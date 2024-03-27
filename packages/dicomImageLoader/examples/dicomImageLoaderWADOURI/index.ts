@@ -248,10 +248,19 @@ function handleImageSelection(event) {
   console.log('Selected file:', selectedFile);
 
   if (selectedFile) {
-    downloadAndView(
-      'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/' +
-        selectedFile
-    );
+    let url;
+
+    if (selectedFile.startsWith('TG_18')) {
+      url =
+        'https://raw.githubusercontent.com/OHIF/viewer-testdata/master/dcm/tg18/' +
+        selectedFile.substring(6);
+    } else {
+      url =
+        'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/' +
+        selectedFile;
+    }
+
+    downloadAndView(url);
   }
 }
 

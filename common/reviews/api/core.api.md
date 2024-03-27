@@ -170,9 +170,13 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     setDefaultProperties(ViewportProperties: VolumeViewportProperties, volumeId?: string): void;
     // (undocumented)
+    protected setInterpolationType(interpolationType: InterpolationType, volumeId?: string): void;
+    // (undocumented)
     setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
+    // (undocumented)
+    protected setRotation: (rotation: number) => void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
@@ -701,10 +705,13 @@ const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
 type DisplayArea = {
+    type?: 'SCALE' | 'FIT';
+    scale?: number;
+    interpolationType?: InterpolationType;
     imageArea?: [number, number];
     imageCanvasPoint?: {
         imagePoint: [number, number];
-        canvasPoint: [number, number];
+        canvasPoint?: [number, number];
     };
     storeAsInitialCamera?: boolean;
 };
@@ -2227,6 +2234,8 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getViewPresentation(viewPresSel: ViewPresentationSelector): ViewPresentation;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     getZoom(): number;
@@ -2260,6 +2269,8 @@ interface IViewport {
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
     // (undocumented)
     setRendered(): void;
+    // (undocumented)
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): any;
     // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
@@ -2796,10 +2807,10 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, renderingEngineId?: string): Promise<string>;
+function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<string>;
 
 // @public (undocumented)
-function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string): Promise<string>;
+function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions): Promise<string>;
 
 // @public (undocumented)
 enum RequestType {
@@ -3098,11 +3109,17 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setImageIdIndex(imageIdIndex: number): Promise<string>;
     // (undocumented)
+    protected setInterpolationType: (interpolationType: InterpolationType) => void;
+    // (undocumented)
     setProperties({ colormap, voiRange, VOILUTFunction, invert, interpolationType, rotation, }?: StackViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    protected setRotation: (rotation: number) => void;
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
     setUseCPURendering(value: boolean): void;
+    // (undocumented)
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
     successCallback(imageId: any, image: any): void;
     // (undocumented)
@@ -3268,6 +3285,8 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         ViewReference,
+        ViewPresentation,
+        ViewPresentationSelector,
         ReferenceCompatibleOptions,
         ViewReferenceSpecifier,
         StackViewportProperties,
@@ -3460,7 +3479,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
+    canvasToWorld: (canvasPos: Point2, destPos?: Point3) => Point3;
     // (undocumented)
     protected createActorMapper(image: any): CanvasActor;
     // (undocumented)
@@ -3498,7 +3517,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
             getScalarData: () => CanvasScalarData;
             getSpacing: () => any;
             worldToIndex: (point: Point3) => number[];
-            indexToWorld: (point: Point3) => Point3;
+            indexToWorld: (point: Point2, destPoint?: Point3) => Point3;
         };
         hasPixelSpacing: boolean;
         calibration: IImageCalibration;
@@ -3637,7 +3656,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
+    static boundsRadius(bounds: number[]): number;
+    // (undocumented)
     protected calibration: IImageCalibration;
+    // (undocumented)
+    static readonly CameraViewPresentation: ViewPresentationSelector;
     // (undocumented)
     readonly canvas: HTMLCanvasElement;
     // (undocumented)
@@ -3648,6 +3671,8 @@ export class Viewport implements IViewport {
     readonly defaultOptions: Record<string, any>;
     // (undocumented)
     readonly element: HTMLDivElement;
+    // (undocumented)
+    protected fitToCanvasCamera: ICamera;
     // (undocumented)
     protected flip({ flipHorizontal, flipVertical }: FlipDirection): void;
     // (undocumented)
@@ -3690,9 +3715,9 @@ export class Viewport implements IViewport {
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
-    getPan(): Point2;
+    getPan(initialCamera?: ICamera): Point2;
     // (undocumented)
-    getProperties: () => void;
+    getProperties: () => ViewportProperties;
     // (undocumented)
     getReferenceId(_specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
@@ -3702,11 +3727,13 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
+    // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
-    getZoom(): number;
+    getZoom(compareCamera?: ICamera): number;
     // (undocumented)
     protected hasPixelSpacing: boolean;
     // (undocumented)
@@ -3750,9 +3777,15 @@ export class Viewport implements IViewport {
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
     // (undocumented)
+    protected setDisplayAreaFit(displayArea: DisplayArea): void;
+    // (undocumented)
+    protected setDisplayAreaScale(displayArea: DisplayArea): void;
+    // (undocumented)
     protected setFitToCanvasCamera(camera: ICamera): void;
     // (undocumented)
     protected setInitialCamera(camera: ICamera): void;
+    // (undocumented)
+    protected setInterpolationType(_interpolationType: InterpolationType, _arg?: any): void;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate?: boolean): void;
     // (undocumented)
@@ -3762,11 +3795,17 @@ export class Viewport implements IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
+    protected setRotation: (_rotation: number) => void;
+    // (undocumented)
+    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
     sHeight: number;
     // (undocumented)
     protected _shouldUseNativeDataType(): boolean;
+    // (undocumented)
+    _suppressCameraModifiedEvents: boolean;
     // (undocumented)
     readonly suppressEvents: boolean;
     // (undocumented)
@@ -3775,6 +3814,8 @@ export class Viewport implements IViewport {
     sx: number;
     // (undocumented)
     sy: number;
+    // (undocumented)
+    static readonly TransferViewPresentation: ViewPresentationSelector;
     // (undocumented)
     triggerCameraModifiedEventIfNecessary(previousCamera: ICamera, updatedCamera: ICamera): void;
     // (undocumented)
@@ -3863,6 +3904,26 @@ enum ViewportType {
     // (undocumented)
     VOLUME_3D = "volume3d"
 }
+
+// @public (undocumented)
+type ViewPresentation = {
+    slabThickness?: number;
+    rotation?: number;
+    displayArea?: DisplayArea;
+    zoom?: number;
+    pan?: Point2;
+};
+
+// @public (undocumented)
+type ViewPresentationSelector = {
+    slabThickness?: boolean;
+    rotation?: boolean;
+    displayArea?: boolean;
+    zoom?: boolean;
+    pan?: boolean;
+    windowLevel?: boolean;
+    paletteLut?: boolean;
+};
 
 // @public (undocumented)
 type ViewReference = {

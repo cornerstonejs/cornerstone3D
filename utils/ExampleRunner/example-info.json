@@ -134,6 +134,10 @@
         "name": "Volume Slab Scroll",
         "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
       },
+      "resize": {
+        "name": "Resize viewport and change aspect ratio",
+        "description": "Resize the viewport and allow various aspect ratios/conditions"
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"

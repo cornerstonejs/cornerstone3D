@@ -1,4 +1,3 @@
-import _cloneDeep from 'lodash.clonedeep';
 import { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
 import { validateSegmentationInput } from './helpers';
 import { addSegmentation as addSegmentationToState } from './segmentationState';
@@ -18,7 +17,7 @@ function addSegmentations(
   validateSegmentationInput(segmentationInputArray);
 
   segmentationInputArray.map((segInput) => {
-    const segmentationInput = _cloneDeep(segInput);
+    const segmentationInput = structuredClone(segInput);
 
     addSegmentationToState(segmentationInput);
   });

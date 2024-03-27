@@ -1,7 +1,9 @@
-import getOrCreateCanvas from '../RenderingEngine/helpers/getOrCreateCanvas';
+import getOrCreateCanvas, {
+  EPSILON,
+} from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
 import StackViewport from '../RenderingEngine/StackViewport';
-import { IImage } from '../types';
+import { IImage, ViewportInputOptions } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
@@ -29,7 +31,8 @@ export default function renderToCanvasGPU(
   canvas: HTMLCanvasElement,
   image: IImage,
   modality = undefined,
-  renderingEngineId = '_thumbnails'
+  renderingEngineId = '_thumbnails',
+  viewportOptions: ViewportInputOptions = { displayArea: { imageArea: [1, 1] } }
 ): Promise<string> {
   if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
     throw new Error('canvas element is required');
@@ -39,21 +42,24 @@ export default function renderToCanvasGPU(
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
   const imageId = image.imageId;
   const element = document.createElement('div');
-  element.style.width = `${canvas.width}px`;
-  element.style.height = `${canvas.height}px`;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const originalWidth = canvas.width;
+  const originalHeight = canvas.height;
+  // The canvas width/height are set by flooring the CSS size converted
+  // into physical pixels, but because these are float values, the conversion
+  // isn't exact, and using the exact value sometimes leads to an off by 1
+  // in the actual size, so adding EPSILON to the size resolves
+  // the problem.
+  element.style.width = `${originalWidth + EPSILON}px`;
+  element.style.height = `${originalHeight + EPSILON}px`;
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
 
   // Up-sampling the provided canvas to match the device pixel ratio
   // since we use device pixel ratio to determine the size of the canvas
   // inside the rendering engine.
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const originalWidth = canvas.width;
-  const originalHeight = canvas.height;
   canvas.width = originalWidth * devicePixelRatio;
   canvas.height = originalHeight * devicePixelRatio;
-  canvas.style.width = `${originalWidth}px`;
-  canvas.style.height = `${originalHeight}px`;
 
   document.body.appendChild(element);
 
@@ -61,6 +67,8 @@ export default function renderToCanvasGPU(
   const uniqueId = viewportId.split(':').join('-');
   element.setAttribute('viewport-id-for-remove', uniqueId);
 
+  // get the canvas element that is the child of the div
+  const temporaryCanvas = getOrCreateCanvas(element);
   const renderingEngine =
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
     new RenderingEngine(renderingEngineId);
@@ -73,6 +81,7 @@ export default function renderToCanvasGPU(
       type: ViewportType.STACK,
       element,
       defaultOptions: {
+        ...viewportOptions,
         suppressEvents: true,
       },
     };
@@ -90,9 +99,6 @@ export default function renderToCanvasGPU(
       if (elementRendered) {
         return;
       }
-
-      // get the canvas element that is the child of the div
-      const temporaryCanvas = getOrCreateCanvas(element);
 
       // Copy the temporary canvas to the given canvas
       const context = canvas.getContext('2d');
@@ -135,7 +141,7 @@ export default function renderToCanvasGPU(
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
     viewport.renderImageObject(image);
 
-    // force a reset camera to center the image
+    // force a reset camera to center the image and undo the small scaling
     viewport.resetCamera();
 
     if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {

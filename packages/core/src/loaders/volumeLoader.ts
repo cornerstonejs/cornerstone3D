@@ -3,7 +3,6 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import cloneDeep from 'lodash.clonedeep';
 
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import cache from '../cache/cache';
@@ -323,7 +322,7 @@ export async function createAndCacheDerivedVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: cloneDeep(metadata),
+    metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -425,7 +424,7 @@ export function createLocalVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: cloneDeep(metadata),
+    metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,

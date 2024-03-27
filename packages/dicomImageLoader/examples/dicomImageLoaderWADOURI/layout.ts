@@ -37,21 +37,50 @@ const html = `
         <option>TestPattern_Palette.dcm</option>
         <option>TestPattern_RGB.dcm</option>
     </optgroup>
+    <optgroup label="TG-18 Luminance-1k">
+        <option>TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm</option>
+        <option>TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01.dcm</option>
+        <option>TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm</option>
+        <option>TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04.dcm</option>
+        <option>TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm</option>
+        <option>TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13.dcm</option>
+        <option>TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm</option>
+        <option>TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01.dcm</option>
+        <option>TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm</option>
+        <option>TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01.dcm</option>
+    </optgroup>
+    <optgroup label="TG-18 Multi-1k">
+        <option>TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm</option>
+        <option>TG_18-multi-1K/TG18-QC/TG18-QC-1k-01.dcm</option>
+        <option>TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm</option>
+    </optgroup>
+    <optgroup label="TG-18 Noise-1k">
+        <option>TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01.dcm</option>
+        <option>TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm</option>
+        <option>TG_18-noise-1k/TG18-NS/TG18-NS-1k-02.dcm</option>
+        <option>TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm</option>
+    </optgroup>
+    <optgroup label="TG-18 Resolution-2k">
+        <option>TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01.dcm</option>
+        <option>TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm</option>
+        <option>TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01.dcm</option>
+        <option>TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm</option>
+        <option>TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03.dcm</option>
+        <option>TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm</option>
+        <option>TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01.dcm</option>
+        <option>TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm</option>
+        <option>TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03.dcm</option>
+        <option>TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm</option>
+        <option>TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02.dcm</option>
+        <option>TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm</option>
+    </optgroup>
     </select>
 
     <br>
     <br>
     <div class="row">
         <div class="col-md-6">
-            <div style="width:512px;height:512px;position:relative;color: white;display:inline-block;border-style:solid;border-color:black;"
-                 oncontextmenu="return false"
-                 class='disable-selection noIbar'
-                 unselectable='on'
-                 onselectstart='return false;'
-                 onmousedown='return false;'>
-                <div id="cornerstone-element"
-                     style="width:512px;height:512px;top:0px;left:0px; position:absolute">
-                </div>
+            <div id="cornerstone-element" style="width:512px;height:512px" onmousedown='return false;' oncontextmenu='return false;'>
             </div>
         </div>
         <div class="col-md-6">

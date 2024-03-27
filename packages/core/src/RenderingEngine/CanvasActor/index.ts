@@ -209,7 +209,8 @@ export default class CanvasActor implements ICanvasActor {
     const imageData = this.viewport.getImageData();
     Object.assign(this.image, {
       worldToIndex: (worldPos) => imageData.imageData.worldToIndex(worldPos),
-      indexToWorld: (index) => imageData.imageData.indexToWorld(index),
+      indexToWorld: (index, destPoint) =>
+        imageData.imageData.indexToWorld(index, destPoint),
       getDimensions: () => imageData.dimensions,
       getScalarData: () => this.derivedImage?.getPixelData(),
       getDirection: () => imageData.direction,

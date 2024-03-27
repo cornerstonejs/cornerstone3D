@@ -1,5 +1,4 @@
 import { MouseBindings, ToolModes } from '../../enums';
-import cloneDeep from 'lodash.clonedeep';
 import get from 'lodash.get';
 import {
   triggerEvent,
@@ -733,7 +732,7 @@ export default class ToolGroup implements IToolGroup {
       get(this._toolInstances[toolName].configuration, configurationPath) ||
       this._toolInstances[toolName].configuration;
 
-    return cloneDeep(_configuration);
+    return structuredClone(_configuration);
   }
 
   /**

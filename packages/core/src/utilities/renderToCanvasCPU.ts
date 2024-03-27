@@ -1,4 +1,8 @@
-import { IImage, CPUFallbackEnabledElement } from '../types';
+import {
+  IImage,
+  CPUFallbackEnabledElement,
+  ViewportInputOptions,
+} from '../types';
 
 import getDefaultViewport from '../RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 import calculateTransform from '../RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';
@@ -15,7 +19,8 @@ export default function renderToCanvasCPU(
   canvas: HTMLCanvasElement,
   image: IImage,
   modality?: string,
-  renderingEngineId?: string
+  _renderingEngineId?: string,
+  _viewportOptions?: ViewportInputOptions
 ): Promise<string> {
   const viewport = getDefaultViewport(canvas, image, modality);
 
