@@ -17,6 +17,7 @@ import {
   getLocalUrl,
   addButtonToToolbar,
   addManipulationBindings,
+  labelmapTools,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -30,15 +31,10 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  RectangleScissorsTool,
-  SphereScissorsTool,
-  CircleScissorsTool,
-  BrushTool,
-  PaintFillTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -96,128 +92,9 @@ instructions.innerText = `
 
 content.append(instructions);
 
-const interpolationTools = new Map<string, any>();
-const previewColors = {
-  0: [255, 255, 255, 128],
-  1: [0, 255, 255, 192],
-  2: [255, 0, 255, 255],
-};
-const preview = {
-  enabled: true,
-  previewColors,
-};
-const configuration = {
-  preview,
-  strategySpecificConfiguration: {
-    useCenterSegmentIndex: true,
-  },
-};
-const thresholdOptions = new Map<string, any>();
-thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
-thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
-thresholdOptions.set('Dynamic Radius 2', { isDynamic: true, dynamicRadius: 2 });
-thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
-thresholdOptions.set('Dynamic Radius 4', { isDynamic: true, dynamicRadius: 4 });
-thresholdOptions.set('Use Existing Threshold', {
-  isDynamic: false,
-  dynamicRadius: 5,
-});
-thresholdOptions.set('CT Fat: (-150, -70)', {
-  threshold: [-150, -70],
-  isDynamic: false,
-});
-thresholdOptions.set('CT Bone: (200, 1000)', {
-  threshold: [200, 1000],
-  isDynamic: false,
-});
-const defaultThresholdOption = [...thresholdOptions.keys()][2];
-const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
-
-interpolationTools.set('ThresholdSphereIsland', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
-interpolationTools.set('ThresholdCircle', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
-interpolationTools.set('ThresholdSphere', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
-interpolationTools.set('CircularBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_CIRCLE',
-  },
-});
-
-interpolationTools.set('CircularEraser', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE_CIRCLE',
-  },
-});
-
-interpolationTools.set('SphereBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_SPHERE',
-  },
-});
-interpolationTools.set('SphereEraser', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE_SPHERE',
-  },
-});
-interpolationTools.set('ScissorsEraser', {
-  baseTool: SphereScissorsTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE',
-  },
-});
-
-const optionsValues = [
-  ...interpolationTools.keys(),
-  RectangleScissorsTool.toolName,
-  CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
-  PaintFillTool.toolName,
-];
-
 // ============================= //
 addDropdownToToolbar({
-  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  options: { map: labelmapTools.toolMap },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -237,14 +114,9 @@ addDropdownToToolbar({
 
 addDropdownToToolbar({
   options: {
-    values: Array.from(thresholdOptions.keys()),
-    defaultValue: defaultThresholdOption,
+    map: labelmapTools.thresholdOptions,
   },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-
-    const thresholdArgs = thresholdOptions.get(name);
-
+  onSelectedValueChange: (name, thresholdArgs) => {
     segmentationUtils.setBrushThresholdForToolGroup(
       toolGroupId,
       thresholdArgs.threshold,
@@ -255,7 +127,7 @@ addDropdownToToolbar({
 
 addSliderToToolbar({
   title: 'Brush Size',
-  range: [5, 100],
+  range: [5, 50],
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
@@ -291,10 +163,6 @@ async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
     volumeId: segmentationId,
-    // The following doesn't quite work yet
-    // TODO, allow RLE to be used instead of scalars.
-    // targetBuffer: { type: 'none' },
-    // voxelRepresentation: VoxelManagerEnum.RLE,
   });
 
   // Add the segmentations to state
@@ -326,49 +194,11 @@ async function run() {
     ProgressiveRetrieveImages.interleavedRetrieveStages
   );
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(RectangleScissorsTool);
-  cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(SphereScissorsTool);
-  cornerstoneTools.addTool(PaintFillTool);
-  cornerstoneTools.addTool(BrushTool);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Manipulation Tools
-  addManipulationBindings(toolGroup);
-
-  // Segmentation Tools
+  addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
+  cornerstoneTools.addTool(SegmentationDisplayTool);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(RectangleScissorsTool.toolName);
-  toolGroup.addTool(CircleScissorsTool.toolName);
-  toolGroup.addTool(SphereScissorsTool.toolName);
-  toolGroup.addTool(PaintFillTool.toolName);
-  toolGroup.addTool(BrushTool.toolName);
-
-  for (const [toolName, config] of interpolationTools.entries()) {
-    if (config.baseTool) {
-      toolGroup.addToolInstance(
-        toolName,
-        config.baseTool,
-        config.configuration
-      );
-    } else {
-      toolGroup.addTool(toolName, config.configuration);
-    }
-    if (config.passive) {
-      // This can be applied during add/remove contours
-      toolGroup.setToolPassive(toolName);
-    }
-  }
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  toolGroup.setToolActive(interpolationTools.keys().next().value, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -443,6 +273,8 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(toolGroupId, [
     {
@@ -450,7 +282,6 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
