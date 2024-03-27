@@ -23,6 +23,8 @@ import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = external.cornerstone.Enums;
+  const { dicomParser } = external;
+
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
     const { metadata, frame } =
@@ -57,12 +59,22 @@ function metaDataProvider(type, imageId) {
       //PerFrameFunctionalGroupsSequence,
     };
   }
-  const { dicomParser } = external;
 
   const metaData = metaDataManager.get(imageId);
 
   if (!metaData) {
     return;
+  }
+
+  if (type === MetadataModules.GENERAL_STUDY) {
+    return {
+      studyDescription: getValue<string>(metaData['00081030']),
+      studyDate: dicomParser.parseDA(getValue<string>(metaData['00080020'])),
+      studyTime: dicomParser.parseTM(
+        getValue<string>(metaData['00080030'], 0, '')
+      ),
+      accessionNumber: getValue<string>(metaData['00080050']),
+    };
   }
 
   if (type === MetadataModules.GENERAL_SERIES) {
@@ -76,12 +88,28 @@ function metaDataProvider(type, imageId) {
         getValue<string>(metaData['00080031'], 0, '')
       ),
       acquisitionDate: dicomParser.parseDA(
-        getValue<string>(metaData['00080022']),
-        ''
+        getValue<string>(metaData['00080022'])
       ),
       acquisitionTime: dicomParser.parseTM(
         getValue<string>(metaData['00080032'], 0, '')
       ),
+    };
+  }
+
+  if (type === MetadataModules.GENERAL_IMAGE) {
+    return {
+      sopInstanceUID: getValue<string>(metaData['00080018']),
+      instanceNumber: getNumberValue(metaData['00200013']),
+      lossyImageCompression: getValue<string>(metaData['00282110']),
+      lossyImageCompressionRatio: getNumberValue(metaData['00282112']),
+      lossyImageCompressionMethod: getValue<string>(metaData['00282114']),
+    };
+  }
+
+  if (type === MetadataModules.PATIENT) {
+    return {
+      patientID: getValue<string>(metaData['00100020']),
+      patientName: getValue<string>(metaData['00100010']),
     };
   }
 
@@ -165,6 +193,7 @@ function metaDataProvider(type, imageId) {
       columnPixelSpacing,
     };
   }
+
   if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
     return getUSEnhancedRegions(metaData);
   }
@@ -188,7 +217,7 @@ function metaDataProvider(type, imageId) {
     return getCineModule(imageId, metaData);
   }
 
-  if (type === 'imagePixelModule') {
+  if (type === MetadataModules.IMAGE_PIXEL) {
     return {
       samplesPerPixel: getNumberValue(metaData['00280002']),
       photometricInterpretation: getValue(metaData['00280004']),
@@ -217,7 +246,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'voiLutModule') {
+  if (type === MetadataModules.VOI_LUT) {
     return {
       // TODO VOT LUT Sequence
       windowCenter: getNumberValues(metaData['00281050'], 1),
@@ -225,7 +254,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'modalityLutModule') {
+  if (type === MetadataModules.MODALITY_LUT) {
     return {
       // TODO VOT LUT Sequence
       rescaleIntercept: getNumberValue(metaData['00281052']),
@@ -234,14 +263,14 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'sopCommonModule') {
+  if (type === MetadataModules.SOP_COMMON) {
     return {
       sopClassUID: getValue<string>(metaData['00080016']),
       sopInstanceUID: getValue<string>(metaData['00080018']),
     };
   }
 
-  if (type === 'petIsotopeModule') {
+  if (type === MetadataModules.PET_ISOTOPE) {
     const radiopharmaceuticalInfo = getValue(metaData['00540016']);
 
     if (radiopharmaceuticalInfo === undefined) {
@@ -268,7 +297,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'overlayPlaneModule') {
+  if (type === MetadataModules.OVERLAY_PLANE) {
     return getOverlayPlaneModule(metaData);
   }
 
@@ -278,7 +307,7 @@ function metaDataProvider(type, imageId) {
     return getTransferSyntax(imageId, metaData);
   }
 
-  if (type === 'petSeriesModule') {
+  if (type === MetadataModules.PET_SERIES) {
     return {
       correctedImage: getValue(metaData['00280051']),
       units: getValue(metaData['00541001']),
@@ -286,14 +315,14 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'petImageModule') {
+  if (type === MetadataModules.PET_IMAGE) {
     return {
       frameReferenceTime: getNumberValue(metaData['00541300']),
       actualFrameDuration: getNumberValue(metaData['00181242']),
     };
   }
 
-  // This is used for gathering all the metadata for export
+  // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
     return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
@@ -334,4 +363,5 @@ export function getTransferSyntax(imageId, metaData) {
       getValue<string>(metaData['00083002']),
   };
 }
+
 export default metaDataProvider;

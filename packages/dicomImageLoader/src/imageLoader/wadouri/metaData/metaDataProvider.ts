@@ -22,14 +22,17 @@ import {
 } from '../../getInstanceModule';
 
 function metaDataProvider(type, imageId) {
+  const { MetadataModules } = external.cornerstone.Enums;
   const { dicomParser } = external;
+
   // Several providers use array queries
   if (Array.isArray(imageId)) {
     return;
   }
+
   const parsedImageId = parseImageId(imageId);
 
-  if (type === 'multiframeModule') {
+  if (type === MetadataModules.MULTIFRAME) {
     const multiframeData = multiframeDataset.retrieveMultiframeDataset(
       parsedImageId.url
     );
@@ -51,13 +54,23 @@ function metaDataProvider(type, imageId) {
   if (parsedImageId.frame) {
     url = `${url}&frame=${parsedImageId.frame}`;
   }
+
   const dataSet = dataSetCacheManager.get(url);
 
   if (!dataSet) {
     return;
   }
 
-  if (type === 'generalSeriesModule') {
+  if (type === MetadataModules.GENERAL_STUDY) {
+    return {
+      studyDescription: dataSet.string('x00081030'),
+      studyDate: dicomParser.parseDA(dataSet.string('x00080020')),
+      studyTime: dicomParser.parseTM(dataSet.string('x00080030') || ''),
+      accessionNumber: dataSet.string('x00080050'),
+    };
+  }
+
+  if (type === MetadataModules.GENERAL_SERIES) {
     return {
       modality: dataSet.string('x00080060'),
       seriesInstanceUID: dataSet.string('x0020000e'),
@@ -65,39 +78,60 @@ function metaDataProvider(type, imageId) {
       studyInstanceUID: dataSet.string('x0020000d'),
       seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
       seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || ''),
-      acquisitionDate: dicomParser.parseDA(dataSet.string('x00080022') || ''),
+      acquisitionDate: dicomParser.parseDA(dataSet.string('x00080022')),
       acquisitionTime: dicomParser.parseTM(dataSet.string('x00080032') || ''),
     };
   }
 
-  if (type === 'patientStudyModule') {
+  if (type === MetadataModules.GENERAL_IMAGE) {
+    return {
+      sopInstanceUID: dataSet.string('x00080018'),
+      instanceNumber: dataSet.intString('x00200013'),
+      lossyImageCompression: dataSet.string('x00282110'),
+      lossyImageCompressionRatio: dataSet.floatString('x00282112'),
+      lossyImageCompressionMethod: dataSet.string('x00282114'),
+    };
+  }
+
+  if (type === MetadataModules.PATIENT) {
+    return {
+      patientID: dataSet.string('x00100020'),
+      patientName: dataSet.string('x00100010'),
+    };
+  }
+
+  if (type === MetadataModules.PATIENT_STUDY) {
     return {
       patientAge: dataSet.intString('x00101010'),
       patientSize: dataSet.floatString('x00101020'),
+      patientSex: dataSet.string('x00100040'),
       patientWeight: dataSet.floatString('x00101030'),
     };
   }
 
-  if (type === 'imagePlaneModule') {
+  if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
+    const modality = dataSet.string('x00080060');
+    const imageSubType = getImageTypeSubItemFromDataset(dataSet, 2);
+
+    return {
+      modality,
+      imageType: dataSet.string('x00080008'),
+      imageSubType,
+      imageOrientationPatient: extractOrientationFromDataset(dataSet),
+      imagePositionPatient: extractPositionFromDataset(dataSet),
+      sliceThickness: extractSliceThicknessFromDataset(dataSet),
+      pixelSpacing: extractSpacingFromDataset(dataSet),
+      numberOfFrames: dataSet.uint16('x00280008'),
+      isNMReconstructable:
+        isNMReconstructable(imageSubType) && modality.includes('NM'),
+    };
+  }
+
+  if (type === MetadataModules.IMAGE_PLANE) {
     const imageOrientationPatient = extractOrientationFromDataset(dataSet);
-
     const imagePositionPatient = extractPositionFromDataset(dataSet);
-
     const pixelSpacing = extractSpacingFromDataset(dataSet);
-
-    let frameOfReferenceUID;
-
-    if (dataSet.elements.x00200052) {
-      frameOfReferenceUID = dataSet.string('x00200052');
-    }
-
     const sliceThickness = extractSliceThicknessFromDataset(dataSet);
-
-    let sliceLocation;
-
-    if (dataSet.elements.x00201041) {
-      sliceLocation = dataSet.floatString('x00201041');
-    }
 
     let columnPixelSpacing = null;
 
@@ -132,7 +166,7 @@ function metaDataProvider(type, imageId) {
     }
 
     return {
-      frameOfReferenceUID,
+      frameOfReferenceUID: dataSet.string('x00200052'),
       rows: dataSet.uint16('x00280010'),
       columns: dataSet.uint16('x00280011'),
       imageOrientationPatient,
@@ -140,48 +174,24 @@ function metaDataProvider(type, imageId) {
       columnCosines,
       imagePositionPatient,
       sliceThickness,
-      sliceLocation,
+      sliceLocation: dataSet.floatString('x00201041'),
       pixelSpacing,
       rowPixelSpacing,
       columnPixelSpacing,
     };
   }
 
-  if (type === 'nmMultiframeGeometryModule') {
-    const modality = dataSet.string('x00080060');
-    const imageSubType = getImageTypeSubItemFromDataset(dataSet, 2);
-
+  if (type === MetadataModules.CINE) {
     return {
-      modality,
-      imageType: dataSet.string('x00080008'),
-      imageSubType,
-      imageOrientationPatient: extractOrientationFromDataset(dataSet),
-      imagePositionPatient: extractPositionFromDataset(dataSet),
-      sliceThickness: extractSliceThicknessFromDataset(dataSet),
-      pixelSpacing: extractSpacingFromDataset(dataSet),
-      numberOfFrames: dataSet.uint16('x00280008'),
-      isNMReconstructable:
-        isNMReconstructable(imageSubType) && modality.includes('NM'),
+      frameTime: dataSet.floatString('x00181063'),
     };
   }
 
-  if (type === 'imagePixelModule') {
+  if (type === MetadataModules.IMAGE_PIXEL) {
     return getImagePixelModule(dataSet);
   }
 
-  if (type === 'modalityLutModule') {
-    return {
-      rescaleIntercept: dataSet.floatString('x00281052'),
-      rescaleSlope: dataSet.floatString('x00281053'),
-      rescaleType: dataSet.string('x00281054'),
-      modalityLUTSequence: getLUTs(
-        dataSet.uint16('x00280103'),
-        dataSet.elements.x00283000
-      ),
-    };
-  }
-
-  if (type === 'voiLutModule') {
+  if (type === MetadataModules.VOI_LUT) {
     const modalityLUTOutputPixelRepresentation =
       getModalityLUTOutputPixelRepresentation(dataSet);
 
@@ -195,14 +205,26 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'sopCommonModule') {
+  if (type === MetadataModules.MODALITY_LUT) {
+    return {
+      rescaleIntercept: dataSet.floatString('x00281052'),
+      rescaleSlope: dataSet.floatString('x00281053'),
+      rescaleType: dataSet.string('x00281054'),
+      modalityLUTSequence: getLUTs(
+        dataSet.uint16('x00280103'),
+        dataSet.elements.x00283000
+      ),
+    };
+  }
+
+  if (type === MetadataModules.SOP_COMMON) {
     return {
       sopClassUID: dataSet.string('x00080016'),
       sopInstanceUID: dataSet.string('x00080018'),
     };
   }
 
-  if (type === 'petIsotopeModule') {
+  if (type === MetadataModules.PET_ISOTOPE) {
     const radiopharmaceuticalInfo = dataSet.elements.x00540016;
 
     if (radiopharmaceuticalInfo === undefined) {
@@ -225,7 +247,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'overlayPlaneModule') {
+  if (type === MetadataModules.OVERLAY_PLANE) {
     return getOverlayPlaneModule(dataSet);
   }
 
@@ -237,7 +259,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'petSeriesModule') {
+  if (type === MetadataModules.PET_SERIES) {
     return {
       correctedImage: dataSet.string('x00280051'),
       units: dataSet.string('x00541001'),
@@ -245,7 +267,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'petImageModule') {
+  if (type === MetadataModules.PET_IMAGE) {
     return {
       frameReferenceTime: dataSet.floatString(
         dataSet.string('x00541300') || ''
@@ -254,6 +276,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
+  // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
     return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
