@@ -520,6 +520,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
 
+    // There is a new point being added/changed, and we want that in a separate
+    // memo to allow undoing it, so need to call the done edit an extra time here.
     this.doneEditMemo();
     this.createMemo(element, annotation, {
       newAnnotation: newAnnotation && controlPoints.length === 1,

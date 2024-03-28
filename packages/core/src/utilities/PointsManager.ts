@@ -254,6 +254,11 @@ export default class PointsManager<T> {
 
   /**
    * Create a PointsManager<Point3> instance with available capacity of initialSize
+   *
+   * @param initialSize - the starting size of the underlying array, however, it will still
+   *        be empty of actual data initially.
+   * @param points - a set of points to add to the points array.  Makes it easy to copy
+   *      a set of points into a PointsManager.
    */
   public static create3(initialSize = 128, points?: Point3[]) {
     initialSize = Math.max(initialSize, points?.length || 0);

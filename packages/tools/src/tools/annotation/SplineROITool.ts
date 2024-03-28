@@ -435,6 +435,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
       return;
     }
 
+    // Ensure new changes are captured in a new memo - otherwise some types of
+    // changes get merged when an endCallback is missed.
     this.doneEditMemo();
 
     const eventDetail = evt.detail;

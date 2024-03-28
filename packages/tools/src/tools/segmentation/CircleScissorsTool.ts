@@ -272,7 +272,6 @@ class CircleScissorsTool extends LabelmapBaseTool {
     const { viewPlaneNormal, viewUp } = annotation.metadata;
 
     if (newAnnotation && !hasMoved) {
-      this.memo = null;
       return;
     }
     data.handles.activeHandleIndex = null;

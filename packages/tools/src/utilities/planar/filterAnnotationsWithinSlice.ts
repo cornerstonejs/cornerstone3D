@@ -97,6 +97,8 @@ export default function filterAnnotationsWithinSlice(
 
     const dir = vec3.create();
 
+    // If the handles has no values, eg a key image or other annotation, it
+    // should just be included.
     if (!point) {
       annotationsWithinSlice.push(annotation);
       return;

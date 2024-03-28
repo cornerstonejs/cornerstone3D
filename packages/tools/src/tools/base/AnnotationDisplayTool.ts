@@ -59,9 +59,11 @@ abstract class AnnotationDisplayTool extends BaseTool {
   filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
     annotations: Annotations
-  ): Annotations | undefined {
+  ): Annotations {
     if (!annotations || !annotations.length) {
-      return annotations;
+      // Some tools don't check the return value, so return an empty array
+      // Which is in fact the correct value here.
+      return [];
     }
 
     const enabledElement = getEnabledElement(element);

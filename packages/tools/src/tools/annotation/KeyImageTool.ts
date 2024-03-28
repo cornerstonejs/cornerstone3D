@@ -231,6 +231,7 @@ class KeyImageTool extends AnnotationTool {
     );
 
     this.isDrawing = false;
+    // Need an extra done edit here because the double click doesn't call end
     this.doneEditMemo();
 
     // This double click was handled and the dialogue was displayed.

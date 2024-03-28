@@ -1,7 +1,6 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
 import {
   PublicToolProps,
   ToolProps,
@@ -34,6 +33,7 @@ import {
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -42,7 +42,7 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-class RectangleScissorsTool extends BaseTool {
+class RectangleScissorsTool extends LabelmapBaseTool {
   static toolName;
   _throttledCalculateCachedStats: any;
   editData: {
@@ -310,6 +310,8 @@ class RectangleScissorsTool extends BaseTool {
     const operationData = {
       ...this.editData,
       points: data.handles.points,
+      strategySpecificConfiguration: {},
+      createMemo: this.createMemo.bind(this),
     };
 
     this.editData = null;

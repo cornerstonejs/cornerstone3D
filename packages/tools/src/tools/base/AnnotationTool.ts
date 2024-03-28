@@ -465,7 +465,18 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     }
   }
 
-  protected static cloneAnnotationData(
+  /**
+   * Creates an annotation state copy to allow storing the current state of
+   * an annotation.  This class has knowledge about the contour and spline
+   * implementations in order to copy the contour object efficiently, and to
+   * allow copying the spline object (which has member variables etc).
+   *
+   * @param annotation - the annotation to create a clone of
+   * @param deleting - a flag to indicate that this object is about to be deleted (deleting true),
+   *       or was just created (deleting false), or neither (deleting undefined).
+   * @returns state information for the given annotation.
+   */
+  protected static createAnnotationState(
     annotation: Annotation,
     deleting?: boolean
   ) {
@@ -496,6 +507,23 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     return state;
   }
 
+  /**
+   * Creates an annotation memo storing the current data state on the given
+   * annotation object.  This will store/recover handles data, text box and contour
+   * data, and if the options are set for deletion, will apply that correctly.
+   *
+   * @param element - that the annotation is shown on.
+   * @param annotation - to store a memo for the current state.
+   * @param options - whether the annotation is being created (newAnnotation) or
+   *       is in the process of being deleted (`deleting`)
+   *       * Note the naming on deleting is to indicate the deletion is in progress,
+   *         as the createAnnotationMemo needs to be called BEFORE the annotation
+   *         is actually deleted.
+   *       * deleting with a value of false is the same as newAnnotation=true,
+   *         as it is simply the opposite direction.  Use undefined for both
+   *         newAnnotation and deleting for non-create/delete operations.
+   * @returns Memo containing the annotation data.
+   */
   public static createAnnotationMemo(
     element,
     annotation: Annotation,
@@ -507,26 +535,23 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { newAnnotation, deleting = newAnnotation ? false : undefined } =
       options || {};
     const { annotationUID } = annotation;
-    const state = this.cloneAnnotationData(annotation, deleting);
+    const state = AnnotationTool.createAnnotationState(annotation, deleting);
 
     const annotationMemo = {
       restoreMemo: () => {
-        const newState = AnnotationTool.cloneAnnotationData(
+        const newState = AnnotationTool.createAnnotationState(
           annotation,
           deleting
         );
         if (state.deleting === true) {
-          // Handle undeletion
+          // Handle undeletion - note the state of deleting is internally
+          // true/false/undefined to mean delete/re-create as these are opposite actions.
           state.deleting = false;
           Object.assign(annotation.data, state.data);
           if (annotation.data.contour) {
             annotation.data.contour.polyline =
               state.data.contour.pointsManager.points;
             delete annotation.data.contour.pointsManager;
-            console.log(
-              'Annotation contour restore',
-              annotation.data.contour.polyline.length
-            );
             if (annotation.data.segmentation) {
               addContourSegmentationAnnotation(
                 annotation as ContourSegmentationAnnotation

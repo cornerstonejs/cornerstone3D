@@ -298,7 +298,7 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
@@ -484,12 +484,6 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract cancel(element: HTMLDivElement): any;
     // (undocumented)
-    protected static cloneAnnotationData(annotation: Annotation, deleting?: boolean): {
-        annotationUID: string;
-        data: any;
-        deleting: boolean;
-    };
-    // (undocumented)
     static createAndAddAnnotation(viewport: any, ...annotationBaseData: any[]): void;
     // (undocumented)
     static createAnnotation(...annotationBaseData: any[]): Annotation;
@@ -501,6 +495,12 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
         deleting?: boolean;
     }): {
         restoreMemo: () => void;
+    };
+    // (undocumented)
+    protected static createAnnotationState(annotation: Annotation, deleting?: boolean): {
+        annotationUID: string;
+        data: any;
+        deleting: boolean;
     };
     // (undocumented)
     protected createMemo(element: any, annotation: any, options?: any): void;
@@ -675,8 +675,6 @@ export abstract class BaseTool implements IBaseTool {
     protected memo: utilities_2.HistoryMemo.Memo;
     // (undocumented)
     mode: ToolModes;
-    // (undocumented)
-    preMouseDownCallback: (_evt: any) => boolean;
     // (undocumented)
     redo(): void;
     // (undocumented)
@@ -1695,7 +1693,7 @@ function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
 function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, preview?: InitializedOperationData): {
     segmentationId: string;
     restoreMemo: typeof restoreMemo;
-    complete: typeof complete;
+    commitMemo: typeof commitMemo;
     segmentationVoxelManager: utilities_2.VoxelManager<number>;
     voxelManager: utilities_2.VoxelManager<number>;
     memo: LabelmapMemo_2;
@@ -1703,7 +1701,7 @@ function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager:
 } | {
     segmentationId: string;
     restoreMemo: typeof restoreMemo;
-    complete: typeof complete;
+    commitMemo: typeof commitMemo;
     segmentationVoxelManager: utilities_2.VoxelManager<T>;
     voxelManager: utilities_2.VoxelManager<T>;
 };
@@ -1737,7 +1735,7 @@ function createPresentationViewSynchronizer(synchronizerName: string): Synchroni
 function createPreviewMemo(segmentationId: string, preview: InitializedOperationData): {
     segmentationId: string;
     restoreMemo: typeof restoreMemo;
-    complete: typeof complete;
+    commitMemo: typeof commitMemo;
     segmentationVoxelManager: utilities_2.VoxelManager<number>;
     voxelManager: utilities_2.VoxelManager<number>;
     memo: LabelmapMemo_2;
@@ -1748,7 +1746,7 @@ function createPreviewMemo(segmentationId: string, preview: InitializedOperation
 function createRleMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>): {
     segmentationId: string;
     restoreMemo: typeof restoreMemo;
-    complete: typeof complete;
+    commitMemo: typeof commitMemo;
     segmentationVoxelManager: utilities_2.VoxelManager<T>;
     voxelManager: utilities_2.VoxelManager<T>;
 };
@@ -3205,10 +3203,10 @@ declare namespace LabelmapMemo {
 
 // @public (undocumented)
 type LabelmapMemo_2 = Types_2.Memo & {
-    setValue: (pointIJK: Types_2.Point3, value: any) => void;
     segmentationVoxelManager: Types_2.VoxelManager<number>;
     voxelManager: Types_2.VoxelManager<number>;
-    complete: () => void;
+    redoVoxelManager?: Types_2.VoxelManager<number>;
+    undoVoxelManager?: Types_2.VoxelManager<number>;
     memo?: LabelmapMemo_2;
 };
 
@@ -4398,7 +4396,7 @@ declare namespace rectangleROITool {
 }
 
 // @public (undocumented)
-export class RectangleScissorsTool extends BaseTool {
+export class RectangleScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -6140,6 +6138,8 @@ export class VideoRedactionTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: any) => void;
+    // (undocumented)
     getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
     // (undocumented)
     _getImageVolumeFromTargetUID(targetUID: any, renderingEngine: any): {
@@ -6169,8 +6169,6 @@ export class VideoRedactionTool extends AnnotationTool {
     isPointNearTool: (element: any, annotation: any, canvasCoords: any, proximity: any) => boolean;
     // (undocumented)
     _mouseDragCallback: (evt: any) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: any) => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)

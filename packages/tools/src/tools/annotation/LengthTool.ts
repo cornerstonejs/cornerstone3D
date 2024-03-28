@@ -213,7 +213,6 @@ class LengthTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    this.doneEditMemo();
     return annotation;
   };
 
@@ -372,6 +371,7 @@ class LengthTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    this.doneEditMemo();
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);

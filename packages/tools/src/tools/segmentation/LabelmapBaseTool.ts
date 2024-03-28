@@ -14,10 +14,20 @@ export type PreviewData = {
    *  The preview data returned from the strategy
    */
   preview: unknown;
+  /** A timer id to allow cancelling the timer */
   timer?: number;
+  /** The start time for the timer, to allow showing preview after a given length of time */
   timerStart: number;
+  /**
+   * The starting point where the use clicked down on, used to cancel preview
+   * on drag, but preserve it if the user moves the mouse tiny amounts accidentally.
+   */
   startPoint: Types.Point2;
   element: HTMLDivElement;
+  /**
+   * Record if this is a drag preview, that is, a preview which is being extended
+   * by the user dragging to view more area.
+   */
   isDrag: boolean;
 };
 
@@ -39,18 +49,11 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
-   * Creates a labelmap memo instance and returns it.
-   * Uses the existing memo if defined.
+   * Creates a labelmap memo instance, which is a partially created memo
+   * object that stores the changes made to the labelmap rather than the
+   * initial state.  This memo is then committed once done so that the
    */
   public createMemo(segmentId: string, segmentationVoxelManager, preview) {
-    if (this.memo) {
-      if (preview?.previewVoxelManager) {
-        // Need to update the preview voxel manager to use the new one
-        (this.memo as LabelmapMemo.LabelmapMemo).voxelManager =
-          preview.previewVoxelManager;
-      }
-      return this.memo as LabelmapMemo.LabelmapMemo;
-    }
     this.memo ||= LabelmapMemo.createLabelmapMemo(
       segmentId,
       segmentationVoxelManager,

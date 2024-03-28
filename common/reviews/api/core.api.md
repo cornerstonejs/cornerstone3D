@@ -2436,7 +2436,7 @@ type Mat3 = [number, number, number, number, number, number, number, number, num
 // @public (undocumented)
 type Memo = {
     restoreMemo: (undo?: boolean) => void;
-    complete?: () => boolean;
+    commitMemo?: () => boolean;
 };
 
 // @public (undocumented)

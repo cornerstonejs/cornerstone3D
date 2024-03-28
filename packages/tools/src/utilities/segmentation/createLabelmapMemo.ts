@@ -6,14 +6,16 @@ import { InitializedOperationData } from '../../tools/segmentation/strategies/Br
 const { VoxelManager, RLEVoxelMap } = utilities;
 
 /**
- * The labelmap memo state.
+ * The labelmap memo state, extending from the base Memo state
  */
 export type LabelmapMemo = Types.Memo & {
-  setValue: (pointIJK: Types.Point3, value) => void;
+  /** The base segmentation voxel manager */
   segmentationVoxelManager: Types.VoxelManager<number>;
+  /** The history remembering voxel manager */
   voxelManager: Types.VoxelManager<number>;
-  // Copy the data for completion
-  complete: () => void;
+  /** The redo and undo voxel managers */
+  redoVoxelManager?: Types.VoxelManager<number>;
+  undoVoxelManager?: Types.VoxelManager<number>;
   memo?: LabelmapMemo;
 };
 
@@ -61,7 +63,7 @@ export function createRleMemo<T>(
   const state = {
     segmentationId,
     restoreMemo,
-    complete,
+    commitMemo,
     segmentationVoxelManager,
     voxelManager,
   };
@@ -80,12 +82,11 @@ export function createPreviewMemo(
     segmentationVoxelManager,
     previewVoxelManager,
   } = preview;
-  // previewMemo?.complete?.();
 
   const state = {
     segmentationId,
     restoreMemo,
-    complete,
+    commitMemo,
     segmentationVoxelManager,
     voxelManager: previewVoxelManager,
     memo: previewMemo,
@@ -98,7 +99,7 @@ export function createPreviewMemo(
  * This is a member function of a memo that causes the completion of the
  * storage - that is, it copies the RLE data and creates a reverse RLE map
  */
-function complete() {
+function commitMemo() {
   if (this.redoVoxelManager) {
     return true;
   }

@@ -142,24 +142,6 @@ addDropdownToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Rotate Delta 90',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 90 });
-
-    viewport.render();
-  },
-});
-
 let selectedAnnotationUID;
 
 function annotationModifiedListener(evt) {
@@ -195,6 +177,10 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
+      // Note that delete needs to have a memo created for it, as the underlying
+      // state manager doesn't record this directly.
+      // The deleting flag is set to true meaning that this annotation is about
+      // to be deleted (but is NOT yet deleted).
       AnnotationTool.createAnnotationMemo(element, annotation, {
         deleting: true,
       });
@@ -269,28 +255,6 @@ async function addSegmentationsToState() {
     ]);
 }
 
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 2,
-  outlineDashActive: undefined,
-  outlineDashInactive: undefined,
-};
-
-function initializeGlobalConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
 /**
  * Runs the demo
  */
@@ -302,7 +266,6 @@ async function run() {
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
-  initializeGlobalConfig();
   cornerstoneTools.addTool(SegmentationDisplayTool);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
 
