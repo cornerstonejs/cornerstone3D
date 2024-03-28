@@ -491,6 +491,10 @@
       "segmentationVolume": {
         "name": "DICOM SEG Volume",
         "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
+      },
+      "segmentationVolumeLocal": {
+        "name": "DICOM SEG Volume Local",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from your local file system to the Cornerstone3D volume"
       }
     },
     "nifti": {
