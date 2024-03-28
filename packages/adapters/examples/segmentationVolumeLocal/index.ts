@@ -49,6 +49,7 @@ const { downloadDICOMData } = helpers;
 //
 const volumeLoaderScheme = "cornerstoneStreamingImageVolume";
 let volumeId: string;
+
 let renderingEngine;
 const renderingEngineId = "MY_RENDERING_ENGINE_ID";
 const toolGroupId = "MY_TOOL_GROUP_ID";
@@ -59,7 +60,6 @@ const viewportIds: string[] = [
     "CT_CORONAL"
 ];
 let imageIds: string[] = [];
-const segmentationRepresentationUIDs: string[] = [];
 
 // ======== Set up page ======== //
 
@@ -200,6 +200,7 @@ async function loadDicom(imageIds) {
 function importSegmentation() {
     const elInput = document.createElement("input");
     elInput.type = "file";
+    elInput.multiple = true;
     elInput.addEventListener("change", async function (evt) {
         const files = evt.target.files;
 
@@ -364,12 +365,12 @@ addDropdownToToolbar({
     onSelectedValueChange: nameAsStringOrNumber => {
         const segmentationId = String(nameAsStringOrNumber);
 
-        const segmentationIds = getSegmentationIds();
-        const index = segmentationIds.indexOf(segmentationId);
-        const uid = segmentationRepresentationUIDs[index];
+        const segmentationRepresentations =
+            segmentation.state.getSegmentationIdRepresentations(segmentationId);
+
         segmentation.activeSegmentation.setActiveSegmentationRepresentation(
             toolGroupId,
-            uid
+            segmentationRepresentations[0].segmentationRepresentationUID
         );
 
         // Update the dropdown
