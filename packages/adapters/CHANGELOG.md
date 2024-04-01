@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.68.0](https://github.com/dcmjs-org/dcmjs/compare/v1.67.1...v1.68.0) (2024-03-29)
+
+### Features
+
+-   **MetaDataProvider:** Update metadata provider ([#1165](https://github.com/dcmjs-org/dcmjs/issues/1165)) ([df5583d](https://github.com/dcmjs-org/dcmjs/commit/df5583dbac34087182887ea2ca457416a77bf0b6))
+
+## [1.67.1](https://github.com/dcmjs-org/dcmjs/compare/v1.67.0...v1.67.1) (2024-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.67.0](https://github.com/dcmjs-org/dcmjs/compare/v1.66.12...v1.67.0) (2024-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.66.12](https://github.com/dcmjs-org/dcmjs/compare/v1.66.11...v1.66.12) (2024-03-25)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

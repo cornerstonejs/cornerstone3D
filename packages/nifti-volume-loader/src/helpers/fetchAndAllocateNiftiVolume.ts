@@ -5,6 +5,7 @@ import {
   Enums,
   eventTarget,
   triggerEvent,
+  getShouldUseSharedArrayBuffer,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -212,6 +213,8 @@ export default async function fetchAndAllocateNiftiVolume(
   cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
 
   let scalarData;
+  const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
+  const buffer_size = dimensions[0] * dimensions[1] * dimensions[2];
 
   switch (BitsAllocated) {
     case 8:
@@ -220,18 +223,18 @@ export default async function fetchAndAllocateNiftiVolume(
           '8 Bit signed images are not yet supported by this plugin.'
         );
       } else {
-        scalarData = createUint8SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        );
+        scalarData = useSharedArrayBuffer
+          ? createUint8SharedArray(buffer_size)
+          : new Uint8Array(buffer_size);
       }
 
       break;
 
     case 16:
     case 32:
-      scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
-      );
+      scalarData = useSharedArrayBuffer
+        ? createFloat32SharedArray(buffer_size)
+        : new Float32Array(buffer_size);
 
       break;
   }
