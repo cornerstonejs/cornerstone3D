@@ -101,6 +101,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   static toolName;
+
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================

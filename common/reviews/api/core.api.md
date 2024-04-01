@@ -697,7 +697,7 @@ interface CustomEvent_2<T = any> extends Event {
 function decimate(list: Array<unknown>, interleave: number, offset?: number): number[];
 
 // @public (undocumented)
-const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
+const deepMerge: (target?: {}, source?: any, optionsArgument?: any) => any;
 
 // @public (undocumented)
 const DefaultHistoryMemo: HistoryMemo_2;

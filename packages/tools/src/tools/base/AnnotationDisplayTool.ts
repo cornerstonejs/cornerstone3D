@@ -9,7 +9,12 @@ import type { Types } from '@cornerstonejs/core';
 
 import BaseTool from './BaseTool';
 import { getAnnotationManager } from '../../stateManagement/annotation/annotationState';
-import { Annotation, Annotations, SVGDrawingHelper } from '../../types';
+import {
+  Annotation,
+  Annotations,
+  SVGDrawingHelper,
+  EventTypes,
+} from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
@@ -68,6 +73,59 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const { viewport } = enabledElement;
 
     return filterAnnotationsForDisplay(viewport, annotations);
+  }
+
+  /**
+   * Creates an annotation containing the basic data set.
+   */
+  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const { world: worldPos } = currentPoints;
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp, position: cameraPosition } = camera;
+
+    const referencedImageId = this.getReferencedImageId(
+      viewport,
+      worldPos,
+      viewPlaneNormal,
+      viewUp
+    );
+
+    const viewReference = viewport.getViewReference({ points: [worldPos] });
+
+    return <Annotation>{
+      highlighted: true,
+      invalidated: true,
+      metadata: {
+        toolName: this.getToolName(),
+        ...viewReference,
+        referencedImageId,
+        viewUp,
+        cameraPosition,
+      },
+      data: {
+        cachedStats: {},
+        handles: {
+          points: [],
+          activeHandleIndex: null,
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          },
+        },
+      },
+    };
   }
 
   /**

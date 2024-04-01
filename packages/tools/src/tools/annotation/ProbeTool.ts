@@ -111,18 +111,20 @@ class ProbeTool extends AnnotationTool {
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
-  constructor(
-    toolProps: PublicToolProps = {},
-    defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {
-        shadow: true,
-        preventHandleOutsideImage: false,
-        getTextLines: defaultGetTextLines,
-      },
-    }
-  ) {
-    super(toolProps, defaultToolProps);
+  public static probeDefaults = {
+    supportedInteractionTypes: ['Mouse', 'Touch'],
+    configuration: {
+      shadow: true,
+      preventHandleOutsideImage: false,
+      getTextLines: defaultGetTextLines,
+    },
+  };
+
+  constructor(toolProps: PublicToolProps = {}, defaultToolProps?) {
+    super(
+      toolProps,
+      AnnotationTool.mergeDefaults(ProbeTool.probeDefaults, defaultToolProps)
+    );
   }
 
   // Not necessary for this tool but needs to be defined since it's an abstract

@@ -69,7 +69,7 @@ const mergeObject = (target, source, optionsArgument) => {
  * @param optionsArgument - The options object.
  * @returns The merged object.
  */
-const deepMerge = (target = {}, source = {}, optionsArgument = undefined) => {
+const deepMerge = (target = {}, source?, optionsArgument = undefined) => {
   const array = Array.isArray(source);
   const options = optionsArgument || { arrayMerge: defaultArrayMerge };
   const arrayMerge = options.arrayMerge || defaultArrayMerge;

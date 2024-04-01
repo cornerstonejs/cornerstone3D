@@ -37,6 +37,19 @@ abstract class BaseTool implements IBaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
+
+  /**
+   * Has the defaults associated with the base tool.
+   */
+  static defaults = {
+    configuration: {
+      strategies: {},
+      defaultStrategy: undefined,
+      activeStrategy: undefined,
+      strategyOptions: {},
+    },
+  };
+
   /**
    * A memo recording the starting state of a tool.  This will be updated
    * as changes are made, and reflects the fact that a memo has been created.
@@ -44,7 +57,11 @@ abstract class BaseTool implements IBaseTool {
   protected memo: utilities.HistoryMemo.Memo;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    const initialProps = utilities.deepMerge(defaultToolProps, toolProps);
+    const mergedDefaults = BaseTool.mergeDefaults(
+      BaseTool.defaults,
+      defaultToolProps
+    );
+    const initialProps = utilities.deepMerge(mergedDefaults, toolProps);
 
     const {
       configuration = {},
@@ -52,18 +69,20 @@ abstract class BaseTool implements IBaseTool {
       toolGroupId,
     } = initialProps;
 
-    // If strategies are not initialized in the tool config
-    if (!configuration.strategies) {
-      configuration.strategies = {};
-      configuration.defaultStrategy = undefined;
-      configuration.activeStrategy = undefined;
-      configuration.strategyOptions = {};
-    }
-
     this.toolGroupId = toolGroupId;
     this.supportedInteractionTypes = supportedInteractionTypes || [];
     this.configuration = Object.assign({}, configuration);
     this.mode = ToolModes.Disabled;
+  }
+
+  /**
+   * Does a deep merge of
+   */
+  public static mergeDefaults(defaults = {}, newDefaults?) {
+    if (!newDefaults) {
+      return defaults;
+    }
+    return utilities.deepMerge(defaults, newDefaults);
   }
 
   /**

@@ -527,7 +527,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return false;
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  protected createAnnotation(evt: EventTypes.InteractionEventType) {
     const worldPos = evt.detail.currentPoints.world;
     const contourAnnotation = super.createAnnotation(evt);
 
