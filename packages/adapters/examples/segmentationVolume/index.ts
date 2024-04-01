@@ -41,7 +41,7 @@ const {
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 
-const { wadors, wadouri } = cornerstoneDicomImageLoader;
+const { wadouri } = cornerstoneDicomImageLoader;
 
 const { adaptersSEG, helpers } = cornerstoneAdapters;
 const { Cornerstone3D } = adaptersSEG;
@@ -291,42 +291,6 @@ function getSegmentationIds() {
     return segmentation.state.getSegmentations().map(x => x.segmentationId);
 }
 
-function metaDataProvider(type, imageId) {
-    if (Array.isArray(imageId)) {
-        return;
-    }
-
-    //
-    const metaData = wadors.metaDataManager.get(imageId);
-    //
-    if (metaData) {
-        // TODO
-        if (type === "generalImageModule") {
-            return {
-                sopInstanceUid: metaData["00080018"].Value[0]
-            };
-        }
-
-        return;
-    }
-
-    //
-    const imageUri = csUtilities.imageIdToURI(imageId);
-    //
-    const dataSet = wadouri.dataSetCacheManager.get(imageUri);
-    //
-    if (dataSet) {
-        // TODO
-        if (type === "generalImageModule") {
-            return {
-                sopInstanceUid: dataSet.string("x00080018")
-            };
-        }
-
-        return;
-    }
-}
-
 async function addSegmentationsToState(segmentationId: string) {
     // Create a segmentation of the same resolution as the source data
     const derivedVolume =
@@ -436,9 +400,6 @@ function handleDragOver(evt) {
 async function run() {
     // Init Cornerstone and related libraries
     await initDemo();
-
-    // TODO
-    metaData.addProvider(metaDataProvider, 1);
 
     //
     labelmapTools.toolMap.forEach(x => {
