@@ -164,6 +164,8 @@ async function readDicom(files) {
 }
 
 async function loadDicom(imageIds) {
+    restart();
+
     // Generate volume id
     volumeId = volumeLoaderScheme + ":" + csUtilities.uuidv4();
 
@@ -310,6 +312,27 @@ async function exportSegmentation() {
     downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
 }
 
+function removeActiveSegmentation() {
+    // Get active segmentation representation
+    const { segmentationId, segmentationRepresentationUID } =
+        segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            toolGroupId
+        );
+
+    //
+    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+        segmentationRepresentationUID
+    ]);
+
+    //
+    segmentation.state.removeSegmentation(segmentationId);
+    //
+    cache.removeVolumeLoadObject(segmentationId);
+
+    // Update the dropdown
+    updateSegmentationDropdown();
+}
+
 // ============================= //
 
 addButtonToToolbar({
@@ -368,7 +391,8 @@ addDropdownToToolbar({
 addDropdownToToolbar({
     id: "ACTIVE_SEGMENTATION_DROPDOWN",
     style: {
-        width: "200px"
+        width: "200px",
+        marginRight: "10px"
     },
     options: { values: [], defaultValue: "" },
     placeholder: "No active segmentation...",
@@ -390,7 +414,35 @@ addDropdownToToolbar({
     container: group2
 });
 
+addButtonToToolbar({
+    id: "REMOVE_ACTIVE_SEGMENTATION",
+    title: "Remove Active Segmentation",
+    event: { click: removeActiveSegmentation },
+    container: group2
+});
+
 // ============================= //
+
+function restart() {
+    // If you import the dicom again, before clearing the cache or starting from scratch
+    if (!volumeId) {
+        return;
+    }
+
+    //
+    cache.removeVolumeLoadObject(volumeId);
+
+    //
+    segmentation.removeSegmentationsFromToolGroup(toolGroupId);
+
+    //
+    const segmentationIds = getSegmentationIds();
+    //
+    segmentationIds.forEach(segmentationId => {
+        segmentation.state.removeSegmentation(segmentationId);
+        cache.removeVolumeLoadObject(segmentationId);
+    });
+}
 
 function getSegmentationIds() {
     return segmentation.state.getSegmentations().map(x => x.segmentationId);
