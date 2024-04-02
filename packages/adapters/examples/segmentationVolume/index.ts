@@ -7,7 +7,6 @@ import {
     addButtonToToolbar,
     addDropdownToToolbar,
     addManipulationBindings,
-    createImageIdsAndCacheMetaData,
     createInfoSection,
     initDemo,
     labelmapTools,
@@ -48,14 +47,18 @@ const { Cornerstone3D } = adaptersSEG;
 const { downloadDICOMData } = helpers;
 
 //
-const volumeName = "CT_VOLUME_ID";
 const volumeLoaderScheme = "cornerstoneStreamingImageVolume";
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+let volumeId: string;
 
 let renderingEngine;
 const renderingEngineId = "MY_RENDERING_ENGINE_ID";
 const toolGroupId = "MY_TOOL_GROUP_ID";
-const viewportIds: string[] = ["CT_AXIAL", "CT_SAGITTAL", "CT_CORONAL"];
+const viewportIds: string[] = [
+    "CT_ACQUISITION",
+    "CT_AXIAL",
+    "CT_SAGITTAL",
+    "CT_CORONAL"
+];
 let imageIds: string[] = [];
 
 // ======== Set up page ======== //
@@ -94,30 +97,118 @@ element2.style.width = size;
 element2.style.height = size;
 const element3 = document.createElement("div");
 element3.style.width = size;
+element3.style.height = size;
+const element4 = document.createElement("div");
+element4.style.width = size;
+element4.style.height = size;
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = e => e.preventDefault();
 element2.oncontextmenu = e => e.preventDefault();
 element3.oncontextmenu = e => e.preventDefault();
+element4.oncontextmenu = e => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
+viewportGrid.appendChild(element4);
 
 content.appendChild(viewportGrid);
 
 createInfoSection(content).addInstruction(
-    "Viewports: Axial | Sagittal | Coronal"
+    "Viewports: Acquisition | Axial | Sagittal | Coronal"
 );
 
 // ============================= //
 
+function importDicom() {
+    const elInput = document.createElement("input");
+    elInput.type = "file";
+    elInput.multiple = true;
+    elInput.addEventListener("change", function (evt) {
+        const files = (evt.target as HTMLInputElement).files;
+
+        //
+        readDicom(files);
+
+        // Input remove
+        elInput.remove();
+    });
+    document.body.appendChild(elInput);
+
+    // Input click
+    elInput.click();
+}
+
+async function readDicom(files) {
+    if (files.length <= 1) {
+        console.error(
+            "Viewport volume does not support just one image, it must be two or more images"
+        );
+        return;
+    }
+
+    imageIds = [];
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        const imageId = wadouri.fileManager.add(file);
+
+        await imageLoader.loadAndCacheImage(imageId);
+
+        imageIds.push(imageId);
+    }
+
+    await loadDicom(imageIds);
+}
+
+async function loadDicom(imageIds) {
+    restart();
+
+    // Generate volume id
+    volumeId = volumeLoaderScheme + ":" + csUtilities.uuidv4();
+
+    // Define a volume in memory
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+        imageIds
+    });
+
+    // Generate segmentation id
+    const newSegmentationId = "MY_SEGMENTATION_ID:" + csUtilities.uuidv4();
+    // Add some segmentations based on the source data volume
+    await addSegmentationsToState(newSegmentationId);
+    //
+    updateSegmentationDropdown();
+
+    //
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    //
+    toolGroup.addViewport(viewportIds[0], renderingEngineId);
+    toolGroup.addViewport(viewportIds[1], renderingEngineId);
+    toolGroup.addViewport(viewportIds[2], renderingEngineId);
+    toolGroup.addViewport(viewportIds[3], renderingEngineId);
+
+    // Set the volume to load
+    volume.load();
+
+    // Set volumes on the viewports
+    await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+
+    // Render the image
+    renderingEngine.renderViewports(viewportIds);
+}
+
 function importSegmentation() {
+    if (!volumeId) {
+        return;
+    }
+
     const elInput = document.createElement("input");
     elInput.type = "file";
     elInput.multiple = true;
     elInput.addEventListener("change", async function (evt) {
-        const files = evt.target.files;
+        const files = (evt.target as HTMLInputElement).files;
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -181,6 +272,14 @@ async function loadSegmentation(arrayBuffer) {
 }
 
 async function exportSegmentation() {
+    //
+    const segmentationIds = getSegmentationIds();
+    //
+    if (!segmentationIds.length) {
+        return;
+    }
+
+    // Get cache volume
     const cacheVolume = cache.getVolume(volumeId);
     const csImages = cacheVolume.getCornerstoneImages();
 
@@ -196,6 +295,7 @@ async function exportSegmentation() {
     const activeSegmentationRepresentationUid =
         activeSegmentationRepresentation.segmentationRepresentationUID;
 
+    //
     const labelmap = Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
         cacheSegmentationVolume
     );
@@ -223,25 +323,69 @@ async function exportSegmentation() {
     downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
 }
 
+function removeActiveSegmentation() {
+    //
+    const segmentationIds = getSegmentationIds();
+    //
+    if (segmentationIds.length <= 1) {
+        return;
+    }
+
+    // Get active segmentation representation
+    const { segmentationId, segmentationRepresentationUID } =
+        segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            toolGroupId
+        );
+
+    //
+    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+        segmentationRepresentationUID
+    ]);
+
+    //
+    segmentation.state.removeSegmentation(segmentationId);
+    //
+    cache.removeVolumeLoadObject(segmentationId);
+
+    // Update the dropdown
+    updateSegmentationDropdown();
+}
+
 // ============================= //
+
+addButtonToToolbar({
+    id: "IMPORT_DICOM",
+    title: "Import DICOM",
+    style: {
+        marginRight: "5px"
+    },
+    event: { click: importDicom },
+    container: group1
+});
 
 addButtonToToolbar({
     id: "IMPORT_SEGMENTATION",
     title: "Import SEG",
-    onClick: importSegmentation,
+    style: {
+        marginRight: "5px"
+    },
+    event: { click: importSegmentation },
     container: group1
 });
 
 addButtonToToolbar({
     id: "EXPORT_SEGMENTATION",
     title: "Export SEG",
-    onClick: exportSegmentation,
+    event: { click: exportSegmentation },
     container: group1
 });
 
 addDropdownToToolbar({
     id: "LABELMAP_TOOLS_DROPDOWN",
-    labelText: "Tools: ",
+    style: {
+        width: "150px",
+        marginRight: "10px"
+    },
     options: { map: labelmapTools.toolMap },
     onSelectedValueChange: nameAsStringOrNumber => {
         const tool = String(nameAsStringOrNumber);
@@ -258,16 +402,18 @@ addDropdownToToolbar({
             bindings: [{ mouseButton: MouseBindings.Primary }]
         });
     },
-    style: {
-        marginRight: "10px"
-    },
+    labelText: "Tools: ",
     container: group2
 });
 
 addDropdownToToolbar({
     id: "ACTIVE_SEGMENTATION_DROPDOWN",
-    labelText: "Set Active Segmentation",
+    style: {
+        width: "200px",
+        marginRight: "10px"
+    },
     options: { values: [], defaultValue: "" },
+    placeholder: "No active segmentation...",
     onSelectedValueChange: nameAsStringOrNumber => {
         const segmentationId = String(nameAsStringOrNumber);
 
@@ -282,10 +428,39 @@ addDropdownToToolbar({
         // Update the dropdown
         updateSegmentationDropdown(segmentationId);
     },
+    labelText: "Set Active Segmentation: ",
+    container: group2
+});
+
+addButtonToToolbar({
+    id: "REMOVE_ACTIVE_SEGMENTATION",
+    title: "Remove Active Segmentation",
+    event: { click: removeActiveSegmentation },
     container: group2
 });
 
 // ============================= //
+
+function restart() {
+    // If you import the dicom again, before clearing the cache or starting from scratch
+    if (!volumeId) {
+        return;
+    }
+
+    //
+    cache.removeVolumeLoadObject(volumeId);
+
+    //
+    segmentation.removeSegmentationsFromToolGroup(toolGroupId);
+
+    //
+    const segmentationIds = getSegmentationIds();
+    //
+    segmentationIds.forEach(segmentationId => {
+        segmentation.state.removeSegmentation(segmentationId);
+        cache.removeVolumeLoadObject(segmentationId);
+    });
+}
 
 function getSegmentationIds() {
     return segmentation.state.getSegmentations().map(x => x.segmentationId);
@@ -371,7 +546,7 @@ function updateSegmentationDropdown(activeSegmentationId?) {
     }
 }
 
-async function handleFileSelect(evt) {
+function handleFileSelect(evt) {
     evt.stopPropagation();
     evt.preventDefault();
 
@@ -379,11 +554,7 @@ async function handleFileSelect(evt) {
     const files = evt.dataTransfer.files;
 
     //
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
-        await readSegmentation(file);
-    }
+    readDicom(files);
 }
 
 function handleDragOver(evt) {
@@ -414,27 +585,6 @@ async function run() {
     cornerstoneTools.addTool(SegmentationDisplayTool);
     toolGroup.addTool(SegmentationDisplayTool.toolName);
 
-    // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-    imageIds = await createImageIdsAndCacheMetaData({
-        StudyInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463",
-        SeriesInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561",
-        wadoRsRoot: "https://d3t6nz73ql33tx.cloudfront.net/dicomweb"
-    });
-
-    // Define a volume in memory
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-        imageIds
-    });
-
-    //
-    const newSegmentationId = "MY_SEGMENTATION_ID:" + csUtilities.uuidv4();
-    // Add some segmentations based on the source data volume
-    await addSegmentationsToState(newSegmentationId);
-    //
-    updateSegmentationDropdown(newSegmentationId);
-
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -444,7 +594,7 @@ async function run() {
             type: ViewportType.ORTHOGRAPHIC,
             element: element1,
             defaultOptions: {
-                orientation: csEnums.OrientationAxis.AXIAL,
+                orientation: csEnums.OrientationAxis.ACQUISITION,
                 background: [0.2, 0, 0.2]
             }
         },
@@ -453,7 +603,7 @@ async function run() {
             type: ViewportType.ORTHOGRAPHIC,
             element: element2,
             defaultOptions: {
-                orientation: csEnums.OrientationAxis.SAGITTAL,
+                orientation: csEnums.OrientationAxis.AXIAL,
                 background: [0.2, 0, 0.2]
             }
         },
@@ -462,6 +612,15 @@ async function run() {
             type: ViewportType.ORTHOGRAPHIC,
             element: element3,
             defaultOptions: {
+                orientation: csEnums.OrientationAxis.SAGITTAL,
+                background: [0.2, 0, 0.2]
+            }
+        },
+        {
+            viewportId: viewportIds[3],
+            type: ViewportType.ORTHOGRAPHIC,
+            element: element4,
+            defaultOptions: {
                 orientation: csEnums.OrientationAxis.CORONAL,
                 background: [0.2, 0, 0.2]
             }
@@ -469,19 +628,6 @@ async function run() {
     ];
 
     renderingEngine.setViewports(viewportInputArray);
-
-    toolGroup.addViewport(viewportIds[0], renderingEngineId);
-    toolGroup.addViewport(viewportIds[1], renderingEngineId);
-    toolGroup.addViewport(viewportIds[2], renderingEngineId);
-
-    // Set the volume to load
-    volume.load();
-
-    // Set volumes on the viewports
-    await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
-
-    // Render the image
-    renderingEngine.renderViewports(viewportIds);
 }
 
 run();
