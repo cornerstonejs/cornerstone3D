@@ -315,27 +315,36 @@ async function exportSegmentation() {
 addButtonToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
-    onClick: importDicom,
+    style: {
+        marginRight: "5px"
+    },
+    event: { click: importDicom },
     container: group1
 });
 
 addButtonToToolbar({
     id: "IMPORT_SEGMENTATION",
     title: "Import SEG",
-    onClick: importSegmentation,
+    style: {
+        marginRight: "5px"
+    },
+    event: { click: importSegmentation },
     container: group1
 });
 
 addButtonToToolbar({
     id: "EXPORT_SEGMENTATION",
     title: "Export SEG",
-    onClick: exportSegmentation,
+    event: { click: exportSegmentation },
     container: group1
 });
 
 addDropdownToToolbar({
     id: "LABELMAP_TOOLS_DROPDOWN",
-    labelText: "Tools: ",
+    style: {
+        width: "150px",
+        marginRight: "10px"
+    },
     options: { map: labelmapTools.toolMap },
     onSelectedValueChange: nameAsStringOrNumber => {
         const tool = String(nameAsStringOrNumber);
@@ -352,16 +361,17 @@ addDropdownToToolbar({
             bindings: [{ mouseButton: MouseBindings.Primary }]
         });
     },
-    style: {
-        marginRight: "10px"
-    },
+    labelText: "Tools: ",
     container: group2
 });
 
 addDropdownToToolbar({
     id: "ACTIVE_SEGMENTATION_DROPDOWN",
-    labelText: "Set Active Segmentation: ",
+    style: {
+        width: "200px"
+    },
     options: { values: [], defaultValue: "" },
+    placeholder: "No active segmentation...",
     onSelectedValueChange: nameAsStringOrNumber => {
         const segmentationId = String(nameAsStringOrNumber);
 
@@ -376,6 +386,7 @@ addDropdownToToolbar({
         // Update the dropdown
         updateSegmentationDropdown(segmentationId);
     },
+    labelText: "Set Active Segmentation: ",
     container: group2
 });
 

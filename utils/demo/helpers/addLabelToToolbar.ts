@@ -1,33 +1,27 @@
-export function addLabelToToolbar({
-  id,
-  title,
-  container,
-  paddings,
-}: {
+import createElement, { configElement } from './createElement';
+
+interface configLabel extends configElement {
   id?: string;
-  title: string;
+  title?: string;
   container?: HTMLElement;
-  paddings?: {
-    top?: number;
-    right?: number;
-    bottom?: number;
-    left?: number;
-  };
-}) {
-  const label = document.createElement('label');
+}
 
-  label.id = id;
-  label.innerHTML = title;
+export function addLabelToToolbar(config: configLabel = {}) {
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
 
-  if (paddings) {
-    label.style.paddingTop = `${paddings.top}px`;
-    label.style.paddingRight = `${paddings.right}px`;
-    label.style.paddingBottom = `${paddings.bottom}px`;
-    label.style.paddingLeft = `${paddings.left}px`;
+  const label = createElement({
+    tag: 'label',
+    ...config,
+  });
+
+  if (config.id) {
+    label.id = config.id;
   }
 
-  container = container ?? document.getElementById('demo-toolbar');
-  container.append(label);
+  if (config.title) {
+    label.innerHTML = config.title;
+  }
 
   return label;
 }
