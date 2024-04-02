@@ -126,7 +126,7 @@ function importDicom() {
     elInput.type = "file";
     elInput.multiple = true;
     elInput.addEventListener("change", function (evt) {
-        const files = evt.target.files;
+        const files = (evt.target as HTMLInputElement).files;
 
         //
         readDicom(files);
@@ -200,11 +200,15 @@ async function loadDicom(imageIds) {
 }
 
 function importSegmentation() {
+    if (!volumeId) {
+        return;
+    }
+
     const elInput = document.createElement("input");
     elInput.type = "file";
     elInput.multiple = true;
     elInput.addEventListener("change", async function (evt) {
-        const files = evt.target.files;
+        const files = (evt.target as HTMLInputElement).files;
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -268,6 +272,13 @@ async function loadSegmentation(arrayBuffer) {
 }
 
 async function exportSegmentation() {
+    //
+    const segmentationIds = getSegmentationIds();
+    //
+    if (!segmentationIds.length) {
+        return;
+    }
+
     // Get cache volume
     const cacheVolume = cache.getVolume(volumeId);
     const csImages = cacheVolume.getCornerstoneImages();
@@ -313,6 +324,13 @@ async function exportSegmentation() {
 }
 
 function removeActiveSegmentation() {
+    //
+    const segmentationIds = getSegmentationIds();
+    //
+    if (segmentationIds.length <= 1) {
+        return;
+    }
+
     // Get active segmentation representation
     const { segmentationId, segmentationRepresentationUID } =
         segmentation.activeSegmentation.getActiveSegmentationRepresentation(
