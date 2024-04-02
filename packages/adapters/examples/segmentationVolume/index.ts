@@ -7,6 +7,7 @@ import {
     addButtonToToolbar,
     addDropdownToToolbar,
     addManipulationBindings,
+    createImageIdsAndCacheMetaData,
     createInfoSection,
     initDemo,
     labelmapTools,
@@ -120,6 +121,19 @@ createInfoSection(content).addInstruction(
 );
 
 // ============================= //
+
+async function demoDicom() {
+    // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+    imageIds = await createImageIdsAndCacheMetaData({
+        StudyInstanceUID:
+            "1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463",
+        SeriesInstanceUID:
+            "1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561",
+        wadoRsRoot: "https://d3t6nz73ql33tx.cloudfront.net/dicomweb"
+    });
+
+    await loadDicom(imageIds);
+}
 
 function importDicom() {
     const elInput = document.createElement("input");
@@ -352,6 +366,16 @@ function removeActiveSegmentation() {
 }
 
 // ============================= //
+
+addButtonToToolbar({
+    id: "DEMO_DICOM",
+    title: "Demo DICOM",
+    style: {
+        marginRight: "5px"
+    },
+    event: { click: demoDicom },
+    container: group1
+});
 
 addButtonToToolbar({
     id: "IMPORT_DICOM",
