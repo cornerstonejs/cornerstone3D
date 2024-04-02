@@ -139,12 +139,17 @@ function importDicom() {
     const elInput = document.createElement("input");
     elInput.type = "file";
     elInput.multiple = true;
+    elInput.hidden = true;
     elInput.addEventListener("change", function (evt) {
         const files = (evt.target as HTMLInputElement).files;
 
         //
         readDicom(files);
 
+        // Input remove
+        elInput.remove();
+    });
+    elInput.addEventListener("cancel", function () {
         // Input remove
         elInput.remove();
     });
@@ -221,6 +226,7 @@ function importSegmentation() {
     const elInput = document.createElement("input");
     elInput.type = "file";
     elInput.multiple = true;
+    elInput.hidden = true;
     elInput.addEventListener("change", async function (evt) {
         const files = (evt.target as HTMLInputElement).files;
 
@@ -230,6 +236,10 @@ function importSegmentation() {
             await readSegmentation(file);
         }
 
+        // Input remove
+        elInput.remove();
+    });
+    elInput.addEventListener("cancel", function () {
         // Input remove
         elInput.remove();
     });
