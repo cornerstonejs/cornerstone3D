@@ -1,7 +1,7 @@
 import createElement, { configElement } from './createElement';
 import addButtonToToolbar from './addButtonToToolbar';
 
-interface configButton extends configElement {
+interface configUpload extends configElement {
   id?: string;
   title: string;
   container?: HTMLElement;
@@ -10,7 +10,7 @@ interface configButton extends configElement {
 }
 
 export default function addUploadToToolbar(
-  config: configButton = {
+  config: configUpload = {
     title: undefined,
     onChange: undefined,
   }
