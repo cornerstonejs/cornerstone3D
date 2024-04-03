@@ -363,7 +363,7 @@ async function handleImage(imageId, imageIndex) {
       loadingImage = null;
       return;
     }
-    handleImage(loadingImage, loadingIndex);
+    await handleImage(loadingImage, loadingIndex);
   }
 }
 
@@ -594,6 +594,16 @@ function addAnnotationListeners() {
   );
 }
 
+const handleKeyEvent = (evt) => {
+  const { element, key } = evt.detail;
+  if (key === 'Escape') {
+    cornerstoneTools.cancelActiveManipulations(element);
+  } else if (key === 'n') {
+    console.log('**** Navigating next with interpolation');
+    viewport.scroll(1);
+  }
+};
+
 /**
  * Runs the demo
  */
@@ -700,6 +710,10 @@ async function run() {
       );
     });
     addAnnotationListeners();
+  });
+
+  element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+    handleKeyEvent(evt);
   });
 }
 
