@@ -3,6 +3,7 @@ import {
   RenderingEngine,
   Types,
   eventTarget,
+  imageLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
@@ -15,7 +16,7 @@ import {
   addManipulationBindings,
   getLocalUrl,
   addSegmentIndexDropdown,
-  contourTools,
+  labelmapTools,
   annotationTools,
 } from '../../../../utils/demo/helpers';
 import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
@@ -31,6 +32,7 @@ const {
   Enums: csToolsEnums,
   segmentation,
   annotation,
+  utilities: cstUtils,
 } = cornerstoneTools;
 const { ViewportType, Events } = Enums;
 const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
@@ -65,7 +67,7 @@ toolStyle.getDefaultToolStyles()[excludeTool] = {
   colorSelected: 'red',
 };
 
-for (const [key, value] of contourTools.toolMap) {
+for (const [key, value] of labelmapTools.toolMap) {
   toolMap.set(key, value);
 }
 
@@ -81,8 +83,8 @@ toolMap.set(cornerstoneTools.ZoomTool.toolName, {
 // ======== Set up page ======== //
 
 setTitleAndDescription(
-  'Contour Segmentation AI',
-  'Here we demonstrate how to use various predictive AI/ML techniques to aid your contour segmentation'
+  'Segmentation AI',
+  'Here we demonstrate how to use various predictive AI/ML techniques to aid your segmentation'
 );
 
 // the image size on canvas
@@ -603,6 +605,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
 
+  cornerstoneTools.addTool(SegmentationDisplayTool);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
@@ -638,6 +641,9 @@ async function run() {
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
 
+  // Add a segmentation that will contains the contour annotations
+  const { imageIds: segmentationImageIds } =
+    await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
   // Set the stack on the viewport
   await viewport.setStack(imageIds);
   viewport.setOptions({ displayArea: { imageArea: [1, 1] } });
@@ -650,12 +656,17 @@ async function run() {
 
   const loadedAI = loadAI();
 
-  // Add a segmentation that will contains the contour annotations
   segmentation.addSegmentations([
     {
       segmentationId,
       representation: {
-        type: csToolsEnums.SegmentationRepresentations.Contour,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: {
+          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
+            imageIds,
+            segmentationImageIds
+          ),
+        },
       },
     },
   ]);
@@ -665,9 +676,16 @@ async function run() {
     await segmentation.addSegmentationRepresentations(toolGroupId, [
       {
         segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]);
+
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    toolGroupId,
+    segmentationRepresentationUIDs[0]
+  );
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // Store the segmentation representation that was just created
   loadedAI.then(() => {
