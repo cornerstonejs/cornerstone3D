@@ -1030,7 +1030,7 @@ function getSpacingInNormalDirection(imageVolume: IImageVolume | {
 }, viewPlaneNormal: Point3): number;
 
 // @public (undocumented)
-function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetVolumeId?: string, useSlabThickness?: boolean): {
+function getTargetVolumeAndSpacingInNormalDir(viewport: IVolumeViewport, camera: ICamera, targetId?: string, useSlabThickness?: boolean): {
     imageVolume: IImageVolume;
     spacingInNormalDirection: number;
     actorUID: string;
@@ -1062,6 +1062,9 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 
 // @public (undocumented)
 function getVolumeActorCorners(volumeActor: any): Array<Point3>;
+
+// @public (undocumented)
+const getVolumeId: (targetId: string) => string;
 
 // @public (undocumented)
 function getVolumeLoaderSchemes(): string[];
@@ -2434,7 +2437,11 @@ enum MetadataModules {
     // (undocumented)
     CINE = "cineModule",
     // (undocumented)
+    GENERAL_IMAGE = "generalImageModule",
+    // (undocumented)
     GENERAL_SERIES = "generalSeriesModule",
+    // (undocumented)
+    GENERAL_STUDY = "generalStudyModule",
     // (undocumented)
     IMAGE_PIXEL = "imagePixelModule",
     // (undocumented)
@@ -2448,7 +2455,17 @@ enum MetadataModules {
     // (undocumented)
     NM_MULTIFRAME_GEOMETRY = "nmMultiframeGeometryModule",
     // (undocumented)
+    OVERLAY_PLANE = "overlayPlaneModule",
+    // (undocumented)
+    PATIENT = "patientModule",
+    // (undocumented)
     PATIENT_STUDY = "patientStudyModule",
+    // (undocumented)
+    PET_IMAGE = "petImageModule",
+    // (undocumented)
+    PET_ISOTOPE = "petIsotopeModule",
+    // (undocumented)
+    PET_SERIES = "petSeriesModule",
     // (undocumented)
     SOP_COMMON = "sopCommonModule",
     // (undocumented)
@@ -3432,7 +3449,8 @@ declare namespace utilities {
         roundNumber,
         roundToPrecision,
         getViewportImageIds,
-        getRandomSampleFromArray
+        getRandomSampleFromArray,
+        getVolumeId
     }
 }
 export { utilities }
@@ -3641,7 +3659,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     customRenderViewportToCanvas: () => unknown;
     // (undocumented)
-    readonly defaultOptions: any;
+    readonly defaultOptions: Record<string, any>;
     // (undocumented)
     readonly element: HTMLDivElement;
     // (undocumented)
@@ -3690,7 +3708,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getProperties: () => void;
     // (undocumented)
-    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    getReferenceId(_specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRenderer(): any;
     // (undocumented)

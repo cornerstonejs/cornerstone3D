@@ -18,7 +18,7 @@ export default function drawRedactionRect(
     lineDash,
   } = Object.assign(
     {
-      color: 'dodgerblue',
+      color: 'rgb(0, 255, 0)',
       width: '2',
       lineWidth: undefined,
       lineDash: undefined,

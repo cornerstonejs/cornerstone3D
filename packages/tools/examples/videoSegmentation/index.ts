@@ -1,190 +1,242 @@
-import {
-  Enums,
-  RenderingEngine,
-  imageLoader,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
-import * as cornerstone from '@cornerstonejs/core';
+import { Enums, RenderingEngine, Types } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  createImageIdsAndCacheMetaData,
-  initDemo,
+  addButtonToToolbar,
+  addSliderToToolbar,
   addDropdownToToolbar,
+  addToggleButtonToToolbar,
+  createImageIdsAndCacheMetaData,
+  createInfoSection,
+  initDemo,
   setTitleAndDescription,
-  getLocalUrl,
   addManipulationBindings,
+  getLocalUrl,
   addVideoTime,
-  addBrushSizeSlider,
   addSegmentIndexDropdown,
+  contourSegmentationToolBindings,
+  contourTools,
 } from '../../../../utils/demo/helpers';
-import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import type { Types as cstTypes } from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const {
-  ToolGroupManager,
-  SegmentationDisplayTool,
-  Enums: csToolsEnums,
-  BrushTool,
-  segmentation,
-  utilities: cstUtils,
-} = cornerstoneTools;
+const DEFAULT_SEGMENTATION_CONFIG = {
+  fillAlpha: 0.5,
+  fillAlphaInactive: 0.3,
+  outlineOpacity: 1,
+  outlineOpacityInactive: 0.85,
+  outlineWidthActive: 3,
+  outlineWidthInactive: 2,
+  outlineDashActive: undefined,
+  outlineDashInactive: undefined,
+};
 
-const { MouseBindings } = csToolsEnums;
+const {
+  SegmentationDisplayTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+  segmentation,
+} = cornerstoneTools;
 const { ViewportType } = Enums;
 
-// Define a unique id for the volume
-let renderingEngine;
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'VIDEO_VIEWPORT';
-const toolGroupId = 'TOOL_GROUP_ID';
+// Define various constants for the tool definition
+const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
+
+const segmentationId = `SEGMENTATION_ID`;
+let segmentationRepresentationUID = '';
+const segmentIndexes = [1, 2, 3, 4, 5];
+const segmentVisibilityMap = new Map();
+
+const { toolMap } = contourTools;
 
 // ======== Set up page ======== //
+
 setTitleAndDescription(
-  'Segmentation in VideoViewport',
-  'Here we demonstrate how to render a labelmap based segmentation on a VideoViewport'
+  'Video Contour Segmentation Tools',
+  'Here we demonstrate how to use spline and livewire segmentation ROI tools on a video viewport'
 );
 
-const size = '1920px';
+const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
+let viewport;
 
-viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const element1 = document.createElement('div');
-element1.oncontextmenu = () => false;
+const viewportId = 'VIDEO_VIEWPORT_ID';
+const element = document.createElement('div');
 
-element1.style.width = size;
-element1.style.height = '500px';
+element.oncontextmenu = () => false;
+element.style.width = size;
+element.style.height = size;
 
-viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element);
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
-  Middle Click: Pan
-  Right Click: Zoom
-  Mouse wheel: Scroll Stack
-  `;
+createInfoSection(content, { ordered: true })
+  .addInstruction('Select a segmentation index')
+  .addInstruction('Select a spline curve type')
+  .addInstruction('Draw a spline curve on the viewport')
+  .addInstruction('Repeat the steps 1-3 as many times as you want')
+  .addInstruction(
+    'Notice that each segment index has a different color assigned to it'
+  )
+  .addInstruction('Change the style for the segmentation')
+  .addInstruction('Confirm the style is applied properly');
 
-content.append(instructions);
+function updateInputsForCurrentSegmentation() {
+  // We can use any toolGroupId because they are all configured in the same way
+  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const contourConfig = segmentationConfig.CONTOUR;
 
-const brushInstanceNames = {
-  CircularBrush: 'CircularBrush',
-  CircularEraser: 'CircularEraser',
-  DynamicThreshold: 'DynamicThreshold',
-};
+  (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
+    String(
+      contourConfig.outlineWidthActive ??
+        DEFAULT_SEGMENTATION_CONFIG.outlineWidthActive
+    );
 
-const brushStrategies = {
-  [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
-  [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
-};
+  (document.getElementById('outlineOpacity') as HTMLInputElement).value =
+    String(
+      contourConfig.outlineOpacity ?? DEFAULT_SEGMENTATION_CONFIG.outlineOpacity
+    );
 
-const brushValues = [
-  brushInstanceNames.CircularBrush,
-  brushInstanceNames.DynamicThreshold,
-  brushInstanceNames.CircularEraser,
-];
+  (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
+    contourConfig.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
+  );
+}
 
-const optionsValues = [...brushValues];
+function getSegmentsVisibilityState() {
+  let segmentsVisibility = segmentVisibilityMap.get(segmentationId);
 
-let viewport;
+  if (!segmentsVisibility) {
+    segmentsVisibility = new Array(segmentIndexes.length + 1).fill(true);
+    segmentVisibilityMap.set(segmentationId, segmentsVisibility);
+  }
 
-const segmentationId = 'VIDEO_SEGMENTATION';
-const segmentationRepresentationUIDs = [];
+  return segmentsVisibility;
+}
+
+function getSegmentationConfig(
+  toolGroupdId: string
+): cstTypes.RepresentationConfig {
+  const segmentationConfig =
+    segmentation.config.getSegmentationRepresentationSpecificConfig(
+      toolGroupdId,
+      segmentationRepresentationUID
+    ) ?? {};
+
+  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // can return an empty object
+  if (!segmentationConfig.CONTOUR) {
+    segmentationConfig.CONTOUR = {};
+  }
+
+  return segmentationConfig;
+}
+
+function updateSegmentationConfig(config) {
+  const segmentationConfig = getSegmentationConfig(toolGroupId);
+
+  Object.assign(segmentationConfig.CONTOUR, config);
+
+  segmentation.config.setSegmentationRepresentationSpecificConfig(
+    toolGroupId,
+    segmentationRepresentationUID,
+    segmentationConfig
+  );
+}
 
 // ============================= //
-addDropdownToToolbar({
-  options: { values: optionsValues, defaultValue: BrushTool.toolName },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    // Set the currently active tool disabled
-    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
+const cancelDrawingEventListener = (evt) => {
+  const { element, key } = evt.detail;
+  if (key === 'Escape') {
+    cornerstoneTools.cancelActiveManipulations(element);
+  }
+};
 
-    if (toolName) {
-      toolGroup.setToolDisabled(toolName);
-    }
-
-    if (brushValues.includes(name)) {
-      toolGroup.setToolActive(name, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    } else {
-      const toolName = name;
-
-      toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    }
-  },
-});
-
-addBrushSizeSlider();
+element.addEventListener(
+  csToolsEnums.Events.KEY_DOWN,
+  cancelDrawingEventListener
+);
 
 addSegmentIndexDropdown(segmentationId);
 
-// ============================= //
+addDropdownToToolbar({
+  options: { map: toolMap },
+  toolGroupId,
+});
 
-function setupTools(toolGroupId) {
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(BrushTool);
+addToggleButtonToToolbar({
+  title: 'Show/Hide All Segments',
+  onClick: function (toggle) {
+    const segmentsVisibility = getSegmentsVisibilityState();
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+    segmentation.config.visibility.setSegmentationVisibility(
+      toolGroupId,
+      segmentationRepresentationUID,
+      !toggle
+    );
 
-  // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularBrush,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularEraser,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.DynamicThreshold,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.DynamicThreshold,
-      preview: {
-        enabled: true,
-      },
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
-      },
-    }
-  );
+    segmentsVisibility.fill(!toggle);
+  },
+});
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+addButtonToToolbar({
+  title: 'Show/Hide Current Segment',
+  onClick: function () {
+    const segmentsVisibility = getSegmentsVisibilityState();
+    const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
+    const visible = !segmentsVisibility[activeSegmentIndex];
 
-  toolGroup.setToolActive(optionsValues[0], {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
+    segmentation.config.visibility.setSegmentVisibility(
+      toolGroupId,
+      segmentationRepresentationUID,
+      activeSegmentIndex,
+      visible
+    );
 
-  return toolGroup;
-}
-// ============================= //
+    segmentsVisibility[activeSegmentIndex] = visible;
+  },
+});
+
+addSliderToToolbar({
+  id: 'outlineWidthActive',
+  title: 'Outline Thickness',
+  range: [0.1, 10],
+  step: 0.1,
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
+    updateSegmentationConfig({ outlineWidthActive: Number(value) });
+  },
+});
+
+addSliderToToolbar({
+  id: 'outlineOpacity',
+  title: 'Outline Opacity',
+  range: [0, 1],
+  step: 0.05,
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
+    updateSegmentationConfig({ outlineOpacity: Number(value) });
+  },
+});
+
+addSliderToToolbar({
+  id: 'fillAlpha',
+  title: 'Fill Alpha',
+  range: [0, 1],
+  step: 0.05,
+  defaultValue: 0.5,
+  onSelectedValueChange: (value) => {
+    updateSegmentationConfig({ fillAlpha: Number(value) });
+  },
+});
 
 /**
  * Runs the demo
@@ -193,8 +245,14 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const toolGroup = setupTools(toolGroupId);
+  // Define tool groups to add the segmentation display tool to
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup, { toolMap });
 
+  toolGroup.addTool(SegmentationDisplayTool.toolName);
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+
+  // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
@@ -208,63 +266,57 @@ async function run() {
   );
 
   // Instantiate a rendering engine
-  renderingEngine = new RenderingEngine(renderingEngineId);
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
   const viewportInputArray = [
     {
       viewportId: viewportId,
       type: ViewportType.VIDEO,
-      element: element1,
+      element: element,
+      defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
     },
   ];
+
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
-  viewport = renderingEngine.getViewport(viewportId);
 
-  const imageIdsArray = [videoId];
-
-  await viewport.setVideo(videoId, 1);
+  // Get the stack viewport that was created
+  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
   addVideoTime(viewportGrid, viewport);
-  // We need the map on all image ids
-  const allImageIds = viewport.getImageIds();
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(allImageIds, {
-      skipCreateBuffer: true,
-      onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
-    });
 
-  fillStackSegmentationWithMockData({
-    imageIds: imageIdsArray,
-    segmentationImageIds,
-    cornerstone,
-  });
+  // Set the stack on the viewport
+  await viewport.setVideo(videoId, 1);
 
-  renderingEngine.renderViewports([viewportId]);
+  // Render the image
+  renderingEngine.render();
 
+  // Add a segmentation that will contains the contour annotations
   segmentation.addSegmentations([
     {
       segmentationId,
       representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            allImageIds,
-            segmentationImageIds
-          ),
-        },
+        type: csToolsEnums.SegmentationRepresentations.Contour,
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
 
-  segmentationRepresentationUIDs.push(uid);
+  // Create a segmentation representation associated to the toolGroupId
+  const segmentationRepresentationUIDs =
+    await segmentation.addSegmentationRepresentations(toolGroupId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
+
+  // Store the segmentation representation that was just created
+  [segmentationRepresentationUID] = segmentationRepresentationUIDs;
+
+  updateInputsForCurrentSegmentation();
 }
 
 run();

@@ -25,7 +25,7 @@ function drawCircle(
     strokeOpacity,
   } = Object.assign(
     {
-      color: 'dodgerblue',
+      color: 'rgb(0, 255, 0)',
       fill: 'transparent',
       width: '2',
       lineDash: undefined,

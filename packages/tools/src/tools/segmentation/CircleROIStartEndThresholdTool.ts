@@ -112,7 +112,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = csUtils.getVolumeId(targetId);
       imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = csUtils.getClosestImageId(
