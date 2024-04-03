@@ -579,9 +579,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
     const startPos = worldPos;
-    const indexPos = imageData.worldToIndex(worldPos);
-    console.debug(indexPos)
-
     const imageIdIndex = this._getImageIdIndex(imageVolume,startPos,viewPlaneNormal);
 
     return imageIdIndex;
@@ -617,6 +614,19 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ): number | undefined {
     const { imageData } = imageVolume;
     const imageIdIndex = imageData.worldToIndex([pos[0],pos[1],pos[2]])
+    const viewPlaneNormalIndex = imageData.worldToIndex(viewPlaneNormal)
+    console.debug(viewPlaneNormalIndex)
+
+    const nonZeroIndex = viewPlaneNormalIndex.findIndex(coord => coord !== 0);
+    let coords = [];
+
+    if (nonZeroIndex === -1) {
+      return null;
+    } else {
+      coords = viewPlaneNormal.filter((_, index) => index !== nonZeroIndex) as [number, number];
+    }
+
+    console.debug(coords)
 
     const mprValues = CONSTANTS.MPR_CAMERA_VALUES
     if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
