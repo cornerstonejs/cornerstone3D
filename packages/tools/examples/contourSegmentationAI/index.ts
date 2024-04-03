@@ -18,7 +18,6 @@ import {
   contourTools,
   annotationTools,
 } from '../../../../utils/demo/helpers';
-import type { Types as cstTypes } from '@cornerstonejs/tools';
 import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
 
 // This is for debugging purposes
@@ -34,21 +33,50 @@ const {
   annotation,
 } = cornerstoneTools;
 const { ViewportType, Events } = Enums;
-const { Events: toolsEvents } = csToolsEnums;
+const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
 const { state: annotationState } = annotation;
+const { style: toolStyle } = cornerstoneTools.annotation.config;
 
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
-const segmentIndexes = [1, 2, 3, 4, 5];
-const segmentVisibilityMap = new Map();
 
 const toolMap = new Map(annotationTools);
+const defaultTool = 'MarkerInclude';
+toolMap.set(defaultTool, {
+  baseTool: cornerstoneTools.ProbeTool.toolName,
+  configuration: {
+    getTextLines: () => null,
+  },
+});
+toolStyle.getDefaultToolStyles()[defaultTool] = { color: 'blue' };
+
+const excludeTool = 'MarkerExclude';
+toolMap.set(excludeTool, {
+  baseTool: cornerstoneTools.ProbeTool.toolName,
+  bindings: [{ mouseButton: MouseBindings.Secondary }],
+  configuration: {
+    getTextLines: () => null,
+  },
+});
+toolStyle.getDefaultToolStyles()[excludeTool] = {
+  color: 'pink',
+  colorSelected: 'red',
+};
+
 for (const [key, value] of contourTools.toolMap) {
   toolMap.set(key, value);
 }
+
+toolMap.set(cornerstoneTools.ZoomTool.toolName, {
+  bindings: [
+    {
+      mouseButton: MouseBindings.Auxiliary,
+      modifierKey: KeyboardBindings.Ctrl,
+    },
+  ],
+});
 
 // ======== Set up page ======== //
 
@@ -58,8 +86,8 @@ setTitleAndDescription(
 );
 
 // the image size on canvas
-const MAX_WIDTH = 500;
-const MAX_HEIGHT = 500;
+const MAX_WIDTH = 1024;
+const MAX_HEIGHT = 1024;
 
 // the image size supported by the model
 const MODEL_WIDTH = 1024;
@@ -492,7 +520,7 @@ element.addEventListener(
 );
 
 addDropdownToToolbar({
-  options: { map: toolMap, defaultValue: 'Probe' },
+  options: { map: toolMap, defaultValue: defaultTool },
   toolGroupId,
 });
 
@@ -506,7 +534,6 @@ function mapAnnotationPoint(worldPoint) {
   const y = Math.trunc(
     (canvasPoint[1] * MAX_HEIGHT * devicePixelRatio) / height
   );
-  console.log('handle, canvas points', worldPoint, canvasPoint, x, y);
   return [x, y];
 }
 /**
@@ -517,9 +544,11 @@ async function annotationModifiedListener() {
   if (isClicked) {
     return;
   }
-  const annotations = annotationState.getAnnotations('Probe', element);
+  const annotations = [
+    ...annotationState.getAnnotations(defaultTool, element),
+    ...annotationState.getAnnotations(excludeTool, element),
+  ];
   const currentAnnotations = filterAnnotationsForDisplay(viewport, annotations);
-  console.log('Current annotations', currentAnnotations);
   if (!currentAnnotations.length) {
     return;
   }
@@ -531,7 +560,7 @@ async function annotationModifiedListener() {
     for (const annotation of currentAnnotations) {
       const handle = annotation.data.handles.points[0];
       const point = mapAnnotationPoint(handle);
-      const label = 1;
+      const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
       points.push(point[0]);
       points.push(point[1]);
       labels.push(label);
@@ -641,7 +670,6 @@ async function run() {
     ]);
 
   // Store the segmentation representation that was just created
-  [segmentationRepresentationUID] = segmentationRepresentationUIDs;
   loadedAI.then(() => {
     handleImage(
       viewport.getCurrentImageId(),

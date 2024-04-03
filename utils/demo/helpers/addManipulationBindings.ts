@@ -48,17 +48,28 @@ export default function addManipulationBindings(
     toolMap?: Map<string, ToolBinding>;
   } = {}
 ) {
-  const zoomBindings: Types.IToolBinding[] = [
-    {
-      mouseButton: MouseBindings.Secondary,
-    },
-  ];
-
   const {
     is3DViewport = false,
     enableShiftClickZoom = false,
     toolMap = new Map(),
   } = options;
+
+  const zoomBindings: Types.IToolBinding[] = toolMap.get(ZoomTool.toolName)
+    ?.bindings || [
+    {
+      mouseButton: MouseBindings.Secondary,
+    },
+  ];
+
+  const panBindings = toolMap.get(PanTool.toolName)?.bindings || [
+    {
+      mouseButton: MouseBindings.Auxiliary,
+    },
+    {
+      numTouchPoints: 1,
+      modifierKey: KeyboardBindings.Ctrl,
+    },
+  ];
 
   if (enableShiftClickZoom === true) {
     zoomBindings.push({
@@ -94,15 +105,7 @@ export default function addManipulationBindings(
   toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-      {
-        numTouchPoints: 1,
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
+    bindings: panBindings,
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: zoomBindings,

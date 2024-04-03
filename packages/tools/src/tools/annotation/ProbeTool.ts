@@ -655,7 +655,7 @@ function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { index, value, modalityUnit } = cachedVolumeStats;
 
-  if (value === undefined) {
+  if (value === undefined || !index) {
     return;
   }
 

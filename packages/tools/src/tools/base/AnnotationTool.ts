@@ -120,7 +120,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   /**
-   * @abstract addNewAnnotation Creates a new annotation based on the clicked mouse position
+   * addNewAnnotation Creates a new annotation based on the clicked mouse position
    *
    * @param evt - The normalized mouse event
    * @param interactionType -  The interaction type used to add the annotation.
@@ -131,8 +131,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ): Annotation;
 
   /**
-   * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
-   *
+   * cancel Used to cancel the ongoing tool drawing and manipulation
    */
   abstract cancel(element: HTMLDivElement);
 
