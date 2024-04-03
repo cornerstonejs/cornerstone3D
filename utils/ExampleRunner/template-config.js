@@ -45,6 +45,11 @@ module.exports = {
             '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
           to: '${destPath.replace(/\\/g, '/')}',
         },
+        {
+          from:
+            '../../../node_modules/onnxruntime-web/dist',
+          to: '${destPath.replace(/\\/g, '/')}/dist',
+        },
       ],
     }),
     // new BundleAnalyzerPlugin()

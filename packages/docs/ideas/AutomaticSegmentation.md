@@ -26,7 +26,12 @@ In addition to the annotation tools, the ability to automatically extend the seg
   - For 2 slices, use linear interpolation from last two slices to generate next slice location
   - Merge points that are too close
 - As soon as the "next" slice is done, start processing the "next next" slice", and adjust slice data position.
+- Parse the annotation results into a contour annotation instance (freeform?)
 
 # Interaction with AI/ML Processing
 
 - Add example code to listen to annotation changes and fire off annotation instance
+
+# Example contourAnnotationAI
+
+A simple example page showing how the annotation might work will be added. This will have basic add/create/remove annotation points, with bindings to left/right buttons.
