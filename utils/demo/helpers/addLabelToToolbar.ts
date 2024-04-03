@@ -2,11 +2,15 @@ import createElement, { configElement } from './createElement';
 
 interface configLabel extends configElement {
   id?: string;
-  title?: string;
+  title: string;
   container?: HTMLElement;
 }
 
-export function addLabelToToolbar(config: configLabel = {}) {
+export default function addLabelToToolbar(
+  config: configLabel = {
+    title: undefined,
+  }
+) {
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 

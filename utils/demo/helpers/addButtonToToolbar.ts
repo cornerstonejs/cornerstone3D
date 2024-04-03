@@ -2,12 +2,17 @@ import createElement, { configElement } from './createElement';
 
 interface configButton extends configElement {
   id?: string;
-  title?: string;
+  title: string;
   container?: HTMLElement;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
-export default function addButtonToToolbar(config: configButton = {}) {
+export default function addButtonToToolbar(
+  config: configButton = {
+    title: undefined,
+    onClick: undefined,
+  }
+) {
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 

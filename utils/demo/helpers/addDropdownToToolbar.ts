@@ -14,7 +14,7 @@ interface configDropdown extends configElement {
   id?: string;
   placeholder?: string;
   options: optionTypeDefaultValue & optionTypeValues;
-  onSelectedValueChange?: (key: number | string, value?) => void;
+  onSelectedValueChange?: (key: number | string, value?: any) => void;
   toolGroupId?: string | string[];
   label?: configElement;
   labelText?: string;
@@ -39,7 +39,7 @@ export default function addDropDownToToolbar(
     config.container ?? document.getElementById('demo-toolbar');
 
   // Create label element if labelText is provided
-  if (config.labelText) {
+  if (config.label || config.labelText) {
     const label = createElement({
       tag: 'label',
       html: config.labelText,

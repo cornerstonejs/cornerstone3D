@@ -7,6 +7,7 @@ import {
     addButtonToToolbar,
     addDropdownToToolbar,
     addManipulationBindings,
+    addUploadToToolbar,
     createImageIdsAndCacheMetaData,
     createInfoSection,
     initDemo,
@@ -135,31 +136,7 @@ async function demoDicom() {
     await loadDicom(imageIds);
 }
 
-function importDicom() {
-    const elInput = document.createElement("input");
-    elInput.type = "file";
-    elInput.multiple = true;
-    elInput.hidden = true;
-    elInput.addEventListener("change", function (evt) {
-        const files = (evt.target as HTMLInputElement).files;
-
-        //
-        readDicom(files);
-
-        // Input remove
-        elInput.remove();
-    });
-    elInput.addEventListener("cancel", function () {
-        // Input remove
-        elInput.remove();
-    });
-    document.body.appendChild(elInput);
-
-    // Input click
-    elInput.click();
-}
-
-async function readDicom(files) {
+async function readDicom(files: FileList) {
     if (files.length <= 1) {
         console.error(
             "Viewport volume does not support just one image, it must be two or more images"
@@ -182,7 +159,7 @@ async function readDicom(files) {
     await loadDicom(imageIds);
 }
 
-async function loadDicom(imageIds) {
+async function loadDicom(imageIds: string[]) {
     restart();
 
     // Generate volume id
@@ -218,38 +195,19 @@ async function loadDicom(imageIds) {
     renderingEngine.renderViewports(viewportIds);
 }
 
-function importSegmentation() {
+async function importSegmentation(files: FileList) {
     if (!volumeId) {
         return;
     }
 
-    const elInput = document.createElement("input");
-    elInput.type = "file";
-    elInput.multiple = true;
-    elInput.hidden = true;
-    elInput.addEventListener("change", async function (evt) {
-        const files = (evt.target as HTMLInputElement).files;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-
-            await readSegmentation(file);
-        }
-
-        // Input remove
-        elInput.remove();
-    });
-    elInput.addEventListener("cancel", function () {
-        // Input remove
-        elInput.remove();
-    });
-    document.body.appendChild(elInput);
-
-    // Input click
-    elInput.click();
+        await readSegmentation(file);
+    }
 }
 
-async function readSegmentation(file) {
+async function readSegmentation(file: File) {
     const imageId = wadouri.fileManager.add(file);
 
     const image = await imageLoader.loadAndCacheImage(imageId);
@@ -261,7 +219,7 @@ async function readSegmentation(file) {
     const instance = metaData.get("instance", imageId);
 
     if (instance.Modality !== "SEG") {
-        console.error("This is not segmentation");
+        console.error("This is not segmentation: " + file.name);
         return;
     }
 
@@ -270,7 +228,7 @@ async function readSegmentation(file) {
     loadSegmentation(arrayBuffer);
 }
 
-async function loadSegmentation(arrayBuffer) {
+async function loadSegmentation(arrayBuffer: ArrayBuffer) {
     //
     const newSegmentationId = "LOAD_SEGMENTATION_ID:" + csUtilities.uuidv4();
 
@@ -383,34 +341,34 @@ addButtonToToolbar({
     style: {
         marginRight: "5px"
     },
-    event: { click: demoDicom },
+    onClick: demoDicom,
     container: group1
 });
 
-addButtonToToolbar({
+addUploadToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
     style: {
         marginRight: "5px"
     },
-    event: { click: importDicom },
+    onChange: readDicom,
     container: group1
 });
 
-addButtonToToolbar({
+addUploadToToolbar({
     id: "IMPORT_SEGMENTATION",
     title: "Import SEG",
     style: {
         marginRight: "5px"
     },
-    event: { click: importSegmentation },
+    onChange: importSegmentation,
     container: group1
 });
 
 addButtonToToolbar({
     id: "EXPORT_SEGMENTATION",
     title: "Export SEG",
-    event: { click: exportSegmentation },
+    onClick: exportSegmentation,
     container: group1
 });
 

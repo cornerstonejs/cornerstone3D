@@ -1,10 +1,10 @@
 export type configElement = {
   tag?: string;
   class?: string;
-  attr?: Record<string, string>;
-  style?: Record<string, string>;
+  attr?: Record<string, any>;
+  style?: Record<string, any>;
   html?: string;
-  event?: Record<string, () => void>;
+  event?: Record<string, any>;
   container?: HTMLElement;
 };
 
@@ -18,7 +18,7 @@ export default function createElement(config: configElement = {}) {
 
   if (config.attr) {
     for (const key in config.attr) {
-      element.setAttribute(key, config.attr[key]);
+      element[key] = config.attr[key];
     }
   }
 
