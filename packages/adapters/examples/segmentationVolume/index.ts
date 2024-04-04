@@ -4,6 +4,7 @@ import * as cornerstoneDicomImageLoader from "@cornerstonejs/dicom-image-loader"
 import * as cornerstoneAdapters from "@cornerstonejs/adapters";
 
 import {
+    addBrushSizeSlider,
     addButtonToToolbar,
     addDropdownToToolbar,
     addManipulationBindings,
@@ -38,7 +39,7 @@ const {
     Enums: csToolsEnums,
     SegmentationDisplayTool,
     ToolGroupManager,
-    segmentation
+    segmentation: csToolsSegmentation
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 
@@ -49,19 +50,14 @@ const { Cornerstone3D } = adaptersSEG;
 const { downloadDICOMData } = helpers;
 
 //
-const volumeLoaderScheme = "cornerstoneStreamingImageVolume";
-let volumeId: string;
-
 let renderingEngine;
 const renderingEngineId = "MY_RENDERING_ENGINE_ID";
+let toolGroup;
 const toolGroupId = "MY_TOOL_GROUP_ID";
-const viewportIds: string[] = [
-    "CT_ACQUISITION",
-    "CT_AXIAL",
-    "CT_SAGITTAL",
-    "CT_CORONAL"
-];
-let imageIds: string[] = [];
+const viewportIds = ["CT_ACQUISITION", "CT_AXIAL", "CT_SAGITTAL", "CT_CORONAL"];
+let imageIds = [];
+const volumeLoaderScheme = "cornerstoneStreamingImageVolume";
+let volumeId;
 
 // ======== Set up page ======== //
 
@@ -81,6 +77,10 @@ demoToolbar.appendChild(group1);
 const group2 = document.createElement("div");
 group2.style.marginBottom = "10px";
 demoToolbar.appendChild(group2);
+
+const group3 = document.createElement("div");
+group3.style.marginBottom = "10px";
+demoToolbar.appendChild(group3);
 
 const content = document.getElementById("content");
 
@@ -178,8 +178,6 @@ async function loadDicom(imageIds: string[]) {
     updateSegmentationDropdown();
 
     //
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    //
     toolGroup.addViewport(viewportIds[0], renderingEngineId);
     toolGroup.addViewport(viewportIds[1], renderingEngineId);
     toolGroup.addViewport(viewportIds[2], renderingEngineId);
@@ -187,7 +185,6 @@ async function loadDicom(imageIds: string[]) {
 
     // Set the volume to load
     volume.load();
-
     // Set volumes on the viewports
     await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
@@ -267,7 +264,7 @@ async function exportSegmentation() {
 
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
         );
 
@@ -285,7 +282,7 @@ async function exportSegmentation() {
     // Generate fake metadata as an example
     labelmap.metadata = [];
     labelmap.segmentsOnLabelmap.forEach(segmentIndex => {
-        const color = segmentation.config.color.getColorForSegmentIndex(
+        const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
             toolGroupId,
             activeSegmentationRepresentationUid,
             segmentIndex
@@ -315,17 +312,17 @@ function removeActiveSegmentation() {
 
     // Get active segmentation representation
     const { segmentationId, segmentationRepresentationUID } =
-        segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
         );
 
     //
-    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
         segmentationRepresentationUID
     ]);
 
     //
-    segmentation.state.removeSegmentation(segmentationId);
+    csToolsSegmentation.state.removeSegmentation(segmentationId);
     //
     cache.removeVolumeLoadObject(segmentationId);
 
@@ -398,6 +395,11 @@ addDropdownToToolbar({
     container: group2
 });
 
+addBrushSizeSlider({
+    toolGroupId: toolGroupId,
+    container: group2
+});
+
 addDropdownToToolbar({
     id: "ACTIVE_SEGMENTATION_DROPDOWN",
     style: {
@@ -410,9 +412,11 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            segmentation.state.getSegmentationIdRepresentations(segmentationId);
+            csToolsSegmentation.state.getSegmentationIdRepresentations(
+                segmentationId
+            );
 
-        segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
             toolGroupId,
             segmentationRepresentations[0].segmentationRepresentationUID
         );
@@ -421,14 +425,14 @@ addDropdownToToolbar({
         updateSegmentationDropdown(segmentationId);
     },
     labelText: "Set Active Segmentation: ",
-    container: group2
+    container: group3
 });
 
 addButtonToToolbar({
     id: "REMOVE_ACTIVE_SEGMENTATION",
     title: "Remove Active Segmentation",
-    event: { click: removeActiveSegmentation },
-    container: group2
+    onClick: removeActiveSegmentation,
+    container: group3
 });
 
 // ============================= //
@@ -443,19 +447,21 @@ function restart() {
     cache.removeVolumeLoadObject(volumeId);
 
     //
-    segmentation.removeSegmentationsFromToolGroup(toolGroupId);
+    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId);
 
     //
     const segmentationIds = getSegmentationIds();
     //
     segmentationIds.forEach(segmentationId => {
-        segmentation.state.removeSegmentation(segmentationId);
+        csToolsSegmentation.state.removeSegmentation(segmentationId);
         cache.removeVolumeLoadObject(segmentationId);
     });
 }
 
 function getSegmentationIds() {
-    return segmentation.state.getSegmentations().map(x => x.segmentationId);
+    return csToolsSegmentation.state
+        .getSegmentations()
+        .map(x => x.segmentationId);
 }
 
 async function addSegmentationsToState(segmentationId: string) {
@@ -466,7 +472,7 @@ async function addSegmentationsToState(segmentationId: string) {
         });
 
     // Add the segmentations to state
-    segmentation.addSegmentations([
+    csToolsSegmentation.addSegmentations([
         {
             segmentationId,
             representation: {
@@ -482,7 +488,7 @@ async function addSegmentationsToState(segmentationId: string) {
     ]);
 
     // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+    await csToolsSegmentation.addSegmentationRepresentations(toolGroupId, [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap
@@ -572,14 +578,16 @@ async function run() {
     });
 
     // Define tool groups to add the segmentation display tool to
-    const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+    toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
+    //
     cornerstoneTools.addTool(SegmentationDisplayTool);
     toolGroup.addTool(SegmentationDisplayTool.toolName);
 
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);
 
+    // Create the viewports
     const viewportInputArray = [
         {
             viewportId: viewportIds[0],
@@ -619,6 +627,7 @@ async function run() {
         }
     ];
 
+    //
     renderingEngine.setViewports(viewportInputArray);
 }
 
