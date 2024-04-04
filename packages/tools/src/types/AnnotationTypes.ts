@@ -11,6 +11,10 @@ type Annotation = {
    */
   parentAnnotationUID?: string;
   /**
+   * The interpolationUID, to match up annotations getting interpolated
+   */
+  interpolationUID?: string;
+  /**
    * Array that contains all child annotation UID
    *
    * An annotation may have one or more child annotations when it is contour

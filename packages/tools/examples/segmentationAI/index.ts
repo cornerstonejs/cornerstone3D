@@ -306,7 +306,7 @@ let loadingIndex;
  * handler called when image available
  */
 async function handleImage(imageId, imageIndex) {
-  if (isLoading) {
+  if (isLoading || isClicked) {
     loadingImage = imageId;
     loadingIndex = imageIndex;
     return;
@@ -364,6 +364,8 @@ async function handleImage(imageId, imageIndex) {
       return;
     }
     await handleImage(loadingImage, loadingIndex);
+  } else {
+    annotationModifiedListener();
   }
 }
 
@@ -453,7 +455,9 @@ addButtonToToolbar({
   onClick: () => {
     points = [];
     labels = [];
-    annotationState.removeAllAnnotations();
+    getCurrentAnnotations().forEach((annotation) =>
+      annotationState.removeAnnotation(annotation.annotationUID)
+    );
     viewport.render();
     decoder(points, labels);
   },
@@ -538,19 +542,25 @@ function mapAnnotationPoint(worldPoint) {
   );
   return [x, y];
 }
-/**
- * Handle the annotations being added by checking to see if they are the current
- * frame and adding appropriate points to it/updating said points.
- */
-async function annotationModifiedListener() {
-  if (isClicked) {
-    return;
-  }
+
+function getCurrentAnnotations() {
   const annotations = [
     ...annotationState.getAnnotations(defaultTool, element),
     ...annotationState.getAnnotations(excludeTool, element),
   ];
   const currentAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+  return currentAnnotations;
+}
+
+/**
+ * Handle the annotations being added by checking to see if they are the current
+ * frame and adding appropriate points to it/updating said points.
+ */
+async function annotationModifiedListener() {
+  if (isClicked || isLoading) {
+    return;
+  }
+  const currentAnnotations = getCurrentAnnotations();
   if (!currentAnnotations.length) {
     return;
   }
@@ -567,7 +577,9 @@ async function annotationModifiedListener() {
       points.push(point[1]);
       labels.push(label);
     }
-    await decoder(points, labels);
+    if (!isLoading) {
+      await decoder(points, labels);
+    }
   } finally {
     canvas.style.cursor = 'default';
     isClicked = false;
@@ -594,13 +606,54 @@ function addAnnotationListeners() {
   );
 }
 
+async function interpolateScroll(dir = 1) {
+  console.log('**** Navigating next with interpolation');
+  const annotations = [
+    ...annotationState.getAnnotations(defaultTool, element),
+    ...annotationState.getAnnotations(excludeTool, element),
+  ];
+
+  const currentAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+  const viewRef = viewport.getViewReference({
+    sliceIndex: viewport.getCurrentImageIdIndex() + dir,
+  });
+  if (!viewRef) {
+    console.log('At end of direction');
+    return;
+  }
+
+  if (!currentAnnotations.length) {
+    viewport.scroll(dir);
+    return;
+  }
+
+  const nextAnnotations = annotations.filter((filterAnnotation) => {
+    const { sliceIndex: filterSliceIndex } = filterAnnotation.metadata;
+    return filterSliceIndex === viewRef.sliceIndex;
+  });
+  if (nextAnnotations.length > 0) {
+    console.log('Already has annotations, not interpolating');
+    return;
+  }
+  console.log('Interpolating annotations', currentAnnotations);
+  isClicked = true;
+  for (const annotation of currentAnnotations) {
+    annotation.interpolationUID ||= crypto.randomUUID();
+    const newAnnotation = structuredClone(annotation);
+    newAnnotation.annotationUID = undefined;
+    Object.assign(newAnnotation.metadata, viewRef);
+    annotationState.addAnnotation(newAnnotation, viewport.element);
+  }
+  isClicked = false;
+  viewport.scroll(dir);
+}
+
 const handleKeyEvent = (evt) => {
   const { element, key } = evt.detail;
   if (key === 'Escape') {
     cornerstoneTools.cancelActiveManipulations(element);
   } else if (key === 'n') {
-    console.log('**** Navigating next with interpolation');
-    viewport.scroll(1);
+    interpolateScroll(1);
   }
 };
 
@@ -703,11 +756,9 @@ async function run() {
       viewport.getCurrentImageId(),
       viewport.getCurrentImageIdIndex()
     );
-    element.addEventListener(Events.IMAGE_RENDERED, (evt) => {
-      handleImage(
-        viewport.getCurrentImageId(),
-        viewport.getCurrentImageIdIndex()
-      );
+    element.addEventListener(Events.IMAGE_RENDERED, async (evt) => {
+      const navigateImageId = viewport.getCurrentImageId();
+      handleImage(navigateImageId, viewport.getCurrentImageIdIndex());
     });
     addAnnotationListeners();
   });
