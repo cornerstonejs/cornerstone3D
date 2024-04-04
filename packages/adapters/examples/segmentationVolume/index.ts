@@ -271,31 +271,29 @@ async function exportSegmentation() {
     const cacheSegmentationVolume = cache.getVolume(
         activeSegmentationRepresentation.segmentationId
     );
-    const activeSegmentationRepresentationUid =
-        activeSegmentationRepresentation.segmentationRepresentationUID;
 
     //
-    const labelmap = Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
+    const labelmapData = Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
         cacheSegmentationVolume
     );
 
     // Generate fake metadata as an example
-    labelmap.metadata = [];
-    labelmap.segmentsOnLabelmap.forEach(segmentIndex => {
+    labelmapData.metadata = [];
+    labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
         const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
             toolGroupId,
-            activeSegmentationRepresentationUid,
+            activeSegmentationRepresentation.segmentationRepresentationUID,
             segmentIndex
         );
 
         const segmentMetadata = generateMockMetadata(segmentIndex, color);
-        labelmap.metadata[segmentIndex] = segmentMetadata;
+        labelmapData.metadata[segmentIndex] = segmentMetadata;
     });
 
     const generatedSegmentation =
         Cornerstone3D.Segmentation.generateSegmentation(
             csImages,
-            labelmap,
+            labelmapData,
             metaData
         );
 
