@@ -1,6 +1,7 @@
 import { Enums, ToolGroupManager } from '@cornerstonejs/tools';
 
 import createElement, { configElement } from './createElement';
+import addLabelToToolbar from './addLabelToToolbar';
 
 export type optionTypeDefaultValue =
   | { defaultValue: number | string }
@@ -14,7 +15,7 @@ interface configDropdown extends configElement {
   id?: string;
   placeholder?: string;
   options: optionTypeDefaultValue & optionTypeValues;
-  onSelectedValueChange?: (key: number | string, value?: any) => void;
+  onSelectedValueChange: (key: number | string, value?: any) => void;
   toolGroupId?: string | string[];
   label?: configElement;
   labelText?: string;
@@ -23,11 +24,7 @@ interface configDropdown extends configElement {
 
 const { MouseBindings } = Enums;
 
-export default function addDropDownToToolbar(
-  config: configDropdown = {
-    options: undefined,
-  }
-) {
+export default function addDropDownToToolbar(config: configDropdown): void {
   const {
     map,
     values = [...map.keys()],
@@ -40,18 +37,19 @@ export default function addDropDownToToolbar(
 
   // Create label element if labelText is provided
   if (config.label || config.labelText) {
-    const label = createElement({
-      tag: 'label',
-      html: config.labelText,
+    const label = addLabelToToolbar({
+      title: config.labelText,
+      container: config.container,
       ...config.label,
     });
 
-    label.htmlFor = config.id;
-
-    config.container.append(label);
+    if (config.id) {
+      label.htmlFor = config.id;
+    }
   }
 
-  const select = createElement({
+  //
+  const select = <HTMLSelectElement>createElement({
     tag: 'select',
     ...config,
   });
@@ -61,7 +59,7 @@ export default function addDropDownToToolbar(
   }
 
   if (config.placeholder) {
-    const optionElement = createElement({
+    const optionElement = <HTMLOptionElement>createElement({
       tag: 'option',
       attr: {
         disabled: '',
@@ -98,15 +96,13 @@ export default function addDropDownToToolbar(
     );
   }
 
-  select.onchange = (evt) => {
+  select.onchange = (evt: Event) => {
     const selectElement = <HTMLSelectElement>evt.target;
     const { value: key } = selectElement;
     if (selectElement) {
       config.onSelectedValueChange(key, map?.get(key));
     }
   };
-
-  config.container.append(select);
 }
 
 function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {

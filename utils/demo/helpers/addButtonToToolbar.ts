@@ -8,15 +8,12 @@ interface configButton extends configElement {
 }
 
 export default function addButtonToToolbar(
-  config: configButton = {
-    title: undefined,
-    onClick: undefined,
-  }
-) {
+  config: configButton
+): HTMLButtonElement {
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
-  const button = createElement({
+  const button = <HTMLButtonElement>createElement({
     tag: 'button',
     ...config,
   });

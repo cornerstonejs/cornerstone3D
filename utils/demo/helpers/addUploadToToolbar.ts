@@ -9,17 +9,12 @@ interface configUpload extends configElement {
   input?: configElement;
 }
 
-export default function addUploadToToolbar(
-  config: configUpload = {
-    title: undefined,
-    onChange: undefined,
-  }
-) {
+export default function addUploadToToolbar(config: configUpload): void {
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
   const fnClick = () => {
-    const elInput = createElement({
+    const elInput = <HTMLInputElement>createElement({
       tag: 'input',
       attr: {
         type: 'file',
@@ -46,10 +41,8 @@ export default function addUploadToToolbar(
     elInput.click();
   };
 
-  const button = addButtonToToolbar({
+  addButtonToToolbar({
     ...config,
     onClick: fnClick,
   });
-
-  return button;
 }

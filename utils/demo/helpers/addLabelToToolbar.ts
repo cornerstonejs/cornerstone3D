@@ -7,14 +7,12 @@ interface configLabel extends configElement {
 }
 
 export default function addLabelToToolbar(
-  config: configLabel = {
-    title: undefined,
-  }
-) {
+  config: configLabel
+): HTMLLabelElement {
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
-  const label = createElement({
+  const label = <HTMLLabelElement>createElement({
     tag: 'label',
     ...config,
   });

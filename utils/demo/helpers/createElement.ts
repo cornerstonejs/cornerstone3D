@@ -8,7 +8,7 @@ export type configElement = {
   container?: HTMLElement;
 };
 
-export default function createElement(config: configElement = {}) {
+export default function createElement(config: configElement): HTMLElement {
   const element = document.createElement(config.tag ?? 'div');
 
   if (config.class) {
