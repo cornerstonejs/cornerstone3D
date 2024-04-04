@@ -2491,6 +2491,9 @@ function getBrushSizeForToolGroup(toolGroupId: string, toolName?: string): void;
 function getBrushThresholdForToolGroup(toolGroupId: string): any;
 
 // @public (undocumented)
+function getBrushToolInstances(toolGroupId: string, toolName?: string): any[];
+
+// @public (undocumented)
 const getCalibratedAreaUnits: (handles: any, image: any) => string;
 
 // @public (undocumented)
@@ -4628,7 +4631,8 @@ declare namespace segmentation_2 {
         getUniqueSegmentIndices,
         getSegmentAtWorldPoint,
         getSegmentAtLabelmapBorder,
-        getHoveredContourSegmentationAnnotation
+        getHoveredContourSegmentationAnnotation,
+        getBrushToolInstances
     }
 }
 
@@ -5668,9 +5672,13 @@ type TouchTapEventType = Types_2.CustomEventType<TouchTapEventDetail>;
 export class TrackballRotateTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    cleanUp: () => void;
+    // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
