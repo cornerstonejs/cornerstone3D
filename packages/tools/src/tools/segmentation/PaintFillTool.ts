@@ -95,6 +95,8 @@ class PaintFillTool extends BaseTool {
     let scalarData: Types.PixelDataTypedArray;
     let index: Types.Point3;
 
+    this.doneEditMemo();
+
     if (isVolumeSegmentation(labelmapData, viewport)) {
       const { volumeId } = representationData[
         type

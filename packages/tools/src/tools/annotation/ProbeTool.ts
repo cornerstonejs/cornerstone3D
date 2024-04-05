@@ -43,10 +43,7 @@ import {
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -288,8 +285,13 @@ class ProbeTool extends AnnotationTool {
 
     resetElementCursor(element);
 
+    if (newAnnotation) {
+      this.createMemo(element, annotation, { newAnnotation });
+    }
+
     this.editData = null;
     this.isDrawing = false;
+    this.doneEditMemo();
 
     if (
       this.isHandleOutsideImage &&
@@ -311,8 +313,10 @@ class ProbeTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
-    const { annotation, viewportIdsToRender } = this.editData;
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     data.handles.points[0] = [...worldPos];
     annotation.invalidated = true;

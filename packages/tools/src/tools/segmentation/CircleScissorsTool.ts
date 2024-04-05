@@ -1,7 +1,6 @@
 import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
 import {
   PublicToolProps,
   ToolProps,
@@ -32,6 +31,8 @@ import {
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import LabelmapBaseTool from './LabelmapBaseTool';
+import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -40,15 +41,16 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-class CircleScissorsTool extends BaseTool {
+class CircleScissorsTool extends LabelmapBaseTool {
   static toolName;
   editData: {
     annotation: any;
     segmentIndex: number;
     //
-    volumeId: string;
-    referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
+    volumeId?: string;
+    segmentationId?: string;
+    referencedVolumeId?: string;
+    imageIdReferenceMap?: Map<string, string>;
     //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -59,6 +61,7 @@ class CircleScissorsTool extends BaseTool {
     hasMoved?: boolean;
     centerCanvas?: Array<number>;
     segmentationRepresentationUID?: string;
+    memo?: LabelmapMemo;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -167,8 +170,8 @@ class CircleScissorsTool extends BaseTool {
 
     this.editData = {
       annotation,
-      centerCanvas: canvasPos,
       segmentIndex,
+      centerCanvas: canvasPos,
       segmentationId,
       segmentsLocked,
       segmentColor,
@@ -178,7 +181,7 @@ class CircleScissorsTool extends BaseTool {
       newAnnotation: true,
       hasMoved: false,
       segmentationRepresentationUID,
-    } as any;
+    };
 
     if (
       isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
@@ -271,7 +274,6 @@ class CircleScissorsTool extends BaseTool {
     if (newAnnotation && !hasMoved) {
       return;
     }
-
     data.handles.activeHandleIndex = null;
 
     this._deactivateDraw(element);
@@ -286,12 +288,15 @@ class CircleScissorsTool extends BaseTool {
       viewPlaneNormal,
       viewUp,
       strategySpecificConfiguration: {},
+      createMemo: this.createMemo.bind(this),
     };
 
     this.editData = null;
     this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
+
+    this.doneEditMemo();
   };
 
   /**

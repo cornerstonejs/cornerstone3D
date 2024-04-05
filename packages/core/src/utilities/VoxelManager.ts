@@ -168,6 +168,11 @@ export default class VoxelManager<T> {
 
   /**
    * Iterate over the points within the bounds, or the modified points if recorded.
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the scalar data, map or rle map depending on the VoxelManager
+   *     type.
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public forEach = (callback, options?) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
@@ -201,6 +206,11 @@ export default class VoxelManager<T> {
 
   /**
    * Foreach callback optimized for RLE testing
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the rle map (see the rle map for callbacks that work at
+   *     the row or rle level, as those can be faster/more efficient)
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public rleForEach(callback, options?) {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
@@ -234,6 +244,11 @@ export default class VoxelManager<T> {
 
   /**
    * Foreach callback optimized for basic map callbacks.
+   *
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the map.
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public mapForEach(callback, options?) {
     const { isWithinObject } = options || {};
@@ -250,19 +265,22 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Clears any map specific data, as wellas the modified slices, points and
-   * bounds.
+   * Clears any map specific data, as well as the modified slices, points and
+   * bounds and sets scalar data to 0.
+   *
+   * @param clearScalar - set to true to clear any underlying scalar data to 0
    */
-  public clear() {
-    if (this.map) {
-      this.map.clear();
-    }
+  public clear(clearScalar = false) {
+    this.map?.clear();
     this.boundsIJK.map((bound) => {
       bound[0] = Infinity;
       bound[1] = -Infinity;
     });
     this.modifiedSlices.clear();
     this.points?.clear();
+    if (clearScalar) {
+      this.scalarData?.fill(0);
+    }
   }
 
   /**
@@ -483,7 +501,7 @@ export default class VoxelManager<T> {
     planeFactory: (width: number, height: number) => T
   ): VoxelManager<T> {
     const map = new Map<number, T>();
-    const [width, height, depth] = dimensions;
+    const [width, height, _depth] = dimensions;
     const planeSize = width * height;
 
     const voxelManager = new VoxelManager(

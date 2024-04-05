@@ -93,6 +93,9 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
+import type { Memo, HistoryMemo } from '../utilities/historyMemo';
+import type { VoxelManager } from '../utilities/VoxelManager';
+import type RLEVoxelMap from '../utilities/RLEVoxelMap';
 import { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
 import type {
@@ -152,6 +155,10 @@ export type {
   IImage,
   IImageData,
   IImageCalibration,
+  Memo,
+  HistoryMemo,
+  VoxelManager,
+  RLEVoxelMap,
   CPUIImageData,
   CPUImageData,
   EventTypes,

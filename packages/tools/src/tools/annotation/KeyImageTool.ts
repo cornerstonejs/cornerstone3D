@@ -123,6 +123,7 @@ class KeyImageTool extends AnnotationTool {
         viewportIdsToRender
       );
     });
+    this.createMemo(element, annotation, { newAnnotation: true });
 
     return annotation;
   };
@@ -188,6 +189,7 @@ class KeyImageTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
+    this.doneEditMemo();
     this._deactivateModify(element);
     resetElementCursor(element);
   };
@@ -220,6 +222,7 @@ class KeyImageTool extends AnnotationTool {
     }
 
     const annotation = clickedAnnotation as Annotation;
+    this.createMemo(element, annotation);
 
     this.configuration.changeTextCallback(
       clickedAnnotation,
@@ -228,6 +231,8 @@ class KeyImageTool extends AnnotationTool {
     );
 
     this.isDrawing = false;
+    // Need an extra done edit here because the double click doesn't call end
+    this.doneEditMemo();
 
     // This double click was handled and the dialogue was displayed.
     // No need for any other listener to handle it too - stopImmediatePropagation

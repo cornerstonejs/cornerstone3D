@@ -401,6 +401,7 @@ class BidirectionalTool extends AnnotationTool {
     if (newAnnotation && !hasMoved) {
       return;
     }
+    this.doneEditMemo();
 
     data.handles.activeHandleIndex = null;
 
@@ -499,7 +500,10 @@ class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine, viewport } = enabledElement;
     const { worldToCanvas } = viewport;
-    const { annotation, viewportIdsToRender, handleIndex } = this.editData;
+    const { annotation, viewportIdsToRender, handleIndex, newAnnotation } =
+      this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const { data } = annotation;
 
     const worldPos = currentPoints.world;
@@ -582,8 +586,15 @@ class BidirectionalTool extends AnnotationTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const { data } = annotation;
     if (movingTextBox) {
       const { deltaPoints } = eventDetail;

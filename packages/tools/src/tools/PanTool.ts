@@ -26,15 +26,9 @@ class PanTool extends BaseTool {
     this._dragCallback(evt);
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
-    this.memo = null;
-    return false;
-  };
-
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
-    this.memo ||= PanTool.createZoomPanMemo(enabledElement.viewport);
 
     const deltaPointsWorld = deltaPoints.world;
     const camera = enabledElement.viewport.getCamera();

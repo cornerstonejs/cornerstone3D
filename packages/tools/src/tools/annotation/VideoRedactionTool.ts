@@ -270,7 +270,7 @@ class VideoRedactionTool extends AnnotationTool {
     evt.preventDefault();
   };
 
-  _mouseUpCallback = (evt) => {
+  _endCallback = (evt) => {
     const eventData = evt.detail;
     const { element } = eventData;
 
@@ -281,6 +281,7 @@ class VideoRedactionTool extends AnnotationTool {
     if (newAnnotation && !hasMoved) {
       return;
     }
+    this.doneEditMemo();
 
     data.active = false;
     data.handles.activeHandleIndex = null;
@@ -315,7 +316,9 @@ class VideoRedactionTool extends AnnotationTool {
     const eventData = evt.detail;
     const { element } = eventData;
 
-    const { annotation, viewportUIDsToRender, handleIndex } = this.editData;
+    const { annotation, viewportUIDsToRender, handleIndex, newAnnotation } =
+      this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
     const { data } = annotation;
 
     if (handleIndex === undefined) {
@@ -442,12 +445,12 @@ class VideoRedactionTool extends AnnotationTool {
   _activateDraw = (element) => {
     state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.addEventListener(Events.MOUSE_MOVE, this._mouseDragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
     element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
   };
 
@@ -457,12 +460,12 @@ class VideoRedactionTool extends AnnotationTool {
   _deactivateDraw = (element) => {
     state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
     element.removeEventListener(Events.MOUSE_MOVE, this._mouseDragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
   };
 
@@ -472,11 +475,11 @@ class VideoRedactionTool extends AnnotationTool {
   _activateModify = (element) => {
     state.isInteractingWithTool = true;
 
-    element.addEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    element.addEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
     element.addEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
   };
 
@@ -486,11 +489,11 @@ class VideoRedactionTool extends AnnotationTool {
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
 
-    element.removeEventListener(Events.MOUSE_UP, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._mouseDragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._mouseUpCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    element.removeEventListener(Events.TOUCH_END, this._mouseUpCallback);
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._mouseDragCallback);
   };
 

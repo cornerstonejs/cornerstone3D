@@ -21,9 +21,20 @@ import {
   ToolProps,
   PublicToolProps,
 } from '../../types';
-import { addAnnotation } from '../../stateManagement/annotation/annotationState';
+import {
+  addAnnotation,
+  removeAnnotation,
+  getAnnotation,
+} from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import ChangeTypes from '../../enums/ChangeTypes';
+import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
+import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import type { ContourSegmentationAnnotation } from '../../types';
+
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
+const { PointsManager } = csUtils;
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -452,6 +463,149 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     if (toolNewImagePoint) {
       return true;
     }
+  }
+
+  /**
+   * Creates an annotation state copy to allow storing the current state of
+   * an annotation.  This class has knowledge about the contour and spline
+   * implementations in order to copy the contour object efficiently, and to
+   * allow copying the spline object (which has member variables etc).
+   *
+   * @param annotation - the annotation to create a clone of
+   * @param deleting - a flag to indicate that this object is about to be deleted (deleting true),
+   *       or was just created (deleting false), or neither (deleting undefined).
+   * @returns state information for the given annotation.
+   */
+  protected static createAnnotationState(
+    annotation: Annotation,
+    deleting?: boolean
+  ) {
+    const { data, annotationUID } = annotation;
+    const cloneData: any = {
+      ...data,
+      cachedStats: {},
+    };
+    delete cloneData.contour;
+    delete cloneData.spline;
+    const state = {
+      annotationUID,
+      data: structuredClone(cloneData),
+      deleting,
+    };
+    const { contour } = data;
+    if (contour) {
+      state.data.contour = {
+        ...contour,
+        polyline: null,
+        pointsManager: PointsManager.create3(
+          contour.polyline.length,
+          contour.polyline
+        ),
+      };
+    }
+
+    return state;
+  }
+
+  /**
+   * Creates an annotation memo storing the current data state on the given
+   * annotation object.  This will store/recover handles data, text box and contour
+   * data, and if the options are set for deletion, will apply that correctly.
+   *
+   * @param element - that the annotation is shown on.
+   * @param annotation - to store a memo for the current state.
+   * @param options - whether the annotation is being created (newAnnotation) or
+   *       is in the process of being deleted (`deleting`)
+   *       * Note the naming on deleting is to indicate the deletion is in progress,
+   *         as the createAnnotationMemo needs to be called BEFORE the annotation
+   *         is actually deleted.
+   *       * deleting with a value of false is the same as newAnnotation=true,
+   *         as it is simply the opposite direction.  Use undefined for both
+   *         newAnnotation and deleting for non-create/delete operations.
+   * @returns Memo containing the annotation data.
+   */
+  public static createAnnotationMemo(
+    element,
+    annotation: Annotation,
+    options?: { newAnnotation?: boolean; deleting?: boolean }
+  ) {
+    if (!annotation) {
+      return;
+    }
+    const { newAnnotation, deleting = newAnnotation ? false : undefined } =
+      options || {};
+    const { annotationUID } = annotation;
+    const state = AnnotationTool.createAnnotationState(annotation, deleting);
+
+    const annotationMemo = {
+      restoreMemo: () => {
+        const newState = AnnotationTool.createAnnotationState(
+          annotation,
+          deleting
+        );
+        if (state.deleting === true) {
+          // Handle undeletion - note the state of deleting is internally
+          // true/false/undefined to mean delete/re-create as these are opposite actions.
+          state.deleting = false;
+          Object.assign(annotation.data, state.data);
+          if (annotation.data.contour) {
+            annotation.data.contour.polyline =
+              state.data.contour.pointsManager.points;
+            delete annotation.data.contour.pointsManager;
+            if (annotation.data.segmentation) {
+              addContourSegmentationAnnotation(
+                annotation as ContourSegmentationAnnotation
+              );
+            }
+          }
+          state.data = newState.data;
+          addAnnotation(annotation, element);
+          setAnnotationSelected(annotation.annotationUID, true);
+          getEnabledElement(element)?.viewport.render();
+          return;
+        }
+        if (state.deleting === false) {
+          // Handle deletion (undo of creation)
+          state.deleting = true;
+          // Use the current state as the restore state.
+          state.data = newState.data;
+          setAnnotationSelected(annotation.annotationUID);
+          removeAnnotation(annotation.annotationUID);
+          getEnabledElement(element)?.viewport.render();
+          return;
+        }
+        const currentAnnotation = getAnnotation(annotationUID);
+        if (!currentAnnotation) {
+          console.warn('No current annotation');
+          return;
+        }
+        Object.assign(currentAnnotation.data, state.data);
+        if (currentAnnotation.data.contour) {
+          currentAnnotation.data.contour.polyline =
+            state.data.contour.pointsManager.points;
+        }
+        state.data = newState.data;
+        currentAnnotation.invalidated = true;
+        triggerAnnotationModified(
+          currentAnnotation,
+          element,
+          ChangeTypes.History
+        );
+      },
+    };
+    DefaultHistoryMemo.push(annotationMemo);
+    return annotationMemo;
+  }
+
+  /**
+   * Creates a memo on the given annotation.
+   */
+  protected createMemo(element, annotation, options?) {
+    this.memo ||= AnnotationTool.createAnnotationMemo(
+      element,
+      annotation,
+      options
+    );
   }
 }
 

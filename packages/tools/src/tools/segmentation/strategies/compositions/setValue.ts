@@ -16,10 +16,12 @@ export default {
     const {
       segmentsLocked,
       segmentIndex,
-      previewVoxelManager,
+      memo,
       previewSegmentIndex,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
     } = operationData;
+    const previewVoxelManager =
+      memo?.voxelManager || operationData.previewVoxelManager;
     const existingValue = segmentationVoxelManager.getAtIndex(index);
     if (segmentIndex === null) {
       const oldValue = previewVoxelManager.getAtIndex(index);

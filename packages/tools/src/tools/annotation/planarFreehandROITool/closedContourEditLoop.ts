@@ -18,6 +18,7 @@ import {
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import updateContourPolyline from '../../../utilities/contours/updateContourPolyline';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
+import { AnnotationTool } from '../../base';
 
 const { getSubPixelSpacingAndXYDirections, addCanvasPointsToArray, getArea } =
   polyline;
@@ -56,6 +57,7 @@ function activateClosedContourEdit(
     editCanvasPoints: [canvasPos],
     startCrossingIndex: undefined,
     editIndex: 0,
+    annotation,
   };
 
   this.commonData = {
@@ -149,7 +151,9 @@ function mouseDragClosedContourEditCallback(
   const { renderingEngine, viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingIndex } = this.editData;
+  const { editIndex, editCanvasPoints, startCrossingIndex, annotation } =
+    this.editData;
+  this.createMemo(element, annotation);
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -250,6 +254,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     startCrossingIndex: undefined,
     editIndex: 0,
     snapIndex: undefined,
+    annotation,
   };
 
   triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
@@ -441,6 +446,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
   const { viewport, renderingEngine } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
+  this.doneEditMemo();
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {
