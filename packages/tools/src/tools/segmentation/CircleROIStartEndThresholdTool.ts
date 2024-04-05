@@ -4,11 +4,7 @@ import {
   cache,
   getEnabledElement,
   utilities as csUtils,
-  metaData,
-  triggerEvent,
-  eventTarget,
-  CONSTANTS,
-  utilities
+  utilities as coreUtils
 } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
@@ -22,10 +18,12 @@ import { isAnnotationLocked } from '../../stateManagement/annotation/annotationL
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
+  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import throttle from '../../utilities/throttle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   hideElementCursor,
@@ -46,8 +44,17 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
+import {
+  getCalibratedAreaUnits,
+  getCalibratedScale,
+  getCalibratedAspect,
+} from '../../utilities/getCalibratedUnits';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInEllipse } from '../../utilities/math/ellipse';
-import { pointInShapeCallback } from '../../utilities';
+import { pointInShapeCallback, roundNumber } from '../../utilities';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
+
 
 const { transformWorldToIndex } = csUtils;
 
@@ -74,6 +81,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       configuration: {
         numSlicesToPropagate: 10,
         calculatePointsInsideVolume: false,
+        getTextLines: defaultGetTextLines,
+        statsCalculator: BasicStatsCalculator,
+        showTextBox: false,
       },
     }
   ) {
@@ -122,35 +132,23 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
     }
 
-    console.debug(viewport.getCurrentImageIdIndex())
-
-    const checkIfPlaneIsValid = this._checkIfViewPlaneIsValid(viewPlaneNormal);
-    if (!checkIfPlaneIsValid) {
-      throw new Error('This tool does not work on non-mpr planes');
-    }
-
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal
     );
 
-    const newStartIndex = this._getStartSliceIndex(
-      imageVolume,
+    const startIndex = this._getStartCoordinate(worldPos, spacingInNormal, viewPlaneNormal);
+
+    // We cannot simply add numSlicesToPropagate to startIndex because
+    // the order of imageIds can be from top to bottom or bottom to top and
+    // we want to make sure it is always propagated in the direction of the
+    // view and also to make sure we don't go out of bounds.
+    const endIndex = this._getEndCoordinate(
       worldPos,
       spacingInNormal,
       viewPlaneNormal,
     );
 
-    // We cannot newStartIndex add numSlicesToPropagate to startIndex because
-    // the order of imageIds can be from top to bottom or bottom to top and
-    // we want to make sure it is always propagated in the direction of the
-    // view and also to make sure we don't go out of bounds.
-    const endIndex = this._getEndSliceIndex(
-      imageVolume,
-      worldPos,
-      spacingInNormal,
-      viewPlaneNormal,
-    );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
@@ -169,14 +167,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       },
       data: {
         label: '',
-        startSlice: newStartIndex,
-        endSlice: endIndex,
+        startCoordinate: startIndex,
+        endCoordinate: endIndex,
 
         handles: {
           textBox: {
             hasMoved: false,
-            worldPosition: null,
-            worldBoundingBox: null,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
           },
           points: [[...worldPos], [...worldPos]] as [
             Types.Point3, // center
@@ -187,6 +190,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         cachedStats: {
           pointsInVolume: [],
           projectionPoints: [],
+          statistics: [],
         },
         labelmapUID: null,
       },
@@ -219,19 +223,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
-  };
-
-  _checkIfViewPlaneIsValid = (viewPlane: Types.Point3): boolean => {
-    const mprValues = CONSTANTS.MPR_CAMERA_VALUES;
-    for (const key in mprValues) {
-      if (mprValues.hasOwnProperty(key)) {
-        const { viewPlaneNormal } = mprValues[key];
-        if (csUtils.isEqual(viewPlaneNormal, viewPlane)) {
-          return true;
-        }
-      }
-    }
-    return false;
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -274,7 +265,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
+      this._computePointsInsideVolume(annotation, imageVolume, targetId, enabledElement);
     }
 
     triggerAnnotationRenderForViewportIds(
@@ -314,8 +305,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       true
     );
 
-    const sliceIndex = viewport.getCurrentImageIdIndex();
-
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
@@ -325,7 +314,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as CircleROIStartEndThresholdAnnotation;
       const { annotationUID, data } = annotation;
-      const { startSlice, endSlice } = data;
+      const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
 
       styleSpecifier.annotationUID = annotationUID;
@@ -341,33 +330,49 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       const radius = getCanvasCircleRadius(canvasCoordinates);
       const { centerPointRadius } = this.configuration;
-
+      const canvasCorners = getCanvasCircleCorners(canvasCoordinates);
       // range of slices to render based on the start and end slice, like
       // np.arange
 
-      // if indexIJK is outside the start/end slice, we don't render
+      const focalPoint = viewport.getCamera().focalPoint;
+      const viewplaneNormal = viewport.getCamera().viewPlaneNormal
+
+      let startCoord: number | vec3 = startCoordinate;
+      let endCoord: number | vec3 = endCoordinate;
+      if (Array.isArray(startCoordinate)) {
+        startCoord = this._getCoordinateForViewplaneNormal(startCoord, viewplaneNormal)
+      }
+      if (Array.isArray(endCoordinate)) {
+        endCoord = this._getCoordinateForViewplaneNormal(endCoord, viewplaneNormal);
+      }
+
+      const roundedStartCoord = coreUtils.roundToPrecision(startCoord)
+      const roundedEndCoord = coreUtils.roundToPrecision(endCoord)
+
+      const coord = this._getCoordinateForViewplaneNormal(focalPoint, viewplaneNormal);
+      const roundedCoord = coreUtils.roundToPrecision(coord);
+
+      // if the focalpoint is outside the start/end coordinates, we don't render
       if (
-        sliceIndex < Math.min(startSlice, endSlice) ||
-        sliceIndex > Math.max(startSlice, endSlice)
+        roundedCoord < Math.min(roundedStartCoord, roundedEndCoord) ||
+        roundedCoord > Math.max(roundedStartCoord, roundedEndCoord)
       ) {
         continue;
       }
-
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
 
       if (annotation.invalidated) {
         this._throttledCalculateCachedStats(annotation, enabledElement);
       }
 
-      const middleSlice = Math.round((startSlice + endSlice) / 2);
+      const middleCoord = coreUtils.roundToPrecision((startCoord + endCoord) / 2);
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
 
       let isMiddleSlice = false;
-      if (sliceIndex === middleSlice) {
+      if (roundedCoord === middleCoord) {
         isMiddleSlice = true;
       }
-
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
@@ -379,7 +384,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       if (!isAnnotationVisible(annotationUID)) {
         continue;
       }
-
       if (
         !isAnnotationLocked(annotation) &&
         !this.editData &&
@@ -403,7 +407,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           }
         );
       }
-
       let lineWidthToUse = lineWidth;
 
       if (isMiddleSlice) {
@@ -423,7 +426,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           lineWidth: lineWidthToUse,
         }
       );
-
       // draw center point, if "centerPointRadius" configuration is valid.
       if (centerPointRadius > 0) {
         if (radius > 3 * centerPointRadius) {
@@ -443,8 +445,63 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       }
 
       renderStatus = true;
-    }
 
+      if (this.configuration.showTextBox == true && this.configuration.calculatePointsInsideVolume == true) {
+
+        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+        if (!options.visibility) {
+          data.handles.textBox = {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          };
+          continue;
+        }
+        const textLines = this.configuration.getTextLines(data);
+        if (!textLines || textLines.length === 0) {
+          continue;
+        }
+
+        // Poor man's cached?
+        let canvasTextBoxCoords;
+
+        if (!data.handles.textBox.hasMoved) {
+          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
+
+          data.handles.textBox.worldPosition =
+            viewport.canvasToWorld(canvasTextBoxCoords);
+        }
+
+        const textBoxPosition = viewport.worldToCanvas(
+          data.handles.textBox.worldPosition
+        );
+
+        const textBoxUID = '1';
+        const boundingBox = drawLinkedTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          textBoxUID,
+          textLines,
+          textBoxPosition,
+          canvasCoordinates,
+          {},
+          options
+        );
+
+        const { x: left, y: top, width, height } = boundingBox;
+        data.handles.textBox.worldBoundingBox = {
+          topLeft: viewport.canvasToWorld([left, top]),
+          topRight: viewport.canvasToWorld([left + width, top]),
+          bottomLeft: viewport.canvasToWorld([left, top + height]),
+          bottomRight: viewport.canvasToWorld([left + width, top + height]),
+        };
+      }
+    }
     return renderStatus;
   };
 
@@ -456,23 +513,22 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
     const { imageData } = imageVolume;
-    const { startSlice, endSlice } = data;
+    const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
     // substitute the end slice index 2 with startIJK index 2
     let endIJK;
 
-    const mprValues = CONSTANTS.MPR_CAMERA_VALUES
-    if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
-      startIJK[2] = startSlice;
-      endIJK = vec3.fromValues(startIJK[0], startIJK[1], endSlice);
-    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
-      startIJK[0] = startSlice;
-      endIJK = vec3.fromValues(endSlice, startIJK[1], startIJK[2]);
-    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
-      startIJK[1] = startSlice;
-      endIJK = vec3.fromValues(startIJK[0], endSlice, startIJK[2]);
+    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
+      startIJK[2] = startCoordinate;
+      endIJK = vec3.fromValues(startIJK[0], startIJK[1], endCoordinate);
+    } else if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0) {
+      startIJK[0] = startCoordinate;
+      endIJK = vec3.fromValues(endCoordinate, startIJK[1], startIJK[2]);
+    } else if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1) {
+      startIJK[1] = startCoordinate;
+      endIJK = vec3.fromValues(startIJK[0], endCoordinate, startIJK[2]);
     }
 
     const startWorld = vec3.create();
@@ -501,12 +557,51 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
-  _computePointsInsideVolume(annotation, imageVolume, enabledElement) {
-    const { data } = annotation;
-    const { viewport } = enabledElement;
+  _computePointsInsideVolume(annotation, imageVolume, targetId, enabledElement) {
+    const { data, metadata } = annotation;
+    const { viewPlaneNormal, viewUp } = metadata;
+    const { viewport, renderingEngine } = enabledElement;
     const projectionPoints = data.cachedStats.projectionPoints;
 
     const pointsInsideVolume: Types.Point3[][] = [[]];
+
+    const image = this.getTargetIdImage(targetId, renderingEngine);
+
+    const canvasCoordinates = data.handles.points.map((p) => viewport.worldToCanvas(p));
+    const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
+      getCanvasCircleCorners(canvasCoordinates)
+    );
+    const pos1 = viewport.canvasToWorld(topLeftCanvas);
+    const pos2 = viewport.canvasToWorld(bottomRightCanvas);
+
+    const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
+      viewPlaneNormal,
+      viewUp,
+      pos1,
+      pos2
+    );
+    const scale = getCalibratedScale(image);
+    const aspect = getCalibratedAspect(image);
+    const area = Math.abs(
+      Math.PI *
+      (worldWidth / scale / 2) *
+      (worldHeight / aspect / scale / 2)
+    );
+
+    const modalityUnitOptions = {
+      isPreScaled: isViewportPreScaled(viewport, targetId),
+      isSuvScaled: this.isSuvScaled(
+        viewport,
+        targetId,
+        annotation.metadata.referencedImageId
+      ),
+    };
+
+    const modalityUnit = getModalityUnit(
+      metadata.Modality,
+      annotation.metadata.referencedImageId,
+      modalityUnitOptions
+    );
 
     for (let i = 0; i < projectionPoints.length; i++) {
       // If image does not exists for the targetId, skip. This can be due
@@ -578,7 +673,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           imageData,
           //@ts-ignore
           (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
-          null,
+          this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 
@@ -586,7 +681,18 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         pointsInsideVolume.push(pointsInShape);
       }
     }
+    const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
+    data.cachedStats.statistics = {
+      Modality: metadata.Modality,
+      area,
+      mean: stats.mean?.value,
+      stdDev: stats.stdDev?.value,
+      max: stats.max?.value,
+      statsArray: stats.array,
+      areaUnit: getCalibratedAreaUnits(null, image),
+      modalityUnit,
+    };
   }
 
   _calculateCachedStatsTool(annotation, enabledElement) {
@@ -609,8 +715,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     return cachedStats;
   }
 
-  _getStartSliceIndex(
-    imageVolume: Types.IImageVolume,
+  _getStartCoordinate(
     worldPos: Types.Point3,
     spacingInNormal: number,
     viewPlaneNormal: Types.Point3
@@ -628,13 +733,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       numSlicesToPropagateFromStart * -spacingInNormal
     );
 
-    const imageIdIndex = this._getImageIdIndex(imageVolume,startPos,viewPlaneNormal);
+    const startCoord = this._getCoordinateForViewplaneNormal(startPos, viewPlaneNormal);
 
-    return imageIdIndex;
+    return startCoord;
   }
 
-  _getEndSliceIndex(
-    imageVolume: Types.IImageVolume,
+  _getEndCoordinate(
     worldPos: Types.Point3,
     spacingInNormal: number,
     viewPlaneNormal: Types.Point3,
@@ -652,30 +756,52 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       numSlicesToPropagateToEnd * spacingInNormal
     );
 
-    const imageIdIndex = this._getImageIdIndex(imageVolume,endPos,viewPlaneNormal);
+    const endCoord = this._getCoordinateForViewplaneNormal(endPos, viewPlaneNormal);
 
-    return imageIdIndex;
+    return endCoord;
   }
 
-  _getImageIdIndex(
-    imageVolume: Types.IImageVolume,
-    pos: vec3,
+  _getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal: Types.Point3): number {
+    const viewplaneNormalAbs = [Math.abs(viewPlaneNormal[0]), Math.abs(viewPlaneNormal[1]), Math.abs(viewPlaneNormal[2])]
+    const indexOfDirection = viewplaneNormalAbs.indexOf(Math.max(...viewplaneNormalAbs));
+
+    return indexOfDirection;
+  }
+
+  _getCoordinateForViewplaneNormal(
+    pos: vec3 | number,
     viewPlaneNormal: Types.Point3,
   ): number | undefined {
-    const { imageData } = imageVolume;
-    const imageIdIndex = imageData.worldToIndex([pos[0],pos[1],pos[2]])
+    const indexOfDirection = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    const mprValues = CONSTANTS.MPR_CAMERA_VALUES
-    if (csUtils.isEqual(viewPlaneNormal, mprValues.axial.viewPlaneNormal)) {
-      return Math.round(imageIdIndex[2]);
-    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.sagittal.viewPlaneNormal)) {
-      return Math.round(imageIdIndex[0]);
-    } else if (csUtils.isEqual(viewPlaneNormal, mprValues.coronal.viewPlaneNormal)) {
-      return Math.round(imageIdIndex[1]);
-    } else {
-      return undefined;
-    }
+    return (pos[indexOfDirection]);
   }
+}
+
+/**
+ * _getTextLines - Returns the Area, mean and std deviation of the area of the
+ * target volume enclosed by the rectangle.
+ *
+ * @param data - The annotation tool-specific data.
+ * @param targetId - The volumeId of the volume to display the stats for.
+ */
+function defaultGetTextLines(data): string[] {
+  const cachedVolumeStats = data.cachedStats.statistics;
+
+  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+
+  if (mean === undefined) {
+    return;
+  }
+
+  const textLines: string[] = [];
+
+  textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+  textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+
+  return textLines;
 }
 
 CircleROIStartEndThresholdTool.toolName = 'CircleROIStartEndThreshold';

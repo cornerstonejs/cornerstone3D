@@ -239,16 +239,27 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   };
   data: {
     label: string;
-    startSlice: number;
-    endSlice: number;
+    startCoordinate: number;
+    endCoordinate: number;
     cachedStats: {
       pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
+      statistics?: ROICachedStats | any[];
     };
     handles: {
       points: Types.Point3[];
       activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
     };
   };
 }
@@ -269,15 +280,26 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
   };
   data: {
     label: string;
-    startSlice: number;
-    endSlice: number;
+    startCoordinate: number;
+    endCoordinate: number;
     cachedStats?: {
       pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][];
+      statistics?: ROICachedStats | any[];
     };
     handles: {
       points: [Types.Point3, Types.Point3]; // [center, end]
       activeHandleIndex: number | null;
+      textBox?: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
     };
   };
 }

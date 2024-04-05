@@ -126,9 +126,9 @@ addButtonToToolbar({
 
     const viewport = annotation.metadata.enabledElement.viewport;
 
-    // get the current slice Index
-    const sliceIndex = viewport.getCurrentImageIdIndex();
-    annotation.data.startSlice = sliceIndex;
+    // get the current focalpoint
+    const focalPointToStart = viewport.getCamera().focalPoint;
+    annotation.data.startCoordinate = focalPointToStart;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
     // and re-calculate the projection points
@@ -159,9 +159,9 @@ addButtonToToolbar({
 
     const viewport = annotation.metadata.enabledElement.viewport;
 
-    // get the current slice Index
-    const sliceIndex = viewport.getCurrentImageIdIndex();
-    annotation.data.endSlice = sliceIndex;
+    // get the current focalpoint
+    const focalPointToEnd = viewport.getCamera().focalPoint;
+    annotation.data.endCoordinate = focalPointToEnd;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
     // and re-calculate the projection points
@@ -197,6 +197,7 @@ async function run() {
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
+    showTextBox: true,
   });
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
