@@ -1,3 +1,5 @@
+import { utilities } from '@cornerstonejs/core';
+
 import createElement, { configElement } from './createElement';
 import addLabelToToolbar from './addLabelToToolbar';
 
@@ -14,21 +16,23 @@ interface configSlider extends configElement {
 }
 
 export default function addSliderToToolbar(config: configSlider): void {
+  config = utilities.deepMerge(config, config.merge);
+
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
   //
-  const label = addLabelToToolbar({
+  const elLabel = addLabelToToolbar({
+    merge: config.label,
     title: config.title,
     container: config.container,
-    ...config.label,
   });
 
   if (config.id) {
-    label.id = `${config.id}-label`;
+    elLabel.id = `${config.id}-label`;
   }
 
-  label.htmlFor = config.title;
+  elLabel.htmlFor = config.title;
 
   //
   const fnInput = (evt: Event) => {
@@ -38,13 +42,14 @@ export default function addSliderToToolbar(config: configSlider): void {
       config.onSelectedValueChange(selectElement.value);
 
       if (config.updateLabelOnChange !== undefined) {
-        config.updateLabelOnChange(selectElement.value, label);
+        config.updateLabelOnChange(selectElement.value, elLabel);
       }
     }
   };
 
   //
-  const input = <HTMLInputElement>createElement({
+  const elInput = <HTMLInputElement>createElement({
+    merge: config,
     tag: 'input',
     attr: {
       type: 'range',
@@ -53,21 +58,20 @@ export default function addSliderToToolbar(config: configSlider): void {
     event: {
       input: fnInput,
     },
-    ...config,
   });
 
   if (config.id) {
-    input.id = config.id;
+    elInput.id = config.id;
   }
 
   // Add step before setting its value to make sure it works for step different than 1.
   // Example: range (0-1), step (0.1) and value (0.5)
   if (config.step) {
-    input.step = String(config.step);
+    elInput.step = String(config.step);
   }
 
-  input.min = String(config.range[0]);
-  input.max = String(config.range[1]);
+  elInput.min = String(config.range[0]);
+  elInput.max = String(config.range[1]);
 
-  input.value = String(config.defaultValue);
+  elInput.value = String(config.defaultValue);
 }

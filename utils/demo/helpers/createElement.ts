@@ -1,4 +1,7 @@
+import { utilities } from '@cornerstonejs/core';
+
 export type configElement = {
+  merge?: object;
   tag?: string;
   class?: string;
   attr?: Record<string, any>;
@@ -9,6 +12,8 @@ export type configElement = {
 };
 
 export default function createElement(config: configElement): HTMLElement {
+  config = utilities.deepMerge(config, config.merge);
+
   const element = document.createElement(config.tag ?? 'div');
 
   if (config.class) {

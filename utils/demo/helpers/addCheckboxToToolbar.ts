@@ -15,17 +15,17 @@ export default function addCheckboxToToolbar(config: configCheckbox): void {
     config.container ?? document.getElementById('demo-toolbar');
 
   //
-  const label = addLabelToToolbar({
+  const elLabel = addLabelToToolbar({
+    merge: config.label,
     title: config.title,
     container: config.container,
-    ...config.label,
   });
 
   if (config.id) {
-    label.id = `${config.id}-label`;
+    elLabel.id = `${config.id}-label`;
   }
 
-  label.htmlFor = config.title;
+  elLabel.htmlFor = config.title;
 
   //
   const fnChange = (evt: Event) => {
@@ -37,7 +37,8 @@ export default function addCheckboxToToolbar(config: configCheckbox): void {
   };
 
   //
-  const input = <HTMLInputElement>createElement({
+  const elInput = <HTMLInputElement>createElement({
+    merge: config,
     tag: 'input',
     attr: {
       type: 'checkbox',
@@ -47,10 +48,9 @@ export default function addCheckboxToToolbar(config: configCheckbox): void {
     event: {
       change: fnChange,
     },
-    ...config,
   });
 
   if (config.id) {
-    input.id = config.id;
+    elInput.id = config.id;
   }
 }

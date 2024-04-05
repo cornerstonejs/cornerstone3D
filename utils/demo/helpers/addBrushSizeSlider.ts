@@ -18,7 +18,9 @@ export default function addBrushSizeSlider(config: configBrush): void {
     config.toolGroupId = 'TOOL_GROUP_ID';
   }
 
+  //
   addSliderToToolbar({
+    merge: config,
     title: 'Brush Size: ',
     range: [5, 50],
     defaultValue: 25,
@@ -30,6 +32,5 @@ export default function addBrushSizeSlider(config: configBrush): void {
         value
       );
     },
-    ...config,
   });
 }

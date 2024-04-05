@@ -1,3 +1,5 @@
+import { utilities } from '@cornerstonejs/core';
+
 import createElement, { configElement } from './createElement';
 
 interface configButton extends configElement {
@@ -10,25 +12,27 @@ interface configButton extends configElement {
 export default function addButtonToToolbar(
   config: configButton
 ): HTMLButtonElement {
+  config = utilities.deepMerge(config, config.merge);
+
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
-  const button = <HTMLButtonElement>createElement({
+  const elButton = <HTMLButtonElement>createElement({
+    merge: config,
     tag: 'button',
-    ...config,
   });
 
   if (config.id) {
-    button.id = config.id;
+    elButton.id = config.id;
   }
 
   if (config.title) {
-    button.innerHTML = config.title;
+    elButton.innerHTML = config.title;
   }
 
   if (config.onClick) {
-    button.onclick = config.onClick;
+    elButton.onclick = config.onClick;
   }
 
-  return button;
+  return elButton;
 }

@@ -25,6 +25,9 @@ interface configDropdown extends configElement {
 const { MouseBindings } = Enums;
 
 export default function addDropDownToToolbar(config: configDropdown): void {
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
+
   const {
     map,
     values = [...map.keys()],
@@ -32,15 +35,12 @@ export default function addDropDownToToolbar(config: configDropdown): void {
     defaultIndex = defaultValue === undefined && 0,
   } = config.options as any;
 
-  config.container =
-    config.container ?? document.getElementById('demo-toolbar');
-
   // Create label element if labelText is provided
   if (config.label || config.labelText) {
     const label = addLabelToToolbar({
+      merge: config.label,
       title: config.labelText,
       container: config.container,
-      ...config.label,
     });
 
     if (config.id) {
@@ -50,8 +50,8 @@ export default function addDropDownToToolbar(config: configDropdown): void {
 
   //
   const select = <HTMLSelectElement>createElement({
+    merge: config,
     tag: 'select',
-    ...config,
   });
 
   if (config.id) {

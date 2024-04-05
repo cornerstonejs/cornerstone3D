@@ -14,7 +14,9 @@ export default function addUploadToToolbar(config: configUpload): void {
     config.container ?? document.getElementById('demo-toolbar');
 
   const fnClick = () => {
+    //
     const elInput = <HTMLInputElement>createElement({
+      merge: config.input,
       tag: 'input',
       attr: {
         type: 'file',
@@ -33,7 +35,6 @@ export default function addUploadToToolbar(config: configUpload): void {
           elInput.remove();
         },
       },
-      ...config.input,
     });
 
     document.body.appendChild(elInput);
@@ -41,8 +42,10 @@ export default function addUploadToToolbar(config: configUpload): void {
     elInput.click();
   };
 
+  //
   addButtonToToolbar({
-    ...config,
+    merge: config,
+    title: config.title,
     onClick: fnClick,
   });
 }

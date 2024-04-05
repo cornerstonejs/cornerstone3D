@@ -1,3 +1,5 @@
+import { utilities } from '@cornerstonejs/core';
+
 import createElement, { configElement } from './createElement';
 
 interface configLabel extends configElement {
@@ -9,21 +11,23 @@ interface configLabel extends configElement {
 export default function addLabelToToolbar(
   config: configLabel
 ): HTMLLabelElement {
+  config = utilities.deepMerge(config, config.merge);
+
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
-  const label = <HTMLLabelElement>createElement({
+  const elLabel = <HTMLLabelElement>createElement({
+    merge: config,
     tag: 'label',
-    ...config,
   });
 
   if (config.id) {
-    label.id = config.id;
+    elLabel.id = config.id;
   }
 
   if (config.title) {
-    label.innerHTML = config.title;
+    elLabel.innerHTML = config.title;
   }
 
-  return label;
+  return elLabel;
 }
