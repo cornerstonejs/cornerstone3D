@@ -307,7 +307,6 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
 export type PlanarFreehandROIAnnotation = ContourAnnotation & {
   data: {
     label?: string;
-    isOpenContour?: boolean;
     isOpenUShapeContour?: boolean;
     // Present if isOpenUShapeContour is true:
     openUShapeContourVectorToPeak?: Types.Point3[];
