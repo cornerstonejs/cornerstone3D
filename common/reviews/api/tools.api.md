@@ -853,41 +853,6 @@ type BoundsIJK_2 = Types_2.BoundsIJK;
 export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    acceptPreview(element?: HTMLDivElement): void;
-    // (undocumented)
-    createEditData(element: any): {
-        volumeId: string;
-        referencedVolumeId: string;
-        segmentsLocked: number[] | [];
-        segmentationRepresentationUID: string;
-        imageIdReferenceMap?: undefined;
-    } | {
-        imageIdReferenceMap: Map<string, string>;
-        segmentsLocked: number[] | [];
-        segmentationRepresentationUID: string;
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    };
-    // (undocumented)
-    protected getOperationData(element?: any): {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        segmentationRepresentationUID: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        configuration: Record<string, any>;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo_2;
-        segmentsLocked: number[];
-        imageIdReferenceMap?: Map<string, string>;
-        volumeId?: string;
-        referencedVolumeId?: string;
-    };
-    // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
     interpolate(element: any, config: any): void;
@@ -896,17 +861,15 @@ export class BrushTool extends LabelmapBaseTool {
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: (evt: any) => void;
+    onSetToolDisabled: (_evt: any) => void;
     // (undocumented)
-    onSetToolEnabled: () => void;
+    onSetToolEnabled: (_evt: any) => void;
     // (undocumented)
-    onSetToolPassive: (evt: any) => void;
+    onSetToolPassive: (_evt: any) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     previewCallback: () => void;
-    // (undocumented)
-    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
