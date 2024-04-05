@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.68.1](https://github.com/dcmjs-org/dcmjs/compare/v1.68.0...v1.68.1) (2024-04-05)
+
+### Bug Fixes
+
+-   **cornerstone-dicom-sr:** Freehand SR hydration support ([#1160](https://github.com/dcmjs-org/dcmjs/issues/1160)) ([5e778a1](https://github.com/dcmjs-org/dcmjs/commit/5e778a1b637eaeb85fe3d3c3120388a322d33c53))
+
 # [1.68.0](https://github.com/dcmjs-org/dcmjs/compare/v1.67.1...v1.68.0) (2024-03-29)
 
 ### Features
