@@ -5,6 +5,7 @@
 ```ts
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
+import { default as default_2 } from '@itk-wasm/morphological-contour-interpolation/dist/morphological-contour-interpolation-options';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
@@ -297,7 +298,7 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
@@ -489,6 +490,21 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
     // (undocumented)
+    static createAnnotationMemo(element: any, annotation: Annotation, options?: {
+        newAnnotation?: boolean;
+        deleting?: boolean;
+    }): {
+        restoreMemo: () => void;
+    };
+    // (undocumented)
+    protected static createAnnotationState(annotation: Annotation, deleting?: boolean): {
+        annotationUID: string;
+        data: any;
+        deleting: boolean;
+    };
+    // (undocumented)
+    protected createMemo(element: any, annotation: any, options?: any): void;
+    // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
         styleSpecifier: StyleSpecifier;
@@ -647,6 +663,8 @@ export abstract class BaseTool implements IBaseTool {
     static createZoomPanMemo(viewport: any): {
         restoreMemo: () => void;
     };
+    // (undocumented)
+    doneEditMemo(): void;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
@@ -818,7 +836,7 @@ declare namespace boundingBox {
 type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
-export class BrushTool extends BaseTool {
+export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     acceptPreview(element?: HTMLDivElement): void;
@@ -849,6 +867,7 @@ export class BrushTool extends BaseTool {
         strategySpecificConfiguration: any;
         preview: unknown;
         configuration: Record<string, any>;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo_2;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -921,6 +940,8 @@ enum ChangeTypes {
     Completed = "Completed",
     // (undocumented)
     HandlesUpdated = "HandlesUpdated",
+    // (undocumented)
+    History = "History",
     // (undocumented)
     InitialSetup = "InitialSetup",
     // (undocumented)
@@ -1176,7 +1197,7 @@ export class CircleROITool extends AnnotationTool {
 }
 
 // @public (undocumented)
-export class CircleScissorsTool extends BaseTool {
+export class CircleScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -1188,9 +1209,10 @@ export class CircleScissorsTool extends BaseTool {
     editData: {
         annotation: any;
         segmentIndex: number;
-        volumeId: string;
-        referencedVolumeId: string;
-        imageIdReferenceMap: Map<string, string>;
+        volumeId?: string;
+        segmentationId?: string;
+        referencedVolumeId?: string;
+        imageIdReferenceMap?: Map<string, string>;
         segmentsLocked: number[];
         segmentColor: [number, number, number, number];
         viewportIdsToRender: string[];
@@ -1200,6 +1222,7 @@ export class CircleScissorsTool extends BaseTool {
         hasMoved?: boolean;
         centerCanvas?: Array<number>;
         segmentationRepresentationUID?: string;
+        memo?: LabelmapMemo_2;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -1319,6 +1342,8 @@ export class CobbAngleTool extends AnnotationTool {
         isNearSecondLine: boolean;
     };
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
     editData: {
         annotation: any;
         viewportIdsToRender: string[];
@@ -1329,6 +1354,8 @@ export class CobbAngleTool extends AnnotationTool {
         isNearFirstLine?: boolean;
         isNearSecondLine?: boolean;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     getArcsStartEndPoints: ({ firstLine, secondLine, mid1, mid2, }: {
         firstLine: any;
@@ -1355,10 +1382,6 @@ export class CobbAngleTool extends AnnotationTool {
     _mouseDownCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     mouseDragCallback: any;
-    // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -1667,6 +1690,23 @@ function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
+function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>, preview?: InitializedOperationData): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: utilities_2.VoxelManager<number>;
+    voxelManager: utilities_2.VoxelManager<number>;
+    memo: LabelmapMemo_2;
+    preview: InitializedOperationData;
+} | {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: utilities_2.VoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+};
+
+// @public (undocumented)
 function createLabelmapVolumeForViewport(input: {
     viewportId: string;
     renderingEngineId: string;
@@ -1690,6 +1730,26 @@ function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, se
 
 // @public (undocumented)
 function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createPreviewMemo(segmentationId: string, preview: InitializedOperationData): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: utilities_2.VoxelManager<number>;
+    voxelManager: utilities_2.VoxelManager<number>;
+    memo: LabelmapMemo_2;
+    preview: InitializedOperationData;
+};
+
+// @public (undocumented)
+function createRleMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.VoxelManager<T>): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: utilities_2.VoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+};
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -3131,6 +3191,25 @@ type LabelmapConfig = {
     outlineOpacityInactive?: number;
 };
 
+declare namespace LabelmapMemo {
+    export {
+        createLabelmapMemo,
+        restoreMemo,
+        createRleMemo,
+        createPreviewMemo,
+        LabelmapMemo_2 as LabelmapMemo
+    }
+}
+
+// @public (undocumented)
+type LabelmapMemo_2 = Types_2.Memo & {
+    segmentationVoxelManager: Types_2.VoxelManager<number>;
+    voxelManager: Types_2.VoxelManager<number>;
+    redoVoxelManager?: Types_2.VoxelManager<number>;
+    undoVoxelManager?: Types_2.VoxelManager<number>;
+    memo?: LabelmapMemo_2;
+};
+
 // @public (undocumented)
 type LabelmapRenderingConfig = {
     cfun?: vtkColorTransferFunction;
@@ -3168,6 +3247,7 @@ type LabelmapToolOperationData = {
     points: Types_2.Point3[];
     preview: any;
     toolGroupId: string;
+    createMemo: (segmentId: any, segmentVoxels: any, previewVoxels?: any, previewMemo?: any) => LabelmapMemo_2;
 };
 
 // @public (undocumented)
@@ -3753,8 +3833,6 @@ export class PanTool extends BaseTool {
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
-    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
-    // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
@@ -4318,7 +4396,7 @@ declare namespace rectangleROITool {
 }
 
 // @public (undocumented)
-export class RectangleScissorsTool extends BaseTool {
+export class RectangleScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -4520,6 +4598,9 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
+function restoreMemo(isUndo?: boolean): void;
+
+// @public (undocumented)
 const roundNumber_2: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
@@ -4642,6 +4723,7 @@ declare namespace segmentation_2 {
         isValidRepresentationConfig,
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
+        LabelmapMemo,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
         floodFill,
@@ -4930,7 +5012,7 @@ function showAllAnnotations(): void;
 function smoothAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
 
 // @public (undocumented)
-export class SphereScissorsTool extends BaseTool {
+export class SphereScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -6056,6 +6138,8 @@ export class VideoRedactionTool extends AnnotationTool {
         hasMoved?: boolean;
     } | null;
     // (undocumented)
+    _endCallback: (evt: any) => void;
+    // (undocumented)
     getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
     // (undocumented)
     _getImageVolumeFromTargetUID(targetUID: any, renderingEngine: any): {
@@ -6085,8 +6169,6 @@ export class VideoRedactionTool extends AnnotationTool {
     isPointNearTool: (element: any, annotation: any, canvasCoords: any, proximity: any) => boolean;
     // (undocumented)
     _mouseDragCallback: (evt: any) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: any) => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)

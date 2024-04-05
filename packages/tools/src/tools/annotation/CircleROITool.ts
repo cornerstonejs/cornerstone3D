@@ -374,6 +374,8 @@ class CircleROITool extends AnnotationTool {
       return;
     }
 
+    this.doneEditMemo();
+
     // Circle ROI tool should reset its highlight to false on mouse up (as opposed
     // to other tools that keep it highlighted until the user moves. The reason
     // is that we use top-left and bottom-right handles to define the circle,
@@ -416,7 +418,9 @@ class CircleROITool extends AnnotationTool {
     const { canvasToWorld } = viewport;
 
     //////
-    const { annotation, viewportIdsToRender } = this.editData;
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const { data } = annotation;
 
     data.handles.points = [
@@ -436,9 +440,15 @@ class CircleROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       const { deltaPoints } = eventDetail;

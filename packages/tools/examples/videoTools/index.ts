@@ -24,22 +24,9 @@ console.warn(
 );
 
 const {
-  LengthTool,
-  KeyImageTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
-  ArrowAnnotateTool,
-  PlanarFreehandROITool,
-  LivewireContourTool,
-
-  VideoRedactionTool,
   ToolGroupManager,
   Enums: csToolsEnums,
+  AnnotationTool,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -120,6 +107,9 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
+      AnnotationTool.createAnnotationMemo(element, annotation, {
+        deleting: true,
+      });
       cornerstoneTools.annotation.state.removeAnnotation(
         annotation.annotationUID
       );

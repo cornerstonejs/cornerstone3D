@@ -1,7 +1,27 @@
 export type Memo = {
+  /**
+   * This restores memo state.  It is an undo if undo is true, or a redo if it
+   * is false.
+   */
   restoreMemo: (undo?: boolean) => void;
+
+  /**
+   * An optional function that will be called to commit any changes that have
+   * occurred in a memo.  This allows recording changes that are ongoing to a memo
+   * and then being able to undo them without having to record the entire state at the
+   * time the memo is initially created.  See createLabelmapMemo for an example
+   * use.
+   *
+   * @return true if this memo contains any data, if so it should go on the memo ring
+   *    after the commit is completed.
+   */
+  commitMemo?: () => boolean;
 };
 
+/**
+ * This is a function which can be implemented to create a memo and then pass
+ * the implementing class instead of a new memo itself.
+ */
 export type Memoable = {
   createMemo: () => Memo;
 };
@@ -25,6 +45,7 @@ export class HistoryMemo {
     this._size = size;
   }
 
+  /** The number of items that can be stored in the history */
   public get size() {
     return this._size;
   }
@@ -83,6 +104,10 @@ export class HistoryMemo {
   }
 }
 
+/**
+ * The default HistoryMemo is a shared history state that can be used for
+ * any undo/redo memo items.
+ */
 const DefaultHistoryMemo = new HistoryMemo();
 
 export { DefaultHistoryMemo };

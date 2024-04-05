@@ -270,11 +270,14 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Undo an action
+   * Undoes an action
    */
   public undo() {
+    // It is possible a user has started another action here, so ensure that one
+    // gets completed/stored correctly.  Normally this only occurs if the user
+    // starts an undo while dragging.
+    this.doneEditMemo();
     DefaultHistoryMemo.undo();
-    this.memo = null;
   }
 
   /**
@@ -284,6 +287,10 @@ abstract class BaseTool implements IBaseTool {
     DefaultHistoryMemo.redo();
   }
 
+  /**
+   * Creates a zoom/pan memo that remembers the original zoom/pan position for
+   * the given viewport.
+   */
   public static createZoomPanMemo(viewport) {
     // TODO - move this to view callback as a utility
     const state = {
@@ -303,6 +310,28 @@ abstract class BaseTool implements IBaseTool {
     };
     DefaultHistoryMemo.push(zoomPanMemo);
     return zoomPanMemo;
+  }
+
+  /**
+   * This clears and edit memo storage to allow for further history functions
+   * to be called.  Calls the complete function if present, and pushes the
+   * memo to the history memo stack.
+   *
+   * This should be called when a tool has finished making a change which should be
+   * separated from future/other changes in terms of the history.
+   * Usually that means on endCallback (mouse up), but some tools also make changes
+   * on the initial creation of an object or have alternate flows and the doneEditMemo
+   * has to be called on mouse down or other initiation events to ensure that new
+   * changes are correctly recorded.
+   *
+   * If the tool has no end callback, then the doneEditMemo is called from the
+   * pre mouse down callback.  See ZoomTool for an example of this usage.
+   */
+  public doneEditMemo() {
+    if (this.memo?.commitMemo?.()) {
+      DefaultHistoryMemo.push(this.memo);
+    }
+    this.memo = null;
   }
 }
 

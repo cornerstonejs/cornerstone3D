@@ -8,7 +8,6 @@ import type {
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { BaseTool } from '../base';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
@@ -45,27 +44,12 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
-
-/**
- * A type for preview data/information, used to setup previews on hover, or
- * maintain the preview information.
- */
-export type PreviewData = {
-  /**
-   *  The preview data returned from the strategy
-   */
-  preview: unknown;
-  timer?: number;
-  timerStart: number;
-  startPoint: Types.Point2;
-  element: HTMLDivElement;
-  isDrag: boolean;
-};
+import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
  * @public
  */
-class BrushTool extends BaseTool {
+class BrushTool extends LabelmapBaseTool {
   static toolName;
   private _editData: {
     segmentsLocked: number[]; //
@@ -82,15 +66,6 @@ class BrushTool extends BaseTool {
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
-  };
-
-  private _previewData?: PreviewData = {
-    preview: null,
-    element: null,
-    timerStart: 0,
-    timer: null,
-    startPoint: [NaN, NaN],
-    isDrag: false,
   };
 
   constructor(
@@ -158,14 +133,6 @@ class BrushTool extends BaseTool {
             bindings: [
               {
                 key: 'Enter',
-              },
-            ],
-          },
-          [StrategyCallbacks.RejectPreview]: {
-            method: StrategyCallbacks.RejectPreview,
-            bindings: [
-              {
-                key: 'Escape',
               },
             ],
           },
@@ -571,7 +538,6 @@ class BrushTool extends BaseTool {
     } = this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
-    console.log('Assigning preview colors', this.configuration.preview);
     const operationData = {
       ...editData,
       points: data?.handles?.points,
@@ -590,6 +556,7 @@ class BrushTool extends BaseTool {
       // Provide the preview information so that data can be used directly
       preview: this._previewData?.preview,
       configuration: this.configuration,
+      createMemo: this.createMemo.bind(this),
     };
     return operationData;
   }
@@ -685,6 +652,8 @@ class BrushTool extends BaseTool {
       this.applyActiveStrategy(enabledElement, operationData);
     }
 
+    this.doneEditMemo();
+
     this._deactivateDraw(element);
 
     resetElementCursor(element);
@@ -740,9 +709,10 @@ class BrushTool extends BaseTool {
    * Accepts a preview, marking it as the active segment.
    */
   public acceptPreview(element = this._previewData.element) {
-    if (!element) {
+    if (!element || !this._previewData?.preview) {
       return;
     }
+    this.doneEditMemo();
     const enabledElement = getEnabledElement(element);
 
     this.applyActiveStrategyCallback(
@@ -752,6 +722,8 @@ class BrushTool extends BaseTool {
     );
     this._previewData.isDrag = false;
     this._previewData.preview = null;
+    // Store the edit memo too
+    this.doneEditMemo();
   }
 
   /**

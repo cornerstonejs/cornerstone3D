@@ -307,10 +307,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       return;
     }
 
-    if (
-      segmentationState.getSegmentationRepresentations(this.toolGroupId)
-        .length > 1
-    ) {
+    if (validSegmentationRepresentations.length > 1) {
       console.warn(
         'Multiple segmentation representations detected for this tool group. The first one will be used.'
       );

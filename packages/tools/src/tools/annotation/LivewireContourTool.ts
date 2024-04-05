@@ -425,6 +425,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     } = this.editData;
     const { data } = annotation;
 
+    this.doneEditMemo();
+
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
@@ -496,8 +498,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
     const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
-    const { annotation, viewportIdsToRender, worldToSlice, sliceToWorld } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      worldToSlice,
+      sliceToWorld,
+      newAnnotation,
+    } = this.editData;
 
     if (this.editData.closed) {
       return;
@@ -512,6 +519,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { viewport, renderingEngine } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
+
+    // There is a new point being added/changed, and we want that in a separate
+    // memo to allow undoing it, so need to call the done edit an extra time here.
+    this.doneEditMemo();
+    this.createMemo(element, annotation, {
+      newAnnotation: newAnnotation && controlPoints.length === 1,
+    });
 
     // Check if user clicked on the first point to close the curve
     if (controlPoints.length >= 2) {
@@ -730,7 +744,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex } = this.editData;
+    const { annotation, viewportIdsToRender, handleIndex, newAnnotation } =
+      this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
     if (handleIndex === undefined) {
       // Drag mode - moving object
       console.warn('No drag implemented for livewire');
@@ -769,7 +785,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
-    this.editData = null;
+    this.doneEditMemo();
     this.scissors = null;
     return annotation.annotationUID;
   };

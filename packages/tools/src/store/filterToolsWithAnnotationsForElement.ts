@@ -41,7 +41,7 @@ export default function filterToolsWithAnnotationsForElement(
       );
     }
 
-    if (annotations.length > 0) {
+    if (annotations?.length > 0) {
       result.push({ tool, annotations });
     }
   }

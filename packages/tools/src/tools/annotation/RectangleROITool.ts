@@ -366,6 +366,7 @@ class RectangleROITool extends AnnotationTool {
     this._deactivateDraw(element);
 
     resetElementCursor(element);
+    this.doneEditMemo();
 
     const { renderingEngine } = getEnabledElement(element);
 
@@ -392,9 +393,16 @@ class RectangleROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - Move the text boxes world position
@@ -878,8 +886,6 @@ class RectangleROITool extends AnnotationTool {
       }
 
       const { dimensions, imageData, metadata } = image;
-      const scalarData =
-        'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 

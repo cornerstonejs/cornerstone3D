@@ -1,8 +1,9 @@
-import { BaseTool } from './base';
+import { BaseTool, AnnotationTool } from './base';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { ToolGroupManager } from '../store';
 import {
   getAnnotations,
+  getAnnotation,
   removeAnnotation,
 } from '../stateManagement/annotation/annotationState';
 import { setAnnotationSelected } from '../stateManagement/annotation/annotationSelection';
@@ -56,15 +57,15 @@ class AnnotationEraserTool extends BaseTool {
 
       const annotations = getAnnotations(toolName, element);
 
-      if (!annotations) {
-        continue;
-      }
-
       const interactableAnnotations =
         toolInstance.filterInteractableAnnotationsForElement(
           element,
           annotations
         );
+
+      if (!interactableAnnotations) {
+        continue;
+      }
 
       for (const annotation of interactableAnnotations) {
         if (
@@ -83,6 +84,10 @@ class AnnotationEraserTool extends BaseTool {
 
     for (const annotationUID of annotationsToRemove) {
       setAnnotationSelected(annotationUID);
+      const annotation = getAnnotation(annotationUID);
+      AnnotationTool.createAnnotationMemo(element, annotation, {
+        deleting: true,
+      });
       removeAnnotation(annotationUID);
     }
 

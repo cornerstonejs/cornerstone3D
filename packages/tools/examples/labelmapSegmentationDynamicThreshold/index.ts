@@ -128,6 +128,7 @@ addDropdownToToolbar({
 addSliderToToolbar({
   title: 'Brush Size',
   range: [5, 50],
+  range: [5, 100],
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);

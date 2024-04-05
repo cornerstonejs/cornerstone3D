@@ -1,51 +1,64 @@
-import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
+import { BaseVolumeViewport, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
 } from '../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../utilities';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { LabelmapToolOperationData } from '../../../types';
-import { getStrategyData } from './utils/getStrategyData';
+import BrushStrategy from './BrushStrategy';
+import type { Composition, InitializedOperationData } from './BrushStrategy';
+import { StrategyCallbacks } from '../../../enums';
+import compositions from './compositions';
 import { isAxisAlignedRectangle } from '../../../utilities/rectangleROITool/isAxisAlignedRectangle';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = LabelmapToolOperationData & {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-};
+const initializeRectangle = {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
+    const {
+      points, // bottom, top, left, right
+      imageVoxelManager: imageVoxelManager,
+      viewport,
+      segmentationImageData,
+      segmentationVoxelManager: segmentationVoxelManager,
+    } = operationData;
+
+    // Happens on a preview setup
+    if (!points) {
+      return;
+    }
+    // Average the points to get the center of the ellipse
+    const center = vec3.fromValues(0, 0, 0);
+    points.forEach((point) => {
+      vec3.add(center, center, point);
+    });
+    vec3.scale(center, center, 1 / points.length);
+
+    operationData.centerWorld = center as Types.Point3;
+    operationData.centerIJK = transformWorldToIndex(
+      segmentationImageData,
+      center as Types.Point3
+    );
+
+    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
+
+    const { boundsIJK, pointInShapeFn } = createPointInRectangle(
+      viewport,
+      points,
+      segmentationImageData
+    );
+    segmentationVoxelManager.boundsIJK = boundsIJK;
+    imageVoxelManager.isInObject = pointInShapeFn;
+  },
+} as Composition;
 
 /**
- * For each point in the bounding box around the rectangle, if the point is inside
- * the rectangle, set the scalar value to the segmentIndex
- * @param toolGroupId - string
- * @param operationData - OperationData
- * @param inside - boolean
+ * Creates a function that tells the user if the provided point in LPS space
+ * is inside the rectangle.
+ *
  */
-// Todo: why we have another constraintFn? in addition to the one in the operationData?
-function fillRectangle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  inside = true
-): void {
-  const { points, segmentsLocked, segmentIndex, segmentationId } =
-    operationData;
-
-  const { viewport } = enabledElement;
-  const strategyData = getStrategyData({
-    operationData,
-    viewport: enabledElement.viewport,
-  });
-
-  if (!strategyData) {
-    console.warn('No data found for fillRectangle');
-    return;
-  }
-
-  const { segmentationImageData, segmentationScalarData } = strategyData;
-
+function createPointInRectangle(viewport, points, segmentationImageData) {
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(segmentationImageData, world);
   });
@@ -62,11 +75,11 @@ function fillRectangle(
     segmentationImageData.getDimensions()
   );
 
-  const isStackViewport = viewport instanceof StackViewport;
+  const isVolumeViewport = viewport instanceof BaseVolumeViewport;
 
   // Are we working with 2D rectangle in axis aligned viewport view or not
   const isAligned =
-    isStackViewport || isAxisAlignedRectangle(rectangleCornersIJK);
+    !isVolumeViewport || isAxisAlignedRectangle(rectangleCornersIJK);
 
   const direction = segmentationImageData.getDirection();
   const spacing = segmentationImageData.getSpacing();
@@ -105,46 +118,53 @@ function fillRectangle(
         return xInside && yInside && zInside;
       };
 
-  const callback = ({ value, index }) => {
-    if (segmentsLocked.includes(value)) {
-      return;
-    }
-
-    segmentationScalarData[index] = segmentIndex;
-  };
-
-  pointInShapeCallback(
-    segmentationImageData,
-    pointInShapeFn,
-    callback,
-    boundsIJK
-  );
-
-  triggerSegmentationDataModified(segmentationId);
+  return { boundsIJK, pointInShapeFn };
 }
+
+const RECTANGLE_STRATEGY = new BrushStrategy(
+  'Rectangle',
+  compositions.regionFill,
+  compositions.setValue,
+  initializeRectangle,
+  compositions.determineSegmentIndex,
+  compositions.preview,
+  compositions.labelmapStatistics,
+  compositions.labelmapInterpolation
+);
+
+const RECTANGLE_THRESHOLD_STRATEGY = new BrushStrategy(
+  'RectangleThreshold',
+  compositions.regionFill,
+  compositions.setValue,
+  initializeRectangle,
+  compositions.determineSegmentIndex,
+  compositions.dynamicThreshold,
+  compositions.threshold,
+  compositions.preview,
+  compositions.islandRemoval,
+  compositions.labelmapStatistics,
+  compositions.labelmapInterpolation
+);
 
 /**
- * Fill the inside of a rectangle
- * @param toolGroupId - The unique identifier of the tool group.
- * @param operationData - The data that will be used to create the
- * new rectangle.
+ * Fill inside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param operationData - EraseOperationData
  */
-export function fillInsideRectangle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  fillRectangle(enabledElement, operationData, true);
-}
+const fillInsideRectangle = RECTANGLE_STRATEGY.strategyFunction;
 
 /**
- * Fill the area outside of a rectangle for the toolGroupId and segmentationRepresentationUID.
- * @param toolGroupId - The unique identifier of the tool group.
- * @param operationData - The data that will be used to create the
- * new rectangle.
+ * Fill inside the circular region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined circle.
+ * @param enabledElement - The element for which the segment is being erased.
+ * @param operationData - EraseOperationData
  */
-export function fillOutsideRectangle(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  fillRectangle(enabledElement, operationData, false);
-}
+const thresholdInsideRectangle = RECTANGLE_THRESHOLD_STRATEGY.strategyFunction;
+
+export {
+  RECTANGLE_STRATEGY,
+  RECTANGLE_THRESHOLD_STRATEGY,
+  fillInsideRectangle,
+  thresholdInsideRectangle,
+};

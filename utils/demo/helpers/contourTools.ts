@@ -4,7 +4,10 @@ const {
   SplineContourSegmentationTool,
   LivewireContourSegmentationTool,
   PlanarFreehandContourSegmentationTool,
+  Enums,
 } = cornerstoneTools;
+
+const { SegmentationRepresentations } = Enums;
 
 const toolMap = new Map<string, any>();
 
@@ -23,20 +26,24 @@ const interpolationConfiguration = {
 
 toolMap.set(PlanarFreehandContourSegmentationTool.toolName, {
   tool: PlanarFreehandContourSegmentationTool,
+  segmentationType: SegmentationRepresentations.Contour,
 });
 
 toolMap.set(LivewireContourSegmentationTool.toolName, {
   tool: LivewireContourSegmentationTool,
+  segmentationType: SegmentationRepresentations.Contour,
 });
 
 toolMap.set('CatmullRomSplineROI', {
   tool: SplineContourSegmentationTool,
+  segmentationType: SegmentationRepresentations.Contour,
   baseTool: SplineContourSegmentationTool.toolName,
   configuration: {
     splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
   },
 });
 toolMap.set('LinearSplineROI', {
+  segmentationType: SegmentationRepresentations.Contour,
   baseTool: SplineContourSegmentationTool.toolName,
   configuration: {
     splineType: SplineContourSegmentationTool.SplineTypes.Linear,
@@ -44,6 +51,7 @@ toolMap.set('LinearSplineROI', {
 });
 
 toolMap.set('BSplineROI', {
+  segmentationType: SegmentationRepresentations.Contour,
   baseTool: SplineContourSegmentationTool.toolName,
   configuration: {
     splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
@@ -51,14 +59,17 @@ toolMap.set('BSplineROI', {
 });
 
 toolMap.set('FreeformInterpolation', {
+  segmentationType: SegmentationRepresentations.Contour,
   baseTool: PlanarFreehandContourSegmentationTool.toolName,
   configuration: interpolationConfiguration,
 });
 toolMap.set('SplineInterpolation', {
+  segmentationType: SegmentationRepresentations.Contour,
   baseTool: SplineContourSegmentationTool.toolName,
   configuration: interpolationConfiguration,
 });
 toolMap.set('LivewireInterpolation', {
+  segmentationType: SegmentationRepresentations.Contour,
   baseTool: LivewireContourSegmentationTool.toolName,
   configuration: interpolationConfiguration,
 });

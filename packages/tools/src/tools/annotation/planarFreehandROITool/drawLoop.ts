@@ -55,6 +55,7 @@ function activateDraw(
     canvasPoints: [canvasPos],
     polylineIndex: 0,
     contourHoleProcessingEnabled,
+    newAnnotation: true,
   };
 
   this.commonData = {
@@ -113,7 +114,8 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
     spacing,
     movingTextBox,
   } = this.commonData;
-  const { polylineIndex, canvasPoints } = this.drawData;
+  const { polylineIndex, canvasPoints, newAnnotation } = this.drawData;
+  this.createMemo(element, annotation, { newAnnotation });
 
   const lastCanvasPoint = canvasPoints[canvasPoints.length - 1];
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -181,6 +183,8 @@ function mouseUpDrawCallback(evt: EventTypes.InteractionEventType): void {
   const lastPoint = canvasPoints[canvasPoints.length - 1];
   const eventDetail = evt.detail;
   const { element } = eventDetail;
+  this.doneEditMemo();
+  this.drawData.newAnnotation = false;
 
   if (
     allowOpenContours &&
