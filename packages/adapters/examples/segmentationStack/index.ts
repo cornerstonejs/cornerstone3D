@@ -53,10 +53,12 @@ let imageIds = [];
 
 // ======== Set up page ======== //
 
-setTitleAndDescription(
-    "DICOM SEG STACK [Construction is underway]",
+setTitleAndDescription("DICOM SEG STACK [Construction is underway]", "");
+
+/* setTitleAndDescription(
+    "DICOM SEG STACK",
     "Here we demonstrate how to import or export a DICOM SEG from a Cornerstone3D stack."
-);
+); */
 
 // TODO
 const descriptionContainer = document.getElementById(
@@ -64,18 +66,29 @@ const descriptionContainer = document.getElementById(
 );
 
 const warn = document.createElement("div");
-warn.style.color = "red";
-warn.innerHTML =
-    "Notice: The import and export from to stack viewport in DICOM SEG format is not done yet. I did as said ";
 descriptionContainer.prepend(warn);
+
+const textA = document.createElement("p");
+textA.style.color = "red";
+textA.innerHTML =
+    "Notice: The import and export from to stack viewport in DICOM SEG format is not done yet. I did as said ";
+warn.appendChild(textA);
 
 const link = document.createElement("a");
 link.href =
     "https://github.com/cornerstonejs/cornerstone3D/issues/1059#issuecomment-1954647390";
 link.innerHTML = "#1059";
 link.target = "_blank";
-warn.appendChild(link);
-//
+textA.appendChild(link);
+
+const textB = document.createElement("p");
+textB.style.color = "red";
+textB.innerHTML =
+    "When importing dicom or demo dicom only one image view and not several." +
+    "<br>" +
+    "When importing seg or exporting seg, it is not dicom seg format, just dicom arraybuffer.";
+warn.appendChild(textB);
+// END TODO
 
 const size = "500px";
 
@@ -183,23 +196,8 @@ async function importSegmentation(files: FileList) {
 }
 
 async function readSegmentation(file: File) {
-    const promise = new Promise<ArrayBuffer>((resolve, reject) => {
-        const fileReader = new FileReader();
-
-        fileReader.onload = e => {
-            const arrayBuffer = e.target.result as ArrayBuffer;
-
-            resolve(arrayBuffer);
-        };
-
-        fileReader.onerror = reject;
-
-        fileReader.readAsArrayBuffer(file);
-    });
-
-    promise.then(arrayBuffer => {
-        loadSegmentation(arrayBuffer);
-    });
+    const arrayBuffer = await loadFileRequest(file);
+    loadSegmentation(arrayBuffer);
 }
 
 async function loadSegmentation(arrayBuffer: ArrayBuffer) {
@@ -235,7 +233,7 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
     }, 200);
 }
 
-async function exportSegmentation() {
+function exportSegmentation() {
     //
     const segmentationIds = getSegmentationIds();
     //
@@ -278,7 +276,7 @@ async function exportSegmentation() {
 
             const pixelData = cacheSegmentationImage.getPixelData();
 
-            downloadDICOMData(pixelData.buffer, "mySEG.dcm");
+            downloadDICOMData(pixelData.buffer, "my_seg_arraybuffer");
         });
     }
 }
@@ -313,6 +311,13 @@ function removeActiveSegmentation() {
 
 // ============================= //
 
+// TODO
+const inputConfig = {
+    attr: {
+        multiple: false
+    }
+};
+
 addButtonToToolbar({
     id: "DEMO_DICOM",
     title: "Demo DICOM",
@@ -331,11 +336,7 @@ addUploadToToolbar({
     },
     onChange: readDicom,
     container: group1,
-    input: {
-        attr: {
-            multiple: false
-        }
-    }
+    input: inputConfig
 });
 
 addUploadToToolbar({
@@ -345,7 +346,8 @@ addUploadToToolbar({
         marginRight: "5px"
     },
     onChange: importSegmentation,
-    container: group1
+    container: group1,
+    input: inputConfig
 });
 
 addButtonToToolbar({
@@ -503,30 +505,6 @@ async function addSegmentationsToState(segmentationId: string) {
     return derivedImages;
 }
 
-/* function generateMockMetadata(segmentIndex, color) {
-    const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB(
-        color.slice(0, 3).map(value => value / 255)
-    ).map(value => Math.round(value));
-
-    return {
-        SegmentedPropertyCategoryCodeSequence: {
-            CodeValue: "T-D0050",
-            CodingSchemeDesignator: "SRT",
-            CodeMeaning: "Tissue"
-        },
-        SegmentNumber: segmentIndex.toString(),
-        SegmentLabel: "Tissue " + segmentIndex.toString(),
-        SegmentAlgorithmType: "SEMIAUTOMATIC",
-        SegmentAlgorithmName: "Slicer Prototype",
-        RecommendedDisplayCIELabValue,
-        SegmentedPropertyTypeCodeSequence: {
-            CodeValue: "T-D0050",
-            CodingSchemeDesignator: "SRT",
-            CodeMeaning: "Tissue"
-        }
-    };
-} */
-
 function updateSegmentationDropdown(activeSegmentationId?) {
     const dropdown = document.getElementById(
         "ACTIVE_SEGMENTATION_DROPDOWN"
@@ -548,6 +526,22 @@ function updateSegmentationDropdown(activeSegmentationId?) {
     }
 }
 
+function loadFileRequest(file: File) {
+    return new Promise<ArrayBuffer>((resolve, reject) => {
+        const fileReader = new FileReader();
+
+        fileReader.onload = evt => {
+            const arrayBuffer = evt.target.result as ArrayBuffer;
+
+            resolve(arrayBuffer);
+        };
+
+        fileReader.onerror = reject;
+
+        fileReader.readAsArrayBuffer(file);
+    });
+}
+
 function handleFileSelect(evt) {
     evt.stopPropagation();
     evt.preventDefault();
@@ -555,8 +549,8 @@ function handleFileSelect(evt) {
     //
     const files = evt.dataTransfer.files;
 
-    //
-    readDicom(files);
+    // TODO
+    readDicom([files[0]]);
 }
 
 function handleDragOver(evt) {
