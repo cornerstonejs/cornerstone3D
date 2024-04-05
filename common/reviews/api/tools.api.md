@@ -230,6 +230,7 @@ export class AngleTool extends AnnotationTool {
 type Annotation = {
     annotationUID?: string;
     parentAnnotationUID?: string;
+    interpolationUID?: string;
     childAnnotationUIDs?: string[];
     highlighted?: boolean;
     isLocked?: boolean;

@@ -212,6 +212,11 @@ function feedForSam(emb, points, labels) {
   };
 }
 
+function createLabelmap(viewport, mask, points, labels) {
+  const imageId = viewport.getCurrentImageId();
+  console.log('*** Creating labelmap data for', imageId);
+}
+
 const boxRadius = 5;
 
 async function decoder(points, labels) {
@@ -255,7 +260,31 @@ async function decoder(points, labels) {
     }
     const mask = res.masks;
     maskImageData = mask.toImageData();
+    createLabelmap(viewport, maskImageData, points, labels);
     ctx.globalAlpha = 0.3;
+    const { data } = maskImageData;
+    let fractionCount = 0;
+    const counts = [];
+    for (let i = 0; i < data.length; i += 4) {
+      const v = data[i];
+      if (v > 0) {
+        if (v < 255) {
+          fractionCount++;
+          data[i] = 0;
+          if (v > 192) {
+            data[i + 1] = 255;
+          } else {
+            data[i + 2] = v + 64;
+          }
+        }
+        counts[v] = 1 + (counts[v] || 0);
+      }
+    }
+    console.log(
+      'Found fractional values:',
+      fractionCount,
+      JSON.stringify(counts)
+    );
     const bitmap = await createImageBitmap(maskImageData);
     ctx.drawImage(bitmap, 0, 0);
 
@@ -757,6 +786,9 @@ async function run() {
       viewport.getCurrentImageIdIndex()
     );
     element.addEventListener(Events.IMAGE_RENDERED, async (evt) => {
+      const ctxMask = canvasMask.getContext('2d');
+      ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
+
       const navigateImageId = viewport.getCurrentImageId();
       handleImage(navigateImageId, viewport.getCurrentImageIdIndex());
     });
