@@ -231,6 +231,7 @@ export class AngleTool extends AnnotationTool {
 type Annotation = {
     annotationUID?: string;
     parentAnnotationUID?: string;
+    interpolationUID?: string;
     childAnnotationUIDs?: string[];
     highlighted?: boolean;
     isLocked?: boolean;
@@ -297,6 +298,8 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
+    // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
     // (undocumented)
@@ -664,6 +667,15 @@ export abstract class BaseTool implements IBaseTool {
         restoreMemo: () => void;
     };
     // (undocumented)
+    static defaults: {
+        configuration: {
+            strategies: {};
+            defaultStrategy: any;
+            activeStrategy: any;
+            strategyOptions: {};
+        };
+    };
+    // (undocumented)
     doneEditMemo(): void;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
@@ -673,6 +685,8 @@ export abstract class BaseTool implements IBaseTool {
     getToolName(): string;
     // (undocumented)
     protected memo: utilities_2.HistoryMemo.Memo;
+    // (undocumented)
+    static mergeDefaults(defaults?: {}, newDefaults?: any): any;
     // (undocumented)
     mode: ToolModes;
     // (undocumented)
@@ -3894,7 +3908,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): PlanarFreehandROIAnnotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
@@ -4060,7 +4074,7 @@ interface ProbeAnnotation extends Annotation {
 
 // @public (undocumented)
 export class ProbeTool extends AnnotationTool {
-    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: any);
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
@@ -4098,6 +4112,15 @@ export class ProbeTool extends AnnotationTool {
     isPointNearTool(): boolean;
     // (undocumented)
     mouseDragCallback: any;
+    // (undocumented)
+    static probeDefaults: {
+        supportedInteractionTypes: string[];
+        configuration: {
+            shadow: boolean;
+            preventHandleOutsideImage: boolean;
+            getTextLines: typeof defaultGetTextLines;
+        };
+    };
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -5127,7 +5150,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel(element: HTMLDivElement): string;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     protected createInterpolatedSplineControl(annotation: any): void;
     // (undocumented)
@@ -5306,6 +5329,8 @@ function stopClip(element: HTMLDivElement, viewportId?: string): void;
 enum StrategyCallbacks {
     // (undocumented)
     AcceptPreview = "acceptPreview",
+    // (undocumented)
+    AddPreview = "addPreview",
     // (undocumented)
     ComputeInnerCircleRadius = "computeInnerCircleRadius",
     // (undocumented)
