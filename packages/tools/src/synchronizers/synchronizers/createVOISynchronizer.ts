@@ -5,6 +5,7 @@ import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
 type VOISynchronizerOptions = {
   syncInvertState: boolean;
+  syncColormap :boolean;
 };
 
 /**
@@ -20,7 +21,7 @@ type VOISynchronizerOptions = {
  */
 export default function createVOISynchronizer(
   synchronizerName: string,
-  options = { syncInvertState: true } as VOISynchronizerOptions
+  options = { syncInvertState: true, syncColormap:true } as VOISynchronizerOptions
 ): Synchronizer {
   const VOISynchronizer = createSynchronizer(
     synchronizerName,
