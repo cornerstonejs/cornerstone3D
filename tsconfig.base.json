@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "jsx": "react-jsx",
-    "lib": ["ES2021", "dom"],
+    "lib": ["ES6", "dom"],
     "module": "esnext", // esnext | commonjs
     "moduleResolution": "node",
     "noImplicitAny": false,
@@ -27,7 +27,7 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": false,
-    "target": "ES2021",
+    "target": "ES5",
     "downlevelIteration": true,
     "resolveJsonModule": true
   },

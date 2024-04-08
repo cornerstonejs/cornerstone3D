@@ -2875,7 +2875,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const colonIndex = imageId.indexOf(':');
       imageURI = imageId.substring(colonIndex + 1);
     }
-    return referencedImageId.endsWith(imageURI);
+    return referencedImageId?.endsWith(imageURI);
   }
 
   /**

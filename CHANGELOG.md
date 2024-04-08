@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.68.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.68.0...v1.68.1) (2024-04-05)
+
+### Bug Fixes
+
+- **cornerstone-dicom-sr:** Freehand SR hydration support ([#1160](https://github.com/cornerstonejs/cornerstone3D/issues/1160)) ([5e778a1](https://github.com/cornerstonejs/cornerstone3D/commit/5e778a1b637eaeb85fe3d3c3120388a322d33c53))
+
+# [1.68.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.67.1...v1.68.0) (2024-03-29)
+
+### Features
+
+- **MetaDataProvider:** Update metadata provider ([#1165](https://github.com/cornerstonejs/cornerstone3D/issues/1165)) ([df5583d](https://github.com/cornerstonejs/cornerstone3D/commit/df5583dbac34087182887ea2ca457416a77bf0b6))
+
+## [1.67.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.67.0...v1.67.1) (2024-03-28)
+
+### Bug Fixes
+
+- **nifti:** support NON-SharedArrayBuffer mode for loading nifti volumes ([#1179](https://github.com/cornerstonejs/cornerstone3D/issues/1179)) ([89a2b13](https://github.com/cornerstonejs/cornerstone3D/commit/89a2b130a6c9ff9de9c68c236bb3e226eec7b489))
+
+# [1.67.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.12...v1.67.0) (2024-03-28)
+
+### Features
+
+- **trackballrotate:** temporarily reduce resolution during rotation for quicker interaction. ([#1178](https://github.com/cornerstonejs/cornerstone3D/issues/1178)) ([916fb69](https://github.com/cornerstonejs/cornerstone3D/commit/916fb69bb6dadb60ca6bbbd1fc449badf91ea53a))
+
+## [1.66.12](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.11...v1.66.12) (2024-03-25)
+
+### Bug Fixes
+
+- **measurements:** referenced viewable bug if imageId does not exist ([#1172](https://github.com/cornerstonejs/cornerstone3D/issues/1172)) ([8618747](https://github.com/cornerstonejs/cornerstone3D/commit/8618747456e52c4ba0673942c5bb28d13d00eae4))
+
 ## [1.66.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.66.10...v1.66.11) (2024-03-25)
 
 **Note:** Version bump only for package root
