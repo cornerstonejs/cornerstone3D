@@ -266,6 +266,13 @@ function clamp(value: number, min: number, max: number): number;
 // @public (undocumented)
 type Color = [number, number, number, number];
 
+declare namespace color {
+    export {
+        hexToRgb,
+        rgbToHex
+    }
+}
+
 // @public (undocumented)
 type ColorLUT = Array<Color>;
 
@@ -1095,6 +1102,13 @@ export function getWebWorkerManager(): any;
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
+
+// @public (undocumented)
+function hexToRgb(hex: any): {
+    r: number;
+    g: number;
+    b: number;
+};
 
 // @public (undocumented)
 interface ICache {
@@ -2846,6 +2860,9 @@ export interface RetrieveStage {
 type RGB = [number, number, number];
 
 // @public (undocumented)
+function rgbToHex(r: any, g: any, b: any): string;
+
+// @public (undocumented)
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
 
 // @public (undocumented)
@@ -3436,7 +3453,8 @@ declare namespace utilities {
         roundToPrecision,
         getViewportImageIds,
         getRandomSampleFromArray,
-        getVolumeId
+        getVolumeId,
+        color
     }
 }
 export { utilities }

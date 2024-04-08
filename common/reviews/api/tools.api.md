@@ -1679,7 +1679,7 @@ function createSynchronizer(synchronizerId: string, eventName: string, eventHand
 function createToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
-function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
+function createVOISynchronizer(synchronizerName: string, options: VOISynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
 function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
@@ -2698,6 +2698,9 @@ function getToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupForViewport(viewportId: string, renderingEngineId?: string): ToolGroup | undefined;
+
+// @public (undocumented)
+function getToolGroupIdFromSegmentationRepresentationUID(segmentationRepresentationUID: string): string;
 
 // @public (undocumented)
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[];
@@ -5178,7 +5181,8 @@ declare namespace state_3 {
         getColorLUT,
         getNextColorLUTIndex,
         removeColorLUT,
-        findSegmentationRepresentationByUID
+        findSegmentationRepresentationByUID,
+        getToolGroupIdFromSegmentationRepresentationUID
     }
 }
 
