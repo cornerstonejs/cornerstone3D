@@ -39,21 +39,11 @@ export default function renderToCanvasGPU(
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
   const imageId = image.imageId;
   const element = document.createElement('div');
-  element.style.width = `${canvas.width}px`;
-  element.style.height = `${canvas.height}px`;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  element.style.width = `${canvas.width / devicePixelRatio}px`;
+  element.style.height = `${canvas.height / devicePixelRatio}px`;
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
-
-  // Up-sampling the provided canvas to match the device pixel ratio
-  // since we use device pixel ratio to determine the size of the canvas
-  // inside the rendering engine.
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const originalWidth = canvas.width;
-  const originalHeight = canvas.height;
-  canvas.width = originalWidth * devicePixelRatio;
-  canvas.height = originalHeight * devicePixelRatio;
-  canvas.style.width = `${originalWidth}px`;
-  canvas.style.height = `${originalHeight}px`;
 
   document.body.appendChild(element);
 

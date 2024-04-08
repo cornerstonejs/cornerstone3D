@@ -4,6 +4,7 @@ import {
   Types,
   eventTarget,
   imageLoader,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
@@ -43,6 +44,15 @@ const { style: toolStyle } = cornerstoneTools.annotation.config;
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
+
+const currentImage = {
+  imageId: null,
+  encoder: null,
+  decoder: null,
+};
+
+/** Store other sessions to be used for next images. */
+const sessions = [];
 
 const toolMap = new Map(annotationTools);
 const defaultTool = 'MarkerInclude';
@@ -101,23 +111,13 @@ const MODELS = {
       name: 'sam-b-encoder',
       url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
       size: 180,
+      key: 'encoder',
     },
     {
       name: 'sam-b-decoder',
       url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
       size: 17,
-    },
-  ],
-  sam_b_int8: [
-    {
-      name: 'sam-b-encoder-int8',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-encoder-int8.onnx',
-      size: 108,
-    },
-    {
-      name: 'sam-b-decoder-int8',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-decoder-int8.onnx',
-      size: 5,
+      key: 'decoder',
     },
   ],
 };
@@ -233,14 +233,14 @@ async function decoder(points, labels) {
   if (points.length > 0) {
     // need to wait for encoder to be ready
     if (image_embeddings === undefined) {
-      await MODELS[config.model][0].sess;
+      await currentImage.encoder;
     }
 
     // wait for encoder to deliver embeddings
     const emb = await image_embeddings;
 
     // the decoder
-    const session = MODELS[config.model][1].sess;
+    const session = currentImage.decoder;
 
     const feed = feedForSam(emb, points, labels);
     const start = performance.now();
@@ -280,11 +280,6 @@ async function decoder(points, labels) {
         counts[v] = 1 + (counts[v] || 0);
       }
     }
-    console.log(
-      'Found fractional values:',
-      fractionCount,
-      JSON.stringify(counts)
-    );
     const bitmap = await createImageBitmap(maskImageData);
     ctx.drawImage(bitmap, 0, 0);
 
@@ -357,20 +352,22 @@ async function handleImage(imageId, imageIndex) {
 
     canvas.style.background = 'none';
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(
-      viewport.canvas,
-      0,
-      0,
-      viewport.canvas.width,
-      viewport.canvas.height,
-      0,
-      0,
-      width,
-      height
-    );
+    // ctx.drawImage(
+    //   viewport.canvas,
+    //   0,
+    //   0,
+    //   viewport.canvas.width,
+    //   viewport.canvas.height,
+    //   0,
+    //   0,
+    //   width,
+    //   height
+    // );
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    await utilities.loadImageToCanvas({ canvas, imageId });
+    canvas.style.width = size;
+    canvas.style.height = size;
 
-    const imageUrl = canvas.toDataURL('image/png');
-    console.log('Current image', imageId, imageIndex, imageUrl);
     imageImageData = ctx.getImageData(0, 0, width, height);
 
     const t = await ort.Tensor.fromImage(imageImageData, {
@@ -378,7 +375,7 @@ async function handleImage(imageId, imageIndex) {
       resizedHeight: MODEL_HEIGHT,
     });
     const feed = config.isSlimSam ? { pixel_values: t } : { input_image: t };
-    const session = await MODELS[config.model][0].sess;
+    const session = await currentImage.encoder;
     const start = performance.now();
     image_embeddings = session.run(feed);
     await image_embeddings;
@@ -423,7 +420,7 @@ async function fetchAndCache(url, name) {
 /*
  * load models one at a time
  */
-async function load_models(models) {
+async function load_models(models, destination = currentImage) {
   const cache = await caches.open('onnx');
   let missing = 0;
   for (const [name, model] of Object.entries(models)) {
@@ -456,7 +453,10 @@ async function load_models(models) {
       const model_bytes = await fetchAndCache(model.url, model.name);
       const extra_opt = model.opt || {};
       const sess_opt = { ...opt, ...extra_opt };
-      model.sess = await ort.InferenceSession.create(model_bytes, sess_opt);
+      destination[model.key] = await ort.InferenceSession.create(
+        model_bytes,
+        sess_opt
+      );
     } catch (e) {
       log(`${model.url} failed, ${e}`);
     }
@@ -495,29 +495,30 @@ addButtonToToolbar({
 const viewportGrid = document.createElement('div');
 let viewport;
 
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.width = '95vw';
+// viewportGrid.style.flexDirection = 'column';
 
 const viewportId = 'VIEWPORT_ID';
 const element = document.createElement('div');
 
 element.oncontextmenu = () => false;
-element.style.width = size;
-element.style.height = size;
+Object.assign(element.style, {
+  width: size,
+  height: size,
+  display: 'inline-block',
+});
 
 Object.assign(canvas.style, {
   width: size,
   height: size,
-  // top: `-${size}`,
-  left: 0,
-  position: 'relative',
-  display: 'block',
+  display: 'inline-block',
   background: 'red',
 });
 
 Object.assign(canvasMask.style, {
   width: size,
   height: size,
+  display: 'inline-block',
   background: 'black',
 });
 
@@ -561,17 +562,44 @@ addDropdownToToolbar({
 
 addSegmentIndexDropdown(segmentationId);
 
+/**
+ * Maps world points to destination points.
+ * Assumes the destination canvas is scale to fit at 100% in both dimensions,
+ * while the source point is also assumed to be in the same position, but not
+ * the same scale.
+ *
+ * TODO - add mapping from index coordinates to dest coordinates
+ * TODO - handle non-square aspect ratios (center relative)
+ * TODO - handle alternate orientations
+ */
 function mapAnnotationPoint(worldPoint) {
   const canvasPoint = viewport.worldToCanvas(worldPoint);
   const { width, height } = viewport.canvas;
+  const { width: destWidth, height: destHeight } = canvas;
 
-  const x = Math.trunc((canvasPoint[0] * MAX_WIDTH * devicePixelRatio) / width);
+  const x = Math.trunc((canvasPoint[0] * destWidth * devicePixelRatio) / width);
   const y = Math.trunc(
-    (canvasPoint[1] * MAX_HEIGHT * devicePixelRatio) / height
+    (canvasPoint[1] * destHeight * devicePixelRatio) / height + height * 0.05
+  );
+  console.log(
+    'mapAnnotationPoint',
+    canvasPoint[0],
+    canvasPoint[1],
+    canvasPoint[0] * devicePixelRatio,
+    canvasPoint[1] * devicePixelRatio,
+    x,
+    y,
+    destWidth,
+    destHeight,
+    devicePixelRatio
   );
   return [x, y];
 }
 
+/**
+ * Gets a list of the include/exclude orientation annotations applying to the
+ * current image id.
+ */
 function getCurrentAnnotations() {
   const annotations = [
     ...annotationState.getAnnotations(defaultTool, element),
@@ -616,6 +644,9 @@ async function annotationModifiedListener() {
   return true;
 }
 
+/**
+ * Adds annotation listeners so that on updates the new annotation gets called
+ */
 function addAnnotationListeners() {
   eventTarget.addEventListener(
     toolsEvents.ANNOTATION_SELECTION_CHANGE,
