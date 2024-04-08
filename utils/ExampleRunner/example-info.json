@@ -317,7 +317,7 @@
         "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
       },
       "labelmapSegmentLocking": {
-        "name": "Labelmap Segmentation Swapping",
+        "name": "Labelmap Segmentation Locking",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "labelmapRenderingDifferentResolutions": {
