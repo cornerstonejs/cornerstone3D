@@ -47,6 +47,10 @@ function playClip(
     );
   }
 
+  if (!playClipOptions) {
+    playClipOptions = {};
+  }
+
   // 4D Cine is enabled by default
   playClipOptions.dynamicCineEnabled =
     playClipOptions.dynamicCineEnabled ?? true;
