@@ -70,6 +70,8 @@ function rectangleROIThresholdVolumeByRange(
     { ...options, boundsIJK }
   );
 
+  outputSegmentationVolume.modified();
+
   return outputSegmentationVolume;
 }
 
