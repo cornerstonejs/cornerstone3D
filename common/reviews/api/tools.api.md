@@ -810,7 +810,7 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     createEditData(element: any): {
         volumeId: string;
-        referencedVolumeId: string;
+        referencedVolumeId: any;
         segmentsLocked: number[] | [];
         segmentationRepresentationUID: string;
         imageIdReferenceMap?: undefined;
@@ -837,6 +837,21 @@ export class BrushTool extends BaseTool {
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
         referencedVolumeId?: string;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        volumeId: string;
+        referencedVolumeId: any;
+        segmentsLocked: number[] | [];
+        imageIdReferenceMap?: undefined;
     };
     // (undocumented)
     invalidateBrushCursor(): void;
