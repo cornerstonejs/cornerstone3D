@@ -6,6 +6,7 @@ import {
     derivations
 } from "dcmjs";
 import ndarray from "ndarray";
+import cloneDeep from "lodash.clonedeep";
 
 import { Events } from "../enums";
 
@@ -926,7 +927,7 @@ function insertOverlappingPixelDataPlanar(
     let tempBuffer = labelmapBufferArray[m].slice(0);
 
     // temp list for checking overlaps
-    let tempSegmentsOnFrame = structuredClone(segmentsOnFrameArray[m]);
+    let tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
 
     /** split overlapping SEGs algorithm for each segment:
      *  A) copy the labelmapBuffer in the array with index 0
@@ -1052,7 +1053,7 @@ function insertOverlappingPixelDataPlanar(
                             M++;
                         }
                         tempBuffer = labelmapBufferArray[m].slice(0);
-                        tempSegmentsOnFrame = structuredClone(
+                        tempSegmentsOnFrame = cloneDeep(
                             segmentsOnFrameArray[m]
                         );
 
@@ -1081,12 +1082,12 @@ function insertOverlappingPixelDataPlanar(
         }
 
         labelmapBufferArray[m] = tempBuffer.slice(0);
-        segmentsOnFrameArray[m] = structuredClone(tempSegmentsOnFrame);
+        segmentsOnFrameArray[m] = cloneDeep(tempSegmentsOnFrame);
 
         // reset temp variables/buffers for new segment
         m = 0;
         tempBuffer = labelmapBufferArray[m].slice(0);
-        tempSegmentsOnFrame = structuredClone(segmentsOnFrameArray[m]);
+        tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
     }
 }
 

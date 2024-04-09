@@ -9,6 +9,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+import cloneDeep from 'lodash.clonedeep';
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -2243,7 +2244,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = structuredClone(this.getCamera());
+    const previousCameraProps = cloneDeep(this.getCamera());
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);

@@ -1,3 +1,4 @@
+import cloneDeep from 'lodash.clonedeep';
 import {
   getEnabledElementByIds,
   volumeLoader,
@@ -59,7 +60,7 @@ export default async function createLabelmapVolumeForViewport(input: {
   if (options) {
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
-    const properties = structuredClone(options);
+    const properties = cloneDeep(options);
     await volumeLoader.createLocalVolume(properties, segmentationId);
   } else {
     // create a labelmap from a reference volume

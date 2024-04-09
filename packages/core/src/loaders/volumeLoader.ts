@@ -9,6 +9,8 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import cloneDeep from 'lodash.clonedeep';
+
 import {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
@@ -322,7 +324,7 @@ export async function createAndCacheDerivedVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: structuredClone(metadata),
+    metadata: cloneDeep(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -424,7 +426,7 @@ export function createLocalVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: structuredClone(metadata),
+    metadata: cloneDeep(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,

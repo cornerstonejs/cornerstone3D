@@ -137,11 +137,11 @@ class Viewport implements IViewport {
       this.renderingEngineId
     );
 
-    this.defaultOptions = structuredClone(props.defaultOptions);
+    this.defaultOptions = _cloneDeep(props.defaultOptions);
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    this.options = structuredClone(props.defaultOptions);
+    this.options = _cloneDeep(props.defaultOptions);
     this.isDisabled = false;
   }
 
@@ -859,7 +859,7 @@ class Viewport implements IViewport {
       flipVertical: false,
     });
 
-    const previousCamera = structuredClone(this.getCamera());
+    const previousCamera = _cloneDeep(this.getCamera());
     const bounds = renderer.computeVisiblePropBounds();
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
@@ -969,9 +969,9 @@ class Viewport implements IViewport {
       clippingRange: clippingRangeToUse,
     });
 
-    const modifiedCamera = structuredClone(this.getCamera());
+    const modifiedCamera = _cloneDeep(this.getCamera());
 
-    this.setFitToCanvasCamera(structuredClone(this.getCamera()));
+    this.setFitToCanvasCamera(_cloneDeep(this.getCamera()));
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);
@@ -1213,7 +1213,7 @@ class Viewport implements IViewport {
     storeAsInitialCamera = false
   ): void {
     const vtkCamera = this.getVtkActiveCamera();
-    const previousCamera = structuredClone(this.getCamera());
+    const previousCamera = _cloneDeep(this.getCamera());
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,
