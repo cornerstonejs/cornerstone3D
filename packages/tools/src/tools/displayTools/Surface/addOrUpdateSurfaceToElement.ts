@@ -96,7 +96,8 @@ function addOrUpdateSurfaceToElement(
   actor.getProperty().setLineWidth(2);
 
   viewport.addActor({
-    actor,
+    // @ts-ignore
+    actor: actor as vtkActor,
     uid: actorUID,
     clippingFilter,
   });
