@@ -134,6 +134,8 @@ export class AdvancedMagnifyTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     showZoomFactorsList(evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation): void;
@@ -5434,11 +5436,15 @@ class ToolGroup implements ToolGroup {
     // (undocumented)
     clone(newToolGroupId: any, fnToolFilter?: (toolName: string) => void): ToolGroup;
     // (undocumented)
+    currentActivePrimaryToolName: string | null;
+    // (undocumented)
     getActivePrimaryMouseButtonTool(): string;
     // (undocumented)
     getDefaultMousePrimary(): MouseBindings;
     // (undocumented)
     getDefaultPrimaryBindings(): IToolBinding[];
+    // (undocumented)
+    getPrevActivePrimaryToolName(): string;
     // (undocumented)
     getToolConfiguration(toolName: string, configurationPath?: string): any;
     // (undocumented)
@@ -5455,6 +5461,8 @@ class ToolGroup implements ToolGroup {
     hasTool(toolName: string): boolean;
     // (undocumented)
     id: string;
+    // (undocumented)
+    prevActivePrimaryToolName: string | null;
     // (undocumented)
     removeViewports(renderingEngineId: string, viewportId?: string): void;
     // (undocumented)
