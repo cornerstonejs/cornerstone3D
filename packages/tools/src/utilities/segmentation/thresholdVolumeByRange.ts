@@ -12,6 +12,7 @@ export type ThresholdRangeOptions = {
   overwrite: boolean;
   boundsIJK: BoundsIJK;
   overlapType?: number;
+  segmentIndex?: number;
 };
 
 /**
@@ -136,9 +137,8 @@ function thresholdVolumeByRange(
       }
     }
 
-    // Todo: make the segmentIndex a parameter
     if (insert) {
-      scalarData[index] = 1;
+      scalarData[index] = options.segmentIndex || 1;
     }
   };
 

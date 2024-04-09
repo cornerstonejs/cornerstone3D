@@ -386,14 +386,6 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns ImageId
    */
   public getCurrentImageId = (): string | undefined => {
-    if (this.getActors().length > 1) {
-      console.warn(
-        `Using the first/default actor of ${
-          this.getActors().length
-        } actors for getCurrentImageId.`
-      );
-    }
-
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {

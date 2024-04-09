@@ -47,6 +47,8 @@ export default class ToolGroup implements IToolGroup {
   id: string;
   viewportsInfo = [];
   toolOptions = {};
+  currentActivePrimaryToolName: string | null = null;
+  prevActivePrimaryToolName: string | null = null;
   /**
    * Options used for restoring a tool
    */
@@ -406,6 +408,18 @@ export default class ToolGroup implements IToolGroup {
       }
     }
 
+    // if it is a primary tool binding, we should store it as the previous primary tool
+    // so that we can restore it when the tool is disabled if desired
+    if (this._hasMousePrimaryButtonBinding(toolBindingsOptions)) {
+      if (this.prevActivePrimaryToolName === null) {
+        this.prevActivePrimaryToolName = toolName;
+      } else {
+        this.prevActivePrimaryToolName = this.currentActivePrimaryToolName;
+      }
+
+      this.currentActivePrimaryToolName = toolName;
+    }
+
     if (typeof toolInstance.onSetToolActive === 'function') {
       toolInstance.onSetToolActive();
     }
@@ -733,6 +747,14 @@ export default class ToolGroup implements IToolGroup {
       this._toolInstances[toolName].configuration;
 
     return structuredClone(_configuration);
+  }
+
+  /**
+   * Gets the name of the previously active tool.
+   * @returns The name of the previously active tool.
+   */
+  public getPrevActivePrimaryToolName(): string {
+    return this.prevActivePrimaryToolName;
   }
 
   /**
