@@ -1206,6 +1206,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     viewport.rotation = rotation;
   }
 
+  /**
+   * The rotation that is being set is intended to be around the currently
+   * display center of the image.  However, the roll operation does it around
+   * another point which can result in the image disappearing.  The set/get
+   * pan values move the center of rotation to the center of the image as
+   * currently actually displayed.
+   */
   private setRotationGPU(rotation: number): void {
     const panFit = this.getPan(this.fitToCanvasCamera);
     const pan = this.getPan();

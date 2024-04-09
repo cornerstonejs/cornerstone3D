@@ -55,14 +55,27 @@ import { InterpolationType } from '../enums';
  * logic.
  */
 class Viewport implements IViewport {
-  static readonly CameraViewPresentation: ViewPresentationSelector = {
+  /**
+   * CameraViewPresentation is a view preentation selector that has all the
+   * camera related presentation selections, and would typically be used for
+   * choosing presentation information between two viewports showing the same
+   * type of orientation of a view, such as the CT, PT and fusion views in the
+   * same orientation view.
+   */
+  public static readonly CameraViewPresentation: ViewPresentationSelector = {
     rotation: true,
     pan: true,
     zoom: true,
     displayArea: true,
   };
 
-  static readonly TransferViewPresentation: ViewPresentationSelector = {
+  /**
+   * TransferViewPresentation is a view presentation selector that selects all
+   * the transfer function related attributes.  It would typically be used for
+   * synchronizing different orientations of the same series, or for
+   * synchronizing two views of the same type of series such as a CT.
+   */
+  public static readonly TransferViewPresentation: ViewPresentationSelector = {
     windowLevel: true,
     paletteLut: true,
   };
@@ -1537,6 +1550,15 @@ class Viewport implements IViewport {
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
   }
 
+  /**
+   * Gets a view target specifying WHAT a view is displaying,
+   * allowing for checking if a given image is displayed or could be displayed
+   * in a given viewport.
+   * See getViewPresentation for HOW a view is displayed.
+   *
+   * @param viewRefSpecifier - choose an alternate view to be specified, typically
+   *      a different slice index in the same set of images.
+   */
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
@@ -1550,6 +1572,13 @@ class Viewport implements IViewport {
     return target;
   }
 
+  /**
+   * Find out if this viewport does or could show this view reference.
+   *
+   * @param options - allows specifying whether the view COULD display this with
+   *                  some modification - either navigation or displaying as volume.
+   * @returns true if the viewport could show this view reference
+   */
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
@@ -1578,7 +1607,27 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Gets a basic view reference.
+   * Gets a view presentation information specifying HOW a viewport displays
+   * something, but not what is being displayed.
+   * See getViewReference to get information on WHAT is being displayed.
+   *
+   * This is intended to have information on how an image is presented to the user, without
+   * specifying what image s displayed.  All of this information is available
+   * externally, but this method combines the parts of this that are appropriate
+   * for remember or applying to other views, without necessarily needing to know
+   * what all the atributes are.  That differs from methods like getCamera which
+   * fetch exact view details that are not likely to be identical between viewports
+   * as they change sizes or apply to different images.
+   *
+   * Note that the results of this can be used on different viewports, for example,
+   * the pan values can be applied to a volume viewport showing a CT, and a
+   * stack viewport showing an ultrasound.
+   *
+   * The selector allows choosing which view presentation attributes to return.
+   * Some default values are available from `Viewport.CameraViewPresentation` and
+   * `Viewport.TransferViewPresentation`
+   *
+   * @param viewPresSel - select which attributes to display.
    */
   public getViewPresentation(
     viewPresSel: ViewPresentationSelector = {
@@ -1610,8 +1659,13 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Sets the view reference.  Only applies properties which are defined and
-   * applicable.
+   * Sets the given view.  This can apply both the view reference and view presentation
+   * without getting multiple event notifications on shared values like camera updates or
+   * flickers as multiple changes are applied.
+   *
+   * @param viewRef - the basic positioning in terms of what image id/slice index/orientation to display
+   *        * The viewRef must be applicable to the current stack or volume, otherwise an exception will be thrown
+   * @param viewPres - the presentation information to apply to the current image (as chosen above)
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
     if (viewPres) {

@@ -873,6 +873,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       canvasPos[1] - panOffsetCanvas[1],
     ];
 
+    // Replace the x,y values only in place in the world position
+    // as the z is unchanging for video display
     destPos.splice(
       0,
       2,

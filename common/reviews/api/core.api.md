@@ -2248,7 +2248,7 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    getViewPresentation(viewPresSel: ViewPresentationSelector): ViewPresentation;
+    getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
