@@ -622,12 +622,8 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      const canvas = getOrCreateCanvas(vp.element);
-
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
-      const pan = vp.getPan();
-      const zoom = vp.getZoom();
       const { flipHorizontal } = prevCamera;
       vp.resetCamera();
 
