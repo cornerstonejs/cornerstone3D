@@ -78,6 +78,7 @@ import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as cacheUtils from './cacheUtils';
+import * as color from './color';
 
 export {
   eventListener,
@@ -160,4 +161,5 @@ export {
   getViewportImageIds,
   getRandomSampleFromArray,
   getVolumeId,
+  color,
 };
