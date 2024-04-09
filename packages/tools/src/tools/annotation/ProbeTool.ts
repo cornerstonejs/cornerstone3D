@@ -38,7 +38,6 @@ import {
   EventTypes,
   ToolHandle,
   PublicToolProps,
-  ToolProps,
   SVGDrawingHelper,
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -437,7 +436,7 @@ class ProbeTool extends AnnotationTool {
 
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].value == null
+        data.cachedStats[targetId].value === null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,

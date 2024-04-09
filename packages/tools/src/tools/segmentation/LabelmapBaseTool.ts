@@ -259,6 +259,29 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
+   * Adds a preview that can be filled with data.
+   */
+  public addPreview(
+    element = this._previewData.element,
+    options?: { acceptReject: boolean }
+  ) {
+    const acceptReject = options?.acceptReject;
+    if (acceptReject === true) {
+      this.acceptPreview(element);
+    } else if (acceptReject === false) {
+      this.rejectPreview(element);
+    }
+    const enabledElement = getEnabledElement(element);
+    this._previewData.preview = this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.AddPreview
+    );
+    this._previewData.isDrag = true;
+    return this._previewData.preview;
+  }
+
+  /**
    * Cancels any preview view being shown, resetting any segments being shown.
    */
   public rejectPreview(element = this._previewData.element) {

@@ -5,6 +5,7 @@ import {
   eventTarget,
   imageLoader,
   utilities,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
@@ -20,6 +21,8 @@ import {
   labelmapTools,
   annotationTools,
 } from '../../../../utils/demo/helpers';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+
 import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
 
 // This is for debugging purposes
@@ -35,21 +38,24 @@ const {
   annotation,
   utilities: cstUtils,
 } = cornerstoneTools;
+
+const { triggerSegmentationDataModified } =
+  segmentation.triggerSegmentationEvents;
+
 const { ViewportType, Events } = Enums;
 const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
 const { state: annotationState } = annotation;
 const { style: toolStyle } = cornerstoneTools.annotation.config;
+const volumeId = 'volumeId';
+const volumeSegLabelmapId = 'segVolumeId';
 
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
+let tool;
 
 const segmentationId = `SEGMENTATION_ID`;
 
-const currentImage = {
-  imageId: null,
-  encoder: null,
-  decoder: null,
-};
+let currentImage;
 
 /** Store other sessions to be used for next images. */
 const sessions = [];
@@ -120,6 +126,20 @@ const MODELS = {
       key: 'decoder',
     },
   ],
+  sam_b_int8: [
+    {
+      name: 'sam-b-encoder-int8',
+      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-encoder-int8.onnx',
+      size: 108,
+      key: 'encoder',
+    },
+    {
+      name: 'sam-b-decoder-int8',
+      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-decoder-int8.onnx',
+      size: 5,
+      key: 'decoder',
+    },
+  ],
 };
 
 const config = getConfig();
@@ -135,7 +155,6 @@ const originalImage = document.createElement('img');
 originalImage.id = 'original-image';
 let decoder_latency;
 
-let image_embeddings;
 let points = [];
 let labels = [];
 let imageImageData;
@@ -157,6 +176,7 @@ function getConfig() {
     device: 'gpu',
     threads: 4,
     local: null,
+    isSlimSam: false,
   };
   const vars = query.split('&');
   for (let i = 0; i < vars.length; i++) {
@@ -188,7 +208,7 @@ function feedForSam(emb, points, labels) {
     [1, 1, 256, 256]
   );
   const hasMask = new ort.Tensor(new Float32Array([0]), [1]);
-  const origianlImageSize = new ort.Tensor(
+  const originalImageSize = new ort.Tensor(
     new Float32Array([MODEL_HEIGHT, MODEL_WIDTH]),
     [2]
   );
@@ -208,36 +228,83 @@ function feedForSam(emb, points, labels) {
     point_labels: pointLabels,
     mask_input: maskInput,
     has_mask_input: hasMask,
-    orig_im_size: origianlImageSize,
+    orig_im_size: originalImageSize,
   };
 }
 
 function createLabelmap(viewport, mask, points, labels) {
   const imageId = viewport.getCurrentImageId();
   console.log('*** Creating labelmap data for', imageId);
+  const preview = tool.addPreview(viewport.element);
+  const {
+    previewSegmentIndex,
+    memo,
+    segmentationId,
+    segmentationVoxelManager,
+  } = preview;
+  const previewVoxelManager = memo?.voxelManager || preview.previewVoxelManager;
+  const [width, height, _depth] = previewVoxelManager.dimensions;
+  const { data } = mask;
+  let setCount = 0;
+
+  for (let j = 0; j < height; j++) {
+    const y = Math.round((j * MAX_HEIGHT * 0.9) / height + MAX_HEIGHT * 0.05);
+    if (y < 0 || y >= MAX_HEIGHT) {
+      continue;
+    }
+    for (let i = 0; i < width; i++) {
+      const x = Math.round((i * MAX_WIDTH * 0.9) / width + MAX_WIDTH * 0.05);
+      if (x < 0 || x >= MAX_WIDTH) {
+        continue;
+      }
+      const index = x * 4 + y * 4 * MAX_WIDTH;
+      const v = data[index];
+      if (v > 0) {
+        setCount++;
+        previewVoxelManager.setAtIJK(i, j, 0, previewSegmentIndex);
+      } else {
+        previewVoxelManager.setAtIJK(i, j, 0, null);
+      }
+    }
+  }
+  console.log(
+    'Modified slices',
+    segmentationVoxelManager.getArrayOfSlices(),
+    setCount
+  );
+  triggerSegmentationDataModified(
+    segmentationId,
+    segmentationVoxelManager.getArrayOfSlices(),
+    previewSegmentIndex
+  );
 }
 
 const boxRadius = 5;
 
 async function decoder(points, labels) {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   canvas.width = imageImageData.width;
   canvas.height = imageImageData.height;
   canvasMask.width = imageImageData.width;
   canvasMask.height = imageImageData.height;
 
+  if (!currentImage || currentImage.imageId !== desiredImage.imageId) {
+    console.warn('***** Image not current, need to wait for current image');
+    return;
+  }
+
   // Comment this line out to draw just the overlay mask data
   ctx.putImageData(imageImageData, 0, 0);
 
   if (points.length > 0) {
     // need to wait for encoder to be ready
-    if (image_embeddings === undefined) {
+    if (!currentImage.imageEmbeddings) {
       await currentImage.encoder;
     }
 
     // wait for encoder to deliver embeddings
-    const emb = await image_embeddings;
+    const emb = await currentImage.imageEmbeddings;
 
     // the decoder
     const session = currentImage.decoder;
@@ -245,7 +312,9 @@ async function decoder(points, labels) {
     const feed = feedForSam(emb, points, labels);
     const start = performance.now();
     const res = await session.run(feed);
-    decoder_latency.innerText = `${(performance.now() - start).toFixed(1)}ms`;
+    decoder_latency.innerText = `decoder ${currentImage.sessionIndex} ${(
+      performance.now() - start
+    ).toFixed(1)} ms`;
 
     for (let i = 0; i < points.length; i += 2) {
       const label = labels[i / 2];
@@ -263,13 +332,11 @@ async function decoder(points, labels) {
     createLabelmap(viewport, maskImageData, points, labels);
     ctx.globalAlpha = 0.3;
     const { data } = maskImageData;
-    let fractionCount = 0;
     const counts = [];
     for (let i = 0; i < data.length; i += 4) {
       const v = data[i];
       if (v > 0) {
         if (v < 255) {
-          fractionCount++;
           data[i] = 0;
           if (v > 192) {
             data[i + 1] = 255;
@@ -300,7 +367,7 @@ function getPoint(event) {
  * handler to handle click event on canvas
  */
 async function handleClick(event) {
-  if (isClicked) {
+  if (isClicked || !currentImage) {
     return;
   }
   try {
@@ -322,51 +389,47 @@ async function handleClick(event) {
   return true;
 }
 
-let isLoading = false;
-let loadingImage;
-let loadingIndex;
+const desiredImage = {
+  imageId: null,
+  imageIndex: -1,
+  decoder: null,
+  encoder: null,
+};
 
 /**
  * handler called when image available
  */
-async function handleImage(imageId, imageIndex) {
-  if (isLoading || isClicked) {
-    loadingImage = imageId;
-    loadingIndex = imageIndex;
+async function handleImage(imageId, imageSession) {
+  const isCurrent = desiredImage.imageId === imageId;
+  if (imageId === imageSession.imageId || imageSession.isLoading) {
     return;
   }
-  isLoading = true;
+  imageSession.isLoading = true;
+  imageSession.imageId = imageId;
   try {
     const encoder_latency = document.getElementById('encoder_latency');
-    encoder_latency.innerText = '';
+    if (isCurrent) {
+      encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
+      decoder_latency.innerText = 'Awaiting image';
+      canvas.style.cursor = 'wait';
+    }
     points = [];
     labels = [];
-    decoder_latency.innerText = '';
-    canvas.style.cursor = 'wait';
-    image_embeddings = undefined;
-
     const width = MAX_WIDTH;
     const height = MAX_HEIGHT;
-    canvas.width = width;
-    canvas.height = height;
+    const renderCanvas = isCurrent ? canvas : imageSession.canvas;
+    renderCanvas.width = width;
+    renderCanvas.height = height;
+    imageSession.imageEmbeddings = undefined;
 
-    canvas.style.background = 'none';
-    const ctx = canvas.getContext('2d');
-    // ctx.drawImage(
-    //   viewport.canvas,
-    //   0,
-    //   0,
-    //   viewport.canvas.width,
-    //   viewport.canvas.height,
-    //   0,
-    //   0,
-    //   width,
-    //   height
-    // );
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    await utilities.loadImageToCanvas({ canvas, imageId });
-    canvas.style.width = size;
-    canvas.style.height = size;
+    const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
+    ctx.clearRect(0, 0, width, height);
+    await utilities.loadImageToCanvas({ canvas: renderCanvas, imageId });
+    renderCanvas.style.width = size;
+    renderCanvas.style.height = size;
+    if (isCurrent) {
+      encoder_latency.innerText = `Rendered image on ${imageSession.sessionIndex}`;
+    }
 
     imageImageData = ctx.getImageData(0, 0, width, height);
 
@@ -375,24 +438,27 @@ async function handleImage(imageId, imageIndex) {
       resizedHeight: MODEL_HEIGHT,
     });
     const feed = config.isSlimSam ? { pixel_values: t } : { input_image: t };
-    const session = await currentImage.encoder;
-    const start = performance.now();
-    image_embeddings = session.run(feed);
-    await image_embeddings;
-    encoder_latency.innerText = `${(performance.now() - start).toFixed(1)}ms`;
-    canvas.style.cursor = 'default';
-  } finally {
-    isLoading = false;
-  }
-  if (loadingImage) {
-    if (loadingImage === imageId) {
-      loadingImage = null;
+    await imageSession.loader;
+    const session = await imageSession.encoder;
+    if (!session) {
+      log('****** No session');
       return;
     }
-    await handleImage(loadingImage, loadingIndex);
-  } else {
-    annotationModifiedListener();
+    const start = performance.now();
+    imageSession.imageEmbeddings = session.run(feed);
+    await imageSession.imageEmbeddings;
+    if (desiredImage.imageId === imageId) {
+      encoder_latency.innerText = `Image Ready ${imageSession.sessionIndex} ${(
+        performance.now() - start
+      ).toFixed(1)} ms`;
+      canvas.style.cursor = 'default';
+    }
+  } finally {
+    imageSession.isLoading = false;
   }
+
+  // Might update the loading image instances
+  tryLoad(desiredImage.imageId);
 }
 
 /*
@@ -420,7 +486,7 @@ async function fetchAndCache(url, name) {
 /*
  * load models one at a time
  */
-async function load_models(models, destination = currentImage) {
+async function load_models(models, imageSession = currentImage) {
   const cache = await caches.open('onnx');
   let missing = 0;
   for (const [name, model] of Object.entries(models)) {
@@ -449,11 +515,17 @@ async function load_models(models, destination = currentImage) {
             use_ort_model_bytes_for_initializers: '1',
           },
         },
+        interOpNumThreads: 4,
+        intraOpNumThreads: 2,
       };
-      const model_bytes = await fetchAndCache(model.url, model.name);
+      const model_bytes = await fetchAndCache(
+        model.url,
+        model.name,
+        imageSession
+      );
       const extra_opt = model.opt || {};
       const sess_opt = { ...opt, ...extra_opt };
-      destination[model.key] = await ort.InferenceSession.create(
+      imageSession[model.key] = await ort.InferenceSession.create(
         model_bytes,
         sess_opt
       );
@@ -465,15 +537,32 @@ async function load_models(models, destination = currentImage) {
   log(`ready, ${(stop - start).toFixed(1)}ms`);
 }
 
+/**
+ * Loads the AI model.
+ */
 async function loadAI() {
   canvas.style.cursor = 'wait';
 
   decoder_latency = document.getElementById('decoder_latency');
   canvas.onmouseup = handleClick;
 
-  await load_models(MODELS[config.model]).catch((e) => {
-    log(e);
-  });
+  for (let i = 0; i < 1; i++) {
+    sessions.push({
+      sessionIndex: i,
+      encoder: null,
+      decoder: null,
+      imageEmbeddings: null,
+      isLoading: false,
+      canvas: canvas, // TODO: document.createElement('canvas'),
+    });
+    const loader = load_models(MODELS[config.model], sessions[i]).catch((e) => {
+      log(e);
+    });
+    sessions[i].loader = loader;
+    if (i === 0) {
+      await loader;
+    }
+  }
 }
 
 const size = `${512 / devicePixelRatio}px`;
@@ -499,14 +588,21 @@ viewportGrid.style.width = '95vw';
 // viewportGrid.style.flexDirection = 'column';
 
 const viewportId = 'VIEWPORT_ID';
+const viewportIds = ['VIEWPORT_ID', 'AXIAL', 'SAGITAL', 'CORONAL'];
 const element = document.createElement('div');
+const element1 = document.createElement('div');
 
-element.oncontextmenu = () => false;
-Object.assign(element.style, {
-  width: size,
-  height: size,
-  display: 'inline-block',
-});
+const elements = [element, element1];
+for (const el of elements) {
+  el.oncontextmenu = () => false;
+
+  Object.assign(el.style, {
+    width: size,
+    height: size,
+    display: 'inline-block',
+  });
+  viewportGrid.appendChild(el);
+}
 
 Object.assign(canvas.style, {
   width: size,
@@ -522,15 +618,10 @@ Object.assign(canvasMask.style, {
   background: 'black',
 });
 
-viewportGrid.appendChild(element);
 viewportGrid.appendChild(canvas);
-viewportGrid.appendChild(canvasMask);
+// viewportGrid.appendChild(canvasMask);
 
 content.appendChild(viewportGrid);
-
-const logDiv = document.createElement('div');
-logDiv.id = 'status';
-content.appendChild(logDiv);
 
 const encoderLatency = document.createElement('div');
 encoderLatency.id = 'encoder_latency';
@@ -539,22 +630,12 @@ content.appendChild(encoderLatency);
 const decoderLatency = document.createElement('div');
 decoderLatency.id = 'decoder_latency';
 content.appendChild(decoderLatency);
-content.appendChild(originalImage);
+
+const logDiv = document.createElement('div');
+logDiv.id = 'status';
+content.appendChild(logDiv);
 
 // ============================= //
-
-const cancelDrawingEventListener = (evt) => {
-  const { element, key } = evt.detail;
-  if (key === 'Escape') {
-    cornerstoneTools.cancelActiveManipulations(element);
-  }
-};
-
-element.addEventListener(
-  csToolsEnums.Events.KEY_DOWN,
-  cancelDrawingEventListener
-);
-
 addDropdownToToolbar({
   options: { map: toolMap, defaultValue: defaultTool },
   toolGroupId,
@@ -577,23 +658,43 @@ function mapAnnotationPoint(worldPoint) {
   const { width, height } = viewport.canvas;
   const { width: destWidth, height: destHeight } = canvas;
 
-  const x = Math.trunc((canvasPoint[0] * destWidth * devicePixelRatio) / width);
-  const y = Math.trunc(
-    (canvasPoint[1] * destHeight * devicePixelRatio) / height + height * 0.05
+  const x = Math.trunc(
+    (canvasPoint[0] * destWidth * devicePixelRatio * 0.9) / width +
+      destWidth * 0.05
   );
-  console.log(
-    'mapAnnotationPoint',
-    canvasPoint[0],
-    canvasPoint[1],
-    canvasPoint[0] * devicePixelRatio,
-    canvasPoint[1] * devicePixelRatio,
-    x,
-    y,
-    destWidth,
-    destHeight,
-    devicePixelRatio
+  const y = Math.trunc(
+    (canvasPoint[1] * destHeight * devicePixelRatio * 0.9) / height +
+      destHeight * 0.05
   );
   return [x, y];
+}
+
+/**
+ * This function will try setting the current image to the desired loading image
+ * if it isn't already the desired one, and invoke the handleImage.  It also checks
+ * the "next" images to see if there are other images which should be tried to load.
+ */
+function tryLoad(imageId) {
+  // Don't try loading something new if the current item is already in progress.
+  const loadingSession = sessions.find(
+    (session) => session.imageId === imageId
+  );
+  if (loadingSession) {
+    if (desiredImage.imageId === imageId && loadingSession !== currentImage) {
+      console.log('***** try load completed - setting current image', imageId);
+      currentImage = loadingSession;
+      annotationModifiedListener();
+    }
+    return;
+  }
+  for (const session of sessions) {
+    if (session.isLoading || session === currentImage) {
+      continue;
+    }
+    handleImage(imageId, session);
+    return;
+  }
+  console.log("***** couldn't find a session to load on");
 }
 
 /**
@@ -614,7 +715,7 @@ function getCurrentAnnotations() {
  * frame and adding appropriate points to it/updating said points.
  */
 async function annotationModifiedListener() {
-  if (isClicked || isLoading) {
+  if (isClicked || !currentImage || currentImage.isLoading) {
     return;
   }
   const currentAnnotations = getCurrentAnnotations();
@@ -634,9 +735,7 @@ async function annotationModifiedListener() {
       points.push(point[1]);
       labels.push(label);
     }
-    if (!isLoading) {
-      await decoder(points, labels);
-    }
+    await decoder(points, labels);
   } finally {
     canvas.style.cursor = 'default';
     isClicked = false;
@@ -668,6 +767,7 @@ function addAnnotationListeners() {
 
 async function interpolateScroll(dir = 1) {
   console.log('**** Navigating next with interpolation');
+  tool.acceptPreview(element);
   const annotations = [
     ...annotationState.getAnnotations(defaultTool, element),
     ...annotationState.getAnnotations(excludeTool, element),
@@ -678,7 +778,6 @@ async function interpolateScroll(dir = 1) {
     sliceIndex: viewport.getCurrentImageIdIndex() + dir,
   });
   if (!viewRef) {
-    console.log('At end of direction');
     return;
   }
 
@@ -702,6 +801,7 @@ async function interpolateScroll(dir = 1) {
     const newAnnotation = structuredClone(annotation);
     newAnnotation.annotationUID = undefined;
     Object.assign(newAnnotation.metadata, viewRef);
+    (newAnnotation as any).cachedStats = {};
     annotationState.addAnnotation(newAnnotation, viewport.element);
   }
   isClicked = false;
@@ -712,6 +812,9 @@ const handleKeyEvent = (evt) => {
   const { element, key } = evt.detail;
   if (key === 'Escape') {
     cornerstoneTools.cancelActiveManipulations(element);
+    tool.rejectPreview(element);
+  } else if (key === 'Enter') {
+    tool.acceptPreview(element);
   } else if (key === 'n') {
     interpolateScroll(1);
   }
@@ -727,6 +830,7 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
+  tool = toolGroup.getToolInstance('ThresholdCircle');
 
   cornerstoneTools.addTool(SegmentationDisplayTool);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
@@ -756,10 +860,20 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
+    {
+      viewportId: viewportIds[1],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0.2, 0.2, 0],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportIds[1], renderingEngineId);
 
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
@@ -768,17 +882,55 @@ async function run() {
   const { imageIds: segmentationImageIds } =
     await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
   // Set the stack on the viewport
-  await viewport.setStack(imageIds);
+  await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
   viewport.setOptions({ displayArea: { imageArea: [1, 1] } });
-
-  // Render the image
-  renderingEngine.render();
 
   // Add the canvas after the viewport
   // element.appendChild(canvas);
 
-  const loadedAI = loadAI();
+  await loadAI();
+  element.addEventListener(Events.IMAGE_RENDERED, async (evt) => {
+    desiredImage.imageId = viewport.getCurrentImageId();
+    desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
+    if (desiredImage.imageId === currentImage?.imageId) {
+      return;
+    }
+    const ctxMask = canvasMask.getContext('2d');
+    ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
 
+    currentImage = null;
+
+    tryLoad(desiredImage.imageId);
+    const nextImageId = imageIds[viewport.getCurrentImageIdIndex() + 1];
+    if (nextImageId) {
+      tryLoad(nextImageId);
+    }
+  });
+  addAnnotationListeners();
+
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  const volumeViewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportIds[1])
+  );
+  volume.load();
+  viewport.setOptions({ displayArea: { imageArea: [1, 1] } });
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    volumeId: volumeSegLabelmapId,
+  });
+
+  volumeViewport.setVolumes([{ volumeId }]);
+  fillVolumeSegmentationWithMockData({
+    volumeId: volumeSegLabelmapId,
+    cornerstone,
+  });
+
+  // Render the image
+  renderingEngine.render();
+
+  tryLoad(viewport.getCurrentImageId());
   segmentation.addSegmentations([
     {
       segmentationId,
@@ -792,6 +944,18 @@ async function run() {
         },
       },
     },
+    {
+      segmentationId: volumeSegLabelmapId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: volumeSegLabelmapId,
+        },
+      },
+    },
   ]);
 
   // Create a segmentation representation associated to the toolGroupId
@@ -801,30 +965,16 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
+      {
+        segmentationId: volumeSegLabelmapId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
     ]);
 
   segmentation.activeSegmentation.setActiveSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUIDs[0]
   );
-
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
-
-  // Store the segmentation representation that was just created
-  loadedAI.then(() => {
-    handleImage(
-      viewport.getCurrentImageId(),
-      viewport.getCurrentImageIdIndex()
-    );
-    element.addEventListener(Events.IMAGE_RENDERED, async (evt) => {
-      const ctxMask = canvasMask.getContext('2d');
-      ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
-
-      const navigateImageId = viewport.getCurrentImageId();
-      handleImage(navigateImageId, viewport.getCurrentImageIdIndex());
-    });
-    addAnnotationListeners();
-  });
 
   element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
     handleKeyEvent(evt);
