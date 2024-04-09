@@ -1671,16 +1671,16 @@ function createLabelmapVolumeForViewport(input: {
     renderingEngineId: string;
     segmentationId?: string;
     options?: {
-        volumeId?: string;
-        scalarData?: Float32Array | Uint8Array | Uint16Array | Int16Array;
-        targetBuffer?: {
+        volumeId: string;
+        scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+        targetBuffer: {
             type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int8Array';
         };
-        metadata?: any;
-        dimensions?: Types_2.Point3;
-        spacing?: Types_2.Point3;
-        origin?: Types_2.Point3;
-        direction?: Float32Array;
+        metadata: Types_2.Metadata;
+        dimensions: Types_2.Point3;
+        spacing: Types_2.Point3;
+        origin: Types_2.Point3;
+        direction: Types_2.Mat3;
     };
 }): Promise<string>;
 
@@ -1688,7 +1688,10 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
-function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
+function createPresentationViewSynchronizer(synchronizerName: string, options?: Types_2.ViewPresentation): Synchronizer;
+
+// @public (undocumented)
+function createPresentationViewSynchronizer_2(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -5364,11 +5367,12 @@ export { SynchronizerManager }
 declare namespace synchronizers {
     export {
         createCameraPositionSynchronizer,
+        createPresentationViewSynchronizer,
         createVOISynchronizer,
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
         createStackImageSynchronizer,
-        createPresentationViewSynchronizer as createSlabThicknessSynchronizer
+        createPresentationViewSynchronizer_2 as createSlabThicknessSynchronizer
     }
 }
 export { synchronizers }

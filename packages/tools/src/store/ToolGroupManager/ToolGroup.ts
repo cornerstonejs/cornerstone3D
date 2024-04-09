@@ -1,6 +1,6 @@
 import { MouseBindings, ToolModes } from '../../enums';
-import cloneDeep from 'lodash.clonedeep';
 import get from 'lodash.get';
+import cloneDeep from 'lodash.clonedeep';
 import {
   triggerEvent,
   eventTarget,
