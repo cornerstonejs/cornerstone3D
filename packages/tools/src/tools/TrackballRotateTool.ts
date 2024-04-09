@@ -46,7 +46,7 @@ class TrackballRotateTool extends BaseTool {
 
     if (this.cleanUp !== null) {
       // Clean up previous event listener
-      element.removeEventListener('mouseup', this.cleanUp);
+      document.removeEventListener('mouseup', this.cleanUp);
     }
 
     this.cleanUp = () => {
@@ -54,7 +54,7 @@ class TrackballRotateTool extends BaseTool {
       viewport.render();
     };
 
-    element.addEventListener('mouseup', this.cleanUp, { once: true });
+    document.addEventListener('mouseup', this.cleanUp, { once: true });
     return true;
   };
 

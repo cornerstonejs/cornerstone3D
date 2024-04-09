@@ -209,7 +209,8 @@ class BrushTool extends BaseTool {
 
       return {
         volumeId,
-        referencedVolumeId: firstVolumeActorUID,
+        referencedVolumeId:
+          labelmapData.referencedVolumeId ?? firstVolumeActorUID,
         segmentsLocked,
         segmentationRepresentationUID,
       };

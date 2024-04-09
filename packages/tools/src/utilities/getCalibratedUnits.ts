@@ -140,7 +140,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       (region) =>
         SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
         SUPPORTED_LENGTH_VARIANT.includes(
-          `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+          `${region.physicalUnitsXDirection},${region.physicalUnitsYDirection}`
         )
     );
 
@@ -176,10 +176,15 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   // everything except REGION/Uncalibratted
-  const types = [CalibrationTypes.ERMF, CalibrationTypes.USER, CalibrationTypes.ERROR, CalibrationTypes.PROJECTION];
+  const types = [
+    CalibrationTypes.ERMF,
+    CalibrationTypes.USER,
+    CalibrationTypes.ERROR,
+    CalibrationTypes.PROJECTION,
+  ];
 
   if (types.includes(calibration?.type)) {
-      calibrationType = calibration.type;
+    calibrationType = calibration.type;
   }
 
   return {
@@ -211,7 +216,7 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
         (region) =>
           SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
           SUPPORTED_PROBE_VARIANT.includes(
-            `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+            `${region.physicalUnitsXDirection},${region.physicalUnitsYDirection}`
           )
       );
 
@@ -247,8 +252,8 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
     calibrationType = 'US Region';
     values = [xValue, yValue];
     units = [
-      UNIT_MAPPING[region.physicalUnitXDirection],
-      UNIT_MAPPING[region.physicalUnitYDirection],
+      UNIT_MAPPING[region.physicalUnitsXDirection],
+      UNIT_MAPPING[region.physicalUnitsYDirection],
     ];
   }
 

@@ -287,7 +287,7 @@
         "description": "Here we demonstrate how to change the color of a segment in a segmentation representation"
       },
       "labelmapSegmentLocking": {
-        "name": "Labelmap Segmentation Swapping",
+        "name": "Labelmap Segmentation Locking",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "labelmapRenderingDifferentResolutions": {

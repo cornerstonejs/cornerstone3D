@@ -134,6 +134,8 @@ export class AdvancedMagnifyTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     showZoomFactorsList(evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation): void;
@@ -1683,7 +1685,7 @@ function createSynchronizer(synchronizerId: string, eventName: string, eventHand
 function createToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
-function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
+function createVOISynchronizer(synchronizerName: string, options: VOISynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
 function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
@@ -2702,6 +2704,9 @@ function getToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupForViewport(viewportId: string, renderingEngineId?: string): ToolGroup | undefined;
+
+// @public (undocumented)
+function getToolGroupIdFromSegmentationRepresentationUID(segmentationRepresentationUID: string): string;
 
 // @public (undocumented)
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[];
@@ -5181,7 +5186,8 @@ declare namespace state_3 {
         getColorLUT,
         getNextColorLUTIndex,
         removeColorLUT,
-        findSegmentationRepresentationByUID
+        findSegmentationRepresentationByUID,
+        getToolGroupIdFromSegmentationRepresentationUID
     }
 }
 
@@ -5433,11 +5439,15 @@ class ToolGroup implements ToolGroup {
     // (undocumented)
     clone(newToolGroupId: any, fnToolFilter?: (toolName: string) => void): ToolGroup;
     // (undocumented)
+    currentActivePrimaryToolName: string | null;
+    // (undocumented)
     getActivePrimaryMouseButtonTool(): string;
     // (undocumented)
     getDefaultMousePrimary(): MouseBindings;
     // (undocumented)
     getDefaultPrimaryBindings(): IToolBinding[];
+    // (undocumented)
+    getPrevActivePrimaryToolName(): string;
     // (undocumented)
     getToolConfiguration(toolName: string, configurationPath?: string): any;
     // (undocumented)
@@ -5454,6 +5464,8 @@ class ToolGroup implements ToolGroup {
     hasTool(toolName: string): boolean;
     // (undocumented)
     id: string;
+    // (undocumented)
+    prevActivePrimaryToolName: string | null;
     // (undocumented)
     removeViewports(renderingEngineId: string, viewportId?: string): void;
     // (undocumented)
