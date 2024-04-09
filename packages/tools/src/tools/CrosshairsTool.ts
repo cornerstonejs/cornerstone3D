@@ -344,9 +344,10 @@ class CrosshairsTool extends AnnotationTool {
    */
   computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo.length || viewportsInfo.length === 1) {
-      throw new Error(
+      console.warn(
         'For crosshairs to operate, at least two viewports must be given.'
       );
+      return;
     }
 
     // Todo: handle two same view viewport, or more than 3 viewports

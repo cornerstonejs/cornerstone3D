@@ -8,8 +8,11 @@ interface IVolumeLoader {
 }
 
 function get4DVolumeInfo(imageIds: string[]) {
-  const imageIdsGroups = splitImageIdsBy4DTags(imageIds);
-  return imageIdsGroups.map((imageIds) => getVolumeInfo(imageIds));
+  const { imageIdsGroups, splittingTag } = splitImageIdsBy4DTags(imageIds);
+  return {
+    volumesInfo: imageIdsGroups.map((imageIds) => getVolumeInfo(imageIds)),
+    splittingTag,
+  };
 }
 
 /**
@@ -37,7 +40,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   }
 
   const { imageIds } = options;
-  const volumesInfo = get4DVolumeInfo(imageIds);
+  const { volumesInfo, splittingTag } = get4DVolumeInfo(imageIds);
 
   const {
     metadata: volumeMetadata,
@@ -69,6 +72,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       scalarData: scalarDataArrays,
       sizeInBytes,
       imageIds: sortedImageIds,
+      splittingTag,
     },
     // Streaming properties
     {

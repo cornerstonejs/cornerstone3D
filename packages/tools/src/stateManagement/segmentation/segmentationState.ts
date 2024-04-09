@@ -306,6 +306,29 @@ function setSegmentSpecificRepresentationConfig(
   }
 }
 
+function getToolGroupIdFromSegmentationRepresentationUID(
+  segmentationRepresentationUID: string
+): string {
+  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
+
+  const toolGroupIds = Object.keys(allToolGroupRepresentations);
+
+  for (const toolGroupId of toolGroupIds) {
+    const toolGroupRepresentations =
+      getAllSegmentationRepresentations()[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) =>
+        representation.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    );
+
+    if (foundRepresentation) {
+      return toolGroupId;
+    }
+  }
+}
+
 /**
  * Add the given segmentation representation data to the given tool group state. It fires
  * SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
@@ -512,4 +535,5 @@ export {
   removeColorLUT,
   //
   findSegmentationRepresentationByUID,
+  getToolGroupIdFromSegmentationRepresentationUID,
 };
