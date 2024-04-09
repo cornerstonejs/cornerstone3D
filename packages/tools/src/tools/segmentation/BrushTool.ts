@@ -1,4 +1,8 @@
-import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
+import {
+  utilities as csUtils,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
@@ -113,6 +117,7 @@ class BrushTool extends BaseTool {
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
+        thresholdVolumeId: null,
         brushSize: 25,
         preview: {
           // Have to enable the preview to use this
@@ -203,14 +208,23 @@ class BrushTool extends BaseTool {
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
-      // Note: For tools that need the source data. Assumed to use
-      // First volume actor for now.
-      const firstVolumeActorUID = actors[0].uid;
+      // we used to take the first actor here but we should take the one that is
+      // probably the same size as the segmentation volume
+      const volumes = actors.map((actorEntry) =>
+        cache.getVolume(actorEntry.referenceId)
+      );
+
+      const segmentationVolume = cache.getVolume(volumeId);
+
+      const referencedVolumeIdToThreshold =
+        volumes.find((volume) =>
+          csUtils.isEqual(volume.dimensions, segmentationVolume.dimensions)
+        )?.volumeId || volumes[0]?.volumeId;
 
       return {
         volumeId,
         referencedVolumeId:
-          labelmapData.referencedVolumeId ?? firstVolumeActorUID,
+          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
         segmentsLocked,
         segmentationRepresentationUID,
       };
