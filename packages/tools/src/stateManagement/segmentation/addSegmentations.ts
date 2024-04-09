@@ -1,4 +1,4 @@
-import cloneDeep from 'lodash.cloneDeep';
+import cloneDeep from 'lodash.clonedeep';
 import { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
 import { validateSegmentationInput } from './helpers';
 import { addSegmentation as addSegmentationToState } from './segmentationState';
