@@ -48,6 +48,7 @@ const VIEWPORT_MIN_SIZE = 2;
  * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
  * us to share texture memory across on-screen viewports that show the same data.
  *
+ *
  * Instantiating a rendering engine:
  * ```js
  * const renderingEngine = new RenderingEngine('pet-ct-rendering-engine');
