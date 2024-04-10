@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.2...v1.70.3) (2024-04-10)
+
+### Bug Fixes
+
+- add syncColormap in VOISynchronizerOptions ([#1190](https://github.com/cornerstonejs/cornerstone3D/issues/1190)) ([54a2d27](https://github.com/cornerstonejs/cornerstone3D/commit/54a2d2786b8cc68829b3b912e43d4aa644bf767f))
+- **SplineROI:** future added polygon woud not trigger complete event when a polygon is out of range and got removed ([#1107](https://github.com/cornerstonejs/cornerstone3D/issues/1107)) ([0cdfbcb](https://github.com/cornerstonejs/cornerstone3D/commit/0cdfbcb08f7820441a9bad022b7f055ea78cd08f))
+
 ## [1.70.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.1...v1.70.2) (2024-04-10)
 
 **Note:** Version bump only for package @cornerstonejs/tools
