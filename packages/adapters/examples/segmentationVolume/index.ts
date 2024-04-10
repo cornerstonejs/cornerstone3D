@@ -1,3 +1,5 @@
+import { api } from "dicomweb-client";
+
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
 import * as cornerstoneDicomImageLoader from "@cornerstonejs/dicom-image-loader";
@@ -117,23 +119,65 @@ viewportGrid.appendChild(element4);
 
 content.appendChild(viewportGrid);
 
-createInfoSection(content).addInstruction(
-    "Viewports: Acquisition | Axial | Sagittal | Coronal"
-);
+createInfoSection(content)
+    .addInstruction("Viewports:")
+    .openNestedSection()
+    .addInstruction("Acquisition | Axial | Sagittal | Coronal")
+    .closeNestedSection();
+
+createInfoSection(content)
+    .addInstruction('You can try configuring "exConfig" in the console:')
+    .openNestedSection()
+    .addInstruction("fetchDicom")
+    .addInstruction("fetchSegmentation")
+    .closeNestedSection();
 
 // ============================= //
 
-async function demoDicom() {
-    // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-    imageIds = await createImageIdsAndCacheMetaData({
+const exConfig = {
+    fetchDicom: {
         StudyInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463",
+            "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
         SeriesInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561",
-        wadoRsRoot: "https://d3t6nz73ql33tx.cloudfront.net/dicomweb"
+            "1.3.6.1.4.1.14519.5.2.1.40445112212390159711541259681923198035",
+        wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
+    },
+    fetchSegmentation: {
+        StudyInstanceUID:
+            "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
+        SeriesInstanceUID:
+            "1.2.276.0.7230010.3.1.3.481034752.2667.1663086918.611582",
+        SOPInstanceUID:
+            "1.2.276.0.7230010.3.1.4.481034752.2667.1663086918.611583",
+        wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
+    }
+};
+window.exConfig = exConfig;
+
+// ============================= //
+
+async function fetchDicom() {
+    // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+    imageIds = await createImageIdsAndCacheMetaData(exConfig.fetchDicom);
+
+    //
+    await loadDicom(imageIds.reverse());
+}
+
+async function fetchSegmentation() {
+    const configSeg = exConfig.fetchSegmentation;
+
+    const client = new api.DICOMwebClient({
+        url: configSeg.wadoRsRoot
+    });
+    const arrayBuffer = await client.retrieveInstance({
+        studyInstanceUID: configSeg.StudyInstanceUID,
+        seriesInstanceUID: configSeg.SeriesInstanceUID,
+        sopInstanceUID: configSeg.SOPInstanceUID
     });
 
-    await loadDicom(imageIds);
+    //
+    await loadSegmentation(arrayBuffer);
 }
 
 async function readDicom(files: FileList) {
@@ -331,12 +375,12 @@ function removeActiveSegmentation() {
 // ============================= //
 
 addButtonToToolbar({
-    id: "DEMO_DICOM",
-    title: "Demo DICOM",
+    id: "LOAD_DICOM",
+    title: "Load DICOM",
     style: {
         marginRight: "5px"
     },
-    onClick: demoDicom,
+    onClick: fetchDicom,
     container: group1
 });
 
@@ -344,9 +388,19 @@ addUploadToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
     style: {
-        marginRight: "5px"
+        marginRight: "15px"
     },
     onChange: readDicom,
+    container: group1
+});
+
+addButtonToToolbar({
+    id: "LOAD_SEGMENTATION",
+    title: "Load SEG",
+    style: {
+        marginRight: "5px"
+    },
+    onClick: fetchSegmentation,
     container: group1
 });
 
