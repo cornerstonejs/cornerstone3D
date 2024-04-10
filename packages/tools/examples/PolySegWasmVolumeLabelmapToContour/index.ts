@@ -119,8 +119,8 @@ addSegmentIndexDropdown(segmentationId);
 addLabelToToolbar({
   id: 'progress',
   title: 'Caching Progress:',
-  paddings: {
-    left: 10,
+  style: {
+    paddingLeft: '10px',
   },
 });
 
