@@ -496,6 +496,10 @@
         "name": "DICOM SEG export",
         "description": "Demonstrates how to export a segmentation to DICOM SEG"
       },
+      "segmentationStack": {
+        "name": "DICOM SEG Stack",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"
+      },
       "segmentationVolume": {
         "name": "DICOM SEG Volume",
         "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
