@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.4...v1.70.5) (2024-04-10)
+
+### Bug Fixes
+
+- orientation marker updates on resize and new volume ([#1202](https://github.com/cornerstonejs/cornerstone3D/issues/1202)) ([d7a765c](https://github.com/cornerstonejs/cornerstone3D/commit/d7a765cec40393edd59408f567431c3bce04920a))
+
 ## [1.70.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.3...v1.70.4) (2024-04-10)
 
 **Note:** Version bump only for package @cornerstonejs/tools
