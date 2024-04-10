@@ -5,7 +5,9 @@ import type { Types } from '@cornerstonejs/core';
 
 import {
   addAnnotation,
+  getAllAnnotations,
   getAnnotations,
+  removeAnnotation,
 } from '../stateManagement/annotation/annotationState';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
@@ -184,6 +186,18 @@ class AdvancedMagnifyTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
+  };
+
+  onSetToolDisabled = () => {
+    // reset
+    this.magnifyViewportManager.dispose();
+    // remove the annotations from the state for that toolGroup
+    const annotations = getAllAnnotations();
+    annotations.forEach((annotation) => {
+      if (annotation.metadata.toolName === this.getToolName()) {
+        removeAnnotation(annotation.annotationUID);
+      }
+    });
   };
 
   /**
@@ -588,8 +602,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
         radius,
         {
           color,
-          lineDash,
-          lineWidth,
+          lineWidth: 5,
         },
         dataId
       );

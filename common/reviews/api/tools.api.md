@@ -134,6 +134,8 @@ export class AdvancedMagnifyTool extends AnnotationTool {
     // (undocumented)
     mouseDragCallback: any;
     // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     showZoomFactorsList(evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation): void;
@@ -808,7 +810,7 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     createEditData(element: any): {
         volumeId: string;
-        referencedVolumeId: string;
+        referencedVolumeId: any;
         segmentsLocked: number[] | [];
         segmentationRepresentationUID: string;
         imageIdReferenceMap?: undefined;
@@ -835,6 +837,21 @@ export class BrushTool extends BaseTool {
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
         referencedVolumeId?: string;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        volumeId: string;
+        referencedVolumeId: any;
+        segmentsLocked: number[] | [];
+        imageIdReferenceMap?: undefined;
     };
     // (undocumented)
     invalidateBrushCursor(): void;
@@ -1654,16 +1671,16 @@ function createLabelmapVolumeForViewport(input: {
     renderingEngineId: string;
     segmentationId?: string;
     options?: {
-        volumeId?: string;
-        scalarData?: Float32Array | Uint8Array | Uint16Array | Int16Array;
-        targetBuffer?: {
+        volumeId: string;
+        scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+        targetBuffer: {
             type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int8Array';
         };
-        metadata?: any;
-        dimensions?: Types_2.Point3;
-        spacing?: Types_2.Point3;
-        origin?: Types_2.Point3;
-        direction?: Float32Array;
+        metadata: Types_2.Metadata;
+        dimensions: Types_2.Point3;
+        spacing: Types_2.Point3;
+        origin: Types_2.Point3;
+        direction: Types_2.Mat3;
     };
 }): Promise<string>;
 
@@ -1671,7 +1688,10 @@ function createLabelmapVolumeForViewport(input: {
 function createMergedLabelmapForIndex(labelmaps: Array<Types_2.IImageVolume>, segmentIndex?: number, volumeId?: string): Types_2.IImageVolume;
 
 // @public (undocumented)
-function createPresentationViewSynchronizer(synchronizerName: string): Synchronizer;
+function createPresentationViewSynchronizer(synchronizerName: string, options?: Types_2.ViewPresentation): Synchronizer;
+
+// @public (undocumented)
+function createPresentationViewSynchronizer_2(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -1683,7 +1703,7 @@ function createSynchronizer(synchronizerId: string, eventName: string, eventHand
 function createToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
-function createVOISynchronizer(synchronizerName: string, options?: VOISynchronizerOptions): Synchronizer;
+function createVOISynchronizer(synchronizerName: string, options: VOISynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
 function createZoomPanSynchronizer(synchronizerName: string): Synchronizer;
@@ -2702,6 +2722,9 @@ function getToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
 function getToolGroupForViewport(viewportId: string, renderingEngineId?: string): ToolGroup | undefined;
+
+// @public (undocumented)
+function getToolGroupIdFromSegmentationRepresentationUID(segmentationRepresentationUID: string): string;
 
 // @public (undocumented)
 function getToolGroupIdsWithSegmentation(segmentationId: string): string[];
@@ -5181,7 +5204,8 @@ declare namespace state_3 {
         getColorLUT,
         getNextColorLUTIndex,
         removeColorLUT,
-        findSegmentationRepresentationByUID
+        findSegmentationRepresentationByUID,
+        getToolGroupIdFromSegmentationRepresentationUID
     }
 }
 
@@ -5343,11 +5367,12 @@ export { SynchronizerManager }
 declare namespace synchronizers {
     export {
         createCameraPositionSynchronizer,
+        createPresentationViewSynchronizer,
         createVOISynchronizer,
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
         createStackImageSynchronizer,
-        createPresentationViewSynchronizer as createSlabThicknessSynchronizer
+        createPresentationViewSynchronizer_2 as createSlabThicknessSynchronizer
     }
 }
 export { synchronizers }
@@ -5433,11 +5458,15 @@ class ToolGroup implements ToolGroup {
     // (undocumented)
     clone(newToolGroupId: any, fnToolFilter?: (toolName: string) => void): ToolGroup;
     // (undocumented)
+    currentActivePrimaryToolName: string | null;
+    // (undocumented)
     getActivePrimaryMouseButtonTool(): string;
     // (undocumented)
     getDefaultMousePrimary(): MouseBindings;
     // (undocumented)
     getDefaultPrimaryBindings(): IToolBinding[];
+    // (undocumented)
+    getPrevActivePrimaryToolName(): string;
     // (undocumented)
     getToolConfiguration(toolName: string, configurationPath?: string): any;
     // (undocumented)
@@ -5454,6 +5483,8 @@ class ToolGroup implements ToolGroup {
     hasTool(toolName: string): boolean;
     // (undocumented)
     id: string;
+    // (undocumented)
+    prevActivePrimaryToolName: string | null;
     // (undocumented)
     removeViewports(renderingEngineId: string, viewportId?: string): void;
     // (undocumented)

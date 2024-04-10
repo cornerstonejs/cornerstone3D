@@ -20,9 +20,10 @@ export default class StreamingDynamicImageVolume
   private _numTimePoints: number;
   private _timePoints: TimePoint[];
   private _timePointIndex = 0;
+  private _splittingTag: string;
 
   constructor(
-    imageVolumeProperties: Types.ImageVolumeProps,
+    imageVolumeProperties: Types.ImageVolumeProps & { splittingTag: string },
     streamingProperties: Types.IStreamingVolumeProperties
   ) {
     StreamingDynamicImageVolume._ensureValidData(
@@ -33,6 +34,7 @@ export default class StreamingDynamicImageVolume
     super(imageVolumeProperties, streamingProperties);
     this._numTimePoints = (<Types.PixelDataTypedArray[]>this.scalarData).length;
     this._timePoints = this._getTimePointsData();
+    this._splittingTag = imageVolumeProperties.splittingTag;
   }
 
   private static _ensureValidData(
@@ -166,8 +168,17 @@ export default class StreamingDynamicImageVolume
       {
         volumeId: this.volumeId,
         timePointIndex: newTimePointIndex,
+        numTimePoints: this.numTimePoints,
+        splittingTag: this.splittingTag,
       }
     );
+  }
+
+  /**
+   * Returns the splitting tag used to split the imageIds in 4D volume
+   */
+  public get splittingTag(): string {
+    return this._splittingTag;
   }
 
   /**

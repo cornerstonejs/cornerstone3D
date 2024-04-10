@@ -7,9 +7,9 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
-import _cloneDeep from 'lodash.clonedeep';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+import cloneDeep from 'lodash.clonedeep';
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -34,6 +34,7 @@ import type {
   StackViewportProperties,
   VOIRange,
   ViewReference,
+  ViewPresentation,
   VolumeActor,
 } from '../types';
 import {
@@ -382,7 +383,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   private setVOI: (voiRange: VOIRange, options?: SetVOIOptions) => void;
 
-  private setInterpolationType: (interpolationType: InterpolationType) => void;
+  protected setInterpolationType: (
+    interpolationType: InterpolationType
+  ) => void;
 
   private setInvertColor: (invert: boolean) => void;
 
@@ -480,12 +483,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           );
           return [pixelCoord[0], pixelCoord[1], 0];
         },
-        indexToWorld: (point: Point3) => {
+        indexToWorld: (point: Point3, destPoint?: Point3) => {
           const canvasPoint = pixelToCanvas(this._cpuFallbackEnabledElement, [
             point[0],
             point[1],
           ]);
-          return this.canvasToWorldCPU(canvasPoint);
+          return this.canvasToWorldCPU(canvasPoint, destPoint);
         },
       },
       scalarData: this.cpuImagePixelData,
@@ -551,7 +554,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const { preferSizeOverAccuracy } = getConfiguration().rendering;
 
     if (preferSizeOverAccuracy) {
-      // @ts-ignore for now until vtk is updated
       mapper.setPreferSizeOverAccuracy(true);
     }
 
@@ -1151,12 +1153,16 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       : (360 - initialToCurrentViewUpAngle) % 360;
   };
 
-  private setRotation(rotation: number): void {
+  protected setRotation = (rotation: number) => {
     const previousCamera = this.getCamera();
 
     this.useCPURendering
       ? this.setRotationCPU(rotation)
       : this.setRotationGPU(rotation);
+
+    if (this._suppressCameraModifiedEvents) {
+      return;
+    }
 
     // New camera after rotation
     const camera = this.getCamera();
@@ -1171,7 +1177,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-  }
+  };
 
   private setVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType,
@@ -1200,9 +1206,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     viewport.rotation = rotation;
   }
 
+  /**
+   * The rotation that is being set is intended to be around the currently
+   * display center of the image.  However, the roll operation does it around
+   * another point which can result in the image disappearing.  The set/get
+   * pan values move the center of rotation to the center of the image as
+   * currently actually displayed.
+   */
   private setRotationGPU(rotation: number): void {
+    const panFit = this.getPan(this.fitToCanvasCamera);
     const pan = this.getPan();
-    this.setPan([0, 0]);
+    const panSub = vec2.sub([0, 0], panFit, pan) as Point2;
+    this.setPan(panSub, false);
     const { flipVertical } = this.getCamera();
 
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
@@ -1216,7 +1231,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
-    this.setPan(pan);
+    const afterPan = this.getPan();
+    const afterPanFit = this.getPan(this.fitToCanvasCamera);
+    const newCenter = vec2.sub([0, 0], afterPan, afterPanFit);
+    const newOffset = vec2.add([0, 0], panFit, newCenter) as Point2;
+    this.setPan(newOffset, false);
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
@@ -2232,7 +2251,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = _cloneDeep(this.getCamera());
+    const previousCameraProps = cloneDeep(this.getCamera());
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
@@ -2673,7 +2692,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._publishCalibratedEvent = false;
   }
 
-  private canvasToWorldCPU = (canvasPos: Point2): Point3 => {
+  private canvasToWorldCPU = (
+    canvasPos: Point2,
+    worldPos: Point3 = [0, 0, 0]
+  ): Point3 => {
     if (!this._cpuFallbackEnabledElement.image) {
       return;
     }
@@ -2683,8 +2705,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
 
-    const worldPos = vec3.fromValues(0, 0, 0);
-
     // Calculate size of spacing vector in normal direction
     const iVector = direction.slice(0, 3) as Point3;
     const jVector = direction.slice(3, 6) as Point3;
@@ -2693,7 +2713,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
     vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
 
-    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+    return worldPos;
   };
 
   private worldToCanvasCPU = (worldPos: Point3): Point2 => {
@@ -2879,6 +2899,27 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       referencedImageId: `${this.imageIds[sliceIndex as number]}`,
       sliceIndex: sliceIndex,
     };
+  }
+
+  /**
+   * Applies the view reference, which may navigate the slice index and apply
+   * other camera modifications
+   */
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
+    const camera = this.getCamera();
+    super.setView(viewRef, viewPres);
+    if (viewRef) {
+      const { viewPlaneNormal, sliceIndex } = viewRef;
+      if (
+        viewPlaneNormal &&
+        !isEqual(viewPlaneNormal, camera.viewPlaneNormal)
+      ) {
+        return;
+      }
+      if (sliceIndex || sliceIndex === 0) {
+        this.setImageIdIndex(sliceIndex as number);
+      }
+    }
   }
 
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {

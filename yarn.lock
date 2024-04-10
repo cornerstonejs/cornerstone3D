@@ -3109,10 +3109,10 @@
     merge-source-map "^1.1.0"
     schema-utils "^2.7.0"
 
-"@kitware/vtk.js@29.7.0":
-  version "29.7.0"
-  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-29.7.0.tgz#56c352a755dd61bf34664866441ef9143e55a24d"
-  integrity sha512-z6XcoB+uUKayOsfLFR6GJW59bUyDe8JLkw3AMWKHbdLQmWvGosl32Zq18TYwCWAH/epIjZBoLBV+8o2GjgCb0w==
+"@kitware/vtk.js@30.3.1":
+  version "30.3.1"
+  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-30.3.1.tgz#0ded19add5b8a5b9b0fb41063a58ec1b6b46c9db"
+  integrity sha512-nM3cyTSfQKqpVtdBPk/Gt2ZJfYW5v3swNUFzXFw2OyC+QW1aAHhAfXmUDayasoCZox3yvo3Lnx3V4ztScEYybQ==
   dependencies:
     "@babel/runtime" "7.22.11"
     "@types/webxr" "^0.5.5"
