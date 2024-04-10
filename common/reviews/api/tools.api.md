@@ -3688,6 +3688,8 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     static CUBE: number;
     // (undocumented)
+    _getViewportsInfo: () => any[];
+    // (undocumented)
     onSetToolActive: () => void;
     // (undocumented)
     onSetToolDisabled: () => void;
@@ -3704,7 +3706,17 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     polyDataURL: any;
     // (undocumented)
+    reset: () => void;
+    // (undocumented)
+    resize: (viewportId: any) => void;
+    // (undocumented)
+    _resizeObservers: Map<any, any>;
+    // (undocumented)
+    _subscribeToViewportEvents(): void;
+    // (undocumented)
     static toolName: any;
+    // (undocumented)
+    _unsubscribeToViewportNewVolumeSet(): void;
     // (undocumented)
     static VTPFILE: number;
 }
