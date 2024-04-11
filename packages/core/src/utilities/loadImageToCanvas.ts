@@ -46,7 +46,6 @@ export interface LoadImageOptions {
  * @param useCPURendering - Force the use of the CPU rendering pipeline (default to false)
  * @param thumbnail - Render a thumbnail image
  * @param imageAspect - assign the width based on the aspect ratio of the image
- * @param physicalPixels - set the width/height to the physical pixel size
  * @returns - A promise that resolves when the image has been rendered with the imageId
  */
 export default function loadImageToCanvas(
@@ -61,11 +60,9 @@ export default function loadImageToCanvas(
     useCPURendering = false,
     thumbnail = false,
     imageAspect = false,
-    physicalPixels = false,
     viewportOptions,
   } = options;
 
-  const devicePixelRatio = window.devicePixelRatio || 1;
   const renderFn = useCPURendering ? renderToCanvasCPU : renderToCanvasGPU;
 
   return new Promise((resolve, reject) => {
@@ -77,10 +74,6 @@ export default function loadImageToCanvas(
       if (thumbnail) {
         canvas.height = 256;
         canvas.width = 256;
-      }
-      if (physicalPixels) {
-        canvas.width = canvas.offsetWidth * devicePixelRatio;
-        canvas.height = canvas.offsetHeight * devicePixelRatio;
       }
       if (imageAspect) {
         canvas.width = (canvas.height * image.width) / image.height;

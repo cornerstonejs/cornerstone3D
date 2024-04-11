@@ -51,6 +51,7 @@ const volumeSegLabelmapId = 'segVolumeId';
 
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
+const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
 let tool;
 
 const segmentationId = `SEGMENTATION_ID`;
@@ -248,12 +249,12 @@ function createLabelmap(viewport, mask, points, labels) {
   let setCount = 0;
 
   for (let j = 0; j < height; j++) {
-    const y = Math.round((j * MAX_HEIGHT * 0.9) / height + MAX_HEIGHT * 0.05);
+    const y = Math.round((j * MAX_HEIGHT) / height);
     if (y < 0 || y >= MAX_HEIGHT) {
       continue;
     }
     for (let i = 0; i < width; i++) {
-      const x = Math.round((i * MAX_WIDTH * 0.9) / width + MAX_WIDTH * 0.05);
+      const x = Math.round((i * MAX_WIDTH) / width);
       if (x < 0 || x >= MAX_WIDTH) {
         continue;
       }
@@ -396,6 +397,19 @@ const desiredImage = {
   encoder: null,
 };
 
+const viewportOptions = {
+  displayArea: {
+    storeAsInitialCamera: true,
+    imageArea: [1, 1],
+    imageCanvasPoint: {
+      // TODO - fix this so top left corner works
+      imagePoint: [0.5, 0.5],
+      canvasPoint: [0.5, 0.5],
+    },
+  },
+  background: <Types.Point3>[0, 0, 0.2],
+};
+
 /**
  * handler called when image available
  */
@@ -424,7 +438,11 @@ async function handleImage(imageId, imageSession) {
 
     const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, width, height);
-    await utilities.loadImageToCanvas({ canvas: renderCanvas, imageId });
+    await utilities.loadImageToCanvas({
+      canvas: renderCanvas,
+      imageId,
+      viewportOptions,
+    });
     renderCanvas.style.width = size;
     renderCanvas.style.height = size;
     if (isCurrent) {
@@ -658,13 +676,9 @@ function mapAnnotationPoint(worldPoint) {
   const { width, height } = viewport.canvas;
   const { width: destWidth, height: destHeight } = canvas;
 
-  const x = Math.trunc(
-    (canvasPoint[0] * destWidth * devicePixelRatio * 0.9) / width +
-      destWidth * 0.05
-  );
+  const x = Math.trunc((canvasPoint[0] * destWidth * devicePixelRatio) / width);
   const y = Math.trunc(
-    (canvasPoint[1] * destHeight * devicePixelRatio * 0.9) / height +
-      destHeight * 0.05
+    (canvasPoint[1] * destHeight * devicePixelRatio) / height
   );
   return [x, y];
 }
@@ -832,9 +846,15 @@ async function run() {
   addManipulationBindings(toolGroup, { toolMap });
   tool = toolGroup.getToolInstance('ThresholdCircle');
 
+  const volumeToolGroup = ToolGroupManager.createToolGroup(volumeToolGroupId);
+  addManipulationBindings(volumeToolGroup, { toolMap });
+
   cornerstoneTools.addTool(SegmentationDisplayTool);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+
+  volumeToolGroup.addTool(SegmentationDisplayTool.toolName);
+  volumeToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -883,7 +903,7 @@ async function run() {
     await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
   // Set the stack on the viewport
   await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
-  viewport.setOptions({ displayArea: { imageArea: [1, 1] } });
+  viewport.setOptions(viewportOptions);
 
   // Add the canvas after the viewport
   // element.appendChild(canvas);
@@ -916,16 +936,8 @@ async function run() {
     renderingEngine.getViewport(viewportIds[1])
   );
   volume.load();
-  viewport.setOptions({ displayArea: { imageArea: [1, 1] } });
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-    volumeId: volumeSegLabelmapId,
-  });
 
   volumeViewport.setVolumes([{ volumeId }]);
-  fillVolumeSegmentationWithMockData({
-    volumeId: volumeSegLabelmapId,
-    cornerstone,
-  });
 
   // Render the image
   renderingEngine.render();
@@ -944,19 +956,14 @@ async function run() {
         },
       },
     },
-    {
-      segmentationId: volumeSegLabelmapId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: volumeSegLabelmapId,
-        },
-      },
-    },
   ]);
+  segmentation.convertStackToVolumeSegmentation({
+    segmentationId,
+    options: {
+      toolGroupId: volumeToolGroupId,
+      volumeId: volumeSegLabelmapId,
+    },
+  });
 
   // Create a segmentation representation associated to the toolGroupId
   const segmentationRepresentationUIDs =
@@ -965,15 +972,25 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
+    ]);
+
+  segmentationRepresentationUIDs.push(
+    ...(await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
       {
         segmentationId: volumeSegLabelmapId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
-    ]);
+    ]))
+  );
 
   segmentation.activeSegmentation.setActiveSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUIDs[0]
+  );
+
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    volumeToolGroupId,
+    segmentationRepresentationUIDs[1]
   );
 
   element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {

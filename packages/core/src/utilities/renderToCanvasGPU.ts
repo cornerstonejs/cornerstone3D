@@ -50,16 +50,11 @@ export default function renderToCanvasGPU(
   // isn't exact, and using the exact value sometimes leads to an off by 1
   // in the actual size, so adding EPSILON to the size resolves
   // the problem.
-  element.style.width = `${originalWidth + EPSILON}px`;
-  element.style.height = `${originalHeight + EPSILON}px`;
+  // Don't touch the canvas size here as what we get out is a canvas at the right size
+  element.style.width = `${originalWidth / devicePixelRatio + EPSILON}px`;
+  element.style.height = `${originalHeight / devicePixelRatio + EPSILON}px`;
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
-
-  // Up-sampling the provided canvas to match the device pixel ratio
-  // since we use device pixel ratio to determine the size of the canvas
-  // inside the rendering engine.
-  canvas.width = originalWidth * devicePixelRatio;
-  canvas.height = originalHeight * devicePixelRatio;
 
   document.body.appendChild(element);
 
