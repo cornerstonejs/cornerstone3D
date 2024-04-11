@@ -285,13 +285,13 @@ function createLabelmap(viewport, mask, points, labels) {
   //       volumeId: segVolumeId,
   //     },
   //   })
-  // .then(() => {
-  const indices = [];
-  for (let k = 0; k < 135; k++) {
-    indices.push(k);
-  }
-  triggerSegmentationDataModified(segVolumeId, indices);
-  // });
+  //   .then(() => {
+  //     const indices = [];
+  //     for (let k = 0; k < 135; k++) {
+  //       indices.push(k);
+  //     }
+  //     triggerSegmentationDataModified(segVolumeId, indices);
+  //   });
 }
 
 const boxRadius = 5;
@@ -884,6 +884,7 @@ async function run() {
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
+  // imageIds = imageIds.slice(0, 2);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -978,10 +979,10 @@ async function run() {
       },
     },
   ]);
-  const segmentationVolume =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-      volumeId: segVolumeId,
-    });
+  // const segmentationVolume =
+  //   await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  //     volumeId: segVolumeId,
+  //   });
   segmentation.convertStackToVolumeSegmentation({
     segmentationId,
     options: {
