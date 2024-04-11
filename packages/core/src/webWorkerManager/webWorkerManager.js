@@ -147,7 +147,7 @@ class CentralizedWorkerManager {
         try {
           // fix if any of the args keys are a function then we need to proxy it
           // for the worker to be able to call it
-          let finalCallbacks;
+          let finalCallbacks = [];
           if (callbacks.length) {
             finalCallbacks = callbacks.map((cb) => {
               return Comlink.proxy(cb);

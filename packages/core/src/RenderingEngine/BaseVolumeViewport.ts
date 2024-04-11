@@ -3,7 +3,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
-import { vec3 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 
 import cache from '../cache';
 import {
@@ -399,7 +399,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return newRGBTransferFunction;
   }
 
-  private setInterpolationType(
+  protected setInterpolationType(
     interpolationType: InterpolationType,
     volumeId?: string
   ) {
@@ -491,10 +491,34 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     this.viewportProperties.voiRange = voiRangeToUse;
   }
 
-  private setRotation(rotation: number): void {
+  protected setRotation = (rotation: number) => {
+    const panFit = this.getPan(this.fitToCanvasCamera);
+    const pan = this.getPan();
     const previousCamera = this.getCamera();
+    const panSub = vec2.sub([0, 0], panFit, pan) as Point2;
+    this.setPan(panSub, false);
+    const { flipVertical } = this.getCamera();
 
+    // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
+    const initialViewUp = flipVertical
+      ? vec3.negate([0, 0, 0], this.initialViewUp)
+      : this.initialViewUp;
+
+    this.setCameraNoEvent({
+      viewUp: initialViewUp as Point3,
+    });
+
+    // rotating camera to the new value
     this.rotateCamera(rotation);
+    const afterPan = this.getPan();
+    const afterPanFit = this.getPan(this.fitToCanvasCamera);
+    const newCenter = vec2.sub([0, 0], afterPan, afterPanFit);
+    const newOffset = vec2.add([0, 0], panFit, newCenter) as Point2;
+    this.setPan(newOffset, false);
+
+    if (this._suppressCameraModifiedEvents) {
+      return;
+    }
 
     // New camera after rotation
     const camera = this.getCamera();
@@ -510,7 +534,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
     this.viewportProperties.rotation = rotation;
-  }
+  };
 
   private rotateCamera(rotation: number): void {
     const rotationToApply = rotation - this.getRotation();
@@ -1148,7 +1172,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     // The initial view up vector without any rotation, but incorporating vertical flip.
     const initialViewUp = flipVertical
-      ? vec3.negate(vec3.create(), this.initialViewUp)
+      ? vec3.negate([0, 0, 0], this.initialViewUp)
       : this.initialViewUp;
 
     if (!initialViewUp) {
@@ -1165,7 +1189,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     // viewPlaneNormal.
 
     const initialToCurrentViewUpCross = vec3.cross(
-      vec3.create(),
+      [0, 0, 0],
       initialViewUp,
       currentViewUp
     );

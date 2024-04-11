@@ -33,7 +33,7 @@ class PlanarFreehandROI {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
+        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -79,13 +79,19 @@ class PlanarFreehandROI {
         const state = defaultState;
 
         state.annotation.data = {
-            polyline: worldCoords,
-            isOpenContour,
+            contour: { polyline: worldCoords, closed: !isOpenContour },
             handles: {
                 points,
                 activeHandleIndex: null,
                 textBox: {
                     hasMoved: false
+                }
+            },
+            cachedStats: {
+                [`imageId:${referencedImageId}`]: {
+                    area: NUMGroup
+                        ? NUMGroup.MeasuredValueSequence.NumericValue
+                        : null
                 }
             },
             frameNumber: ReferencedFrameNumber
@@ -96,7 +102,9 @@ class PlanarFreehandROI {
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
-        const { isOpenContour, polyline } = data;
+
+        const { polyline, closed } = data.contour;
+        const isOpenContour = closed !== true;
 
         const { referencedImageId } = metadata;
 
@@ -118,13 +126,20 @@ class PlanarFreehandROI {
             points.push([firstPoint[0], firstPoint[1]]);
         }
 
-        const area = 0; // TODO -> The tool doesn't have these stats yet.
-        const perimeter = 0;
+        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
+            data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
+            /** From cachedStats */
             points,
             area,
+            areaUnit,
             perimeter,
+            modalityUnit,
+            mean,
+            max,
+            stdDev,
+            /** Other */
             trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []

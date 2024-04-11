@@ -3,6 +3,62 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.5](https://github.com/dcmjs-org/dcmjs/compare/v1.70.4...v1.70.5) (2024-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.70.4](https://github.com/dcmjs-org/dcmjs/compare/v1.70.3...v1.70.4) (2024-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.70.3](https://github.com/dcmjs-org/dcmjs/compare/v1.70.2...v1.70.3) (2024-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.70.2](https://github.com/dcmjs-org/dcmjs/compare/v1.70.1...v1.70.2) (2024-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.70.1](https://github.com/dcmjs-org/dcmjs/compare/v1.70.0...v1.70.1) (2024-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.70.0](https://github.com/dcmjs-org/dcmjs/compare/v1.69.0...v1.70.0) (2024-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.69.0](https://github.com/dcmjs-org/dcmjs/compare/v1.68.3...v1.69.0) (2024-04-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.68.3](https://github.com/dcmjs-org/dcmjs/compare/v1.68.2...v1.68.3) (2024-04-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.68.2](https://github.com/dcmjs-org/dcmjs/compare/v1.68.1...v1.68.2) (2024-04-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.68.1](https://github.com/dcmjs-org/dcmjs/compare/v1.68.0...v1.68.1) (2024-04-05)
+
+### Bug Fixes
+
+-   **cornerstone-dicom-sr:** Freehand SR hydration support ([#1160](https://github.com/dcmjs-org/dcmjs/issues/1160)) ([5e778a1](https://github.com/dcmjs-org/dcmjs/commit/5e778a1b637eaeb85fe3d3c3120388a322d33c53))
+
+# [1.68.0](https://github.com/dcmjs-org/dcmjs/compare/v1.67.1...v1.68.0) (2024-03-29)
+
+### Features
+
+-   **MetaDataProvider:** Update metadata provider ([#1165](https://github.com/dcmjs-org/dcmjs/issues/1165)) ([df5583d](https://github.com/dcmjs-org/dcmjs/commit/df5583dbac34087182887ea2ca457416a77bf0b6))
+
+## [1.67.1](https://github.com/dcmjs-org/dcmjs/compare/v1.67.0...v1.67.1) (2024-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.67.0](https://github.com/dcmjs-org/dcmjs/compare/v1.66.12...v1.67.0) (2024-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.66.12](https://github.com/dcmjs-org/dcmjs/compare/v1.66.11...v1.66.12) (2024-03-25)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

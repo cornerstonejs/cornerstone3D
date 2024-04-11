@@ -19,6 +19,8 @@ import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewReference,
+  ViewPresentation,
+  ViewPresentationSelector,
 } from './IViewport';
 import type {
   VolumeActor,
@@ -168,6 +170,8 @@ export type {
   IStreamingVolumeProperties,
   IViewport,
   ViewReference,
+  ViewPresentation,
+  ViewPresentationSelector,
   ReferenceCompatibleOptions,
   ViewReferenceSpecifier,
   StackViewportProperties,

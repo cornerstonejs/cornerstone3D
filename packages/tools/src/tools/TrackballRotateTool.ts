@@ -1,4 +1,5 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import { Events } from '../enums';
 
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -13,6 +14,7 @@ class TrackballRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  cleanUp: () => void;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -28,6 +30,33 @@ class TrackballRotateTool extends BaseTool {
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
+
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const actorEntry = viewport.getDefaultActor();
+    const actor = actorEntry.actor as Types.VolumeActor;
+    const mapper = actor.getMapper();
+    const originalSampleDistance = mapper.getSampleDistance();
+
+    mapper.setSampleDistance(originalSampleDistance * 2);
+
+    if (this.cleanUp !== null) {
+      // Clean up previous event listener
+      document.removeEventListener('mouseup', this.cleanUp);
+    }
+
+    this.cleanUp = () => {
+      mapper.setSampleDistance(originalSampleDistance);
+      viewport.render();
+    };
+
+    document.addEventListener('mouseup', this.cleanUp, { once: true });
+    return true;
+  };
 
   rotateCamera = (viewport, centerWorld, axis, angle) => {
     const vtkCamera = viewport.getVtkActiveCamera();
@@ -70,6 +99,7 @@ class TrackballRotateTool extends BaseTool {
     const { rotateIncrementDegrees } = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
     const camera = viewport.getCamera();
     const width = element.clientWidth;
     const height = element.clientHeight;
