@@ -229,26 +229,6 @@ export default class BrushStrategy {
       return operationData.preview;
     }
 
-    if (isVolumeSegmentation(operationData, viewport)) {
-      const { referencedVolumeId, volumeId } =
-        operationData as LabelmapToolOperationDataVolume;
-
-      const segmentation = cache.getVolume(volumeId);
-
-      if (referencedVolumeId) {
-        const imageVolume = cache.getVolume(referencedVolumeId);
-
-        if (
-          !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-          !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-        ) {
-          throw new Error(
-            'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-          );
-        }
-      }
-    }
-
     const {
       imageVoxelManager,
       segmentationVoxelManager,

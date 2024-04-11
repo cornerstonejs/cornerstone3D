@@ -1,6 +1,7 @@
 import { Enums, ToolGroupManager } from '@cornerstonejs/tools';
 
-const { MouseBindings } = Enums;
+import createElement, { configElement } from './createElement';
+import addLabelToToolbar from './addLabelToToolbar';
 
 export type optionTypeDefaultValue =
   | { defaultValue: number | string }
@@ -10,51 +11,64 @@ export type optionTypeValues =
   | { values: number[] | string[] }
   | { map: Map<string | number, any> };
 
-export default function addDropDownToToolbar({
-  id,
-  options,
-  container,
-  style,
-  onSelectedValueChange,
-  labelText,
-  toolGroupId,
-}: {
+interface configDropdown extends configElement {
   id?: string;
+  placeholder?: string;
   options: optionTypeDefaultValue & optionTypeValues;
-  container?: HTMLElement;
-  style?: Record<string, any>;
-  onSelectedValueChange?: (key: number | string, value?) => void;
+  onSelectedValueChange: (key: number | string, value?: any) => void;
   toolGroupId?: string | string[];
+  label?: configElement;
   labelText?: string;
-}) {
+  container?: HTMLElement;
+}
+
+const { MouseBindings } = Enums;
+
+export default function addDropDownToToolbar(config: configDropdown): void {
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
+
   const {
     map,
     values = [...map.keys()],
     defaultValue,
     defaultIndex = defaultValue === undefined && 0,
-  } = options as any;
-  container = container ?? document.getElementById('demo-toolbar');
-
-  if (!onSelectedValueChange && toolGroupId) {
-    onSelectedValueChange = changeActiveTool.bind(
-      null,
-      Array.isArray(toolGroupId) ? toolGroupId : [toolGroupId]
-    );
-  }
+  } = config.options as any;
 
   // Create label element if labelText is provided
-  if (labelText) {
-    const label = document.createElement('label');
-    label.htmlFor = id;
-    label.innerText = labelText;
-    container.append(label);
+  if (config.label || config.labelText) {
+    const label = addLabelToToolbar({
+      merge: config.label,
+      title: config.labelText,
+      container: config.container,
+    });
+
+    if (config.id) {
+      label.htmlFor = config.id;
+    }
   }
 
-  const select = document.createElement('select');
-  select.id = id;
+  //
+  const select = <HTMLSelectElement>createElement({
+    merge: config,
+    tag: 'select',
+  });
 
-  if (style) {
-    Object.assign(select.style, style);
+  if (config.id) {
+    select.id = config.id;
+  }
+
+  if (config.placeholder) {
+    const optionElement = <HTMLOptionElement>createElement({
+      tag: 'option',
+      attr: {
+        disabled: '',
+        hidden: '',
+        selected: '',
+      },
+      html: config.placeholder,
+    });
+    select.append(optionElement);
   }
 
   values.forEach((value, index) => {
@@ -62,24 +76,33 @@ export default function addDropDownToToolbar({
     const stringValue = String(value);
     optionElement.value = stringValue;
     optionElement.innerText = stringValue;
+
     if (value === defaultValue || index === defaultIndex) {
       optionElement.selected = true;
       if (map) {
         map.get(value).selected = true;
       }
     }
+
     select.append(optionElement);
   });
 
-  select.onchange = (evt) => {
+  if (!config.onSelectedValueChange && config.toolGroupId) {
+    config.onSelectedValueChange = changeActiveTool.bind(
+      null,
+      Array.isArray(config.toolGroupId)
+        ? config.toolGroupId
+        : [config.toolGroupId]
+    );
+  }
+
+  select.onchange = (evt: Event) => {
     const selectElement = <HTMLSelectElement>evt.target;
     const { value: key } = selectElement;
     if (selectElement) {
-      onSelectedValueChange(key, map?.get(key));
+      config.onSelectedValueChange(key, map?.get(key));
     }
   };
-
-  container.append(select);
 }
 
 function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {

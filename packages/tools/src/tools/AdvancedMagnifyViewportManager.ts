@@ -15,7 +15,7 @@ import {
 import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 // Defined the tool name internally instead of importing
-// AdvangedMagnifyTool due to cyclic dependency
+// AdvancedMagnifyTool due to cyclic dependency
 const ADVANCED_MAGNIFY_TOOL_NAME = 'AdvancedMagnify';
 
 const PARALLEL_THRESHOLD = 1 - CONSTANTS.EPSILON;

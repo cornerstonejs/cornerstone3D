@@ -26,6 +26,7 @@ import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
 import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
 import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
+import { getBrushToolInstances } from './utilities';
 
 export {
   thresholdVolumeByRange,
@@ -52,4 +53,5 @@ export {
   getSegmentAtWorldPoint,
   getSegmentAtLabelmapBorder,
   getHoveredContourSegmentationAnnotation,
+  getBrushToolInstances,
 };

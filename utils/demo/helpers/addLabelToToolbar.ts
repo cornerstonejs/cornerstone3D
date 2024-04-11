@@ -1,33 +1,33 @@
-export function addLabelToToolbar({
-  id,
-  title,
-  container,
-  paddings,
-}: {
+import { utilities } from '@cornerstonejs/core';
+
+import createElement, { configElement } from './createElement';
+
+interface configLabel extends configElement {
   id?: string;
   title: string;
   container?: HTMLElement;
-  paddings?: {
-    top?: number;
-    right?: number;
-    bottom?: number;
-    left?: number;
-  };
-}) {
-  const label = document.createElement('label');
+}
 
-  label.id = id;
-  label.innerHTML = title;
+export default function addLabelToToolbar(
+  config: configLabel
+): HTMLLabelElement {
+  config = utilities.deepMerge(config, config.merge);
 
-  if (paddings) {
-    label.style.paddingTop = `${paddings.top}px`;
-    label.style.paddingRight = `${paddings.right}px`;
-    label.style.paddingBottom = `${paddings.bottom}px`;
-    label.style.paddingLeft = `${paddings.left}px`;
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
+
+  const elLabel = <HTMLLabelElement>createElement({
+    merge: config,
+    tag: 'label',
+  });
+
+  if (config.id) {
+    elLabel.id = config.id;
   }
 
-  container = container ?? document.getElementById('demo-toolbar');
-  container.append(label);
+  if (config.title) {
+    elLabel.innerHTML = config.title;
+  }
 
-  return label;
+  return elLabel;
 }
