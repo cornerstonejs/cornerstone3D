@@ -45,6 +45,7 @@ import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes } from '../../enums';
 
@@ -52,6 +53,7 @@ const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
 
 const PARALLEL_THRESHOLD = 1 - EPSILON;
+
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
  * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
@@ -243,7 +245,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
            */
           epsilon: 0.1,
         },
-        calculateStats: false,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -294,7 +296,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     );
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
+
     evt.preventDefault();
+
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
@@ -350,6 +354,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     } else {
       this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     }
+
+    evt.preventDefault();
   };
 
   /**
@@ -536,16 +542,21 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       annotation.data.handles.points.length = 0;
     };
 
-    return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
-      data: {
-        contour: {
-          polyline: [<Types.Point3>[...worldPos]],
+    const annotation = <PlanarFreehandROIAnnotation>csUtils.deepMerge(
+      contourAnnotation,
+      {
+        data: {
+          contour: {
+            polyline: [<Types.Point3>[...worldPos]],
+          },
+          label: '',
+          cachedStats: {},
         },
-        label: '',
-        cachedStats: {},
-      },
-      onInterpolationComplete,
-    });
+        onInterpolationComplete,
+      }
+    );
+
+    return annotation;
   }
 
   protected getAnnotationStyle(context) {
@@ -682,7 +693,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ) => {
     const { data } = annotation;
     const { cachedStats } = data;
-    const { polyline: points } = data.contour;
+    const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
 
@@ -835,6 +846,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
+        perimeter: calculatePerimeter(canvasCoordinates, closed),
         mean: stats.mean?.value,
         max: stats.max?.value,
         stdDev: stats.stdDev?.value,
@@ -921,8 +933,16 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats || {};
+  const {
+    area,
+    mean,
+    stdDev,
+    perimeter,
+    max,
+    isEmptyArea,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
 
@@ -943,6 +963,10 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (stdDev) {
     textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  if (perimeter) {
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${modalityUnit}`);
   }
 
   return textLines;

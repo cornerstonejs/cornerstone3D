@@ -80,6 +80,7 @@ class BrushTool extends LabelmapBaseTool {
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
+        thresholdVolumeId: null,
         brushSize: 25,
         preview: {
           // Have to enable the preview to use this

@@ -1,4 +1,8 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  cache,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import {
@@ -96,6 +100,7 @@ export default class LabelmapBaseTool extends BaseTool {
   /**
    * Creates a set of edit data used to modify a labelmap.
    */
+
   createEditData(element) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
@@ -131,13 +136,23 @@ export default class LabelmapBaseTool extends BaseTool {
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
-      // Note: For tools that need the source data. Assumed to use
-      // First volume actor for now.
-      const firstVolumeActorUID = actors[0].uid;
+      // we used to take the first actor here but we should take the one that is
+      // probably the same size as the segmentation volume
+      const volumes = actors.map((actorEntry) =>
+        cache.getVolume(actorEntry.referenceId)
+      );
+
+      const segmentationVolume = cache.getVolume(volumeId);
+
+      const referencedVolumeIdToThreshold =
+        volumes.find((volume) =>
+          csUtils.isEqual(volume.dimensions, segmentationVolume.dimensions)
+        )?.volumeId || volumes[0]?.volumeId;
 
       return {
         volumeId,
-        referencedVolumeId: firstVolumeActorUID,
+        referencedVolumeId:
+          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
         segmentsLocked,
         segmentationRepresentationUID,
       };

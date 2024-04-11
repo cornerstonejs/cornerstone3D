@@ -366,13 +366,19 @@ class SplineROITool extends ContourSegmentationBaseTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    this.fireChangeOnUpdate ||= {
-      annotationUID: annotation.annotationUID,
-      changeType: newAnnotation
-        ? ChangeTypes.Completed
-        : ChangeTypes.HandlesUpdated,
-      contourHoleProcessingEnabled,
-    };
+    const changeType = newAnnotation
+      ? ChangeTypes.Completed
+      : ChangeTypes.HandlesUpdated;
+    if (!this.fireChangeOnUpdate) {
+      this.fireChangeOnUpdate = {
+        annotationUID: annotation.annotationUID,
+        changeType,
+        contourHoleProcessingEnabled,
+      };
+    } else {
+      this.fireChangeOnUpdate.annotationUID = annotation.annotationUID;
+      this.fireChangeOnUpdate.changeType = changeType;
+    }
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
