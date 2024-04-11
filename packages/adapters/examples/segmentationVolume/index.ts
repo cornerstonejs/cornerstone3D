@@ -152,7 +152,7 @@ const exConfig = {
         wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
     }
 };
-window.exConfig = exConfig;
+(window as any).exConfig = exConfig;
 
 // ============================= //
 
@@ -162,22 +162,6 @@ async function fetchDicom() {
 
     //
     await loadDicom(imageIds.reverse());
-}
-
-async function fetchSegmentation() {
-    const configSeg = exConfig.fetchSegmentation;
-
-    const client = new api.DICOMwebClient({
-        url: configSeg.wadoRsRoot
-    });
-    const arrayBuffer = await client.retrieveInstance({
-        studyInstanceUID: configSeg.StudyInstanceUID,
-        seriesInstanceUID: configSeg.SeriesInstanceUID,
-        sopInstanceUID: configSeg.SOPInstanceUID
-    });
-
-    //
-    await loadSegmentation(arrayBuffer);
 }
 
 async function readDicom(files: FileList) {
@@ -234,6 +218,26 @@ async function loadDicom(imageIds: string[]) {
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
+}
+
+async function fetchSegmentation() {
+    if (!volumeId) {
+        return;
+    }
+
+    const configSeg = exConfig.fetchSegmentation;
+
+    const client = new api.DICOMwebClient({
+        url: configSeg.wadoRsRoot
+    });
+    const arrayBuffer = await client.retrieveInstance({
+        studyInstanceUID: configSeg.StudyInstanceUID,
+        seriesInstanceUID: configSeg.SeriesInstanceUID,
+        sopInstanceUID: configSeg.SOPInstanceUID
+    });
+
+    //
+    await loadSegmentation(arrayBuffer);
 }
 
 async function importSegmentation(files: FileList) {
