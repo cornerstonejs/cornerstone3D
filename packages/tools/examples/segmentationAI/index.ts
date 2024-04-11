@@ -21,7 +21,6 @@ import {
   labelmapTools,
   annotationTools,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
 
@@ -47,7 +46,7 @@ const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
 const { state: annotationState } = annotation;
 const { style: toolStyle } = cornerstoneTools.annotation.config;
 const volumeId = 'volumeId';
-const volumeSegLabelmapId = 'segVolumeId';
+const segVolumeId = 'segVolumeId';
 
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
@@ -278,6 +277,21 @@ function createLabelmap(viewport, mask, points, labels) {
     segmentationVoxelManager.getArrayOfSlices(),
     previewSegmentIndex
   );
+  // segmentation
+  //   .convertStackToVolumeSegmentation({
+  //     segmentationId,
+  //     options: {
+  //       toolGroupId: volumeToolGroupId,
+  //       volumeId: segVolumeId,
+  //     },
+  //   })
+  // .then(() => {
+  const indices = [];
+  for (let k = 0; k < 135; k++) {
+    indices.push(k);
+  }
+  triggerSegmentationDataModified(segVolumeId, indices);
+  // });
 }
 
 const boxRadius = 5;
@@ -438,6 +452,10 @@ async function handleImage(imageId, imageSession) {
 
     const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, width, height);
+    volumeViewport.setView(
+      viewport.getViewReference(),
+      viewport.getViewPresentation()
+    );
     await utilities.loadImageToCanvas({
       canvas: renderCanvas,
       imageId,
@@ -600,7 +618,7 @@ addButtonToToolbar({
 });
 
 const viewportGrid = document.createElement('div');
-let viewport;
+let viewport, volumeViewport;
 
 viewportGrid.style.width = '95vw';
 // viewportGrid.style.flexDirection = 'column';
@@ -901,6 +919,7 @@ async function run() {
   // Add a segmentation that will contains the contour annotations
   const { imageIds: segmentationImageIds } =
     await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+
   // Set the stack on the viewport
   await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
   viewport.setOptions(viewportOptions);
@@ -931,13 +950,15 @@ async function run() {
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
-
-  const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIds[1])
-  );
+  volumeViewport = renderingEngine.getViewport(viewportIds[1]);
   volume.load();
 
   volumeViewport.setVolumes([{ volumeId }]);
+
+  volumeViewport.setView(
+    viewport.getViewReference(),
+    viewport.getViewPresentation()
+  );
 
   // Render the image
   renderingEngine.render();
@@ -957,11 +978,15 @@ async function run() {
       },
     },
   ]);
+  const segmentationVolume =
+    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+      volumeId: segVolumeId,
+    });
   segmentation.convertStackToVolumeSegmentation({
     segmentationId,
     options: {
       toolGroupId: volumeToolGroupId,
-      volumeId: volumeSegLabelmapId,
+      volumeId: segVolumeId,
     },
   });
 
@@ -977,7 +1002,7 @@ async function run() {
   segmentationRepresentationUIDs.push(
     ...(await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
       {
-        segmentationId: volumeSegLabelmapId,
+        segmentationId: segVolumeId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]))
