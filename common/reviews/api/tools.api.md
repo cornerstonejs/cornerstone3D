@@ -1639,7 +1639,7 @@ function convertStackToVolumeSegmentation({ segmentationId, options, }: {
         volumeId?: string;
         removeOriginal?: boolean;
     };
-}): Promise<void>;
+}): Promise<string[]>;
 
 // @public (undocumented)
 function convertVolumeToStackSegmentation({ segmentationId, options, }: {

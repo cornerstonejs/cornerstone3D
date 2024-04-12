@@ -78,6 +78,8 @@ export default function loadImageToCanvas(
       if (imageAspect) {
         canvas.width = (canvas.height * image.width) / image.height;
       }
+      canvas.style.width = `${canvas.width / devicePixelRatio}px`;
+      canvas.style.height = `${canvas.height / devicePixelRatio}px`;
 
       renderFn(
         canvas,

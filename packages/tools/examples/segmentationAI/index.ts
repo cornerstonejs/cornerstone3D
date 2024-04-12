@@ -272,26 +272,7 @@ function createLabelmap(viewport, mask, points, labels) {
     segmentationVoxelManager.getArrayOfSlices(),
     setCount
   );
-  triggerSegmentationDataModified(
-    segmentationId,
-    segmentationVoxelManager.getArrayOfSlices(),
-    previewSegmentIndex
-  );
-  // segmentation
-  //   .convertStackToVolumeSegmentation({
-  //     segmentationId,
-  //     options: {
-  //       toolGroupId: volumeToolGroupId,
-  //       volumeId: segVolumeId,
-  //     },
-  //   })
-  //   .then(() => {
-  //     const indices = [];
-  //     for (let k = 0; k < 135; k++) {
-  //       indices.push(k);
-  //     }
-  //     triggerSegmentationDataModified(segVolumeId, indices);
-  //   });
+  triggerSegmentationDataModified(segmentationId);
 }
 
 const boxRadius = 5;
@@ -674,7 +655,7 @@ content.appendChild(logDiv);
 // ============================= //
 addDropdownToToolbar({
   options: { map: toolMap, defaultValue: defaultTool },
-  toolGroupId,
+  toolGroupId: [toolGroupId, volumeToolGroupId],
 });
 
 addSegmentIndexDropdown(segmentationId);
@@ -869,13 +850,11 @@ async function run() {
 
   cornerstoneTools.addTool(SegmentationDisplayTool);
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   volumeToolGroup.addTool(SegmentationDisplayTool.toolName);
-  volumeToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const imageIdsFull = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
@@ -884,7 +863,7 @@ async function run() {
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  // imageIds = imageIds.slice(0, 2);
+  const imageIds = imageIdsFull.reverse().slice(0, 2);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -912,7 +891,7 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
-  toolGroup.addViewport(viewportIds[1], renderingEngineId);
+  volumeToolGroup.addViewport(viewportIds[1], renderingEngineId);
 
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
@@ -979,11 +958,7 @@ async function run() {
       },
     },
   ]);
-  // const segmentationVolume =
-  //   await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-  //     volumeId: segVolumeId,
-  //   });
-  segmentation.convertStackToVolumeSegmentation({
+  const volumeReps = await segmentation.convertStackToVolumeSegmentation({
     segmentationId,
     options: {
       toolGroupId: volumeToolGroupId,
@@ -999,25 +974,10 @@ async function run() {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]);
+  segmentationRepresentationUIDs.push(...volumeReps);
 
-  segmentationRepresentationUIDs.push(
-    ...(await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
-      {
-        segmentationId: segVolumeId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]))
-  );
-
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUIDs[0]
-  );
-
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    volumeToolGroupId,
-    segmentationRepresentationUIDs[1]
-  );
+  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  volumeToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
     handleKeyEvent(evt);
