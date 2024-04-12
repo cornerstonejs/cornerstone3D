@@ -13,7 +13,11 @@ import type {
   OrientationVectors,
   Point3,
 } from '../types';
-import type { ViewportInput } from '../types/IViewport';
+import type {
+  ViewPresentation,
+  ViewReference,
+  ViewportInput,
+} from '../types/IViewport';
 import {
   actorIsA,
   getClosestImageId,

@@ -234,7 +234,6 @@ function feedForSam(emb, points, labels) {
 
 function createLabelmap(viewport, mask, points, labels) {
   const imageId = viewport.getCurrentImageId();
-  console.log('*** Creating labelmap data for', imageId);
   const preview = tool.addPreview(viewport.element);
   const {
     previewSegmentIndex,
@@ -267,11 +266,6 @@ function createLabelmap(viewport, mask, points, labels) {
       }
     }
   }
-  console.log(
-    'Modified slices',
-    segmentationVoxelManager.getArrayOfSlices(),
-    setCount
-  );
   triggerSegmentationDataModified(segmentationId);
 }
 
@@ -696,7 +690,6 @@ function tryLoad(imageId) {
   );
   if (loadingSession) {
     if (desiredImage.imageId === imageId && loadingSession !== currentImage) {
-      console.log('***** try load completed - setting current image', imageId);
       currentImage = loadingSession;
       annotationModifiedListener();
     }
@@ -709,7 +702,6 @@ function tryLoad(imageId) {
     handleImage(imageId, session);
     return;
   }
-  console.log("***** couldn't find a session to load on");
 }
 
 /**
@@ -781,7 +773,6 @@ function addAnnotationListeners() {
 }
 
 async function interpolateScroll(dir = 1) {
-  console.log('**** Navigating next with interpolation');
   tool.acceptPreview(element);
   const annotations = [
     ...annotationState.getAnnotations(defaultTool, element),
@@ -809,7 +800,6 @@ async function interpolateScroll(dir = 1) {
     console.log('Already has annotations, not interpolating');
     return;
   }
-  console.log('Interpolating annotations', currentAnnotations);
   isClicked = true;
   for (const annotation of currentAnnotations) {
     annotation.interpolationUID ||= crypto.randomUUID();
