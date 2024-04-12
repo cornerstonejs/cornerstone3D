@@ -115,7 +115,6 @@ abstract class AnnotationDisplayTool extends BaseTool {
           // make them invalid since the image has been calibrated so that
           // we can update the cachedStats and also rendering
           annotation.invalidated = true;
-          annotation.data.cachedStats = {};
         }
       });
       triggerAnnotationRender(element);
