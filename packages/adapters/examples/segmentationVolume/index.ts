@@ -5,6 +5,8 @@ import * as cornerstoneTools from "@cornerstonejs/tools";
 import * as cornerstoneDicomImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as cornerstoneAdapters from "@cornerstonejs/adapters";
 
+import { dicomMap } from "./demo";
+
 import {
     addBrushSizeSlider,
     addButtonToToolbar,
@@ -84,6 +86,10 @@ const group3 = document.createElement("div");
 group3.style.marginBottom = "10px";
 demoToolbar.appendChild(group3);
 
+const group4 = document.createElement("div");
+group4.style.marginBottom = "10px";
+demoToolbar.appendChild(group4);
+
 const content = document.getElementById("content");
 
 const viewportGrid = document.createElement("div");
@@ -126,7 +132,7 @@ createInfoSection(content)
     .closeNestedSection();
 
 createInfoSection(content)
-    .addInstruction('You can try configuring "exConfig" in the console:')
+    .addInstruction('You can try configuring "dev" in the console:')
     .openNestedSection()
     .addInstruction("fetchDicom")
     .addInstruction("fetchSegmentation")
@@ -134,31 +140,24 @@ createInfoSection(content)
 
 // ============================= //
 
-const exConfig = {
-    fetchDicom: {
-        StudyInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
-        SeriesInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.40445112212390159711541259681923198035",
-        wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
+let devConfig = {
+    ...dicomMap.values().next().value
+};
+const dev = {
+    get getConfig() {
+        return devConfig;
     },
-    fetchSegmentation: {
-        StudyInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
-        SeriesInstanceUID:
-            "1.2.276.0.7230010.3.1.3.481034752.2667.1663086918.611582",
-        SOPInstanceUID:
-            "1.2.276.0.7230010.3.1.4.481034752.2667.1663086918.611583",
-        wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
+    set setConfig(obj: object) {
+        devConfig = csUtilities.deepMerge(devConfig, obj);
     }
 };
-(window as any).exConfig = exConfig;
+(window as any).dev = dev;
 
 // ============================= //
 
 async function fetchDicom() {
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-    imageIds = await createImageIdsAndCacheMetaData(exConfig.fetchDicom);
+    imageIds = await createImageIdsAndCacheMetaData(dev.getConfig.fetchDicom);
 
     //
     await loadDicom(imageIds.reverse());
@@ -225,7 +224,7 @@ async function fetchSegmentation() {
         return;
     }
 
-    const configSeg = exConfig.fetchSegmentation;
+    const configSeg = dev.getConfig.fetchSegmentation;
 
     const client = new api.DICOMwebClient({
         url: configSeg.wadoRsRoot
@@ -378,6 +377,18 @@ function removeActiveSegmentation() {
 
 // ============================= //
 
+addDropdownToToolbar({
+    id: "DICOM_DROPDOWN",
+    style: {
+        marginRight: "10px"
+    },
+    options: { map: dicomMap, defaultIndex: 0 },
+    onSelectedValueChange: (key, value) => {
+        dev.setConfig = value;
+    },
+    container: group1
+});
+
 addButtonToToolbar({
     id: "LOAD_DICOM",
     title: "Load DICOM",
@@ -392,10 +403,10 @@ addUploadToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
     style: {
-        marginRight: "15px"
+        marginRight: "5px"
     },
     onChange: readDicom,
-    container: group1
+    container: group2
 });
 
 addButtonToToolbar({
@@ -415,14 +426,14 @@ addUploadToToolbar({
         marginRight: "5px"
     },
     onChange: importSegmentation,
-    container: group1
+    container: group2
 });
 
 addButtonToToolbar({
     id: "EXPORT_SEGMENTATION",
     title: "Export SEG",
     onClick: exportSegmentation,
-    container: group1
+    container: group2
 });
 
 addDropdownToToolbar({
@@ -431,7 +442,7 @@ addDropdownToToolbar({
         width: "150px",
         marginRight: "10px"
     },
-    options: { map: labelmapTools.toolMap },
+    options: { map: labelmapTools.toolMap, defaultIndex: 0 },
     onSelectedValueChange: nameAsStringOrNumber => {
         const tool = String(nameAsStringOrNumber);
         const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -448,12 +459,12 @@ addDropdownToToolbar({
         });
     },
     labelText: "Tools: ",
-    container: group2
+    container: group3
 });
 
 addBrushSizeSlider({
     toolGroupId: toolGroupId,
-    container: group2
+    container: group3
 });
 
 addDropdownToToolbar({
@@ -481,14 +492,14 @@ addDropdownToToolbar({
         updateSegmentationDropdown(segmentationId);
     },
     labelText: "Set Active Segmentation: ",
-    container: group3
+    container: group4
 });
 
 addButtonToToolbar({
     id: "REMOVE_ACTIVE_SEGMENTATION",
     title: "Remove Active Segmentation",
     onClick: removeActiveSegmentation,
-    container: group3
+    container: group4
 });
 
 // ============================= //
