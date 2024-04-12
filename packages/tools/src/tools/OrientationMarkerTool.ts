@@ -213,7 +213,12 @@ class OrientationMarkerTool extends BaseTool {
 
     let viewports = renderingEngine.getViewports();
     viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
-    viewports.forEach((viewport) => this.addAxisActorInViewport(viewport));
+
+    viewports.forEach((viewport) => {
+      if (!viewport.getWidget(this.getToolName())) {
+        this.addAxisActorInViewport(viewport);
+      }
+    });
   }
 
   async addAxisActorInViewport(viewport) {
@@ -268,6 +273,7 @@ class OrientationMarkerTool extends BaseTool {
       orientationWidget,
       actor,
     };
+    viewport.addWidget(this.getToolName(), orientationWidget);
     renderWindow.render();
     viewport.getRenderingEngine().render();
 
