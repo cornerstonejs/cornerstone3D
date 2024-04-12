@@ -606,12 +606,13 @@ viewportGrid.style.width = '95vw';
 
 const viewportId = 'VIEWPORT_ID';
 const viewportIds = ['VIEWPORT_ID', 'AXIAL', 'SAGITAL', 'CORONAL'];
-const element = document.createElement('div');
-const element1 = document.createElement('div');
 
-const elements = [element, element1];
-for (const el of elements) {
+const elements = [];
+for (const id of viewportIds) {
+  const el = document.createElement('div');
+  elements.push(el);
   el.oncontextmenu = () => false;
+  el.id = id;
 
   Object.assign(el.style, {
     width: size,
@@ -620,6 +621,7 @@ for (const el of elements) {
   });
   viewportGrid.appendChild(el);
 }
+const [element, element1, element2, element3] = elements;
 
 Object.assign(canvas.style, {
   width: size,
@@ -863,7 +865,7 @@ async function run() {
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  const imageIds = imageIdsFull.reverse().slice(0, 2);
+  const imageIds = imageIdsFull.reverse(); // .slice(0, 2);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -887,11 +889,31 @@ async function run() {
         background: <Types.Point3>[0.2, 0.2, 0],
       },
     },
+    {
+      viewportId: viewportIds[2],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0, 0.2, 0],
+      },
+    },
+    {
+      viewportId: viewportIds[3],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
   volumeToolGroup.addViewport(viewportIds[1], renderingEngineId);
+  volumeToolGroup.addViewport(viewportIds[2], renderingEngineId);
+  volumeToolGroup.addViewport(viewportIds[3], renderingEngineId);
 
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
@@ -934,6 +956,14 @@ async function run() {
   volume.load();
 
   volumeViewport.setVolumes([{ volumeId }]);
+  const sagViewport = renderingEngine.getViewport(
+    viewportIds[2]
+  ) as Types.IVolumeViewport;
+  sagViewport.setVolumes([{ volumeId }]);
+  const corViewport = renderingEngine.getViewport(
+    viewportIds[3]
+  ) as Types.IVolumeViewport;
+  corViewport.setVolumes([{ volumeId }]);
 
   volumeViewport.setView(
     viewport.getViewReference(),
