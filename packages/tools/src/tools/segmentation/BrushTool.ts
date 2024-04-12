@@ -2,6 +2,9 @@ import {
   utilities as csUtils,
   cache,
   getEnabledElement,
+  StackViewport,
+  eventTarget,
+  Enums,
 } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
@@ -206,6 +209,20 @@ class BrushTool extends BaseTool {
         type
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
+
+      const isStackViewport = viewport instanceof StackViewport;
+
+      if (isStackViewport) {
+        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+          detail: {
+            type: 'Segmentation',
+            message: 'Cannot perform brush operation on the selected viewport',
+          },
+          cancelable: true,
+        });
+        eventTarget.dispatchEvent(event);
+        return null;
+      }
 
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume

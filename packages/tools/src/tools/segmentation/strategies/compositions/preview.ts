@@ -88,7 +88,7 @@ export default {
       previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
       preview,
-    } = operationData;
+    } = operationData || {};
     if (previewSegmentIndex === undefined) {
       return;
     }
