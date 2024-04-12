@@ -841,16 +841,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       })
       .filter(Boolean);
 
-    const voiRange = voiRanges.length ? voiRanges[0].voiRange : null;
+    const voiRange = volumeId
+      ? voiRanges.find((range) => range.volumeId === volumeId)?.voiRange
+      : voiRanges[0]?.voiRange;
 
     const volumeColormap = this.getColormap(applicableVolumeActorInfo);
 
-    let colormap;
-    if (volumeId && volumeColormap) {
-      colormap = volumeColormap;
-    } else {
-      colormap = latestColormap;
-    }
+    const colormap =
+      volumeId && volumeColormap ? volumeColormap : latestColormap;
 
     return {
       colormap: colormap,
