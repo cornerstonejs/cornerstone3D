@@ -1,7 +1,11 @@
+/* import { api } from "dicomweb-client"; */
+
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
 import * as cornerstoneDicomImageLoader from "@cornerstonejs/dicom-image-loader";
 import * as cornerstoneAdapters from "@cornerstonejs/adapters";
+
+import { dicomMap } from "./demo";
 
 import {
     addBrushSizeSlider,
@@ -107,6 +111,10 @@ const group3 = document.createElement("div");
 group3.style.marginBottom = "10px";
 demoToolbar.appendChild(group3);
 
+const group4 = document.createElement("div");
+group4.style.marginBottom = "10px";
+demoToolbar.appendChild(group4);
+
 const content = document.getElementById("content");
 
 const viewportGrid = document.createElement("div");
@@ -128,32 +136,25 @@ viewportGrid.appendChild(element1);
 content.appendChild(viewportGrid);
 
 createInfoSection(content)
-    .addInstruction('You can try configuring "exConfig" in the console:')
+    .addInstruction('You can try configuring "dev" in the console:')
     .openNestedSection()
     .addInstruction("fetchDicom")
     .closeNestedSection();
 
 // ============================= //
 
-const exConfig = {
-    fetchDicom: {
-        StudyInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
-        SeriesInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.40445112212390159711541259681923198035",
-        wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
-    }
-    /* fetchSegmentation: {
-        StudyInstanceUID:
-            "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
-        SeriesInstanceUID:
-            "1.2.276.0.7230010.3.1.3.481034752.2667.1663086918.611582",
-        SOPInstanceUID:
-            "1.2.276.0.7230010.3.1.4.481034752.2667.1663086918.611583",
-        wadoRsRoot: "https://d33do7qe4w26qo.cloudfront.net/dicomweb"
-    } */
+let devConfig = {
+    ...dicomMap.values().next().value
 };
-(window as any).exConfig = exConfig;
+const dev = {
+    get getConfig() {
+        return devConfig;
+    },
+    set setConfig(obj: object) {
+        devConfig = csUtilities.deepMerge(devConfig, obj);
+    }
+};
+(window as any).dev = dev;
 
 // ============================= //
 
@@ -162,10 +163,18 @@ async function fetchDicom() {
 
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM
     const imageIdsArray = await createImageIdsAndCacheMetaData(
-        exConfig.fetchDicom
+        dev.getConfig.fetchDicom
     );
 
     imageIds = imageIdsArray.slice(0, 1);
+
+    // TODO
+    if (
+        dev.getConfig.fetchDicom.StudyInstanceUID ===
+        "1.3.12.2.1107.5.2.32.35162.30000015050317233592200000046"
+    ) {
+        imageIds = imageIdsArray.slice(50, 51);
+    }
 
     await loadDicom(imageIds);
 }
@@ -207,6 +216,26 @@ async function loadDicom(imageIds: string[]) {
     // Render the image
     renderingEngine.renderViewports(viewportIds);
 }
+
+/* async function fetchSegmentation() {
+    if (!imageIds.length) {
+        return;
+    }
+
+    const configSeg = dev.getConfig.fetchSegmentation;
+
+    const client = new api.DICOMwebClient({
+        url: configSeg.wadoRsRoot
+    });
+    const arrayBuffer = await client.retrieveInstance({
+        studyInstanceUID: configSeg.StudyInstanceUID,
+        seriesInstanceUID: configSeg.SeriesInstanceUID,
+        sopInstanceUID: configSeg.SOPInstanceUID
+    });
+
+    //
+    await loadSegmentation(arrayBuffer);
+} */
 
 async function importSegmentation(files: FileList) {
     if (!imageIds.length) {
@@ -367,6 +396,18 @@ const inputConfig = {
     }
 };
 
+addDropdownToToolbar({
+    id: "DICOM_DROPDOWN",
+    style: {
+        marginRight: "10px"
+    },
+    options: { map: dicomMap, defaultIndex: 0 },
+    onSelectedValueChange: (key, value) => {
+        dev.setConfig = value;
+    },
+    container: group1
+});
+
 addButtonToToolbar({
     id: "LOAD_DICOM",
     title: "Load DICOM",
@@ -377,14 +418,24 @@ addButtonToToolbar({
     container: group1
 });
 
+/* addButtonToToolbar({
+    id: "LOAD_SEGMENTATION",
+    title: "Load SEG",
+    style: {
+        marginRight: "5px"
+    },
+    onClick: fetchSegmentation,
+    container: group1
+}); */
+
 addUploadToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
     style: {
-        marginRight: "15px"
+        marginRight: "5px"
     },
     onChange: readDicom,
-    container: group1,
+    container: group2,
     input: inputConfig
 });
 
@@ -395,7 +446,7 @@ addUploadToToolbar({
         marginRight: "5px"
     },
     onChange: importSegmentation,
-    container: group1,
+    container: group2,
     input: inputConfig
 });
 
@@ -403,7 +454,7 @@ addButtonToToolbar({
     id: "EXPORT_SEGMENTATION",
     title: "Export SEG",
     onClick: exportSegmentation,
-    container: group1
+    container: group2
 });
 
 addDropdownToToolbar({
@@ -429,12 +480,12 @@ addDropdownToToolbar({
         });
     },
     labelText: "Tools: ",
-    container: group2
+    container: group3
 });
 
 addBrushSizeSlider({
     toolGroupId: toolGroupId,
-    container: group2
+    container: group3
 });
 
 addDropdownToToolbar({
@@ -462,14 +513,14 @@ addDropdownToToolbar({
         updateSegmentationDropdown(segmentationId);
     },
     labelText: "Set Active Segmentation: ",
-    container: group3
+    container: group4
 });
 
 addButtonToToolbar({
     id: "REMOVE_ACTIVE_SEGMENTATION",
     title: "Remove Active Segmentation",
     onClick: removeActiveSegmentation,
-    container: group3
+    container: group4
 });
 
 // ============================= //
