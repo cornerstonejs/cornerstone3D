@@ -112,7 +112,6 @@ class BrushTool extends BaseTool {
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
-            dynamicRadius: 0, // in voxel counts in each direction, only used during dynamic threshold strategies.
           },
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
