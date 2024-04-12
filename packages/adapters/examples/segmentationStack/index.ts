@@ -289,21 +289,45 @@ function removeActiveSegmentation() {
         return;
     }
 
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
     // Get active segmentation representation
-    const { segmentationId, segmentationRepresentationUID } =
+    const activeSegmentationRepresentation =
         csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
         );
 
+    if (!activeSegmentation || !activeSegmentationRepresentation) {
+        return;
+    }
+
     //
     csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
-        segmentationRepresentationUID
+        activeSegmentationRepresentation.segmentationRepresentationUID
     ]);
 
     //
-    csToolsSegmentation.state.removeSegmentation(segmentationId);
+    csToolsSegmentation.state.removeSegmentation(
+        activeSegmentation.segmentationId
+    );
+
     //
-    cache.removeVolumeLoadObject(segmentationId);
+    const labelmap =
+        activeSegmentation.representationData[
+            csToolsEnums.SegmentationRepresentations.Labelmap
+        ];
+
+    //
+    if (labelmap.imageIdReferenceMap) {
+        //
+        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
+            //
+            cache.removeImageLoadObject(derivedImagesId);
+        });
+    }
 
     // Update the dropdown
     updateSegmentationDropdown();
