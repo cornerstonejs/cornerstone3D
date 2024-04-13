@@ -54,6 +54,8 @@ const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
 let tool;
 
 const segmentationId = `SEGMENTATION_ID`;
+// Stores information on whether the AI data is encoded in cache
+let cached;
 
 let currentImage;
 
@@ -159,6 +161,7 @@ let points = [];
 let labels = [];
 let imageImageData;
 let isClicked = false;
+let skipAnnotationUpdates = false;
 let maskImageData;
 
 function log(i) {
@@ -244,7 +247,6 @@ function createLabelmap(viewport, mask, points, labels) {
   const previewVoxelManager = memo?.voxelManager || preview.previewVoxelManager;
   const [width, height, _depth] = previewVoxelManager.dimensions;
   const { data } = mask;
-  let setCount = 0;
 
   for (let j = 0; j < height; j++) {
     const y = Math.round((j * MAX_HEIGHT) / height);
@@ -259,7 +261,6 @@ function createLabelmap(viewport, mask, points, labels) {
       const index = x * 4 + y * 4 * MAX_WIDTH;
       const v = data[index];
       if (v > 0) {
-        setCount++;
         previewVoxelManager.setAtIJK(i, j, 0, previewSegmentIndex);
       } else {
         previewVoxelManager.setAtIJK(i, j, 0, null);
@@ -271,7 +272,7 @@ function createLabelmap(viewport, mask, points, labels) {
 
 const boxRadius = 5;
 
-async function decoder(points, labels) {
+async function decoder(points, labels, useSession = currentImage) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   canvas.width = imageImageData.width;
@@ -279,7 +280,7 @@ async function decoder(points, labels) {
   canvasMask.width = imageImageData.width;
   canvasMask.height = imageImageData.height;
 
-  if (!currentImage || currentImage.imageId !== desiredImage.imageId) {
+  if (!useSession || useSession.imageId !== desiredImage.imageId) {
     console.warn('***** Image not current, need to wait for current image');
     return;
   }
@@ -289,20 +290,20 @@ async function decoder(points, labels) {
 
   if (points.length > 0) {
     // need to wait for encoder to be ready
-    if (!currentImage.imageEmbeddings) {
-      await currentImage.encoder;
+    if (!useSession.imageEmbeddings) {
+      await useSession.encoder;
     }
 
     // wait for encoder to deliver embeddings
-    const emb = await currentImage.imageEmbeddings;
+    const emb = await useSession.imageEmbeddings;
 
     // the decoder
-    const session = currentImage.decoder;
+    const session = useSession.decoder;
 
     const feed = feedForSam(emb, points, labels);
     const start = performance.now();
     const res = await session.run(feed);
-    decoder_latency.innerText = `decoder ${currentImage.sessionIndex} ${(
+    decoder_latency.innerText = `decoder ${useSession.sessionIndex} ${(
       performance.now() - start
     ).toFixed(1)} ms`;
 
@@ -353,32 +354,6 @@ function getPoint(event) {
   return [x, y];
 }
 
-/**
- * handler to handle click event on canvas
- */
-async function handleClick(event) {
-  if (isClicked || !currentImage) {
-    return;
-  }
-  try {
-    isClicked = true;
-    canvas.style.cursor = 'wait';
-
-    const point = getPoint(event);
-    const { button } = event;
-    const label = button === 2 ? 0 : 1;
-    event.preventDefault();
-    points.push(point[0]);
-    points.push(point[1]);
-    labels.push(label);
-    await decoder(points, labels);
-  } finally {
-    canvas.style.cursor = 'default';
-    isClicked = false;
-  }
-  return true;
-}
-
 const desiredImage = {
   imageId: null,
   imageIndex: -1,
@@ -399,18 +374,45 @@ const viewportOptions = {
   background: <Types.Point3>[0, 0, 0.2],
 };
 
+const imageEncodings = new Map();
+let sharedImageEncoding;
+
+/**
+ * Loads encoder data externally.  Applies the image data to the session if
+ * successful.
+ */
+async function restoreImageEncoding(imageId) {
+  if (!sharedImageEncoding) {
+    return;
+  }
+  const floatData = imageEncodings.get(imageId);
+  if (floatData) {
+    sharedImageEncoding.image_embeddings.cpuData = floatData;
+    return sharedImageEncoding;
+  }
+}
+
+async function storeImageEncoding(imageId, data) {
+  if (!sharedImageEncoding) {
+    console.log('Sharing image encoding', data);
+    sharedImageEncoding = data;
+  }
+  const storeData = data.image_embeddings.cpuData;
+  imageEncodings.set(imageId, new Float32Array(storeData));
+}
+
 /**
  * handler called when image available
  */
 async function handleImage(imageId, imageSession) {
-  const isCurrent = desiredImage.imageId === imageId;
-  if (imageId === imageSession.imageId || imageSession.isLoading) {
+  if (imageId === imageSession.imageId || isClicked) {
     return;
   }
-  imageSession.isLoading = true;
+  isClicked = true;
   imageSession.imageId = imageId;
   try {
     const encoder_latency = document.getElementById('encoder_latency');
+    const isCurrent = desiredImage.imageId === imageId;
     if (isCurrent) {
       encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
       decoder_latency.innerText = 'Awaiting image';
@@ -444,32 +446,40 @@ async function handleImage(imageId, imageSession) {
 
     imageImageData = ctx.getImageData(0, 0, width, height);
 
-    const t = await ort.Tensor.fromImage(imageImageData, {
-      resizedWidth: MODEL_WIDTH,
-      resizedHeight: MODEL_HEIGHT,
-    });
-    const feed = config.isSlimSam ? { pixel_values: t } : { input_image: t };
-    await imageSession.loader;
-    const session = await imageSession.encoder;
-    if (!session) {
-      log('****** No session');
-      return;
-    }
-    const start = performance.now();
-    imageSession.imageEmbeddings = session.run(feed);
-    await imageSession.imageEmbeddings;
-    if (desiredImage.imageId === imageId) {
-      encoder_latency.innerText = `Image Ready ${imageSession.sessionIndex} ${(
-        performance.now() - start
-      ).toFixed(1)} ms`;
-      canvas.style.cursor = 'default';
+    const data = await restoreImageEncoding(imageId);
+    if (data) {
+      console.log('***** Got image embeddings', data);
+      imageSession.imageEmbeddings = data;
+      if (desiredImage.imageId === imageId) {
+        encoder_latency.innerText = `Cached Image`;
+        canvas.style.cursor = 'default';
+      }
+    } else {
+      const t = await ort.Tensor.fromImage(imageImageData, {
+        resizedWidth: MODEL_WIDTH,
+        resizedHeight: MODEL_HEIGHT,
+      });
+      const feed = config.isSlimSam ? { pixel_values: t } : { input_image: t };
+      await imageSession.loader;
+      const session = await imageSession.encoder;
+      if (!session) {
+        log('****** No session');
+        return;
+      }
+      const start = performance.now();
+      imageSession.imageEmbeddings = session.run(feed);
+      const data = await imageSession.imageEmbeddings;
+      storeImageEncoding(imageId, data);
+      if (desiredImage.imageId === imageId) {
+        encoder_latency.innerText = `Image Ready ${
+          imageSession.sessionIndex
+        } ${(performance.now() - start).toFixed(1)} ms`;
+        canvas.style.cursor = 'default';
+      }
     }
   } finally {
-    imageSession.isLoading = false;
+    isClicked = false;
   }
-
-  // Might update the loading image instances
-  tryLoad(desiredImage.imageId);
 }
 
 /*
@@ -555,9 +565,8 @@ async function loadAI() {
   canvas.style.cursor = 'wait';
 
   decoder_latency = document.getElementById('decoder_latency');
-  canvas.onmouseup = handleClick;
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 2; i++) {
     sessions.push({
       sessionIndex: i,
       encoder: null,
@@ -588,7 +597,6 @@ addButtonToToolbar({
       annotationState.removeAnnotation(annotation.annotationUID)
     );
     viewport.render();
-    decoder(points, labels);
   },
 });
 
@@ -657,6 +665,50 @@ addDropdownToToolbar({
 addSegmentIndexDropdown(segmentationId);
 
 /**
+ * Cache the next image as encoded.
+ */
+function cacheImageEncodings(
+  offset = 0,
+  current = viewport.getCurrentImageId()
+) {
+  console.log('cacheImageEncodings', offset, current);
+  const imageIds = viewport.getImageIds();
+  if (offset >= imageIds.length) {
+    // We are done.
+    return;
+  }
+  const index = (offset + current) % imageIds.length;
+  const imageId = imageIds[index];
+  if (imageEncodings.has(imageId)) {
+    cacheImageEncodings(offset + 1, current);
+    return;
+  }
+  if (cached) {
+    return;
+  }
+  if (isClicked) {
+    setTimeout(() => cacheImageEncodings(offset, current), 100);
+    return;
+  }
+
+  document.getElementById('status').innerText = `Caching ${index}`;
+  handleImage(imageId, sessions[1]).then(() => {
+    cacheImageEncodings(offset + 1, current);
+  });
+}
+
+addButtonToToolbar({
+  title: 'Cache',
+  onClick: () => {
+    if (cached !== undefined) {
+      return;
+    }
+    cached = false;
+    cacheImageEncodings(0, 0);
+  },
+});
+
+/**
  * Maps world points to destination points.
  * Assumes the destination canvas is scale to fit at 100% in both dimensions,
  * while the source point is also assumed to be in the same position, but not
@@ -683,25 +735,19 @@ function mapAnnotationPoint(worldPoint) {
  * if it isn't already the desired one, and invoke the handleImage.  It also checks
  * the "next" images to see if there are other images which should be tried to load.
  */
-function tryLoad(imageId) {
-  // Don't try loading something new if the current item is already in progress.
-  const loadingSession = sessions.find(
-    (session) => session.imageId === imageId
-  );
-  if (loadingSession) {
-    if (desiredImage.imageId === imageId && loadingSession !== currentImage) {
-      currentImage = loadingSession;
+function tryLoad() {
+  // Always use session 0 for the current session
+  const { imageId } = desiredImage;
+  const session = sessions[0];
+
+  if (session.imageId === imageId) {
+    if (currentImage !== session) {
+      currentImage = session;
       annotationModifiedListener();
     }
     return;
   }
-  for (const session of sessions) {
-    if (session.isLoading || session === currentImage) {
-      continue;
-    }
-    handleImage(imageId, session);
-    return;
-  }
+  handleImage(imageId, session);
 }
 
 /**
@@ -722,32 +768,66 @@ function getCurrentAnnotations() {
  * frame and adding appropriate points to it/updating said points.
  */
 async function annotationModifiedListener() {
-  if (isClicked || !currentImage || currentImage.isLoading) {
+  if (!currentImage || skipAnnotationUpdates) {
+    console.warn('Not current image - not running update');
     return;
   }
   const currentAnnotations = getCurrentAnnotations();
   if (!currentAnnotations.length) {
+    console.log('**** No current annotations - not trying load');
     return;
   }
-  try {
-    isClicked = true;
-    canvas.style.cursor = 'wait';
-    points = [];
-    labels = [];
-    for (const annotation of currentAnnotations) {
-      const handle = annotation.data.handles.points[0];
-      const point = mapAnnotationPoint(handle);
-      const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
-      points.push(point[0]);
-      points.push(point[1]);
-      labels.push(label);
-    }
-    await decoder(points, labels);
-  } finally {
-    canvas.style.cursor = 'default';
-    isClicked = false;
+  console.log('**** Annotation modified', currentAnnotations);
+  points = [];
+  labels = [];
+  for (const annotation of currentAnnotations) {
+    const handle = annotation.data.handles.points[0];
+    const point = mapAnnotationPoint(handle);
+    const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
+    points.push(point[0]);
+    points.push(point[1]);
+    labels.push(label);
   }
+  runDecoder();
   return true;
+}
+
+let decoderWaiting = false;
+
+/** Awaits a chance to run the decoder */
+function runDecoder() {
+  if (decoderWaiting) {
+    console.log('Decoder already waiting');
+    return;
+  }
+  decoderWaiting = true;
+  runDecoderTest();
+}
+
+async function runDecoderTest() {
+  if (!decoderWaiting) {
+    console.log('Cancelling run decoder test');
+    return;
+  }
+  if (isClicked || !currentImage) {
+    console.log(
+      '*** Waiting for current image or isClicked',
+      isClicked,
+      !!currentImage
+    );
+    setTimeout(runDecoder, 1000);
+  } else {
+    console.log('Run annotations mask update');
+    isClicked = true;
+    try {
+      canvas.style.cursor = 'wait';
+      await decoder(points, labels);
+    } finally {
+      canvas.style.cursor = 'default';
+      isClicked = false;
+      decoderWaiting = false;
+    }
+  }
 }
 
 /**
@@ -800,16 +880,19 @@ async function interpolateScroll(dir = 1) {
     console.log('Already has annotations, not interpolating');
     return;
   }
-  isClicked = true;
-  for (const annotation of currentAnnotations) {
-    annotation.interpolationUID ||= crypto.randomUUID();
-    const newAnnotation = structuredClone(annotation);
-    newAnnotation.annotationUID = undefined;
-    Object.assign(newAnnotation.metadata, viewRef);
-    (newAnnotation as any).cachedStats = {};
-    annotationState.addAnnotation(newAnnotation, viewport.element);
+  skipAnnotationUpdates = true;
+  try {
+    for (const annotation of currentAnnotations) {
+      annotation.interpolationUID ||= crypto.randomUUID();
+      const newAnnotation = structuredClone(annotation);
+      newAnnotation.annotationUID = undefined;
+      Object.assign(newAnnotation.metadata, viewRef);
+      (newAnnotation as any).cachedStats = {};
+      annotationState.addAnnotation(newAnnotation, viewport.element);
+    }
+  } finally {
+    skipAnnotationUpdates = false;
   }
-  isClicked = false;
   viewport.scroll(dir);
 }
 
@@ -855,7 +938,7 @@ async function run() {
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  const imageIds = imageIdsFull.reverse(); // .slice(0, 2);
+  const imageIds = imageIdsFull.reverse().slice(35, 45);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -913,7 +996,7 @@ async function run() {
     await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
 
   // Set the stack on the viewport
-  await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
+  await viewport.setStack(imageIds);
   viewport.setOptions(viewportOptions);
 
   // Add the canvas after the viewport
@@ -930,12 +1013,8 @@ async function run() {
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
 
     currentImage = null;
-
-    tryLoad(desiredImage.imageId);
-    const nextImageId = imageIds[viewport.getCurrentImageIdIndex() + 1];
-    if (nextImageId) {
-      tryLoad(nextImageId);
-    }
+    decoderWaiting = false;
+    tryLoad();
   });
   addAnnotationListeners();
 
@@ -955,15 +1034,11 @@ async function run() {
   ) as Types.IVolumeViewport;
   corViewport.setVolumes([{ volumeId }]);
 
-  volumeViewport.setView(
-    viewport.getViewReference(),
-    viewport.getViewPresentation()
-  );
-
   // Render the image
   renderingEngine.render();
 
-  tryLoad(viewport.getCurrentImageId());
+  desiredImage.imageId = viewport.getCurrentImageId();
+  tryLoad();
   segmentation.addSegmentations([
     {
       segmentationId,
@@ -1002,6 +1077,10 @@ async function run() {
   element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
     handleKeyEvent(evt);
   });
+  volumeViewport.setView(
+    viewport.getViewReference(),
+    viewport.getViewPresentation()
+  );
 }
 
 run();
