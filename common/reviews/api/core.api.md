@@ -2094,7 +2094,7 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
     // (undocumented)
-    setImageIdIndex(imageIdIndex: number): Promise<string>;
+    setImageIdIndex(imageIdIndex: number, overwriteScrollIndex?: boolean): Promise<string>;
     // (undocumented)
     setProperties({ voiRange, invert, interpolationType, rotation, colormap, }: StackViewportProperties, suppressEvents?: boolean): void;
     // (undocumented)
@@ -3138,7 +3138,7 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
     // (undocumented)
-    setImageIdIndex(imageIdIndex: number): Promise<string>;
+    setImageIdIndex(imageIdIndex: number, overwriteScrollIndex?: any): Promise<string>;
     // (undocumented)
     protected setInterpolationType: (interpolationType: InterpolationType) => void;
     // (undocumented)

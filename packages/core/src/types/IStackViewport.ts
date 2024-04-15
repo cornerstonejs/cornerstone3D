@@ -160,7 +160,7 @@ export default interface IStackViewport extends IViewport {
    */
   setImageIdIndex(
     imageIdIndex: number,
-    overwriteScrollIndex: boolean
+    overwriteScrollIndex?: boolean
   ): Promise<string>;
   /**
    * Calibrates the image with new metadata that has been added for imageId. To calibrate
