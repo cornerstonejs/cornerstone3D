@@ -196,26 +196,7 @@ class AdvancedMagnifyViewportManager {
     if ((viewport as Types.IStackViewport).stackActorReInitialized) {
       // we should invalidate the viewport as well
       // this will trigger the magnify viewport to be updated
-      const magnifyViewports =
-        this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
-
-      magnifyViewports.forEach(
-        ({ magnifyViewport, annotation, magnifyViewportInfo }) => {
-          this.destroyViewport(magnifyViewport.viewportId);
-
-          // if it is new image we need to update the magnifyViewportInfo
-          // since it might have new image dimensions etc.
-          const newEnabledElement =
-            getEnabledElementByViewportId(sourceViewportId);
-
-          this.createViewport(annotation, {
-            ...magnifyViewportInfo,
-            sourceEnabledElement: {
-              ...newEnabledElement,
-            },
-          });
-        }
-      );
+      this._reset(sourceViewportId);
     }
 
     magnifyViewportsMapEntries.forEach(({ annotation }) => {
@@ -275,6 +256,29 @@ class AdvancedMagnifyViewportManager {
     });
   };
 
+  private _reset(sourceViewportId: string) {
+    const magnifyViewports =
+      this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
+
+    magnifyViewports.forEach(
+      ({ magnifyViewport, annotation, magnifyViewportInfo }) => {
+        this.destroyViewport(magnifyViewport.viewportId);
+
+        // if it is new image we need to update the magnifyViewportInfo
+        // since it might have new image dimensions etc.
+        const newEnabledElement =
+          getEnabledElementByViewportId(sourceViewportId);
+
+        this.createViewport(annotation, {
+          ...magnifyViewportInfo,
+          sourceEnabledElement: {
+            ...newEnabledElement,
+          },
+        });
+      }
+    );
+  }
+
   private _addEventListeners() {
     eventTarget.addEventListener(
       cstEvents.ANNOTATION_REMOVED,
@@ -295,10 +299,30 @@ class AdvancedMagnifyViewportManager {
       this._newStackImageCallback
     );
 
+    const newStackHandler = (evt) => {
+      const { viewportId: sourceViewportId } = evt.detail;
+      this._reset(sourceViewportId);
+    };
+
+    element.addEventListener(Events.STACK_VIEWPORT_NEW_STACK, newStackHandler);
+
+    const newVolumeHandler = (evt) => {
+      const { viewportId: sourceViewportId } = evt.detail;
+      this._reset(sourceViewportId);
+    };
+    element.addEventListener(
+      Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      newVolumeHandler
+    );
+
     element.addEventListener(
       Events.VOLUME_NEW_IMAGE,
       this._newVolumeImageCallback
     );
+
+    // Store the event handlers to remove later
+    element.newStackHandler = newStackHandler;
+    element.newVolumeHandler = newVolumeHandler;
   }
 
   private _removeSourceElementEventListener(element) {
@@ -311,6 +335,20 @@ class AdvancedMagnifyViewportManager {
       Events.VOLUME_NEW_IMAGE,
       this._newVolumeImageCallback
     );
+
+    // Remove using the stored handlers
+    element.removeEventListener(
+      Events.STACK_VIEWPORT_NEW_STACK,
+      element.newStackHandler
+    );
+    element.removeEventListener(
+      Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      element.newVolumeHandler
+    );
+
+    // Clean up references
+    delete element.newStackHandler;
+    delete element.newVolumeHandler;
   }
 
   private _initialize() {
