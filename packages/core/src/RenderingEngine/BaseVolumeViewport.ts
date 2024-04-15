@@ -257,9 +257,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const mapper = volumeActor.getMapper();
-    mapper.setSampleDistance(1.0);
-
     const cfun = vtkColorTransferFunction.newInstance();
     let colormapObj = colormapUtils.getColormap(colormap.name);
 
@@ -327,6 +324,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       });
     }
     volumeActor.getProperty().setScalarOpacity(0, ofun);
+
+    if (!this.viewportProperties.colormap) {
+      this.viewportProperties.colormap = {};
+    }
 
     this.viewportProperties.colormap.opacity = colormap.opacity;
   }
@@ -771,6 +772,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     applyPreset(volumeActor, preset);
 
+    this.viewportProperties.preset = preset;
+    this.render();
+
     if (!suppressEvents) {
       triggerEvent(this.element, Events.PRESET_MODIFIED, {
         viewportId: this.id,
@@ -822,6 +826,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       invert,
       slabThickness,
       rotation,
+      preset,
     } = this.viewportProperties;
 
     const voiRanges = this.getActors()
@@ -858,6 +863,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       invert: invert,
       slabThickness: slabThickness,
       rotation: rotation,
+      preset,
     };
   };
 
