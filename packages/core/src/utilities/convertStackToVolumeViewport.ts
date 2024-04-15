@@ -5,7 +5,7 @@ import {
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
 import { Events, OrientationAxis, ViewportType } from '../enums';
-import { utilities } from '@cornerstonejs/core';
+import { imageIdToURI } from '../utilities';
 
 const VOLUME_LOADER_SCHEME = 'wadors';
 
@@ -48,7 +48,7 @@ async function convertStackToVolumeViewport({
 
   let imageIds = viewport.getImageIds();
   imageIds = imageIds.map((imageId) => {
-    const imageURI = utilities.imageIdToURI(imageId);
+    const imageURI = imageIdToURI(imageId);
     return `${VOLUME_LOADER_SCHEME}:${imageURI}`;
   });
 
