@@ -5,6 +5,9 @@ import {
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
 import { Events, OrientationAxis, ViewportType } from '../enums';
+import { utilities } from '@cornerstonejs/core';
+
+const VOLUME_LOADER_SCHEME = 'wadors';
 
 /**
  * Converts a stack viewport to a volume viewport.
@@ -43,7 +46,11 @@ async function convertStackToVolumeViewport({
   const { id, element } = viewport;
   const viewportId = options.viewportId || id;
 
-  const imageIds = viewport.getImageIds();
+  let imageIds = viewport.getImageIds();
+  imageIds = imageIds.map((imageId) => {
+    const imageURI = utilities.imageIdToURI(imageId);
+    return `${VOLUME_LOADER_SCHEME}:${imageURI}`;
+  });
 
   // It is important to keep the camera before enabling the viewport
   const prevCamera = viewport.getCamera();
