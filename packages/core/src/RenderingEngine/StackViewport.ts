@@ -190,6 +190,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   // Camera properties
   private initialViewUp: Point3;
 
+  public _wasNewImage;
+
   /**
    * Constructor for the StackViewport class
    * @param props - ViewportInput
@@ -2012,8 +2014,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       renderingEngineId: this.renderingEngineId,
     };
 
-    triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
     this._updateActorToDisplayImageId(image);
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
     // Trigger the image to be drawn on the next animation frame
     this.render();
@@ -2299,6 +2301,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       );
 
       this._setPropertiesFromCache();
+      this._wasNewImage = false;
 
       return;
     }
@@ -2377,6 +2380,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
     this.stackInvalidated = false;
+
+    this._wasNewImage = true;
 
     if (this._publishCalibratedEvent) {
       this.triggerCalibrationEvent();
