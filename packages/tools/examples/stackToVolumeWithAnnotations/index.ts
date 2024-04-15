@@ -47,6 +47,8 @@ let toolGroup;
 const toolGroupId = 'MY_TOOL_GROUP_ID';
 const viewportIds = ['CT_VIEWPORT'];
 let imageIds;
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
+const volumeId = volumeLoaderScheme + ':myVolume';
 
 const toolsNames = [LengthTool.toolName];
 let selectedToolName = toolsNames[0];
@@ -111,12 +113,12 @@ addUploadToToolbar({
       imageIds.push(imageId);
     }
 
-    //
     const viewport = renderingEngine.getViewport(viewportIds[0]);
-    //
-    await viewport.setStack(imageIds, 0);
 
-    // Render the image
+    if (viewport.type === ViewportType.STACK) {
+      await viewport.setStack(imageIds, 0);
+    }
+
     renderingEngine.renderViewports(viewportIds);
   },
   container: group1,
@@ -162,7 +164,7 @@ addButtonToToolbar({
         viewport: viewport as Types.IStackViewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
-          volumeId: `cornerstoneStreamingImageVolume:myVolume`,
+          volumeId: volumeId,
         },
       });
     } else {
