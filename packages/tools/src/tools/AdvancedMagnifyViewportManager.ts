@@ -4,6 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   CONSTANTS,
+  getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { AnnotationRemovedEventType } from '../types/EventTypes';
@@ -47,6 +48,7 @@ export type MagnifyViewportInfo = {
 type MagnifyViewportsMapEntry = {
   annotation: AdvancedMagnifyAnnotation;
   magnifyViewport: AdvancedMagnifyViewport;
+  magnifyViewportInfo: MagnifyViewportInfo;
 };
 
 /**
@@ -110,6 +112,7 @@ class AdvancedMagnifyViewportManager {
     this._magnifyViewportsMap.set(magnifyViewport.viewportId, {
       annotation,
       magnifyViewport,
+      magnifyViewportInfo: viewportInfo,
     });
 
     return magnifyViewport;
@@ -133,7 +136,7 @@ class AdvancedMagnifyViewportManager {
     this._destroyViewports();
   }
 
-  private _destroyViewport(magnifyViewportId: string) {
+  public destroyViewport(magnifyViewportId: string) {
     const magnifyViewportMapEntry =
       this._magnifyViewportsMap.get(magnifyViewportId);
 
@@ -153,7 +156,7 @@ class AdvancedMagnifyViewportManager {
     const magnifyViewportIds = Array.from(this._magnifyViewportsMap.keys());
 
     magnifyViewportIds.forEach((magnifyViewportId) =>
-      this._destroyViewport(magnifyViewportId)
+      this.destroyViewport(magnifyViewportId)
     );
   }
 
@@ -164,7 +167,7 @@ class AdvancedMagnifyViewportManager {
       return;
     }
 
-    this._destroyViewport(annotation.data.magnifyViewportId);
+    this.destroyViewport(annotation.data.magnifyViewportId);
   };
 
   private _getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId) {
@@ -184,6 +187,36 @@ class AdvancedMagnifyViewportManager {
     const { viewportId: sourceViewportId, imageId } = evt.detail;
     const magnifyViewportsMapEntries =
       this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
+
+    const { viewport } = getEnabledElementByViewportId(sourceViewportId);
+
+    // if the viewport was new in terms of image, we need to destroy the magnify
+    // viewports and recreate them, the new image might have different dimensions
+    // or orientation etc.
+    if ((viewport as Types.IStackViewport).stackActorReInitialized) {
+      // we should invalidate the viewport as well
+      // this will trigger the magnify viewport to be updated
+      const magnifyViewports =
+        this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
+
+      magnifyViewports.forEach(
+        ({ magnifyViewport, annotation, magnifyViewportInfo }) => {
+          this.destroyViewport(magnifyViewport.viewportId);
+
+          // if it is new image we need to update the magnifyViewportInfo
+          // since it might have new image dimensions etc.
+          const newEnabledElement =
+            getEnabledElementByViewportId(sourceViewportId);
+
+          this.createViewport(annotation, {
+            ...magnifyViewportInfo,
+            sourceEnabledElement: {
+              ...newEnabledElement,
+            },
+          });
+        }
+      );
+    }
 
     magnifyViewportsMapEntries.forEach(({ annotation }) => {
       annotation.metadata.referencedImageId = imageId;

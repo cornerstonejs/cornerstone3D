@@ -190,7 +190,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   // Camera properties
   private initialViewUp: Point3;
 
-  public _wasNewImage;
+  // this flag is used to check
+  // if the viewport used the same actor/mapper to render the image
+  // or because of the new image inconsistency, a new actor/mapper was created
+  public stackActorReInitialized: boolean;
 
   /**
    * Constructor for the StackViewport class
@@ -2301,7 +2304,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       );
 
       this._setPropertiesFromCache();
-      this._wasNewImage = false;
+      this.stackActorReInitialized = false;
 
       return;
     }
@@ -2381,7 +2384,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
     this.stackInvalidated = false;
 
-    this._wasNewImage = true;
+    this.stackActorReInitialized = true;
 
     if (this._publishCalibratedEvent) {
       this.triggerCalibrationEvent();
