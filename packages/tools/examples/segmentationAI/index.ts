@@ -145,7 +145,7 @@ const [element, element1, element2, element3] = elements;
 Object.assign(canvas.style, {
   width: size,
   height: size,
-  display: 'inline-block',
+  display: 'none',
   background: 'red',
 });
 
@@ -156,7 +156,7 @@ Object.assign(canvasMask.style, {
   background: 'black',
 });
 
-viewportGrid.appendChild(canvas);
+// viewportGrid.appendChild(canvas);
 // viewportGrid.appendChild(canvasMask);
 
 content.appendChild(viewportGrid);

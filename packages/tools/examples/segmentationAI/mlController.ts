@@ -26,8 +26,6 @@ const viewportOptions = {
 let getCurrentAnnotations, viewport, excludeTool, tool;
 
 let currentImage;
-/** Store other sessions to be used for next images. */
-const sessions = [];
 
 // the image size on canvas
 const MAX_WIDTH = 1024;
@@ -78,12 +76,6 @@ const desiredImage = {
 const imageEncodings = new Map();
 let sharedImageEncoding;
 
-const config = getConfig();
-
-ort.env.wasm.wasmPaths = 'dist/';
-ort.env.wasm.numThreads = config.threads;
-ort.env.wasm.proxy = config.provider == 'wasm';
-
 const canvas = document.createElement('canvas');
 canvas.oncontextmenu = () => false;
 const canvasMask = document.createElement('canvas');
@@ -102,33 +94,6 @@ let maskImageData;
 
 function log(i) {
   document.getElementById('status').innerText += `\n${i}`;
-}
-
-/**
- * create config from url
- */
-function getConfig() {
-  const query = window.location.search.substring(1);
-  const config = {
-    model: 'sam_b',
-    provider: 'webgpu',
-    device: 'gpu',
-    threads: 4,
-    local: null,
-    isSlimSam: false,
-  };
-  const vars = query.split('&');
-  for (let i = 0; i < vars.length; i++) {
-    const pair = vars[i].split('=');
-    if (pair[0] in config) {
-      config[pair[0]] = decodeURIComponent(pair[1]);
-    } else if (pair[0].length > 0) {
-      throw new Error('unknown argument: ' + pair[0]);
-    }
-  }
-  config.threads = parseInt(String(config.threads));
-  config.local = parseInt(config.local);
-  return config;
 }
 
 /**
@@ -195,6 +160,10 @@ let decoderWaiting = false;
  *
  */
 export default class MLController {
+  /** Store other sessions to be used for next images. */
+  private sessions = [];
+  private config;
+
   private loadingAI: Promise<unknown>;
 
   /**
@@ -228,10 +197,8 @@ export default class MLController {
     }
     const currentAnnotations = getCurrentAnnotations();
     if (!currentAnnotations.length) {
-      console.log('**** No current annotations - not trying load');
       return;
     }
-    console.log('**** Annotation modified', currentAnnotations);
     annotationsNeedUpdating = true;
     this.tryLoad();
   };
@@ -257,6 +224,7 @@ export default class MLController {
    * Loads the AI model.
    */
   public loadAI() {
+    this.getConfig();
     if (!this.loadingAI) {
       this.loadingAI = this.loadAIInternal();
     }
@@ -268,10 +236,11 @@ export default class MLController {
    * the AI to load and then waiting for it once other things are also ready.
    */
   protected async loadAIInternal() {
+    const { sessions } = this;
     canvas.style.cursor = 'wait';
 
     decoder_latency = document.getElementById('decoder_latency');
-
+    let loader;
     for (let i = 0; i < 2; i++) {
       sessions.push({
         sessionIndex: i,
@@ -279,17 +248,20 @@ export default class MLController {
         decoder: null,
         imageEmbeddings: null,
         isLoading: false,
-        canvas: canvas, // TODO: document.createElement('canvas'),
+        canvas: document.createElement('canvas'),
       });
-      const loader = this.loadModels(MODELS[config.model], sessions[i]).catch(
-        (e) => {
-          log(e);
-        }
-      );
-      sessions[i].loader = loader;
       if (i === 0) {
+        loader = this.loadModels(MODELS[this.config.model], sessions[i]).catch(
+          (e) => {
+            log(e);
+          }
+        );
         await loader;
+      } else {
+        // Only the encoder is needed otherwise
+        sessions[i].encoder = sessions[0].encoder;
       }
+      sessions[i].loader = loader;
     }
   }
 
@@ -311,7 +283,6 @@ export default class MLController {
     current = viewport.getCurrentImageId(),
     offset = 0
   ) {
-    console.log('cacheImageEncodings', offset, current);
     const imageIds = viewport.getImageIds();
     if (offset >= imageIds.length) {
       // We are done.
@@ -331,7 +302,7 @@ export default class MLController {
     }
 
     document.getElementById('status').innerText = `Caching ${index}`;
-    this.handleImage(imageId, sessions[1]).then(() => {
+    this.handleImage(imageId, this.sessions[1]).then(() => {
       this.cacheImageEncodings(current, offset + 1);
     });
   }
@@ -390,7 +361,7 @@ export default class MLController {
           resizedWidth: MODEL_WIDTH,
           resizedHeight: MODEL_HEIGHT,
         });
-        const feed = config.isSlimSam
+        const feed = this.config.isSlimSam
           ? { pixel_values: t }
           : { input_image: t };
         await imageSession.loader;
@@ -420,24 +391,16 @@ export default class MLController {
   /** Awaits a chance to run the decoder */
   protected async runDecoder() {
     if (isClicked || !currentImage) {
-      console.log(
-        '*** runDecoder - not runnable now',
-        isClicked,
-        !!currentImage
-      );
       return;
-    } else {
-      console.log('Run annotations mask update');
-      isClicked = true;
-      try {
-        canvas.style.cursor = 'wait';
-        await this.decoder(points, labels);
-        console.log('Completed decoder');
-      } finally {
-        canvas.style.cursor = 'default';
-        isClicked = false;
-        decoderWaiting = false;
-      }
+    }
+    isClicked = true;
+    try {
+      canvas.style.cursor = 'wait';
+      await this.decoder(points, labels);
+    } finally {
+      canvas.style.cursor = 'default';
+      isClicked = false;
+      decoderWaiting = false;
     }
   }
 
@@ -448,7 +411,7 @@ export default class MLController {
    */
   public tryLoad() {
     // Always use session 0 for the current session
-    const session = sessions[0];
+    const [session] = this.sessions;
 
     if (session.imageId === desiredImage.imageId) {
       if (currentImage !== session) {
@@ -712,7 +675,7 @@ export default class MLController {
     for (const [_name, model] of Object.entries(models)) {
       try {
         const opt = {
-          executionProviders: [config.provider],
+          executionProviders: [this.config.provider],
           enableMemPattern: false,
           enableCpuMemArena: false,
           extra: {
@@ -755,7 +718,7 @@ export default class MLController {
       .split('/');
     const [studyUID, _series, seriesUID] = studySeriesUids;
     const root = await window.navigator.storage.getDirectory();
-    const modelRoot = await getOrCreateDir(root, config.model);
+    const modelRoot = await getOrCreateDir(root, this.config.model);
     const studyRoot = await getOrCreateDir(modelRoot, studyUID);
     const seriesRoot = await getOrCreateDir(studyRoot, seriesUID);
     return seriesRoot;
@@ -771,6 +734,41 @@ export default class MLController {
       const nextSlash = imageId.indexOf('/', sopLocation);
       return imageId.substring(sopLocation, nextSlash);
     }
+  }
+
+  /**
+   * create config from url
+   */
+  getConfig() {
+    if (this.config) {
+      return this.config;
+    }
+    const query = window.location.search.substring(1);
+    const config = {
+      model: 'sam_b',
+      provider: 'webgpu',
+      device: 'gpu',
+      threads: 4,
+      local: null,
+      isSlimSam: false,
+    };
+    const vars = query.split('&');
+    for (let i = 0; i < vars.length; i++) {
+      const pair = vars[i].split('=');
+      if (pair[0] in config) {
+        config[pair[0]] = decodeURIComponent(pair[1]);
+      } else if (pair[0].length > 0) {
+        throw new Error('unknown argument: ' + pair[0]);
+      }
+    }
+    config.threads = parseInt(String(config.threads));
+    config.local = parseInt(config.local);
+    ort.env.wasm.wasmPaths = 'dist/';
+    ort.env.wasm.numThreads = config.threads;
+    ort.env.wasm.proxy = config.provider == 'wasm';
+
+    this.config = config;
+    return config;
   }
 }
 
