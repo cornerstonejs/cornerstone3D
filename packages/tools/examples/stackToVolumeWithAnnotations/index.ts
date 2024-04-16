@@ -1,7 +1,6 @@
 import * as cornerstone from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import * as cornerstoneDicomImageLoader from '@cornerstonejs/dicom-image-loader';
 
 import {
   addButtonToToolbar,
@@ -9,7 +8,6 @@ import {
   createImageIdsAndCacheMetaData,
   createInfoSection,
   initDemo,
-  addUploadToToolbar,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
@@ -22,7 +20,6 @@ const {
   Enums: csEnums,
   RenderingEngine,
   getRenderingEngine,
-  imageLoader,
   utilities: csUtilities,
 } = cornerstone;
 const { ViewportType } = csEnums;
@@ -37,8 +34,6 @@ const {
   utilities: csToolsUtilities,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
-
-const { wadouri } = cornerstoneDicomImageLoader;
 
 //
 let renderingEngine;
@@ -88,41 +83,6 @@ content.appendChild(viewportGrid);
 createInfoSection(content).addInstruction('Left Click to use selected tool');
 
 // ============================= //
-
-addUploadToToolbar({
-  id: 'IMPORT_DICOM',
-  title: 'Import DICOM',
-  style: {
-    marginRight: '5px',
-  },
-  onChange: async (files) => {
-    if (files.length <= 1) {
-      console.error(
-        'It cannot be just one image, it must be two or more images'
-      );
-      return;
-    }
-
-    imageIds = [];
-
-    for (const file of files) {
-      const imageId = wadouri.fileManager.add(file);
-
-      await imageLoader.loadAndCacheImage(imageId);
-
-      imageIds.push(imageId);
-    }
-
-    const viewport = renderingEngine.getViewport(viewportIds[0]);
-
-    if (viewport.type === ViewportType.STACK) {
-      await viewport.setStack(imageIds, 0);
-    }
-
-    renderingEngine.renderViewports(viewportIds);
-  },
-  container: group1,
-});
 
 addDropdownToToolbar({
   style: {

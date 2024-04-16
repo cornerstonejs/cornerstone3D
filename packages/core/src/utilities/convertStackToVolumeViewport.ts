@@ -5,9 +5,6 @@ import {
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
 import { Events, OrientationAxis, ViewportType } from '../enums';
-import { imageIdToURI } from '../utilities';
-
-const VOLUME_LOADER_SCHEME = 'wadors';
 
 /**
  * Converts a stack viewport to a volume viewport.
@@ -46,11 +43,7 @@ async function convertStackToVolumeViewport({
   const { id, element } = viewport;
   const viewportId = options.viewportId || id;
 
-  let imageIds = viewport.getImageIds();
-  imageIds = imageIds.map((imageId) => {
-    const imageURI = imageIdToURI(imageId);
-    return `${VOLUME_LOADER_SCHEME}:${imageURI}`;
-  });
+  const imageIds = viewport.getImageIds();
 
   // It is important to keep the camera before enabling the viewport
   const prevCamera = viewport.getCamera();
@@ -67,7 +60,7 @@ async function convertStackToVolumeViewport({
   });
 
   // Ideally here we should be able to just create a local volume and not use the
-  //  volume louder but we don't know if the stack is already pre-cached for all its
+  // volume louder but we don't know if the stack is already pre-cached for all its
   // imageIds or not so we just let the loader handle it and we have cache
   // optimizations in place to avoid fetching the same imageId if it is already
   // cached
