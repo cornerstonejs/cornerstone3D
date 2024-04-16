@@ -99,7 +99,6 @@ let points = [];
 let labels = [];
 let imageImageData;
 let isClicked = false;
-let skipAnnotationUpdates = false;
 let annotationsNeedUpdating = false;
 
 let maskImageData;
@@ -280,6 +279,42 @@ async function decoder(points, labels, useSession = currentImage) {
 }
 
 /**
+ * Gets the storage directory for storing the given image id
+ */
+async function getDirectoryForImageId(_imageId) {
+  const root = await window.navigator.storage.getDirectory();
+  return root;
+}
+
+/**
+ * Gets the file name for the given imageId
+ */
+function getFileNameForImageId(imageId) {
+  const instancesLocation = imageId.indexOf('/instances/');
+  if (instancesLocation != -1) {
+    const sopLocation = instancesLocation + 11;
+    const nextSlash = imageId.indexOf('/', sopLocation);
+    return imageId.substring(sopLocation, nextSlash);
+  }
+}
+
+/*
+    Create a function which will be passed to the promise
+    and resolve it when FileReader has finished loading the file.
+  */
+function getBuffer(fileData) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(fileData);
+    reader.onload = function () {
+      const arrayBuffer = reader.result;
+      const bytes = new Float32Array(arrayBuffer);
+      resolve(bytes);
+    };
+  });
+}
+
+/**
  * Loads encoder data externally.  Applies the image data to the session if
  * successful.
  */
@@ -289,18 +324,42 @@ async function restoreImageEncoding(imageId) {
   }
   const floatData = imageEncodings.get(imageId);
   if (floatData) {
-    sharedImageEncoding.image_embeddings.cpuData = floatData;
+    sharedImageEncoding.image_embeddings.cpuData.set(floatData);
     return sharedImageEncoding;
+  }
+  try {
+    const root = await getDirectoryForImageId(imageId);
+    const name = getFileNameForImageId(imageId);
+    const fileHandle = await root.getFileHandle(name);
+    const file = await fileHandle.getFile();
+    if (file) {
+      const buffer = await getBuffer(file);
+      imageEncodings.set(imageId, buffer);
+      sharedImageEncoding.image_embeddings.cpuData.set(buffer);
+      return sharedImageEncoding;
+    }
+  } catch (e) {
+    console.log('Unable to fetch file', imageId, e);
   }
 }
 
 async function storeImageEncoding(imageId, data) {
   if (!sharedImageEncoding) {
-    console.log('Sharing image encoding', data);
     sharedImageEncoding = data;
   }
   const storeData = data.image_embeddings.cpuData;
-  imageEncodings.set(imageId, new Float32Array(storeData));
+  const writeData = new Float32Array(storeData);
+  imageEncodings.set(imageId, writeData);
+  try {
+    const root = await getDirectoryForImageId(imageId);
+    const name = getFileNameForImageId(imageId);
+    const fileHandle = await root.getFileHandle(name, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(writeData);
+    await writable.close();
+  } catch (e) {
+    console.log('Unable to write', imageId, e);
+  }
 }
 
 /**
@@ -347,7 +406,6 @@ async function handleImage(imageId, imageSession) {
 
     const data = await restoreImageEncoding(imageId);
     if (data) {
-      console.log('***** Got image embeddings', data);
       imageSession.imageEmbeddings = data;
       if (desiredImage.imageId === imageId) {
         encoder_latency.innerText = `Cached Image`;
@@ -386,7 +444,7 @@ async function handleImage(imageId, imageSession) {
 /*
  * fetch and cache url
  */
-async function fetchAndCache(url, name) {
+async function fetchAndCacheModel(url, name) {
   try {
     const cache = await caches.open('onnx');
     let cachedResponse = await cache.match(url);
@@ -408,10 +466,10 @@ async function fetchAndCache(url, name) {
 /*
  * load models one at a time
  */
-async function load_models(models, imageSession = currentImage) {
+async function loadModels(models, imageSession = currentImage) {
   const cache = await caches.open('onnx');
   let missing = 0;
-  for (const [name, model] of Object.entries(models)) {
+  for (const [_name, model] of Object.entries(models)) {
     const cachedResponse = await cache.match(model.url);
     if (cachedResponse === undefined) {
       missing += model.size;
@@ -423,7 +481,7 @@ async function load_models(models, imageSession = currentImage) {
     log('loading...');
   }
   const start = performance.now();
-  for (const [name, model] of Object.entries(models)) {
+  for (const [_name, model] of Object.entries(models)) {
     try {
       const opt = {
         executionProviders: [config.provider],
@@ -440,7 +498,7 @@ async function load_models(models, imageSession = currentImage) {
         interOpNumThreads: 4,
         intraOpNumThreads: 2,
       };
-      const model_bytes = await fetchAndCache(
+      const model_bytes = await fetchAndCacheModel(
         model.url,
         model.name,
         imageSession
@@ -457,10 +515,6 @@ async function load_models(models, imageSession = currentImage) {
   }
   const stop = performance.now();
   log(`ready, ${(stop - start).toFixed(1)}ms`);
-}
-
-export function setSkipAnnotationUpdates(skip) {
-  skipAnnotationUpdates = skip;
 }
 
 /**
@@ -491,7 +545,7 @@ export async function loadAI(
       isLoading: false,
       canvas: canvas, // TODO: document.createElement('canvas'),
     });
-    const loader = load_models(MODELS[config.model], sessions[i]).catch((e) => {
+    const loader = loadModels(MODELS[config.model], sessions[i]).catch((e) => {
       log(e);
     });
     sessions[i].loader = loader;
@@ -565,15 +619,12 @@ export function tryLoad() {
   const session = sessions[0];
 
   if (session.imageId === desiredImage.imageId) {
-    console.log('Session image id is the desired one, not encoding');
     if (currentImage !== session) {
-      console.log('Current image being set to session');
       currentImage = session;
     }
     updateAnnotations();
     return;
   }
-  console.log('Handling image id', desiredImage.imageId);
   handleImage(desiredImage.imageId, session);
 }
 

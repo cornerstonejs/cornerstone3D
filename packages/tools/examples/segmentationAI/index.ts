@@ -28,7 +28,6 @@ import {
   loadAI,
   annotationModifiedListener,
   viewportRenderedListener,
-  setSkipAnnotationUpdates,
   cacheImageEncodings,
 } from './mlController';
 
@@ -232,7 +231,7 @@ function getCurrentAnnotations() {
   return currentAnnotations;
 }
 
-/**
+/*
  * Adds annotation listeners so that on updates the new annotation gets called
  */
 function addAnnotationListeners() {
@@ -274,18 +273,13 @@ async function interpolateScroll(dir = 1) {
     console.log('Already has annotations, not interpolating');
     return;
   }
-  setSkipAnnotationUpdates(true);
-  try {
-    for (const annotation of currentAnnotations) {
-      annotation.interpolationUID ||= crypto.randomUUID();
-      const newAnnotation = structuredClone(annotation);
-      newAnnotation.annotationUID = undefined;
-      Object.assign(newAnnotation.metadata, viewRef);
-      (newAnnotation as any).cachedStats = {};
-      annotationState.addAnnotation(newAnnotation, viewport.element);
-    }
-  } finally {
-    setSkipAnnotationUpdates(false);
+  for (const annotation of currentAnnotations) {
+    annotation.interpolationUID ||= crypto.randomUUID();
+    const newAnnotation = structuredClone(annotation);
+    newAnnotation.annotationUID = undefined;
+    Object.assign(newAnnotation.metadata, viewRef);
+    (newAnnotation as any).cachedStats = {};
+    annotationState.addAnnotation(newAnnotation, viewport.element);
   }
   viewport.scroll(dir);
 }
