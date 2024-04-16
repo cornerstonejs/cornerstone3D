@@ -4,11 +4,9 @@ import {
   Types,
   eventTarget,
   imageLoader,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import ort from 'onnxruntime-web/webgpu';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
@@ -24,6 +22,16 @@ import {
 
 import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
 
+import {
+  clearML,
+  viewportOptions,
+  loadAI,
+  annotationModifiedListener,
+  viewportRenderedListener,
+  setSkipAnnotationUpdates,
+  cacheImageEncodings,
+} from './mlController';
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -38,9 +46,6 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { triggerSegmentationDataModified } =
-  segmentation.triggerSegmentationEvents;
-
 const { ViewportType, Events } = Enums;
 const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
 const { state: annotationState } = annotation;
@@ -51,16 +56,11 @@ const segVolumeId = 'segVolumeId';
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
-let tool;
 
 const segmentationId = `SEGMENTATION_ID`;
 // Stores information on whether the AI data is encoded in cache
 let cached;
-
-let currentImage;
-
-/** Store other sessions to be used for next images. */
-const sessions = [];
+let toolForPreview;
 
 const toolMap = new Map(annotationTools);
 const defaultTool = 'MarkerInclude';
@@ -105,485 +105,11 @@ setTitleAndDescription(
   'Here we demonstrate how to use various predictive AI/ML techniques to aid your segmentation'
 );
 
-// the image size on canvas
-const MAX_WIDTH = 1024;
-const MAX_HEIGHT = 1024;
-
-// the image size supported by the model
-const MODEL_WIDTH = 1024;
-const MODEL_HEIGHT = 1024;
-
-const MODELS = {
-  sam_b: [
-    {
-      name: 'sam-b-encoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-      size: 180,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-      size: 17,
-      key: 'decoder',
-    },
-  ],
-  sam_b_int8: [
-    {
-      name: 'sam-b-encoder-int8',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-encoder-int8.onnx',
-      size: 108,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder-int8',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-decoder-int8.onnx',
-      size: 5,
-      key: 'decoder',
-    },
-  ],
-};
-
-const config = getConfig();
-
-ort.env.wasm.wasmPaths = 'dist/';
-ort.env.wasm.numThreads = config.threads;
-// ort.env.wasm.proxy = config.provider == "wasm";
-
 const canvas = document.createElement('canvas');
 canvas.oncontextmenu = () => false;
 const canvasMask = document.createElement('canvas');
 const originalImage = document.createElement('img');
 originalImage.id = 'original-image';
-let decoder_latency;
-
-let points = [];
-let labels = [];
-let imageImageData;
-let isClicked = false;
-let skipAnnotationUpdates = false;
-let maskImageData;
-
-function log(i) {
-  document.getElementById('status').innerText += `\n${i}`;
-}
-
-/**
- * create config from url
- */
-function getConfig() {
-  const query = window.location.search.substring(1);
-  const config = {
-    model: 'sam_b',
-    provider: 'webgpu',
-    device: 'gpu',
-    threads: 4,
-    local: null,
-    isSlimSam: false,
-  };
-  const vars = query.split('&');
-  for (let i = 0; i < vars.length; i++) {
-    const pair = vars[i].split('=');
-    if (pair[0] in config) {
-      config[pair[0]] = decodeURIComponent(pair[1]);
-    } else if (pair[0].length > 0) {
-      throw new Error('unknown argument: ' + pair[0]);
-    }
-  }
-  config.threads = parseInt(String(config.threads));
-  config.local = parseInt(config.local);
-  return config;
-}
-
-/**
- * clone tensor
- */
-function cloneTensor(t) {
-  return new ort.Tensor(t.type, Float32Array.from(t.data), t.dims);
-}
-
-/*
- * create feed for the original facebook model
- */
-function feedForSam(emb, points, labels) {
-  const maskInput = new ort.Tensor(
-    new Float32Array(256 * 256),
-    [1, 1, 256, 256]
-  );
-  const hasMask = new ort.Tensor(new Float32Array([0]), [1]);
-  const originalImageSize = new ort.Tensor(
-    new Float32Array([MODEL_HEIGHT, MODEL_WIDTH]),
-    [2]
-  );
-  const pointCoords = new ort.Tensor(new Float32Array(points), [
-    1,
-    points.length / 2,
-    2,
-  ]);
-  const pointLabels = new ort.Tensor(new Float32Array(labels), [
-    1,
-    labels.length,
-  ]);
-
-  return {
-    image_embeddings: cloneTensor(emb.image_embeddings),
-    point_coords: pointCoords,
-    point_labels: pointLabels,
-    mask_input: maskInput,
-    has_mask_input: hasMask,
-    orig_im_size: originalImageSize,
-  };
-}
-
-function createLabelmap(viewport, mask, points, labels) {
-  const imageId = viewport.getCurrentImageId();
-  const preview = tool.addPreview(viewport.element);
-  const {
-    previewSegmentIndex,
-    memo,
-    segmentationId,
-    segmentationVoxelManager,
-  } = preview;
-  const previewVoxelManager = memo?.voxelManager || preview.previewVoxelManager;
-  const [width, height, _depth] = previewVoxelManager.dimensions;
-  const { data } = mask;
-
-  for (let j = 0; j < height; j++) {
-    const y = Math.round((j * MAX_HEIGHT) / height);
-    if (y < 0 || y >= MAX_HEIGHT) {
-      continue;
-    }
-    for (let i = 0; i < width; i++) {
-      const x = Math.round((i * MAX_WIDTH) / width);
-      if (x < 0 || x >= MAX_WIDTH) {
-        continue;
-      }
-      const index = x * 4 + y * 4 * MAX_WIDTH;
-      const v = data[index];
-      if (v > 0) {
-        previewVoxelManager.setAtIJK(i, j, 0, previewSegmentIndex);
-      } else {
-        previewVoxelManager.setAtIJK(i, j, 0, null);
-      }
-    }
-  }
-  triggerSegmentationDataModified(segmentationId);
-}
-
-const boxRadius = 5;
-
-async function decoder(points, labels, useSession = currentImage) {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  canvas.width = imageImageData.width;
-  canvas.height = imageImageData.height;
-  canvasMask.width = imageImageData.width;
-  canvasMask.height = imageImageData.height;
-
-  if (!useSession || useSession.imageId !== desiredImage.imageId) {
-    console.warn('***** Image not current, need to wait for current image');
-    return;
-  }
-
-  // Comment this line out to draw just the overlay mask data
-  ctx.putImageData(imageImageData, 0, 0);
-
-  if (points.length > 0) {
-    // need to wait for encoder to be ready
-    if (!useSession.imageEmbeddings) {
-      await useSession.encoder;
-    }
-
-    // wait for encoder to deliver embeddings
-    const emb = await useSession.imageEmbeddings;
-
-    // the decoder
-    const session = useSession.decoder;
-
-    const feed = feedForSam(emb, points, labels);
-    const start = performance.now();
-    const res = await session.run(feed);
-    decoder_latency.innerText = `decoder ${useSession.sessionIndex} ${(
-      performance.now() - start
-    ).toFixed(1)} ms`;
-
-    for (let i = 0; i < points.length; i += 2) {
-      const label = labels[i / 2];
-      ctx.fillStyle = label ? 'blue' : 'pink';
-
-      ctx.fillRect(
-        points[i] - boxRadius,
-        points[i + 1] - boxRadius,
-        2 * boxRadius,
-        2 * boxRadius
-      );
-    }
-    const mask = res.masks;
-    maskImageData = mask.toImageData();
-    createLabelmap(viewport, maskImageData, points, labels);
-    ctx.globalAlpha = 0.3;
-    const { data } = maskImageData;
-    const counts = [];
-    for (let i = 0; i < data.length; i += 4) {
-      const v = data[i];
-      if (v > 0) {
-        if (v < 255) {
-          data[i] = 0;
-          if (v > 192) {
-            data[i + 1] = 255;
-          } else {
-            data[i + 2] = v + 64;
-          }
-        }
-        counts[v] = 1 + (counts[v] || 0);
-      }
-    }
-    const bitmap = await createImageBitmap(maskImageData);
-    ctx.drawImage(bitmap, 0, 0);
-
-    const ctxMask = canvasMask.getContext('2d');
-    ctxMask.globalAlpha = 0.9;
-    ctxMask.drawImage(bitmap, 0, 0);
-  }
-}
-
-function getPoint(event) {
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.trunc(((event.clientX - rect.left) * MAX_WIDTH) / rect.width);
-  const y = Math.trunc(((event.clientY - rect.top) * MAX_HEIGHT) / rect.height);
-  return [x, y];
-}
-
-const desiredImage = {
-  imageId: null,
-  imageIndex: -1,
-  decoder: null,
-  encoder: null,
-};
-
-const viewportOptions = {
-  displayArea: {
-    storeAsInitialCamera: true,
-    imageArea: [1, 1],
-    imageCanvasPoint: {
-      // TODO - fix this so top left corner works
-      imagePoint: [0.5, 0.5],
-      canvasPoint: [0.5, 0.5],
-    },
-  },
-  background: <Types.Point3>[0, 0, 0.2],
-};
-
-const imageEncodings = new Map();
-let sharedImageEncoding;
-
-/**
- * Loads encoder data externally.  Applies the image data to the session if
- * successful.
- */
-async function restoreImageEncoding(imageId) {
-  if (!sharedImageEncoding) {
-    return;
-  }
-  const floatData = imageEncodings.get(imageId);
-  if (floatData) {
-    sharedImageEncoding.image_embeddings.cpuData = floatData;
-    return sharedImageEncoding;
-  }
-}
-
-async function storeImageEncoding(imageId, data) {
-  if (!sharedImageEncoding) {
-    console.log('Sharing image encoding', data);
-    sharedImageEncoding = data;
-  }
-  const storeData = data.image_embeddings.cpuData;
-  imageEncodings.set(imageId, new Float32Array(storeData));
-}
-
-/**
- * handler called when image available
- */
-async function handleImage(imageId, imageSession) {
-  if (imageId === imageSession.imageId || isClicked) {
-    return;
-  }
-  isClicked = true;
-  imageSession.imageId = imageId;
-  try {
-    const encoder_latency = document.getElementById('encoder_latency');
-    const isCurrent = desiredImage.imageId === imageId;
-    if (isCurrent) {
-      encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
-      decoder_latency.innerText = 'Awaiting image';
-      canvas.style.cursor = 'wait';
-    }
-    points = [];
-    labels = [];
-    const width = MAX_WIDTH;
-    const height = MAX_HEIGHT;
-    const renderCanvas = isCurrent ? canvas : imageSession.canvas;
-    renderCanvas.width = width;
-    renderCanvas.height = height;
-    imageSession.imageEmbeddings = undefined;
-
-    const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
-    ctx.clearRect(0, 0, width, height);
-    volumeViewport.setView(
-      viewport.getViewReference(),
-      viewport.getViewPresentation()
-    );
-    await utilities.loadImageToCanvas({
-      canvas: renderCanvas,
-      imageId,
-      viewportOptions,
-    });
-    renderCanvas.style.width = size;
-    renderCanvas.style.height = size;
-    if (isCurrent) {
-      encoder_latency.innerText = `Rendered image on ${imageSession.sessionIndex}`;
-    }
-
-    imageImageData = ctx.getImageData(0, 0, width, height);
-
-    const data = await restoreImageEncoding(imageId);
-    if (data) {
-      console.log('***** Got image embeddings', data);
-      imageSession.imageEmbeddings = data;
-      if (desiredImage.imageId === imageId) {
-        encoder_latency.innerText = `Cached Image`;
-        canvas.style.cursor = 'default';
-      }
-    } else {
-      const t = await ort.Tensor.fromImage(imageImageData, {
-        resizedWidth: MODEL_WIDTH,
-        resizedHeight: MODEL_HEIGHT,
-      });
-      const feed = config.isSlimSam ? { pixel_values: t } : { input_image: t };
-      await imageSession.loader;
-      const session = await imageSession.encoder;
-      if (!session) {
-        log('****** No session');
-        return;
-      }
-      const start = performance.now();
-      imageSession.imageEmbeddings = session.run(feed);
-      const data = await imageSession.imageEmbeddings;
-      storeImageEncoding(imageId, data);
-      if (desiredImage.imageId === imageId) {
-        encoder_latency.innerText = `Image Ready ${
-          imageSession.sessionIndex
-        } ${(performance.now() - start).toFixed(1)} ms`;
-        canvas.style.cursor = 'default';
-      }
-    }
-  } finally {
-    isClicked = false;
-  }
-}
-
-/*
- * fetch and cache url
- */
-async function fetchAndCache(url, name) {
-  try {
-    const cache = await caches.open('onnx');
-    let cachedResponse = await cache.match(url);
-    if (cachedResponse == undefined) {
-      await cache.add(url);
-      cachedResponse = await cache.match(url);
-      log(`${name} (network)`);
-    } else {
-      log(`${name} (cached)`);
-    }
-    const data = await cachedResponse.arrayBuffer();
-    return data;
-  } catch (error) {
-    log(`${name} (network)`);
-    return await fetch(url).then((response) => response.arrayBuffer());
-  }
-}
-
-/*
- * load models one at a time
- */
-async function load_models(models, imageSession = currentImage) {
-  const cache = await caches.open('onnx');
-  let missing = 0;
-  for (const [name, model] of Object.entries(models)) {
-    const cachedResponse = await cache.match(model.url);
-    if (cachedResponse === undefined) {
-      missing += model.size;
-    }
-  }
-  if (missing > 0) {
-    log(`downloading ${missing} MB from network ... it might take a while`);
-  } else {
-    log('loading...');
-  }
-  const start = performance.now();
-  for (const [name, model] of Object.entries(models)) {
-    try {
-      const opt = {
-        executionProviders: [config.provider],
-        enableMemPattern: false,
-        enableCpuMemArena: false,
-        extra: {
-          session: {
-            disable_prepacking: '1',
-            use_device_allocator_for_initializers: '1',
-            use_ort_model_bytes_directly: '1',
-            use_ort_model_bytes_for_initializers: '1',
-          },
-        },
-        interOpNumThreads: 4,
-        intraOpNumThreads: 2,
-      };
-      const model_bytes = await fetchAndCache(
-        model.url,
-        model.name,
-        imageSession
-      );
-      const extra_opt = model.opt || {};
-      const sess_opt = { ...opt, ...extra_opt };
-      imageSession[model.key] = await ort.InferenceSession.create(
-        model_bytes,
-        sess_opt
-      );
-    } catch (e) {
-      log(`${model.url} failed, ${e}`);
-    }
-  }
-  const stop = performance.now();
-  log(`ready, ${(stop - start).toFixed(1)}ms`);
-}
-
-/**
- * Loads the AI model.
- */
-async function loadAI() {
-  canvas.style.cursor = 'wait';
-
-  decoder_latency = document.getElementById('decoder_latency');
-
-  for (let i = 0; i < 2; i++) {
-    sessions.push({
-      sessionIndex: i,
-      encoder: null,
-      decoder: null,
-      imageEmbeddings: null,
-      isLoading: false,
-      canvas: canvas, // TODO: document.createElement('canvas'),
-    });
-    const loader = load_models(MODELS[config.model], sessions[i]).catch((e) => {
-      log(e);
-    });
-    sessions[i].loader = loader;
-    if (i === 0) {
-      await loader;
-    }
-  }
-}
 
 const size = `${512 / devicePixelRatio}px`;
 const content = document.getElementById('content');
@@ -591,11 +117,7 @@ const content = document.getElementById('content');
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
-    points = [];
-    labels = [];
-    getCurrentAnnotations().forEach((annotation) =>
-      annotationState.removeAnnotation(annotation.annotationUID)
-    );
+    clearML();
     viewport.render();
   },
 });
@@ -664,39 +186,6 @@ addDropdownToToolbar({
 
 addSegmentIndexDropdown(segmentationId);
 
-/**
- * Cache the next image as encoded.
- */
-function cacheImageEncodings(
-  offset = 0,
-  current = viewport.getCurrentImageId()
-) {
-  console.log('cacheImageEncodings', offset, current);
-  const imageIds = viewport.getImageIds();
-  if (offset >= imageIds.length) {
-    // We are done.
-    return;
-  }
-  const index = (offset + current) % imageIds.length;
-  const imageId = imageIds[index];
-  if (imageEncodings.has(imageId)) {
-    cacheImageEncodings(offset + 1, current);
-    return;
-  }
-  if (cached) {
-    return;
-  }
-  if (isClicked) {
-    setTimeout(() => cacheImageEncodings(offset, current), 100);
-    return;
-  }
-
-  document.getElementById('status').innerText = `Caching ${index}`;
-  handleImage(imageId, sessions[1]).then(() => {
-    cacheImageEncodings(offset + 1, current);
-  });
-}
-
 addButtonToToolbar({
   title: 'Cache',
   onClick: () => {
@@ -704,7 +193,7 @@ addButtonToToolbar({
       return;
     }
     cached = false;
-    cacheImageEncodings(0, 0);
+    cacheImageEncodings(viewport.getCurrentImageIdIndex());
   },
 });
 
@@ -731,26 +220,6 @@ function mapAnnotationPoint(worldPoint) {
 }
 
 /**
- * This function will try setting the current image to the desired loading image
- * if it isn't already the desired one, and invoke the handleImage.  It also checks
- * the "next" images to see if there are other images which should be tried to load.
- */
-function tryLoad() {
-  // Always use session 0 for the current session
-  const { imageId } = desiredImage;
-  const session = sessions[0];
-
-  if (session.imageId === imageId) {
-    if (currentImage !== session) {
-      currentImage = session;
-      annotationModifiedListener();
-    }
-    return;
-  }
-  handleImage(imageId, session);
-}
-
-/**
  * Gets a list of the include/exclude orientation annotations applying to the
  * current image id.
  */
@@ -764,96 +233,21 @@ function getCurrentAnnotations() {
 }
 
 /**
- * Handle the annotations being added by checking to see if they are the current
- * frame and adding appropriate points to it/updating said points.
- */
-async function annotationModifiedListener() {
-  if (!currentImage || skipAnnotationUpdates) {
-    console.warn('Not current image - not running update');
-    return;
-  }
-  const currentAnnotations = getCurrentAnnotations();
-  if (!currentAnnotations.length) {
-    console.log('**** No current annotations - not trying load');
-    return;
-  }
-  console.log('**** Annotation modified', currentAnnotations);
-  points = [];
-  labels = [];
-  for (const annotation of currentAnnotations) {
-    const handle = annotation.data.handles.points[0];
-    const point = mapAnnotationPoint(handle);
-    const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
-    points.push(point[0]);
-    points.push(point[1]);
-    labels.push(label);
-  }
-  runDecoder();
-  return true;
-}
-
-let decoderWaiting = false;
-
-/** Awaits a chance to run the decoder */
-function runDecoder() {
-  if (decoderWaiting) {
-    console.log('Decoder already waiting');
-    return;
-  }
-  decoderWaiting = true;
-  runDecoderTest();
-}
-
-async function runDecoderTest() {
-  if (!decoderWaiting) {
-    console.log('Cancelling run decoder test');
-    return;
-  }
-  if (isClicked || !currentImage) {
-    console.log(
-      '*** Waiting for current image or isClicked',
-      isClicked,
-      !!currentImage
-    );
-    setTimeout(runDecoder, 1000);
-  } else {
-    console.log('Run annotations mask update');
-    isClicked = true;
-    try {
-      canvas.style.cursor = 'wait';
-      await decoder(points, labels);
-    } finally {
-      canvas.style.cursor = 'default';
-      isClicked = false;
-      decoderWaiting = false;
-    }
-  }
-}
-
-/**
  * Adds annotation listeners so that on updates the new annotation gets called
  */
 function addAnnotationListeners() {
+  const boundListener = annotationModifiedListener;
   eventTarget.addEventListener(
     toolsEvents.ANNOTATION_SELECTION_CHANGE,
-    annotationModifiedListener
+    boundListener
   );
-  eventTarget.addEventListener(
-    toolsEvents.ANNOTATION_MODIFIED,
-    annotationModifiedListener
-  );
-  eventTarget.addEventListener(
-    toolsEvents.ANNOTATION_COMPLETED,
-    annotationModifiedListener
-  );
-  eventTarget.addEventListener(
-    toolsEvents.ANNOTATION_ADDED,
-    annotationModifiedListener
-  );
+  eventTarget.addEventListener(toolsEvents.ANNOTATION_MODIFIED, boundListener);
+  eventTarget.addEventListener(toolsEvents.ANNOTATION_COMPLETED, boundListener);
+  eventTarget.addEventListener(toolsEvents.ANNOTATION_ADDED, boundListener);
 }
 
 async function interpolateScroll(dir = 1) {
-  tool.acceptPreview(element);
+  toolForPreview.acceptPreview(element);
   const annotations = [
     ...annotationState.getAnnotations(defaultTool, element),
     ...annotationState.getAnnotations(excludeTool, element),
@@ -880,7 +274,7 @@ async function interpolateScroll(dir = 1) {
     console.log('Already has annotations, not interpolating');
     return;
   }
-  skipAnnotationUpdates = true;
+  setSkipAnnotationUpdates(true);
   try {
     for (const annotation of currentAnnotations) {
       annotation.interpolationUID ||= crypto.randomUUID();
@@ -891,7 +285,7 @@ async function interpolateScroll(dir = 1) {
       annotationState.addAnnotation(newAnnotation, viewport.element);
     }
   } finally {
-    skipAnnotationUpdates = false;
+    setSkipAnnotationUpdates(false);
   }
   viewport.scroll(dir);
 }
@@ -900,13 +294,21 @@ const handleKeyEvent = (evt) => {
   const { element, key } = evt.detail;
   if (key === 'Escape') {
     cornerstoneTools.cancelActiveManipulations(element);
-    tool.rejectPreview(element);
+    toolForPreview.rejectPreview(element);
   } else if (key === 'Enter') {
-    tool.acceptPreview(element);
+    toolForPreview.acceptPreview(element);
   } else if (key === 'n') {
     interpolateScroll(1);
   }
 };
+
+function navigateVolumeListener(event) {
+  volumeViewport.setView(
+    viewport.getViewReference(),
+    viewport.getViewPresentation()
+  );
+  viewportRenderedListener(event);
+}
 
 /**
  * Runs the demo
@@ -918,7 +320,7 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
-  tool = toolGroup.getToolInstance('ThresholdCircle');
+  toolForPreview = toolGroup.getToolInstance('ThresholdCircle');
 
   const volumeToolGroup = ToolGroupManager.createToolGroup(volumeToolGroupId);
   addManipulationBindings(volumeToolGroup, { toolMap });
@@ -1002,22 +404,8 @@ async function run() {
   // Add the canvas after the viewport
   // element.appendChild(canvas);
 
-  await loadAI();
-  element.addEventListener(Events.IMAGE_RENDERED, async (evt) => {
-    desiredImage.imageId = viewport.getCurrentImageId();
-    desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
-    if (desiredImage.imageId === currentImage?.imageId) {
-      return;
-    }
-    const ctxMask = canvasMask.getContext('2d');
-    ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
-
-    currentImage = null;
-    decoderWaiting = false;
-    tryLoad();
-  });
-  addAnnotationListeners();
-
+  await loadAI(viewport, getCurrentAnnotations, excludeTool, toolForPreview);
+  element.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
@@ -1037,8 +425,6 @@ async function run() {
   // Render the image
   renderingEngine.render();
 
-  desiredImage.imageId = viewport.getCurrentImageId();
-  tryLoad();
   segmentation.addSegmentations([
     {
       segmentationId,
@@ -1081,6 +467,7 @@ async function run() {
     viewport.getViewReference(),
     viewport.getViewPresentation()
   );
+  addAnnotationListeners();
 }
 
 run();

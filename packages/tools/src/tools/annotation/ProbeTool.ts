@@ -24,7 +24,7 @@ import {
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { roundNumber } from '../../utilities';
 import {
@@ -444,7 +444,12 @@ class ProbeTool extends AnnotationTool {
           value: null,
         };
 
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+        this._calculateCachedStats(
+          annotation,
+          renderingEngine,
+          enabledElement,
+          ChangeTypes.StatsUpdated
+        );
       } else if (annotation.invalidated) {
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);
 
@@ -529,7 +534,12 @@ class ProbeTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
+  _calculateCachedStats(
+    annotation,
+    renderingEngine,
+    enabledElement,
+    changeType = ChangeTypes.HandlesUpdated
+  ) {
     const data = annotation.data;
     const { renderingEngineId, viewport } = enabledElement;
     const { element } = viewport;
@@ -647,7 +657,7 @@ class ProbeTool extends AnnotationTool {
       annotation.invalidated = false;
 
       // Dispatching annotation modified
-      triggerAnnotationModified(annotation, element);
+      triggerAnnotationModified(annotation, element, changeType);
     }
 
     return cachedStats;

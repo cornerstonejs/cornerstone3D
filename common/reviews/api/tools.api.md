@@ -4069,7 +4069,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, changeType?: ChangeTypes): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
