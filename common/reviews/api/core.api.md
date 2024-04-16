@@ -815,6 +815,8 @@ export enum EVENTS {
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
     // (undocumented)
+    ERROR_EVENT = "CORNERSTONE_ERROR",
+    // (undocumented)
     GEOMETRY_CACHE_GEOMETRY_ADDED = "CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED",
     // (undocumented)
     IMAGE_CACHE_IMAGE_ADDED = "CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED",
@@ -1392,6 +1394,7 @@ interface IImage {
     photometricInterpretation?: string;
     // (undocumented)
     preScale?: {
+        enabled: boolean;
         scaled?: boolean;
         scalingParameters?: {
             modality?: string;
@@ -1662,6 +1665,8 @@ type ImageLoaderFn = (imageId: string, options?: Record<string, any>) => {
 interface ImageLoaderOptions {
     // (undocumented)
     additionalDetails?: Record<string, unknown>;
+    // (undocumented)
+    ignoreCache?: boolean;
     // (undocumented)
     priority: number;
     // (undocumented)
@@ -2100,6 +2105,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
+    stackActorReInitialized: boolean;
+    // (undocumented)
     unsetColormap(): void;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
@@ -2202,6 +2209,8 @@ interface IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>): void;
     // (undocumented)
+    addWidget: (id: string, widget: any) => void;
+    // (undocumented)
     canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -2252,6 +2261,10 @@ interface IViewport {
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
+    getWidget: (id: string) => any;
+    // (undocumented)
+    getWidgets: () => any;
+    // (undocumented)
     getZoom(): number;
     // (undocumented)
     id: string;
@@ -2265,6 +2278,8 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
+    // (undocumented)
+    removeWidgets: () => void;
     // (undocumented)
     render(): void;
     // (undocumented)
@@ -3152,6 +3167,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
     // (undocumented)
+    stackActorReInitialized: boolean;
+    // (undocumented)
     successCallback(imageId: any, image: any): void;
     // (undocumented)
     unsetColormap: () => void;
@@ -3688,6 +3705,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
+    addWidget: (widgetId: any, widget: any) => void;
+    // (undocumented)
     static boundsRadius(bounds: number[]): number;
     // (undocumented)
     protected calibration: IImageCalibration;
@@ -3765,6 +3784,10 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
+    getWidget: (id: any) => any;
+    // (undocumented)
+    getWidgets: () => any[];
+    // (undocumented)
     getZoom(compareCamera?: ICamera): number;
     // (undocumented)
     protected hasPixelSpacing: boolean;
@@ -3788,6 +3811,8 @@ export class Viewport implements IViewport {
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
+    // (undocumented)
+    removeWidgets: () => void;
     // (undocumented)
     render(): void;
     // (undocumented)

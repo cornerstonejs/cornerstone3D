@@ -87,8 +87,9 @@ interface AdvancedMagnifyAnnotation extends Annotation {
         zoomFactor: number;
         sourceViewportId: string;
         magnifyViewportId: string;
+        isCanvasAnnotation: boolean;
         handles: {
-            points: Types_2.Point3[];
+            points: [Types_2.Point3, Types_2.Point3, Types_2.Point3, Types_2.Point3];
             activeHandleIndex: number | null;
         };
     };
@@ -5230,7 +5231,7 @@ type Statistics = {
 };
 
 // @public (undocumented)
-function stopClip(element: HTMLDivElement, viewportId?: string): void;
+function stopClip(element: HTMLDivElement, options?: any): void;
 
 // @public (undocumented)
 enum StrategyCallbacks {

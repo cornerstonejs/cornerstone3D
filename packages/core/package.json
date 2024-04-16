@@ -30,7 +30,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@kitware/vtk.js": "30.3.1",
+    "@kitware/vtk.js": "30.3.3",
     "comlink": "^4.4.1",
     "detect-gpu": "^5.0.22",
     "gl-matrix": "^3.4.3",
