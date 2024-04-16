@@ -22,14 +22,7 @@ import {
 
 import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
 
-import {
-  clearML,
-  viewportOptions,
-  loadAI,
-  annotationModifiedListener,
-  viewportRenderedListener,
-  cacheImageEncodings,
-} from './mlController';
+import MLController, { viewportOptions } from './mlController';
 
 // This is for debugging purposes
 console.warn(
@@ -44,6 +37,9 @@ const {
   annotation,
   utilities: cstUtils,
 } = cornerstoneTools;
+
+const ml = new MLController();
+const { viewportRenderedListener } = ml;
 
 const { ViewportType, Events } = Enums;
 const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
@@ -116,7 +112,7 @@ const content = document.getElementById('content');
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
-    clearML();
+    ml.clearML();
     viewport.render();
   },
 });
@@ -192,7 +188,7 @@ addButtonToToolbar({
       return;
     }
     cached = false;
-    cacheImageEncodings(viewport.getCurrentImageIdIndex());
+    ml.cacheImageEncodings(viewport.getCurrentImageIdIndex());
   },
 });
 
@@ -235,7 +231,7 @@ function getCurrentAnnotations() {
  * Adds annotation listeners so that on updates the new annotation gets called
  */
 function addAnnotationListeners() {
-  const boundListener = annotationModifiedListener;
+  const boundListener = ml.annotationModifiedListener;
   eventTarget.addEventListener(
     toolsEvents.ANNOTATION_SELECTION_CHANGE,
     boundListener
@@ -308,6 +304,9 @@ function navigateVolumeListener(event) {
  * Runs the demo
  */
 async function run() {
+  // Get the load started here, as it can take a while.
+  ml.loadAI();
+
   // Init Cornerstone and related libraries
   await initDemo();
 
@@ -334,7 +333,7 @@ async function run() {
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  const imageIds = imageIdsFull.reverse().slice(35, 45);
+  const imageIds = imageIdsFull.reverse(); // .slice(35, 45);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -397,8 +396,13 @@ async function run() {
 
   // Add the canvas after the viewport
   // element.appendChild(canvas);
-
-  await loadAI(viewport, getCurrentAnnotations, excludeTool, toolForPreview);
+  ml.connectViewport(
+    viewport,
+    getCurrentAnnotations,
+    excludeTool,
+    toolForPreview
+  );
+  await ml.loadAI();
   element.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,

@@ -1,11 +1,8 @@
-import { Types, eventTarget, utilities } from '@cornerstonejs/core';
+import { Types, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
 
-import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
-
-const { Enums: csToolsEnums, annotation } = cornerstoneTools;
-const { Events: toolsEvents } = csToolsEnums;
+const { annotation } = cornerstoneTools;
 const { state: annotationState } = annotation;
 
 const { segmentation } = cornerstoneTools;
@@ -174,130 +171,6 @@ function feedForSam(emb, points, labels) {
   };
 }
 
-function createLabelmap(mask, _points, _labels) {
-  const preview = tool.addPreview(viewport.element);
-  const { previewSegmentIndex, memo, segmentationId } = preview;
-  const previewVoxelManager = memo?.voxelManager || preview.previewVoxelManager;
-  const [width, height, _depth] = previewVoxelManager.dimensions;
-  const { data } = mask;
-
-  for (let j = 0; j < height; j++) {
-    const y = Math.round((j * MAX_HEIGHT) / height);
-    if (y < 0 || y >= MAX_HEIGHT) {
-      continue;
-    }
-    for (let i = 0; i < width; i++) {
-      const x = Math.round((i * MAX_WIDTH) / width);
-      if (x < 0 || x >= MAX_WIDTH) {
-        continue;
-      }
-      const index = x * 4 + y * 4 * MAX_WIDTH;
-      const v = data[index];
-      if (v > 0) {
-        previewVoxelManager.setAtIJK(i, j, 0, previewSegmentIndex);
-      } else {
-        previewVoxelManager.setAtIJK(i, j, 0, null);
-      }
-    }
-  }
-  triggerSegmentationDataModified(segmentationId);
-}
-
-async function decoder(points, labels, useSession = currentImage) {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  canvas.width = imageImageData.width;
-  canvas.height = imageImageData.height;
-  canvasMask.width = imageImageData.width;
-  canvasMask.height = imageImageData.height;
-
-  if (!useSession || useSession.imageId !== desiredImage.imageId) {
-    console.warn('***** Image not current, need to wait for current image');
-    return;
-  }
-
-  // Comment this line out to draw just the overlay mask data
-  ctx.putImageData(imageImageData, 0, 0);
-
-  if (points.length) {
-    // need to wait for encoder to be ready
-    if (!useSession.imageEmbeddings) {
-      await useSession.encoder;
-    }
-
-    // wait for encoder to deliver embeddings
-    const emb = await useSession.imageEmbeddings;
-
-    // the decoder
-    const session = useSession.decoder;
-
-    const feed = feedForSam(emb, points, labels);
-    const start = performance.now();
-    const res = await session.run(feed);
-    decoder_latency.innerText = `decoder ${useSession.sessionIndex} ${(
-      performance.now() - start
-    ).toFixed(1)} ms`;
-
-    for (let i = 0; i < points.length; i += 2) {
-      const label = labels[i / 2];
-      ctx.fillStyle = label ? 'blue' : 'pink';
-
-      ctx.fillRect(
-        points[i] - boxRadius,
-        points[i + 1] - boxRadius,
-        2 * boxRadius,
-        2 * boxRadius
-      );
-    }
-    const mask = res.masks;
-    maskImageData = mask.toImageData();
-    createLabelmap(maskImageData, points, labels);
-    ctx.globalAlpha = 0.3;
-    const { data } = maskImageData;
-    const counts = [];
-    for (let i = 0; i < data.length; i += 4) {
-      const v = data[i];
-      if (v > 0) {
-        if (v < 255) {
-          data[i] = 0;
-          if (v > 192) {
-            data[i + 1] = 255;
-          } else {
-            data[i + 2] = v + 64;
-          }
-        }
-        counts[v] = 1 + (counts[v] || 0);
-      }
-    }
-    const bitmap = await createImageBitmap(maskImageData);
-    ctx.drawImage(bitmap, 0, 0);
-
-    const ctxMask = canvasMask.getContext('2d');
-    ctxMask.globalAlpha = 0.9;
-    ctxMask.drawImage(bitmap, 0, 0);
-  }
-}
-
-/**
- * Gets the storage directory for storing the given image id
- */
-async function getDirectoryForImageId(_imageId) {
-  const root = await window.navigator.storage.getDirectory();
-  return root;
-}
-
-/**
- * Gets the file name for the given imageId
- */
-function getFileNameForImageId(imageId) {
-  const instancesLocation = imageId.indexOf('/instances/');
-  if (instancesLocation != -1) {
-    const sopLocation = instancesLocation + 11;
-    const nextSlash = imageId.indexOf('/', sopLocation);
-    return imageId.substring(sopLocation, nextSlash);
-  }
-}
-
 /*
     Create a function which will be passed to the promise
     and resolve it when FileReader has finished loading the file.
@@ -314,409 +187,601 @@ function getBuffer(fileData) {
   });
 }
 
-/**
- * Loads encoder data externally.  Applies the image data to the session if
- * successful.
- */
-async function restoreImageEncoding(imageId) {
-  if (!sharedImageEncoding) {
-    return;
-  }
-  const floatData = imageEncodings.get(imageId);
-  if (floatData) {
-    sharedImageEncoding.image_embeddings.cpuData.set(floatData);
-    return sharedImageEncoding;
-  }
-  try {
-    const root = await getDirectoryForImageId(imageId);
-    const name = getFileNameForImageId(imageId);
-    const fileHandle = await root.getFileHandle(name);
-    const file = await fileHandle.getFile();
-    if (file) {
-      const buffer = await getBuffer(file);
-      imageEncodings.set(imageId, buffer);
-      sharedImageEncoding.image_embeddings.cpuData.set(buffer);
-      return sharedImageEncoding;
-    }
-  } catch (e) {
-    console.log('Unable to fetch file', imageId, e);
-  }
-}
-
-async function storeImageEncoding(imageId, data) {
-  if (!sharedImageEncoding) {
-    sharedImageEncoding = data;
-  }
-  const storeData = data.image_embeddings.cpuData;
-  const writeData = new Float32Array(storeData);
-  imageEncodings.set(imageId, writeData);
-  try {
-    const root = await getDirectoryForImageId(imageId);
-    const name = getFileNameForImageId(imageId);
-    const fileHandle = await root.getFileHandle(name, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(writeData);
-    await writable.close();
-  } catch (e) {
-    console.log('Unable to write', imageId, e);
-  }
-}
-
-/**
- * handler called when image available
- */
-async function handleImage(imageId, imageSession) {
-  if (imageId === imageSession.imageId || isClicked) {
-    return;
-  }
-  isClicked = true;
-  imageSession.imageId = imageId;
-  try {
-    const encoder_latency = document.getElementById('encoder_latency');
-    const isCurrent = desiredImage.imageId === imageId;
-    if (isCurrent) {
-      encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
-      decoder_latency.innerText = 'Awaiting image';
-      canvas.style.cursor = 'wait';
-    }
-    points = [];
-    labels = [];
-    const width = MAX_WIDTH;
-    const height = MAX_HEIGHT;
-    const renderCanvas = isCurrent ? canvas : imageSession.canvas;
-    renderCanvas.width = width;
-    renderCanvas.height = height;
-    imageSession.imageEmbeddings = undefined;
-    const size = renderCanvas.style.width;
-
-    const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
-    ctx.clearRect(0, 0, width, height);
-    await utilities.loadImageToCanvas({
-      canvas: renderCanvas,
-      imageId,
-      viewportOptions,
-    });
-    renderCanvas.style.width = size;
-    renderCanvas.style.height = size;
-    if (isCurrent) {
-      encoder_latency.innerText = `Rendered image on ${imageSession.sessionIndex}`;
-    }
-
-    imageImageData = ctx.getImageData(0, 0, width, height);
-
-    const data = await restoreImageEncoding(imageId);
-    if (data) {
-      imageSession.imageEmbeddings = data;
-      if (desiredImage.imageId === imageId) {
-        encoder_latency.innerText = `Cached Image`;
-        canvas.style.cursor = 'default';
-      }
-    } else {
-      const t = await ort.Tensor.fromImage(imageImageData, {
-        resizedWidth: MODEL_WIDTH,
-        resizedHeight: MODEL_HEIGHT,
-      });
-      const feed = config.isSlimSam ? { pixel_values: t } : { input_image: t };
-      await imageSession.loader;
-      const session = await imageSession.encoder;
-      if (!session) {
-        log('****** No session');
-        return;
-      }
-      const start = performance.now();
-      imageSession.imageEmbeddings = session.run(feed);
-      const data = await imageSession.imageEmbeddings;
-      storeImageEncoding(imageId, data);
-      if (desiredImage.imageId === imageId) {
-        encoder_latency.innerText = `Image Ready ${
-          imageSession.sessionIndex
-        } ${(performance.now() - start).toFixed(1)} ms`;
-        canvas.style.cursor = 'default';
-      }
-    }
-  } finally {
-    isClicked = false;
-  }
-
-  tryLoad();
-}
-
-/*
- * fetch and cache url
- */
-async function fetchAndCacheModel(url, name) {
-  try {
-    const cache = await caches.open('onnx');
-    let cachedResponse = await cache.match(url);
-    if (cachedResponse == undefined) {
-      await cache.add(url);
-      cachedResponse = await cache.match(url);
-      log(`${name} (network)`);
-    } else {
-      log(`${name} (cached)`);
-    }
-    const data = await cachedResponse.arrayBuffer();
-    return data;
-  } catch (error) {
-    log(`${name} (network)`);
-    return await fetch(url).then((response) => response.arrayBuffer());
-  }
-}
-
-/*
- * load models one at a time
- */
-async function loadModels(models, imageSession = currentImage) {
-  const cache = await caches.open('onnx');
-  let missing = 0;
-  for (const [_name, model] of Object.entries(models)) {
-    const cachedResponse = await cache.match(model.url);
-    if (cachedResponse === undefined) {
-      missing += model.size;
-    }
-  }
-  if (missing > 0) {
-    log(`downloading ${missing} MB from network ... it might take a while`);
-  } else {
-    log('loading...');
-  }
-  const start = performance.now();
-  for (const [_name, model] of Object.entries(models)) {
-    try {
-      const opt = {
-        executionProviders: [config.provider],
-        enableMemPattern: false,
-        enableCpuMemArena: false,
-        extra: {
-          session: {
-            disable_prepacking: '1',
-            use_device_allocator_for_initializers: '1',
-            use_ort_model_bytes_directly: '1',
-            use_ort_model_bytes_for_initializers: '1',
-          },
-        },
-        interOpNumThreads: 4,
-        intraOpNumThreads: 2,
-      };
-      const model_bytes = await fetchAndCacheModel(
-        model.url,
-        model.name,
-        imageSession
-      );
-      const extra_opt = model.opt || {};
-      const sess_opt = { ...opt, ...extra_opt };
-      imageSession[model.key] = await ort.InferenceSession.create(
-        model_bytes,
-        sess_opt
-      );
-    } catch (e) {
-      log(`${model.url} failed, ${e}`);
-    }
-  }
-  const stop = performance.now();
-  log(`ready, ${(stop - start).toFixed(1)}ms`);
-}
-
-/**
- * Loads the AI model.
- */
-export async function loadAI(
-  viewportIn,
-  getCurrentAnnotationsIn,
-  excludeToolIn,
-  toolForPreviewIn
-) {
-  // TODO - make these member variables in a constructor
-  viewport = viewportIn;
-  getCurrentAnnotations = getCurrentAnnotationsIn;
-  excludeTool = excludeToolIn;
-  tool = toolForPreviewIn;
-
-  canvas.style.cursor = 'wait';
-
-  decoder_latency = document.getElementById('decoder_latency');
-
-  for (let i = 0; i < 2; i++) {
-    sessions.push({
-      sessionIndex: i,
-      encoder: null,
-      decoder: null,
-      imageEmbeddings: null,
-      isLoading: false,
-      canvas: canvas, // TODO: document.createElement('canvas'),
-    });
-    const loader = loadModels(MODELS[config.model], sessions[i]).catch((e) => {
-      log(e);
-    });
-    sessions[i].loader = loader;
-    if (i === 0) {
-      await loader;
-    }
-  }
-}
-
-/**
- * Cache the next image as encoded.
- */
-export function cacheImageEncodings(
-  current = viewport.getCurrentImageId(),
-  offset = 0
-) {
-  console.log('cacheImageEncodings', offset, current);
-  const imageIds = viewport.getImageIds();
-  if (offset >= imageIds.length) {
-    // We are done.
-    return;
-  }
-  const index = (offset + current) % imageIds.length;
-  const imageId = imageIds[index];
-  if (imageEncodings.has(imageId)) {
-    cacheImageEncodings(current, offset + 1);
-    return;
-  }
-  // Try doing a load, so that UI has priority
-  tryLoad();
-  if (isClicked) {
-    setTimeout(() => cacheImageEncodings(current, offset), 500);
-    return;
-  }
-
-  document.getElementById('status').innerText = `Caching ${index}`;
-  handleImage(imageId, sessions[1]).then(() => {
-    cacheImageEncodings(current, offset + 1);
-  });
-}
-
-/**
- * Maps world points to destination points.
- * Assumes the destination canvas is scale to fit at 100% in both dimensions,
- * while the source point is also assumed to be in the same position, but not
- * the same scale.
- *
- * TODO - add mapping from index coordinates to dest coordinates
- * TODO - handle non-square aspect ratios (center relative)
- * TODO - handle alternate orientations
- */
-function mapAnnotationPoint(worldPoint) {
-  const canvasPoint = viewport.worldToCanvas(worldPoint);
-  const { width, height } = viewport.canvas;
-  const { width: destWidth, height: destHeight } = canvas;
-
-  const x = Math.trunc((canvasPoint[0] * destWidth * devicePixelRatio) / width);
-  const y = Math.trunc(
-    (canvasPoint[1] * destHeight * devicePixelRatio) / height
-  );
-  return [x, y];
-}
-
-/**
- * This function will try setting the current image to the desired loading image
- * if it isn't already the desired one, and invoke the handleImage.  It also checks
- * the "next" images to see if there are other images which should be tried to load.
- */
-export function tryLoad() {
-  // Always use session 0 for the current session
-  const session = sessions[0];
-
-  if (session.imageId === desiredImage.imageId) {
-    if (currentImage !== session) {
-      currentImage = session;
-    }
-    updateAnnotations();
-    return;
-  }
-  handleImage(desiredImage.imageId, session);
-}
-
-/**
- * Handle the annotations being added by checking to see if they are the current
- * frame and adding appropriate points to it/updating said points.
- */
-export async function annotationModifiedListener(event?) {
-  const changeType = event?.detail.changeType;
-  if (changeType === cornerstoneTools.Enums.ChangeTypes.StatsUpdated) {
-    return;
-  }
-  const currentAnnotations = getCurrentAnnotations();
-  if (!currentAnnotations.length) {
-    console.log('**** No current annotations - not trying load');
-    return;
-  }
-  console.log('**** Annotation modified', currentAnnotations);
-  annotationsNeedUpdating = true;
-  tryLoad();
-}
-
-function updateAnnotations() {
-  if (isClicked || !annotationsNeedUpdating || !currentImage) {
-    return;
-  }
-  const currentAnnotations = getCurrentAnnotations();
-  annotationsNeedUpdating = false;
-  points = [];
-  labels = [];
-  if (!currentAnnotations?.length) {
-    return;
-  }
-  for (const annotation of currentAnnotations) {
-    const handle = annotation.data.handles.points[0];
-    const point = mapAnnotationPoint(handle);
-    const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
-    points.push(point[0]);
-    points.push(point[1]);
-    labels.push(label);
-  }
-  runDecoder();
-
-  // Make sure any loading required is attempted again as the image may have changed
-  tryLoad();
-}
-
 let decoderWaiting = false;
 
-/** Awaits a chance to run the decoder */
-async function runDecoder() {
-  if (isClicked || !currentImage) {
-    console.log('*** runDecoder - not runnable now', isClicked, !!currentImage);
-    return;
-  } else {
-    console.log('Run annotations mask update');
+/**
+ * Implement a machine learning controller to interface with various machine
+ * learning algorithms.
+ *
+ */
+export default class MLController {
+  private loadingAI: Promise<unknown>;
+
+  /**
+   * A listener for viewport being rendered that tried loading/encoding the
+   * new image if it is different from the previous image.  Will return before
+   * the image is encoded.  Can safely be extracted from the instance object and
+   * called stand alone.
+   */
+  public viewportRenderedListener = (_event) => {
+    desiredImage.imageId = viewport.getCurrentImageId();
+    desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
+    if (desiredImage.imageId === currentImage?.imageId) {
+      return;
+    }
+    const ctxMask = canvasMask.getContext('2d');
+    ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
+
+    currentImage = null;
+    decoderWaiting = false;
+    this.tryLoad();
+  };
+
+  /**
+   * Handle the annotations being added by checking to see if they are the current
+   * frame and adding appropriate points to it/updating said points.
+   */
+  public annotationModifiedListener = (event?) => {
+    const changeType = event?.detail.changeType;
+    if (changeType === cornerstoneTools.Enums.ChangeTypes.StatsUpdated) {
+      return;
+    }
+    const currentAnnotations = getCurrentAnnotations();
+    if (!currentAnnotations.length) {
+      console.log('**** No current annotations - not trying load');
+      return;
+    }
+    console.log('**** Annotation modified', currentAnnotations);
+    annotationsNeedUpdating = true;
+    this.tryLoad();
+  };
+
+  /**
+   *  Connects a viewport up to get anotations and updates
+   * Note that only one viewport at a time is permitted as the model needs to
+   * load data about the active viewport.
+   */
+  public connectViewport(
+    viewportIn,
+    getCurrentAnnotationsIn,
+    excludeToolIn,
+    toolForPreviewIn
+  ) {
+    viewport = viewportIn;
+    getCurrentAnnotations = getCurrentAnnotationsIn;
+    excludeTool = excludeToolIn;
+    tool = toolForPreviewIn;
+  }
+
+  /**
+   * Loads the AI model.
+   */
+  public loadAI() {
+    if (!this.loadingAI) {
+      this.loadingAI = this.loadAIInternal();
+    }
+    return this.loadingAI;
+  }
+
+  /**
+   * Does the actual load, separated from the public method to allow starting
+   * the AI to load and then waiting for it once other things are also ready.
+   */
+  protected async loadAIInternal() {
+    canvas.style.cursor = 'wait';
+
+    decoder_latency = document.getElementById('decoder_latency');
+
+    for (let i = 0; i < 2; i++) {
+      sessions.push({
+        sessionIndex: i,
+        encoder: null,
+        decoder: null,
+        imageEmbeddings: null,
+        isLoading: false,
+        canvas: canvas, // TODO: document.createElement('canvas'),
+      });
+      const loader = this.loadModels(MODELS[config.model], sessions[i]).catch(
+        (e) => {
+          log(e);
+        }
+      );
+      sessions[i].loader = loader;
+      if (i === 0) {
+        await loader;
+      }
+    }
+  }
+
+  /**
+   * Clears the ML related annotations on the specified viewport.
+   */
+  public clearML(viewport) {
+    points = [];
+    labels = [];
+    getCurrentAnnotations(viewport).forEach((annotation) =>
+      annotationState.removeAnnotation(annotation.annotationUID)
+    );
+  }
+
+  /**
+   * Cache the next image as encoded.
+   */
+  public cacheImageEncodings(
+    current = viewport.getCurrentImageId(),
+    offset = 0
+  ) {
+    console.log('cacheImageEncodings', offset, current);
+    const imageIds = viewport.getImageIds();
+    if (offset >= imageIds.length) {
+      // We are done.
+      return;
+    }
+    const index = (offset + current) % imageIds.length;
+    const imageId = imageIds[index];
+    if (imageEncodings.has(imageId)) {
+      this.cacheImageEncodings(current, offset + 1);
+      return;
+    }
+    // Try doing a load, so that UI has priority
+    this.tryLoad();
+    if (isClicked) {
+      setTimeout(() => this.cacheImageEncodings(current, offset), 500);
+      return;
+    }
+
+    document.getElementById('status').innerText = `Caching ${index}`;
+    this.handleImage(imageId, sessions[1]).then(() => {
+      this.cacheImageEncodings(current, offset + 1);
+    });
+  }
+
+  /**
+   * handler called when image available
+   */
+  protected async handleImage(imageId, imageSession) {
+    if (imageId === imageSession.imageId || isClicked) {
+      return;
+    }
     isClicked = true;
+    imageSession.imageId = imageId;
     try {
-      canvas.style.cursor = 'wait';
-      await decoder(points, labels);
-      console.log('Completed decoder');
+      const encoder_latency = document.getElementById('encoder_latency');
+      const isCurrent = desiredImage.imageId === imageId;
+      if (isCurrent) {
+        encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
+        decoder_latency.innerText = 'Awaiting image';
+        canvas.style.cursor = 'wait';
+      }
+      points = [];
+      labels = [];
+      const width = MAX_WIDTH;
+      const height = MAX_HEIGHT;
+      const renderCanvas = isCurrent ? canvas : imageSession.canvas;
+      renderCanvas.width = width;
+      renderCanvas.height = height;
+      imageSession.imageEmbeddings = undefined;
+      const size = renderCanvas.style.width;
+
+      const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.clearRect(0, 0, width, height);
+      await utilities.loadImageToCanvas({
+        canvas: renderCanvas,
+        imageId,
+        viewportOptions,
+      });
+      renderCanvas.style.width = size;
+      renderCanvas.style.height = size;
+      if (isCurrent) {
+        encoder_latency.innerText = `Rendered image on ${imageSession.sessionIndex}`;
+      }
+
+      imageImageData = ctx.getImageData(0, 0, width, height);
+
+      const data = await this.restoreImageEncoding(imageId);
+      if (data) {
+        imageSession.imageEmbeddings = data;
+        if (desiredImage.imageId === imageId) {
+          encoder_latency.innerText = `Cached Image`;
+          canvas.style.cursor = 'default';
+        }
+      } else {
+        const t = await ort.Tensor.fromImage(imageImageData, {
+          resizedWidth: MODEL_WIDTH,
+          resizedHeight: MODEL_HEIGHT,
+        });
+        const feed = config.isSlimSam
+          ? { pixel_values: t }
+          : { input_image: t };
+        await imageSession.loader;
+        const session = await imageSession.encoder;
+        if (!session) {
+          log('****** No session');
+          return;
+        }
+        const start = performance.now();
+        imageSession.imageEmbeddings = session.run(feed);
+        const data = await imageSession.imageEmbeddings;
+        this.storeImageEncoding(imageId, data);
+        if (desiredImage.imageId === imageId) {
+          encoder_latency.innerText = `Image Ready ${
+            imageSession.sessionIndex
+          } ${(performance.now() - start).toFixed(1)} ms`;
+          canvas.style.cursor = 'default';
+        }
+      }
     } finally {
-      canvas.style.cursor = 'default';
       isClicked = false;
-      decoderWaiting = false;
+    }
+
+    this.tryLoad();
+  }
+
+  /** Awaits a chance to run the decoder */
+  protected async runDecoder() {
+    if (isClicked || !currentImage) {
+      console.log(
+        '*** runDecoder - not runnable now',
+        isClicked,
+        !!currentImage
+      );
+      return;
+    } else {
+      console.log('Run annotations mask update');
+      isClicked = true;
+      try {
+        canvas.style.cursor = 'wait';
+        await this.decoder(points, labels);
+        console.log('Completed decoder');
+      } finally {
+        canvas.style.cursor = 'default';
+        isClicked = false;
+        decoderWaiting = false;
+      }
+    }
+  }
+
+  /**
+   * This function will try setting the current image to the desired loading image
+   * if it isn't already the desired one, and invoke the handleImage.  It also checks
+   * the "next" images to see if there are other images which should be tried to load.
+   */
+  public tryLoad() {
+    // Always use session 0 for the current session
+    const session = sessions[0];
+
+    if (session.imageId === desiredImage.imageId) {
+      if (currentImage !== session) {
+        currentImage = session;
+      }
+      this.updateAnnotations();
+      return;
+    }
+    this.handleImage(desiredImage.imageId, session);
+  }
+
+  /**
+   * Maps world points to destination points.
+   * Assumes the destination canvas is scale to fit at 100% in both dimensions,
+   * while the source point is also assumed to be in the same position, but not
+   * the same scale.
+   *
+   * TODO - add mapping from index coordinates to dest coordinates
+   * TODO - handle non-square aspect ratios (center relative)
+   * TODO - handle alternate orientations
+   */
+  mapAnnotationPoint(worldPoint) {
+    const canvasPoint = viewport.worldToCanvas(worldPoint);
+    const { width, height } = viewport.canvas;
+    const { width: destWidth, height: destHeight } = canvas;
+
+    const x = Math.trunc(
+      (canvasPoint[0] * destWidth * devicePixelRatio) / width
+    );
+    const y = Math.trunc(
+      (canvasPoint[1] * destHeight * devicePixelRatio) / height
+    );
+    return [x, y];
+  }
+
+  /**
+   * Updates annotations when they have changed in some way, running the decoder.
+   */
+  updateAnnotations() {
+    if (isClicked || !annotationsNeedUpdating || !currentImage) {
+      return;
+    }
+    const currentAnnotations = getCurrentAnnotations();
+    annotationsNeedUpdating = false;
+    points = [];
+    labels = [];
+    if (!currentAnnotations?.length) {
+      return;
+    }
+    for (const annotation of currentAnnotations) {
+      const handle = annotation.data.handles.points[0];
+      const point = this.mapAnnotationPoint(handle);
+      const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
+      points.push(point[0]);
+      points.push(point[1]);
+      labels.push(label);
+    }
+    this.runDecoder();
+
+    // Make sure any loading required is attempted again as the image may have changed
+    this.tryLoad();
+  }
+
+  /**
+   * Loads encoder data externally.  Applies the image data to the session if
+   * successful.
+   */
+  async restoreImageEncoding(imageId) {
+    if (!sharedImageEncoding) {
+      return;
+    }
+    const floatData = imageEncodings.get(imageId);
+    if (floatData) {
+      sharedImageEncoding.image_embeddings.cpuData.set(floatData);
+      return sharedImageEncoding;
+    }
+    try {
+      const root = await this.getDirectoryForImageId(imageId);
+      const name = this.getFileNameForImageId(imageId);
+      const fileHandle = await root.getFileHandle(name);
+      const file = await fileHandle.getFile();
+      if (file) {
+        const buffer = await getBuffer(file);
+        imageEncodings.set(imageId, buffer);
+        sharedImageEncoding.image_embeddings.cpuData.set(buffer);
+        return sharedImageEncoding;
+      }
+    } catch (e) {
+      console.log('Unable to fetch file', imageId, e);
+    }
+  }
+
+  async storeImageEncoding(imageId, data) {
+    if (!sharedImageEncoding) {
+      sharedImageEncoding = data;
+    }
+    const storeData = data.image_embeddings.cpuData;
+    const writeData = new Float32Array(storeData);
+    imageEncodings.set(imageId, writeData);
+    try {
+      const root = await this.getDirectoryForImageId(imageId);
+      const name = this.getFileNameForImageId(imageId);
+      const fileHandle = await root.getFileHandle(name, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(writeData);
+      await writable.close();
+    } catch (e) {
+      console.log('Unable to write', imageId, e);
+    }
+  }
+
+  /**
+   * Given the mask created by the AI model, assigns the data to a new preview
+   * instance of a labelmap.
+   */
+  createLabelmap(mask, _points, _labels) {
+    const preview = tool.addPreview(viewport.element);
+    const { previewSegmentIndex, memo, segmentationId } = preview;
+    const previewVoxelManager =
+      memo?.voxelManager || preview.previewVoxelManager;
+    const [width, height, _depth] = previewVoxelManager.dimensions;
+    const { data } = mask;
+
+    for (let j = 0; j < height; j++) {
+      const y = Math.round((j * MAX_HEIGHT) / height);
+      if (y < 0 || y >= MAX_HEIGHT) {
+        continue;
+      }
+      for (let i = 0; i < width; i++) {
+        const x = Math.round((i * MAX_WIDTH) / width);
+        if (x < 0 || x >= MAX_WIDTH) {
+          continue;
+        }
+        const index = x * 4 + y * 4 * MAX_WIDTH;
+        const v = data[index];
+        if (v > 0) {
+          previewVoxelManager.setAtIJK(i, j, 0, previewSegmentIndex);
+        } else {
+          previewVoxelManager.setAtIJK(i, j, 0, null);
+        }
+      }
+    }
+    triggerSegmentationDataModified(segmentationId);
+  }
+
+  async decoder(points, labels, useSession = currentImage) {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = imageImageData.width;
+    canvas.height = imageImageData.height;
+    canvasMask.width = imageImageData.width;
+    canvasMask.height = imageImageData.height;
+
+    if (!useSession || useSession.imageId !== desiredImage.imageId) {
+      console.warn('***** Image not current, need to wait for current image');
+      return;
+    }
+
+    // Comment this line out to draw just the overlay mask data
+    ctx.putImageData(imageImageData, 0, 0);
+
+    if (points.length) {
+      // need to wait for encoder to be ready
+      if (!useSession.imageEmbeddings) {
+        await useSession.encoder;
+      }
+
+      // wait for encoder to deliver embeddings
+      const emb = await useSession.imageEmbeddings;
+
+      // the decoder
+      const session = useSession.decoder;
+
+      const feed = feedForSam(emb, points, labels);
+      const start = performance.now();
+      const res = await session.run(feed);
+      decoder_latency.innerText = `decoder ${useSession.sessionIndex} ${(
+        performance.now() - start
+      ).toFixed(1)} ms`;
+
+      for (let i = 0; i < points.length; i += 2) {
+        const label = labels[i / 2];
+        ctx.fillStyle = label ? 'blue' : 'pink';
+
+        ctx.fillRect(
+          points[i] - boxRadius,
+          points[i + 1] - boxRadius,
+          2 * boxRadius,
+          2 * boxRadius
+        );
+      }
+      const mask = res.masks;
+      maskImageData = mask.toImageData();
+      this.createLabelmap(maskImageData, points, labels);
+      ctx.globalAlpha = 0.3;
+      const { data } = maskImageData;
+      const counts = [];
+      for (let i = 0; i < data.length; i += 4) {
+        const v = data[i];
+        if (v > 0) {
+          if (v < 255) {
+            data[i] = 0;
+            if (v > 192) {
+              data[i + 1] = 255;
+            } else {
+              data[i + 2] = v + 64;
+            }
+          }
+          counts[v] = 1 + (counts[v] || 0);
+        }
+      }
+      const bitmap = await createImageBitmap(maskImageData);
+      ctx.drawImage(bitmap, 0, 0);
+
+      const ctxMask = canvasMask.getContext('2d');
+      ctxMask.globalAlpha = 0.9;
+      ctxMask.drawImage(bitmap, 0, 0);
+    }
+  }
+
+  /*
+   * fetch and cache url
+   */
+  async fetchAndCacheModel(url, name) {
+    try {
+      const cache = await caches.open('onnx');
+      let cachedResponse = await cache.match(url);
+      if (cachedResponse == undefined) {
+        await cache.add(url);
+        cachedResponse = await cache.match(url);
+        log(`${name} (network)`);
+      } else {
+        log(`${name} (cached)`);
+      }
+      const data = await cachedResponse.arrayBuffer();
+      return data;
+    } catch (error) {
+      log(`${name} (network)`);
+      return await fetch(url).then((response) => response.arrayBuffer());
+    }
+  }
+
+  /*
+   * load models one at a time
+   */
+  async loadModels(models, imageSession = currentImage) {
+    const cache = await caches.open('onnx');
+    let missing = 0;
+    for (const [_name, model] of Object.entries(models)) {
+      const cachedResponse = await cache.match(model.url);
+      if (cachedResponse === undefined) {
+        missing += model.size;
+      }
+    }
+    if (missing > 0) {
+      log(`downloading ${missing} MB from network ... it might take a while`);
+    } else {
+      log('loading...');
+    }
+    const start = performance.now();
+    for (const [_name, model] of Object.entries(models)) {
+      try {
+        const opt = {
+          executionProviders: [config.provider],
+          enableMemPattern: false,
+          enableCpuMemArena: false,
+          extra: {
+            session: {
+              disable_prepacking: '1',
+              use_device_allocator_for_initializers: '1',
+              use_ort_model_bytes_directly: '1',
+              use_ort_model_bytes_for_initializers: '1',
+            },
+          },
+          interOpNumThreads: 4,
+          intraOpNumThreads: 2,
+        };
+        const model_bytes = await this.fetchAndCacheModel(
+          model.url,
+          model.name,
+          imageSession
+        );
+        const extra_opt = model.opt || {};
+        const sess_opt = { ...opt, ...extra_opt };
+        imageSession[model.key] = await ort.InferenceSession.create(
+          model_bytes,
+          sess_opt
+        );
+      } catch (e) {
+        log(`${model.url} failed, ${e}`);
+      }
+    }
+    const stop = performance.now();
+    log(`ready, ${(stop - start).toFixed(1)}ms`);
+  }
+
+  /**
+   * Gets the storage directory for storing the given image id
+   */
+  async getDirectoryForImageId(imageId) {
+    const studySeriesUids = imageId
+      .split('/studies/')[1]
+      .split('/instances/')[0]
+      .split('/');
+    const [studyUID, _series, seriesUID] = studySeriesUids;
+    const root = await window.navigator.storage.getDirectory();
+    const modelRoot = await getOrCreateDir(root, config.model);
+    const studyRoot = await getOrCreateDir(modelRoot, studyUID);
+    const seriesRoot = await getOrCreateDir(studyRoot, seriesUID);
+    return seriesRoot;
+  }
+
+  /**
+   * Gets the file name for the given imageId
+   */
+  getFileNameForImageId(imageId) {
+    const instancesLocation = imageId.indexOf('/instances/');
+    if (instancesLocation != -1) {
+      const sopLocation = instancesLocation + 11;
+      const nextSlash = imageId.indexOf('/', sopLocation);
+      return imageId.substring(sopLocation, nextSlash);
     }
   }
 }
 
-export async function viewportRenderedListener(_event) {
-  desiredImage.imageId = viewport.getCurrentImageId();
-  desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
-  if (desiredImage.imageId === currentImage?.imageId) {
-    return;
+/** Gets or creates a diretory name */
+async function getOrCreateDir(dir, name) {
+  for await (const [key, value] of dir) {
+    if (key === name) {
+      return value;
+    }
   }
-  const ctxMask = canvasMask.getContext('2d');
-  ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
-
-  currentImage = null;
-  decoderWaiting = false;
-  tryLoad();
-}
-
-/**
- * Clears the ML related annotations on the specified viewport.
- */
-export function clearML(viewport) {
-  points = [];
-  labels = [];
-  getCurrentAnnotations(viewport).forEach((annotation) =>
-    annotationState.removeAnnotation(annotation.annotationUID)
-  );
+  return dir.getDirectoryHandle(name, { create: true });
 }
 
 export { viewportOptions };
