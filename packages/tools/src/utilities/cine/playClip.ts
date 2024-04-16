@@ -198,7 +198,7 @@ function playClip(
  * Stops an already playing clip.
  * @param element - HTML Element
  */
-function stopClip(element: HTMLDivElement, options): void {
+function stopClip(element: HTMLDivElement, options = {} as any): void {
   _stopClip(element, {
     stopDynamicCine: true,
     ...options,
