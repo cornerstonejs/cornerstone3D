@@ -9,11 +9,13 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import { BaseTool } from './base';
 import {
   Enums,
+  eventTarget,
   getEnabledElementByIds,
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import { getToolGroup } from '../store/ToolGroupManager';
+import { Events } from '../enums';
 
 const OverlayMarkerType = {
   ANNOTATED_CUBE: 1,
@@ -35,8 +37,6 @@ class OrientationMarkerTool extends BaseTool {
   _resizeObservers = new Map();
 
   static OVERLAY_MARKER_TYPES = OverlayMarkerType;
-
-  configuration_invalidated = true;
 
   constructor(
     toolProps = {},
@@ -88,29 +88,22 @@ class OrientationMarkerTool extends BaseTool {
   ) {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
-    this.configuration_invalidated = true;
   }
 
   onSetToolEnabled = (): void => {
     this.initViewports();
-    this.configuration_invalidated = true;
     this._subscribeToViewportEvents();
   };
 
   onSetToolActive = (): void => {
     this.initViewports();
-    this.configuration_invalidated = true;
+
     this._subscribeToViewportEvents();
   };
 
   onSetToolDisabled = (): void => {
     this.cleanUpData();
     this._unsubscribeToViewportNewVolumeSet();
-  };
-
-  reset = () => {
-    this.configuration_invalidated = true;
-    this.initViewports();
   };
 
   _getViewportsInfo = () => {
@@ -130,50 +123,77 @@ class OrientationMarkerTool extends BaseTool {
   };
 
   _unsubscribeToViewportNewVolumeSet() {
-    const viewportsInfo = this._getViewportsInfo();
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const { viewport } = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      const { element } = viewport;
+    const unsubscribe = () => {
+      const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        const { viewport } = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        const { element } = viewport;
 
-      element.removeEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        this.reset
-      );
+        element.removeEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          this.initViewports
+        );
 
-      // // // unsubscribe to element resize events
-      const resizeObserver = this._resizeObservers.get(viewportId);
-      resizeObserver.unobserve(element);
+        const resizeObserver = this._resizeObservers.get(viewportId);
+        resizeObserver.unobserve(element);
+      });
+    };
+
+    eventTarget.removeEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
+      if (evt.detail.toolGroupId !== this.toolGroupId) {
+        return;
+      }
+      unsubscribe();
+      this.initViewports();
     });
   }
 
   _subscribeToViewportEvents() {
-    const viewportsInfo = this._getViewportsInfo();
+    const subscribeToElementResize = () => {
+      const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        const { viewport } = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        const { element } = viewport;
+        this.initViewports();
 
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const { viewport } = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      const { element } = viewport;
+        element.addEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          this.initViewports
+        );
 
-      element.addEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        this.reset
-      );
+        const resizeObserver = new ResizeObserver(() => {
+          // Todo: i wish there was a better way to do this
+          setTimeout(() => {
+            const { viewport } = getEnabledElementByIds(
+              viewportId,
+              renderingEngineId
+            );
+            this.resize(viewportId);
+            viewport.render();
+          }, 100);
+        });
 
-      const resizeObserver = new ResizeObserver(() => {
-        // Todo: i wish there was a better way to do this
-        setTimeout(() => {
-          this.reset();
-        }, 100);
+        resizeObserver.observe(element);
+
+        this._resizeObservers.set(viewportId, resizeObserver);
       });
+    };
 
-      resizeObserver.observe(element);
+    subscribeToElementResize();
 
-      this._resizeObservers.set(viewportId, resizeObserver);
+    eventTarget.addEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
+      if (evt.detail.toolGroupId !== this.toolGroupId) {
+        return;
+      }
+
+      subscribeToElementResize();
+      this.initViewports();
     });
   }
 
@@ -276,8 +296,6 @@ class OrientationMarkerTool extends BaseTool {
     viewport.addWidget(this.getToolName(), orientationWidget);
     renderWindow.render();
     viewport.getRenderingEngine().render();
-
-    this.configuration_invalidated = false;
   }
 
   private async createCustomActor() {
