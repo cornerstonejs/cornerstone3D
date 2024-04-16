@@ -121,7 +121,6 @@ const viewportGrid = document.createElement('div');
 let viewport, volumeViewport;
 
 viewportGrid.style.width = '95vw';
-// viewportGrid.style.flexDirection = 'column';
 
 const viewportId = 'VIEWPORT_ID';
 const viewportIds = ['VIEWPORT_ID', 'AXIAL', 'SAGITAL', 'CORONAL'];
