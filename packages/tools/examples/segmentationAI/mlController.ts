@@ -279,7 +279,7 @@ export default class MLController {
   /**
    * Cache the next image as encoded.
    */
-  public cacheImageEncodings(
+  public async cacheImageEncodings(
     current = viewport.getCurrentImageId(),
     offset = 0
   ) {
@@ -290,6 +290,10 @@ export default class MLController {
     }
     const index = (offset + current) % imageIds.length;
     const imageId = imageIds[index];
+    if (!imageEncodings.has(imageId)) {
+      // Try loading from storage
+      await this.loadStorageImageEncoding(imageId, index);
+    }
     if (imageEncodings.has(imageId)) {
       this.cacheImageEncodings(current, offset + 1);
       return;
@@ -483,21 +487,28 @@ export default class MLController {
     if (!sharedImageEncoding) {
       return;
     }
+    if (!imageEncodings.has(imageId)) {
+      await this.loadStorageImageEncoding(imageId);
+    }
     const floatData = imageEncodings.get(imageId);
     if (floatData) {
       sharedImageEncoding.image_embeddings.cpuData.set(floatData);
       return sharedImageEncoding;
     }
+  }
+
+  async loadStorageImageEncoding(imageId, index = null) {
     try {
       const root = await this.getDirectoryForImageId(imageId);
       const name = this.getFileNameForImageId(imageId);
       const fileHandle = await root.getFileHandle(name);
+      document.getElementById(
+        'status'
+      ).innerText = `Loading from storage ${index}`;
       const file = await fileHandle.getFile();
       if (file) {
         const buffer = await getBuffer(file);
         imageEncodings.set(imageId, buffer);
-        sharedImageEncoding.image_embeddings.cpuData.set(buffer);
-        return sharedImageEncoding;
       }
     } catch (e) {
       console.log('Unable to fetch file', imageId, e);
