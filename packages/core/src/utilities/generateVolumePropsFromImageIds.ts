@@ -11,7 +11,7 @@ import createUint8SharedArray from './createUint8SharedArray';
 import getScalingParameters from './getScalingParameters';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
-import { hasFloatRescale } from './hasFloatRescale';
+import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { ImageVolumeProps, Mat3, Point3 } from '../types';
 import cache from '../cache';
 import { Events } from '../enums';
@@ -41,7 +41,7 @@ function generateVolumePropsFromImageIds(
 
   // The prescale is ALWAYS used with modality LUT, so we can assume that
   // if the rescale slope is not an integer, we need to use Float32
-  const floatAfterScale = hasFloatRescale(scalingParameters);
+  const floatAfterScale = hasFloatScalingParameters(scalingParameters);
   const canRenderFloat = canRenderFloatTextures();
 
   const {

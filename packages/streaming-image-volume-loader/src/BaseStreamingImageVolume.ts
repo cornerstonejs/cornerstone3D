@@ -20,8 +20,11 @@ import type {
 import { scaleArray, autoLoad } from './helpers';
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
-const { ProgressiveIterator, imageRetrieveMetadataProvider, hasFloatRescale } =
-  csUtils;
+const {
+  ProgressiveIterator,
+  imageRetrieveMetadataProvider,
+  hasFloatScalingParameters,
+} = csUtils;
 const { ImageQualityStatus } = Enums;
 
 /**
@@ -398,7 +401,7 @@ export default class BaseStreamingImageVolume
       typeof scalingParameters.rescaleSlope === 'number' &&
       typeof scalingParameters.rescaleIntercept === 'number';
 
-    const floatAfterScale = hasFloatRescale(scalingParameters);
+    const floatAfterScale = hasFloatScalingParameters(scalingParameters);
     const allowFloatRendering = canRenderFloatTextures();
 
     /**

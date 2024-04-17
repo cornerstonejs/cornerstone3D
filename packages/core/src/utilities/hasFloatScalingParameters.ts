@@ -5,7 +5,9 @@ import { ScalingParameters } from '../types';
  * @param scalingParameters - The scaling parameters to check.
  * @returns True if the scaling parameters contain a float rescale value, false otherwise.
  */
-export const hasFloatRescale = (scalingParameters: ScalingParameters) => {
+export const hasFloatScalingParameters = (
+  scalingParameters: ScalingParameters
+): boolean => {
   const hasFloatRescale = Object.values(scalingParameters).some(
     (value) => typeof value === 'number' && !Number.isInteger(value)
   );
