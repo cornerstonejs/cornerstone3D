@@ -76,7 +76,11 @@ import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
 import cache from '../cache';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
+import {
+  canRenderFloatTextures,
+  getConfiguration,
+  getShouldUseCPURendering,
+} from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import {
   ImagePixelModule,
@@ -2064,6 +2068,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       useRGBA: false,
       transferSyntaxUID,
+      useNativeDataType: this.useNativeDataType,
+      allowFloatRendering: canRenderFloatTextures(),
       priority: 5,
       requestType: RequestType.Interaction,
       additionalDetails,

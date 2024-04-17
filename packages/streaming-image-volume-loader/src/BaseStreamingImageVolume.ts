@@ -10,6 +10,7 @@ import {
   utilities as csUtils,
   utilities,
   ProgressiveRetrieveImages,
+  canRenderFloatTextures,
 } from '@cornerstonejs/core';
 import type {
   Types,
@@ -397,6 +398,12 @@ export default class BaseStreamingImageVolume
       typeof scalingParameters.rescaleSlope === 'number' &&
       typeof scalingParameters.rescaleIntercept === 'number';
 
+    const areThereAnyNonIntegerScalingParameter = Object.values(
+      scalingParameters
+    ).some((value) => typeof value === 'number' && !Number.isInteger(value));
+
+    const allowFloatRendering = canRenderFloatTextures();
+
     /**
      * So this is has limitation right now, but we need to somehow indicate
      * whether the volume has been scaled with the scaling parameters or not.
@@ -410,6 +417,13 @@ export default class BaseStreamingImageVolume
      * not, which we store it in the this.scaling.PT.suvbw.
      */
     this.isPreScaled = isSlopeAndInterceptNumbers;
+
+    // in case where the hardware/os does not support float rendering but the
+    // requested scaling params are not integers, we need to disable pre-scaling
+    if (!allowFloatRendering && areThereAnyNonIntegerScalingParameter) {
+      this.isPreScaled = false;
+    }
+
     const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
 
     return {
@@ -429,8 +443,9 @@ export default class BaseStreamingImageVolume
         columns,
       },
       skipCreateImage: true,
+      allowFloatRendering,
       preScale: {
-        enabled: true,
+        enabled: this.isPreScaled,
         // we need to pass in the scalingParameters here, since the streaming
         // volume loader doesn't go through the createImage phase in the loader,
         // and therefore doesn't have the scalingParameters

@@ -219,6 +219,20 @@ function postProcessDecodedPixels(
     isColorImage(imageFrame.photometricInterpretation) &&
     options.targetBuffer?.offset === undefined;
 
+  const canRenderFloat =
+    typeof options.allowFloatRendering !== 'undefined'
+      ? options.allowFloatRendering
+      : true;
+
+  const willScale = options.preScale?.enabled;
+
+  const areThereAnyNonIntegerScalingParameter =
+    willScale &&
+    Object.values(options.preScale.scalingParameters).some(
+      (v) => typeof v === 'number' && !Number.isInteger(v)
+    );
+  const disableScale = !canRenderFloat && areThereAnyNonIntegerScalingParameter;
+
   if (type && !invalidColorType) {
     pixelDataArray = _handleTargetBuffer(
       options,
@@ -226,7 +240,7 @@ function postProcessDecodedPixels(
       typedArrayConstructors,
       pixelDataArray
     );
-  } else if (options.preScale.enabled) {
+  } else if (options.preScale.enabled && !disableScale) {
     pixelDataArray = _handlePreScaleSetup(
       options,
       minBeforeScale,
@@ -244,11 +258,11 @@ function postProcessDecodedPixels(
   let minAfterScale = minBeforeScale;
   let maxAfterScale = maxBeforeScale;
 
-  if (options.preScale.enabled) {
+  if (options.preScale.enabled && !disableScale) {
     const scalingParameters = options.preScale.scalingParameters;
     _validateScalingParameters(scalingParameters);
 
-    const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
+    const { rescaleSlope, rescaleIntercept } = scalingParameters;
     const isSlopeAndInterceptNumbers =
       typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
 
@@ -269,6 +283,13 @@ function postProcessDecodedPixels(
         maxAfterScale = maxAfterScale * suvbw;
       }
     }
+  } else if (disableScale) {
+    imageFrame.preScale = {
+      scaled: false,
+    };
+
+    minAfterScale = minBeforeScale;
+    maxAfterScale = maxBeforeScale;
   }
 
   // assign the array buffer to the pixelData only if it is not a SharedArrayBuffer
@@ -311,7 +332,9 @@ function _handleTargetBuffer(
   const TypedArrayConstructor = typedArrayConstructors[type];
 
   if (!TypedArrayConstructor) {
-    throw new Error(`target array ${type} is not supported`);
+    throw new Error(
+      `target array ${type} is not supported, you need to set use16BitDataType to true if you want to use Uint16Array or Int16Array.`
+    );
   }
 
   if (rows && rows != imageFrame.rows) {

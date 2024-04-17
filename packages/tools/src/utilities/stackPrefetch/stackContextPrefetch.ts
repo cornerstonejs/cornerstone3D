@@ -5,6 +5,7 @@ import {
   imageLoadPoolManager,
   cache,
   getConfiguration as getCoreConfiguration,
+  canRenderFloatTextures,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState } from './state';
 import {
@@ -217,7 +218,10 @@ function prefetch(element) {
       .loadAndCacheImage(imageId, options)
       .then(() => doneCallback(imageId));
 
-  const { useNorm16Texture } = getCoreConfiguration().rendering;
+  const { useNorm16Texture, preferSizeOverAccuracy } =
+    getCoreConfiguration().rendering;
+
+  const useNativeDataType = useNorm16Texture || preferSizeOverAccuracy;
 
   indicesToRequestCopy.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
@@ -225,11 +229,13 @@ function prefetch(element) {
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
+        type: useNativeDataType ? undefined : 'Float32Array',
       },
       preScale: {
         enabled: true,
       },
+      useNativeDataType,
+      allowFloatRendering: canRenderFloatTextures(),
       requestType,
     };
 

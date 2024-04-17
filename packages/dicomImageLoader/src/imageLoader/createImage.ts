@@ -144,6 +144,16 @@ function createImage(
     options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
+
+  // check if the options to use the 16 bit data type is set
+  // on the image load options, and prefer that over the global
+  // options of the dicom loader
+  decodeConfig.use16BitDataType =
+    (options && options.targetBuffer?.type === 'Uint16Array') ||
+    options.targetBuffer?.type === 'Int16Array'
+      ? true
+      : options.useNativeDataType || decodeConfig.use16BitDataType;
+
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,
