@@ -265,6 +265,9 @@ function cancelLoadImage(imageId: string): void;
 function cancelLoadImages(imageIds: Array<string>): void;
 
 // @public (undocumented)
+export function canRenderFloatTextures(): boolean;
+
+// @public (undocumented)
 function clamp(value: number, min: number, max: number): number;
 
 // @public (undocumented)
@@ -1109,6 +1112,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
 
 // @public (undocumented)
 export function getWebWorkerManager(): any;
+
+// @public (undocumented)
+const hasFloatScalingParameters: (scalingParameters: ScalingParameters) => boolean;
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
@@ -3097,7 +3103,6 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
         useRGBA: boolean;
         transferSyntaxUID: any;
         useNativeDataType: boolean;
-        allowFloatRendering: boolean;
         priority: number;
         requestType: RequestType;
         additionalDetails: {
@@ -3507,7 +3512,8 @@ declare namespace utilities {
         getViewportImageIds,
         getRandomSampleFromArray,
         getVolumeId,
-        color
+        color,
+        hasFloatScalingParameters
     }
 }
 export { utilities }
