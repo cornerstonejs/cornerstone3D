@@ -134,7 +134,7 @@ class OrientationMarkerTool extends BaseTool {
 
         element.removeEventListener(
           Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          this.initViewports
+          this.initViewports.bind(this)
         );
 
         const resizeObserver = this._resizeObservers.get(viewportId);
@@ -164,7 +164,7 @@ class OrientationMarkerTool extends BaseTool {
 
         element.addEventListener(
           Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          this.initViewports
+          this.initViewports.bind(this)
         );
 
         const resizeObserver = new ResizeObserver(() => {
