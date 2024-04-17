@@ -296,6 +296,7 @@ function navigateVolumeListener(event) {
     viewport.getViewReference(),
     viewport.getViewPresentation()
   );
+  volumeViewport.render();
   viewportRenderedListener(event);
 }
 
@@ -464,6 +465,7 @@ async function run() {
     viewport.getViewReference(),
     viewport.getViewPresentation()
   );
+  volumeViewport.render();
   addAnnotationListeners();
 }
 

@@ -1,4 +1,10 @@
-import type { IImage, ViewportInputOptions } from '../types';
+import type {
+  IImage,
+  ViewPresentation,
+  ViewReference,
+  ViewportInputOptions,
+  Point3,
+} from '../types';
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import * as metaData from '../metaData';
@@ -8,9 +14,50 @@ import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import { getConfiguration } from '../init';
 
-export interface LoadImageOptions {
-  canvas: HTMLCanvasElement;
+/**
+ * The original load image options specified just an image id,  which is optimal
+ * for things like thumbnails rendering a single image.
+ */
+export type StackLoadImageOptions = {
   imageId: string;
+};
+
+/**
+ * The full image load options allows specifying more parameters for both the
+ * presentation and the view so that a specific view can be referenced/displayed.
+ */
+export type FullImageLoadOptions = {
+  viewReference: ViewReference;
+  viewPresentation: ViewPresentation;
+  imageId: undefined;
+};
+
+/**
+ * The canvas load position allows for determining the rendered position of
+ * image data within the canvas, and can be used to map loaded canvas points
+ * to and from other viewport positions for things like external computations
+ * on the load image to canvas view and the viewport view (which may contain
+ * extraneous data such as segmentation and thus not be usable for external
+ * computations.)
+ */
+export type CanvasLoadPosition = {
+  origin: Point3;
+  topRight: Point3;
+  bottomLeft: Point3;
+  thicknessMm: number;
+};
+
+/**
+ * The image canvas can be loaded/set with various view conditions to specify the initial
+ * view as well as how and where ot render the image.
+ */
+export type LoadImageOptions = {
+  canvas: HTMLCanvasElement;
+  // Define the view specification as optional here, and then incorporate specific
+  // requirements in mix in types.
+  imageId?: string;
+  viewReference?: ViewReference;
+  viewPresentation?: ViewPresentation;
   requestType?: RequestType;
   priority?: number;
   renderingEngineId?: string;
@@ -24,7 +71,7 @@ export interface LoadImageOptions {
   physicalPixels?: boolean;
   // Sets the viewport input options  Defaults to scale to fit 110%
   viewportOptions?: ViewportInputOptions;
-}
+} & (StackLoadImageOptions | FullImageLoadOptions);
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the GPU rendering pipeline
@@ -50,7 +97,7 @@ export interface LoadImageOptions {
  */
 export default function loadImageToCanvas(
   options: LoadImageOptions
-): Promise<string> {
+): Promise<CanvasLoadPosition> {
   const {
     canvas,
     imageId,
@@ -87,9 +134,7 @@ export default function loadImageToCanvas(
         modality,
         renderingEngineId,
         viewportOptions
-      ).then(() => {
-        resolve(imageId);
-      });
+      ).then(resolve);
     }
 
     function errorCallback(error: Error, imageId: string) {

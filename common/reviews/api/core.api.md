@@ -2449,7 +2449,7 @@ function loadAndCacheImages(imageIds: Array<string>, options?: ImageLoaderOption
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
-function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
+function loadImageToCanvas(options: LoadImageOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<IImageVolume>;
@@ -2882,10 +2882,10 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<string>;
+function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
-function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions): Promise<string>;
+function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
 enum RequestType {

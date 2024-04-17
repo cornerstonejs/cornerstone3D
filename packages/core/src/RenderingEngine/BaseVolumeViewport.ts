@@ -638,7 +638,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       });
     }
     super.setView(viewRef, viewPres);
-    this.render();
   }
 
   /**

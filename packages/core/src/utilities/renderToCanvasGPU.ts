@@ -7,6 +7,7 @@ import { IImage, ViewportInputOptions } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
+import { CanvasLoadPosition } from './loadImageToCanvas';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation
@@ -33,7 +34,7 @@ export default function renderToCanvasGPU(
   modality = undefined,
   renderingEngineId = '_thumbnails',
   viewportOptions: ViewportInputOptions = { displayArea: { imageArea: [1, 1] } }
-): Promise<string> {
+): Promise<CanvasLoadPosition> {
   if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
     throw new Error('canvas element is required');
   }
@@ -109,6 +110,16 @@ export default function renderToCanvasGPU(
         canvas.height // destination dimensions
       );
 
+      const origin = viewport.canvasToWorld([0, 0]);
+      const topRight = viewport.canvasToWorld([
+        temporaryCanvas.width / devicePixelRatio,
+        0,
+      ]);
+      const bottomLeft = viewport.canvasToWorld([
+        0,
+        temporaryCanvas.height / devicePixelRatio,
+      ]);
+      const thicknessMm = 1;
       elementRendered = true;
 
       // remove based on id
@@ -130,7 +141,12 @@ export default function renderToCanvasGPU(
           element.remove();
         });
       }, 0);
-      resolve(imageId);
+      resolve({
+        origin,
+        bottomLeft,
+        topRight,
+        thicknessMm,
+      });
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);

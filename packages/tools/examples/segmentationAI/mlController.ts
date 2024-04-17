@@ -1,6 +1,7 @@
 import { Types, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
+import { vec3 } from 'gl-matrix';
 
 const { annotation } = cornerstoneTools;
 const { state: annotationState } = annotation;
@@ -19,7 +20,7 @@ const viewportOptions = {
       imagePoint: [0.5, 0.5],
       canvasPoint: [0.5, 0.5],
     },
-  },
+  } as Types.DisplayArea,
   background: <Types.Point3>[0, 0, 0.2],
 };
 
@@ -340,7 +341,7 @@ export default class MLController {
 
       const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
       ctx.clearRect(0, 0, width, height);
-      await utilities.loadImageToCanvas({
+      imageSession.canvasPosition = await utilities.loadImageToCanvas({
         canvas: renderCanvas,
         imageId,
         viewportOptions,
@@ -538,30 +539,53 @@ export default class MLController {
    * Given the mask created by the AI model, assigns the data to a new preview
    * instance of a labelmap.
    */
-  createLabelmap(mask, _points, _labels) {
+  createLabelmap(mask, canvasPosition, _points, _labels) {
     const preview = tool.addPreview(viewport.element);
     const { previewSegmentIndex, memo, segmentationId } = preview;
     const previewVoxelManager =
       memo?.voxelManager || preview.previewVoxelManager;
-    const [width, height, _depth] = previewVoxelManager.dimensions;
+    const { dimensions } = previewVoxelManager;
+    const [width, height] = dimensions;
     const { data } = mask;
 
-    for (let j = 0; j < height; j++) {
-      const y = Math.round((j * MAX_HEIGHT) / height);
-      if (y < 0 || y >= MAX_HEIGHT) {
-        continue;
-      }
-      for (let i = 0; i < width; i++) {
-        const x = Math.round((i * MAX_WIDTH) / width);
-        if (x < 0 || x >= MAX_WIDTH) {
+    const { origin, topRight, bottomLeft } = canvasPosition;
+    const downVec = vec3.subtract(vec3.create(), bottomLeft, origin);
+    const rightVec = vec3.subtract(vec3.create(), topRight, origin);
+    // Vectors are scaled to unit vectors in CANVAS space
+    vec3.scale(downVec, downVec, 1 / canvas.height);
+    vec3.scale(rightVec, rightVec, 1 / canvas.width);
+
+    const worldPointJ = vec3.create();
+    const worldPoint = vec3.create();
+    const imageData = viewport.getDefaultImageData();
+
+    // Assumes that the load to canvas size is bigger than the destination
+    // size - if that isnt true, then this should super-sample the data
+    for (let j = 0; j < canvas.height; j++) {
+      vec3.scaleAndAdd(worldPointJ, origin, downVec, j);
+      for (let i = 0; i < canvas.width; i++) {
+        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVec, i);
+        const ijkPoint = imageData.worldToIndex(worldPoint).map(Math.round);
+        if (
+          ijkPoint.findIndex((v, index) => v < 0 || v >= dimensions[index]) !==
+          -1
+        ) {
           continue;
         }
-        const index = x * 4 + y * 4 * MAX_WIDTH;
-        const v = data[index];
+        const maskIndex = i * 4 + j * 4 * MAX_WIDTH;
+        const v = data[maskIndex];
         if (v > 0) {
-          previewVoxelManager.setAtIJK(i, j, 0, previewSegmentIndex);
+          // console.log(
+          //   'Setting value at',
+          //   i,
+          //   j,
+          //   (i * width) / MAX_WIDTH,
+          //   (j * height) / MAX_HEIGHT,
+          //   ijkPoint
+          // );
+          previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
         } else {
-          previewVoxelManager.setAtIJK(i, j, 0, null);
+          previewVoxelManager.setAtIJKPoint(ijkPoint, null);
         }
       }
     }
@@ -616,7 +640,12 @@ export default class MLController {
       }
       const mask = res.masks;
       maskImageData = mask.toImageData();
-      this.createLabelmap(maskImageData, points, labels);
+      this.createLabelmap(
+        maskImageData,
+        useSession.canvasPosition,
+        points,
+        labels
+      );
       ctx.globalAlpha = 0.3;
       const { data } = maskImageData;
       const counts = [];

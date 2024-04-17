@@ -7,6 +7,7 @@ import {
 import getDefaultViewport from '../RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 import calculateTransform from '../RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';
 import drawImageSync from '../RenderingEngine/helpers/cpuFallback/drawImageSync';
+import type { CanvasLoadPosition } from './loadImageToCanvas';
 
 /**
  * Renders a cornerstone image object to a canvas.
@@ -21,7 +22,7 @@ export default function renderToCanvasCPU(
   modality?: string,
   _renderingEngineId?: string,
   _viewportOptions?: ViewportInputOptions
-): Promise<string> {
+): Promise<CanvasLoadPosition> {
   const viewport = getDefaultViewport(canvas, image, modality);
 
   const enabledElement: CPUFallbackEnabledElement = {
@@ -36,6 +37,6 @@ export default function renderToCanvasCPU(
   const invalidated = true;
   return new Promise((resolve, reject) => {
     drawImageSync(enabledElement, invalidated);
-    resolve(image.imageId);
+    resolve(null);
   });
 }
