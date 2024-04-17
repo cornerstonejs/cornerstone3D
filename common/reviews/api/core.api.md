@@ -377,6 +377,7 @@ function convertVolumeToStackViewport({ viewport, options, }: {
 // @public (undocumented)
 type Cornerstone3DConfig = {
     gpuTier?: TierResult;
+    isMobile: boolean;
     detectGPUConfig: GetGPUTier;
     rendering: {
         preferSizeOverAccuracy: boolean;
@@ -3095,6 +3096,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
         };
         useRGBA: boolean;
         transferSyntaxUID: any;
+        useNativeDataType: boolean;
+        allowFloatRendering: boolean;
         priority: number;
         requestType: RequestType;
         additionalDetails: {
