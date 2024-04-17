@@ -5,7 +5,6 @@ import {
   imageLoadPoolManager,
   cache,
   getConfiguration as getCoreConfiguration,
-  canRenderFloatTextures,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState } from './state';
 import {
@@ -182,7 +181,6 @@ function prefetch(element) {
       preScale: {
         enabled: true,
       },
-      allowFloatRendering: canRenderFloatTextures(),
       useNativeDataType,
       requestType,
     };

@@ -71,6 +71,7 @@ import convertToGrayscale from './convertToGrayscale';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
+import { hasFloatRescale } from './hasFloatRescale';
 
 // name spaces
 import * as planar from './planar';
@@ -162,4 +163,5 @@ export {
   getRandomSampleFromArray,
   getVolumeId,
   color,
+  hasFloatRescale,
 };

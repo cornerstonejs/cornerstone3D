@@ -6,7 +6,7 @@ import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
-import { canRenderFloatTextures, getConfiguration } from '../init';
+import { getConfiguration } from '../init';
 
 export interface LoadImageOptions {
   canvas: HTMLCanvasElement;
@@ -127,7 +127,6 @@ export default function loadImageToCanvas(
         enabled: true,
       },
       useNativeDataType,
-      allowFloatRendering: canRenderFloatTextures(),
       useRGBA: !!useCPURendering,
       requestType,
     };

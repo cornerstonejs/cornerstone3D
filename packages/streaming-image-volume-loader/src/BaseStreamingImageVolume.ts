@@ -8,7 +8,6 @@ import {
   cache,
   imageLoader,
   utilities as csUtils,
-  utilities,
   ProgressiveRetrieveImages,
   canRenderFloatTextures,
 } from '@cornerstonejs/core';
@@ -21,9 +20,9 @@ import type {
 import { scaleArray, autoLoad } from './helpers';
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
-const { ProgressiveIterator } = csUtils;
+const { ProgressiveIterator, imageRetrieveMetadataProvider, hasFloatRescale } =
+  csUtils;
 const { ImageQualityStatus } = Enums;
-const { imageRetrieveMetadataProvider } = utilities;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -205,6 +204,7 @@ export default class BaseStreamingImageVolume
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getLoaderImageOptions(imageId);
     const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
+
     handleArrayBufferLoad(scalarData, image, options);
 
     const { scalingParameters } = image.preScale || {};
@@ -398,10 +398,7 @@ export default class BaseStreamingImageVolume
       typeof scalingParameters.rescaleSlope === 'number' &&
       typeof scalingParameters.rescaleIntercept === 'number';
 
-    const areThereAnyNonIntegerScalingParameter = Object.values(
-      scalingParameters
-    ).some((value) => typeof value === 'number' && !Number.isInteger(value));
-
+    const floatAfterScale = hasFloatRescale(scalingParameters);
     const allowFloatRendering = canRenderFloatTextures();
 
     /**
@@ -420,7 +417,7 @@ export default class BaseStreamingImageVolume
 
     // in case where the hardware/os does not support float rendering but the
     // requested scaling params are not integers, we need to disable pre-scaling
-    if (!allowFloatRendering && areThereAnyNonIntegerScalingParameter) {
+    if (!allowFloatRendering && floatAfterScale) {
       this.isPreScaled = false;
     }
 
@@ -663,6 +660,10 @@ export default class BaseStreamingImageVolume
     image,
     scalingParametersToUse: Types.ScalingParameters
   ) {
+    if (!image.preScale.enabled) {
+      return image.getPixelData().slice(0);
+    }
+
     const imageIsAlreadyScaled = image.preScale?.scaled;
     const noScalingParametersToUse =
       !scalingParametersToUse ||

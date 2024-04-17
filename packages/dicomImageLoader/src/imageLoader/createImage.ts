@@ -121,6 +121,8 @@ function createImage(
   const imageFrame = getImageFrame(imageId);
   imageFrame.decodeLevel = options.decodeLevel;
 
+  options.allowFloatRendering = cornerstone.canRenderFloatTextures();
+
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
     const scalingParameters = getScalingParameters(

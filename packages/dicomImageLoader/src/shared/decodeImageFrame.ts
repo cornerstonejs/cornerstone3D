@@ -212,28 +212,30 @@ function postProcessDecodedPixels(
   };
 
   const type = options.targetBuffer?.type;
-  // Sometimes the type is specified before the DICOM header data has been
-  // read.  This is fine except for color data, where the wrong type gets
-  // specified.  Don't use the target buffer in that case.
-  const invalidColorType =
-    isColorImage(imageFrame.photometricInterpretation) &&
-    options.targetBuffer?.offset === undefined;
 
   const canRenderFloat =
     typeof options.allowFloatRendering !== 'undefined'
       ? options.allowFloatRendering
       : true;
 
+  // Sometimes the type is specified before the DICOM header data has been
+  // read.  This is fine except for color data, where the wrong type gets
+  // specified.  Don't use the target buffer in that case.
+  const invalidType =
+    isColorImage(imageFrame.photometricInterpretation) &&
+    options.targetBuffer?.offset === undefined;
+
   const willScale = options.preScale?.enabled;
 
-  const areThereAnyNonIntegerScalingParameter =
+  const hasFloatRescale =
     willScale &&
     Object.values(options.preScale.scalingParameters).some(
       (v) => typeof v === 'number' && !Number.isInteger(v)
     );
-  const disableScale = !canRenderFloat && areThereAnyNonIntegerScalingParameter;
+  const disableScale =
+    !options.preScale.enabled || (!canRenderFloat && hasFloatRescale);
 
-  if (type && !invalidColorType) {
+  if (type && !invalidType) {
     pixelDataArray = _handleTargetBuffer(
       options,
       imageFrame,

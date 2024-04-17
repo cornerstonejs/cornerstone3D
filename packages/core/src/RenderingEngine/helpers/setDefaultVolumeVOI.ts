@@ -9,7 +9,6 @@ import * as metaData from '../../metaData';
 import { getMinMax, windowLevel } from '../../utilities';
 import { RequestType } from '../../enums';
 import cache from '../../cache';
-import { canRenderFloatTextures } from '../../init';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;
@@ -168,7 +167,6 @@ async function getVOIFromMinMax(
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
     useNativeDataType,
-    allowFloatRendering: canRenderFloatTextures(),
     preScale: {
       enabled: true,
       scalingParameters: scalingParametersToUse,
