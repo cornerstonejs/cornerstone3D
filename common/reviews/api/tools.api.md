@@ -8,6 +8,8 @@ import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWi
 import { default as default_2 } from '@itk-wasm/morphological-contour-interpolation/dist/morphological-contour-interpolation-options';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
+import { IVolumeViewport as IVolumeViewport_2 } from 'packages/core/dist/types/types';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';

@@ -1,10 +1,12 @@
-import { Types, utilities } from '@cornerstonejs/core';
+import { Types, utilities, eventTarget, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
 
 const { annotation } = cornerstoneTools;
 const { state: annotationState } = annotation;
+const { Events } = Enums;
+const { Events: toolsEvents } = cornerstoneTools.Enums;
 
 const { segmentation } = cornerstoneTools;
 
@@ -175,6 +177,7 @@ export default class MLController {
    */
   public viewportRenderedListener = (_event) => {
     desiredImage.imageId = viewport.getCurrentImageId();
+    console.log('********** Viewport rendered', desiredImage.imageId);
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
@@ -205,7 +208,7 @@ export default class MLController {
   };
 
   /**
-   *  Connects a viewport up to get anotations and updates
+   * Connects a viewport up to get anotations and updates
    * Note that only one viewport at a time is permitted as the model needs to
    * load data about the active viewport.
    */
@@ -215,10 +218,48 @@ export default class MLController {
     excludeToolIn,
     toolForPreviewIn
   ) {
+    if (viewport) {
+      this.disconnectViewport(viewport);
+    }
+    currentImage = null;
     viewport = viewportIn;
     getCurrentAnnotations = getCurrentAnnotationsIn;
     excludeTool = excludeToolIn;
     tool = toolForPreviewIn;
+
+    desiredImage.imageId = viewport.getCurrentImageId();
+    viewport.element.addEventListener(
+      Events.IMAGE_RENDERED,
+      this.viewportRenderedListener
+    );
+    const boundListener = this.annotationModifiedListener;
+    eventTarget.addEventListener(
+      toolsEvents.ANNOTATION_MODIFIED,
+      boundListener
+    );
+    eventTarget.addEventListener(
+      toolsEvents.ANNOTATION_COMPLETED,
+      boundListener
+    );
+    if (desiredImage.imageId) {
+      this.tryLoad();
+    }
+  }
+
+  public disconnectViewport(viewport) {
+    viewport.element.removeEventListener(
+      Events.IMAGE_RENDERED,
+      this.viewportRenderedListener
+    );
+    const boundListener = this.annotationModifiedListener;
+    eventTarget.removeEventListener(
+      toolsEvents.ANNOTATION_MODIFIED,
+      boundListener
+    );
+    eventTarget.removeEventListener(
+      toolsEvents.ANNOTATION_COMPLETED,
+      boundListener
+    );
   }
 
   /**
@@ -395,7 +436,7 @@ export default class MLController {
 
   /** Awaits a chance to run the decoder */
   protected async runDecoder() {
-    if (isClicked || !currentImage) {
+    if (isClicked || !currentImage?.imageEmbeddings) {
       return;
     }
     isClicked = true;
@@ -415,6 +456,9 @@ export default class MLController {
    * the "next" images to see if there are other images which should be tried to load.
    */
   public tryLoad() {
+    if (!desiredImage.imageId) {
+      desiredImage.imageId = viewport.getCurrentImageId();
+    }
     // Always use session 0 for the current session
     const [session] = this.sessions;
 
@@ -545,7 +589,6 @@ export default class MLController {
     const previewVoxelManager =
       memo?.voxelManager || preview.previewVoxelManager;
     const { dimensions } = previewVoxelManager;
-    const [width, height] = dimensions;
     const { data } = mask;
 
     const { origin, topRight, bottomLeft } = canvasPosition;
@@ -572,17 +615,10 @@ export default class MLController {
         ) {
           continue;
         }
-        const maskIndex = i * 4 + j * 4 * MAX_WIDTH;
+        // 4 values - RGBA - per pixel
+        const maskIndex = 4 * (i + j * MAX_WIDTH);
         const v = data[maskIndex];
         if (v > 0) {
-          // console.log(
-          //   'Setting value at',
-          //   i,
-          //   j,
-          //   (i * width) / MAX_WIDTH,
-          //   (j * height) / MAX_HEIGHT,
-          //   ijkPoint
-          // );
           previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
         } else {
           previewVoxelManager.setAtIJKPoint(ijkPoint, null);

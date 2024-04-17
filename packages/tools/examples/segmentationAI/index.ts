@@ -2,7 +2,6 @@ import {
   Enums,
   RenderingEngine,
   Types,
-  eventTarget,
   imageLoader,
   volumeLoader,
 } from '@cornerstonejs/core';
@@ -39,10 +38,9 @@ const {
 } = cornerstoneTools;
 
 const ml = new MLController();
-const { viewportRenderedListener } = ml;
 
 const { ViewportType, Events } = Enums;
-const { Events: toolsEvents, KeyboardBindings, MouseBindings } = csToolsEnums;
+const { KeyboardBindings, MouseBindings } = csToolsEnums;
 const { state: annotationState } = annotation;
 const { style: toolStyle } = cornerstoneTools.annotation.config;
 const volumeId = 'volumeId';
@@ -118,12 +116,13 @@ addButtonToToolbar({
 });
 
 const viewportGrid = document.createElement('div');
+let renderingEngine;
 let viewport, volumeViewport;
 
 viewportGrid.style.width = '95vw';
 
-const viewportId = 'VIEWPORT_ID';
-const viewportIds = ['VIEWPORT_ID', 'AXIAL', 'SAGITAL', 'CORONAL'];
+const viewportId = 'Stack';
+const viewportIds = [viewportId, 'AXIAL', 'SAGITAL', 'CORONAL'];
 
 const elements = [];
 for (const id of viewportIds) {
@@ -180,6 +179,22 @@ addDropdownToToolbar({
 
 addSegmentIndexDropdown(segmentationId);
 
+addDropdownToToolbar({
+  options: {
+    values: viewportIds,
+  },
+  onSelectedValueChange: (value) => {
+    console.log('Selecting viewport', value);
+    const viewport = renderingEngine.getViewport(value);
+    ml.connectViewport(
+      viewport,
+      getCurrentAnnotations,
+      excludeTool,
+      toolForPreview
+    );
+  },
+});
+
 addButtonToToolbar({
   title: 'Cache',
   onClick: () => {
@@ -224,20 +239,6 @@ function getCurrentAnnotations() {
   ];
   const currentAnnotations = filterAnnotationsForDisplay(viewport, annotations);
   return currentAnnotations;
-}
-
-/*
- * Adds annotation listeners so that on updates the new annotation gets called
- */
-function addAnnotationListeners() {
-  const boundListener = ml.annotationModifiedListener;
-  eventTarget.addEventListener(
-    toolsEvents.ANNOTATION_SELECTION_CHANGE,
-    boundListener
-  );
-  eventTarget.addEventListener(toolsEvents.ANNOTATION_MODIFIED, boundListener);
-  eventTarget.addEventListener(toolsEvents.ANNOTATION_COMPLETED, boundListener);
-  eventTarget.addEventListener(toolsEvents.ANNOTATION_ADDED, boundListener);
 }
 
 async function interpolateScroll(dir = 1) {
@@ -297,7 +298,6 @@ function navigateVolumeListener(event) {
     viewport.getViewPresentation()
   );
   volumeViewport.render();
-  viewportRenderedListener(event);
 }
 
 /**
@@ -336,7 +336,7 @@ async function run() {
   const imageIds = imageIdsFull.reverse(); // .slice(35, 45);
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
   const viewportInputArray = [
@@ -396,13 +396,14 @@ async function run() {
 
   // Add the canvas after the viewport
   // element.appendChild(canvas);
+  await ml.loadAI();
   ml.connectViewport(
     viewport,
     getCurrentAnnotations,
     excludeTool,
     toolForPreview
   );
-  await ml.loadAI();
+
   element.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -466,7 +467,6 @@ async function run() {
     viewport.getViewPresentation()
   );
   volumeViewport.render();
-  addAnnotationListeners();
 }
 
 run();
