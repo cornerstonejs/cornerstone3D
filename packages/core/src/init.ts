@@ -132,7 +132,13 @@ async function init(configuration = config): Promise<boolean> {
       config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
 
       if (!config.rendering.useNorm16Texture) {
-        config.rendering.preferSizeOverAccuracy = true;
+        if (configuration.rendering?.preferSizeOverAccuracy) {
+          config.rendering.preferSizeOverAccuracy = true;
+        } else {
+          console.log(
+            'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
+          );
+        }
       }
     }
   }
