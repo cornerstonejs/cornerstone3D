@@ -202,7 +202,15 @@ function setPreferSizeOverAccuracy(status: boolean): void {
  */
 function canRenderFloatTextures(): boolean {
   const isMobile = config.isMobile;
-  return !isMobileIOS() && !isMobile;
+  if (!isMobile) {
+    return true;
+  }
+
+  if (isMobileIOS()) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
