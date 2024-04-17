@@ -45,13 +45,13 @@ function getDataInTime(
   if (options.maskVolumeId) {
     const segmentationVolume = cache.getVolume(options.maskVolumeId);
 
-    const dataInTime = _getTimePointDataMask(
+    const [dataInTime, ijkCoords] = _getTimePointDataMask(
       frames,
       dynamicVolume,
       segmentationVolume
     );
 
-    return dataInTime;
+    return [dataInTime, ijkCoords];
   }
 
   if (options.imageCoordinate) {
@@ -103,11 +103,19 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   // Pre-allocate memory for array
   const nonZeroVoxelIndices = [];
   nonZeroVoxelIndices.length = len;
+  const ijkCoords = [];
+
+  const dimensions = segmentationVolume.dimensions;
 
   // Get the index of every non-zero voxel in mask
   let actualLen = 0;
   for (let i = 0, len = segScalarData.length; i < len; i++) {
     if (segScalarData[i] !== 0) {
+      ijkCoords.push([
+        i % dimensions[0],
+        Math.floor((i / dimensions[0]) % dimensions[1]),
+        Math.floor(i / (dimensions[0] * dimensions[1])),
+      ]);
       nonZeroVoxelIndices[actualLen++] = i;
     }
   }
@@ -134,14 +142,18 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
       values.push(indexValues);
     }
 
-    return values;
+    return [values, ijkCoords];
   }
 
   // In case that the segmentation mask is not the same size as the dynamic volume (one frame)
   // then we need to consider each voxel in the segmentation mask and check if it
   // overlaps with the other volume, and if so we need to average the values of the
   // overlapping voxels.
-  const callback = ({ pointLPS: segPointLPS, value: segValue }) => {
+  const callback = ({
+    pointLPS: segPointLPS,
+    value: segValue,
+    pointIJK: segPointIJK,
+  }) => {
     // see if the value is non-zero
     if (segValue === 0) {
       // not interested
@@ -188,6 +200,7 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
       averageValues.push(sum / count);
     });
 
+    ijkCoords.push(segPointIJK);
     values.push(averageValues);
   };
 
@@ -197,7 +210,7 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   // Todo: consider using the nonZeroVoxelIndices to compute the pointLPS
   pointInShapeCallback(maskImageData, () => true, callback);
 
-  return values;
+  return [values, ijkCoords];
 }
 
 export default getDataInTime;

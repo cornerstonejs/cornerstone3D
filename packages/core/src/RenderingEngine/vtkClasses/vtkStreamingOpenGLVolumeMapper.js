@@ -1,4 +1,3 @@
-import { mat3, mat4, vec3 } from 'gl-matrix';
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
@@ -6,9 +5,8 @@ import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 
-const { vtkWarningMacro } = macro;
 /**
- * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
+ * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
  * into GPU memory using the new methods on vtkStreamingOpenGLTexture.
  *
@@ -155,6 +153,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       model.colorTextureString = toString;
     }
 
+    publicAPI.updateLabelOutlineThicknessTexture(actor);
+
     // rebuild the scalarTexture if the data has changed
     toString = `${image.getMTime()}`;
 
@@ -245,29 +245,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     model.VBOBuildTime.modified();
   };
-
-  // publicAPI.getRenderTargetSize = () => {
-  //   // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/VolumeMapper/index.js#L952
-  //   if (model.lastXYF > 1.43) {
-  //     const sz = model.framebuffer.getSize()
-  //     return [model.fvp[0] * sz[0], model.fvp[1] * sz[1]]
-  //   }
-
-  //   // This seems wrong, it assumes the renderWindow only has one renderer
-  //   // but I don't know if this stuff is correct...
-
-  //   const { usize, vsize } = model.openGLRenderer.getTiledSizeAndOrigin()
-
-  //   return [usize, vsize]
-  // }
-
-  // publicAPI.getRenderTargetSize = () => {
-  //   if (model._useSmallViewport) {
-  //     return [model._smallViewportWidth, model._smallViewportHeight]
-  //   }
-
-  //   return model._openGLRenderWindow.getFramebufferSize()
-  // }
 
   publicAPI.getRenderTargetSize = () => {
     if (model._useSmallViewport) {

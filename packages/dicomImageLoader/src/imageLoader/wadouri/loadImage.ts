@@ -171,14 +171,15 @@ function loadImage(
 ): Types.IImageLoadObject {
   const parsedImageId = parseImageId(imageId);
 
-  options = Object.assign({}, options);
-  let loader = options.loader;
+  options = { ...options };
 
-  if (loader === undefined) {
-    loader = getLoaderForScheme(parsedImageId.scheme);
-  } else {
-    delete options.loader;
+  let schemeLoader = options.loader;
+
+  if (!(schemeLoader instanceof Function)) {
+    schemeLoader = getLoaderForScheme(parsedImageId.scheme);
   }
+
+  delete options.loader;
 
   // if the dataset for this url is already loaded, use it, in case of multiframe
   // images, we need to extract the frame pixelData from the dataset although the
@@ -189,7 +190,7 @@ function loadImage(
      */
     const dataSet: DataSet = (dataSetCacheManager as any).get(
       parsedImageId.url,
-      loader,
+      schemeLoader,
       imageId
     );
 
@@ -205,7 +206,7 @@ function loadImage(
   // load the dataSet via the dataSetCacheManager
   const dataSetPromise = dataSetCacheManager.load(
     parsedImageId.url,
-    loader,
+    schemeLoader,
     imageId
   );
 

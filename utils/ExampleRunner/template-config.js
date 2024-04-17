@@ -57,6 +57,9 @@ module.exports = {
   module: {
     rules,
   },
+  experiments: {
+    asyncWebAssembly: true
+  },
   resolve: {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
@@ -88,7 +91,7 @@ module.exports = {
   devServer: {
     hot: true,
     open: false,
-    port: 3000,
+    port: ${process.env.CS3D_PORT || 3000},
     historyApiFallback: true,
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",

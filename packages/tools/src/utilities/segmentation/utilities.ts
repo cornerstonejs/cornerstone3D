@@ -2,7 +2,7 @@ import { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import BrushTool from '../../tools/segmentation/BrushTool';
-import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape';
+import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
 
 export type ThresholdInformation = {
   volume: Types.IImageVolume;
@@ -10,10 +10,7 @@ export type ThresholdInformation = {
   upper: number;
 };
 
-export default function getBrushToolInstances(
-  toolGroupId: string,
-  toolName?: string
-) {
+export function getBrushToolInstances(toolGroupId: string, toolName?: string) {
   const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
@@ -67,7 +64,10 @@ export function getVoxelOverlap(
   const voxelCornersIJK = voxelCornersWorld.map(
     (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
   );
-  const overlapBounds = getBoundingBoxAroundShape(voxelCornersIJK, dimensions);
+  const overlapBounds = getBoundingBoxAroundShapeIJK(
+    voxelCornersIJK,
+    dimensions
+  );
 
   return overlapBounds;
 }

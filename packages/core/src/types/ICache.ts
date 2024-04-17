@@ -10,7 +10,8 @@ interface ICache {
   /** Stores the imageLoad Object inside the cache */
   putImageLoadObject: (
     imageId: string,
-    imageLoadObject: IImageLoadObject
+    imageLoadObject: IImageLoadObject,
+    updateCache?: boolean
   ) => Promise<any>;
   /** Retrieves the imageLoad Object from the cache */
   getImageLoadObject: (imageId: string) => IImageLoadObject | void;

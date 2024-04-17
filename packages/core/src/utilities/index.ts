@@ -26,6 +26,7 @@ import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex from './transformWorldToIndex';
+import transformIndexToWorld from './transformIndexToWorld';
 import loadImageToCanvas from './loadImageToCanvas';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
@@ -39,22 +40,45 @@ import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeView
 import { isImageActor, actorIsA } from './actorCheck';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
 import getClosestStackImageIndexForPoint from './getClosestStackImageIndexForPoint';
+import getCurrentVolumeViewportSlice from './getCurrentVolumeViewportSlice';
 import calculateViewportsSpatialRegistration from './calculateViewportsSpatialRegistration';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
+import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
+import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
+import makeVolumeMetadata from './makeVolumeMetadata';
+import genericMetadataProvider from './genericMetadataProvider';
+import { isValidVolume } from './isValidVolume';
+import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWithCornerstoneImage';
+import ProgressiveIterator from './ProgressiveIterator';
+import decimate from './decimate';
+import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
+import isVideoTransferSyntax from './isVideoTransferSyntax';
+import { getBufferConfiguration } from './getBufferConfiguration';
+import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageIds';
+import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
+import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
+import VoxelManager from './VoxelManager';
+import roundNumber, { roundToPrecision } from './roundNumber';
+import convertToGrayscale from './convertToGrayscale';
+import getViewportImageIds from './getViewportImageIds';
+import { getRandomSampleFromArray } from './getRandomSampleFromArray';
+import { getVolumeId } from './getVolumeId';
 
 // name spaces
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
+import * as cacheUtils from './cacheUtils';
+import * as color from './color';
 
 export {
   eventListener,
@@ -79,6 +103,7 @@ export {
   createInt16SharedArray,
   getViewportModality,
   windowLevel,
+  convertToGrayscale,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
@@ -87,6 +112,7 @@ export {
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,
+  transformIndexToWorld,
   loadImageToCanvas,
   renderToCanvasCPU,
   renderToCanvasGPU,
@@ -102,15 +128,38 @@ export {
   actorIsA,
   getViewportsWithImageURI,
   getClosestStackImageIndexForPoint,
+  getCurrentVolumeViewportSlice,
   calculateViewportsSpatialRegistration,
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,
   hasNaNValues,
   applyPreset,
   deepMerge,
+  PointsManager,
   getScalingParameters,
   getScalarDataType,
   colormap,
   getImageLegacy,
+  ProgressiveIterator,
+  decimate,
+  imageRetrieveMetadataProvider,
   transferFunctionUtils,
+  updateVTKImageDataWithCornerstoneImage,
+  sortImageIdsAndGetSpacing,
+  makeVolumeMetadata,
+  isValidVolume,
+  genericMetadataProvider,
+  isVideoTransferSyntax,
+  getBufferConfiguration,
+  VoxelManager,
+  generateVolumePropsFromImageIds,
+  convertStackToVolumeViewport,
+  convertVolumeToStackViewport,
+  cacheUtils,
+  roundNumber,
+  roundToPrecision,
+  getViewportImageIds,
+  getRandomSampleFromArray,
+  getVolumeId,
+  color,
 };

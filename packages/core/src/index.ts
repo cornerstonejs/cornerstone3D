@@ -19,12 +19,13 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume } from './cache';
+import cache, { ImageVolume, Surface } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 
 import getEnabledElement, {
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   getEnabledElements,
 } from './getEnabledElement';
 import * as metaData from './metaData';
@@ -40,6 +41,7 @@ import {
   resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
 } from './init';
 
 // Classes
@@ -49,7 +51,15 @@ import Settings from './Settings';
 import * as volumeLoader from './loaders/volumeLoader';
 import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
-import * as Types from './types';
+import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
+import type * as Types from './types';
+import {
+  IRetrieveConfiguration,
+  IImagesLoader,
+  RetrieveOptions,
+  RetrieveStage,
+  ImageLoadListener,
+} from './types';
 import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
@@ -58,9 +68,18 @@ import triggerEvent from './utilities/triggerEvent';
 import {
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
 } from './RenderingEngine/helpers';
 
-export type { Types };
+// Add new types here so that they can be imported singly as required.
+export type {
+  Types,
+  IRetrieveConfiguration,
+  RetrieveOptions,
+  RetrieveStage,
+  ImageLoadListener,
+  IImagesLoader,
+};
 
 export {
   // init
@@ -69,6 +88,7 @@ export {
   // configs
   getConfiguration,
   setConfiguration,
+  getWebWorkerManager,
   // enums
   Enums,
   CONSTANTS,
@@ -84,12 +104,14 @@ export {
   VideoViewport,
   RenderingEngine,
   ImageVolume,
+  Surface,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,
   getEnabledElement,
   getEnabledElementByIds,
   getEnabledElements,
+  getEnabledElementByViewportId,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,
@@ -109,6 +131,7 @@ export {
   utilities,
   setVolumesForViewports,
   addVolumesToViewports,
+  addImageSlicesToViewports,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
@@ -124,4 +147,5 @@ export {
   resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
+  ProgressiveRetrieveImages,
 };

@@ -1,6 +1,7 @@
 /* eslint-disable complexity */
 import { ByteArray } from 'dicom-parser';
-
+import bilinear from './scaling/bilinear';
+import replicate from './scaling/replicate';
 import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
 import decodeRLE from './decoders/decodeRLE';
@@ -11,11 +12,17 @@ import decodeJPEGLossless from './decoders/decodeJPEGLossless';
 import decodeJPEGLS from './decoders/decodeJPEGLS';
 import decodeJPEG2000 from './decoders/decodeJPEG2000';
 import decodeHTJ2K from './decoders/decodeHTJ2K';
-import scaleArray from './scaling/scaleArray';
+// Note that the scaling is pixel value scaling, which is applying a modality LUT
+import applyModalityLUT from './scaling/scaleArray';
 import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
 import getMinMax from './getMinMax';
 import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
 import isColorImage from './isColorImage';
+
+const imageUtils = {
+  bilinear,
+  replicate,
+};
 
 /**
  * Decodes the provided image frame.
@@ -121,6 +128,9 @@ async function decodeImageFrame(
       decodePromise = decodeJPEG2000(pixelData, opts);
       break;
     case '3.2.840.10008.1.2.4.96':
+    case '1.2.840.10008.1.2.4.201':
+    case '1.2.840.10008.1.2.4.202':
+    case '1.2.840.10008.1.2.4.203':
       // HTJ2K
       opts = {
         ...imageFrame,
@@ -243,7 +253,7 @@ function postProcessDecodedPixels(
       typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
 
     if (isSlopeAndInterceptNumbers) {
-      scaleArray(pixelDataArray, scalingParameters);
+      applyModalityLUT(pixelDataArray, scalingParameters);
       imageFrame.preScale = {
         ...options.preScale,
         scaled: true,
@@ -295,8 +305,18 @@ function _handleTargetBuffer(
     type,
     offset: rawOffset = 0,
     length: rawLength,
+    rows,
   } = options.targetBuffer;
 
+  const TypedArrayConstructor = typedArrayConstructors[type];
+
+  if (!TypedArrayConstructor) {
+    throw new Error(`target array ${type} is not supported`);
+  }
+
+  if (rows && rows != imageFrame.rows) {
+    scaleImageFrame(imageFrame, options.targetBuffer, TypedArrayConstructor);
+  }
   const imageFrameLength = imageFrame.pixelDataLength;
 
   const offset = rawOffset;
@@ -304,12 +324,6 @@ function _handleTargetBuffer(
     rawLength !== null && rawLength !== undefined
       ? rawLength
       : imageFrameLength - offset;
-
-  const TypedArrayConstructor = typedArrayConstructors[type];
-
-  if (!TypedArrayConstructor) {
-    throw new Error(`target array ${type} is not supported`);
-  }
 
   const imageFramePixelData = imageFrame.pixelData;
 
@@ -370,6 +384,49 @@ function _validateScalingParameters(scalingParameters) {
       'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
     );
   }
+}
+
+function createDestinationImage(
+  imageFrame,
+  targetBuffer,
+  TypedArrayConstructor
+) {
+  const { samplesPerPixel } = imageFrame;
+  const { rows, columns } = targetBuffer;
+  const typedLength = rows * columns * samplesPerPixel;
+  const pixelData = new TypedArrayConstructor(typedLength);
+  const bytesPerPixel = pixelData.byteLength / typedLength;
+  return {
+    pixelData,
+    rows,
+    columns,
+    frameInfo: {
+      ...imageFrame.frameInfo,
+      rows,
+      columns,
+    },
+    imageInfo: {
+      ...imageFrame.imageInfo,
+      rows,
+      columns,
+      bytesPerPixel,
+    },
+  };
+}
+
+/** Scales the image frame, updating the frame in place with a new scaled
+ * version of it (in place modification)
+ */
+function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
+  const dest = createDestinationImage(
+    imageFrame,
+    targetBuffer,
+    TypedArrayConstructor
+  );
+  const { scalingType = 'replicate' } = targetBuffer;
+  imageUtils[scalingType](imageFrame, dest);
+  Object.assign(imageFrame, dest);
+  return imageFrame;
 }
 
 export default decodeImageFrame;

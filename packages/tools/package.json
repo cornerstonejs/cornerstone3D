@@ -1,9 +1,9 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "1.27.3",
+  "version": "1.70.6",
   "description": "Cornerstone3D Tools",
   "main": "src/index.ts",
-  "types": "dist/esm/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
@@ -30,11 +30,18 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "git://github.com/dmz86/cornerstonejs-core.git",
+    "@icr/polyseg-wasm": "0.4.0",
+    "@types/offscreencanvas": "2019.7.3",
+    "comlink": "^4.4.1",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "^4.4.2"
   },
+  "devDependencies": {
+    "canvas": "^2.11.2"
+  },
   "peerDependencies": {
-    "@kitware/vtk.js": "27.3.1",
+    "@icr/polyseg-wasm": "0.4.0",
+    "@kitware/vtk.js": "30.3.3",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",

@@ -1,6 +1,6 @@
 import { BaseTool } from './base';
 import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import jumpToWorld from '../utilities/viewport/jumpToWorld';
 import { PublicToolProps, ToolProps } from '../types';
@@ -54,7 +54,7 @@ class MIPJumpToClickTool extends BaseTool {
       );
     }
 
-    const volumeId = targetId.split('volumeId:')[1];
+    const volumeId = utilities.getVolumeId(targetId);
 
     // 3. Criteria function to search for the point (maximum intensity)
     let maxIntensity = -Infinity;

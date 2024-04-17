@@ -1,5 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { Annotation } from './AnnotationTypes';
+import { ISpline } from './';
+import { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
+import { ContourAnnotation } from './ContourAnnotation';
 
 interface ROICachedStats {
   [targetId: string]: {
@@ -32,6 +35,7 @@ export interface RectangleROIAnnotation extends Annotation {
     cachedStats?:
       | ROICachedStats
       | {
+          pointsInVolume?: Types.Point3[];
           projectionPoints?: Types.Point3[];
           projectionPointsImageIds?: string[];
         };
@@ -83,8 +87,9 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
     zoomFactor: number;
     sourceViewportId: string;
     magnifyViewportId: string;
+    isCanvasAnnotation: boolean;
     handles: {
-      points: Types.Point3[]; // [top, right, bottom, left]
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]; // in canvas space
       activeHandleIndex: number | null;
     };
   };
@@ -107,15 +112,46 @@ export interface CircleROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?: ROICachedStats & {
+    cachedStats?:
+      | (ROICachedStats & {
+          [targetId: string]: {
+            radius: number;
+            radiusUnit: string;
+            perimeter: number;
+          };
+        })
+      | {
+          pointsInVolume: Types.Point3[];
+          projectionPoints: Types.Point3[][];
+        };
+  };
+}
+
+export type SplineROIAnnotation = ContourAnnotation & {
+  data: {
+    label?: string;
+    spline: {
+      type: string;
+      instance: ISpline;
+      resolution: number;
+    };
+    cachedStats?: {
       [targetId: string]: {
-        radius: number;
-        radiusUnit: string;
-        perimeter: number;
+        Modality: string;
+        area: number;
+        areaUnit: string;
       };
     };
   };
-}
+};
+
+export type SplineContourSegmentationAnnotation = SplineROIAnnotation &
+  ContourSegmentationAnnotationData;
+
+export type LivewireContourAnnotation = ContourAnnotation;
+
+export type LivewireContourSegmentationAnnotation = LivewireContourAnnotation &
+  ContourSegmentationAnnotationData;
 
 export interface EllipticalROIAnnotation extends Annotation {
   data: {
@@ -207,6 +243,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     startSlice: number;
     endSlice: number;
     cachedStats: {
+      pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
     };
@@ -217,7 +254,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   };
 }
 
-export interface PlanarFreehandROIAnnotation extends Annotation {
+export interface CircleROIStartEndThresholdAnnotation extends Annotation {
   metadata: {
     cameraPosition?: Types.Point3;
     cameraFocalPoint?: Types.Point3;
@@ -227,31 +264,56 @@ export interface PlanarFreehandROIAnnotation extends Annotation {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
     toolName: string;
+    enabledElement: any; // Todo: how to remove this from the annotation??
+    volumeId: string;
+    spacingInNormal: number;
   };
   data: {
-    polyline: Types.Point3[];
+    label: string;
+    startSlice: number;
+    endSlice: number;
+    cachedStats?: {
+      pointsInVolume: Types.Point3[];
+      projectionPoints: Types.Point3[][];
+    };
+    handles: {
+      points: [Types.Point3, Types.Point3]; // [center, end]
+      activeHandleIndex: number | null;
+    };
+  };
+}
+
+export type PlanarFreehandROIAnnotation = ContourAnnotation & {
+  data: {
     label?: string;
-    isOpenContour?: boolean;
     isOpenUShapeContour?: boolean;
     // Present if isOpenUShapeContour is true:
     openUShapeContourVectorToPeak?: Types.Point3[];
-    handles: {
-      points: Types.Point3[];
-      activeHandleIndex: number | null;
-      textBox: {
-        hasMoved: boolean;
-        worldPosition: Types.Point3;
-        worldBoundingBox: {
-          topLeft: Types.Point3;
-          topRight: Types.Point3;
-          bottomLeft: Types.Point3;
-          bottomRight: Types.Point3;
-        };
-      };
-    };
     cachedStats?: ROICachedStats;
   };
-}
+};
+export type PlanarFreehandContourSegmentationAnnotation =
+  PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
+
+export type InterpolationROIAnnotation = ContourAnnotation &
+  ContourSegmentationAnnotationData & {
+    metadata: {
+      annotationUID?: string;
+    };
+    /** The interpolationUID links contours which are interpolated together */
+    interpolationUID?: string;
+    /**
+     *  The interpolation completed flag is used to mark interpolations as being done
+     * and no longer elligible for matching.
+     */
+    interpolationCompleted?: boolean;
+    /**
+     * A flag to track updates to annotations caused by things like
+     * spline or livewire regeenration of the data, and which should cause further
+     * updates to occur (or not as the tool decides).
+     */
+    isInterpolationUpdate?: boolean;
+  };
 
 export interface ArrowAnnotation extends Annotation {
   data: {
@@ -294,6 +356,35 @@ export interface AngleAnnotation extends Annotation {
     cachedStats: {
       [targetId: string]: {
         angle: number;
+      };
+    };
+  };
+}
+
+export interface UltrasoundDirectionalAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+    label: string;
+    cachedStats: {
+      [targetId: string]: {
+        xValues: number[];
+        yValues: number[];
+        units: string[];
+        isHorizontal: boolean;
+        isUnitless: boolean;
       };
     };
   };
@@ -389,3 +480,5 @@ export interface VideoRedactionAnnotation extends Annotation {
     active: boolean;
   };
 }
+
+export type { ContourAnnotation };

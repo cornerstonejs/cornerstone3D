@@ -13,7 +13,7 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 
 You can find the Cornerstone documentation [on the website](https://cornerstonejs.org/).
 
-The documentation is divided into several sections:
+The documentation is divided into several sections
 
 - [Tutorial](https://cornerstonejs.org/docs/category/tutorials)
 - [Main Concepts](https://cornerstonejs.org/docs/category/concepts)

@@ -82,6 +82,14 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     ...(passiveToolsIfEventWasPrimaryMouseButton || []),
   ];
 
+  // Actions need to run before tool/handle selected callbacks otherwise actions
+  // like the one from SplineTool to remove/add control points would not work.
+  const actionExecuted = mouseDownAnnotationAction(evt);
+
+  if (actionExecuted) {
+    return;
+  }
+
   const eventDetail = evt.detail;
   const { element } = eventDetail;
 
@@ -149,12 +157,6 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
       // If the tool claims it consumed the event, prevent further checks.
       return;
     }
-  }
-
-  const actionExecuted = mouseDownAnnotationAction(evt);
-
-  if (actionExecuted) {
-    return;
   }
 
   // Don't stop propagation so that mouseDownActivate can handle the event

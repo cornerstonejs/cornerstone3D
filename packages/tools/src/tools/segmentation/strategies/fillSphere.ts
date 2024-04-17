@@ -1,89 +1,77 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInSurroundingSphereCallback } from '../../../utilities';
-import isWithinThreshold from './utils/isWithinThreshold';
+import BrushStrategy from './BrushStrategy';
+import type { InitializedOperationData, Composition } from './BrushStrategy';
+import compositions from './compositions';
+import StrategyCallbacks from '../../../enums/StrategyCallbacks';
+import { createEllipseInPoint } from './fillCircle';
+const { transformWorldToIndex } = csUtils;
+import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
+const sphereComposition = {
+  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
+    const {
+      points,
+      imageVoxelManager: imageVoxelManager,
+      viewport,
+      segmentationImageData,
+      segmentationVoxelManager: segmentationVoxelManager,
+    } = operationData;
 
-type OperationData = {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: Types.IImageVolume;
-  imageVolume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentationId: string;
-  segmentsLocked: number[];
-  viewPlaneNormal: Types.Point3;
-  viewUp: Types.Point3;
-  strategySpecificConfiguration: any;
-  constraintFn: () => boolean;
-};
+    // Happens on a preview setup
+    if (!points) {
+      return;
+    }
+    // Average the points to get the center of the ellipse
+    const center = vec3.fromValues(0, 0, 0);
+    points.forEach((point) => {
+      vec3.add(center, center, point);
+    });
+    vec3.scale(center, center, 1 / points.length);
 
-function fillSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  _inside = true,
-  threshold = false
-): void {
-  const { viewport } = enabledElement;
-  const {
-    volume: segmentation,
-    segmentsLocked,
-    segmentIndex,
-    imageVolume,
-    strategySpecificConfiguration,
-    segmentationId,
-    points,
-  } = operationData;
+    operationData.centerWorld = center as Types.Point3;
+    operationData.centerIJK = transformWorldToIndex(
+      segmentationImageData,
+      center as Types.Point3
+    );
 
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
-  const scalarIndex = [];
+    const {
+      boundsIJK: newBoundsIJK,
+      topLeftWorld,
+      bottomRightWorld,
+    } = getSphereBoundsInfo(
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
+      segmentationImageData,
+      viewport
+    );
 
-  let callback;
+    segmentationVoxelManager.boundsIJK = newBoundsIJK;
 
-  if (threshold) {
-    callback = ({ value, index, pointIJK }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
+    if (imageVoxelManager) {
+      imageVoxelManager.isInObject = createEllipseInPoint({
+        topLeftWorld,
+        bottomRightWorld,
+        center,
+      });
+    } else {
+      segmentationVoxelManager.isInObject = createEllipseInPoint({
+        topLeftWorld,
+        bottomRightWorld,
+        center,
+      });
+    }
+  },
+} as Composition;
 
-      if (
-        isWithinThreshold(index, imageVolume, strategySpecificConfiguration)
-      ) {
-        scalarData[index] = segmentIndex;
-        scalarIndex.push(index);
-      }
-    };
-  } else {
-    callback = ({ index, value }) => {
-      if (segmentsLocked.includes(value)) {
-        return;
-      }
-      scalarData[index] = segmentIndex;
-      scalarIndex.push(index);
-    };
-  }
-
-  pointInSurroundingSphereCallback(
-    imageData,
-    [points[0], points[1]],
-    callback,
-    viewport as Types.IVolumeViewport
-  );
-
-  // Since the scalar indexes start from the top left corner of the cube, the first
-  // slice that needs to be rendered can be calculated from the first mask coordinate
-  // divided by the zMultiple, as well as the last slice for the last coordinate
-  const zMultiple = dimensions[0] * dimensions[1];
-  const minSlice = Math.floor(scalarIndex[0] / zMultiple);
-  const maxSlice = Math.floor(scalarIndex[scalarIndex.length - 1] / zMultiple);
-  const sliceArray = Array.from(
-    { length: maxSlice - minSlice + 1 },
-    (v, k) => k + minSlice
-  );
-
-  triggerSegmentationDataModified(segmentationId, sliceArray);
-}
+const SPHERE_STRATEGY = new BrushStrategy(
+  'Sphere',
+  compositions.regionFill,
+  compositions.setValue,
+  sphereComposition,
+  compositions.determineSegmentIndex,
+  compositions.preview
+);
 
 /**
  * Fill inside a sphere with the given segment index in the given operation data. The
@@ -91,12 +79,15 @@ function fillSphere(
  * @param enabledElement - The element that is enabled and selected.
  * @param operationData - OperationData
  */
-export function fillInsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  fillSphere(enabledElement, operationData, true);
-}
+const fillInsideSphere = SPHERE_STRATEGY.strategyFunction;
+
+const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
+  'SphereThreshold',
+  ...SPHERE_STRATEGY.compositions,
+  compositions.dynamicThreshold,
+  compositions.threshold,
+  compositions.islandRemoval
+);
 
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
@@ -104,23 +95,8 @@ export function fillInsideSphere(
  * @param enabledElement - The element for which the segment is being filled.
  * @param operationData - EraseOperationData
  */
-export function thresholdInsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  const { volume, imageVolume } = operationData;
 
-  if (
-    !csUtils.isEqual(volume.dimensions, imageVolume.dimensions) ||
-    !csUtils.isEqual(volume.direction, imageVolume.direction)
-  ) {
-    throw new Error(
-      'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-    );
-  }
-
-  fillSphere(enabledElement, operationData, true, true);
-}
+const thresholdInsideSphere = SPHERE_THRESHOLD_STRATEGY.strategyFunction;
 
 /**
  * Fill outside a sphere with the given segment index in the given operation data. The
@@ -128,9 +104,8 @@ export function thresholdInsideSphere(
  * @param enabledElement - The element that is enabled and selected.
  * @param operationData - OperationData
  */
-export function fillOutsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  fillSphere(enabledElement, operationData, false);
+export function fillOutsideSphere(): void {
+  throw new Error('fill outside sphere not implemented');
 }
+
+export { fillInsideSphere, thresholdInsideSphere, SPHERE_STRATEGY };

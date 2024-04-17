@@ -1,13 +1,11 @@
+import { vec3 } from 'gl-matrix';
 import { cache, utilities, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
-import makeVolumeMetadata from './makeVolumeMetadata';
-import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
 
 const { createUint8SharedArray, createFloat32SharedArray } = utilities;
 
 function getVolumeInfo(imageIds: string[]) {
-  const volumeMetadata = makeVolumeMetadata(imageIds);
+  const volumeMetadata = utilities.makeVolumeMetadata(imageIds);
 
   const {
     BitsAllocated,
@@ -35,10 +33,8 @@ function getVolumeInfo(imageIds: string[]) {
 
   vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
-  const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
-    imageIds,
-    scanAxisNormal
-  );
+  const { zSpacing, origin, sortedImageIds } =
+    utilities.sortImageIdsAndGetSpacing(imageIds, scanAxisNormal);
 
   const numFrames = imageIds.length;
 

@@ -1,9 +1,15 @@
 import type { Types } from '@cornerstonejs/core';
-import { SetToolBindingsType, ToolOptionsType } from './ISetToolModeOptions';
+import {
+  IToolBinding,
+  SetToolBindingsType,
+  ToolOptionsType,
+} from './ISetToolModeOptions';
 import { MouseBindings } from '../enums';
 import { ToolConfiguration } from '../types';
 /**
  * ToolGroup interface
+ * @deprecated - this is going away in favour of using the type import from the
+ *      tool group itself.
  */
 export default interface IToolGroup {
   /** Unserializable instantiated tool classes, keyed by name */
@@ -20,13 +26,15 @@ export default interface IToolGroup {
   getViewportsInfo: () => Array<Types.IViewportId>;
   /** Get the toolInstance of the toolName */
   getToolInstance: { (toolName: string): any };
+  /** Check if a tool is already added to the tool group */
+  hasTool(toolName: string): boolean;
   /** Add a tool to toolGroup with its configuration and custom calculator if wanted */
   addTool: {
     (toolName: string, toolConfiguration?: ToolConfiguration): void;
   };
   /** Add tool instance, if you want to create more than one instance from the same tool e.g., brush/eraser tool */
   addToolInstance: {
-    (ttoolName: string, parentClassName: string, configuration?: any): void;
+    (toolName: string, parentClassName: string, configuration?: any): void;
   };
   /** Add viewports to share the tools for the ToolGroup */
   addViewport: {
@@ -42,7 +50,10 @@ export default interface IToolGroup {
   };
   /** Setting the tool to be Passive by its name*/
   setToolPassive: {
-    (toolName: string): void;
+    (
+      toolName: string,
+      options?: { removeAllBindings?: boolean | IToolBinding[] }
+    ): void;
   };
   /** Setting the tool to be Enabled by its name*/
   setToolEnabled: {
@@ -70,7 +81,7 @@ export default interface IToolGroup {
     ): void;
   };
   getToolConfiguration: {
-    (toolName: string, configurationPath: string): any;
+    (toolName: string, configurationPath?: string): any;
   };
   getDefaultMousePrimary: {
     (): MouseBindings;
