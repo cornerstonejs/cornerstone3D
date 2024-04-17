@@ -7,10 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { roundNumber } from '../../utilities';
 import throttle from '../../utilities/throttle';
 import {
@@ -878,37 +875,35 @@ class RectangleROITool extends AnnotationTool {
       }
 
       const { dimensions, imageData, metadata } = image;
-      const scalarData =
-        'getScalarData' in image ? image.getScalarData() : image.scalarData;
 
-      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
+      const pos1Index = transformWorldToIndex(imageData, worldPos1);
 
-      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
-      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
-      worldPos1Index[2] = Math.floor(worldPos1Index[2]);
+      pos1Index[0] = Math.floor(pos1Index[0]);
+      pos1Index[1] = Math.floor(pos1Index[1]);
+      pos1Index[2] = Math.floor(pos1Index[2]);
 
-      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
+      const pos2Index = transformWorldToIndex(imageData, worldPos2);
 
-      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
-      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
-      worldPos2Index[2] = Math.floor(worldPos2Index[2]);
+      pos2Index[0] = Math.floor(pos2Index[0]);
+      pos2Index[1] = Math.floor(pos2Index[1]);
+      pos2Index[2] = Math.floor(pos2Index[2]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
         this.isHandleOutsideImage = false;
 
         // Calculate index bounds to iterate over
 
-        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
-        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
+        const iMin = Math.min(pos1Index[0], pos2Index[0]);
+        const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
-        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
-        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
+        const jMin = Math.min(pos1Index[1], pos2Index[1]);
+        const jMax = Math.max(pos1Index[1], pos2Index[1]);
 
-        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
-        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
+        const kMin = Math.min(pos1Index[2], pos2Index[2]);
+        const kMax = Math.max(pos1Index[2], pos2Index[2]);
 
         const boundsIJK = [
           [iMin, iMax],
@@ -922,7 +917,12 @@ class RectangleROITool extends AnnotationTool {
           worldPos1,
           worldPos2
         );
-        const scale = getCalibratedScale(image);
+
+        const handles = [pos1Index, pos2Index];
+        const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+          image,
+          handles
+        );
 
         const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
 
@@ -959,7 +959,7 @@ class RectangleROITool extends AnnotationTool {
           max: stats.max?.value,
           statsArray: stats.array,
           pointsInShape: pointsInShape,
-          areaUnit: getCalibratedAreaUnits(null, image),
+          areaUnit: areaUnits,
           modalityUnit,
         };
       } else {

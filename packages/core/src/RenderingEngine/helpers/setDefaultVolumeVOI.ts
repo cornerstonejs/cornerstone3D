@@ -186,7 +186,10 @@ async function getVOIFromMinMax(
   let image = cache.getImage(imageId);
 
   if (!imageVolume.referencedImageIds?.length) {
-    image = await loadAndCacheImage(imageId, options);
+    // we should ignore the cache here,
+    // since we want to load the image from with the most
+    // recent prescale settings
+    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
 
   const imageScalarData = image
