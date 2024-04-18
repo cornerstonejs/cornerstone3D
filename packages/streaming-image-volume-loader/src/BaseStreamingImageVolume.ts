@@ -177,6 +177,8 @@ export default class BaseStreamingImageVolume
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
       imageVolume: this,
+      numberOfFrames: numFrames,
+      framesProcessed: this.framesProcessed,
     };
 
     triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
