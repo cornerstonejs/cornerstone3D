@@ -11,7 +11,7 @@ interface configLabel extends configElement {
 export default function addLabelToToolbar(
   config: configLabel
 ): HTMLLabelElement {
-  config = utilities.deepMerge(config, config.merge);
+  config = utilities.deepMerge(config, config.merge || {});
 
   config.container =
     config.container ?? document.getElementById('demo-toolbar');

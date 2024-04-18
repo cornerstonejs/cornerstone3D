@@ -37,6 +37,7 @@ import type {
   VolumeViewportProperties,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
+  ViewPresentation,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -618,6 +619,27 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       );
     }
     return sliceIndex === undefined || sliceIndex === currentSliceIndex;
+  }
+
+  /**
+   * Navigates to the specified view reference first, then applies the view
+   * presentation.  Handles both stack references as well as volume references.
+   */
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
+    if (viewRef) {
+      const { cameraFocalPoint, viewPlaneNormal } = viewRef;
+      const { focalPoint, position } = this.getCamera();
+      const positionDelta = vec3.sub([0, 0, 0], position, focalPoint);
+      const cameraPosition = cameraFocalPoint
+        ? vec3.add([0, 0, 0], cameraFocalPoint, positionDelta)
+        : position;
+      this.setCamera({
+        focalPoint: cameraFocalPoint,
+        position: cameraPosition as Point3,
+        viewPlaneNormal,
+      });
+    }
+    super.setView(viewRef, viewPres);
   }
 
   /**

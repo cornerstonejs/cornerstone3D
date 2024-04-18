@@ -292,6 +292,13 @@ interface IViewport {
   setPan(pan: Point2, storeAsInitialCamera?: boolean);
   /** sets the camera */
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+  /** Resets the camera */
+  resetCamera(
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean,
+    storeAsInitialCamera?: boolean
+  ): boolean;
   /** Gets the number of slices in the current camera orientation */
   getNumberOfSlices(): number;
   /** Gets the current slice in the current camera orientation */

@@ -2202,7 +2202,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
    */
-  public async addImages(stackInputs: Array<IStackInput>): Promise<void> {
+  public async addImages(
+    stackInputs: Array<IStackInput>,
+    _immediate = true,
+    _suppressEvents = false
+  ): Promise<void> {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const image = cache.getImage(stackInput.imageId);
@@ -2912,23 +2916,26 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   /**
    * Applies the view reference, which may navigate the slice index and apply
-   * other camera modifications
+   * other camera modifications.
+   * Currently depends on the slice index being the right slice index for this viewport
+   * which isn't necessarily a good assumption.
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
     const camera = this.getCamera();
-    super.setView(viewRef, viewPres);
     if (viewRef) {
       const { viewPlaneNormal, sliceIndex } = viewRef;
       if (
-        viewPlaneNormal &&
-        !isEqual(viewPlaneNormal, camera.viewPlaneNormal)
+        !viewPlaneNormal ||
+        isEqual(viewPlaneNormal, camera.viewPlaneNormal)
       ) {
-        return;
-      }
-      if (sliceIndex || sliceIndex === 0) {
-        this.setImageIdIndex(sliceIndex as number);
+        // TODO - use cameraFocalPoint to determine the local slice index, so that
+        // views in different image sets work together - only if same FOR of course
+        if ((sliceIndex as number) >= 0) {
+          this.setImageIdIndex(sliceIndex as number);
+        }
       }
     }
+    super.setView(viewRef, viewPres);
   }
 
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {

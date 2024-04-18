@@ -695,7 +695,7 @@ class Viewport implements IViewport {
       this.setDisplayAreaScale(displayArea);
     } else {
       this.setInterpolationType(
-        this.getProperties().interpolationType || InterpolationType.LINEAR
+        this.getProperties()?.interpolationType || InterpolationType.LINEAR
       );
       this.setDisplayAreaFit(displayArea);
     }

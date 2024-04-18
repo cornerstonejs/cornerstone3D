@@ -2,11 +2,18 @@ import getOrCreateCanvas, {
   EPSILON,
 } from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
-import StackViewport from '../RenderingEngine/StackViewport';
-import { IImage, ViewportInputOptions } from '../types';
+import {
+  IImage,
+  IStackViewport,
+  IVolume,
+  ViewportInputOptions,
+  IVolumeViewport,
+  ViewReference,
+} from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
+import { CanvasLoadPosition } from './loadImageToCanvas';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation
@@ -23,26 +30,33 @@ import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
  * renderToCanvasGPU(canvas, image)
  * ```
  * @param canvas - Canvas element to render to
- * @param image - The image to render
+ * @param imageOrVolume - The image to render
  * @param modality - [Default = undefined] The modality of the image
  * @returns - A promise that resolves when the image has been rendered with the imageId
  */
 export default function renderToCanvasGPU(
   canvas: HTMLCanvasElement,
-  image: IImage,
+  imageOrVolume: IImage | IVolume,
   modality = undefined,
   renderingEngineId = '_thumbnails',
-  viewportOptions: ViewportInputOptions = { displayArea: { imageArea: [1, 1] } }
-): Promise<string> {
+  viewportOptions: ViewportInputOptions & { viewReference?: ViewReference } = {
+    displayArea: { imageArea: [1, 1] },
+  }
+): Promise<CanvasLoadPosition> {
   if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
     throw new Error('canvas element is required');
   }
 
-  const imageIdToPrint = image.imageId;
+  const isVolume = !(imageOrVolume as IImage).imageId;
+  const image = !isVolume && (imageOrVolume as IImage);
+  const volume = isVolume && (imageOrVolume as IVolume);
+  const imageIdToPrint = image?.imageId || volume?.volumeId;
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
-  const imageId = image.imageId;
   const element = document.createElement('div');
   const devicePixelRatio = window.devicePixelRatio || 1;
+  if (!viewportOptions.displayArea) {
+    viewportOptions.displayArea = { imageArea: [1, 1] };
+  }
   const originalWidth = canvas.width;
   const originalHeight = canvas.height;
   // The canvas width/height are set by flooring the CSS size converted
@@ -50,16 +64,11 @@ export default function renderToCanvasGPU(
   // isn't exact, and using the exact value sometimes leads to an off by 1
   // in the actual size, so adding EPSILON to the size resolves
   // the problem.
-  element.style.width = `${originalWidth + EPSILON}px`;
-  element.style.height = `${originalHeight + EPSILON}px`;
+  // Don't touch the canvas size here as what we get out is a canvas at the right size
+  element.style.width = `${originalWidth / devicePixelRatio + EPSILON}px`;
+  element.style.height = `${originalHeight / devicePixelRatio + EPSILON}px`;
   element.style.visibility = 'hidden';
   element.style.position = 'absolute';
-
-  // Up-sampling the provided canvas to match the device pixel ratio
-  // since we use device pixel ratio to determine the size of the canvas
-  // inside the rendering engine.
-  canvas.width = originalWidth * devicePixelRatio;
-  canvas.height = originalHeight * devicePixelRatio;
 
   document.body.appendChild(element);
 
@@ -73,20 +82,20 @@ export default function renderToCanvasGPU(
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
     new RenderingEngine(renderingEngineId);
 
-  let viewport = renderingEngine.getViewport(viewportId) as StackViewport;
+  let viewport = renderingEngine.getViewport(viewportId);
 
   if (!viewport) {
-    const stackViewportInput = {
+    const viewportInput = {
       viewportId,
-      type: ViewportType.STACK,
+      type: isVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK,
       element,
       defaultOptions: {
         ...viewportOptions,
         suppressEvents: true,
       },
     };
-    renderingEngine.enableElement(stackViewportInput);
-    viewport = renderingEngine.getViewport(viewportId) as StackViewport;
+    renderingEngine.enableElement(viewportInput);
+    viewport = renderingEngine.getViewport(viewportId);
   }
 
   return new Promise((resolve) => {
@@ -94,9 +103,18 @@ export default function renderToCanvasGPU(
     // enable it and later disable it without losing the canvas context
     let elementRendered = false;
 
+    let { viewReference } = viewportOptions;
+
     // Create a named function to handle the event
     const onImageRendered = (eventDetail) => {
       if (elementRendered) {
+        return;
+      }
+      if (viewReference) {
+        const useViewRef = viewReference;
+        viewReference = null;
+        viewport.setView(useViewRef);
+        viewport.render();
         return;
       }
 
@@ -114,6 +132,16 @@ export default function renderToCanvasGPU(
         canvas.height // destination dimensions
       );
 
+      const origin = viewport.canvasToWorld([0, 0]);
+      const topRight = viewport.canvasToWorld([
+        temporaryCanvas.width / devicePixelRatio,
+        0,
+      ]);
+      const bottomLeft = viewport.canvasToWorld([
+        0,
+        temporaryCanvas.height / devicePixelRatio,
+      ]);
+      const thicknessMm = 1;
       elementRendered = true;
 
       // remove based on id
@@ -135,17 +163,26 @@ export default function renderToCanvasGPU(
           element.remove();
         });
       }, 0);
-      resolve(imageId);
+      resolve({
+        origin,
+        bottomLeft,
+        topRight,
+        thicknessMm,
+      });
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
-    viewport.renderImageObject(image);
+    if (isVolume) {
+      (viewport as IVolumeViewport).setVolumes([volume], false, true);
+    } else {
+      (viewport as IStackViewport).renderImageObject(imageOrVolume);
+    }
 
     // force a reset camera to center the image and undo the small scaling
     viewport.resetCamera();
 
     if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
-      viewport.setProperties({
+      (viewport as IStackViewport).setProperties({
         voiRange: {
           lower: image.minPixelValue,
           upper: image.maxPixelValue,
