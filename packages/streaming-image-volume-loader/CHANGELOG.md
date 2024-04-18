@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.8...v1.70.9) (2024-04-18)
+
+### Bug Fixes
+
+- **trackball:** Correct typos and enhance TrackballRotateTool functionality ([#1214](https://github.com/cornerstonejs/cornerstone3D/issues/1214)) ([522574e](https://github.com/cornerstonejs/cornerstone3D/commit/522574ee616186ffe021f376c95dbbbd8a754c4e))
+
 ## [1.70.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.7...v1.70.8) (2024-04-18)
 
 ### Bug Fixes
