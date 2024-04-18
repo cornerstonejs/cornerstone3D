@@ -113,17 +113,20 @@ export default function loadImageToCanvas(
       );
     }
 
-    const { useNorm16Texture } = getConfiguration().rendering;
+    const { useNorm16Texture, preferSizeOverAccuracy } =
+      getConfiguration().rendering;
+    const useNativeDataType = useNorm16Texture || preferSizeOverAccuracy;
 
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
+        type: useNativeDataType ? undefined : 'Float32Array',
       },
       preScale: {
         enabled: true,
       },
+      useNativeDataType,
       useRGBA: !!useCPURendering,
       requestType,
     };

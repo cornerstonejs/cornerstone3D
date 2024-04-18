@@ -166,6 +166,7 @@ async function getVOIFromMinMax(
     },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
+    useNativeDataType,
     preScale: {
       enabled: true,
       scalingParameters: scalingParametersToUse,

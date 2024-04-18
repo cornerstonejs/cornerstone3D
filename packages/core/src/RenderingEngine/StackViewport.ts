@@ -2064,6 +2064,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       useRGBA: false,
       transferSyntaxUID,
+      useNativeDataType: this.useNativeDataType,
       priority: 5,
       requestType: RequestType.Interaction,
       additionalDetails,
