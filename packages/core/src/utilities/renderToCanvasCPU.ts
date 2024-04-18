@@ -2,6 +2,7 @@ import {
   IImage,
   CPUFallbackEnabledElement,
   ViewportInputOptions,
+  IVolume,
 } from '../types';
 
 import getDefaultViewport from '../RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
@@ -18,11 +19,16 @@ import type { CanvasLoadPosition } from './loadImageToCanvas';
  */
 export default function renderToCanvasCPU(
   canvas: HTMLCanvasElement,
-  image: IImage,
+  imageOrVolume: IImage | IVolume,
   modality?: string,
   _renderingEngineId?: string,
   _viewportOptions?: ViewportInputOptions
 ): Promise<CanvasLoadPosition> {
+  const volume = imageOrVolume as IVolume;
+  if (volume.volumeId) {
+    throw new Error('Unsupported volume rendering for CPU');
+  }
+  const image = imageOrVolume as IImage;
   const viewport = getDefaultViewport(canvas, image, modality);
 
   const enabledElement: CPUFallbackEnabledElement = {

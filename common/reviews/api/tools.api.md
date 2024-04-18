@@ -6,9 +6,9 @@
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import { default as default_2 } from '@itk-wasm/morphological-contour-interpolation/dist/morphological-contour-interpolation-options';
+import { default as default_3 } from 'packages/core/dist/types/RenderingEngine/StackViewport';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
 import { IVolumeViewport as IVolumeViewport_2 } from 'packages/core/dist/types/types';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
@@ -16,10 +16,13 @@ import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
@@ -2790,7 +2793,7 @@ function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 function getUniqueSegmentIndices(segmentationId: any): any;
 
 // @public (undocumented)
-function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | IStackViewport_2;
+function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | default_3;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];

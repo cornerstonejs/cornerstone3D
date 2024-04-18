@@ -37,11 +37,12 @@ import type {
   VolumeViewportProperties,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
+  ViewPresentation,
+  ViewReference,
+  IVolumeViewport,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
-import type { ViewReference, ViewPresentation } from '../types/IViewport';
 import {
   actorIsA,
   applyPreset,

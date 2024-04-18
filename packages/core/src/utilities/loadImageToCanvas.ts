@@ -4,6 +4,7 @@ import type {
   ViewReference,
   ViewportInputOptions,
   Point3,
+  IVolume,
 } from '../types';
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
@@ -13,6 +14,7 @@ import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import { getConfiguration } from '../init';
+import cache from '../cache';
 
 /**
  * The original load image options specified just an image id,  which is optimal
@@ -101,36 +103,49 @@ export default function loadImageToCanvas(
   const {
     canvas,
     imageId,
+    viewReference,
     requestType = RequestType.Thumbnail,
     priority = -5,
     renderingEngineId = '_thumbnails',
     useCPURendering = false,
     thumbnail = false,
     imageAspect = false,
-    viewportOptions,
+    viewportOptions: baseViewportOptions,
   } = options;
+  const volumeId = viewReference?.volumeId;
+  const isVolume = volumeId && !imageId;
+  const viewportOptions =
+    viewReference && baseViewportOptions
+      ? { ...baseViewportOptions, viewReference }
+      : baseViewportOptions;
 
   const renderFn = useCPURendering ? renderToCanvasCPU : renderToCanvasGPU;
 
   return new Promise((resolve, reject) => {
-    function successCallback(image: IImage, imageId: string) {
+    function successCallback(imageOrVolume: IImage | IVolume, imageId: string) {
       const { modality } = metaData.get('generalSeriesModule', imageId) || {};
 
-      image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
+      const image = !isVolume && (imageOrVolume as IImage);
+      const volume = isVolume && (imageOrVolume as IVolume);
+      if (image) {
+        image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
+      }
 
       if (thumbnail) {
         canvas.height = 256;
         canvas.width = 256;
       }
-      if (imageAspect) {
-        canvas.width = (canvas.height * image.width) / image.height;
+      if (imageAspect && image) {
+        canvas.width = image && (canvas.height * image.width) / image.height;
       }
       canvas.style.width = `${canvas.width / devicePixelRatio}px`;
       canvas.style.height = `${canvas.height / devicePixelRatio}px`;
-
+      if (volume && useCPURendering) {
+        reject(new Error('CPU rendering of volume not supported'));
+      }
       renderFn(
         canvas,
-        image,
+        imageOrVolume,
         modality,
         renderingEngineId,
         viewportOptions
@@ -168,11 +183,20 @@ export default function loadImageToCanvas(
       requestType,
     };
 
-    imageLoadPoolManager.addRequest(
-      sendRequest.bind(null, imageId, null, options),
-      requestType,
-      { imageId },
-      priority
-    );
+    if (volumeId) {
+      const volume = cache.getVolume(volumeId) as unknown as IVolume;
+      if (!volume) {
+        reject(new Error(`Volume id ${volumeId} not found in cache`));
+      }
+      const useImageId = volume.imageIds[0];
+      successCallback(volume, useImageId);
+    } else {
+      imageLoadPoolManager.addRequest(
+        sendRequest.bind(null, imageId, null, options),
+        requestType,
+        { imageId },
+        priority
+      );
+    }
   });
 }
