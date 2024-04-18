@@ -1924,6 +1924,8 @@ type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>;
 type ImageVolumeModifiedEventDetail = {
     imageVolume: IImageVolume;
     FrameOfReferenceUID: string;
+    numberOfFrames: number;
+    framesProcessed: number;
 };
 
 // @public (undocumented)

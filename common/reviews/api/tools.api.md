@@ -5736,15 +5736,25 @@ export class TrackballRotateTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
+    _getViewportsInfo: () => any[];
+    // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    _resizeObservers: Map<any, any>;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _viewportAddedListener: (evt: any) => void;
 }
 
 // @public (undocumented)
