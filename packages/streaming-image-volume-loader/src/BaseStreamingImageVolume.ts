@@ -665,7 +665,7 @@ export default class BaseStreamingImageVolume
     image,
     scalingParametersToUse: Types.ScalingParameters
   ) {
-    if (!image.preScale.enabled) {
+    if (!image.preScale?.enabled) {
       return image.getPixelData().slice(0);
     }
 
