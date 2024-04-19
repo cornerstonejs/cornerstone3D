@@ -152,8 +152,6 @@ function getBuffer(fileData) {
   });
 }
 
-let decoderWaiting = false;
-
 /**
  * Implement a machine learning controller to interface with various machine
  * learning algorithms.
@@ -189,8 +187,10 @@ export default class MLController {
       return;
     }
     if (desiredImage.imageId === currentImage?.imageId) {
+      console.log('*** Desired image is same as current', desiredImage.imageId);
       return;
     }
+    console.log('Rendering new image');
     const { canvasMask } = this;
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
@@ -397,6 +397,7 @@ export default class MLController {
         imageId,
         viewportOptions,
         viewReference: null,
+        renderingEngineId: viewport.getRenderingEngine().id,
       };
       console.log('About to load image to canvas', imageId, viewport);
       if (imageId.startsWith('volumeId:')) {
@@ -468,7 +469,6 @@ export default class MLController {
     } finally {
       canvas.style.cursor = 'default';
       isClicked = false;
-      decoderWaiting = false;
     }
   }
 
@@ -482,7 +482,6 @@ export default class MLController {
       desiredImage.imageId =
         viewport.getCurrentImageId() || viewport.getReferenceId();
       currentImage = null;
-      decoderWaiting = false;
     }
     // Always use session 0 for the current session
     const [session] = this.sessions;
