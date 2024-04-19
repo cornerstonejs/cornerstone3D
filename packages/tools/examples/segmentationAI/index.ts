@@ -134,7 +134,7 @@ for (const id of viewportIds) {
   });
   viewportGrid.appendChild(el);
 }
-const [element, element1, element2, element3] = elements;
+const [element0, element1, element2, element3] = elements;
 viewportGrid.appendChild(canvas);
 viewportGrid.appendChild(canvasMask);
 
@@ -231,14 +231,18 @@ function mapAnnotationPoint(worldPoint) {
  */
 function getCurrentAnnotations() {
   const annotations = [
-    ...annotationState.getAnnotations(defaultTool, element),
-    ...annotationState.getAnnotations(excludeTool, element),
+    ...annotationState.getAnnotations(defaultTool, element0),
+    ...annotationState.getAnnotations(excludeTool, element0),
   ];
-  const currentAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+  const currentAnnotations = filterAnnotationsForDisplay(
+    activeViewport,
+    annotations
+  );
   return currentAnnotations;
 }
 
-async function interpolateScroll(dir = 1) {
+async function interpolateScroll(viewport, dir = 1) {
+  const { element } = viewport;
   toolForPreview.acceptPreview(element);
   const annotations = [
     ...annotationState.getAnnotations(defaultTool, element),
@@ -254,7 +258,8 @@ async function interpolateScroll(dir = 1) {
   }
 
   if (!currentAnnotations.length) {
-    viewport.scroll(dir);
+    console.log('No annotations, not scrolling');
+    cstUtils.scroll(viewport, { delta: dir });
     return;
   }
 
@@ -264,6 +269,7 @@ async function interpolateScroll(dir = 1) {
   });
   if (nextAnnotations.length > 0) {
     console.log('Already has annotations, not interpolating');
+    cstUtils.scroll(viewport, { delta: dir });
     return;
   }
   for (const annotation of currentAnnotations) {
@@ -274,18 +280,19 @@ async function interpolateScroll(dir = 1) {
     (newAnnotation as any).cachedStats = {};
     annotationState.addAnnotation(newAnnotation, viewport.element);
   }
-  viewport.scroll(dir);
+  cstUtils.scroll(viewport, { delta: dir });
 }
 
 const handleKeyEvent = (evt) => {
-  const { element, key } = evt.detail;
+  const { key } = evt.detail;
+  const { element } = activeViewport;
   if (key === 'Escape') {
     cornerstoneTools.cancelActiveManipulations(element);
     toolForPreview.rejectPreview(element);
   } else if (key === 'Enter') {
     toolForPreview.acceptPreview(element);
   } else if (key === 'n') {
-    interpolateScroll(1);
+    interpolateScroll(activeViewport, 1);
   }
 };
 
@@ -340,7 +347,7 @@ async function run() {
     {
       viewportId: viewportId,
       type: ViewportType.STACK,
-      element: element,
+      element: element0,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
@@ -402,7 +409,7 @@ async function run() {
     toolForPreview
   );
 
-  element.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
+  element0.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
@@ -457,9 +464,11 @@ async function run() {
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   volumeToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-    handleKeyEvent(evt);
-  });
+  elements.forEach((element) =>
+    element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
+      handleKeyEvent(evt);
+    })
+  );
   volumeViewport.setView(
     viewport.getViewReference(),
     viewport.getViewPresentation()

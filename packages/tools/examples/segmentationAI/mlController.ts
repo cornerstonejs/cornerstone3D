@@ -205,10 +205,12 @@ export default class MLController {
   public annotationModifiedListener = (event?) => {
     const changeType = event?.detail.changeType;
     if (changeType === cornerstoneTools.Enums.ChangeTypes.StatsUpdated) {
+      console.log('Annotation only changing event type');
       return;
     }
     const currentAnnotations = getCurrentAnnotations();
     if (!currentAnnotations.length) {
+      console.log('Current annotations is empty');
       return;
     }
     annotationsNeedUpdating = true;
@@ -235,7 +237,8 @@ export default class MLController {
     excludeTool = excludeToolIn;
     tool = toolForPreviewIn;
 
-    desiredImage.imageId = viewport.getCurrentImageId();
+    desiredImage.imageId =
+      viewport.getCurrentImageId() || viewport.getReferenceId();
     viewport.element.addEventListener(
       Events.IMAGE_RENDERED,
       this.viewportRenderedListener
@@ -395,15 +398,17 @@ export default class MLController {
       const renderArguments = {
         canvas,
         imageId,
-        viewportOptions,
+        viewportOptions: {
+          ...viewport.defaultOptions,
+          ...viewportOptions,
+        },
         viewReference: null,
         renderingEngineId: viewport.getRenderingEngine().id,
       };
-      console.log('About to load image to canvas', imageId, viewport);
+      console.log('Loading image to canvas', imageId);
       if (imageId.startsWith('volumeId:')) {
         const viewRef = viewport.getViewReference();
         renderArguments.viewReference = viewRef;
-        console.log('**** loadImageToCanvas VOLUME', imageId, viewRef);
         renderArguments.imageId = null;
       }
       imageSession.canvasPosition = await utilities.loadImageToCanvas(
