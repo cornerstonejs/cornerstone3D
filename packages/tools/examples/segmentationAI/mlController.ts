@@ -79,9 +79,6 @@ const desiredImage = {
 const imageEncodings = new Map();
 let sharedImageEncoding;
 
-const canvas = document.createElement('canvas');
-canvas.oncontextmenu = () => false;
-const canvasMask = document.createElement('canvas');
 const originalImage = document.createElement('img');
 originalImage.id = 'original-image';
 let decoder_latency;
@@ -163,6 +160,9 @@ let decoderWaiting = false;
  *
  */
 export default class MLController {
+  public canvas = document.createElement('canvas');
+  public canvasMask = document.createElement('canvas');
+
   /** Store other sessions to be used for next images. */
   private sessions = [];
   private config;
@@ -176,18 +176,26 @@ export default class MLController {
    * called stand alone.
    */
   public viewportRenderedListener = (_event) => {
-    desiredImage.imageId = viewport.getCurrentImageId();
-    console.log('********** Viewport rendered', desiredImage.imageId);
+    desiredImage.imageId =
+      viewport.getCurrentImageId() || viewport.getReferenceId();
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
+    if (!desiredImage.imageId) {
+      console.warn(
+        '******* Current image is null',
+        viewport.getCurrentImageId(),
+        viewport.getReferenceId(),
+        viewport.getViewReference()
+      );
+      return;
+    }
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
+    const { canvasMask } = this;
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
 
-    currentImage = null;
-    decoderWaiting = false;
-    this.tryLoad();
+    this.tryLoad(true);
   };
 
   /**
@@ -233,6 +241,7 @@ export default class MLController {
       this.viewportRenderedListener
     );
     const boundListener = this.annotationModifiedListener;
+    eventTarget.addEventListener(toolsEvents.ANNOTATION_ADDED, boundListener);
     eventTarget.addEventListener(
       toolsEvents.ANNOTATION_MODIFIED,
       boundListener
@@ -279,7 +288,7 @@ export default class MLController {
    */
   protected async loadAIInternal() {
     const { sessions } = this;
-    canvas.style.cursor = 'wait';
+    this.canvas.style.cursor = 'wait';
 
     decoder_latency = document.getElementById('decoder_latency');
     let loader;
@@ -290,7 +299,7 @@ export default class MLController {
         decoder: null,
         imageEmbeddings: null,
         isLoading: false,
-        canvas: document.createElement('canvas'),
+        canvas: i === 0 ? this.canvas : document.createElement('canvas'),
       });
       if (i === 0) {
         loader = this.loadModels(MODELS[this.config.model], sessions[i]).catch(
@@ -365,6 +374,7 @@ export default class MLController {
     try {
       const encoder_latency = document.getElementById('encoder_latency');
       const isCurrent = desiredImage.imageId === imageId;
+      const { canvas } = imageSession;
       if (isCurrent) {
         encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
         decoder_latency.innerText = 'Awaiting image';
@@ -374,21 +384,32 @@ export default class MLController {
       labels = [];
       const width = MAX_WIDTH;
       const height = MAX_HEIGHT;
-      const renderCanvas = isCurrent ? canvas : imageSession.canvas;
-      renderCanvas.width = width;
-      renderCanvas.height = height;
+      canvas.width = width;
+      canvas.height = height;
       imageSession.imageEmbeddings = undefined;
-      const size = renderCanvas.style.width;
+      const size = canvas.style.width;
 
-      const ctx = renderCanvas.getContext('2d', { willReadFrequently: true });
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.clearRect(0, 0, width, height);
-      imageSession.canvasPosition = await utilities.loadImageToCanvas({
-        canvas: renderCanvas,
+
+      const renderArguments = {
+        canvas,
         imageId,
         viewportOptions,
-      });
-      renderCanvas.style.width = size;
-      renderCanvas.style.height = size;
+        viewReference: null,
+      };
+      console.log('About to load image to canvas', imageId, viewport);
+      if (imageId.startsWith('volumeId:')) {
+        const viewRef = viewport.getViewReference();
+        renderArguments.viewReference = viewRef;
+        console.log('**** loadImageToCanvas VOLUME', imageId, viewRef);
+        renderArguments.imageId = null;
+      }
+      imageSession.canvasPosition = await utilities.loadImageToCanvas(
+        renderArguments
+      );
+      canvas.style.width = size;
+      canvas.style.height = size;
       if (isCurrent) {
         encoder_latency.innerText = `Rendered image on ${imageSession.sessionIndex}`;
       }
@@ -436,12 +457,13 @@ export default class MLController {
 
   /** Awaits a chance to run the decoder */
   protected async runDecoder() {
+    const { canvas } = this;
     if (isClicked || !currentImage?.imageEmbeddings) {
       return;
     }
     isClicked = true;
     try {
-      canvas.style.cursor = 'wait';
+      this.canvas.style.cursor = 'wait';
       await this.decoder(points, labels);
     } finally {
       canvas.style.cursor = 'default';
@@ -455,9 +477,12 @@ export default class MLController {
    * if it isn't already the desired one, and invoke the handleImage.  It also checks
    * the "next" images to see if there are other images which should be tried to load.
    */
-  public tryLoad() {
-    if (!desiredImage.imageId) {
-      desiredImage.imageId = viewport.getCurrentImageId();
+  public tryLoad(resetImage = false) {
+    if (!desiredImage.imageId || resetImage) {
+      desiredImage.imageId =
+        viewport.getCurrentImageId() || viewport.getReferenceId();
+      currentImage = null;
+      decoderWaiting = false;
     }
     // Always use session 0 for the current session
     const [session] = this.sessions;
@@ -485,7 +510,7 @@ export default class MLController {
   mapAnnotationPoint(worldPoint) {
     const canvasPoint = viewport.worldToCanvas(worldPoint);
     const { width, height } = viewport.canvas;
-    const { width: destWidth, height: destHeight } = canvas;
+    const { width: destWidth, height: destHeight } = this.canvas;
 
     const x = Math.trunc(
       (canvasPoint[0] * destWidth * devicePixelRatio) / width
@@ -519,9 +544,6 @@ export default class MLController {
       labels.push(label);
     }
     this.runDecoder();
-
-    // Make sure any loading required is attempted again as the image may have changed
-    this.tryLoad();
   }
 
   /**
@@ -546,10 +568,16 @@ export default class MLController {
     try {
       const root = await this.getDirectoryForImageId(imageId);
       const name = this.getFileNameForImageId(imageId);
-      const fileHandle = await root.getFileHandle(name);
-      document.getElementById(
-        'status'
-      ).innerText = `Loading from storage ${index}`;
+      if (!root || !name) {
+        return null;
+      }
+      const fileHandle = await findFileEntry(root, name);
+      if (!fileHandle) {
+        return null;
+      }
+      document.getElementById('status').innerText = `Loading from storage ${
+        index || imageId
+      }`;
       const file = await fileHandle.getFile();
       if (file) {
         const buffer = await getBuffer(file);
@@ -570,6 +598,9 @@ export default class MLController {
     try {
       const root = await this.getDirectoryForImageId(imageId);
       const name = this.getFileNameForImageId(imageId);
+      if (!root || !name) {
+        return;
+      }
       const fileHandle = await root.getFileHandle(name, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(writeData);
@@ -584,6 +615,7 @@ export default class MLController {
    * instance of a labelmap.
    */
   createLabelmap(mask, canvasPosition, _points, _labels) {
+    const { canvas } = this;
     const preview = tool.addPreview(viewport.element);
     const { previewSegmentIndex, memo, segmentationId } = preview;
     const previewVoxelManager =
@@ -629,6 +661,7 @@ export default class MLController {
   }
 
   async decoder(points, labels, useSession = currentImage) {
+    const { canvas, canvasMask } = this;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.width = imageImageData.width;
@@ -788,6 +821,12 @@ export default class MLController {
    * Gets the storage directory for storing the given image id
    */
   async getDirectoryForImageId(imageId) {
+    if (
+      imageId.indexOf('/studies/') === -1 ||
+      imageId.indexOf('/instances/') === -1
+    ) {
+      return null;
+    }
     const studySeriesUids = imageId
       .split('/studies/')[1]
       .split('/instances/')[0]
@@ -850,12 +889,19 @@ export default class MLController {
 
 /** Gets or creates a diretory name */
 async function getOrCreateDir(dir, name) {
+  return (
+    (await findFileEntry(dir, name)) ||
+    dir.getDirectoryHandle(name, { create: true })
+  );
+}
+
+/** Finds a file entry */
+async function findFileEntry(dir, name) {
   for await (const [key, value] of dir) {
     if (key === name) {
       return value;
     }
   }
-  return dir.getDirectoryHandle(name, { create: true });
 }
 
 export { viewportOptions };

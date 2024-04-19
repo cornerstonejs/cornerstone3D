@@ -98,11 +98,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use various predictive AI/ML techniques to aid your segmentation'
 );
 
-const canvas = document.createElement('canvas');
-canvas.oncontextmenu = () => false;
-const canvasMask = document.createElement('canvas');
-const originalImage = document.createElement('img');
-originalImage.id = 'original-image';
+const { canvas, canvasMask } = ml;
 
 const size = `${512 / devicePixelRatio}px`;
 const content = document.getElementById('content');
@@ -110,14 +106,14 @@ const content = document.getElementById('content');
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
-    ml.clearML();
+    ml.clearML(activeViewport);
     viewport.render();
   },
 });
 
 const viewportGrid = document.createElement('div');
 let renderingEngine;
-let viewport, volumeViewport;
+let viewport, volumeViewport, activeViewport;
 
 viewportGrid.style.width = '95vw';
 
@@ -139,11 +135,13 @@ for (const id of viewportIds) {
   viewportGrid.appendChild(el);
 }
 const [element, element1, element2, element3] = elements;
+viewportGrid.appendChild(canvas);
+viewportGrid.appendChild(canvasMask);
 
 Object.assign(canvas.style, {
   width: size,
   height: size,
-  display: 'none',
+  display: 'inline-block',
   background: 'red',
 });
 
@@ -184,10 +182,9 @@ addDropdownToToolbar({
     values: viewportIds,
   },
   onSelectedValueChange: (value) => {
-    console.log('Selecting viewport', value);
-    const viewport = renderingEngine.getViewport(value);
+    activeViewport = renderingEngine.getViewport(value);
     ml.connectViewport(
-      viewport,
+      activeViewport,
       getCurrentAnnotations,
       excludeTool,
       toolForPreview
@@ -385,6 +382,7 @@ async function run() {
 
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  activeViewport = viewport;
 
   // Add a segmentation that will contains the contour annotations
   const { imageIds: segmentationImageIds } =
