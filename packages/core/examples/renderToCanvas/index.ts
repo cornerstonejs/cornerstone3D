@@ -58,6 +58,7 @@ const viewportInput = {
 };
 
 let viewportType = {
+  sliceIndex: null,
   viewportInputArray: [
     {
       ...viewportInput,
@@ -193,7 +194,7 @@ async function run() {
       viewport = null;
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     }
-    const { viewportInputArray } = viewportType;
+    const { viewportInputArray, sliceIndex } = viewportType;
     renderingEngine.setViewports(viewportInputArray as any);
 
     const [viewportInputData] = viewportInputArray;
@@ -217,12 +218,9 @@ async function run() {
         const viewport = <Types.IStackViewport>(
           renderingEngine.getViewport(viewportId)
         );
-        console.log('Setting stack on viewport to', imageId);
         await viewport.setStack([imageId], 0);
         viewport.resetCamera();
-        console.log('Rendering viewport');
         viewport.render();
-        console.log('Done');
       }, 200);
     } else {
       // Get the stack viewport that was created
@@ -230,7 +228,12 @@ async function run() {
         renderingEngine.getViewport(viewportId)
       );
       await viewport.setVolumes([{ volumeId }]);
-      await volume.load();
+      if (sliceIndex !== undefined) {
+        await csTools.utilities.jumpToSlice(viewport.element, {
+          imageIndex: sliceIndex,
+        });
+      }
+      volume.load();
       viewport.render();
       setTimeout(() => {
         utilities.loadImageToCanvas({
