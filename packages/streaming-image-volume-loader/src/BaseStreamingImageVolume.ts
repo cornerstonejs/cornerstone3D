@@ -455,6 +455,7 @@ export default class BaseStreamingImageVolume
       },
       transferPixelData: true,
       transferSyntaxUID,
+      // The loader is used to load the image into the cache
       loader: imageLoader.loadImage,
       additionalDetails: {
         imageId,
