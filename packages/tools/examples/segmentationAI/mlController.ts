@@ -178,19 +178,11 @@ export default class MLController {
       viewport.getCurrentImageId() || viewport.getReferenceId();
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
     if (!desiredImage.imageId) {
-      console.warn(
-        '******* Current image is null',
-        viewport.getCurrentImageId(),
-        viewport.getReferenceId(),
-        viewport.getViewReference()
-      );
       return;
     }
     if (desiredImage.imageId === currentImage?.imageId) {
-      console.log('*** Desired image is same as current', desiredImage.imageId);
       return;
     }
-    console.log('Rendering new image');
     const { canvasMask } = this;
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
@@ -205,12 +197,10 @@ export default class MLController {
   public annotationModifiedListener = (event?) => {
     const changeType = event?.detail.changeType;
     if (changeType === cornerstoneTools.Enums.ChangeTypes.StatsUpdated) {
-      console.log('Annotation only changing event type');
-      return;
+      console.log('Stats updated only');
     }
     const currentAnnotations = getCurrentAnnotations();
     if (!currentAnnotations.length) {
-      console.log('Current annotations is empty');
       return;
     }
     annotationsNeedUpdating = true;
@@ -405,7 +395,6 @@ export default class MLController {
         viewReference: null,
         renderingEngineId: viewport.getRenderingEngine().id,
       };
-      console.log('Loading image to canvas', imageId);
       if (imageId.startsWith('volumeId:')) {
         const viewRef = viewport.getViewReference();
         renderArguments.viewReference = viewRef;

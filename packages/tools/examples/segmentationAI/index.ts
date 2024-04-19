@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import {
   Enums,
   RenderingEngine,
@@ -258,8 +259,6 @@ async function interpolateScroll(viewport, dir = 1) {
   }
 
   if (!currentAnnotations.length) {
-    console.log('No annotations, not scrolling');
-    cstUtils.scroll(viewport, { delta: dir });
     return;
   }
 
@@ -268,19 +267,28 @@ async function interpolateScroll(viewport, dir = 1) {
     return filterSliceIndex === viewRef.sliceIndex;
   });
   if (nextAnnotations.length > 0) {
-    console.log('Already has annotations, not interpolating');
     cstUtils.scroll(viewport, { delta: dir });
     return;
   }
+  const { focalPoint, viewPlaneNormal } = activeViewport.getCamera();
+  const newDelta = vec3.sub(
+    vec3.create(),
+    viewRef.cameraFocalPoint,
+    focalPoint
+  );
   for (const annotation of currentAnnotations) {
     annotation.interpolationUID ||= crypto.randomUUID();
     const newAnnotation = structuredClone(annotation);
     newAnnotation.annotationUID = undefined;
     Object.assign(newAnnotation.metadata, viewRef);
     (newAnnotation as any).cachedStats = {};
+    for (const handle of newAnnotation.data.handles.points) {
+      vec3.add(handle, handle, newDelta);
+    }
     annotationState.addAnnotation(newAnnotation, viewport.element);
   }
-  cstUtils.scroll(viewport, { delta: dir });
+  activeViewport.setView(viewRef);
+  activeViewport.render();
 }
 
 const handleKeyEvent = (evt) => {
