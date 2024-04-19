@@ -42,6 +42,13 @@ class CornerstoneEventTarget implements EventTarget {
     this.listeners[type].push(callback);
   }
 
+  /**
+   * Adds a debounced event listener to the event target.
+   *
+   * @param type - The type of the event to listen for.
+   * @param callback - The callback function to be executed when the event is triggered.
+   * @param delay - The delay in milliseconds before the callback is invoked after the last event.
+   */
   public addEventListenerDebounced(type, callback, delay) {
     // Ensure the dictionary for the type exists
     this.debouncedListeners[type] = this.debouncedListeners[type] || {};
@@ -73,6 +80,12 @@ class CornerstoneEventTarget implements EventTarget {
     }
   }
 
+  /**
+   * Removes a debounced event listener from the event target.
+   *
+   * @param type - The type of the event.
+   * @param callback - The callback function to be removed.
+   */
   public removeEventListenerDebounced(type, callback) {
     if (
       this.debouncedListeners[type] &&
