@@ -71,7 +71,6 @@ const workerManager = getWebWorkerManager();
 const options = {
   // maxWorkerInstances: 1,
   // overwrite: false
-  // autoTerminationOnIdle: 10000
 };
 
 workerManager.registerWorker('test-worker', workerFn, options);
