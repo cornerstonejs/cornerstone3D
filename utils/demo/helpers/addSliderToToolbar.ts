@@ -1,13 +1,9 @@
-export default function addSliderToToolbar({
-  id,
-  title,
-  range,
-  step,
-  defaultValue,
-  container,
-  onSelectedValueChange,
-  updateLabelOnChange,
-}: {
+import { utilities } from '@cornerstonejs/core';
+
+import createElement, { configElement } from './createElement';
+import addLabelToToolbar from './addLabelToToolbar';
+
+interface configSlider extends configElement {
   id?: string;
   title: string;
   range: number[];
@@ -16,43 +12,66 @@ export default function addSliderToToolbar({
   container?: HTMLElement;
   onSelectedValueChange: (value: string) => void;
   updateLabelOnChange?: (value: string, label: HTMLElement) => void;
-}) {
-  const label = document.createElement('label');
-  const input = document.createElement('input');
+  label?: configElement;
+}
 
-  if (id) {
-    input.id = id;
-    label.id = `${id}-label`;
+export default function addSliderToToolbar(config: configSlider): void {
+  config = utilities.deepMerge(config, config.merge);
+
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
+
+  //
+  const elLabel = addLabelToToolbar({
+    merge: config.label,
+    title: config.title,
+    container: config.container,
+  });
+
+  if (config.id) {
+    elLabel.id = `${config.id}-label`;
   }
 
-  label.htmlFor = title;
-  label.innerText = title;
+  elLabel.htmlFor = config.title;
 
-  input.type = 'range';
-  input.name = title;
-  input.min = String(range[0]);
-  input.max = String(range[1]);
-
-  // add step before setting its value to make sure it works for step different than 1.
-  // Example: range (0-1), step (0.1) and value (0.5)
-  if (step) {
-    input.step = String(step);
-  }
-
-  input.value = String(defaultValue);
-
-  input.oninput = (evt) => {
+  //
+  const fnInput = (evt: Event) => {
     const selectElement = <HTMLSelectElement>evt.target;
 
     if (selectElement) {
-      onSelectedValueChange(selectElement.value);
-      if (updateLabelOnChange !== undefined) {
-        updateLabelOnChange(selectElement.value, label);
+      config.onSelectedValueChange(selectElement.value);
+
+      if (config.updateLabelOnChange !== undefined) {
+        config.updateLabelOnChange(selectElement.value, elLabel);
       }
     }
   };
 
-  container = container ?? document.getElementById('demo-toolbar');
-  container.append(label);
-  container.append(input);
+  //
+  const elInput = <HTMLInputElement>createElement({
+    merge: config,
+    tag: 'input',
+    attr: {
+      type: 'range',
+      name: config.title,
+    },
+    event: {
+      input: fnInput,
+    },
+  });
+
+  if (config.id) {
+    elInput.id = config.id;
+  }
+
+  // Add step before setting its value to make sure it works for step different than 1.
+  // Example: range (0-1), step (0.1) and value (0.5)
+  if (config.step) {
+    elInput.step = String(config.step);
+  }
+
+  elInput.min = String(config.range[0]);
+  elInput.max = String(config.range[1]);
+
+  elInput.value = String(config.defaultValue);
 }

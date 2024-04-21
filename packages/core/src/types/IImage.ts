@@ -20,6 +20,7 @@ interface IImage {
   isPreScaled?: boolean;
   /** preScale object */
   preScale?: {
+    enabled: boolean;
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;
     /** scaling parameters */

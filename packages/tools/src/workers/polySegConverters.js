@@ -13,7 +13,6 @@ import { pointInShapeCallback } from '../utilities';
 import {
   containsPoint,
   getAABB,
-  isPointInsidePolyline3D,
   projectTo2D,
 } from '../utilities/math/polyline';
 import { isPlaneIntersectingAABB } from '../utilities/planar';

@@ -543,9 +543,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
           const pixelCoord = this.canvasToIndex(canvasPoint);
           return [pixelCoord[0], pixelCoord[1], 0];
         },
-        indexToWorld: (point: Point3) => {
+        indexToWorld: (point: Point2, destPoint?: Point3) => {
           const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-          return this.canvasToWorld(canvasPoint);
+          return this.canvasToWorld(canvasPoint, destPoint);
         },
       },
       hasPixelSpacing: this.hasPixelSpacing,
@@ -856,7 +856,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * @param canvasPos - to convert to world
    * @returns World position
    */
-  public canvasToWorld = (canvasPos: Point2): Point3 => {
+  public canvasToWorld = (
+    canvasPos: Point2,
+    destPos: Point3 = [0, 0, 0]
+  ): Point3 => {
     const pan: Point2 = this.videoCamera.panWorld; // In world coordinates
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
 
@@ -870,13 +873,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
       canvasPos[1] - panOffsetCanvas[1],
     ];
 
-    const worldPos: Point3 = [
-      subCanvasPos[0] / worldToCanvasRatio,
-      subCanvasPos[1] / worldToCanvasRatio,
+    // Replace the x,y values only in place in the world position
+    // as the z is unchanging for video display
+    destPos.splice(
       0,
-    ];
-
-    return worldPos;
+      2,
+      subCanvasPos[0] / worldToCanvasRatio,
+      subCanvasPos[1] / worldToCanvasRatio
+    );
+    return destPos;
   };
 
   /**

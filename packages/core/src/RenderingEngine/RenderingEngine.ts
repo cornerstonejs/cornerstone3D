@@ -48,6 +48,7 @@ const VIEWPORT_MIN_SIZE = 2;
  * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
  * us to share texture memory across on-screen viewports that show the same data.
  *
+ *
  * Instantiating a rendering engine:
  * ```js
  * const renderingEngine = new RenderingEngine('pet-ct-rendering-engine');
@@ -74,7 +75,7 @@ const VIEWPORT_MIN_SIZE = 2;
 class RenderingEngine implements IRenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
-  /** A flag which tells if the renderingEngine has been destroyed */
+  /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
   public offscreenMultiRenderWindow: any;
   readonly offScreenCanvasContainer: any; // WebGL
@@ -154,9 +155,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
-      console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
-      console.log(`Viewport ${viewportId} disabled`);
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
@@ -603,6 +602,10 @@ class RenderingEngine implements IRenderingEngine {
     keepCamera = true,
     immediate = true
   ) {
+    // Ensure all the canvases are ready for rendering
+    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
+      getOrCreateCanvas(vp.element);
+    });
     const canvasesDrivenByVtkJs = vtkDrivenViewports.map((vp) => vp.canvas);
 
     if (canvasesDrivenByVtkJs.length) {
@@ -620,16 +623,8 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      const canvas = getOrCreateCanvas(vp.element);
-      const rect = canvas.getBoundingClientRect();
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      canvas.width = rect.width * devicePixelRatio;
-      canvas.height = rect.height * devicePixelRatio;
-
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
-      const pan = vp.getPan();
-      const zoom = vp.getZoom();
       const { flipHorizontal } = prevCamera;
       vp.resetCamera();
 
@@ -645,7 +640,6 @@ class RenderingEngine implements IRenderingEngine {
           if (rotation) {
             vp.setProperties({ rotation });
           }
-          console.log('What to do with pan and zoom', pan[0], pan[1], zoom);
         } else {
           vp.setCamera(prevCamera);
         }
@@ -676,12 +670,6 @@ class RenderingEngine implements IRenderingEngine {
 
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
     canvasesDrivenByVtkJs.push(canvas);
-
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * devicePixelRatio;
-    canvas.height = rect.height * devicePixelRatio;
 
     // 2.c Calculating the new size for offScreen Canvas
     const { offScreenCanvasWidth, offScreenCanvasHeight } =
@@ -769,7 +757,6 @@ class RenderingEngine implements IRenderingEngine {
       offScreenCanvasHeight,
       xOffset
     );
-
     // 2. Add a renderer to the offScreenMultiRenderWindow
     this.offscreenMultiRenderWindow.addRenderer({
       viewport: [
@@ -966,21 +953,17 @@ class RenderingEngine implements IRenderingEngine {
   ): { offScreenCanvasWidth: number; offScreenCanvasHeight: number } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
     // 1. Calculated the height of the offScreen canvas to be the maximum height
     // between canvases
     const offScreenCanvasHeight = Math.max(
-      ...canvasesDrivenByVtkJs.map(
-        (canvas) => canvas.clientHeight * devicePixelRatio
-      )
+      ...canvasesDrivenByVtkJs.map((canvas) => canvas.height)
     );
 
     // 2. Calculating the width of the offScreen canvas to be the sum of all
     let offScreenCanvasWidth = 0;
 
     canvasesDrivenByVtkJs.forEach((canvas) => {
-      offScreenCanvasWidth += canvas.clientWidth * devicePixelRatio;
+      offScreenCanvasWidth += canvas.width;
     });
 
     offScreenCanvasContainer.width = offScreenCanvasWidth;
@@ -1009,8 +992,6 @@ class RenderingEngine implements IRenderingEngine {
     // Redefine viewport properties
     let _xOffset = 0;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
     for (let i = 0; i < viewportsDrivenByVtkJs.length; i++) {
       const viewport = viewportsDrivenByVtkJs[i];
       const {
@@ -1029,7 +1010,7 @@ class RenderingEngine implements IRenderingEngine {
         _xOffset
       );
 
-      _xOffset += viewport.canvas.clientWidth * devicePixelRatio;
+      _xOffset += viewport.canvas.width;
 
       viewport.sx = sx;
       viewport.sy = sy;
@@ -1065,22 +1046,17 @@ class RenderingEngine implements IRenderingEngine {
     _xOffset: number
   ): ViewportDisplayCoords {
     const { canvas } = viewport;
-    const { clientWidth, clientHeight } = canvas;
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const height = clientHeight * devicePixelRatio;
-    const width = clientWidth * devicePixelRatio;
+    const { width: sWidth, height: sHeight } = canvas;
 
     // Update the canvas drawImage offsets.
     const sx = _xOffset;
     const sy = 0;
-    const sWidth = width;
-    const sHeight = height;
 
     const sxStartDisplayCoords = sx / offScreenCanvasWidth;
 
     // Need to offset y if it not max height
     const syStartDisplayCoords =
-      sy + (offScreenCanvasHeight - height) / offScreenCanvasHeight;
+      sy + (offScreenCanvasHeight - sHeight) / offScreenCanvasHeight;
 
     const sWidthDisplayCoords = sWidth / offScreenCanvasWidth;
     const sHeightDisplayCoords = sHeight / offScreenCanvasHeight;
@@ -1318,6 +1294,8 @@ class RenderingEngine implements IRenderingEngine {
       viewportId,
       renderingEngineId,
     };
+
+    viewport.removeWidgets();
 
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport

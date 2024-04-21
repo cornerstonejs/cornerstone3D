@@ -356,7 +356,13 @@ class VolumeViewport extends BaseVolumeViewport {
   public getCurrentImageIdIndex = (volumeId?: string): number => {
     const { viewPlaneNormal, focalPoint } = this.getCamera();
 
-    const { origin, direction, spacing } = this.getImageData(volumeId);
+    const imageData = this.getImageData(volumeId);
+
+    if (!imageData) {
+      return;
+    }
+
+    const { origin, direction, spacing } = imageData;
 
     const spacingInNormal = getSpacingInNormalDirection(
       { direction, spacing },
@@ -380,14 +386,6 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns ImageId
    */
   public getCurrentImageId = (): string | undefined => {
-    if (this.getActors().length > 1) {
-      console.warn(
-        `Using the first/default actor of ${
-          this.getActors().length
-        } actors for getCurrentImageId.`
-      );
-    }
-
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {

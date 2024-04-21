@@ -7,11 +7,8 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import { math, roundNumber } from '../../utilities';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -45,6 +42,7 @@ import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes } from '../../enums';
 
@@ -52,6 +50,7 @@ const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
 
 const PARALLEL_THRESHOLD = 1 - EPSILON;
+
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
  * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
@@ -243,7 +242,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
            */
           epsilon: 0.1,
         },
-        calculateStats: false,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -294,7 +293,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     );
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
+
     evt.preventDefault();
+
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
@@ -350,6 +351,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     } else {
       this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     }
+
+    evt.preventDefault();
   };
 
   /**
@@ -536,16 +539,21 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       annotation.data.handles.points.length = 0;
     };
 
-    return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
-      data: {
-        contour: {
-          polyline: [<Types.Point3>[...worldPos]],
+    const annotation = <PlanarFreehandROIAnnotation>csUtils.deepMerge(
+      contourAnnotation,
+      {
+        data: {
+          contour: {
+            polyline: [<Types.Point3>[...worldPos]],
+          },
+          label: '',
+          cachedStats: {},
         },
-        label: '',
-        cachedStats: {},
-      },
-      onInterpolationComplete,
-    });
+        onInterpolationComplete,
+      }
+    );
+
+    return annotation;
   }
 
   protected getAnnotationStyle(context) {
@@ -682,7 +690,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ) => {
     const { data } = annotation;
     const { cachedStats } = data;
-    const { polyline: points } = data.contour;
+    const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
 
@@ -716,11 +724,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
-      const scale = getCalibratedScale(image);
-      let area = polyline.getArea(canvasCoordinates) / scale / scale;
-      // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
-
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
       worldPosIndex[1] = Math.floor(worldPosIndex[1]);
@@ -752,6 +755,59 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         kMin = Math.min(kMin, worldPosIndex[2]);
         kMax = Math.max(kMax, worldPosIndex[2]);
       }
+
+      const worldPosIndex2 = csUtils.transformWorldToIndex(
+        imageData,
+        points[1]
+      );
+      worldPosIndex2[0] = Math.floor(worldPosIndex2[0]);
+      worldPosIndex2[1] = Math.floor(worldPosIndex2[1]);
+      worldPosIndex2[2] = Math.floor(worldPosIndex2[2]);
+
+      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+        image,
+        () => {
+          const polyline = data.contour.polyline;
+          const numPoints = polyline.length;
+          const projectedPolyline = new Array(numPoints);
+
+          for (let i = 0; i < numPoints; i++) {
+            projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
+          }
+
+          const {
+            maxX: canvasMaxX,
+            maxY: canvasMaxY,
+            minX: canvasMinX,
+            minY: canvasMinY,
+          } = math.polyline.getAABB(projectedPolyline);
+
+          const topLeftBBWorld = viewport.canvasToWorld([
+            canvasMinX,
+            canvasMinY,
+          ]);
+
+          const topLeftBBIndex = csUtils.transformWorldToIndex(
+            imageData,
+            topLeftBBWorld
+          );
+
+          const bottomRightBBWorld = viewport.canvasToWorld([
+            canvasMaxX,
+            canvasMaxY,
+          ]);
+
+          const bottomRightBBIndex = csUtils.transformWorldToIndex(
+            imageData,
+            bottomRightBBWorld
+          );
+
+          return [topLeftBBIndex, bottomRightBBIndex];
+        }
+      );
+      let area = polyline.getArea(canvasCoordinates) / scale / scale;
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
 
       // Expand bounding box
       const iDelta = 0.01 * (iMax - iMin);
@@ -835,12 +891,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
+        perimeter: calculatePerimeter(canvasCoordinates, closed),
         mean: stats.mean?.value,
         max: stats.max?.value,
         stdDev: stats.stdDev?.value,
         statsArray: stats.array,
         pointsInShape: pointsInShape,
-        areaUnit: getCalibratedAreaUnits(null, image),
+        areaUnit: areaUnits,
         modalityUnit,
       };
     }
@@ -920,8 +977,16 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats || {};
+  const {
+    area,
+    mean,
+    stdDev,
+    perimeter,
+    max,
+    isEmptyArea,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
 
@@ -942,6 +1007,10 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (stdDev) {
     textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  if (perimeter) {
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${modalityUnit}`);
   }
 
   return textLines;
