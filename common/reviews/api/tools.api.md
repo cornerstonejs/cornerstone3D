@@ -1981,6 +1981,7 @@ declare namespace drawing {
         drawPath,
         drawLinkedTextBox,
         drawRect,
+        drawRectByCoordinates,
         drawTextBox,
         drawArrow,
         drawRedactionRect,
@@ -2026,6 +2027,9 @@ function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string,
 
 // @public (undocumented)
 function drawRect(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rectangleUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}, dataId?: string): void;
+
+// @public (undocumented)
+function drawRectByCoordinates(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, rectangleUID: string, canvasCoordinates: Types_2.Point2[], options?: {}, dataId?: string): void;
 
 // @public (undocumented)
 function drawRedactionRect(svgDrawingHelper: any, annotationUID: string, rectangleUID: string, start: any, end: any, options?: {}): void;
