@@ -13,6 +13,7 @@ export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice
   overwrite: boolean;
   overlapType?: number; // type of the voxel overlap
+  segmentIndex?: number; // segment index to threshold
 };
 
 export type AnnotationForThresholding = {
@@ -68,6 +69,8 @@ function rectangleROIThresholdVolumeByRange(
     thresholdVolumeInformation,
     { ...options, boundsIJK }
   );
+
+  outputSegmentationVolume.modified();
 
   return outputSegmentationVolume;
 }

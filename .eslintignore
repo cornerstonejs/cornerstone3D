@@ -1,3 +1,5 @@
 *.css
 *.md
 *.json
+packages/adapters/config/webpack/*.js
+packages/docs/*.js

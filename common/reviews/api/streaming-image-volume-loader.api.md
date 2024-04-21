@@ -43,7 +43,9 @@ export const helpers: {
 
 // @public (undocumented)
 export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
-    constructor(imageVolumeProperties: Types.ImageVolumeProps, streamingProperties: Types.IStreamingVolumeProperties);
+    constructor(imageVolumeProperties: Types.ImageVolumeProps & {
+        splittingTag: string;
+    }, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageIdsToLoad(): string[];
     // (undocumented)
@@ -54,6 +56,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     isDynamicVolume(): boolean;
     // (undocumented)
     get numTimePoints(): number;
+    // (undocumented)
+    get splittingTag(): string;
     // (undocumented)
     get timePointIndex(): number;
     set timePointIndex(newTimePointIndex: number);

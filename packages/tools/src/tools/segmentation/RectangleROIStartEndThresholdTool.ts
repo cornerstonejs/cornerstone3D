@@ -111,7 +111,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       throw new Error('Stack Viewport Not implemented');
     } else {
       const targetId = this.getTargetId(viewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = csUtils.getVolumeId(targetId);
       imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -395,7 +395,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
-    const { element, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     const { cachedStats } = data;
     const targetId = this.getTargetId(viewport);
@@ -409,7 +409,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, viewport.element);
 
     return cachedStats;
   }

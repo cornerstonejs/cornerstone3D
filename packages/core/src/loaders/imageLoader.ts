@@ -26,6 +26,7 @@ export interface ImageLoaderOptions {
   priority: number;
   requestType: string;
   additionalDetails?: Record<string, unknown>;
+  ignoreCache?: boolean;
 }
 
 interface DerivedImages {
@@ -126,6 +127,10 @@ function loadImageFromCacheOrVolume(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
+  if (options.ignoreCache) {
+    return loadImageFromImageLoader(imageId, options);
+  }
+
   // 1. Check inside the image cache for imageId
   let imageLoadObject = cache.getImageLoadObject(imageId);
   if (imageLoadObject !== undefined) {

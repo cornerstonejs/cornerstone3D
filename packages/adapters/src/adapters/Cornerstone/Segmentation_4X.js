@@ -359,11 +359,11 @@ async function generateToolState(
     // we don't have to call metadataProvider.get() for each imageId over
     // and over again.
     const sopUIDImageIdIndexMap = imageIds.reduce((acc, imageId) => {
-        const { sopInstanceUid } = metadataProvider.get(
+        const { sopInstanceUID } = metadataProvider.get(
             "generalImageModule",
             imageId
         );
-        acc[sopInstanceUid] = imageId;
+        acc[sopInstanceUID] = imageId;
         return acc;
     }, {});
 

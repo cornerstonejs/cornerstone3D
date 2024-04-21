@@ -11,7 +11,7 @@ import {
 
 import { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
-import { addToolState, getToolState } from './state';
+import { addToolState, getToolState, getToolStateByViewportId } from './state';
 import { CINETypes } from '../../types';
 import scroll from '../scroll';
 
@@ -19,7 +19,6 @@ const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
 
 const debounced = true;
-const loop = true;
 const dynamicVolumesPlayingMap = new Map();
 
 /**
@@ -46,6 +45,10 @@ function playClip(
     throw new Error(
       'playClip: element must be a valid Cornerstone enabled element'
     );
+  }
+
+  if (!playClipOptions) {
+    playClipOptions = {};
   }
 
   // 4D Cine is enabled by default
@@ -83,7 +86,10 @@ function playClip(
     // Make sure the specified clip is not running before any property update.
     // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
     // prevent stopping a 4D CINE in case it is playing on another viewport.
-    _stopClip(element, isDynamicCinePlaying);
+    _stopClip(element, {
+      stopDynamicCine: !isDynamicCinePlaying,
+      viewportId: viewport.id,
+    });
   }
 
   playClipData.dynamicCineEnabled = playClipOptions.dynamicCineEnabled;
@@ -122,10 +128,13 @@ function playClip(
     const newStepIndexOutOfRange =
       newStepIndex < 0 || newStepIndex >= numScrollSteps;
 
-    if (!loop && newStepIndexOutOfRange) {
+    if (!playClipData.loop && newStepIndexOutOfRange) {
       // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
       // prevent stopping a 4D CINE in case it is playing on another viewport.
-      _stopClip(element, isDynamicCinePlaying);
+      _stopClip(element, {
+        stopDynamicCine: !isDynamicCinePlaying,
+        viewportId: viewport.id,
+      });
 
       const eventDetail = { element };
 
@@ -189,23 +198,40 @@ function playClip(
  * Stops an already playing clip.
  * @param element - HTML Element
  */
-function stopClip(element: HTMLDivElement): void {
-  _stopClip(element, true);
+function stopClip(element: HTMLDivElement, options = {} as any): void {
+  _stopClip(element, {
+    stopDynamicCine: true,
+    ...options,
+  });
 }
 
-function _stopClip(element: HTMLDivElement, stopDynamicCine: boolean): void {
+function _stopClip(
+  element: HTMLDivElement,
+  options = { stopDynamicCine: true, viewportId: undefined }
+) {
+  const { stopDynamicCine, viewportId } = options;
   const enabledElement = getEnabledElement(element);
+
+  let toolState;
   if (!enabledElement) {
-    return;
+    if (viewportId) {
+      toolState = getToolStateByViewportId(viewportId);
+    } else {
+      return;
+    }
+  } else {
+    const { viewport } = enabledElement;
+    toolState = getToolState(viewport.element);
   }
-  const { viewport } = enabledElement;
-  const cineToolData = getToolState(viewport.element);
 
-  if (cineToolData) {
-    _stopClipWithData(cineToolData);
+  if (toolState) {
+    _stopClipWithData(toolState);
   }
 
-  if (stopDynamicCine && viewport instanceof BaseVolumeViewport) {
+  if (
+    stopDynamicCine &&
+    enabledElement?.viewport instanceof BaseVolumeViewport
+  ) {
     _stopDynamicVolumeCine(element);
   }
 }

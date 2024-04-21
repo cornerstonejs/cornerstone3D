@@ -3,13 +3,14 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import cloneDeep from 'lodash.clonedeep';
 
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import cloneDeep from 'lodash.clonedeep';
+
 import {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
@@ -284,7 +285,6 @@ export async function createAndCacheDerivedVolume(
   options: DerivedVolumeOptions
 ): Promise<IImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);
-
   if (!referencedVolume) {
     throw new Error(
       `Cannot created derived volume: Referenced volume with id ${referencedVolumeId} does not exist.`
@@ -333,6 +333,7 @@ export async function createAndCacheDerivedVolume(
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
     imageIds: [],
+    referencedVolumeId,
   });
 
   const volumeLoadObject = {

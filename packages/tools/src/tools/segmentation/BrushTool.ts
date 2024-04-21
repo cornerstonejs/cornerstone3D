@@ -1,4 +1,11 @@
-import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
+import {
+  utilities as csUtils,
+  cache,
+  getEnabledElement,
+  StackViewport,
+  eventTarget,
+  Enums,
+} from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
@@ -108,11 +115,11 @@ class BrushTool extends BaseTool {
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
-            dynamicRadius: 0, // in voxel counts in each direction, only used during dynamic threshold strategies.
           },
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
+        thresholdVolumeId: null,
         brushSize: 25,
         preview: {
           // Have to enable the preview to use this
@@ -203,13 +210,37 @@ class BrushTool extends BaseTool {
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
-      // Note: For tools that need the source data. Assumed to use
-      // First volume actor for now.
-      const firstVolumeActorUID = actors[0].uid;
+      const isStackViewport = viewport instanceof StackViewport;
+
+      if (isStackViewport) {
+        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+          detail: {
+            type: 'Segmentation',
+            message: 'Cannot perform brush operation on the selected viewport',
+          },
+          cancelable: true,
+        });
+        eventTarget.dispatchEvent(event);
+        return null;
+      }
+
+      // we used to take the first actor here but we should take the one that is
+      // probably the same size as the segmentation volume
+      const volumes = actors.map((actorEntry) =>
+        cache.getVolume(actorEntry.referenceId)
+      );
+
+      const segmentationVolume = cache.getVolume(volumeId);
+
+      const referencedVolumeIdToThreshold =
+        volumes.find((volume) =>
+          csUtils.isEqual(volume.dimensions, segmentationVolume.dimensions)
+        )?.volumeId || volumes[0]?.volumeId;
 
       return {
         volumeId,
-        referencedVolumeId: firstVolumeActorUID,
+        referencedVolumeId:
+          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
         segmentsLocked,
         segmentationRepresentationUID,
       };

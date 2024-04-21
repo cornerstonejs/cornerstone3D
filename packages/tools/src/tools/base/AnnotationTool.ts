@@ -24,7 +24,6 @@ import {
 import { addAnnotation } from '../../stateManagement/annotation/annotationState';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { getVolumeId } from '../../utilities/getVolumeId';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -267,6 +266,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
 
     const { data } = annotation;
+    const { isCanvasAnnotation } = data;
     const { points, textBox } = data.handles;
 
     if (textBox) {
@@ -293,10 +293,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
     for (let i = 0; i < points?.length; i++) {
       const point = points[i];
-      const annotationCanvasCoordinate = viewport.worldToCanvas(point);
+      const annotationCanvasCoordinate = isCanvasAnnotation
+        ? point.slice(0, 2)
+        : viewport.worldToCanvas(point);
 
       const near =
-        vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity;
+        vec2.distance(
+          canvasCoords,
+          annotationCanvasCoordinate as Types.Point2
+        ) < proximity;
 
       if (near === true) {
         data.handles.activeHandleIndex = i;
@@ -369,7 +374,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = getVolumeId(targetId);
+      const volumeId = csUtils.getVolumeId(targetId);
       const volume = cache.getVolume(volumeId);
       return volume.scaling?.PT !== undefined;
     }

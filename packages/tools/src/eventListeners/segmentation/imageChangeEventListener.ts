@@ -45,6 +45,8 @@ const disable = function (element: HTMLDivElement): void {
   );
 };
 
+const perToolGroupManualTriggers = new Map();
+
 /**
  *  When the image is rendered, check what tools can be rendered for this element.
  *
@@ -123,7 +125,11 @@ function _imageChangeEventListener(evt) {
     // where we are in the process of updating the volume conversion to a stack while
     // the data is still coming in. In such situations, we should trigger the render
     // to ensure that the segmentation actors are created, even if the data arrives late.
-    triggerSegmentationRender(toolGroup.id);
+
+    if (!perToolGroupManualTriggers.has(toolGroup.id)) {
+      perToolGroupManualTriggers.set(toolGroup.id, true);
+      triggerSegmentationRender(toolGroup.id);
+    }
 
     // we should return here, since there is no segmentation actor to update
     // we will hit this function later on after the actor is created

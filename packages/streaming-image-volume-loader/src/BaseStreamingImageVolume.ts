@@ -8,8 +8,8 @@ import {
   cache,
   imageLoader,
   utilities as csUtils,
-  utilities,
   ProgressiveRetrieveImages,
+  canRenderFloatTextures,
 } from '@cornerstonejs/core';
 import type {
   Types,
@@ -20,9 +20,12 @@ import type {
 import { scaleArray, autoLoad } from './helpers';
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
-const { ProgressiveIterator } = csUtils;
+const {
+  ProgressiveIterator,
+  imageRetrieveMetadataProvider,
+  hasFloatScalingParameters,
+} = csUtils;
 const { ImageQualityStatus } = Enums;
-const { imageRetrieveMetadataProvider } = utilities;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -174,6 +177,8 @@ export default class BaseStreamingImageVolume
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
       imageVolume: this,
+      numberOfFrames: numFrames,
+      framesProcessed: this.framesProcessed,
     };
 
     triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
@@ -204,6 +209,7 @@ export default class BaseStreamingImageVolume
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getLoaderImageOptions(imageId);
     const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
+
     handleArrayBufferLoad(scalarData, image, options);
 
     const { scalingParameters } = image.preScale || {};
@@ -397,6 +403,9 @@ export default class BaseStreamingImageVolume
       typeof scalingParameters.rescaleSlope === 'number' &&
       typeof scalingParameters.rescaleIntercept === 'number';
 
+    const floatAfterScale = hasFloatScalingParameters(scalingParameters);
+    const allowFloatRendering = canRenderFloatTextures();
+
     /**
      * So this is has limitation right now, but we need to somehow indicate
      * whether the volume has been scaled with the scaling parameters or not.
@@ -410,6 +419,13 @@ export default class BaseStreamingImageVolume
      * not, which we store it in the this.scaling.PT.suvbw.
      */
     this.isPreScaled = isSlopeAndInterceptNumbers;
+
+    // in case where the hardware/os does not support float rendering but the
+    // requested scaling params are not integers, we need to disable pre-scaling
+    if (!allowFloatRendering && floatAfterScale) {
+      this.isPreScaled = false;
+    }
+
     const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
 
     return {
@@ -429,8 +445,9 @@ export default class BaseStreamingImageVolume
         columns,
       },
       skipCreateImage: true,
+      allowFloatRendering,
       preScale: {
-        enabled: true,
+        enabled: this.isPreScaled,
         // we need to pass in the scalingParameters here, since the streaming
         // volume loader doesn't go through the createImage phase in the loader,
         // and therefore doesn't have the scalingParameters
@@ -438,6 +455,7 @@ export default class BaseStreamingImageVolume
       },
       transferPixelData: true,
       transferSyntaxUID,
+      // The loader is used to load the image into the cache
       loader: imageLoader.loadImage,
       additionalDetails: {
         imageId,
@@ -648,6 +666,10 @@ export default class BaseStreamingImageVolume
     image,
     scalingParametersToUse: Types.ScalingParameters
   ) {
+    if (!image.preScale?.enabled) {
+      return image.getPixelData().slice(0);
+    }
+
     const imageIsAlreadyScaled = image.preScale?.scaled;
     const noScalingParametersToUse =
       !scalingParametersToUse ||

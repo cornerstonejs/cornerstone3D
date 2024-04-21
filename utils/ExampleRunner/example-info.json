@@ -134,6 +134,10 @@
         "name": "Volume Slab Scroll",
         "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
       },
+      "resize": {
+        "name": "Resize viewport and change aspect ratio",
+        "description": "Resize the viewport and allow various aspect ratios/conditions"
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
@@ -241,7 +245,7 @@
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
-    "video" : {
+    "video": {
       "video": {
         "name": "Video Display",
         "description": "Basic video display"
@@ -275,7 +279,7 @@
         "description": "Video range selection"
       }
     },
-    "tools-segmentation" : {
+    "tools-segmentation": {
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
@@ -316,8 +320,12 @@
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
         "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
       },
+      "labelmapSegmentColorChange": {
+        "name": "Labelmap Segment Color Change",
+        "description": "Here we demonstrate how to change the color of a segment in a segmentation representation"
+      },
       "labelmapSegmentLocking": {
-        "name": "Labelmap Segmentation Swapping",
+        "name": "Labelmap Segmentation Locking",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "labelmapRenderingDifferentResolutions": {
@@ -423,12 +431,12 @@
         "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
       }
     },
-    "polymorph-segmentation":{
-      "PolySegWasmContourToStackLabelmap":{
+    "polymorph-segmentation": {
+      "PolySegWasmContourToStackLabelmap": {
         "name": "Convert contour segmentation to stack labelmap",
         "description": "Demonstrates how to convert a contour segmentation to a stack labelmap"
       },
-      "PolySegWasmContourToVolumeLabelmap":{
+      "PolySegWasmContourToVolumeLabelmap": {
         "name": "Convert contour segmentation to volume labelmap",
         "description": "Demonstrates how to convert a contour segmentation to a volume labelmap"
       },
@@ -436,27 +444,27 @@
         "name": "Convert contour segmentation to surface",
         "description": "Demonstrates how to convert a contour segmentation to a closed surface"
       },
-      "PolySegWasmStackLabelmapToSurface":{
+      "PolySegWasmStackLabelmapToSurface": {
         "name": "Convert stack labelmap to surface",
         "description": "Demonstrates how to convert a stack labelmap to a closed surface"
       },
-      "PolySegWasmVolumeLabelmapToSurface":{
+      "PolySegWasmVolumeLabelmapToSurface": {
         "name": "Convert volume labelmap to surface",
         "description": "Demonstrates how to convert a volume labelmap to a closed surface"
       },
-      "PolySegWasmSurfaceToVolumeLabelmap":{
+      "PolySegWasmSurfaceToVolumeLabelmap": {
         "name": "Convert surface to volume labelmap",
         "description": "Demonstrates how to convert a closed surface to a volume labelmap"
       },
-      "PolySegWasmSurfaceToStackLabelmap":{
+      "PolySegWasmSurfaceToStackLabelmap": {
         "name": "Convert surface to stack labelmap",
         "description": "Demonstrates how to convert a closed surface to a stack labelmap"
       },
-      "PolySegWasmVolumeLabelmapToContour":{
+      "PolySegWasmVolumeLabelmapToContour": {
         "name": "Convert volume labelmap to contour",
         "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
       },
-      "PolySegWasmSurfaceToContour":{
+      "PolySegWasmSurfaceToContour": {
         "name": "Convert surface to contour",
         "description": "Demonstrates how to convert a closed surface to a contour segmentation"
       }
@@ -487,6 +495,14 @@
       "segmentationExport": {
         "name": "DICOM SEG export",
         "description": "Demonstrates how to export a segmentation to DICOM SEG"
+      },
+      "segmentationStack": {
+        "name": "DICOM SEG Stack",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"
+      },
+      "segmentationVolume": {
+        "name": "DICOM SEG Volume",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
       }
     },
     "nifti": {

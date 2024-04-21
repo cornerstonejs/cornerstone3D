@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { getShouldUseSharedArrayBuffer, Types } from '@cornerstonejs/core';
 import { parseAffineMatrix } from './affineUtilities';
 
 /**
@@ -11,7 +11,8 @@ const invertDataPerFrame = (dimensions, imageDataArray) => {
   if (
     imageDataArray instanceof Uint8Array ||
     imageDataArray instanceof ArrayBuffer ||
-    imageDataArray instanceof SharedArrayBuffer
+    (getShouldUseSharedArrayBuffer() &&
+      imageDataArray instanceof SharedArrayBuffer)
   ) {
     TypedArrayConstructor = Uint8Array;
     bytesPerVoxel = 1;
