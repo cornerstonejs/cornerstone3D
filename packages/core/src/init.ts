@@ -198,16 +198,11 @@ function setPreferSizeOverAccuracy(status: boolean): void {
  * So we should not use float textures on IOS devices.
  */
 function canRenderFloatTextures(): boolean {
-  const isMobile = config.isMobile;
-  if (!isMobile) {
+  if (!isIOS()) {
     return true;
   }
 
-  if (isMobileIOS()) {
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
 /**
