@@ -71,6 +71,7 @@ const MODELS = {
 
 const desiredImage = {
   imageId: null,
+  sampleImageId: null,
   imageIndex: -1,
   decoder: null,
   encoder: null,
@@ -180,6 +181,13 @@ export default class MLController {
     if (!desiredImage.imageId) {
       return;
     }
+    if (desiredImage.imageId.startsWith('volumeId:')) {
+      desiredImage.sampleImageId = viewport.getImageIds(
+        viewport.getVolumeId()
+      )[0];
+    } else {
+      desiredImage.sampleImageId = desiredImage.imageId;
+    }
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
@@ -197,7 +205,7 @@ export default class MLController {
   public annotationModifiedListener = (event?) => {
     const changeType = event?.detail.changeType;
     if (changeType === cornerstoneTools.Enums.ChangeTypes.StatsUpdated) {
-      console.log('Stats updated only');
+      return;
     }
     const currentAnnotations = getCurrentAnnotations();
     if (!currentAnnotations.length) {
@@ -229,6 +237,14 @@ export default class MLController {
 
     desiredImage.imageId =
       viewport.getCurrentImageId() || viewport.getReferenceId();
+    if (desiredImage.imageId.startsWith('volumeId:')) {
+      desiredImage.sampleImageId = viewport.getImageIds(
+        viewport.getVolumeId()
+      )[0];
+    } else {
+      desiredImage.sampleImageId = desiredImage.imageId;
+    }
+
     viewport.element.addEventListener(
       Events.IMAGE_RENDERED,
       this.viewportRenderedListener
@@ -336,7 +352,7 @@ export default class MLController {
     const imageId = imageIds[index];
     if (!imageEncodings.has(imageId)) {
       // Try loading from storage
-      await this.loadStorageImageEncoding(imageId, index);
+      await this.loadStorageImageEncoding(current, imageId, index);
     }
     if (imageEncodings.has(imageId)) {
       this.cacheImageEncodings(current, offset + 1);
@@ -350,20 +366,23 @@ export default class MLController {
     }
 
     document.getElementById('status').innerText = `Caching ${index}`;
-    this.handleImage(imageId, this.sessions[1]).then(() => {
-      this.cacheImageEncodings(current, offset + 1);
-    });
+    this.handleImage({ imageId, sampleImageId: 'TODO' }, this.sessions[1]).then(
+      () => {
+        this.cacheImageEncodings(current, offset + 1);
+      }
+    );
   }
 
   /**
    * handler called when image available
    */
-  protected async handleImage(imageId, imageSession) {
+  protected async handleImage({ imageId, sampleImageId }, imageSession) {
     if (imageId === imageSession.imageId || isClicked) {
       return;
     }
     isClicked = true;
     imageSession.imageId = imageId;
+    imageSession.sampleImageId = sampleImageId;
     try {
       const encoder_latency = document.getElementById('encoder_latency');
       const isCurrent = desiredImage.imageId === imageId;
@@ -411,7 +430,7 @@ export default class MLController {
 
       imageImageData = ctx.getImageData(0, 0, width, height);
 
-      const data = await this.restoreImageEncoding(imageId);
+      const data = await this.restoreImageEncoding(imageSession, imageId);
       if (data) {
         imageSession.imageEmbeddings = data;
         if (desiredImage.imageId === imageId) {
@@ -435,7 +454,7 @@ export default class MLController {
         const start = performance.now();
         imageSession.imageEmbeddings = session.run(feed);
         const data = await imageSession.imageEmbeddings;
-        this.storeImageEncoding(imageId, data);
+        this.storeImageEncoding(imageSession, imageId, data);
         if (desiredImage.imageId === imageId) {
           encoder_latency.innerText = `Image Ready ${
             imageSession.sessionIndex
@@ -487,7 +506,7 @@ export default class MLController {
       this.updateAnnotations();
       return;
     }
-    this.handleImage(desiredImage.imageId, session);
+    this.handleImage(desiredImage, session);
   }
 
   /**
@@ -543,12 +562,12 @@ export default class MLController {
    * Loads encoder data externally.  Applies the image data to the session if
    * successful.
    */
-  async restoreImageEncoding(imageId) {
+  async restoreImageEncoding(session, imageId) {
     if (!sharedImageEncoding) {
       return;
     }
     if (!imageEncodings.has(imageId)) {
-      await this.loadStorageImageEncoding(imageId);
+      await this.loadStorageImageEncoding(session, imageId);
     }
     const floatData = imageEncodings.get(imageId);
     if (floatData) {
@@ -557,9 +576,9 @@ export default class MLController {
     }
   }
 
-  async loadStorageImageEncoding(imageId, index = null) {
+  async loadStorageImageEncoding(session, imageId, index = null) {
     try {
-      const root = await this.getDirectoryForImageId(imageId);
+      const root = await this.getDirectoryForImageId(session, imageId);
       const name = this.getFileNameForImageId(imageId);
       if (!root || !name) {
         return null;
@@ -581,7 +600,7 @@ export default class MLController {
     }
   }
 
-  async storeImageEncoding(imageId, data) {
+  async storeImageEncoding(session, imageId, data) {
     if (!sharedImageEncoding) {
       sharedImageEncoding = data;
     }
@@ -589,7 +608,7 @@ export default class MLController {
     const writeData = new Float32Array(storeData);
     imageEncodings.set(imageId, writeData);
     try {
-      const root = await this.getDirectoryForImageId(imageId);
+      const root = await this.getDirectoryForImageId(session, imageId);
       const name = this.getFileNameForImageId(imageId);
       if (!root || !name) {
         return;
@@ -813,12 +832,19 @@ export default class MLController {
   /**
    * Gets the storage directory for storing the given image id
    */
-  async getDirectoryForImageId(imageId) {
+  async getDirectoryForImageId(session, imageId) {
     if (
       imageId.indexOf('/studies/') === -1 ||
       imageId.indexOf('/instances/') === -1
     ) {
-      return null;
+      imageId = session.sampleImageId;
+      if (
+        !imageId ||
+        imageId.indexOf('/studies/') === -1 ||
+        imageId.indexOf('/instances/') === -1
+      ) {
+        return null;
+      }
     }
     const studySeriesUids = imageId
       .split('/studies/')[1]
@@ -836,6 +862,15 @@ export default class MLController {
    * Gets the file name for the given imageId
    */
   getFileNameForImageId(imageId) {
+    if (imageId.startsWith('volumeId:')) {
+      const sliceIndex = imageId.indexOf('sliceIndex=');
+      const focalPoint = imageId.indexOf('&focalPoint=');
+      const name = imageId
+        .substring(sliceIndex, focalPoint)
+        .replace('&', '.')
+        .replace('sliceIndex=', 'volume.');
+      return name;
+    }
     const instancesLocation = imageId.indexOf('/instances/');
     if (instancesLocation != -1) {
       const sopLocation = instancesLocation + 11;
