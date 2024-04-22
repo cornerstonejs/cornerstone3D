@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.12](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.11...v1.70.12) (2024-04-22)
+
+### Bug Fixes
+
+- **worker-management:** Prevent termination of running workers ([#1221](https://github.com/cornerstonejs/cornerstone3D/issues/1221)) ([cd4a7c0](https://github.com/cornerstonejs/cornerstone3D/commit/cd4a7c09d13fc723b37397e6f45892db84828704))
+
 ## [1.70.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.10...v1.70.11) (2024-04-22)
 
 ### Bug Fixes
