@@ -46,25 +46,25 @@ async function setDefaultVolumeVOI(
       );
     }
     voi = handlePreScaledVolume(imageVolume, voi);
-  } else if (imageVolume.metadata?.voiLut.length > 0) {
+  } else if (imageVolume.metadata?.voiLut?.length > 0) {
     // case: .nitfi, .nrrd
-    const index = Math.floor(imageVolume.metadata?.voiLut.length / 2);
+    const index = Math.floor(imageVolume.metadata?.voiLut?.length / 2);
     const voiLut: VOI = imageVolume.metadata.voiLut[index];
     voi = windowLevel.toLowHighRange(
       Number(voiLut.windowWidth),
       Number(voiLut.windowCenter)
     );
   }
-  const { lower, upper } = voi;
-
-  if (lower === 0 && upper === 0) {
-    return;
+  if (voi?.lower && voi?.upper) {
+    const { lower, upper } = voi;
+    if (lower === 0 && upper === 0) {
+      return;
+    }
+    volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .setMappingRange(lower, upper);
   }
-
-  volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setMappingRange(lower, upper);
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
