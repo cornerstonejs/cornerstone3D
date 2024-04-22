@@ -9,8 +9,6 @@ import {
 import { init as csTools3dInit } from '@cornerstonejs/tools';
 import { cornerstoneNiftiImageVolumeLoader } from '@cornerstonejs/nifti-volume-loader';
 
-import { setCtTransferFunctionForVolumeActor } from '../../../../utils/demo/helpers';
-
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -90,7 +88,7 @@ async function setup() {
 
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [{ volumeId }],
     viewportInputArray.map((v) => v.viewportId)
   );
 
