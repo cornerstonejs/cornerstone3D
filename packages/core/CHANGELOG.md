@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.10...v1.70.11) (2024-04-22)
+
+### Bug Fixes
+
+- **ipadOS:** for basic rendering of non floats ([#1220](https://github.com/cornerstonejs/cornerstone3D/issues/1220)) ([b6d76e1](https://github.com/cornerstonejs/cornerstone3D/commit/b6d76e154e55d02f187bd2ecb2cfe2eb18f8950d))
+
 ## [1.70.10](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.9...v1.70.10) (2024-04-19)
 
 ### Bug Fixes
