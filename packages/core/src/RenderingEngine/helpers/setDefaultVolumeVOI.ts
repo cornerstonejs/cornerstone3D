@@ -3,6 +3,7 @@ import {
   IImageVolume,
   VOIRange,
   ScalingParameters,
+  VOI,
 } from '../../types';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
@@ -19,27 +20,41 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * loads the middle slice image (middle imageId) and based on its min
  * and max pixel values, it calculates the VOI.
  * Finally it sets the VOI on the volumeActor transferFunction
+ * For nifti image which imageIds is empty, try to look for voiLut from its metadata
  * @param volumeActor - The volume actor
  * @param imageVolume - The image volume that we want to set the VOI for.
+ * @param useNativeDataType -  The image data type is native or Float32Array
  */
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
   imageVolume: IImageVolume,
   useNativeDataType: boolean
 ): Promise<void> {
-  let voi = getVOIFromMetadata(imageVolume);
+  let voi;
+  if (imageVolume.imageIds?.length) {
+    // If the volume is composed of imageIds, we can apply a default VOI based
+    // on either the metadata or the min/max of the middle slice.
+    voi = getVOIFromMetadata(imageVolume);
 
-  if (!voi) {
-    voi = await getVOIFromMinMax(imageVolume, useNativeDataType);
-  }
+    if (!voi) {
+      voi = await getVOIFromMinMax(imageVolume, useNativeDataType);
+    }
 
-  if (!voi || voi.lower === undefined || voi.upper === undefined) {
-    throw new Error(
-      'Could not get VOI from metadata, nor from the min max of the image middle slice'
+    if (!voi || voi.lower === undefined || voi.upper === undefined) {
+      throw new Error(
+        'Could not get VOI from metadata, nor from the min max of the image middle slice'
+      );
+    }
+    voi = handlePreScaledVolume(imageVolume, voi);
+  } else if (imageVolume.metadata?.voiLut.length > 0) {
+    // case: .nitfi, .nrrd
+    const index = Math.floor(imageVolume.metadata?.voiLut.length / 2);
+    const voiLut: VOI = imageVolume.metadata.voiLut[index];
+    voi = windowLevel.toLowHighRange(
+      Number(voiLut.windowWidth),
+      Number(voiLut.windowCenter)
     );
   }
-
-  voi = handlePreScaledVolume(imageVolume, voi);
   const { lower, upper } = voi;
 
   if (lower === 0 && upper === 0) {
@@ -118,6 +133,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * and max pixel values, it calculates the VOI.
  *
  * @param imageVolume - The image volume that we want to get the VOI from.
+ * @param useNativeDataType - The image data type is native or Float32Array
  * @returns The VOIRange with lower and upper values
  */
 async function getVOIFromMinMax(
@@ -166,7 +182,6 @@ async function getVOIFromMinMax(
     },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
-    useNativeDataType,
     preScale: {
       enabled: true,
       scalingParameters: scalingParametersToUse,
@@ -187,10 +202,7 @@ async function getVOIFromMinMax(
   let image = cache.getImage(imageId);
 
   if (!imageVolume.referencedImageIds?.length) {
-    // we should ignore the cache here,
-    // since we want to load the image from with the most
-    // recent prescale settings
-    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
+    image = await loadAndCacheImage(imageId, options);
   }
 
   const imageScalarData = image
