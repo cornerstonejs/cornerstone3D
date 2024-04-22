@@ -102,7 +102,6 @@ export default async function fetchAndAllocateNiftiVolume(
     niftiImage = NiftiReader.readImage(niftiHeader, niftiBuffer);
   }
 
-  console.time('answer time');
   const { scalarData, pixelRepresentation } = modalityScaleNifti(
     niftiHeader,
     niftiImage
@@ -117,9 +116,6 @@ export default async function fetchAndAllocateNiftiVolume(
     scalarData,
     pixelRepresentation
   );
-
-  console.timeEnd('answer time');
-
   return new NiftiImageVolume(
     // ImageVolume properties
     {

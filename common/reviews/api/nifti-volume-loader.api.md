@@ -50,8 +50,8 @@ function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any,
 };
 
 // @public (undocumented)
-function modalityScaleNifti(niftiHeader: any, niftiImageBuffer: ArrayBuffer): {
-    scalarData: PixelDataTypedArray_2;
+function modalityScaleNifti(niftiHeader: any, niftiImageBuffer: any): {
+    scalarData: Types.PixelDataTypedArray;
     pixelRepresentation: number;
 };
 

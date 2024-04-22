@@ -3,13 +3,9 @@ import {
   Enums,
   getShouldUseSharedArrayBuffer,
   utilities,
+  Types,
 } from '@cornerstonejs/core';
 import * as NIFTICONSTANTS from './niftiConstants';
-import {
-  PixelDataTypedArray,
-  PixelDataTypedArrayString,
-} from '@cornerstonejs/core/src/types';
-
 const {
   createFloat32SharedArray,
   createInt16SharedArray,
@@ -21,15 +17,15 @@ const {
  * intercept
  *
  * Todo: add the scaling of PT and SUV
- * @param niftiHeader - The header of nifti file
+ * @param niftiHeader- The header of nifti file
  * @param niftiImageBuffer - The array buffer of nifti file
- * @returns The array being scaled and pixelRepresentation
+ * @returns {object} TypedArray and pixelRepresentation is 0 if scala data is unsigned
  */
 export default function modalityScaleNifti(
   niftiHeader,
-  niftiImageBuffer: ArrayBuffer
+  niftiImageBuffer
 ): {
-  scalarData: PixelDataTypedArray;
+  scalarData: Types.PixelDataTypedArray;
   pixelRepresentation: number;
 } {
   const { datatypeCode, scl_slope, scl_inter } = niftiHeader;
@@ -134,9 +130,9 @@ function checkCacheAvailable(bitsAllocated: number, length: number): number {
 }
 
 function allocateScalarData(
-  types: PixelDataTypedArrayString,
-  niiBuffer: PixelDataTypedArray
-): PixelDataTypedArray {
+  types: Types.PixelDataTypedArrayString,
+  niiBuffer: Types.PixelDataTypedArray
+): Types.PixelDataTypedArray {
   let bitsAllocated;
   let scalarData;
   const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();

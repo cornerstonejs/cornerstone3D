@@ -2,7 +2,6 @@ import {
   RenderingEngine,
   Enums,
   init as csInit,
-  Types,
   volumeLoader,
   setVolumesForViewports,
 } from '@cornerstonejs/core';
