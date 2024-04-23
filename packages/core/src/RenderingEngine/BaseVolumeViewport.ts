@@ -63,6 +63,7 @@ import volumeNewImageEventDispatcher, {
 import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
+import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { getColormap, getColormapNames } from '../utilities/colormap';
@@ -588,10 +589,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (viewRefSpecifier?.forFrameOfReference !== false) {
       target.volumeId = volumeId;
     }
-    if (
-      viewRefSpecifier?.sliceIndex !== undefined &&
-      viewRefSpecifier.sliceIndex !== this.getCurrentImageIdIndex()
-    ) {
+    if ((viewRefSpecifier?.sliceIndex as number) >= 0) {
+      const { viewPlaneNormal } = target;
+      const imageData = this.getImageData(volumeId);
+      const { direction, spacing, origin } = imageData;
+
+      const spacingInNormal = getSpacingInNormalDirection(
+        { direction, spacing },
+        viewPlaneNormal
+      );
+      const delta =
+        (viewRefSpecifier.sliceIndex as number) - this.getCurrentImageIdIndex();
       // Calculate a camera focal point and position
       const { sliceRangeInfo } = getVolumeViewportScrollInfo(
         this,
@@ -600,9 +608,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       );
 
       const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
-      const { focalPoint, viewPlaneNormal, position } = camera;
-      const delta =
-        (viewRefSpecifier.sliceIndex as number) - this.getCurrentImageIdIndex();
+      const { focalPoint, position } = camera;
       const { newFocalPoint } = snapFocalPointToSlice(
         focalPoint,
         position,
@@ -611,6 +617,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         spacingInNormalDirection,
         delta
       );
+      const sub = vec3.sub([0, 0, 0], newFocalPoint, origin);
+      const distance = vec3.dot(sub, viewPlaneNormal);
+
+      // This is ugly, but there are two different units of measure for the position
+      // and they differ in sign, so make sure that the sliceIndex is the right
+      // final sign index agreeing with the getCurrentImageIdIndex
+      target.sliceIndex = Math.round(Math.abs(distance) / spacingInNormal);
       target.cameraFocalPoint = newFocalPoint;
     }
     return target;

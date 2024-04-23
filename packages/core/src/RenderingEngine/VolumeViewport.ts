@@ -372,12 +372,11 @@ class VolumeViewport extends BaseVolumeViewport {
       { direction, spacing },
       viewPlaneNormal
     );
-    const sub = vec3.create();
-    vec3.sub(sub, focalPoint, origin);
+    const sub = vec3.sub([0, 0, 0], focalPoint, origin);
     const distance = vec3.dot(sub, viewPlaneNormal);
 
     // divide by the spacing in the normal direction to get the
-    // number of steps, and subtract 1 to get the index
+    // number of steps
     return Math.round(Math.abs(distance) / spacingInNormal);
   };
 

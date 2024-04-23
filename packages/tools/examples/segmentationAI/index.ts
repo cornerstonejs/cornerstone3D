@@ -229,28 +229,6 @@ addButtonToToolbar({
 });
 
 /**
- * Maps world points to destination points.
- * Assumes the destination canvas is scale to fit at 100% in both dimensions,
- * while the source point is also assumed to be in the same position, but not
- * the same scale.
- *
- * TODO - add mapping from index coordinates to dest coordinates
- * TODO - handle non-square aspect ratios (center relative)
- * TODO - handle alternate orientations
- */
-function mapAnnotationPoint(worldPoint) {
-  const canvasPoint = viewport.worldToCanvas(worldPoint);
-  const { width, height } = viewport.canvas;
-  const { width: destWidth, height: destHeight } = canvas;
-
-  const x = Math.trunc((canvasPoint[0] * destWidth * devicePixelRatio) / width);
-  const y = Math.trunc(
-    (canvasPoint[1] * destHeight * devicePixelRatio) / height
-  );
-  return [x, y];
-}
-
-/**
  * Gets a list of the include/exclude orientation annotations applying to the
  * current image id.
  */
@@ -282,6 +260,9 @@ async function interpolateScroll(viewport, dir = 1) {
 
   const currentImageIdIndex = viewport.getCurrentImageIdIndex();
   const { focalPoint } = activeViewport.getCamera();
+  const oldView = viewport.getViewReference({
+    sliceIndex: currentImageIdIndex + dir,
+  });
   viewport.scroll(dir);
   const nextImageIdIndex = viewport.getCurrentImageIdIndex();
   if (currentImageIdIndex === nextImageIdIndex) {
