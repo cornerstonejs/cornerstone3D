@@ -38,7 +38,31 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const ml = new MLController();
+const logs = [];
+
+/**
+ * Log to the specified logger.
+ */
+function mlLogger(logName, ...args) {
+  console.log(logName, ...args);
+  const element = document.getElementById(logName);
+  if (!element) {
+    return;
+  }
+  if (logName === 'status') {
+    logs.push(args.join(' '));
+    if (logs.length > 5) {
+      logs.splice(0, 1);
+    }
+    element.innerText = logs.join('\n');
+    return;
+  }
+  element.innerText = args.join(' ');
+}
+
+const ml = new MLController({
+  listeners: [mlLogger],
+});
 
 const { ViewportType, Events } = Enums;
 const { KeyboardBindings, MouseBindings } = csToolsEnums;
@@ -159,11 +183,11 @@ Object.assign(canvasMask.style, {
 content.appendChild(viewportGrid);
 
 const encoderLatency = document.createElement('div');
-encoderLatency.id = 'encoder_latency';
+encoderLatency.id = 'encoder';
 content.appendChild(encoderLatency);
 
 const decoderLatency = document.createElement('div');
-decoderLatency.id = 'decoder_latency';
+decoderLatency.id = 'decoder';
 content.appendChild(decoderLatency);
 
 const logDiv = document.createElement('div');

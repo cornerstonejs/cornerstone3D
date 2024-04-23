@@ -26,49 +26,6 @@ const viewportOptions = {
   background: <Types.Point3>[0, 0, 0.2],
 };
 
-let getCurrentAnnotations, viewport, excludeTool, tool;
-
-let currentImage;
-
-// the image size on canvas
-const MAX_WIDTH = 1024;
-const MAX_HEIGHT = 1024;
-
-// the image size supported by the model
-const MODEL_WIDTH = 1024;
-const MODEL_HEIGHT = 1024;
-
-const MODELS = {
-  sam_b: [
-    {
-      name: 'sam-b-encoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-      size: 180,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-      size: 17,
-      key: 'decoder',
-    },
-  ],
-  sam_b_int8: [
-    {
-      name: 'sam-b-encoder-int8',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-encoder-int8.onnx',
-      size: 108,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder-int8',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-decoder-int8.onnx',
-      size: 5,
-      key: 'decoder',
-    },
-  ],
-};
-
 const desiredImage = {
   imageId: null,
   sampleImageId: null,
@@ -85,17 +42,11 @@ originalImage.id = 'original-image';
 let decoder_latency;
 const boxRadius = 5;
 
-let points = [];
-let labels = [];
 let imageImageData;
 let isClicked = false;
 let annotationsNeedUpdating = false;
 
 let maskImageData;
-
-function log(i) {
-  document.getElementById('status').innerText += `\n${i}`;
-}
 
 /**
  * clone tensor
@@ -107,16 +58,13 @@ function cloneTensor(t) {
 /*
  * create feed for the original facebook model
  */
-function feedForSam(emb, points, labels) {
+function feedForSam(emb, points, labels, modelSize = [1024, 1024]) {
   const maskInput = new ort.Tensor(
     new Float32Array(256 * 256),
     [1, 1, 256, 256]
   );
   const hasMask = new ort.Tensor(new Float32Array([0]), [1]);
-  const originalImageSize = new ort.Tensor(
-    new Float32Array([MODEL_HEIGHT, MODEL_WIDTH]),
-    [2]
-  );
+  const originalImageSize = new ort.Tensor(new Float32Array(modelSize), [2]);
   const pointCoords = new ort.Tensor(new Float32Array(points), [
     1,
     points.length / 2,
@@ -153,20 +101,93 @@ function getBuffer(fileData) {
   });
 }
 
+export enum Loggers {
+  Log = 'status',
+  Encoder = 'encoder',
+  Decoder = 'decoder',
+}
+
 /**
  * Implement a machine learning controller to interface with various machine
  * learning algorithms.
  *
  */
 export default class MLController {
+  // the image size on canvas
+  maxWidth = 1024;
+  maxHeight = 1024;
+
+  // the image size supported by the model
+  modelWidth = 1024;
+  modelHeight = 1024;
+
+  /**
+   * Defines the URL endpoints and render sizes/setup for the various models that
+   * can be used.
+   */
+  static MODELS = {
+    sam_b: [
+      {
+        name: 'sam-b-encoder',
+        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
+        size: 180,
+        key: 'encoder',
+      },
+      {
+        name: 'sam-b-decoder',
+        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
+        size: 17,
+        key: 'decoder',
+      },
+    ],
+    sam_b_int8: [
+      {
+        name: 'sam-b-encoder-int8',
+        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-encoder-int8.onnx',
+        size: 108,
+        key: 'encoder',
+      },
+      {
+        name: 'sam-b-decoder-int8',
+        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-decoder-int8.onnx',
+        size: 5,
+        key: 'decoder',
+      },
+    ],
+  };
+
   public canvas = document.createElement('canvas');
   public canvasMask = document.createElement('canvas');
 
   /** Store other sessions to be used for next images. */
   private sessions = [];
   private config;
+  private points = [];
+  private labels = [];
 
   private loadingAI: Promise<unknown>;
+
+  protected getCurrentAnnotations;
+  protected viewport;
+  protected excludeTool;
+  protected tool;
+  protected currentImage;
+  private listeners = [console.log];
+
+  constructor(options = { listeners: null }) {
+    if (options.listeners) {
+      this.listeners = [...options.listeners];
+    }
+  }
+
+  /**
+   * Logs the message to the given log level
+   */
+  protected log(logger: Loggers, ...args) {
+    for (const listener of this.listeners) {
+      listener(logger, ...args);
+    }
+  }
 
   /**
    * A listener for viewport being rendered that tried loading/encoding the
@@ -175,6 +196,7 @@ export default class MLController {
    * called stand alone.
    */
   public viewportRenderedListener = (_event) => {
+    const { viewport, currentImage } = this;
     desiredImage.imageId =
       viewport.getCurrentImageId() || viewport.getReferenceId();
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
@@ -207,7 +229,7 @@ export default class MLController {
     if (changeType === cornerstoneTools.Enums.ChangeTypes.StatsUpdated) {
       return;
     }
-    const currentAnnotations = getCurrentAnnotations();
+    const currentAnnotations = this.getCurrentAnnotations();
     if (!currentAnnotations.length) {
       return;
     }
@@ -221,19 +243,19 @@ export default class MLController {
    * load data about the active viewport.
    */
   public connectViewport(
-    viewportIn,
-    getCurrentAnnotationsIn,
-    excludeToolIn,
-    toolForPreviewIn
+    viewport,
+    getCurrentAnnotations,
+    excludeTool,
+    toolForPreview
   ) {
-    if (viewport) {
-      this.disconnectViewport(viewport);
+    if (this.viewport) {
+      this.disconnectViewport(this.viewport);
     }
-    currentImage = null;
-    viewport = viewportIn;
-    getCurrentAnnotations = getCurrentAnnotationsIn;
-    excludeTool = excludeToolIn;
-    tool = toolForPreviewIn;
+    this.currentImage = null;
+    this.viewport = viewport;
+    this.getCurrentAnnotations = getCurrentAnnotations;
+    this.excludeTool = excludeTool;
+    this.tool = toolForPreview;
 
     desiredImage.imageId =
       viewport.getCurrentImageId() || viewport.getReferenceId();
@@ -299,7 +321,6 @@ export default class MLController {
     const { sessions } = this;
     this.canvas.style.cursor = 'wait';
 
-    decoder_latency = document.getElementById('decoder_latency');
     let loader;
     for (let i = 0; i < 2; i++) {
       sessions.push({
@@ -311,11 +332,12 @@ export default class MLController {
         canvas: i === 0 ? this.canvas : document.createElement('canvas'),
       });
       if (i === 0) {
-        loader = this.loadModels(MODELS[this.config.model], sessions[i]).catch(
-          (e) => {
-            log(e);
-          }
-        );
+        loader = this.loadModels(
+          MLController.MODELS[this.config.model],
+          sessions[i]
+        ).catch((e) => {
+          this.log(Loggers.Log, "Couldn't load models", e);
+        });
         await loader;
       } else {
         // Only the encoder is needed otherwise
@@ -329,9 +351,9 @@ export default class MLController {
    * Clears the ML related annotations on the specified viewport.
    */
   public clearML(viewport) {
-    points = [];
-    labels = [];
-    getCurrentAnnotations(viewport).forEach((annotation) =>
+    this.points = [];
+    this.labels = [];
+    this.getCurrentAnnotations(viewport).forEach((annotation) =>
       annotationState.removeAnnotation(annotation.annotationUID)
     );
   }
@@ -340,9 +362,10 @@ export default class MLController {
    * Cache the next image as encoded.
    */
   public async cacheImageEncodings(
-    current = viewport.getCurrentImageId(),
+    current = this.viewport.getCurrentImageId(),
     offset = 0
   ) {
+    const { viewport } = this;
     const imageIds = viewport.getImageIds();
     if (offset >= imageIds.length) {
       // We are done.
@@ -365,7 +388,7 @@ export default class MLController {
       return;
     }
 
-    document.getElementById('status').innerText = `Caching ${index}`;
+    this.log(Loggers.Log, 'Caching', index);
     this.handleImage({ imageId, sampleImageId: 'TODO' }, this.sessions[1]).then(
       () => {
         this.cacheImageEncodings(current, offset + 1);
@@ -380,22 +403,25 @@ export default class MLController {
     if (imageId === imageSession.imageId || isClicked) {
       return;
     }
+    const { viewport } = this;
     isClicked = true;
     imageSession.imageId = imageId;
     imageSession.sampleImageId = sampleImageId;
     try {
-      const encoder_latency = document.getElementById('encoder_latency');
       const isCurrent = desiredImage.imageId === imageId;
       const { canvas } = imageSession;
       if (isCurrent) {
-        encoder_latency.innerText = `Loading image on ${imageSession.sessionIndex}`;
-        decoder_latency.innerText = 'Awaiting image';
+        this.log(
+          Loggers.Encoder,
+          `Loading image on ${imageSession.sessionIndex}`
+        );
+        this.log(Loggers.Decoder, 'Awaiting image');
         canvas.style.cursor = 'wait';
       }
-      points = [];
-      labels = [];
-      const width = MAX_WIDTH;
-      const height = MAX_HEIGHT;
+      this.points = [];
+      this.labels = [];
+      const width = this.maxWidth;
+      const height = this.maxHeight;
       canvas.width = width;
       canvas.height = height;
       imageSession.imageEmbeddings = undefined;
@@ -425,7 +451,10 @@ export default class MLController {
       canvas.style.width = size;
       canvas.style.height = size;
       if (isCurrent) {
-        encoder_latency.innerText = `Rendered image on ${imageSession.sessionIndex}`;
+        this.log(
+          Loggers.Encoder,
+          `Rendered image on ${imageSession.sessionIndex}`
+        );
       }
 
       imageImageData = ctx.getImageData(0, 0, width, height);
@@ -434,13 +463,13 @@ export default class MLController {
       if (data) {
         imageSession.imageEmbeddings = data;
         if (desiredImage.imageId === imageId) {
-          encoder_latency.innerText = `Cached Image`;
+          this.log(Loggers.Encoder, 'Cached Image');
           canvas.style.cursor = 'default';
         }
       } else {
         const t = await ort.Tensor.fromImage(imageImageData, {
-          resizedWidth: MODEL_WIDTH,
-          resizedHeight: MODEL_HEIGHT,
+          resizedWidth: this.modelWidth,
+          resizedHeight: this.modelHeight,
         });
         const feed = this.config.isSlimSam
           ? { pixel_values: t }
@@ -448,7 +477,7 @@ export default class MLController {
         await imageSession.loader;
         const session = await imageSession.encoder;
         if (!session) {
-          log('****** No session');
+          this.log(Loggers.Log, '****** No session');
           return;
         }
         const start = performance.now();
@@ -456,9 +485,12 @@ export default class MLController {
         const data = await imageSession.imageEmbeddings;
         this.storeImageEncoding(imageSession, imageId, data);
         if (desiredImage.imageId === imageId) {
-          encoder_latency.innerText = `Image Ready ${
-            imageSession.sessionIndex
-          } ${(performance.now() - start).toFixed(1)} ms`;
+          this.log(
+            Loggers.Encoder,
+            `Image Ready ${imageSession.sessionIndex} ${(
+              performance.now() - start
+            ).toFixed(1)} ms`
+          );
           canvas.style.cursor = 'default';
         }
       }
@@ -472,13 +504,13 @@ export default class MLController {
   /** Awaits a chance to run the decoder */
   protected async runDecoder() {
     const { canvas } = this;
-    if (isClicked || !currentImage?.imageEmbeddings) {
+    if (isClicked || !this.currentImage?.imageEmbeddings) {
       return;
     }
     isClicked = true;
     try {
       this.canvas.style.cursor = 'wait';
-      await this.decoder(points, labels);
+      await this.decoder(this.points, this.labels);
     } finally {
       canvas.style.cursor = 'default';
       isClicked = false;
@@ -491,17 +523,18 @@ export default class MLController {
    * the "next" images to see if there are other images which should be tried to load.
    */
   public tryLoad(resetImage = false) {
+    const { viewport } = this;
     if (!desiredImage.imageId || resetImage) {
       desiredImage.imageId =
         viewport.getCurrentImageId() || viewport.getReferenceId();
-      currentImage = null;
+      this.currentImage = null;
     }
     // Always use session 0 for the current session
     const [session] = this.sessions;
 
     if (session.imageId === desiredImage.imageId) {
-      if (currentImage !== session) {
-        currentImage = session;
+      if (this.currentImage !== session) {
+        this.currentImage = session;
       }
       this.updateAnnotations();
       return;
@@ -520,6 +553,7 @@ export default class MLController {
    * TODO - handle alternate orientations
    */
   mapAnnotationPoint(worldPoint) {
+    const { viewport } = this;
     const canvasPoint = viewport.worldToCanvas(worldPoint);
     const { width, height } = viewport.canvas;
     const { width: destWidth, height: destHeight } = this.canvas;
@@ -537,23 +571,23 @@ export default class MLController {
    * Updates annotations when they have changed in some way, running the decoder.
    */
   updateAnnotations() {
-    if (isClicked || !annotationsNeedUpdating || !currentImage) {
+    if (isClicked || !annotationsNeedUpdating || !this.currentImage) {
       return;
     }
-    const currentAnnotations = getCurrentAnnotations();
+    const currentAnnotations = this.getCurrentAnnotations();
     annotationsNeedUpdating = false;
-    points = [];
-    labels = [];
+    this.points = [];
+    this.labels = [];
     if (!currentAnnotations?.length) {
       return;
     }
     for (const annotation of currentAnnotations) {
       const handle = annotation.data.handles.points[0];
       const point = this.mapAnnotationPoint(handle);
-      const label = annotation.metadata.toolName === excludeTool ? 0 : 1;
-      points.push(point[0]);
-      points.push(point[1]);
-      labels.push(label);
+      const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
+      this.points.push(point[0]);
+      this.points.push(point[1]);
+      this.labels.push(label);
     }
     this.runDecoder();
   }
@@ -587,16 +621,14 @@ export default class MLController {
       if (!fileHandle) {
         return null;
       }
-      document.getElementById('status').innerText = `Loading from storage ${
-        index || imageId
-      }`;
+      this.log(Loggers.Log, `Loading from storage ${index || imageId}`);
       const file = await fileHandle.getFile();
       if (file) {
         const buffer = await getBuffer(file);
         imageEncodings.set(imageId, buffer);
       }
     } catch (e) {
-      console.log('Unable to fetch file', imageId, e);
+      this.log(Loggers.Log, 'Unable to fetch file', imageId, e);
     }
   }
 
@@ -617,8 +649,11 @@ export default class MLController {
       const writable = await fileHandle.createWritable();
       await writable.write(writeData);
       await writable.close();
+      navigator.storage.persist().then((persistance) => {
+        console.log('Persisted file', name, persistance);
+      });
     } catch (e) {
-      console.log('Unable to write', imageId, e);
+      this.log(Loggers.Log, 'Unable to write', imageId, e);
     }
   }
 
@@ -627,8 +662,8 @@ export default class MLController {
    * instance of a labelmap.
    */
   createLabelmap(mask, canvasPosition, _points, _labels) {
-    const { canvas } = this;
-    const preview = tool.addPreview(viewport.element);
+    const { canvas, viewport } = this;
+    const preview = this.tool.addPreview(viewport.element);
     const { previewSegmentIndex, memo, segmentationId } = preview;
     const previewVoxelManager =
       memo?.voxelManager || preview.previewVoxelManager;
@@ -660,7 +695,7 @@ export default class MLController {
           continue;
         }
         // 4 values - RGBA - per pixel
-        const maskIndex = 4 * (i + j * MAX_WIDTH);
+        const maskIndex = 4 * (i + j * this.maxWidth);
         const v = data[maskIndex];
         if (v > 0) {
           previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
@@ -672,7 +707,7 @@ export default class MLController {
     triggerSegmentationDataModified(segmentationId);
   }
 
-  async decoder(points, labels, useSession = currentImage) {
+  async decoder(points, labels, useSession = this.currentImage) {
     const { canvas, canvasMask } = this;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -682,7 +717,10 @@ export default class MLController {
     canvasMask.height = imageImageData.height;
 
     if (!useSession || useSession.imageId !== desiredImage.imageId) {
-      console.warn('***** Image not current, need to wait for current image');
+      this.log(
+        Loggers.Log,
+        '***** Image not current, need to wait for current image'
+      );
       return;
     }
 
@@ -704,9 +742,12 @@ export default class MLController {
       const feed = feedForSam(emb, points, labels);
       const start = performance.now();
       const res = await session.run(feed);
-      decoder_latency.innerText = `decoder ${useSession.sessionIndex} ${(
-        performance.now() - start
-      ).toFixed(1)} ms`;
+      this.log(
+        Loggers.Decoder,
+        `decoder ${useSession.sessionIndex} ${(
+          performance.now() - start
+        ).toFixed(1)} ms`
+      );
 
       for (let i = 0; i < points.length; i += 2) {
         const label = labels[i / 2];
@@ -763,14 +804,14 @@ export default class MLController {
       if (cachedResponse == undefined) {
         await cache.add(url);
         cachedResponse = await cache.match(url);
-        log(`${name} (network)`);
+        this.log(Loggers.Log, `${name} (network)`);
       } else {
-        log(`${name} (cached)`);
+        this.log(Loggers.Log, `${name} (cached)`);
       }
       const data = await cachedResponse.arrayBuffer();
       return data;
     } catch (error) {
-      log(`${name} (network)`);
+      this.log(Loggers.Log, `${name} (network)`);
       return await fetch(url).then((response) => response.arrayBuffer());
     }
   }
@@ -778,19 +819,22 @@ export default class MLController {
   /*
    * load models one at a time
    */
-  async loadModels(models, imageSession = currentImage) {
+  async loadModels(models, imageSession = this.currentImage) {
     const cache = await caches.open('onnx');
     let missing = 0;
-    for (const [_name, model] of Object.entries(models)) {
+    for (const model of Object.values(models) as any[]) {
       const cachedResponse = await cache.match(model.url);
       if (cachedResponse === undefined) {
         missing += model.size;
       }
     }
     if (missing > 0) {
-      log(`downloading ${missing} MB from network ... it might take a while`);
+      this.log(
+        Loggers.Log,
+        `downloading ${missing} MB from network ... it might take a while`
+      );
     } else {
-      log('loading...');
+      this.log(Loggers.Log, 'loading...');
     }
     const start = performance.now();
     for (const [_name, model] of Object.entries(models)) {
@@ -822,11 +866,11 @@ export default class MLController {
           sess_opt
         );
       } catch (e) {
-        log(`${model.url} failed, ${e}`);
+        this.log(Loggers.Log, `${model.url} failed, ${e}`);
       }
     }
     const stop = performance.now();
-    log(`ready, ${(stop - start).toFixed(1)}ms`);
+    this.log(Loggers.Log, `ready, ${(stop - start).toFixed(1)}ms`);
   }
 
   /**
