@@ -443,26 +443,18 @@ class VolumeViewport extends BaseVolumeViewport {
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
 
     if (isImageActor(volumeActor)) {
+      const transferFunction = (volumeActor.actor as ImageActor)
+        .getProperty()
+        .getRGBTransferFunction(0);
+
       setTransferFunctionNodes(
-        (volumeActor.actor as ImageActor)
-          .getProperty()
-          .getRGBTransferFunction(0),
+        transferFunction,
         this.initialTransferFunctionNodes
       );
     }
 
-    const range = (volumeActor.actor as vtkVolume)
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getMappingRange();
-
     const eventDetails = {
-      viewportId: volumeActor.uid,
-      range: {
-        lower: range[0],
-        upper: range[1],
-      },
-      volumeId: volumeActor.uid,
+      ...super.getVOIModifiedEventDetail(volumeId),
     };
 
     const resetPan = true;

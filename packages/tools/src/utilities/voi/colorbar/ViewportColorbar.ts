@@ -160,21 +160,24 @@ class ViewportColorbar extends Colorbar {
   private _viewportVOIModifiedCallback = (
     evt: Types.EventTypes.VoiModifiedEvent
   ) => {
-    const { viewportId, volumeId, range: voiRange } = evt.detail;
+    const { viewportId, volumeId, range: voiRange, colormap } = evt.detail;
     const { viewport } = this.enabledElement;
-
     if (viewportId !== viewport.id || volumeId !== this._volumeId) {
       return;
     }
 
     this.voiRange = voiRange;
+
+    if (colormap) {
+      this.activeColormapName = colormap.name;
+    }
     this.showAndAutoHideTicks();
   };
 
   private _viewportColormapModifiedCallback = (
     evt: Types.EventTypes.ColormapModifiedEvent
   ) => {
-    const { viewportId, colormap, volumeId  } = evt.detail;
+    const { viewportId, colormap, volumeId } = evt.detail;
     const { viewport } = this.enabledElement;
 
     if (viewportId !== viewport.id || volumeId !== this._volumeId) {
