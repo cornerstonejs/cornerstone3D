@@ -275,31 +275,27 @@ async function interpolateScroll(viewport, dir = 1) {
   ];
 
   const currentAnnotations = filterAnnotationsForDisplay(viewport, annotations);
-  const viewRef = viewport.getViewReference({
-    sliceIndex: viewport.getCurrentImageIdIndex() + dir,
-  });
-  if (!viewRef) {
-    return;
-  }
 
   if (!currentAnnotations.length) {
     return;
   }
 
-  const nextAnnotations = annotations.filter((filterAnnotation) => {
-    const { sliceIndex: filterSliceIndex } = filterAnnotation.metadata;
-    return filterSliceIndex === viewRef.sliceIndex;
-  });
-  if (nextAnnotations.length > 0) {
-    cstUtils.scroll(viewport, { delta: dir });
+  const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+  const { focalPoint } = activeViewport.getCamera();
+  viewport.scroll(dir);
+  const nextImageIdIndex = viewport.getCurrentImageIdIndex();
+  if (currentImageIdIndex === nextImageIdIndex) {
+    console.warn('No next image in direction', dir, currentImageIdIndex);
     return;
   }
-  const { focalPoint, viewPlaneNormal } = activeViewport.getCamera();
-  const newDelta = vec3.sub(
-    vec3.create(),
-    viewRef.cameraFocalPoint,
-    focalPoint
-  );
+  const nextAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+
+  if (nextAnnotations.length > 0) {
+    return;
+  }
+  const { focalPoint: newFocal } = activeViewport.getCamera();
+  const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
+  const viewRef = viewport.getViewReference();
   for (const annotation of currentAnnotations) {
     annotation.interpolationUID ||= crypto.randomUUID();
     const newAnnotation = structuredClone(annotation);
@@ -311,8 +307,7 @@ async function interpolateScroll(viewport, dir = 1) {
     }
     annotationState.addAnnotation(newAnnotation, viewport.element);
   }
-  activeViewport.setView(viewRef);
-  activeViewport.render();
+  viewport.render();
 }
 
 const handleKeyEvent = (evt) => {
