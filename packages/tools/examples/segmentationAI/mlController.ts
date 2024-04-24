@@ -356,34 +356,39 @@ export default class MLController {
     offset = 0
   ) {
     const { viewport, imageEncodings } = this;
-    const imageIds = viewport.getImageIds();
-    if (offset >= imageIds.length) {
-      // We are done.
-      return;
-    }
-    const index = (offset + current) % imageIds.length;
-    const imageId = imageIds[index];
-    if (!imageEncodings.has(imageId)) {
-      // Try loading from storage
-      await this.loadStorageImageEncoding(current, imageId, index);
-    }
-    if (imageEncodings.has(imageId)) {
-      this.cacheImageEncodings(current, offset + 1);
-      return;
-    }
-    // Try doing a load, so that UI has priority
-    this.tryLoad();
-    if (this.isClicked) {
-      setTimeout(() => this.cacheImageEncodings(current, offset), 500);
-      return;
-    }
-
-    this.log(Loggers.Log, 'Caching', index);
-    this.handleImage({ imageId, sampleImageId: 'TODO' }, this.sessions[1]).then(
-      () => {
-        this.cacheImageEncodings(current, offset + 1);
+    if (viewport.getVolumeId) {
+      // TODO - implement volume cache
+    } else {
+      const imageIds = viewport.getImageIds();
+      if (offset >= imageIds.length) {
+        // We are done.
+        return;
       }
-    );
+      const index = (offset + current) % imageIds.length;
+      const imageId = imageIds[index];
+      if (!imageEncodings.has(imageId)) {
+        // Try loading from storage
+        await this.loadStorageImageEncoding(current, imageId, index);
+      }
+      if (imageEncodings.has(imageId)) {
+        this.cacheImageEncodings(current, offset + 1);
+        return;
+      }
+      // Try doing a load, so that UI has priority
+      this.tryLoad();
+      if (this.isClicked) {
+        setTimeout(() => this.cacheImageEncodings(current, offset), 500);
+        return;
+      }
+
+      this.log(Loggers.Log, 'Caching', index);
+      this.handleImage(
+        { imageId, sampleImageId: 'TODO' },
+        this.sessions[1]
+      ).then(() => {
+        this.cacheImageEncodings(current, offset + 1);
+      });
+    }
   }
 
   /**

@@ -258,17 +258,16 @@ async function interpolateScroll(viewport, dir = 1) {
     return;
   }
 
-  const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+  const currentSliceIndex = viewport.getCurrentImageIdIndex();
   const { focalPoint } = activeViewport.getCamera();
-  const oldView = viewport.getViewReference({
-    sliceIndex: currentImageIdIndex + dir,
+  const viewRef = viewport.getViewReference({
+    sliceIndex: currentSliceIndex + dir,
   });
-  viewport.scroll(dir);
-  const nextImageIdIndex = viewport.getCurrentImageIdIndex();
-  if (currentImageIdIndex === nextImageIdIndex) {
-    console.warn('No next image in direction', dir, currentImageIdIndex);
+  if (!viewRef) {
+    console.warn('No next image in direction', dir, currentSliceIndex);
     return;
   }
+  viewport.setView(viewRef);
   const nextAnnotations = filterAnnotationsForDisplay(viewport, annotations);
 
   if (nextAnnotations.length > 0) {
@@ -276,7 +275,6 @@ async function interpolateScroll(viewport, dir = 1) {
   }
   const { focalPoint: newFocal } = activeViewport.getCamera();
   const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
-  const viewRef = viewport.getViewReference();
   for (const annotation of currentAnnotations) {
     annotation.interpolationUID ||= crypto.randomUUID();
     const newAnnotation = structuredClone(annotation);

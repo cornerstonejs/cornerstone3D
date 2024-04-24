@@ -591,13 +591,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     if ((viewRefSpecifier?.sliceIndex as number) >= 0) {
       const { viewPlaneNormal } = target;
-      const imageData = this.getImageData(volumeId);
-      const { direction, spacing, origin } = imageData;
-
-      const spacingInNormal = getSpacingInNormalDirection(
-        { direction, spacing },
-        viewPlaneNormal
-      );
       const delta =
         (viewRefSpecifier.sliceIndex as number) - this.getCurrentImageIdIndex();
       // Calculate a camera focal point and position
@@ -617,13 +610,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         spacingInNormalDirection,
         delta
       );
-      const sub = vec3.sub([0, 0, 0], newFocalPoint, origin);
-      const distance = vec3.dot(sub, viewPlaneNormal);
-
-      // This is ugly, but there are two different units of measure for the position
-      // and they differ in sign, so make sure that the sliceIndex is the right
-      // final sign index agreeing with the getCurrentImageIdIndex
-      target.sliceIndex = Math.round(Math.abs(distance) / spacingInNormal);
       target.cameraFocalPoint = newFocalPoint;
     }
     return target;
@@ -694,17 +680,23 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * presentation.  Handles both stack references as well as volume references.
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
-    if (viewRef?.sliceIndex !== undefined) {
+    if (typeof viewRef?.sliceIndex === 'number') {
+      const { viewPlaneNormal: refViewPlaneNormal } = viewRef;
+      let { sliceIndex } = viewRef;
       const volumeId = this.getVolumeId();
-      const { currentStepIndex, sliceRangeInfo } = getVolumeViewportScrollInfo(
-        this,
-        volumeId,
-        true
-      );
+      const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
+        getVolumeViewportScrollInfo(this, volumeId, true);
 
       const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
       const { focalPoint, viewPlaneNormal, position } = camera;
-      const delta = (viewRef.sliceIndex as number) - currentStepIndex;
+      if (
+        !refViewPlaneNormal ||
+        isEqual.negative(viewPlaneNormal, refViewPlaneNormal)
+      ) {
+        // Convert opposite orientation view refs to normal orientation
+        sliceIndex = numScrollSteps - sliceIndex - 1;
+      }
+      const delta = sliceIndex - currentStepIndex;
       const { newFocalPoint, newPosition } = snapFocalPointToSlice(
         focalPoint,
         position,

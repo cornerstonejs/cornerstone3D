@@ -2852,10 +2852,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
-  public getSliceIndex = (): number => {
-    return this.currentImageIdIndex;
-  };
-
   /**
    * Checks to see if this target is or could be shown in this viewport
    */
@@ -2892,16 +2888,23 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   /**
    * Gets a standard target to show this image instance.
+   * Note that the view plane normal is NEGATIVE of the camera view plane
+   * normal so that the VTK and non VTK references agree on the slice index.
+   * May return undefined if the requested slice index is not available.
    */
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
-      viewRefSpecifier;
+    const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
+    const superRef = super.getViewReference(viewRefSpecifier);
+    const referencedImageId = this.imageIds[sliceIndex as number];
+    if (!referencedImageId) {
+      return;
+    }
     return {
-      ...super.getViewReference(viewRefSpecifier),
-      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
-      sliceIndex: sliceIndex,
+      ...superRef,
+      referencedImageId,
+      viewPlaneNormal: <Point3>superRef.viewPlaneNormal.map((it) => -it),
     };
   }
 
@@ -2915,16 +2918,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const camera = this.getCamera();
     if (viewRef) {
       const { viewPlaneNormal, sliceIndex } = viewRef;
+      if (typeof sliceIndex !== 'number') {
+        return;
+      }
       if (
         !viewPlaneNormal ||
-        isEqual(viewPlaneNormal, camera.viewPlaneNormal)
+        isEqual.negative(viewPlaneNormal, camera.viewPlaneNormal)
       ) {
-        // TODO - use cameraFocalPoint to determine the local slice index, so that
-        // views in different image sets work together - only if same FOR of course
-        if ((sliceIndex as number) >= 0) {
-          this.setImageIdIndex(sliceIndex as number);
-        }
+        this.setImageIdIndex(sliceIndex as number);
+      } else if (isEqual(viewPlaneNormal, camera.viewPlaneNormal)) {
+        this.setImageIdIndex(this.imageIds.length - sliceIndex);
       }
+      // TODO - use cameraFocalPoint to determine the local slice index, so that
+      // views in different image sets work together - only if same FOR of course
     }
     super.setView(viewRef, viewPres);
   }

@@ -1,3 +1,5 @@
+import { ValueType } from 'karma';
+
 function areNumbersEqualWithTolerance(
   num1: number,
   num2: number,
@@ -63,3 +65,15 @@ export default function isEqual<ValueType>(
 
   return false;
 }
+
+const negative = (v) =>
+  typeof v === 'number' ? -v : v?.map ? v.map(negative) : !v;
+
+/**
+ *  Compare negative values
+ */
+isEqual.negative = <ValueType>(
+  v1: ValueType,
+  v2: ValueType,
+  tolerance = undefined
+) => isEqual(v1, negative(v2) as unknown as ValueType, tolerance);

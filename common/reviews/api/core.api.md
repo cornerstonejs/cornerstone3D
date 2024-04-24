@@ -2050,6 +2050,12 @@ export function isCornerstoneInitialized(): boolean;
 function isEqual<ValueType>(v1: ValueType, v2: ValueType, tolerance?: number): boolean;
 
 // @public (undocumented)
+namespace isEqual {
+    var // (undocumented)
+    negative: <ValueType_1>(v1: ValueType_1, v2: ValueType_1, tolerance?: any) => boolean;
+}
+
+// @public (undocumented)
 function isImageActor(actorEntry: Types.ActorEntry): boolean;
 
 // @public (undocumented)
@@ -3151,8 +3157,6 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    getSliceIndex: () => number;
-    // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3818,6 +3822,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -4188,7 +4194,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
-    getCurrentImageIdIndex: (volumeId?: string) => number;
+    getCurrentImageIdIndex: (volumeId?: string, useSlabThickness?: boolean) => number;
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
