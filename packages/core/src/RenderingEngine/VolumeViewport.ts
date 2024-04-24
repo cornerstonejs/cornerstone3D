@@ -238,7 +238,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
       const mapper = actor.getMapper();
       // @ts-ignore vtk incorrect typing
-      mapper.setBlendMode(blendMode);
+      mapper.setBlendMode?.(blendMode);
     });
 
     if (immediate) {
