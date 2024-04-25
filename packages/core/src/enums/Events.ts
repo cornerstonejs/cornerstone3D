@@ -5,6 +5,7 @@ enum Events {
   /**
    * ERROR CODES
    */
+  ERROR_EVENT = 'CORNERSTONE_ERROR',
 
   /**
    * Error that is thrown when the ImageCache exceeds its max cache size.
@@ -243,7 +244,7 @@ enum Events {
    * Make use of {@link EventTypes.ColormapModifiedEvent | ColormapModified Event Type } for typing your event listeners for COLORMAP_MODIFIED event,
    * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
    */
-  COLORMAP_MODIFIED = "CORNERSTONE_COLORMAP_MODIFIED"
+  COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
 }
 
 export default Events;

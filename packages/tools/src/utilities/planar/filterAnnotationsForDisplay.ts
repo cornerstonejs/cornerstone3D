@@ -47,6 +47,9 @@ export default function filterAnnotationsForDisplay(
     if (!annotation.isVisible) {
       return false;
     }
+    if (annotation.data.isCanvasAnnotation) {
+      return true;
+    }
     return viewport.isReferenceViewable(annotation.metadata, filterOptions);
   });
 }

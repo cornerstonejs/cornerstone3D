@@ -265,6 +265,9 @@ function cancelLoadImage(imageId: string): void;
 function cancelLoadImages(imageIds: Array<string>): void;
 
 // @public (undocumented)
+export function canRenderFloatTextures(): boolean;
+
+// @public (undocumented)
 function clamp(value: number, min: number, max: number): number;
 
 // @public (undocumented)
@@ -377,6 +380,7 @@ function convertVolumeToStackViewport({ viewport, options, }: {
 // @public (undocumented)
 type Cornerstone3DConfig = {
     gpuTier?: TierResult;
+    isMobile: boolean;
     detectGPUConfig: GetGPUTier;
     rendering: {
         preferSizeOverAccuracy: boolean;
@@ -819,6 +823,8 @@ export enum EVENTS {
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
     // (undocumented)
+    ERROR_EVENT = "CORNERSTONE_ERROR",
+    // (undocumented)
     GEOMETRY_CACHE_GEOMETRY_ADDED = "CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED",
     // (undocumented)
     IMAGE_CACHE_IMAGE_ADDED = "CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED",
@@ -1110,6 +1116,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
 
 // @public (undocumented)
 export function getWebWorkerManager(): any;
+
+// @public (undocumented)
+const hasFloatScalingParameters: (scalingParameters: ScalingParameters) => boolean;
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
@@ -1420,6 +1429,7 @@ interface IImage {
     photometricInterpretation?: string;
     // (undocumented)
     preScale?: {
+        enabled: boolean;
         scaled?: boolean;
         scalingParameters?: {
             modality?: string;
@@ -1691,6 +1701,8 @@ interface ImageLoaderOptions {
     // (undocumented)
     additionalDetails?: Record<string, unknown>;
     // (undocumented)
+    ignoreCache?: boolean;
+    // (undocumented)
     priority: number;
     // (undocumented)
     requestType: string;
@@ -1942,6 +1954,8 @@ type ImageVolumeModifiedEvent = CustomEvent_2<ImageVolumeModifiedEventDetail>;
 type ImageVolumeModifiedEventDetail = {
     imageVolume: IImageVolume;
     FrameOfReferenceUID: string;
+    numberOfFrames: number;
+    framesProcessed: number;
 };
 
 // @public (undocumented)
@@ -2132,6 +2146,8 @@ interface IStackViewport extends IViewport {
     // (undocumented)
     setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
     // (undocumented)
+    stackActorReInitialized: boolean;
+    // (undocumented)
     unsetColormap(): void;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
@@ -2234,6 +2250,8 @@ interface IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>): void;
     // (undocumented)
+    addWidget: (id: string, widget: any) => void;
+    // (undocumented)
     canvas: HTMLCanvasElement;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -2284,6 +2302,10 @@ interface IViewport {
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
+    getWidget: (id: string) => any;
+    // (undocumented)
+    getWidgets: () => any;
+    // (undocumented)
     getZoom(): number;
     // (undocumented)
     id: string;
@@ -2297,6 +2319,8 @@ interface IViewport {
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
+    // (undocumented)
+    removeWidgets: () => void;
     // (undocumented)
     render(): void;
     // (undocumented)
@@ -3196,6 +3220,7 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
         };
         useRGBA: boolean;
         transferSyntaxUID: any;
+        useNativeDataType: boolean;
         priority: number;
         requestType: RequestType;
         additionalDetails: {
@@ -3267,6 +3292,8 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     setUseCPURendering(value: boolean): void;
     // (undocumented)
     setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    // (undocumented)
+    stackActorReInitialized: boolean;
     // (undocumented)
     successCallback(imageId: any, image: any): void;
     // (undocumented)
@@ -3609,7 +3636,8 @@ declare namespace utilities {
         getViewportImageIds,
         getRandomSampleFromArray,
         getVolumeId,
-        color
+        color,
+        hasFloatScalingParameters
     }
 }
 export { utilities }
@@ -3810,6 +3838,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     addActors(actors: Array<ActorEntry>, resetCameraPanAndZoom?: boolean): void;
     // (undocumented)
+    addWidget: (widgetId: any, widget: any) => void;
+    // (undocumented)
     static boundsRadius(bounds: number[]): number;
     // (undocumented)
     protected calibration: IImageCalibration;
@@ -3887,6 +3917,10 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
+    getWidget: (id: any) => any;
+    // (undocumented)
+    getWidgets: () => any[];
+    // (undocumented)
     getZoom(compareCamera?: ICamera): number;
     // (undocumented)
     protected hasPixelSpacing: boolean;
@@ -3910,6 +3944,8 @@ export class Viewport implements IViewport {
     removeActors(actorUIDs: Array<string>): void;
     // (undocumented)
     removeAllActors(): void;
+    // (undocumented)
+    removeWidgets: () => void;
     // (undocumented)
     render(): void;
     // (undocumented)
