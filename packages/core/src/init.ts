@@ -13,11 +13,12 @@ import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 const defaultConfig: Cornerstone3DConfig = {
   gpuTier: undefined,
   detectGPUConfig: {},
+  isMobile: false, // is mobile device
   rendering: {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
   // cache
@@ -27,11 +28,12 @@ const defaultConfig: Cornerstone3DConfig = {
 let config: Cornerstone3DConfig = {
   gpuTier: undefined,
   detectGPUConfig: {},
+  isMobile: false, // is mobile device
   rendering: {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
   // cache
@@ -77,23 +79,33 @@ function hasSharedArrayBuffer() {
   }
 }
 
-// Todo: commenting this out until proper support for int16 textures
-// are added to browsers, current implementation is buggy
-// function _hasNorm16TextureSupport() {
-//   const gl = _getGLContext();
+function _hasNorm16TextureSupport() {
+  const gl = _getGLContext();
 
-//   if (gl) {
-//     const ext = (gl as WebGL2RenderingContext).getExtension(
-//       'EXT_texture_norm16'
-//     );
+  if (gl) {
+    const ext = (gl as WebGL2RenderingContext).getExtension(
+      'EXT_texture_norm16'
+    );
 
-//     if (ext) {
-//       return true;
-//     }
-//   }
+    if (ext) {
+      return true;
+    }
+  }
 
-//   return false;
-// }
+  return false;
+}
+
+function isIOS() {
+  if (/iPad|iPhone|iPod/.test(navigator.platform)) {
+    return true;
+  } else {
+    return (
+      navigator.maxTouchPoints &&
+      navigator.maxTouchPoints > 2 &&
+      /MacIntel/.test(navigator.platform)
+    );
+  }
+}
 
 /**
  * Initialize the cornerstone-core. If the browser has a webgl context and
@@ -111,6 +123,22 @@ async function init(configuration = config): Promise<boolean> {
 
   // merge configs
   config = deepMerge(defaultConfig, configuration);
+
+  if (isIOS()) {
+    // iOS devices don't have support for OES_texture_float_linear
+    // and thus we should use native data type if we are on iOS
+    config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
+
+    if (!config.rendering.useNorm16Texture) {
+      if (configuration.rendering?.preferSizeOverAccuracy) {
+        config.rendering.preferSizeOverAccuracy = true;
+      } else {
+        console.log(
+          'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
+        );
+      }
+    }
+  }
 
   // gpuTier
   const hasWebGLContext = _hasActiveWebGLContext();
@@ -163,6 +191,18 @@ function setPreferSizeOverAccuracy(status: boolean): void {
   config.rendering.preferSizeOverAccuracy = status;
   csRenderInitialized = true;
   _updateRenderingPipelinesForAllViewports();
+}
+
+/**
+ * Only IPhone IOS cannot render float textures right now due to the lack of support for OES_texture_float_linear.
+ * So we should not use float textures on IOS devices.
+ */
+function canRenderFloatTextures(): boolean {
+  if (!isIOS()) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -286,4 +326,5 @@ export {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
+  canRenderFloatTextures,
 };

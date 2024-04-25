@@ -3,6 +3,8 @@ import { LoadRequestFunction } from './LoadRequestFunction';
 
 export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;
+  useNativeDataType?: boolean;
+  allowFloatRendering?: boolean;
   skipCreateImage?: boolean;
   preScale?: {
     enabled: boolean;

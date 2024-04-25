@@ -1295,6 +1295,8 @@ class RenderingEngine implements IRenderingEngine {
       renderingEngineId,
     };
 
+    viewport.removeWidgets();
+
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
     triggerEvent(eventTarget, Events.ELEMENT_DISABLED, eventDetail);
