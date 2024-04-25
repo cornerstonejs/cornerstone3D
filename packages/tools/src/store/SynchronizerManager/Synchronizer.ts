@@ -333,6 +333,11 @@ class Synchronizer {
       }
 
       const viewport = renderingEngine.getViewport(vUid.viewportId);
+
+      if (!viewport) {
+        return;
+      }
+
       const { element } = viewport;
 
       element.removeEventListener(

@@ -216,6 +216,15 @@ export type ViewPresentationSelector = {
 interface IViewport {
   /** unique identifier of the viewport */
   id: string;
+
+  getWidget: (id: string) => any;
+
+  addWidget: (id: string, widget: any) => void;
+
+  getWidgets: () => any;
+
+  removeWidgets: () => void;
+
   /** renderingEngineId the viewport belongs to */
   renderingEngineId: string;
   /** viewport type, can be ORTHOGRAPHIC or STACK for now */

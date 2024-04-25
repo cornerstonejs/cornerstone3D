@@ -1,4 +1,11 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import {
+  utilities as csUtils,
+  cache,
+  getEnabledElement,
+  StackViewport,
+  eventTarget,
+  Enums,
+} from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';

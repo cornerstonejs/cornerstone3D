@@ -155,8 +155,11 @@ class CentralizedWorkerManager {
           }
           const workerProperties = this.workerRegistry[workerName];
 
+          workerProperties.processing = true;
+
           const results = await api[methodName](args, ...finalCallbacks);
 
+          workerProperties.processing = false;
           workerProperties.lastActiveTime[index] = Date.now();
 
           // If auto termination is enabled and the interval is not set, set it.
@@ -201,6 +204,11 @@ class CentralizedWorkerManager {
 
   terminateIdleWorkers(workerName, idleTimeThreshold) {
     const workerProperties = this.workerRegistry[workerName];
+
+    if (workerProperties.processing) {
+      return;
+    }
+
     const now = Date.now();
 
     workerProperties.instances.forEach((_, index) => {

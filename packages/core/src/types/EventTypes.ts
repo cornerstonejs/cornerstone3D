@@ -56,7 +56,7 @@ type ColormapModifiedEventDetail = {
   colormap: ColormapPublic;
   /** Unique ID for the volume in the cache */
   volumeId?: string;
-}
+};
 
 /**
  * DISPLAY_AREA_MODIFIED Event's data
@@ -119,6 +119,10 @@ type ImageVolumeModifiedEventDetail = {
   imageVolume: IImageVolume;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
+  /** number of frames */
+  numberOfFrames: number;
+  /** framesProcessed */
+  framesProcessed: number;
 };
 
 /**

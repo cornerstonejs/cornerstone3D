@@ -175,6 +175,36 @@ class Viewport implements IViewport {
     return false;
   }
 
+  private viewportWidgets = new Map() as Map<string, any>;
+
+  public addWidget = (widgetId, widget) => {
+    this.viewportWidgets.set(widgetId, widget);
+  };
+
+  public getWidget = (id) => {
+    return this.viewportWidgets.get(id);
+  };
+
+  public getWidgets = () => {
+    return Array.from(this.viewportWidgets.values());
+  };
+
+  public removeWidgets = () => {
+    const widgets = this.getWidgets();
+    widgets.forEach((widget) => {
+      if (widget.getEnabled()) {
+        widget.setEnabled(false);
+      }
+      if (widget.getActor && widget.getRenderer) {
+        const actor = widget.getActor();
+        const renderer = widget.getRenderer();
+        if (renderer && actor) {
+          renderer.removeActor(actor);
+        }
+      }
+    });
+  };
+
   /**
    * Indicate that the image has been rendered.
    * This will set the viewportStatus to RENDERED if there is image data

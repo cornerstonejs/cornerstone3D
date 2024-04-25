@@ -239,6 +239,14 @@ export default class ToolGroup implements IToolGroup {
     if (runtimeSettings.get('useCursors')) {
       this.setViewportsCursorByToolName(toolName);
     }
+
+    const eventDetail = {
+      toolGroupId: this.id,
+      viewportId,
+      renderingEngineId: renderingEngineUIDToUse,
+    };
+
+    triggerEvent(eventTarget, Events.TOOLGROUP_VIEWPORT_ADDED, eventDetail);
   }
 
   /**
@@ -273,6 +281,14 @@ export default class ToolGroup implements IToolGroup {
         this.viewportsInfo.splice(indices[i], 1);
       }
     }
+
+    const eventDetail = {
+      toolGroupId: this.id,
+      viewportId,
+      renderingEngineId,
+    };
+
+    triggerEvent(eventTarget, Events.TOOLGROUP_VIEWPORT_REMOVED, eventDetail);
   }
 
   public setActiveStrategy(toolName: string, strategyName: string) {

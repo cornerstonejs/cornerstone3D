@@ -91,8 +91,9 @@ interface AdvancedMagnifyAnnotation extends Annotation {
         zoomFactor: number;
         sourceViewportId: string;
         magnifyViewportId: string;
+        isCanvasAnnotation: boolean;
         handles: {
-            points: Types_2.Point3[];
+            points: [Types_2.Point3, Types_2.Point3, Types_2.Point3, Types_2.Point3];
             activeHandleIndex: number | null;
         };
     };
@@ -2137,7 +2138,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -2286,6 +2287,10 @@ enum Events {
     TOOL_ACTIVATED = "CORNERSTONE_TOOLS_TOOL_ACTIVATED",
     // (undocumented)
     TOOL_MODE_CHANGED = "CORNERSTONE_TOOLS_TOOL_MODE_CHANGED",
+    // (undocumented)
+    TOOLGROUP_VIEWPORT_ADDED = "CORNERSTONE_TOOLS_TOOLGROUP_VIEWPORT_ADDED",
+    // (undocumented)
+    TOOLGROUP_VIEWPORT_REMOVED = "CORNERSTONE_TOOLS_TOOLGROUP_VIEWPORT_REMOVED",
     // (undocumented)
     TOUCH_DRAG = "CORNERSTONE_TOOLS_TOUCH_DRAG",
     // (undocumented)
@@ -2566,13 +2571,25 @@ function getBrushThresholdForToolGroup(toolGroupId: string): any;
 function getBrushToolInstances(toolGroupId: string, toolName?: string): any[];
 
 // @public (undocumented)
-const getCalibratedAreaUnits: (handles: any, image: any) => string;
+const getCalibratedAspect: (image: any) => any;
 
 // @public (undocumented)
-const getCalibratedLengthUnits: (handles: any, image: any) => string;
+const getCalibratedLengthUnitsAndScale: (image: any, handles: any) => {
+    units: string;
+    areaUnits: string;
+    scale: number;
+};
 
 // @public (undocumented)
-const getCalibratedScale: (image: any, handles?: any[]) => any;
+const getCalibratedProbeUnitsAndValue: (image: any, handles: any) => {
+    units: string[];
+    values: any[];
+    calibrationType?: undefined;
+} | {
+    units: string[];
+    values: any[];
+    calibrationType: string;
+};
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
@@ -3754,8 +3771,6 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     static AXIS: number;
     // (undocumented)
-    configuration_invalidated: boolean;
-    // (undocumented)
     createAnnotatedCubeActor(): Promise<vtkAnnotatedCubeActor>;
     // (undocumented)
     static CUBE: number;
@@ -3777,8 +3792,6 @@ export class OrientationMarkerTool extends BaseTool {
     };
     // (undocumented)
     polyDataURL: any;
-    // (undocumented)
-    reset: () => void;
     // (undocumented)
     resize: (viewportId: any) => void;
     // (undocumented)
@@ -5317,7 +5330,7 @@ type Statistics = {
 };
 
 // @public (undocumented)
-function stopClip(element: HTMLDivElement, viewportId?: string): void;
+function stopClip(element: HTMLDivElement, options?: any): void;
 
 // @public (undocumented)
 enum StrategyCallbacks {
@@ -5816,15 +5829,25 @@ export class TrackballRotateTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
+    _getViewportsInfo: () => any[];
+    // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    _resizeObservers: Map<any, any>;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _viewportAddedListener: (evt: any) => void;
 }
 
 // @public (undocumented)
@@ -6075,9 +6098,9 @@ declare namespace utilities {
         touch,
         triggerEvent,
         calibrateImageSpacing,
-        getCalibratedLengthUnits,
-        getCalibratedAreaUnits,
-        getCalibratedScale,
+        getCalibratedLengthUnitsAndScale,
+        getCalibratedProbeUnitsAndValue,
+        getCalibratedAspect,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,

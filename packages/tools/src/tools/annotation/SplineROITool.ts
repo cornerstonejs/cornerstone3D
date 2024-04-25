@@ -38,8 +38,7 @@ import {
   throttle,
   roundNumber,
   triggerAnnotationRenderForViewportIds,
-  getCalibratedScale,
-  getCalibratedAreaUnits,
+  getCalibratedLengthUnitsAndScale,
 } from '../../utilities';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -1177,7 +1176,40 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
-      const scale = getCalibratedScale(image);
+      const { imageData } = image;
+      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+        image,
+        () => {
+          const {
+            maxX: canvasMaxX,
+            maxY: canvasMaxY,
+            minX: canvasMinX,
+            minY: canvasMinY,
+          } = math.polyline.getAABB(canvasCoordinates);
+
+          const topLeftBBWorld = viewport.canvasToWorld([
+            canvasMinX,
+            canvasMinY,
+          ]);
+
+          const topLeftBBIndex = utilities.transformWorldToIndex(
+            imageData,
+            topLeftBBWorld
+          );
+
+          const bottomRightBBWorld = viewport.canvasToWorld([
+            canvasMaxX,
+            canvasMaxY,
+          ]);
+
+          const bottomRightBBIndex = utilities.transformWorldToIndex(
+            imageData,
+            bottomRightBBWorld
+          );
+
+          return [topLeftBBIndex, bottomRightBBIndex];
+        }
+      );
       let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
 
       // Convert from canvas_pixels ^2 to mm^2
@@ -1186,7 +1218,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        areaUnit: getCalibratedAreaUnits(null, image),
+        areaUnit: areaUnits,
       };
     }
 
