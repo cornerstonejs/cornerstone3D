@@ -1599,6 +1599,40 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   /**
+   * Gets reference data for other images
+   */
+  protected getOtherSliceReferenceData(sliceIndex): ViewReference {
+    const imageId = this.imageIds[sliceIndex];
+    if (!imageId) {
+      return;
+    }
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
+    const {
+      rowCosines = [1, 0, 0],
+      columnCosines = [0, 1, 0],
+      imagePositionPatient,
+      frameOfReferenceUID: FrameOfReferenceUID,
+    } = imagePlaneModule;
+
+    const viewPlaneNormal = <Point3>(
+      vec3.cross([0, 0, 0], columnCosines, rowCosines)
+    );
+    console.log(
+      'image data',
+      imagePlaneModule,
+      viewPlaneNormal,
+      imagePositionPatient
+    );
+    return {
+      FrameOfReferenceUID,
+      viewPlaneNormal,
+      cameraFocalPoint: <Point3>imagePositionPatient,
+      referencedImageId: imageId,
+      sliceIndex,
+    };
+  }
+
+  /**
    * Converts the image direction to camera viewUp and viewplaneNormal
    *
    * @param imageDataDirection - vtkImageData direction
@@ -2914,7 +2948,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
     reference.referencedImageId = referencedImageId;
     if (this.getCurrentImageIdIndex() !== sliceIndex) {
-      throw new Error('TODO: implement this');
+      const otherData = this.getOtherSliceReferenceData(sliceIndex);
+      if (!otherData) {
+        return;
+      }
+      Object.assign(reference, otherData);
     }
     return reference;
   }
@@ -2922,26 +2960,27 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   /**
    * Applies the view reference, which may navigate the slice index and apply
    * other camera modifications.
-   * Currently depends on the slice index being the right slice index for this viewport
-   * which isn't necessarily a good assumption.
+   * Assumes that the slice index is correct for this viewport
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
-    const camera = this.getCamera();
     if (viewRef) {
-      const { viewPlaneNormal, sliceIndex } = viewRef;
-      if (typeof sliceIndex !== 'number') {
-        return;
-      }
+      const { referencedImageId, sliceIndex, volumeId } = viewRef;
       if (
-        !viewPlaneNormal ||
-        isEqual.negative(viewPlaneNormal, camera.viewPlaneNormal)
+        typeof sliceIndex === 'number' &&
+        referencedImageId &&
+        referencedImageId === this.imageIds[sliceIndex]
       ) {
-        this.setImageIdIndex(sliceIndex as number);
-      } else if (isEqual(viewPlaneNormal, camera.viewPlaneNormal)) {
-        this.setImageIdIndex(this.imageIds.length - sliceIndex);
+        this.setImageIdIndex(sliceIndex);
+      } else {
+        const foundIndex = this.imageIds.indexOf(referencedImageId);
+        if (foundIndex !== -1) {
+          this.setImageIdIndex(foundIndex);
+        } else {
+          throw new Error(
+            'Unsupported - navigating to a volume id specified reference'
+          );
+        }
       }
-      // TODO - use cameraFocalPoint to determine the local slice index, so that
-      // views in different image sets work together - only if same FOR of course
     }
     super.setView(viewRef, viewPres);
   }

@@ -1,8 +1,6 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import { vec3 } from 'gl-matrix';
-
 import cache from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import { BlendModes, OrientationAxis, Events } from '../enums';
@@ -12,6 +10,8 @@ import type {
   IVolumeInput,
   OrientationVectors,
   Point3,
+  ViewReference,
+  ViewReferenceSpecifier,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import {
@@ -262,7 +262,6 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
-    const viewUp = <Point3>activeCamera.getViewUp();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
     // always add clipping planes for the volume viewport. If a use case
@@ -396,6 +395,26 @@ class VolumeViewport extends BaseVolumeViewport {
     return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
 
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   * Add the referenced image id.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const viewRef = super.getViewReference(viewRefSpecifier);
+    if (!viewRef?.volumeId) {
+      return;
+    }
+    const volume = cache.getVolume(viewRef.volumeId);
+    viewRef.referencedImageId = getClosestImageId(
+      volume,
+      viewRef.cameraFocalPoint,
+      viewRef.viewPlaneNormal
+    );
+    return viewRef;
+  }
   /**
    * Reset the viewport properties to the default values
    *

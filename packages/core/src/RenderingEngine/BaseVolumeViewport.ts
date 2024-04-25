@@ -1695,19 +1695,26 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   abstract getCurrentImageId(): string;
 
-  /** Gets the volumeId to use for references */
+  /**
+   * Gets the volumeId to use for references.
+   * Returns undefined if the specified volume is NOT in this viewport.
+   */
   protected getVolumeId(specifier?: ViewReferenceSpecifier) {
+    const actorEntries = this.getActors();
+    if (!actorEntries) {
+      return;
+    }
     if (!specifier?.volumeId) {
-      const actorEntries = this.getActors();
-      if (!actorEntries) {
-        return;
-      }
       // find the first image actor of instance type vtkVolume
       return actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.uid;
     }
-    return specifier.volumeId;
+    return actorEntries.find(
+      (actorEntry) =>
+        actorEntry.actor.getClassName() === 'vtkVolume' &&
+        actorEntry.uid === specifier.volumeId
+    )?.uid;
   }
 
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
@@ -1723,7 +1730,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       )?.uid;
     }
 
-    sliceIndex ??= this.getCurrentImageIdIndex();
+    const currentIndex = this.getCurrentImageIdIndex();
+    sliceIndex ??= currentIndex;
     const { viewPlaneNormal, focalPoint } = this.getCamera();
     const querySeparator = volumeId.indexOf('?') > -1 ? '&' : '?';
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(

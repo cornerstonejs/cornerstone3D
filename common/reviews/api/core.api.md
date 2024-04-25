@@ -3172,6 +3172,8 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
+    protected getOtherSliceReferenceData(sliceIndex: any): ViewReference;
+    // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
     getReferenceId(specifier?: ViewReferenceSpecifier): string;
@@ -4244,6 +4246,8 @@ export class VolumeViewport extends BaseVolumeViewport {
             origin: Point3;
         }>;
     }>;
+    // (undocumented)
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
     // (undocumented)
