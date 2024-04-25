@@ -505,9 +505,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
-  public getFrameOfReferenceUID = (): string | undefined => {
+  public getFrameOfReferenceUID = (
+    sliceIndex = this.getCurrentImageIdIndex()
+  ): string | undefined => {
     // Get the current image that is displayed in the viewport
-    const imageId = this.getCurrentImageId();
+    const imageId = this.imageIds[sliceIndex];
 
     if (!imageId) {
       return;
@@ -2896,16 +2898,16 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
     const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
-    const superRef = super.getViewReference(viewRefSpecifier);
+    const reference = super.getViewReference(viewRefSpecifier);
     const referencedImageId = this.imageIds[sliceIndex as number];
     if (!referencedImageId) {
       return;
     }
-    return {
-      ...superRef,
-      referencedImageId,
-      viewPlaneNormal: <Point3>superRef.viewPlaneNormal.map((it) => -it),
-    };
+    reference.referencedImageId = referencedImageId;
+    if (this.getCurrentImageIdIndex() !== sliceIndex) {
+      throw new Error('TODO: implement this');
+    }
+    return reference;
   }
 
   /**

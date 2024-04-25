@@ -352,7 +352,7 @@ class VolumeViewport extends BaseVolumeViewport {
   /**
    * Uses the slice range information to compute the current image id index.
    * Note that this may be offset from the origin location, or opposite in
-   * diretion to the distance from the origin location, as the index is a
+   * direction to the distance from the origin location, as the index is a
    * complete index from minimum to maximum.
    *
    * @returns The slice index in the direction of the view

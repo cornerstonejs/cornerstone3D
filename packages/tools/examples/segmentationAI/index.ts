@@ -260,16 +260,17 @@ async function interpolateScroll(viewport, dir = 1) {
 
   const currentSliceIndex = viewport.getCurrentImageIdIndex();
   const { focalPoint } = activeViewport.getCamera();
-  const viewRef = viewport.getViewReference({
-    sliceIndex: currentSliceIndex + dir,
+  await viewport.scroll(dir);
+  await new Promise((resolve) => {
+    window.setTimeout(resolve, 250);
   });
-  if (!viewRef) {
+  const viewRef = viewport.getViewReference();
+  if (!viewRef || viewRef.sliceIndex === currentSliceIndex) {
     console.warn('No next image in direction', dir, currentSliceIndex);
     return;
   }
-  viewport.setView(viewRef);
-  const nextAnnotations = filterAnnotationsForDisplay(viewport, annotations);
 
+  const nextAnnotations = filterAnnotationsForDisplay(viewport, annotations);
   if (nextAnnotations.length > 0) {
     return;
   }

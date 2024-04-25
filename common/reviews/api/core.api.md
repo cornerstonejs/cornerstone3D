@@ -3122,7 +3122,7 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getDefaultProperties: (imageId?: string) => StackViewportProperties;
     // (undocumented)
-    getFrameOfReferenceUID: () => string | undefined;
+    getFrameOfReferenceUID: (sliceIndex?: number) => string | undefined;
     // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
     // (undocumented)
@@ -3821,8 +3821,6 @@ export class Viewport implements IViewport {
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
     getRotation: () => number;
-    // (undocumented)
-    getSliceIndex(): number;
     // (undocumented)
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)

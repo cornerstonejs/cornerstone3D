@@ -40,6 +40,7 @@ import type {
   ViewPresentation,
   ViewReference,
   IVolumeViewport,
+  ICamera,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -63,7 +64,6 @@ import volumeNewImageEventDispatcher, {
 import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { getColormap, getColormapNames } from '../utilities/colormap';
@@ -680,32 +680,73 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * presentation.  Handles both stack references as well as volume references.
    */
   public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
-    if (typeof viewRef?.sliceIndex === 'number') {
-      const { viewPlaneNormal: refViewPlaneNormal } = viewRef;
+    const volumeId = this.getVolumeId();
+    if (viewRef) {
+      const {
+        viewPlaneNormal: refViewPlaneNormal,
+        FrameOfReferenceUID: refFrameOfReference,
+        cameraFocalPoint,
+      } = viewRef;
       let { sliceIndex } = viewRef;
-      const volumeId = this.getVolumeId();
-      const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
-        getVolumeViewportScrollInfo(this, volumeId, true);
-
-      const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
-      const { focalPoint, viewPlaneNormal, position } = camera;
-      if (
-        !refViewPlaneNormal ||
-        isEqual.negative(viewPlaneNormal, refViewPlaneNormal)
-      ) {
-        // Convert opposite orientation view refs to normal orientation
-        sliceIndex = numScrollSteps - sliceIndex - 1;
-      }
-      const delta = sliceIndex - currentStepIndex;
-      const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-        focalPoint,
-        position,
-        sliceRange,
+      const { focalPoint, viewPlaneNormal, position } = this.getCamera();
+      const isNegativeNormal = isEqual.negative(
         viewPlaneNormal,
-        spacingInNormalDirection,
-        delta
+        refViewPlaneNormal
       );
-      this.setCamera({ focalPoint: newFocalPoint, position: newPosition });
+      const isSameNormal = isEqual(viewPlaneNormal, refViewPlaneNormal);
+
+      // Handle slices
+      if (
+        typeof sliceIndex === 'number' &&
+        viewRef.volumeId === volumeId &&
+        (isNegativeNormal || isSameNormal)
+      ) {
+        const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
+          getVolumeViewportScrollInfo(this, volumeId, true);
+
+        const { sliceRange, spacingInNormalDirection } = sliceRangeInfo;
+        if (isNegativeNormal) {
+          // Convert opposite orientation view refs to normal orientation
+          sliceIndex = numScrollSteps - sliceIndex - 1;
+        }
+        const delta = sliceIndex - currentStepIndex;
+        const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+          focalPoint,
+          position,
+          sliceRange,
+          viewPlaneNormal,
+          spacingInNormalDirection,
+          delta
+        );
+        this.setCamera({ focalPoint: newFocalPoint, position: newPosition });
+      } else if (refFrameOfReference === this.getFrameOfReferenceUID()) {
+        // Handle same frame of reference navigation
+
+        if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
+          // Need to update the orientation vectors correctly for this case
+          throw new Error('Changing view plane normal not yet supported');
+        }
+        if (cameraFocalPoint) {
+          const focalDelta = vec3.subtract(
+            [0, 0, 0],
+            cameraFocalPoint,
+            focalPoint
+          );
+          const useNormal = refViewPlaneNormal ?? viewPlaneNormal;
+          const normalDot = vec3.dot(focalDelta, useNormal);
+          if (!isEqual(normalDot, 0)) {
+            // Gets the portion of the focal point in the normal direction
+            vec3.scale(focalDelta, useNormal, normalDot);
+          }
+          const newFocal = <Point3>vec3.add([0, 0, 0], focalPoint, focalDelta);
+          const newPosition = <Point3>vec3.add([0, 0, 0], position, focalDelta);
+          this.setCamera({ focalPoint: newFocal, position: newPosition });
+        }
+      } else {
+        throw new Error(
+          `Incompatible view refs: ${refFrameOfReference}!==${this.getFrameOfReferenceUID()}`
+        );
+      }
     }
     super.setView(viewRef, viewPres);
   }
