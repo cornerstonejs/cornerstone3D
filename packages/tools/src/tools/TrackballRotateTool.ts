@@ -66,7 +66,6 @@ class TrackballRotateTool extends BaseTool {
 
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-
     return viewports;
   };
 
