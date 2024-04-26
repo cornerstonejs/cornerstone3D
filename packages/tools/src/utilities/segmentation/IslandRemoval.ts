@@ -152,6 +152,7 @@ export default class IslandRemoval {
 
     const callback = (index, rle) => {
       const [, jPrime, kPrime] = segmentSet.toIJK(index);
+      console.log('Found point', jPrime, kPrime, rle);
       if (rle.value !== SegmentationEnum.ISLAND) {
         for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
           const clearPoint = toIJK([iPrime, jPrime, kPrime]);
