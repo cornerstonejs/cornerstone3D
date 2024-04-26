@@ -11,12 +11,15 @@ import { mat4, vec3 } from 'gl-matrix';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
+import { IStackViewport, IVolumeViewport } from 'core/src/types';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 /**
  * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.
  */
 class TrackballRotateTool extends BaseTool {
   static toolName;
+  originalSampleDistance = null;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
@@ -38,31 +41,27 @@ class TrackballRotateTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
+  _getMapperFromViewport = (
+    viewport: IStackViewport | IVolumeViewport
+  ): vtkVolumeMapper => {
     const actorEntry = viewport.getDefaultActor();
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
-    const originalSampleDistance = mapper.getSampleDistance();
+    return mapper;
+  };
 
-    mapper.setSampleDistance(originalSampleDistance * 2);
-
-    if (this.cleanUp !== null) {
-      // Clean up previous event listener
-      document.removeEventListener('mouseup', this.cleanUp);
+  _reduceSampleDistance = (viewport: IStackViewport | IVolumeViewport) => {
+    const mapper = this._getMapperFromViewport(viewport);
+    if (this.originalSampleDistance === null) {
+      //Store the origial sample distance at the first call to be able to restore it
+      this.originalSampleDistance = mapper.getSampleDistance();
     }
+    mapper.setSampleDistance(this.originalSampleDistance * 2);
+  };
 
-    this.cleanUp = () => {
-      mapper.setSampleDistance(originalSampleDistance);
-      viewport.render();
-    };
-
-    document.addEventListener('mouseup', this.cleanUp, { once: true });
-    return true;
+  _restoreSampleDistance = (viewport: IStackViewport | IVolumeViewport) => {
+    const mapper = this._getMapperFromViewport(viewport);
+    mapper.setSampleDistance(this.originalSampleDistance);
   };
 
   _getViewportsInfo = () => {
@@ -172,6 +171,7 @@ class TrackballRotateTool extends BaseTool {
     const { rotateIncrementDegrees } = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    this._reduceSampleDistance(viewport);
 
     const camera = viewport.getCamera();
     const width = element.clientWidth;
@@ -235,6 +235,7 @@ class TrackballRotateTool extends BaseTool {
 
       this.rotateCamera(viewport, centerWorld, rightV, angleY);
 
+      this._restoreSampleDistance(viewport);
       viewport.render();
     }
   }
