@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import normalizeViewportPlane from '../utils/normalizeViewportPlane';
+import { normalizeViewportPlane } from '../../../../utilities/segmentation';
 
 const { RLEVoxelMap } = utilities;
 

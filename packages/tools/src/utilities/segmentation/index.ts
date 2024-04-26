@@ -27,6 +27,8 @@ import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
 import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 import { getBrushToolInstances } from './utilities';
+import normalizeViewportPlane from './normalizeViewportPlane';
+import IslandRemoval from './islandRemoval';
 
 export {
   thresholdVolumeByRange,
@@ -35,6 +37,8 @@ export {
   getDefaultRepresentationConfig,
   createLabelmapVolumeForViewport,
   LabelmapMemo,
+  normalizeViewportPlane,
+  IslandRemoval,
   rectangleROIThresholdVolumeByRange,
   triggerSegmentationRender,
   floodFill,

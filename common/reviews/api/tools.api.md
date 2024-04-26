@@ -3730,6 +3730,26 @@ type NormalizedMouseEventType = Types_2.CustomEventType<MouseCustomEventDetail>;
 // @public (undocumented)
 type NormalizedTouchEventType = Types_2.CustomEventType<TouchCustomEventDetail>;
 
+// @public (undocumented)
+function normalizeViewportPlane(viewport: Types_2.IViewport, boundsIJK: Types_2.BoundsIJK): {
+    toIJK: any;
+    boundsIJKPrime: any;
+    fromIJK: any;
+    error: string;
+} | {
+    boundsIJKPrime: any;
+    toIJK: (ijkPrime: any) => any;
+    fromIJK: (ijk: any) => any;
+    type: string;
+    error?: undefined;
+} | {
+    boundsIJKPrime: any;
+    toIJK: ([j, k, i]: [any, any, any]) => any[];
+    fromIJK: ([i, j, k]: [any, any, any]) => any[];
+    type: string;
+    error?: undefined;
+};
+
 declare namespace orientation_2 {
     export {
         getOrientationStringLPS,
@@ -4780,6 +4800,7 @@ declare namespace segmentation_2 {
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
         LabelmapMemo,
+        normalizeViewportPlane,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
         floodFill,
