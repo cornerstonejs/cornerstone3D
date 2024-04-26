@@ -28,6 +28,7 @@ const renderingEngineId = 'renderingEngineId';
 
 describe('IslandRemove', function () {
   let islandRemoval, segmentationVoxels, renderingEngine, viewport;
+  let previewVoxels;
 
   beforeAll(() => {
     window.devicePixelRatio = 1;
@@ -45,6 +46,8 @@ describe('IslandRemove', function () {
     renderingEngine = new RenderingEngine(renderingEngineId);
     createViewport(renderingEngine, OrientationAxis.ACQUISITION, width, height);
     viewport = renderingEngine.getViewport(viewportId);
+    previewVoxels =
+      VoxelManager.createRLEHistoryVoxelManager(segmentationVoxels);
   });
 
   afterEach(() => {
@@ -52,18 +55,53 @@ describe('IslandRemove', function () {
     renderingEngine.destroy();
   });
 
-  it('should initialize', () => {
+  it('fills center', () => {
     expect(islandRemoval).not.toBeUndefined();
     const x = 10;
     const y = 10;
     const z = 2;
+    const w = 5;
+    const h = 5;
 
-    createBox(segmentationVoxels, 255, x, y, z);
-    islandRemoval.initialize(viewport, segmentationVoxels, {
+    createBox(segmentationVoxels, 1, x, y, z, w, h);
+    const initialized = islandRemoval.initialize(viewport, segmentationVoxels, {
       segmentIndex: 1,
-      previewSegmentIndex: 255,
       points: [[x, y, z]],
     });
+    expect(initialized).toBe(true);
+    const floodedCount = islandRemoval.applyPoints();
+    expect(floodedCount).toBe((w - 1) * (h - 1));
+    expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(1);
+    expect(segmentationVoxels.getAtIJK(x + 1, y + 1, z)).toBe(0);
+    islandRemoval.removeInternalIslands();
+    expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(1);
+    expect(segmentationVoxels.getAtIJK(x + 1, y + 1, z)).toBe(1);
+  });
+
+  it('fills center preview', () => {
+    expect(islandRemoval).not.toBeUndefined();
+    const x = 10;
+    const y = 10;
+    const z = 2;
+    const w = 5;
+    const h = 5;
+    const previewSegmentIndex = 255;
+    const segmentIndex = 1;
+
+    createBox(previewVoxels, previewSegmentIndex, x, y, z, w, h);
+    const initialized = islandRemoval.initialize(viewport, previewVoxels, {
+      segmentIndex,
+      previewSegmentIndex,
+      points: [[x, y, z]],
+    });
+    expect(initialized).toBe(true);
+    const floodedCount = islandRemoval.applyPoints();
+    expect(floodedCount).toBe((w - 1) * (h - 1));
+    expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(255);
+    expect(segmentationVoxels.getAtIJK(x + 1, y + 1, z)).toBe(0);
+    islandRemoval.removeInternalIslands();
+    expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(255);
+    expect(segmentationVoxels.getAtIJK(x + 1, y + 1, z)).toBe(255);
   });
 });
 

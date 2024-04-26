@@ -3021,15 +3021,21 @@ function isContourSegmentationAnnotation(annotation: Annotation): annotation is 
 class IslandRemoval {
     constructor();
     // (undocumented)
+    applyPoints(): number;
+    // (undocumented)
+    clickedPoints: Types_2.Point3[];
+    // (undocumented)
     static covers(rle: any, row: any): boolean;
     // (undocumented)
     fillSegments: (index: number) => boolean;
     // (undocumented)
-    initialize(viewport: any, segmentationVoxels: any, options: any): void;
+    initialize(viewport: any, segmentationVoxels: any, options: any): boolean;
     // (undocumented)
     previewSegmentIndex: number;
     // (undocumented)
     previewVoxelManager: Types_2.VoxelManager<number>;
+    // (undocumented)
+    removeExternalIslands(): void;
     // (undocumented)
     removeInternalIslands(): number[];
     // (undocumented)

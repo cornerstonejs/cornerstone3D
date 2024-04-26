@@ -10,13 +10,13 @@ const MAX_IMAGE_SIZE = 65535;
 
 export enum SegmentationEnum {
   // Segment means it is in the segment or preview of interest
-  SEGMENT = 1,
+  SEGMENT = -1,
   // Island means it is connected to a selected point
-  ISLAND = 2,
+  ISLAND = -2,
   // Interior means it is inside the island, or possibly inside
-  INTERIOR = 3,
+  INTERIOR = -3,
   // Exterior means it is outside the island
-  EXTERIOR = 4,
+  EXTERIOR = -4,
 }
 
 /**
@@ -28,6 +28,7 @@ export default class IslandRemoval {
   fillSegments: (index: number) => boolean;
   previewVoxelManager: Types.VoxelManager<number>;
   previewSegmentIndex: number;
+  clickedPoints: Types.Point3[];
 
   constructor() {
     // TODO - figure out options to apply here.
@@ -50,7 +51,7 @@ export default class IslandRemoval {
       ? segmentationVoxels
       : VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
 
-    const { previewSegmentIndex, segmentIndex } = options;
+    const { segmentIndex = 1, previewSegmentIndex = 1 } = options;
 
     const clickedPoints = options.points || previewVoxelManager.getPoints();
     if (!clickedPoints?.length) {
@@ -100,6 +101,67 @@ export default class IslandRemoval {
     segmentSet.fillFrom(getter, boundsIJKPrime);
     segmentSet.normalizer = { toIJK, fromIJK, boundsIJKPrime };
     this.segmentSet = segmentSet;
+    this.previewVoxelManager = previewVoxelManager;
+    this.segmentIndex = segmentIndex;
+    this.previewSegmentIndex = previewSegmentIndex ?? segmentIndex;
+    this.clickedPoints = clickedPoints;
+
+    return true;
+  }
+
+  public applyPoints() {
+    const { clickedPoints, segmentSet } = this;
+    // Just used to count up how many points got filled.
+    let floodedCount = 0;
+    const { fromIJK } = segmentSet.normalizer;
+
+    // First mark everything as island that is connected to a start point
+    clickedPoints.forEach((clickedPoint) => {
+      const ijkPrime = fromIJK(clickedPoint);
+      const index = segmentSet.toIndex(ijkPrime);
+      const [iPrime, jPrime, kPrime] = ijkPrime;
+      if (segmentSet.get(index) === SegmentationEnum.SEGMENT) {
+        floodedCount += segmentSet.floodFill(
+          iPrime,
+          jPrime,
+          kPrime,
+          SegmentationEnum.ISLAND
+        );
+      }
+    });
+
+    return floodedCount;
+  }
+
+  /**
+   * This part removes external islands.  External islands are regions of voxels which
+   * are not connected to the selected/click points.  The algorithm is to
+   * start with all of the clicked points, performing a flood fill along all
+   * sections that are within the given segment, replacing the "SEGMENT"
+   * indicator with a new "ISLAND" indicator.  Then, every point in the
+   * preview that is not marked as ISLAND is now external and can be reset to
+   * the value it had before the flood fill was initiated.
+   */
+  public removeExternalIslands() {
+    const { previewVoxelManager, segmentSet } = this;
+    const { toIJK } = segmentSet.normalizer;
+
+    // Next, iterate over all points which were set to a new value in the preview
+    // For everything NOT connected to something in set of clicked points,
+    // remove it from the preview.
+
+    const callback = (index, rle) => {
+      const [, jPrime, kPrime] = segmentSet.toIJK(index);
+      if (rle.value !== SegmentationEnum.ISLAND) {
+        for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
+          const clearPoint = toIJK([iPrime, jPrime, kPrime]);
+          // preview voxel manager knows to reset on null
+          previewVoxelManager.setAtIJKPoint(clearPoint, null);
+        }
+      }
+    };
+
+    segmentSet.forEach(callback, { rowModified: true });
   }
 
   /**
@@ -120,6 +182,7 @@ export default class IslandRemoval {
     const { height, normalizer } = segmentSet;
     const { toIJK } = normalizer;
 
+    let interiorCount = 0;
     segmentSet.forEachRow((baseIndex, row) => {
       let lastRle;
       for (const rle of [...row]) {
@@ -131,17 +194,20 @@ export default class IslandRemoval {
           continue;
         }
         for (let iPrime = lastRle.end; iPrime < rle.start; iPrime++) {
+          interiorCount++;
           segmentSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
         }
         lastRle = rle;
       }
     });
     // Next, remove the island sets which are adjacent to an opening
+    let segmentSetCount = 0;
     segmentSet.forEach((baseIndex, rle) => {
       if (rle.value !== SegmentationEnum.INTERIOR) {
         // Already filled/handled
         return;
       }
+      segmentSetCount++;
       const [, jPrime, kPrime] = segmentSet.toIJK(baseIndex);
       const rowPrev = jPrime > 0 ? segmentSet.getRun(jPrime - 1, kPrime) : null;
       const rowNext =
