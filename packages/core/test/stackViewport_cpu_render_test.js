@@ -34,7 +34,7 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 const AXIAL = 'AXIAL';
 
-function createViewport(renderingEngine, orientation, width, height) {
+function createViewport(renderingEngine, _orientation, width, height) {
   const element = document.createElement('div');
 
   element.style.width = `${width}px`;

@@ -2,7 +2,7 @@ import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import normalizeViewportPlane from './normalizeViewportPlane';
 
-const { RLEVoxelMap } = utilities;
+const { RLEVoxelMap, VoxelManager } = utilities;
 
 // The maximum size of a dimension on an image in DICOM
 // Note, does not work for whole slide imaging
@@ -41,16 +41,18 @@ export default class IslandRemoval {
    *
    * Returns undefined if the data is invalid for some reason.
    */
-  initialize(operationData) {
-    const {
-      segmentationVoxelManager,
-      previewSegmentIndex,
-      previewVoxelManager,
-      segmentIndex,
-      viewport,
-    } = operationData;
+  initialize(viewport, segmentationVoxels, options) {
+    const hasSource = !!segmentationVoxels.sourceVoxelManager;
+    const segmentationVoxelManager = hasSource
+      ? segmentationVoxels.sourceVoxelManager
+      : segmentationVoxels;
+    const previewVoxelManager = hasSource
+      ? segmentationVoxels
+      : VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
 
-    const clickedPoints = previewVoxelManager.getPoints();
+    const { previewSegmentIndex, segmentIndex } = options;
+
+    const clickedPoints = options.points || previewVoxelManager.getPoints();
     if (!clickedPoints?.length) {
       return;
     }

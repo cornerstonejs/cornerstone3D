@@ -3018,6 +3018,27 @@ function isClosed(polyline: Types_2.Point2[]): boolean;
 function isContourSegmentationAnnotation(annotation: Annotation): annotation is ContourSegmentationAnnotation;
 
 // @public (undocumented)
+class IslandRemoval {
+    constructor();
+    // (undocumented)
+    static covers(rle: any, row: any): boolean;
+    // (undocumented)
+    fillSegments: (index: number) => boolean;
+    // (undocumented)
+    initialize(viewport: any, segmentationVoxels: any, options: any): void;
+    // (undocumented)
+    previewSegmentIndex: number;
+    // (undocumented)
+    previewVoxelManager: Types_2.VoxelManager<number>;
+    // (undocumented)
+    removeInternalIslands(): number[];
+    // (undocumented)
+    segmentIndex: number;
+    // (undocumented)
+    segmentSet: Types_2.RLEVoxelMap<number>;
+}
+
+// @public (undocumented)
 function isObject(value: any): boolean;
 
 // @public (undocumented)
@@ -4801,6 +4822,7 @@ declare namespace segmentation_2 {
         createLabelmapVolumeForViewport,
         LabelmapMemo,
         normalizeViewportPlane,
+        IslandRemoval,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
         floodFill,
