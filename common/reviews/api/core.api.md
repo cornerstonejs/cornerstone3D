@@ -62,7 +62,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
+export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>): void;
 
 // @public (undocumented)
 function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
@@ -2064,10 +2064,10 @@ export function isCornerstoneInitialized(): boolean;
 function isEqual<ValueType>(v1: ValueType, v2: ValueType, tolerance?: number): boolean;
 
 // @public (undocumented)
-namespace isEqual {
-    var // (undocumented)
-    negative: <ValueType_1>(v1: ValueType_1, v2: ValueType_1, tolerance?: any) => boolean;
-}
+const isEqualAbs: <ValueType>(v1: ValueType, v2: ValueType, tolerance?: any) => boolean;
+
+// @public (undocumented)
+const isEqualNegative: <ValueType>(v1: ValueType, v2: ValueType, tolerance?: any) => boolean;
 
 // @public (undocumented)
 function isImageActor(actorEntry: Types.ActorEntry): boolean;
@@ -3101,7 +3101,7 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     addActors: (actors: Array<ActorEntry>) => void;
     // (undocumented)
-    addImages(stackInputs: Array<IStackInput>, _immediate?: boolean, _suppressEvents?: boolean): Promise<void>;
+    addImages(stackInputs: Array<IStackInput>): void;
     // (undocumented)
     calibrateSpacing(imageId: string): void;
     // (undocumented)
@@ -3144,13 +3144,15 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getDefaultProperties: (imageId?: string) => StackViewportProperties;
     // (undocumented)
-    getFrameOfReferenceUID: (sliceIndex?: number) => string | undefined;
+    getFrameOfReferenceUID: (sliceIndex?: number) => string;
     // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
     // (undocumented)
     getImageDataMetadata(image: IImage): ImageDataMetaData;
     // (undocumented)
     getImageIds: () => Array<string>;
+    // (undocumented)
+    getImagePlaneReferenceData(sliceIndex: any): ViewReference;
     // (undocumented)
     getLoaderImageOptions(imageId: string): {
         targetBuffer: {
@@ -3171,8 +3173,6 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     };
     // (undocumented)
     getNumberOfSlices: () => number;
-    // (undocumented)
-    protected getOtherSliceReferenceData(sliceIndex: any): ViewReference;
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
@@ -3510,6 +3510,8 @@ declare namespace utilities {
         getMinMax,
         getRuntimeId,
         isEqual,
+        isEqualAbs,
+        isEqualNegative,
         isOpposite,
         createFloat32SharedArray,
         createUint8SharedArray,

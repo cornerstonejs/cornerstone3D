@@ -57,7 +57,7 @@ abstract class BaseTool implements IBaseTool {
   protected memo: utilities.HistoryMemo.Memo;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    const mergedDefaults = BaseTool.mergeDefaults(
+    const mergedDefaults = BaseTool.mergeDefaultProps(
       BaseTool.defaults,
       defaultToolProps
     );
@@ -76,13 +76,20 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * Does a deep merge of
+   * Does a deep merge of property options.  Allows extending the default values
+   * for a child class.
+   *
+   * @param defaultProps - this is a base set of defaults to merge into
+   * @param additionalProps - the additional properties to merge into the default props
+   *
+   * @returns defaultProps if additional props not defined, or a merge into a new object
+   *     containing additionalProps adding onto and overriding defaultProps.
    */
-  public static mergeDefaults(defaults = {}, newDefaults?) {
-    if (!newDefaults) {
-      return defaults;
+  public static mergeDefaultProps(defaultProps = {}, additionalProps?) {
+    if (!additionalProps) {
+      return defaultProps;
     }
-    return utilities.deepMerge(defaults, newDefaults);
+    return utilities.deepMerge(defaultProps, additionalProps);
   }
 
   /**
@@ -92,6 +99,13 @@ abstract class BaseTool implements IBaseTool {
   public getToolName(): string {
     // Since toolName is static we get it from the class constructor
     return (<typeof BaseTool>this.constructor).toolName;
+  }
+
+  /**
+   * Newer method for getting the tool name as a property
+   */
+  public get toolName() {
+    return this.getToolName();
   }
 
   /**

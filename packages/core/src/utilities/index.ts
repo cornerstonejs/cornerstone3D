@@ -11,7 +11,7 @@ import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
-import isEqual from './isEqual';
+import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
@@ -99,6 +99,8 @@ export {
   getMinMax,
   getRuntimeId,
   isEqual,
+  isEqualAbs,
+  isEqualNegative,
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,

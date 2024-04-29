@@ -692,7 +692,7 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     protected memo: utilities_2.HistoryMemo.Memo;
     // (undocumented)
-    static mergeDefaults(defaults?: {}, newDefaults?: any): any;
+    static mergeDefaultProps(defaultProps?: {}, additionalProps?: any): any;
     // (undocumented)
     mode: ToolModes;
     // (undocumented)
@@ -707,6 +707,8 @@ export abstract class BaseTool implements IBaseTool {
     toolGroupId: string;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    get toolName(): string;
     // (undocumented)
     undo(): void;
 }

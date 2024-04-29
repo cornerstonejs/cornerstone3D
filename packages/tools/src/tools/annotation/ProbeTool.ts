@@ -119,7 +119,10 @@ class ProbeTool extends AnnotationTool {
   constructor(toolProps: PublicToolProps = {}, defaultToolProps?) {
     super(
       toolProps,
-      AnnotationTool.mergeDefaults(ProbeTool.probeDefaults, defaultToolProps)
+      AnnotationTool.mergeDefaultProps(
+        ProbeTool.probeDefaults,
+        defaultToolProps
+      )
     );
   }
 

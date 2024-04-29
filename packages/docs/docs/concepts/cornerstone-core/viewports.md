@@ -86,3 +86,16 @@ This means the left (0) middle (0.5) point on the canvas needs to align with the
 left (0) middle (0.5) point on the image. Values are based on % size of the full image.
 In this example, if we had a 1024 x 1024 x-ray image. The imagePoint would be [0, 512].
 Let's say we were on a mobile iPhone in landscape mode (844 x 390). The canvasPoint would be [0, 195].
+
+# Viewport Reference and Presentation
+
+The reference and presentation information for a viewport specify what image a viewport
+is displaying, and the presentation of the image. These are specified in several ways
+so that a view can be transfered from one viewport to another, or can be remembered in order
+to restore a view later.
+
+## View Reference
+
+A view reference specifies what image a view contains, typically identified as the referenced
+image id, as well as the focal point/orientation and frame of reference UID.
+The focal point is a general one that should not be interpreted as including any zoom/pan information.

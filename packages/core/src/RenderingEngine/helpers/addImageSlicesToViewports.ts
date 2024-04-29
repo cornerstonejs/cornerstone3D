@@ -17,13 +17,11 @@ import type {
  * @param immediateRender - If true, the volumes will be rendered immediately
  * @returns A promise that resolves when all volumes have been added
  */
-async function addImageSlicesToViewports(
+function addImageSlicesToViewports(
   renderingEngine: IRenderingEngine,
   stackInputs: Array<IStackInput>,
-  viewportIds: Array<string>,
-  immediateRender = false,
-  suppressEvents = false
-): Promise<void> {
+  viewportIds: Array<string>
+) {
   // Check if all viewports are volumeViewports
   for (const viewportId of viewportIds) {
     const viewport = renderingEngine.getViewport(viewportId);
@@ -42,13 +40,11 @@ async function addImageSlicesToViewports(
     }
   }
 
-  const addStackPromises = viewportIds.map(async (viewportId) => {
+  viewportIds.forEach((viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as IStackViewport;
 
-    return viewport.addImages(stackInputs, immediateRender, suppressEvents);
+    return viewport.addImages(stackInputs);
   });
-
-  await Promise.all(addStackPromises);
 }
 
 export default addImageSlicesToViewports;

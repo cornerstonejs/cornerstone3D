@@ -510,36 +510,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
-  public getFrameOfReferenceUID = (
-    sliceIndex = this.getCurrentImageIdIndex()
-  ): string | undefined => {
-    // Get the current image that is displayed in the viewport
-    const imageId = this.imageIds[sliceIndex];
-
-    if (!imageId) {
-      return;
-    }
-
-    // Use the metadata provider to grab its imagePlaneModule metadata
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    // If nothing exists, return undefined
-    if (!imagePlaneModule) {
-      return;
-    }
-
-    // Otherwise, provide the FrameOfReferenceUID so we can map
-    // annotations made on VolumeViewports back to StackViewports
-    // and vice versa
-    return imagePlaneModule.frameOfReferenceUID;
-  };
+  public getFrameOfReferenceUID = (sliceIndex?: number): string =>
+    this.getImagePlaneReferenceData(sliceIndex)?.FrameOfReferenceUID;
 
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
    */
-  public getCornerstoneImage = (): IImage => {
-    return this.csImage;
-  };
+  public getCornerstoneImage = (): IImage => this.csImage;
 
   /**
    * Creates imageMapper based on the provided vtkImageData and also creates
@@ -1599,9 +1576,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   /**
-   * Gets reference data for other images
+   * Gets the view reference data for a given image slice.  This uses the
+   * image plane module to read a default focal point/normal, and also returns
+   * the referenced image id and the frame of reference uid.
    */
-  protected getOtherSliceReferenceData(sliceIndex): ViewReference {
+  public getImagePlaneReferenceData(sliceIndex): ViewReference {
     const imageId = this.imageIds[sliceIndex];
     if (!imageId) {
       return;
@@ -1616,12 +1595,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     const viewPlaneNormal = <Point3>(
       vec3.cross([0, 0, 0], columnCosines, rowCosines)
-    );
-    console.log(
-      'image data',
-      imagePlaneModule,
-      viewPlaneNormal,
-      imagePositionPatient
     );
     return {
       FrameOfReferenceUID,
@@ -2238,11 +2211,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
    */
-  public async addImages(
-    stackInputs: Array<IStackInput>,
-    _immediate = true,
-    _suppressEvents = false
-  ): Promise<void> {
+  public addImages(stackInputs: Array<IStackInput>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const image = cache.getImage(stackInput.imageId);
@@ -2948,11 +2917,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
     reference.referencedImageId = referencedImageId;
     if (this.getCurrentImageIdIndex() !== sliceIndex) {
-      const otherData = this.getOtherSliceReferenceData(sliceIndex);
-      if (!otherData) {
+      const referenceData = this.getImagePlaneReferenceData(sliceIndex);
+      if (!referenceData) {
         return;
       }
-      Object.assign(reference, otherData);
+      Object.assign(reference, referenceData);
     }
     return reference;
   }
