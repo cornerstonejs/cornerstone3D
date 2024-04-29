@@ -79,7 +79,12 @@ class TrackballRotateTool extends BaseTool {
           const { viewport } = getEnabledElementByIds(
             viewportId,
             renderingEngineId
-          );
+          ) || { viewport: null };
+
+          if (!viewport) {
+            return;
+          }
+
           const { element } = viewport;
 
           const resizeObserver = new ResizeObserver(() => {

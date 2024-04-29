@@ -49,7 +49,7 @@ type ActorEntry = {
 };
 
 // @public (undocumented)
-function actorIsA(actorEntry: Types.ActorEntry, actorType: actorTypes): boolean;
+function actorIsA(actorEntry: Types.ActorEntry | Types.Actor, actorType: actorTypes): boolean;
 
 // @public (undocumented)
 type ActorSliceRange = {
@@ -145,6 +145,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     getSlabThickness(): number;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+    // (undocumented)
+    protected getVOIModifiedEventDetail(volumeId: string): VoiModifiedEventDetail;
     // (undocumented)
     protected getVolumeId(specifier: ViewReferenceSpecifier): string;
     // (undocumented)
@@ -287,7 +289,8 @@ declare namespace colormap {
     export {
         getColormap,
         getColormapNames,
-        registerColormap
+        registerColormap,
+        findMatchingColormap
     }
 }
 
@@ -311,7 +314,7 @@ type ColormapPublic = {
 type ColormapRegistration = {
     ColorSpace: string;
     Name: string;
-    RGBPoints: RGB[];
+    RGBPoints: RGB[] | number[];
 };
 
 // @public (undocumented)
@@ -928,6 +931,9 @@ declare namespace EventTypes {
         StackViewportScrollEventDetail
     }
 }
+
+// @public (undocumented)
+function findMatchingColormap(rgbPoints: any, actor: any): ColormapPublic | null;
 
 // @public (undocumented)
 type FlipDirection = {
@@ -4037,6 +4043,7 @@ type VoiModifiedEventDetail = {
     VOILUTFunction?: VOILUTFunctionType;
     invert?: boolean;
     invertStateChanged?: boolean;
+    colormap?: ColormapPublic;
 };
 
 // @public (undocumented)
