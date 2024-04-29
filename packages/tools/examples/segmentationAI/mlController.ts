@@ -231,7 +231,7 @@ export default class MLController {
    * Note that only one viewport at a time is permitted as the model needs to
    * load data about the active viewport.
    */
-  public connectViewport(
+  public initViewport(
     viewport,
     getCurrentAnnotations,
     excludeTool,
@@ -295,7 +295,7 @@ export default class MLController {
   /**
    * Loads the AI model.
    */
-  public loadAI() {
+  public initModel() {
     this.getConfig();
     if (!this.loadingAI) {
       this.loadingAI = this.loadAIInternal();
@@ -312,6 +312,9 @@ export default class MLController {
     this.canvas.style.cursor = 'wait';
 
     let loader;
+    // Create two sessions, one for the current images, and a second session
+    // for caching non-visible images.  This doesn't create two GPU sessions,
+    // but does create two sessions for storage of encoded results.
     for (let i = 0; i < 2; i++) {
       sessions.push({
         sessionIndex: i,
@@ -338,9 +341,10 @@ export default class MLController {
   }
 
   /**
-   * Clears the ML related annotations on the specified viewport.
+   * Clears the points, labels and annotations rrelated to the ML model from the
+   * viewport.
    */
-  public clearML(viewport) {
+  public clear(viewport) {
     this.points = [];
     this.labels = [];
     this.getCurrentAnnotations(viewport).forEach((annotation) =>

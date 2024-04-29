@@ -1580,7 +1580,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * image plane module to read a default focal point/normal, and also returns
    * the referenced image id and the frame of reference uid.
    */
-  public getImagePlaneReferenceData(sliceIndex): ViewReference {
+  public getImagePlaneReferenceData(
+    sliceIndex = this.getCurrentImageIdIndex()
+  ): ViewReference {
     const imageId = this.imageIds[sliceIndex];
     if (!imageId) {
       return;
@@ -2917,7 +2919,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
     reference.referencedImageId = referencedImageId;
     if (this.getCurrentImageIdIndex() !== sliceIndex) {
-      const referenceData = this.getImagePlaneReferenceData(sliceIndex);
+      const referenceData = this.getImagePlaneReferenceData(
+        sliceIndex as number
+      );
       if (!referenceData) {
         return;
       }

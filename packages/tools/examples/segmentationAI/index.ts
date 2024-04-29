@@ -125,13 +125,13 @@ setTitleAndDescription(
 
 const { canvas, canvasMask } = ml;
 
-const size = `${512 / devicePixelRatio}px`;
+const size = `512px`;
 const content = document.getElementById('content');
 
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
-    ml.clearML(activeViewport);
+    ml.clear(activeViewport);
     viewport.render();
   },
 });
@@ -208,7 +208,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     activeViewport = renderingEngine.getViewport(value);
-    ml.connectViewport(
+    ml.initViewport(
       activeViewport,
       getCurrentAnnotations,
       excludeTool,
@@ -303,7 +303,7 @@ const handleKeyEvent = (evt) => {
   }
 };
 
-function navigateVolumeListener(event) {
+function navigateVolumeListener(_event) {
   volumeViewport.setView(
     viewport.getViewReference(),
     viewport.getViewPresentation()
@@ -316,7 +316,7 @@ function navigateVolumeListener(event) {
  */
 async function run() {
   // Get the load started here, as it can take a while.
-  ml.loadAI();
+  ml.initModel();
 
   // Init Cornerstone and related libraries
   await initDemo();
@@ -324,6 +324,8 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
+  // The threshold circle has preview turned on by default, so use it as the
+  // tool to get/apply previews with.
   toolForPreview = toolGroup.getToolInstance('ThresholdCircle');
 
   const volumeToolGroup = ToolGroupManager.createToolGroup(volumeToolGroupId);
@@ -408,13 +410,8 @@ async function run() {
 
   // Add the canvas after the viewport
   // element.appendChild(canvas);
-  await ml.loadAI();
-  ml.connectViewport(
-    viewport,
-    getCurrentAnnotations,
-    excludeTool,
-    toolForPreview
-  );
+  await ml.initModel();
+  ml.initViewport(viewport, getCurrentAnnotations, excludeTool, toolForPreview);
 
   element0.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

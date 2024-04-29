@@ -20,15 +20,16 @@ import cache from '../cache';
  * The original load image options specified just an image id,  which is optimal
  * for things like thumbnails rendering a single image.
  */
-export type StackLoadImageOptions = {
+export type SimpleLoadImageOptions = {
   imageId: string;
 };
 
 /**
- * The full image load options allows specifying more parameters for both the
- * presentation and the view so that a specific view can be referenced/displayed.
+ * The image display options use a paired view reference/presentation to specify
+ * what and how to display images.  See the viewports section of the docs for
+ * more details.
  */
-export type FullImageLoadOptions = {
+export type EnhancedImageLoadOptions = {
   viewReference: ViewReference;
   viewPresentation: ViewPresentation;
   imageId: undefined;
@@ -43,20 +44,36 @@ export type FullImageLoadOptions = {
  * computations.)
  */
 export type CanvasLoadPosition = {
+  /**
+   *  The origin of canvas rendered, as world point.  This is the
+   * canvas position `[0,0]` in world coordinates.
+   */
   origin: Point3;
+  /**
+   * The top right canvas position in world coordinates - that is, the canvas
+   * point `[width,0]` in world coordinates.
+   */
   topRight: Point3;
+  /**
+   * The bottom left canvas position in world coordinates.  That is, `[0,height]`
+   * in world coordinates.
+   */
   bottomLeft: Point3;
-  thicknessMm: number;
 };
 
 /**
  * The image canvas can be loaded/set with various view conditions to specify the initial
- * view as well as how and where ot render the image.
+ * view as well as how and where to render the image.
+ * Stack views are specified with an imageId to view, while volume views are
+ * specified with a viewReference and optionally a viewPresentation.
  */
 export type LoadImageOptions = {
   canvas: HTMLCanvasElement;
-  // Define the view specification as optional here, and then incorporate specific
-  // requirements in mix in types.
+  /**
+   * Either the imageID or view reference is required, as defined in the mix-in
+   * SimpleLoadImageOptions or EnhancedImageLoadOptions, but these are optional
+   * here for ease of access.
+   */
   imageId?: string;
   viewReference?: ViewReference;
   viewPresentation?: ViewPresentation;
@@ -73,12 +90,16 @@ export type LoadImageOptions = {
   physicalPixels?: boolean;
   // Sets the viewport input options  Defaults to scale to fit 110%
   viewportOptions?: ViewportInputOptions;
-} & (StackLoadImageOptions | FullImageLoadOptions);
+} & (SimpleLoadImageOptions | EnhancedImageLoadOptions);
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the GPU rendering pipeline
  * for image by default but you can force the CPU rendering pipeline by setting the
  * useCPURendering parameter to true.
+ *
+ * For volume views, the volume is specified by a volumeId, which must be in the
+ * same rendering engine in which it was originally created.  This isn't otherwise
+ * loaded, and the data needs to already be available.
  *
  * @example
  * ```

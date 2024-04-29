@@ -102,18 +102,19 @@ export default function renderToCanvasGPU(
     // Creating a temporary HTML element so that we can
     // enable it and later disable it without losing the canvas context
     let elementRendered = false;
-
-    let { viewReference } = viewportOptions;
+    const { viewReference } = viewportOptions;
+    // Record whether the view reference needs to be applied before capturing
+    // the canvas.
+    let appliedViewReference = !viewReference;
 
     // Create a named function to handle the event
-    const onImageRendered = (eventDetail) => {
+    const onImageRendered = (_eventDetail) => {
       if (elementRendered) {
         return;
       }
-      if (viewReference) {
-        const useViewRef = viewReference;
-        viewReference = null;
-        viewport.setView(useViewRef);
+      if (!appliedViewReference) {
+        appliedViewReference = true;
+        viewport.setView(viewReference);
         viewport.render();
         return;
       }
@@ -141,7 +142,6 @@ export default function renderToCanvasGPU(
         0,
         temporaryCanvas.height / devicePixelRatio,
       ]);
-      const thicknessMm = 1;
       elementRendered = true;
 
       // remove based on id
@@ -167,7 +167,6 @@ export default function renderToCanvasGPU(
         origin,
         bottomLeft,
         topRight,
-        thicknessMm,
       });
     };
 

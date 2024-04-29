@@ -3152,7 +3152,7 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getImageIds: () => Array<string>;
     // (undocumented)
-    getImagePlaneReferenceData(sliceIndex: any): ViewReference;
+    getImagePlaneReferenceData(sliceIndex?: number): ViewReference;
     // (undocumented)
     getLoaderImageOptions(imageId: string): {
         targetBuffer: {
