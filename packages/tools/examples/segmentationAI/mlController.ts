@@ -323,9 +323,13 @@ export default class MLController {
    * load data about the active viewport.  This method will disconnect a previous
    * viewport automatically.
    *
-   * The viewport must have a labelmap segmentation registered with it to run.
+   * The viewport must have a labelmap segmentation registered, as well as a
+   * tool which extendds LabelmapBaseTool to use for setting the preview view
+   * once the decode is completed.  This is provided as toolForPreview
    *
    * @param viewport - a viewport to listen for annotations and rendered events
+   * @param toolForPreview - this tool is used to access the preview object and
+   *     create a new preview instance.
    */
   public initViewport(viewport, toolForPreview) {
     const { desiredImage } = this;
@@ -365,6 +369,9 @@ export default class MLController {
     }
   }
 
+  /**
+   * Disconnects the given viewport, removing the listeners.
+   */
   public disconnectViewport(viewport) {
     viewport.element.removeEventListener(
       Events.IMAGE_RENDERED,
@@ -382,9 +389,12 @@ export default class MLController {
   }
 
   /**
-   * Loads the AI model.
+   * Loads the AI model.  This can take a while and will return a promise
+   * which resolves when the model is completed.  If the model is already laoded,
+   * then the promise returned will be already resolved.  Can be called multiple
+   * times and will only initialize once.
    */
-  public initModel() {
+  public initModel(): Promise<unknown> {
     this.getConfig();
     if (!this.loadingAI) {
       this.loadingAI = this.loadAIInternal();
@@ -395,6 +405,8 @@ export default class MLController {
   /**
    * Does the actual load, separated from the public method to allow starting
    * the AI to load and then waiting for it once other things are also ready.
+   * This is done internally so that only a single load/setup is created, allowing
+   * for hte load to be started and only waited for when other things are ready.
    */
   protected async loadAIInternal() {
     const { sessions } = this;
@@ -430,7 +442,7 @@ export default class MLController {
   }
 
   /**
-   * Clears the points, labels and annotations rrelated to the ML model from the
+   * Clears the points, labels and annotations related to the ML model from the
    * viewport.
    */
   public clear(viewport) {
@@ -442,50 +454,60 @@ export default class MLController {
   }
 
   /**
-   * Cache the next image as encoded.
+   * Cache the next image encoded.  This will start at the current image id,
+   * and will keep on fetching additional images, wrapping round to the 0...current
+   * position-1 so as to fetch all images.
+   * Works with both volume (orthographic) and stack viewports.
+   * This will interfere with any image navigation
    */
   public async cacheImageEncodings(
-    current = this.viewport.getCurrentImageId(),
-    offset = 0
+    current = this.viewport.getCurrentImageIdIndex(),
+    offset = 0,
+    length = 1000_000
   ) {
     const { viewport, imageEncodings } = this;
-    if (viewport.getVolumeId) {
-      // TODO - implement volume cache
-    } else {
-      const imageIds = viewport.getImageIds();
-      if (offset >= imageIds.length) {
-        // We are done.
-        return;
-      }
-      const index = (offset + current) % imageIds.length;
-      const imageId = imageIds[index];
-      if (!imageEncodings.has(imageId)) {
-        // Try loading from storage
-        await this.loadStorageImageEncoding(current, imageId, index);
-      }
-      if (imageEncodings.has(imageId)) {
-        this.cacheImageEncodings(current, offset + 1);
-        return;
-      }
-      // Try doing a load, so that UI has priority
-      this.tryLoad();
-      if (this.isClicked) {
-        setTimeout(() => this.cacheImageEncodings(current, offset), 500);
-        return;
-      }
-
-      this.log(Loggers.Log, 'Caching', index);
-      this.handleImage(
-        { imageId, sampleImageId: 'TODO' },
-        this.sessions[1]
-      ).then(() => {
-        this.cacheImageEncodings(current, offset + 1);
-      });
+    if (offset >= length) {
+      // We are done.
+      return;
     }
+    const index = (offset + current) % length;
+    const view = viewport.getViewReference({ sliceIndex: index });
+    if (!view) {
+      length = index;
+      return this.cacheImageEncodings(current, offset, length);
+    }
+    const imageId =
+      view.referencedImageId || viewport.getReferenceId({ sliceIndex: index });
+    if (!imageEncodings.has(imageId)) {
+      // Try loading from storage
+      await this.loadStorageImageEncoding(current, imageId, index);
+    }
+    if (imageEncodings.has(imageId)) {
+      this.cacheImageEncodings(current, offset + 1, length);
+      return;
+    }
+    // Try doing a load, so that UI has priority
+    this.tryLoad();
+    if (this.isClicked) {
+      setTimeout(() => this.cacheImageEncodings(current, offset), 500);
+      return;
+    }
+
+    this.log(Loggers.Log, 'Caching', index, imageId);
+    const sampleImageId = viewport.getImageIds()[0];
+    this.handleImage({ imageId, sampleImageId }, this.sessions[1]).then(() => {
+      this.cacheImageEncodings(current, offset + 1, length);
+    });
   }
 
   /**
-   * handler called when image available
+   * Handles a new image.  This will render the image to a separate canvas
+   * using the load image to canvas, and then will load or generate encoder
+   * values into the imageSession provided.
+   * If there is already an image being handled or worked on, returns immediately.
+   *
+   * At the end of the handle, tries calling the tryLoad method to see if there
+   * are other high priority tasks to complete.
    */
   protected async handleImage({ imageId, sampleImageId }, imageSession) {
     if (imageId === imageSession.imageId || this.isClicked) {
@@ -589,7 +611,10 @@ export default class MLController {
     this.tryLoad();
   }
 
-  /** Awaits a chance to run the decoder */
+  /**
+   * This method tries to run the decoder.  It will succeed if the current image
+   * has been encoded and is not otherwise already being decoded.
+   */
   protected async runDecoder() {
     const { canvas } = this;
     if (this.isClicked || !this.currentImage?.imageEmbeddings) {
@@ -607,8 +632,12 @@ export default class MLController {
 
   /**
    * This function will try setting the current image to the desired loading image
-   * if it isn't already the desired one, and invoke the handleImage.  It also checks
-   * the "next" images to see if there are other images which should be tried to load.
+   * if it isn't already the desired one, and invoke the handleImage.
+   * If the desired image is already the right one, then it will try to run
+   * and outstanding decoder task.
+   * This sequence allows out of order decodes to happen and to start the latest
+   * encode/decode at the time the last operation has completed.  If the user
+   * performs multiple operations, then only the last set is handled.
    */
   public tryLoad(resetImage = false) {
     const { viewport, desiredImage } = this;
@@ -653,6 +682,9 @@ export default class MLController {
 
   /**
    * Updates annotations when they have changed in some way, running the decoder.
+   * This will mark the annotations as needing update, so that if the
+   * encoding of the image isn't ready yet, or the encoder is otherwise busy,
+   * it will run the update again once the tryLoad is done at the end of the task.
    */
   updateAnnotations() {
     if (this.isClicked || !this.annotationsNeedUpdating || !this.currentImage) {
@@ -677,8 +709,9 @@ export default class MLController {
   }
 
   /**
-   * Loads encoder data externally.  Applies the image data to the session if
-   * successful.
+   * Restores a stored image encoding from memory cache first, and from
+   * the browser storage secondly.  This is much faster than re-generating it
+   * all the time.
    */
   async restoreImageEncoding(session, imageId) {
     if (!this.sharedImageEncoding) {
@@ -694,6 +727,9 @@ export default class MLController {
     }
   }
 
+  /**
+   * Loads the image encoding from browser storage.
+   */
   async loadStorageImageEncoding(session, imageId, index = null) {
     try {
       const root = await this.getDirectoryForImageId(session, imageId);
@@ -716,6 +752,9 @@ export default class MLController {
     }
   }
 
+  /**
+   * Stores the image encoding to both memory cache and browser storage.
+   */
   async storeImageEncoding(session, imageId, data) {
     if (!this.sharedImageEncoding) {
       this.sharedImageEncoding = data;
@@ -743,7 +782,9 @@ export default class MLController {
 
   /**
    * Given the mask created by the AI model, assigns the data to a new preview
-   * instance of a labelmap.
+   * instance of a labelmap and triggers the modified event so that the new
+   * segmentation data is visible.  Replaces existing segmentation on that
+   * image.
    */
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
@@ -791,6 +832,9 @@ export default class MLController {
     triggerSegmentationDataModified(segmentationId);
   }
 
+  /**
+   * Runs the GPU decoder operation itself.
+   */
   async decoder(points, labels, useSession = this.currentImage) {
     const { canvas, canvasMask, imageImageData, desiredImage, boxRadius } =
       this;
@@ -880,7 +924,7 @@ export default class MLController {
   }
 
   /*
-   * fetch and cache url
+   * fetch and cache the ONNX model at the given url/name.
    */
   async fetchAndCacheModel(url, name) {
     try {
@@ -902,7 +946,8 @@ export default class MLController {
   }
 
   /*
-   * load models one at a time
+   * load model cache data and creates an instance.  This calls fetchAndCacheModle
+   * once for the decoder and encoder, and then instantiates an instance.
    */
   async loadModels(models, imageSession = this.currentImage) {
     const cache = await caches.open('onnx');
@@ -987,7 +1032,7 @@ export default class MLController {
   }
 
   /**
-   * Gets the file name for the given imageId
+   * Gets the storage file name for the given imageId
    */
   getFileNameForImageId(imageId) {
     if (imageId.startsWith('volumeId:')) {
@@ -1008,7 +1053,8 @@ export default class MLController {
   }
 
   /**
-   * create config from url
+   * Creates a confgiuration for which encoder/decoder to run.  TODO - move
+   * this into the constructor.
    */
   getConfig() {
     if (this.config) {
@@ -1043,7 +1089,7 @@ export default class MLController {
   }
 }
 
-/** Gets or creates a diretory name */
+/** Gets or creates a storage directory */
 async function getOrCreateDir(dir, name) {
   return (
     (await findFileEntry(dir, name)) ||
@@ -1051,7 +1097,7 @@ async function getOrCreateDir(dir, name) {
   );
 }
 
-/** Finds a file entry */
+/** Finds a file entry in the given directory. */
 async function findFileEntry(dir, name) {
   for await (const [key, value] of dir) {
     if (key === name) {

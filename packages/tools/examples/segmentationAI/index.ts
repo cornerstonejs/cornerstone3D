@@ -219,7 +219,7 @@ addButtonToToolbar({
       return;
     }
     cached = false;
-    ml.cacheImageEncodings(viewport.getCurrentImageIdIndex());
+    ml.cacheImageEncodings();
   },
 });
 
