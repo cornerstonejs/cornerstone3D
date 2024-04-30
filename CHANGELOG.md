@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.15](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.14...v1.70.15) (2024-04-30)
+
+### Bug Fixes
+
+- **orientation-marker:** remove if viewport is undefined ([#1230](https://github.com/cornerstonejs/cornerstone3D/issues/1230)) ([fe511d9](https://github.com/cornerstonejs/cornerstone3D/commit/fe511d97377c1ca22b776458fc924129d6fa5ceb))
+
 ## [1.70.14](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.13...v1.70.14) (2024-04-29)
 
 ### Bug Fixes
