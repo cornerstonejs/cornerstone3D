@@ -128,6 +128,37 @@ describe('IslandRemove', function () {
     expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(1);
     expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(0);
   });
+
+  it('deletes preview externals', () => {
+    const x = 10;
+    const y = 10;
+    const z = 2;
+    const w = 5;
+    const h = 5;
+    const previewSegmentIndex = 255;
+    const segmentIndex = 1;
+
+    createBox(previewVoxels, previewSegmentIndex, x, y, z, w, h);
+    createBox(previewVoxels, previewSegmentIndex, x - 5, y, z, 2, 2);
+
+    const initialized = islandRemoval.initialize(viewport, segmentationVoxels, {
+      segmentIndex,
+      previewSegmentIndex,
+      points: [
+        [x, y, z],
+        [x + 1, y, z],
+        [x, y + 1, z],
+      ],
+    });
+    expect(initialized).toBe(true);
+    const floodedCount = islandRemoval.applyPoints();
+    expect(floodedCount).toBe((w - 1) * (h - 1));
+    expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(previewSegmentIndex);
+    expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(previewSegmentIndex);
+    islandRemoval.removeExternalIslands();
+    expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(previewSegmentIndex);
+    expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(0);
+  });
 });
 
 function createBox(voxels, segmentIndex, x = 10, y = 10, z = 2, w = 5, h = 5) {
