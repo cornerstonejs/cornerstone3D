@@ -152,12 +152,17 @@ export default class IslandRemoval {
 
     const callback = (index, rle) => {
       const [, jPrime, kPrime] = segmentSet.toIJK(index);
-      console.log('Found point', jPrime, kPrime, rle);
       if (rle.value !== SegmentationEnum.ISLAND) {
         for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
           const clearPoint = toIJK([iPrime, jPrime, kPrime]);
-          // preview voxel manager knows to reset on null
-          previewVoxelManager.setAtIJKPoint(clearPoint, null);
+          const v = previewVoxelManager.getAtIJKPoint(clearPoint);
+          // preview voxel manager knows to reset on null if it has a preview
+          // value, but need to clear to 0 for non-preview points as those
+          // will be undefined in the preview voxel manager.
+          previewVoxelManager.setAtIJKPoint(
+            clearPoint,
+            v === undefined ? 0 : null
+          );
         }
       }
     };
@@ -183,7 +188,6 @@ export default class IslandRemoval {
     const { height, normalizer } = segmentSet;
     const { toIJK } = normalizer;
 
-    let interiorCount = 0;
     segmentSet.forEachRow((baseIndex, row) => {
       let lastRle;
       for (const rle of [...row]) {
@@ -195,20 +199,17 @@ export default class IslandRemoval {
           continue;
         }
         for (let iPrime = lastRle.end; iPrime < rle.start; iPrime++) {
-          interiorCount++;
           segmentSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
         }
         lastRle = rle;
       }
     });
     // Next, remove the island sets which are adjacent to an opening
-    let segmentSetCount = 0;
     segmentSet.forEach((baseIndex, rle) => {
       if (rle.value !== SegmentationEnum.INTERIOR) {
         // Already filled/handled
         return;
       }
-      segmentSetCount++;
       const [, jPrime, kPrime] = segmentSet.toIJK(baseIndex);
       const rowPrev = jPrime > 0 ? segmentSet.getRun(jPrime - 1, kPrime) : null;
       const rowNext =
