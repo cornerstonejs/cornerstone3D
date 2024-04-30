@@ -17,23 +17,52 @@ import { getConfiguration } from '../init';
 import cache from '../cache';
 
 /**
- * The original load image options specified just an image id,  which is optimal
- * for things like thumbnails rendering a single image.
+ * A type constraint to define the imageId and exclude the viewReference,
+ * used in the image load options.
  */
-export type SimpleLoadImageOptions = {
+type ImageIdConstraint = {
   imageId: string;
+  viewReference: undefined;
 };
 
 /**
- * The image display options use a paired view reference/presentation to specify
- * what and how to display images.  See the viewports section of the docs for
- * more details.
+ * A type constraint to define the view reference, and not allow the imageId in the
+ * image load options.
  */
-export type EnhancedImageLoadOptions = {
+type ViewReferenceConstraint = {
   viewReference: ViewReference;
-  viewPresentation: ViewPresentation;
   imageId: undefined;
 };
+
+/**
+ * The image canvas can be loaded/set with various view conditions to specify the initial
+ * view as well as how and where to render the image.
+ * Stack views are specified with an imageId to view, while volume views are
+ * specified with a viewReference and optionally a viewPresentation.
+ */
+export type LoadImageOptions = {
+  canvas: HTMLCanvasElement;
+  /**
+   * Either the imageID or view reference is required, as defined in type
+   * constraints.
+   */
+  imageId?: string;
+  viewReference?: ViewReference;
+  viewPresentation?: ViewPresentation;
+  requestType?: RequestType;
+  priority?: number;
+  renderingEngineId?: string;
+  useCPURendering?: boolean;
+  // Render a thumbnail in a 256x256 viewport
+  // Also set imageAspect to render thumbnail in an aspect ratio width viewport
+  thumbnail?: boolean;
+  // Sets the CSS width to the image aspect ratio
+  imageAspect?: boolean;
+  // Sets the canvas pixel size to the physical pixel size of the image area
+  physicalPixels?: boolean;
+  // Sets the viewport input options  Defaults to scale to fit 110%
+  viewportOptions?: ViewportInputOptions;
+} & (ImageIdConstraint | ViewReferenceConstraint);
 
 /**
  * The canvas load position allows for determining the rendered position of
@@ -60,37 +89,6 @@ export type CanvasLoadPosition = {
    */
   bottomLeft: Point3;
 };
-
-/**
- * The image canvas can be loaded/set with various view conditions to specify the initial
- * view as well as how and where to render the image.
- * Stack views are specified with an imageId to view, while volume views are
- * specified with a viewReference and optionally a viewPresentation.
- */
-export type LoadImageOptions = {
-  canvas: HTMLCanvasElement;
-  /**
-   * Either the imageID or view reference is required, as defined in the mix-in
-   * SimpleLoadImageOptions or EnhancedImageLoadOptions, but these are optional
-   * here for ease of access.
-   */
-  imageId?: string;
-  viewReference?: ViewReference;
-  viewPresentation?: ViewPresentation;
-  requestType?: RequestType;
-  priority?: number;
-  renderingEngineId?: string;
-  useCPURendering?: boolean;
-  // Render a thumbnail in a 256x256 viewport
-  // Also set imageAspect to render thumbnail in an aspect ratio width viewport
-  thumbnail?: boolean;
-  // Sets the CSS width to the image aspect ratio
-  imageAspect?: boolean;
-  // Sets the canvas pixel size to the physical pixel size of the image area
-  physicalPixels?: boolean;
-  // Sets the viewport input options  Defaults to scale to fit 110%
-  viewportOptions?: ViewportInputOptions;
-} & (SimpleLoadImageOptions | EnhancedImageLoadOptions);
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the GPU rendering pipeline
@@ -124,7 +122,7 @@ export default function loadImageToCanvas(
   const {
     canvas,
     imageId,
-    viewReference,
+    viewReference = null,
     requestType = RequestType.Thumbnail,
     priority = -5,
     renderingEngineId = '_thumbnails',

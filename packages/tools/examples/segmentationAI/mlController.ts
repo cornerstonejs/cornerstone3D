@@ -9,6 +9,7 @@ const { Events } = Enums;
 const { Events: toolsEvents } = cornerstoneTools.Enums;
 
 const { segmentation } = cornerstoneTools;
+const { filterAnnotationsForDisplay } = cornerstoneTools.utilities.planar;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
@@ -72,7 +73,7 @@ function getBuffer(fileData) {
     const reader = new FileReader();
     reader.readAsArrayBuffer(fileData);
     reader.onload = function () {
-      const arrayBuffer = reader.result;
+      const arrayBuffer = reader.result as ArrayBuffer;
       const bytes = new Float32Array(arrayBuffer);
       resolve(bytes);
     };
@@ -86,11 +87,30 @@ export enum Loggers {
 }
 
 /**
- * Implement a machine learning controller to interface with various machine
- * learning algorithms.
+ * The MLController handles the interaction between CS3D viewports and ONNX segmentation
+ * models to allow segmentation of volume and stack viewports using browser local
+ * data models.  The process is that a particular view of the viewport is rendered
+ * using the loadImageToCanvas to generate the required model size.  This will render
+ * without annotations/segmentation.  Then, this view is passed to the encoder model which
+ * transforms the data into a set of information about the overall image.  This encoding
+ * can take a while, so it is cached.
  *
+ * To generate segmentations, the encoded model data is combined with information from the
+ * user in the form of annotations on the image to include or exclude regions from the segmentation,
+ * and allow the segmentation to be guided.
+ *
+ * Once the segmentation data has been generated, it is converted from the overlay/bitmap model into
+ * a CS3D segmentation map, in the segment index currently being worked on.
+ *
+ * The encoded model data is stored in browser local storage, and each model
+ *  typically consumes about 4 mb per frame.
  */
 export default class MLController {
+  /** Default name for a tool for inclusion points */
+  public static MarkerInclude = 'MarkerInclude';
+  /** Default name for a tool for exclusion points */
+  public static MarkerExclude = 'MarkerExclude';
+
   // the image size on canvas
   maxWidth = 1024;
   maxHeight = 1024;
@@ -145,9 +165,8 @@ export default class MLController {
 
   private loadingAI: Promise<unknown>;
 
-  protected getCurrentAnnotations;
   protected viewport;
-  protected excludeTool;
+  protected excludeTool = MLController.MarkerExclude;
   protected tool;
   protected currentImage;
   private listeners = [console.log];
@@ -166,10 +185,46 @@ export default class MLController {
   protected isClicked = false;
   protected annotationsNeedUpdating = false;
   protected maskImageData;
+  protected annotationNames = [
+    MLController.MarkerInclude,
+    MLController.MarkerExclude,
+  ];
+  protected model = 'sam_b';
 
-  constructor(options = { listeners: null }) {
+  /**
+   * Configure the ML Controller.  No parameters are required, and will default
+   * to the basic set of controls using MarkerInclude/Exclude and the default SAM
+   * model for segmentation.
+   *
+   * @param options - a set of options to configure this with
+   *    * listeners - a set of functions to call to get log type feedback on the status of the segmentation
+   *    * getCurrentAnnotations - a function to get the annotations to apply for segmentation
+   *    * annotationNames - a list of annotation names to use to generate segmentations
+   *    * models - a set of model configurations to run - note these are added globally to the static models
+   */
+  constructor(
+    options = {
+      listeners: null,
+      getCurrentAnnotations: null,
+      annotationNames: null,
+      models: null,
+      model: null,
+    }
+  ) {
     if (options.listeners) {
       this.listeners = [...options.listeners];
+    }
+    if (options.getCurrentAnnotations) {
+      this.getCurrentAnnotations = options.getCurrentAnnotations;
+    }
+    if (options.annotationNames) {
+      this.annotationNames = options.annotationNames;
+    }
+    if (options.models) {
+      Object.assign(MLController.MODELS, options.models);
+    }
+    if (options.model) {
+      this.model = options.model;
     }
   }
 
@@ -183,10 +238,36 @@ export default class MLController {
   }
 
   /**
+   * Gets a list of the include/exclude orientation annotations applying to the
+   * current image id.
+   */
+  protected getCurrentAnnotations = () => {
+    const annotations = [];
+    const { element } = this.viewport;
+    for (const annotationName of this.annotationNames) {
+      annotations.push(
+        ...annotationState.getAnnotations(annotationName, element)
+      );
+    }
+    const currentAnnotations = filterAnnotationsForDisplay(
+      this.viewport,
+      annotations
+    );
+    return currentAnnotations;
+  };
+
+  /**
    * A listener for viewport being rendered that tried loading/encoding the
    * new image if it is different from the previous image.  Will return before
-   * the image is encoded.  Can safely be extracted from the instance object and
-   * called stand alone.
+   * the image is encoded.  Can be called without binding as it is already
+   * bound to the this object.
+   * The behaviour of the callback is that if the image has changed in terms
+   * of which image (new view reference), then that image is set as the
+   * currently desired encoded image, and a new encoding will be read from
+   * cache or one will be created and stored in cache.
+   *
+   * This does not need to be manually bound, the initViewport will bind
+   * this to the correct rendering messages.
    */
   public viewportRenderedListener = (_event) => {
     const { viewport, currentImage, desiredImage } = this;
@@ -214,10 +295,20 @@ export default class MLController {
   };
 
   /**
-   * Handle the annotations being added by checking to see if they are the current
-   * frame and adding appropriate points to it/updating said points.
+   * This is an already bound annotation modified listener, that is added/removed
+   * from the viewport by the initViewport method.
+   * This listener does the following:
+   *   * Gets the annotations, returning immediately if there are no annotations
+   *   * Marks the annotations as needing an update
+   *   * Starts an encoding on the current image if it is not already encoded
+   *   * When the image is encoded, runs the decoder
+   *   * Once the decoder has completed, converts the results into a CS3D segmentation preview
+   *
+   * Note that the decoder run will not occur if the image is changed before the
+   * decoder starts running, and that encoding a new image may not start until
+   * an ongoing decoder operations has completed.
    */
-  public annotationModifiedListener = (event?) => {
+  public annotationModifiedListener = (_event?) => {
     const currentAnnotations = this.getCurrentAnnotations();
     if (!currentAnnotations.length) {
       return;
@@ -229,22 +320,20 @@ export default class MLController {
   /**
    * Connects a viewport up to get anotations and updates
    * Note that only one viewport at a time is permitted as the model needs to
-   * load data about the active viewport.
+   * load data about the active viewport.  This method will disconnect a previous
+   * viewport automatically.
+   *
+   * The viewport must have a labelmap segmentation registered with it to run.
+   *
+   * @param viewport - a viewport to listen for annotations and rendered events
    */
-  public initViewport(
-    viewport,
-    getCurrentAnnotations,
-    excludeTool,
-    toolForPreview
-  ) {
+  public initViewport(viewport, toolForPreview) {
     const { desiredImage } = this;
     if (this.viewport) {
       this.disconnectViewport(this.viewport);
     }
     this.currentImage = null;
     this.viewport = viewport;
-    this.getCurrentAnnotations = getCurrentAnnotations;
-    this.excludeTool = excludeTool;
     this.tool = toolForPreview;
 
     desiredImage.imageId =
@@ -546,10 +635,6 @@ export default class MLController {
    * Assumes the destination canvas is scale to fit at 100% in both dimensions,
    * while the source point is also assumed to be in the same position, but not
    * the same scale.
-   *
-   * TODO - add mapping from index coordinates to dest coordinates
-   * TODO - handle non-square aspect ratios (center relative)
-   * TODO - handle alternate orientations
    */
   mapAnnotationPoint(worldPoint) {
     const { viewport } = this;
@@ -648,9 +733,9 @@ export default class MLController {
       const writable = await fileHandle.createWritable();
       await writable.write(writeData);
       await writable.close();
-      navigator.storage.persist().then((persistance) => {
-        console.log('Persisted file', imageId, name, persistance);
-      });
+      // Note, this data is not considered for persistence as it is assumed multiple
+      // series are being worked on.  See the persistance model for adding ahead of
+      // time caching.
     } catch (e) {
       this.log(Loggers.Log, 'Unable to write', imageId, e);
     }
@@ -931,7 +1016,7 @@ export default class MLController {
     }
     const query = window.location.search.substring(1);
     const config = {
-      model: 'sam_b',
+      model: this.model || 'sam_b',
       provider: 'webgpu',
       device: 'gpu',
       threads: 4,

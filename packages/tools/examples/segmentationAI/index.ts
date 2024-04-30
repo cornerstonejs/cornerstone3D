@@ -20,8 +20,6 @@ import {
   annotationTools,
 } from '../../../../utils/demo/helpers';
 
-import { filterAnnotationsForDisplay } from '../../src/utilities/planar';
-
 import MLController, { viewportOptions } from './mlController';
 
 // This is for debugging purposes
@@ -37,6 +35,8 @@ const {
   annotation,
   utilities: cstUtils,
 } = cornerstoneTools;
+
+const { filterAnnotationsForDisplay } = cstUtils.planar;
 
 const logs = [];
 
@@ -81,7 +81,7 @@ let cached;
 let toolForPreview;
 
 const toolMap = new Map(annotationTools);
-const defaultTool = 'MarkerInclude';
+const defaultTool = MLController.MarkerInclude;
 toolMap.set(defaultTool, {
   baseTool: cornerstoneTools.ProbeTool.toolName,
   configuration: {
@@ -90,7 +90,7 @@ toolMap.set(defaultTool, {
 });
 toolStyle.getDefaultToolStyles()[defaultTool] = { color: 'blue' };
 
-const excludeTool = 'MarkerExclude';
+const excludeTool = MLController.MarkerExclude;
 toolMap.set(excludeTool, {
   baseTool: cornerstoneTools.ProbeTool.toolName,
   bindings: [{ mouseButton: MouseBindings.Secondary }],
@@ -208,12 +208,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     activeViewport = renderingEngine.getViewport(value);
-    ml.initViewport(
-      activeViewport,
-      getCurrentAnnotations,
-      excludeTool,
-      toolForPreview
-    );
+    ml.initViewport(activeViewport, toolForPreview);
   },
 });
 
@@ -227,22 +222,6 @@ addButtonToToolbar({
     ml.cacheImageEncodings(viewport.getCurrentImageIdIndex());
   },
 });
-
-/**
- * Gets a list of the include/exclude orientation annotations applying to the
- * current image id.
- */
-function getCurrentAnnotations() {
-  const annotations = [
-    ...annotationState.getAnnotations(defaultTool, element0),
-    ...annotationState.getAnnotations(excludeTool, element0),
-  ];
-  const currentAnnotations = filterAnnotationsForDisplay(
-    activeViewport,
-    annotations
-  );
-  return currentAnnotations;
-}
 
 async function interpolateScroll(viewport, dir = 1) {
   const { element } = viewport;
@@ -411,7 +390,7 @@ async function run() {
   // Add the canvas after the viewport
   // element.appendChild(canvas);
   await ml.initModel();
-  ml.initViewport(viewport, getCurrentAnnotations, excludeTool, toolForPreview);
+  ml.initViewport(viewport, toolForPreview);
 
   element0.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

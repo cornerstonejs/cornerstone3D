@@ -178,7 +178,10 @@ export default function renderToCanvasGPU(
     }
 
     // force a reset camera to center the image and undo the small scaling
-    viewport.resetCamera(true, true, false, false);
+    const resetPan = true,
+      resetZoom = true,
+      doNotResetCenter = false;
+    viewport.resetCamera(resetPan, resetZoom, doNotResetCenter);
 
     if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
       (viewport as IStackViewport).setProperties({
