@@ -894,47 +894,52 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const pan: Point2 = this.videoCamera.panWorld;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
 
-    const subCanvasPos: Point2 = [
+    const canvasPos: Point2 = [
       (worldPos[0] + pan[0]) * worldToCanvasRatio,
       (worldPos[1] + pan[1]) * worldToCanvasRatio,
     ];
-
-    const canvasPos: Point2 = [subCanvasPos[0], subCanvasPos[1]];
 
     return canvasPos;
   };
 
   public getPan(): Point2 {
-    const worldPan = this.videoCamera.panWorld;
-    return [worldPan[0], worldPan[1]];
+    const panWorld = this.videoCamera.panWorld;
+    return [panWorld[0], panWorld[1]];
   }
 
   public getRotation = () => 0;
 
+  /**
+   * Uses the transform to convert canvas coordinates into index coordinates.
+   */
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
 
-    return transform.transformPoint(canvasPos);
+    return transform.transformPoint(
+      <Point2>canvasPos.map((it) => it * devicePixelRatio)
+    );
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
     const transform = this.getTransform();
-    return transform.transformPoint(indexPos);
+    return <Point2>(
+      transform.transformPoint(indexPos).map((it) => it / devicePixelRatio)
+    );
   };
 
   private refreshRenderValues() {
+    const devicePixelRatio = window.devicePixelRatio || 1;
     // this means that each unit (pixel) in the world (video) would be
     // represented by n pixels in the canvas.
-    let worldToCanvasRatio = this.canvas.width / this.videoWidth;
+    let worldToCanvasRatio =
+      this.canvas.width / this.videoWidth / devicePixelRatio;
 
     if (this.videoHeight * worldToCanvasRatio > this.canvas.height) {
       // If by fitting the width, we exceed the height of the viewport, then we need to decrease the
       // size of the viewport further by considering its verticality.
-      const secondWorldToCanvasRatio =
-        this.canvas.height / (this.videoHeight * worldToCanvasRatio);
-
-      worldToCanvasRatio *= secondWorldToCanvasRatio;
+      worldToCanvasRatio =
+        this.canvas.height / (this.videoHeight * devicePixelRatio);
     }
 
     // Set the width as big as possible, this is the portion of the canvas
@@ -943,8 +948,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const drawHeight = Math.floor(this.videoHeight * worldToCanvasRatio);
 
     // calculate x and y offset in order to center the image
-    const xOffsetCanvas = this.canvas.width / 2 - drawWidth / 2;
-    const yOffsetCanvas = this.canvas.height / 2 - drawHeight / 2;
+    const xOffsetCanvas = (this.canvas.width - drawWidth) / 2;
+    const yOffsetCanvas = (this.canvas.height - drawHeight) / 2;
 
     const xOffsetWorld = xOffsetCanvas / worldToCanvasRatio;
     const yOffsetWorld = yOffsetCanvas / worldToCanvasRatio;
@@ -965,8 +970,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.renderFrame();
   };
 
+  /**
+   * Creates a transform from video index coordinates to canvas coordinates.
+   */
   protected getTransform() {
     const panWorld: Point2 = this.videoCamera.panWorld;
+    const devicePixelRatio = window.devicePixelRatio || 1;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
     const canvasToWorldRatio: number = this.getCanvasToWorldRatio();
     const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
@@ -981,7 +990,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     transform.translate(halfCanvas[0], halfCanvas[1]);
 
     // Scale
-    transform.scale(worldToCanvasRatio, worldToCanvasRatio);
+    transform.scale(
+      worldToCanvasRatio * devicePixelRatio,
+      worldToCanvasRatio * devicePixelRatio
+    );
 
     // Apply the translation
     transform.translate(panWorld[0], panWorld[1]);
@@ -1025,7 +1037,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
 
-    this.canvasContext.transform(
+    const ctx = this.canvasContext;
+
+    ctx.resetTransform();
+
+    // Need to correct the transform for device pixel ratio scaling.
+    ctx.transform(
       transformationMatrix[0],
       transformationMatrix[1],
       transformationMatrix[2],
@@ -1034,13 +1051,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       transformationMatrix[5]
     );
 
-    this.canvasContext.drawImage(
-      this.videoElement,
-      0,
-      0,
-      this.videoWidth,
-      this.videoHeight
-    );
+    ctx.drawImage(this.videoElement, 0, 0, this.videoWidth, this.videoHeight);
 
     for (const actor of this.getActors()) {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);

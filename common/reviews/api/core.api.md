@@ -198,13 +198,13 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
 // @public (undocumented)
 enum BlendModes {
     // (undocumented)
-    AVERAGE_INTENSITY_BLEND = 3,
+    AVERAGE_INTENSITY_BLEND,
     // (undocumented)
-    COMPOSITE = 0,
+    COMPOSITE,
     // (undocumented)
-    MAXIMUM_INTENSITY_BLEND = 1,
+    MAXIMUM_INTENSITY_BLEND,
     // (undocumented)
-    MINIMUM_INTENSITY_BLEND = 2
+    MINIMUM_INTENSITY_BLEND
 }
 
 // @public (undocumented)
