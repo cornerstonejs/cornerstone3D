@@ -129,6 +129,8 @@ if (configuration.examples) {
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
   shell.exec(`yarn run webpack:dynamic-import`);
+  shell.cd('../..');
+  shell.exec('yarn install:externals');
 
   shell.cd(currentWD);
 
