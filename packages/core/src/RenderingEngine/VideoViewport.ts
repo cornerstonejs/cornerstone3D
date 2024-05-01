@@ -635,7 +635,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
     // NOTE: the parallel scale should be done first
     // because it affects the focal point later
-    if (camera.parallelScale !== undefined) {
+    if (parallelScale) {
       this.videoCamera.parallelScale =
         this.element.clientHeight / 2 / parallelScale;
     }
@@ -885,7 +885,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   /**
-   * Converts and [x,y] video coordinate to a Cornerstone3D VideoViewport.
+   * Converts `[x, y, 0]` world video coordinate to canvas CSS coordinates.
    *
    * @param  worldPos - world coord to convert to canvas
    * @returns Canvas position
@@ -928,18 +928,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
   };
 
+  /**
+   * Sets  initial video camera to center the image area.  The values
+   * are set in canvas CSS pixel units and NOT in canvas index units.
+   */
   private refreshRenderValues() {
-    const devicePixelRatio = window.devicePixelRatio || 1;
     // this means that each unit (pixel) in the world (video) would be
-    // represented by n pixels in the canvas.
-    let worldToCanvasRatio =
-      this.canvas.width / this.videoWidth / devicePixelRatio;
+    // represented by n pixels in the canvas, measured in css pixels
+    let worldToCanvasRatio = this.canvas.offsetWidth / this.videoWidth;
 
     if (this.videoHeight * worldToCanvasRatio > this.canvas.height) {
       // If by fitting the width, we exceed the height of the viewport, then we need to decrease the
       // size of the viewport further by considering its verticality.
-      worldToCanvasRatio =
-        this.canvas.height / (this.videoHeight * devicePixelRatio);
+      worldToCanvasRatio = this.canvas.offsetHeight / this.videoHeight;
     }
 
     // Set the width as big as possible, this is the portion of the canvas
@@ -948,8 +949,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const drawHeight = Math.floor(this.videoHeight * worldToCanvasRatio);
 
     // calculate x and y offset in order to center the image
-    const xOffsetCanvas = (this.canvas.width - drawWidth) / 2;
-    const yOffsetCanvas = (this.canvas.height - drawHeight) / 2;
+    const xOffsetCanvas = (this.canvas.offsetWidth - drawWidth) / 2;
+    const yOffsetCanvas = (this.canvas.offsetHeight - drawHeight) / 2;
 
     const xOffsetWorld = xOffsetCanvas / worldToCanvasRatio;
     const yOffsetWorld = yOffsetCanvas / worldToCanvasRatio;
@@ -978,22 +979,25 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
     const canvasToWorldRatio: number = this.getCanvasToWorldRatio();
-    const halfCanvas = [this.canvas.width / 2, this.canvas.height / 2];
+    const halfCanvas = [
+      this.canvas.offsetWidth / 2,
+      this.canvas.offsetHeight / 2,
+    ];
     const halfCanvasWorldCoordinates = [
       halfCanvas[0] * canvasToWorldRatio,
       halfCanvas[1] * canvasToWorldRatio,
     ];
     const transform = new Transform();
 
+    // Start by converting into canvas index coordinates FROM canvas css pixel coordinates
+    transform.scale(devicePixelRatio, devicePixelRatio);
+
     // Translate to the center of the canvas (move origin of the transform
     // to the center of the canvas)
     transform.translate(halfCanvas[0], halfCanvas[1]);
 
     // Scale
-    transform.scale(
-      worldToCanvasRatio * devicePixelRatio,
-      worldToCanvasRatio * devicePixelRatio
-    );
+    transform.scale(worldToCanvasRatio, worldToCanvasRatio);
 
     // Apply the translation
     transform.translate(panWorld[0], panWorld[1]);
@@ -1033,6 +1037,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return new CanvasActor(this, image);
   }
 
+  /**
+   * Renders the video frame to the viewport.
+   */
   private renderFrame = () => {
     const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
