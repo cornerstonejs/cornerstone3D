@@ -39,7 +39,7 @@ jobs:
       - run:
           name: 'Perform the versioning before build'
           command: node ./version.mjs
-      - run: yarn run build
+      - run: yarn build
       - persist_to_workspace:
           root: ~/repo
           paths:

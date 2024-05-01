@@ -1,0 +1,3 @@
+# Yarn and package files are generated from templates
+yarn.lock
+package.json

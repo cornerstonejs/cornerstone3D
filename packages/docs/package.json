@@ -20,7 +20,7 @@
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "prep-coverage": "cd ../.. && yarn run test:ci && cd packages/docs && yarn run copy-coverage-to-docs",
-    "prep-examples": "cd ../.. && yarn run build-all-examples && cd packages/docs && yarn run copy-examples-to-docs",
+    "prep-examples": "cd ../.. && yarn install:externals && yarn run build-all-examples && cd packages/docs && yarn run copy-examples-to-docs",
     "prep": "yarn run prep-coverage && yarn run prep-examples",
     "prep-no-tests": "yarn run copy-coverage-to-docs && yarn run prep-examples",
     "write-translations": "docusaurus write-translations",
