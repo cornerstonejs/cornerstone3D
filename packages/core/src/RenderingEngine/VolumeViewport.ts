@@ -238,7 +238,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
       const mapper = actor.getMapper();
       // @ts-ignore vtk incorrect typing
-      mapper.setBlendMode(blendMode);
+      mapper.setBlendMode?.(blendMode);
     });
 
     if (immediate) {
@@ -356,7 +356,13 @@ class VolumeViewport extends BaseVolumeViewport {
   public getCurrentImageIdIndex = (volumeId?: string): number => {
     const { viewPlaneNormal, focalPoint } = this.getCamera();
 
-    const { origin, direction, spacing } = this.getImageData(volumeId);
+    const imageData = this.getImageData(volumeId);
+
+    if (!imageData) {
+      return;
+    }
+
+    const { origin, direction, spacing } = imageData;
 
     const spacingInNormal = getSpacingInNormalDirection(
       { direction, spacing },
@@ -380,14 +386,6 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns ImageId
    */
   public getCurrentImageId = (): string | undefined => {
-    if (this.getActors().length > 1) {
-      console.warn(
-        `Using the first/default actor of ${
-          this.getActors().length
-        } actors for getCurrentImageId.`
-      );
-    }
-
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
@@ -445,26 +443,18 @@ class VolumeViewport extends BaseVolumeViewport {
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
 
     if (isImageActor(volumeActor)) {
+      const transferFunction = (volumeActor.actor as ImageActor)
+        .getProperty()
+        .getRGBTransferFunction(0);
+
       setTransferFunctionNodes(
-        (volumeActor.actor as ImageActor)
-          .getProperty()
-          .getRGBTransferFunction(0),
+        transferFunction,
         this.initialTransferFunctionNodes
       );
     }
 
-    const range = (volumeActor.actor as vtkVolume)
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getMappingRange();
-
     const eventDetails = {
-      viewportId: volumeActor.uid,
-      range: {
-        lower: range[0],
-        upper: range[1],
-      },
-      volumeId: volumeActor.uid,
+      ...super.getVOIModifiedEventDetail(volumeId),
     };
 
     const resetPan = true;

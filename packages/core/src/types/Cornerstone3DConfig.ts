@@ -8,6 +8,11 @@ type Cornerstone3DConfig = {
    * https://github.com/pmndrs/detect-gpu/blob/master/src/index.ts#L82
    */
   gpuTier?: TierResult;
+
+  /**
+   * Whether the device is mobile or not.
+   */
+  isMobile: boolean;
   /**
    * When the `gpuTier` is not provided, the `detectGPUConfig` is passed as
    * an argument to the `getGPUTier` method.

@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "1.61.5",
+  "version": "1.70.15",
   "description": "Cornerstone3D Tools",
   "main": "src/index.ts",
   "types": "dist/types/index.d.ts",
@@ -29,7 +29,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.61.5",
+    "@cornerstonejs/core": "^1.70.15",
     "@icr/polyseg-wasm": "0.4.0",
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
@@ -41,7 +41,7 @@
   },
   "peerDependencies": {
     "@icr/polyseg-wasm": "0.4.0",
-    "@kitware/vtk.js": "29.7.0",
+    "@kitware/vtk.js": "30.4.1",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",

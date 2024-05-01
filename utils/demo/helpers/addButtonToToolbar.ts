@@ -1,22 +1,38 @@
-export default function addButtonToToolbar({
-  id,
-  title,
-  container,
-  onClick,
-}: {
+import { utilities } from '@cornerstonejs/core';
+
+import createElement, { configElement } from './createElement';
+
+interface configButton extends configElement {
   id?: string;
   title: string;
   container?: HTMLElement;
   onClick: () => void;
-}) {
-  const button = document.createElement('button');
+}
 
-  button.id = id;
-  button.innerHTML = title;
-  button.onclick = onClick;
+export default function addButtonToToolbar(
+  config: configButton
+): HTMLButtonElement {
+  config = utilities.deepMerge(config, config.merge);
 
-  container = container ?? document.getElementById('demo-toolbar');
-  container.append(button);
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
 
-  return button;
+  const elButton = <HTMLButtonElement>createElement({
+    merge: config,
+    tag: 'button',
+  });
+
+  if (config.id) {
+    elButton.id = config.id;
+  }
+
+  if (config.title) {
+    elButton.innerHTML = config.title;
+  }
+
+  if (config.onClick) {
+    elButton.onclick = config.onClick;
+  }
+
+  return elButton;
 }

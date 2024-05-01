@@ -54,7 +54,7 @@ export default class CanvasActor implements ICanvasActor {
       const baseOffset = (y * width) << 2;
       let indicesToDelete;
       for (const run of row) {
-        const { start: start, end, value: segmentIndex } = run;
+        const { start, end, value: segmentIndex } = run;
         if (segmentIndex === 0) {
           indicesToDelete ||= [];
           indicesToDelete.push(row.indexOf(run));
@@ -85,10 +85,10 @@ export default class CanvasActor implements ICanvasActor {
       imageData,
       0,
       0,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight
+      dirtyX - 1,
+      dirtyY - 1,
+      dirtyWidth + 2,
+      dirtyHeight + 2
     );
     context.drawImage(
       canvas,
@@ -209,7 +209,8 @@ export default class CanvasActor implements ICanvasActor {
     const imageData = this.viewport.getImageData();
     Object.assign(this.image, {
       worldToIndex: (worldPos) => imageData.imageData.worldToIndex(worldPos),
-      indexToWorld: (index) => imageData.imageData.indexToWorld(index),
+      indexToWorld: (index, destPoint) =>
+        imageData.imageData.indexToWorld(index, destPoint),
       getDimensions: () => imageData.dimensions,
       getScalarData: () => this.derivedImage?.getPixelData(),
       getDirection: () => imageData.direction,

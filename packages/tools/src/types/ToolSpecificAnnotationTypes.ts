@@ -35,6 +35,7 @@ export interface RectangleROIAnnotation extends Annotation {
     cachedStats?:
       | ROICachedStats
       | {
+          pointsInVolume?: Types.Point3[];
           projectionPoints?: Types.Point3[];
           projectionPointsImageIds?: string[];
         };
@@ -86,8 +87,9 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
     zoomFactor: number;
     sourceViewportId: string;
     magnifyViewportId: string;
+    isCanvasAnnotation: boolean;
     handles: {
-      points: Types.Point3[]; // [top, right, bottom, left]
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]; // in canvas space
       activeHandleIndex: number | null;
     };
   };
@@ -110,13 +112,18 @@ export interface CircleROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?: ROICachedStats & {
-      [targetId: string]: {
-        radius: number;
-        radiusUnit: string;
-        perimeter: number;
-      };
-    };
+    cachedStats?:
+      | (ROICachedStats & {
+          [targetId: string]: {
+            radius: number;
+            radiusUnit: string;
+            perimeter: number;
+          };
+        })
+      | {
+          pointsInVolume: Types.Point3[];
+          projectionPoints: Types.Point3[][];
+        };
   };
 }
 
@@ -236,6 +243,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     startSlice: number;
     endSlice: number;
     cachedStats: {
+      pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
     };
@@ -246,17 +254,44 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   };
 }
 
+export interface CircleROIStartEndThresholdAnnotation extends Annotation {
+  metadata: {
+    cameraPosition?: Types.Point3;
+    cameraFocalPoint?: Types.Point3;
+    viewPlaneNormal?: Types.Point3;
+    viewUp?: Types.Point3;
+    annotationUID?: string;
+    FrameOfReferenceUID: string;
+    referencedImageId?: string;
+    toolName: string;
+    enabledElement: any; // Todo: how to remove this from the annotation??
+    volumeId: string;
+    spacingInNormal: number;
+  };
+  data: {
+    label: string;
+    startSlice: number;
+    endSlice: number;
+    cachedStats?: {
+      pointsInVolume: Types.Point3[];
+      projectionPoints: Types.Point3[][];
+    };
+    handles: {
+      points: [Types.Point3, Types.Point3]; // [center, end]
+      activeHandleIndex: number | null;
+    };
+  };
+}
+
 export type PlanarFreehandROIAnnotation = ContourAnnotation & {
   data: {
     label?: string;
-    isOpenContour?: boolean;
     isOpenUShapeContour?: boolean;
     // Present if isOpenUShapeContour is true:
     openUShapeContourVectorToPeak?: Types.Point3[];
     cachedStats?: ROICachedStats;
   };
 };
-
 export type PlanarFreehandContourSegmentationAnnotation =
   PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
 

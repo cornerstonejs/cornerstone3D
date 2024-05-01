@@ -83,12 +83,11 @@ describe('renderToCanvas -- GPU', () => {
     const vp = this.renderingEngine.getViewport(viewportId);
     element.addEventListener(Events.IMAGE_RENDERED, () => {
       const image = vp.getCanvas().toDataURL('image/png');
-
       compareImages(
         image,
         renderToCanvas_gpu_setStack,
         'renderToCanvas_gpu_setStack'
-      );
+      ).then(() => null, done.fail);
 
       // compare the other canvas as well
       const image2 = canvas.toDataURL('image/png');
@@ -101,16 +100,72 @@ describe('renderToCanvas -- GPU', () => {
     });
 
     try {
-      utilities.loadImageToCanvas({ canvas, imageId }).then(() => {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
-          vp.render();
+      utilities
+        .loadImageToCanvas({ canvas, imageId, viewportOptions: {} })
+        .then(() => {
+          vp.setStack([imageId], 0).then(() => {
+            vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+            vp.render();
+          });
         });
-      });
     } catch (e) {
       done.fail(e);
     }
   });
+
+  // fit('Should render exact pixel image with scale 1', function (done) {
+  //   const width = 256;
+  //   const height = 256;
+  //   const element = createViewport(this.renderingEngine, AXIAL, width, height);
+  //   this.DOMElements.push(element);
+  //   const canvas = document.createElement('canvas');
+
+  //   canvas.width = width;
+  //   canvas.height = height;
+
+  //   document.body.appendChild(canvas);
+  //   this.DOMElements.push(canvas);
+
+  //   // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
+  //   const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
+
+  //   const vp = this.renderingEngine.getViewport(viewportId);
+  //   element.addEventListener(Events.IMAGE_RENDERED, () => {
+  //     const image = vp.getCanvas().toDataURL('image/png');
+  //     compareImages(
+  //       image,
+  //       renderToCanvas_gpu_setStack,
+  //       'renderToCanvas_gpu_setStack'
+  //     ).then(() => null, done.fail);
+
+  //     // compare the other canvas as well
+  //     const image2 = canvas.toDataURL('image/png');
+
+  //     console.warn('Canvas image', image2);
+  //     compareImages(
+  //       image2,
+  //       renderToCanvas_gpu_canvas,
+  //       'renderToCanvas_gpu_canvas'
+  //     ).then(done, done.fail);
+  //   });
+
+  //   try {
+  //     utilities
+  //       .loadImageToCanvas({
+  //         canvas,
+  //         imageId,
+  //         viewportOptions: { displayArea: { type: 'SCALE', scale: 1 } },
+  //       })
+  //       .then(() => {
+  //         vp.setStack([imageId], 0).then(() => {
+  //           vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+  //           vp.render();
+  //         });
+  //       });
+  //   } catch (e) {
+  //     done.fail(e);
+  //   }
+  // });
 
   it('Should render two viewports one with setStack and one with renderToCanvas: color images', function (done) {
     const width = 256;
@@ -149,12 +204,14 @@ describe('renderToCanvas -- GPU', () => {
     });
 
     try {
-      utilities.loadImageToCanvas({ canvas, imageId }).then(() => {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
-          vp.render();
+      utilities
+        .loadImageToCanvas({ canvas, imageId, viewportOptions: {} })
+        .then(() => {
+          vp.setStack([imageId], 0).then(() => {
+            vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+            vp.render();
+          });
         });
-      });
     } catch (e) {
       done.fail(e);
     }

@@ -134,6 +134,10 @@
         "name": "Volume Slab Scroll",
         "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
       },
+      "resize": {
+        "name": "Resize viewport and change aspect ratio",
+        "description": "Resize the viewport and allow various aspect ratios/conditions"
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
@@ -324,8 +328,12 @@
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
         "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
       },
+      "labelmapSegmentColorChange": {
+        "name": "Labelmap Segment Color Change",
+        "description": "Here we demonstrate how to change the color of a segment in a segmentation representation"
+      },
       "labelmapSegmentLocking": {
-        "name": "Labelmap Segmentation Swapping",
+        "name": "Labelmap Segmentation Locking",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "labelmapRenderingDifferentResolutions": {
@@ -495,6 +503,14 @@
       "segmentationExport": {
         "name": "DICOM SEG export",
         "description": "Demonstrates how to export a segmentation to DICOM SEG"
+      },
+      "segmentationStack": {
+        "name": "DICOM SEG Stack",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"
+      },
+      "segmentationVolume": {
+        "name": "DICOM SEG Volume",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
       }
     },
     "nifti": {

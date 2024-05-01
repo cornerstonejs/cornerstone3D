@@ -21,72 +21,7 @@ const UNIT_MAPPING = {
 };
 
 const EPS = 1e-3;
-
-/**
- * Extracts the length units and the type of calibration for those units
- * into the response.  The length units will typically be either mm or px
- * while the calibration type can be any of a number of different calibration types.
- *
- * Volumetric images have no calibration type, so are just the raw mm.
- *
- * TODO: Handle region calibration
- *
- * @param handles - used to detect if the spacing information is different
- *   between various points (eg angled ERMF or US Region).
- *   Currently unused, but needed for correct US Region handling
- * @param image - to extract the calibration from
- *        image.calibration - calibration value to extract units form
- * @returns String containing the units and type of calibration
- */
-const getCalibratedLengthUnits = (handles, image): string => {
-  const { calibration, hasPixelSpacing } = image;
-  // Anachronistic - moving to using calibration consistently, but not completed yet
-  const units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
-  if (
-    !calibration ||
-    (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
-  ) {
-    return units;
-  }
-  if (calibration.type === CalibrationTypes.UNCALIBRATED) {
-    return PIXEL_UNITS;
-  }
-  if (calibration.sequenceOfUltrasoundRegions) {
-    return 'US Region';
-  }
-  return `${units} ${calibration.type}`;
-};
-
 const SQUARE = '\xb2';
-/**
- *  Extracts the area units, including the squared sign plus calibration type.
- */
-const getCalibratedAreaUnits = (handles, image): string => {
-  const { calibration, hasPixelSpacing } = image;
-  const units = (hasPixelSpacing ? 'mm' : PIXEL_UNITS) + SQUARE;
-  if (!calibration || !calibration.type) {
-    return units;
-  }
-  if (calibration.sequenceOfUltrasoundRegions) {
-    return 'US Region';
-  }
-  return `${units} ${calibration.type}`;
-};
-
-/**
- * Gets the scale divisor for converting from internal spacing to
- * image spacing for calibrated images.
- */
-const getCalibratedScale = (image, handles = []) => {
-  if (image.calibration?.sequenceOfUltrasoundRegions) {
-    // image.spacing / image.us.space
-  } else if (image.calibration?.scale) {
-    return image.calibration.scale;
-  } else {
-    return 1;
-  }
-};
-
 /**
  * Extracts the calibrated length units, area units, and the scale
  * for converting from internal spacing to image spacing.
@@ -96,10 +31,9 @@ const getCalibratedScale = (image, handles = []) => {
  * @returns Object containing the units, area units, and scale
  */
 const getCalibratedLengthUnitsAndScale = (image, handles) => {
-  const [imageIndex1, imageIndex2] = handles;
   const { calibration, hasPixelSpacing } = image;
   let units = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
-  const areaUnits = units + SQUARE;
+  let areaUnits = units + SQUARE;
   let scale = 1;
   let calibrationType = '';
 
@@ -115,6 +49,15 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
+    let imageIndex1, imageIndex2;
+    if (Array.isArray(handles) && handles.length === 2) {
+      [imageIndex1, imageIndex2] = handles;
+    } else if (typeof handles === 'function') {
+      const points = handles();
+      imageIndex1 = points[0];
+      imageIndex2 = points[1];
+    }
+
     let regions = calibration.sequenceOfUltrasoundRegions.filter(
       (region) =>
         imageIndex1[0] >= region.regionLocationMinX0 &&
@@ -140,7 +83,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       (region) =>
         SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
         SUPPORTED_LENGTH_VARIANT.includes(
-          `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+          `${region.physicalUnitsXDirection},${region.physicalUnitsYDirection}`
         )
     );
 
@@ -165,14 +108,32 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     );
 
     if (isSamePhysicalDelta) {
-      scale = 1 / (physicalDeltaX * physicalDeltaY * 100);
+      // 1 to 1 aspect ratio, we use just one of them
+      scale = 1 / (physicalDeltaX * 10);
       calibrationType = 'US Region';
       units = 'mm';
+      areaUnits = 'mm' + SQUARE;
     } else {
+      // here we are showing at the aspect ratio of the physical delta
+      // if they are not the same, then we should show px, but the correct solution
+      // is to grab each point separately and scale them individually
+      // Todo: implement this
       return { units: PIXEL_UNITS, areaUnits: PIXEL_UNITS + SQUARE, scale };
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
+  }
+
+  // everything except REGION/Uncalibrated
+  const types = [
+    CalibrationTypes.ERMF,
+    CalibrationTypes.USER,
+    CalibrationTypes.ERROR,
+    CalibrationTypes.PROJECTION,
+  ];
+
+  if (types.includes(calibration?.type)) {
+    calibrationType = calibration.type;
   }
 
   return {
@@ -204,7 +165,7 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
         (region) =>
           SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
           SUPPORTED_PROBE_VARIANT.includes(
-            `${region.physicalUnitXDirection},${region.physicalUnitYDirection}`
+            `${region.physicalUnitsXDirection},${region.physicalUnitsYDirection}`
           )
       );
 
@@ -240,8 +201,8 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
     calibrationType = 'US Region';
     values = [xValue, yValue];
     units = [
-      UNIT_MAPPING[region.physicalUnitXDirection],
-      UNIT_MAPPING[region.physicalUnitYDirection],
+      UNIT_MAPPING[region.physicalUnitsXDirection],
+      UNIT_MAPPING[region.physicalUnitsYDirection],
     ];
   }
 
@@ -260,13 +221,8 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
  */
 const getCalibratedAspect = (image) => image.calibration?.aspect || 1;
 
-export default getCalibratedLengthUnits;
-
 export {
-  getCalibratedAreaUnits,
-  getCalibratedLengthUnits,
   getCalibratedLengthUnitsAndScale,
-  getCalibratedScale,
   getCalibratedAspect,
   getCalibratedProbeUnitsAndValue,
 };

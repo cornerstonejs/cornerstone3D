@@ -208,7 +208,7 @@ abstract class BaseTool implements IBaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = targetId.split(/volumeId:|\?/)[1];
+      const volumeId = utilities.getVolumeId(targetId);
       const viewports = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id

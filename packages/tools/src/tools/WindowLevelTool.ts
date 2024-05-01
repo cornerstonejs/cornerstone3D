@@ -2,10 +2,9 @@ import { BaseTool } from './base';
 import {
   getEnabledElement,
   VolumeViewport,
-  StackViewport,
-  utilities,
   cache,
   Types,
+  utilities,
 } from '@cornerstonejs/core';
 import { EventTypes } from '../types';
 
@@ -51,7 +50,7 @@ class WindowLevelTool extends BaseTool {
     const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = utilities.getVolumeId(targetId);
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id

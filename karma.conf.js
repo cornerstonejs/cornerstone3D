@@ -11,9 +11,16 @@ module.exports = function (config) {
         stopOnFailure: false,
         failFast: false,
       },
-      captureConsole: false,
+      // Set to true to capture WARN level logging
+      // See browserConsoleLogOptions for setting other log levels
+      captureConsole: true,
       clearContext: false,
     },
+    // Uncomment this out to capture all logging
+    // browserConsoleLogOptions: {
+    //   terminal: true,
+    //   level: '',
+    // },
     specReporter: {
       maxLogLines: 5, // limit number of lines logged per test
       suppressSummary: true, // do not print summary
@@ -69,6 +76,10 @@ module.exports = function (config) {
       type: 'html',
       dir: 'coverage/',
     },
+    // The default of 2 seconds is a bit short for some tests
+    browserNoActivityTimeout: 6000,
+    browserDisconnectTimeout: 6000,
+
     /*webpackMiddleware: {
       noInfo: true
     },*/

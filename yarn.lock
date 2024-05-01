@@ -3109,10 +3109,10 @@
     merge-source-map "^1.1.0"
     schema-utils "^2.7.0"
 
-"@kitware/vtk.js@29.7.0":
-  version "29.7.0"
-  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-29.7.0.tgz#56c352a755dd61bf34664866441ef9143e55a24d"
-  integrity sha512-z6XcoB+uUKayOsfLFR6GJW59bUyDe8JLkw3AMWKHbdLQmWvGosl32Zq18TYwCWAH/epIjZBoLBV+8o2GjgCb0w==
+"@kitware/vtk.js@30.4.1":
+  version "30.4.1"
+  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-30.4.1.tgz#ce8a50012e56341d2d01708a32a2ac3afa675b67"
+  integrity sha512-jBJFm8AyWpJjNFFBadXyvBwegdD9M6WRdxmIb+x/MVpCyA5lEZSMemhiMn71oKsznaEe5Pjv2VDVJWmwK0vhUg==
   dependencies:
     "@babel/runtime" "7.22.11"
     "@types/webxr" "^0.5.5"
@@ -15363,11 +15363,6 @@ media-typer@0.3.0:
   resolved "https://registry.yarnpkg.com/media-typer/-/media-typer-0.3.0.tgz#8710d7af0aa626f8fffa1ce00168545263255748"
   integrity sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==
 
-medium-zoom@^1.0.4:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/medium-zoom/-/medium-zoom-1.1.0.tgz#6efb6bbda861a02064ee71a2617a8dc4381ecc71"
-  integrity sha512-ewyDsp7k4InCUp3jRmwHBRFGyjBimKps/AJLjRSox+2q/2H4p/PNpQf+pwONWlJiOudkBXtbdmVbFjqyybfTmQ==
-
 memfs@^3.1.2, memfs@^3.4.3:
   version "3.6.0"
   resolved "https://registry.yarnpkg.com/memfs/-/memfs-3.6.0.tgz#d7a2110f86f79dd950a8b6df6d57bc984aa185f6"
@@ -17609,12 +17604,6 @@ pkg-up@^3.1.0:
   integrity sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==
   dependencies:
     find-up "^3.0.0"
-
-"plugin-image-zoom@github:ataft/plugin-image-zoom":
-  version "1.1.0"
-  resolved "https://codeload.github.com/ataft/plugin-image-zoom/tar.gz/8e1b866c79ed6d42cefc4c52f851f1dfd1d0c7de"
-  dependencies:
-    medium-zoom "^1.0.4"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"

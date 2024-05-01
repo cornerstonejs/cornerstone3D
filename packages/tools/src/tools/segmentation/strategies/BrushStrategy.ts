@@ -34,6 +34,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  configuration?: Record<string, any>;
 };
 
 export type StrategyFunction = (
@@ -109,6 +110,9 @@ export default class BrushStrategy {
     [StrategyCallbacks.Preview]: addSingletonMethod(
       StrategyCallbacks.Preview,
       false
+    ),
+    [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
+      StrategyCallbacks.ComputeInnerCircleRadius
     ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
@@ -209,26 +213,6 @@ export default class BrushStrategy {
     if (!data) {
       console.warn('No data found for BrushStrategy');
       return operationData.preview;
-    }
-
-    if (isVolumeSegmentation(operationData, viewport)) {
-      const { referencedVolumeId, volumeId } =
-        operationData as LabelmapToolOperationDataVolume;
-
-      const segmentation = cache.getVolume(volumeId);
-
-      if (referencedVolumeId) {
-        const imageVolume = cache.getVolume(referencedVolumeId);
-
-        if (
-          !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-          !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-        ) {
-          throw new Error(
-            'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-          );
-        }
-      }
     }
 
     const {

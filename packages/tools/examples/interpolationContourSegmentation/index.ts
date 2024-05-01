@@ -11,6 +11,7 @@ import {
   addButtonToToolbar,
   addDropdownToToolbar,
   addManipulationBindings,
+  contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -33,7 +34,6 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType, InterpolationType } = Enums;
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -162,19 +162,13 @@ addDropdownToToolbar({
 
       // Set the new tool active
       toolGroup.setToolActive(newSelectedToolName, {
-        bindings: [
-          {
-            mouseButton: MouseBindings.Primary, // Left Click
-          },
-          {
-            mouseButton: MouseBindings.Primary, // Shift + Left Click
-            modifierKey: KeyboardBindings.Shift,
-          },
-        ],
+        bindings: contourSegmentationToolBindings,
       });
 
       // Set the old tool passive
-      toolGroup.setToolPassive(selectedToolName, { removeAllBindings: true });
+      toolGroup.setToolPassive(selectedToolName, {
+        removeAllBindings: contourSegmentationToolBindings,
+      });
     }
     selectedToolName = <string>newSelectedToolName;
   },
@@ -300,15 +294,7 @@ function addBindings(toolGroupId) {
 
   // Set the initial state of the tools.
   toolGroup.setToolActive(interpolationToolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Shift + Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
+    bindings: contourSegmentationToolBindings,
   });
 }
 /**

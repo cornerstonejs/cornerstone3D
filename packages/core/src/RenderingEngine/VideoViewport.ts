@@ -60,6 +60,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private scalarData: CanvasScalarData;
 
   /**
+   * This is used to pause initially so that we get at least one render to allow
+   * navigating frames.  Otherwise the viewport is blank initially until the user
+   * hits play manually.
+   */
+  private initialRender: () => void;
+
+  /**
    * The range is the set of frames to play
    */
   private frameRange: [number, number] = [0, 0];
@@ -119,6 +126,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.videoElement = document.createElement('video');
     this.videoElement.muted = this.mute;
     this.videoElement.loop = this.loop;
+    this.videoElement.autoplay = true;
     this.videoElement.crossOrigin = 'anonymous';
 
     this.addEventListeners();
@@ -235,16 +243,22 @@ class VideoViewport extends Viewport implements IVideoViewport {
       this.numberOfFrames = numberOfFrames;
       // 1 based range setting
       this.setFrameRange([1, numberOfFrames]);
-      this.play();
+      // The initial render allows us to set the frame position - rendering needs
+      // to start already playing
+      this.initialRender = () => {
+        this.initialRender = null;
+        this.pause();
+        this.setFrameNumber(frameNumber || 1);
+      };
+
       // This is ugly, but without it, the video often fails to render initially
       // so having a play, followed by a pause fixes things.
-      // 100 ms is a tested value that seems to work to prevent exceptions
+      // 25 ms is a tested value that seems to work to prevent exceptions
       return new Promise((resolve) => {
         window.setTimeout(() => {
-          this.pause();
           this.setFrameNumber(frameNumber || 1);
           resolve(this);
-        }, 100);
+        }, 25);
       });
     });
   }
@@ -529,9 +543,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
           const pixelCoord = this.canvasToIndex(canvasPoint);
           return [pixelCoord[0], pixelCoord[1], 0];
         },
-        indexToWorld: (point: Point3) => {
+        indexToWorld: (point: Point2, destPoint?: Point3) => {
           const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-          return this.canvasToWorld(canvasPoint);
+          return this.canvasToWorld(canvasPoint, destPoint);
         },
       },
       hasPixelSpacing: this.hasPixelSpacing,
@@ -646,6 +660,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
       ];
     }
 
+    this.canvasContext.fillStyle = 'rgba(0,0,0,1)';
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     if (this.isPlaying === false) {
@@ -841,7 +856,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * @param canvasPos - to convert to world
    * @returns World position
    */
-  public canvasToWorld = (canvasPos: Point2): Point3 => {
+  public canvasToWorld = (
+    canvasPos: Point2,
+    destPos: Point3 = [0, 0, 0]
+  ): Point3 => {
     const pan: Point2 = this.videoCamera.panWorld; // In world coordinates
     const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
 
@@ -855,13 +873,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
       canvasPos[1] - panOffsetCanvas[1],
     ];
 
-    const worldPos: Point3 = [
-      subCanvasPos[0] / worldToCanvasRatio,
-      subCanvasPos[1] / worldToCanvasRatio,
+    // Replace the x,y values only in place in the world position
+    // as the z is unchanging for video display
+    destPos.splice(
       0,
-    ];
-
-    return worldPos;
+      2,
+      subCanvasPos[0] / worldToCanvasRatio,
+      subCanvasPos[1] / worldToCanvasRatio
+    );
+    return destPos;
   };
 
   /**
@@ -1044,6 +1064,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       time: this.videoElement.currentTime,
       duration: this.videoElement.duration,
     });
+
+    this.initialRender?.();
 
     const frame = this.getFrameNumber();
     if (this.isPlaying) {

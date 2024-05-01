@@ -201,7 +201,12 @@ function findIntersectingContour(
   }
 }
 
-function createPolylineHole(
+/**
+ * Modifies the holeAnnotation to work as a contour hole in the targetAnnotation,
+ * displayed on the given viewport.
+
+ */
+export function createPolylineHole(
   viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   holeAnnotation: ContourSegmentationAnnotation
@@ -359,7 +364,7 @@ function combinePolylines(
       metadata: {
         ...metadata,
         toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
-        originalToolName: targetAnnotation.metadata.toolName,
+        originalToolName: metadata.originalToolName || metadata.toolName,
       },
       data: {
         cachedStats: {},

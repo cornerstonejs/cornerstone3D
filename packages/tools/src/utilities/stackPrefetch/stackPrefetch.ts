@@ -166,18 +166,22 @@ function prefetch(element) {
   const requestFn = (imageId, options) =>
     imageLoader.loadAndCacheImage(imageId, options);
 
-  const { useNorm16Texture } = getCoreConfiguration().rendering;
+  const { useNorm16Texture, preferSizeOverAccuracy } =
+    getCoreConfiguration().rendering;
+
+  const useNativeDataType = useNorm16Texture || preferSizeOverAccuracy;
 
   imageIdsToPrefetch.forEach((imageId) => {
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
+        type: useNativeDataType ? undefined : 'Float32Array',
       },
       preScale: {
         enabled: true,
       },
+      useNativeDataType,
       requestType,
     };
 

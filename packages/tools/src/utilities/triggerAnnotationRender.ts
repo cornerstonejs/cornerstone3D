@@ -159,7 +159,9 @@ class AnnotationRenderingEngine {
     const enabledElement = getEnabledElement(element);
 
     if (!enabledElement) {
-      console.warn('Element has been disabled');
+      // Happens during testing, and isn't an issue as it just means there
+      // is overlap between shutdown and re-render
+      // console.warn('Element has been disabled');
       return;
     }
 

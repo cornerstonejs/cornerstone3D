@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  imageLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -31,9 +30,6 @@ const {
   segmentation,
   BrushTool,
   PanTool,
-  ZoomTool,
-  StackScrollTool,
-  StackScrollMouseWheelTool,
   BidirectionalTool,
   utilities: cstUtils,
 } = cornerstoneTools;
@@ -53,7 +49,6 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const segmentationId = 'volumeSegmentationId';
 const toolGroupIds = ['toolgroupIdVolume'];
 const segmentationRepresentationUIDs = [];
-let stackImageIds;
 
 const actionConfiguration = {
   contourBidirectional: {
@@ -141,7 +136,7 @@ addDropdownToToolbar({
     const name = String(nameAsStringOrNumber);
     toolGroupIds.forEach((toolGroupId) => {
       const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-      addManipulationBindings(toolGroup);
+
       // Set the currently active tool disabled
       const toolName = toolGroup.getActivePrimaryMouseButtonTool();
 
@@ -296,14 +291,6 @@ const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
 const StudyInstanceUID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
-function getPtImageIds() {
-  return createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot,
-  });
-}
 function getCtImageIds() {
   return createImageIdsAndCacheMetaData({
     StudyInstanceUID,
@@ -321,11 +308,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
@@ -333,11 +316,7 @@ async function run() {
   toolGroupIds.forEach((toolGroupId) => {
     const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    // Manipulation Tools
-    toolGroup.addTool(PanTool.toolName);
-    toolGroup.addTool(StackScrollTool.toolName);
-    toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    addManipulationBindings(toolGroup, { enableShiftClickZoom: true });
 
     toolGroup.addTool(BidirectionalTool.toolName, {
       actions: actionConfiguration,
@@ -397,37 +376,14 @@ async function run() {
         },
       ],
     });
-    toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Secondary, // Right Click
-        },
-        {
-          mouseButton: MouseBindings.Primary,
-          modifierKey: KeyboardBindings.Shift,
-        },
-      ],
-    });
-    toolGroup.setToolActive(StackScrollTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-          modifierKey: KeyboardBindings.Alt,
-        },
-      ],
-    });
     // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
     // hook instead of mouse buttons, it does not need to assign any mouse button.
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
     toolGroup.setToolActive(BidirectionalTool.toolName);
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const [imageIds, imageIdsStack] = await Promise.all([
-    getCtImageIds(),
-    getPtImageIds(),
-  ]);
-  stackImageIds = imageIdsStack;
+  const imageIds = await getCtImageIds();
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

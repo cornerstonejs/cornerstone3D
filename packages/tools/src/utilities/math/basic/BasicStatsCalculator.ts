@@ -1,4 +1,4 @@
-import { Statistics } from '../../../types';
+import { NamedStatistics, Statistics } from '../../../types';
 import Calculator from './Calculator';
 
 export default class BasicStatsCalculator extends Calculator {
@@ -46,15 +46,15 @@ export default class BasicStatsCalculator extends Calculator {
 
   /**
    * Basic function that calculates statictics for a given array of points.
-   * @param points
    * @returns An object that contains :
    * max : The maximum value of the array
    * mean : mean of the array
    * stdDev : standard deviation of the array
    * stdDevWithSumSquare : standard deviation of the array using sum²
+   * array : An array of hte above values, in order.
    */
 
-  static getStatistics = (): Statistics[] => {
+  static getStatistics = (): NamedStatistics => {
     const mean = this.sum.map((sum) => sum / this.count);
     const stdDev = this.squaredDiffSum.map((squaredDiffSum) =>
       Math.sqrt(squaredDiffSum / this.count)
@@ -62,7 +62,46 @@ export default class BasicStatsCalculator extends Calculator {
     const stdDevWithSumSquare = this.sumSquares.map((it, idx) =>
       Math.sqrt(this.sumSquares[idx] / this.count - mean[idx] ** 2)
     );
-    const currentMax = this.max;
+
+    const named: NamedStatistics = {
+      max: {
+        name: 'max',
+        label: 'Max Pixel',
+        value: singleArrayAsNumber(this.max),
+        unit: null,
+      },
+      mean: {
+        name: 'mean',
+        label: 'Mean Pixel',
+        value: singleArrayAsNumber(mean),
+        unit: null,
+      },
+      stdDev: {
+        name: 'stdDev',
+        label: 'Standard Deviation',
+        value: singleArrayAsNumber(stdDev),
+        unit: null,
+      },
+      stdDevWithSumSquare: {
+        name: 'stdDevWithSumSquare',
+        value: singleArrayAsNumber(stdDevWithSumSquare),
+        unit: null,
+      },
+      count: {
+        name: 'count',
+        label: 'Pixel Count',
+        value: this.count,
+        unit: null,
+      },
+      array: [],
+    };
+    named.array.push(
+      named.max,
+      named.mean,
+      named.stdDev,
+      named.stdDevWithSumSquare,
+      named.count
+    );
 
     this.max = [-Infinity];
     this.sum = [0];
@@ -70,16 +109,7 @@ export default class BasicStatsCalculator extends Calculator {
     this.squaredDiffSum = [0];
     this.count = 0;
 
-    return [
-      { name: 'max', value: singleArrayAsNumber(currentMax), unit: null },
-      { name: 'mean', value: singleArrayAsNumber(mean), unit: null },
-      { name: 'stdDev', value: singleArrayAsNumber(stdDev), unit: null },
-      {
-        name: 'stdDevWithSumSquare',
-        value: singleArrayAsNumber(stdDevWithSumSquare),
-        unit: null,
-      },
-    ];
+    return named;
   };
 }
 

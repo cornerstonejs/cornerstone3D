@@ -23,7 +23,7 @@ import type {
   IToolBinding,
   ToolOptionsType,
 } from './ISetToolModeOptions';
-import type IToolGroup from './IToolGroup';
+import type IToolGroup from '../store/ToolGroupManager/ToolGroup';
 import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
 import type * as AnnotationStyle from './AnnotationStyle';
 import type ToolHandle from './ToolHandle';
@@ -64,7 +64,7 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type AnnotationRenderContext from './AnnotationRenderContext';
-import type { Statistics } from './CalculatorTypes';
+import type { Statistics, NamedStatistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
@@ -162,6 +162,9 @@ export type {
   ContourSegmentationData,
   //Statistics
   Statistics,
+  NamedStatistics,
+
+  // Labelmap data
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,

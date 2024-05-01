@@ -12,9 +12,9 @@ import isObject from './isObject';
 import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import {
-  getCalibratedLengthUnits,
-  getCalibratedAreaUnits,
-  getCalibratedScale,
+  getCalibratedLengthUnitsAndScale,
+  getCalibratedProbeUnitsAndValue,
+  getCalibratedAspect,
 } from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds';
@@ -67,9 +67,9 @@ export {
   touch,
   triggerEvent,
   calibrateImageSpacing,
-  getCalibratedLengthUnits,
-  getCalibratedAreaUnits,
-  getCalibratedScale,
+  getCalibratedLengthUnitsAndScale,
+  getCalibratedProbeUnitsAndValue,
+  getCalibratedAspect,
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,

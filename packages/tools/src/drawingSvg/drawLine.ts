@@ -21,7 +21,7 @@ export default function drawLine(
 
   const { color, width, lineWidth, lineDash, shadow } = Object.assign(
     {
-      color: 'dodgerblue',
+      color: 'rgb(0, 255, 0)',
       width: '2',
       lineWidth: undefined,
       lineDash: undefined,

@@ -134,7 +134,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     let referencedImageId = targetId.split(/^[a-zA-Z]+:/)[1];
 
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = targetId.split(/volumeId:|\?/)[1];
+      const volumeId = utilities.getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = utilities.getClosestImageId(
