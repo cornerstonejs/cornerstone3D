@@ -109,7 +109,7 @@ async function render(
     );
   }
 
-  if (contourData.annotationUIDsMap?.size) {
+  if (contourData?.annotationUIDsMap?.size) {
     handleContourAnnotationSegmentation(
       viewport,
       contourData.annotationUIDsMap,
