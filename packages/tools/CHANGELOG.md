@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.70.15](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.14...v1.70.15) (2024-04-30)
+
+### Bug Fixes
+
+- **orientation-marker:** remove if viewport is undefined ([#1230](https://github.com/cornerstonejs/cornerstone3D/issues/1230)) ([fe511d9](https://github.com/cornerstonejs/cornerstone3D/commit/fe511d97377c1ca22b776458fc924129d6fa5ceb))
+
+## [1.70.14](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.13...v1.70.14) (2024-04-29)
+
+### Bug Fixes
+
+- **colormap:** Resolve bugs related to colormap reset and colorbar ([#1225](https://github.com/cornerstonejs/cornerstone3D/issues/1225)) ([aaac143](https://github.com/cornerstonejs/cornerstone3D/commit/aaac14353c6cd37d242b1d33adbb861a398c82b8))
+
+## [1.70.13](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.12...v1.70.13) (2024-04-25)
+
+### Bug Fixes
+
+- **trackball:** return if element is not defined in resize observer ([#1227](https://github.com/cornerstonejs/cornerstone3D/issues/1227)) ([04b25ba](https://github.com/cornerstonejs/cornerstone3D/commit/04b25ba51fe2568049ee261413286638e52a3ebc))
+
+## [1.70.12](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.11...v1.70.12) (2024-04-22)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.70.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.10...v1.70.11) (2024-04-22)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [1.70.10](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.9...v1.70.10) (2024-04-19)
 
 ### Bug Fixes
