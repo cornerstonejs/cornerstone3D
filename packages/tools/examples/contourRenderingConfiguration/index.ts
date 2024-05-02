@@ -142,13 +142,9 @@ async function addAnnoationsToSegmentation(viewport) {
   const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
   const viewPlaneNormal = viewport.getCamera().viewPlaneNormal;
   const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-  // load the contour data
-  const annotationUIDsMap = new Map();
 
   const promises = circle.contourSets.map(async (contourSet) => {
     const { data, segmentIndex } = contourSet;
-    const annotationUIDs = new Set();
-    annotationUIDsMap.set(segmentIndex, annotationUIDs);
 
     await Promise.all(
       data.map(async (contour) => {
@@ -190,12 +186,11 @@ async function addAnnoationsToSegmentation(viewport) {
           contourSegmentationAnnotation
         );
 
-        annotationUIDs.add(contourSegmentationAnnotation.annotationUID);
         return contourSegmentationAnnotation;
       })
     );
 
-    return { segmentIndex, annotationUIDs };
+    return;
   });
 
   await Promise.all(promises);
