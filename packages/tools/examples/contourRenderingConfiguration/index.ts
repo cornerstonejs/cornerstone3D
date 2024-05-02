@@ -138,7 +138,7 @@ addSliderToToolbar({
   },
 });
 
-async function addAnnoationsToSegmentation(viewport) {
+async function addAnnotationsToSegmentation(viewport) {
   const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
   const viewPlaneNormal = viewport.getCamera().viewPlaneNormal;
   const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -290,7 +290,7 @@ async function run() {
     },
   ]);
 
-  await addAnnoationsToSegmentation(viewport);
+  await addAnnotationsToSegmentation(viewport);
   // // Add the segmentation representation to the toolgroup
   const segRepresentations1 = await segmentation.addSegmentationRepresentations(
     toolGroupId,
