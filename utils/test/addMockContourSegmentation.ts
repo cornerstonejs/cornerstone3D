@@ -7,7 +7,7 @@ export function addMockContourSegmentation({
   viewport,
 }) {
   contours = Array.isArray(contours) ? contours : [contours];
-
+  const annotationUIDsMap = new Map();
   contours.forEach((contour) => {
     const {
       segmentIndex = 1,
@@ -80,5 +80,13 @@ export function addMockContourSegmentation({
       viewport.getRenderingEngine(),
       [viewport.id]
     );
+
+    if (!annotationUIDsMap.has(segmentIndex)) {
+      annotationUIDsMap.set(segmentIndex, []);
+    }
+
+    annotationUIDsMap
+      .get(segmentIndex)
+      .push(contourSegmentationAnnotation.annotationUID);
   });
 }

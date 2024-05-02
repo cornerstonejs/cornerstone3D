@@ -15,6 +15,7 @@ import { addOrUpdateVTKContourSets } from './vtkContour/addOrUpdateVTKContourSet
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './vtkContour/contourConfigCache';
 import { polySeg } from '../../../stateManagement/segmentation';
+import { handleContourAnnotationSegmentation } from './annotationContour/handleContourAnnotationSegmentation';
 
 let polySegConversionInProgress = false;
 
@@ -95,89 +96,27 @@ async function render(
     );
   }
 
-  // From here to below it is basically the legacy geometryId based
-  // contour rendering via vtkActors that has some bugs for display,
-  // as it sometimes appear and sometimes not, and it is not clear.
-  // We have moved to the new SVG based contours via our annotation tools
-  // check out annotationUIDsMap in the ContourSegmentationData type
-  const { geometryIds } = contourData;
-
-  if (!geometryIds?.length || !(viewport instanceof BaseVolumeViewport)) {
+  if (!(viewport instanceof BaseVolumeViewport)) {
     return;
   }
 
-  // add the contour sets to the viewport
-  addOrUpdateVTKContourSets(
-    viewport,
-    geometryIds,
-    representationConfig,
-    toolGroupConfig
-  );
+  if (contourData?.geometryIds?.length) {
+    addOrUpdateVTKContourSets(
+      viewport,
+      contourData.geometryIds,
+      representationConfig,
+      toolGroupConfig
+    );
+  }
 
-  /**
-   * The following logic could be added if we want to support the use case
-   * where the contour representation data is initiated using annotations
-   * in the state from the get-go , and not when the user draws a contour.
-   */
-  // if (contourData?.points?.length) {
-  //   // contourData = createAnnotationsFromPoints(contourData.points);
-  //   const contourSegmentationAnnotation = {
-  //     annotationUID: csUtils.uuidv4(),
-  //     data: {
-  //       contour: {
-  //         closed: true,
-  //         polyline: contourData.points,
-  //       },
-  //       segmentation: {
-  //         segmentationId,
-  //         segmentIndex: 1, // Todo
-  //         segmentationRepresentationUID:
-  //           representationConfig.segmentationRepresentationUID,
-  //       },
-  //     },
-  //     highlighted: false,
-  //     invalidated: false,
-  //     isLocked: false,
-  //     isVisible: true,
-  //     metadata: {
-  //       toolName: 'PlanarFreehandContourSegmentationTool',
-  //       FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-  //       viewPlaneNormal: viewport.getCamera().viewPlaneNormal,
-  //     },
-  //   };
-
-  //   addAnnotation(contourSegmentationAnnotation, viewport.element);
-  // } else if (
-  //   !contourData &&
-  //   polySeg.canComputeRequestedRepresentation(
-  //     representationConfig.segmentationRepresentationUID
-  //   )
-  // ) {
-  // contourData = await polySeg.computeAndAddContourRepresentation(
-  //   segmentationId,
-  //   {
-  //     segmentationRepresentationUID:
-  //       representationConfig.segmentationRepresentationUID,
-  //     viewport,
-  //   }
-  // );
-  // }
-
-  // if (contourData?.geometryIds?.length) {
-  //   handleVTKContour({
-  //     viewport,
-  //     representationConfig,
-  //     toolGroupConfig,
-  //     geometryIds: contourData.geometryIds,
-  //   });
-  // } else if (contourData.annotationUIDsMap?.size) {
-  //   handleContourAnnotationSegmentation({
-  //     viewport,
-  //     representationConfig,
-  //     toolGroupConfig,
-  //     annotationUIDsMap: contourData.annotationUIDsMap,
-  //   });
-  // }
+  if (contourData.annotationUIDsMap?.size) {
+    handleContourAnnotationSegmentation(
+      viewport,
+      contourData.annotationUIDsMap,
+      representationConfig,
+      toolGroupConfig
+    );
+  }
 }
 
 function _removeContourFromToolGroupViewports(
