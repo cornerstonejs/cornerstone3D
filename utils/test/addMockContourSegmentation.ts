@@ -31,7 +31,10 @@ export function addMockContourSegmentation({
       const x = centerInCanvas[0] + radiusInCanvas * Math.cos(angle);
       const y = centerInCanvas[1] + radiusInCanvas * Math.sin(angle);
 
-      const world = viewport.canvasToWorld([x, y]);
+      const world = viewport.canvasToWorld([
+        x / window?.devicePixelRatio || 1,
+        y / window?.devicePixelRatio || 1,
+      ]);
 
       return world;
     });
