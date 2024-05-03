@@ -46,6 +46,7 @@ import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataPr
 import getViewportImageCornersInWorld from './getViewportImageCornersInWorld';
 import hasNaNValues from './hasNaNValues';
 import applyPreset from './applyPreset';
+import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import getScalarDataType from './getScalarDataType';
@@ -67,6 +68,10 @@ import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
+import getViewportImageIds from './getViewportImageIds';
+import { getRandomSampleFromArray } from './getRandomSampleFromArray';
+import { getVolumeId } from './getVolumeId';
+import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 
 // name spaces
 import * as planar from './planar';
@@ -74,6 +79,7 @@ import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as cacheUtils from './cacheUtils';
+import * as color from './color';
 
 export {
   eventListener,
@@ -130,6 +136,7 @@ export {
   hasNaNValues,
   applyPreset,
   deepMerge,
+  PointsManager,
   getScalingParameters,
   getScalarDataType,
   colormap,
@@ -152,4 +159,9 @@ export {
   cacheUtils,
   roundNumber,
   roundToPrecision,
+  getViewportImageIds,
+  getRandomSampleFromArray,
+  getVolumeId,
+  color,
+  hasFloatScalingParameters,
 };

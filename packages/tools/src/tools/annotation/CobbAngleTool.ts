@@ -75,6 +75,7 @@ class CobbAngleTool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        showArcLines: false,
       },
     }
   ) {
@@ -795,33 +796,35 @@ class CobbAngleTool extends AnnotationTool {
         data.cachedStats[targetId].points.canvas;
       const { arc1Angle, arc2Angle } = data.cachedStats[targetId];
 
-      lineUID = 'arc1';
+      if (this.configuration.showArcLines) {
+        lineUID = 'arc1';
 
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        arc1Start as Types.Point2,
-        arc1End as Types.Point2,
-        {
-          color,
-          lineWidth: '1',
-        }
-      );
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          arc1Start as Types.Point2,
+          arc1End as Types.Point2,
+          {
+            color,
+            lineWidth: '1',
+          }
+        );
 
-      lineUID = 'arc2';
+        lineUID = 'arc2';
 
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        arc2Start as Types.Point2,
-        arc2End as Types.Point2,
-        {
-          color,
-          lineWidth: '1',
-        }
-      );
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          arc2Start as Types.Point2,
+          arc2End as Types.Point2,
+          {
+            color,
+            lineWidth: '1',
+          }
+        );
+      }
 
       if (!data.cachedStats[targetId]?.angle) {
         continue;
@@ -876,45 +879,47 @@ class CobbAngleTool extends AnnotationTool {
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
 
-      const arc1TextBoxUID = 'arcAngle1';
+      if (this.configuration.showArcLines) {
+        const arc1TextBoxUID = 'arcAngle1';
 
-      const arc1TextLine = [
-        `${arc1Angle.toFixed(2)} ${String.fromCharCode(176)}`,
-      ];
+        const arc1TextLine = [
+          `${arc1Angle.toFixed(2)} ${String.fromCharCode(176)}`,
+        ];
 
-      const arch1TextPosCanvas = midPoint2(arc1Start, arc1End);
+        const arch1TextPosCanvas = midPoint2(arc1Start, arc1End);
 
-      drawTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        arc1TextBoxUID,
-        arc1TextLine,
-        arch1TextPosCanvas,
-        {
-          ...options,
-          padding: 3,
-        }
-      );
+        drawTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arc1TextBoxUID,
+          arc1TextLine,
+          arch1TextPosCanvas,
+          {
+            ...options,
+            padding: 3,
+          }
+        );
 
-      const arc2TextBoxUID = 'arcAngle2';
+        const arc2TextBoxUID = 'arcAngle2';
 
-      const arc2TextLine = [
-        `${arc2Angle.toFixed(2)} ${String.fromCharCode(176)}`,
-      ];
+        const arc2TextLine = [
+          `${arc2Angle.toFixed(2)} ${String.fromCharCode(176)}`,
+        ];
 
-      const arch2TextPosCanvas = midPoint2(arc2Start, arc2End);
+        const arch2TextPosCanvas = midPoint2(arc2Start, arc2End);
 
-      drawTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        arc2TextBoxUID,
-        arc2TextLine,
-        arch2TextPosCanvas,
-        {
-          ...options,
-          padding: 3,
-        }
-      );
+        drawTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arc2TextBoxUID,
+          arc2TextLine,
+          arch2TextPosCanvas,
+          {
+            ...options,
+            padding: 3,
+          }
+        );
+      }
     }
 
     return renderStatus;

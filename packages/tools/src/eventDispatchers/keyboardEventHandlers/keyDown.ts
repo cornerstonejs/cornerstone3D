@@ -40,7 +40,7 @@ export default function keyDown(evt: KeyDownEventType): void {
       // so that the method can depend on the specific configuration in use.
       const method =
         typeof value.method === 'function' ? value.method : key[value.method];
-      method.call(key, element, value);
+      method.call(key, element, value, evt);
     }
   }
 }

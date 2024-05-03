@@ -5,6 +5,7 @@ enum Events {
   /**
    * ERROR CODES
    */
+  ERROR_EVENT = 'CORNERSTONE_ERROR',
 
   /**
    * Error that is thrown when the ImageCache exceeds its max cache size.
@@ -38,6 +39,12 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.VoiModifiedEventDetail | VoiModified Event Detail }
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+  /**
+   * Triggers on the HTML element when viewport modifies its preset (used in volume viewport 3D)
+   *
+   * Make use of {@link EventTypes.PresetModifiedEvent | PresetModified Event Type } for typing your event listeners for PRESET_MODIFIED event,
+   */
+  PRESET_MODIFIED = 'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED',
   /**
    * Triggers on the HTML element when viewport modifies its display area
    *
@@ -209,15 +216,35 @@ enum Events {
    * Triggers when the scroll function is called with a delta that is out of bounds.
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
    */
-  VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
+  VOLUME_SCROLL_OUT_OF_BOUNDS = 'VOLUME_SCROLL_OUT_OF_BOUNDS',
+
+  /**
+   * Triggers when the scroll function is called on a volume.
+   */
+  VOLUME_VIEWPORT_SCROLL = 'VOLUME_VIEWPORT_SCROLL',
 
   /**
    * Triggers when the clipping planes has been updated
    */
   CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
+
+  /**
+   * Triggers when the webworker has made progress
+   * You should use it with a workerType to indicate the type of worker that is making progress
+   * Checkout the polySEG convertors in the cornerstone tools
+   * to lean how to use it
+   */
+  WEB_WORKER_PROGRESS = 'CORNERSTONE_WEB_WORKER_PROGRESS',
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+
+  /**
+   * Triggers on the HTML element when viewport modifies its colormap
+   * Make use of {@link EventTypes.ColormapModifiedEvent | ColormapModified Event Type } for typing your event listeners for COLORMAP_MODIFIED event,
+   * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
+   */
+  COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
 }
 
 export default Events;

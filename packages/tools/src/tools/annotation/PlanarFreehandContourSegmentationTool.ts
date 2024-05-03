@@ -1,8 +1,9 @@
-import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { utilities } from '@cornerstonejs/core';
-import type { PublicToolProps, AnnotationRenderContext } from '../../types';
-import PlanarFreehandROITool from './PlanarFreehandROITool';
+import type { PublicToolProps } from '../../types';
+import type { AnnotationRenderContext } from '../../types';
+import { PlanarFreehandContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import PlanarFreehandROITool from './PlanarFreehandROITool';
 
 class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
   static toolName;
@@ -34,16 +35,19 @@ class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
   protected renderAnnotationInstance(
     renderContext: AnnotationRenderContext
   ): boolean {
-    const { annotation } = renderContext;
+    const annotation =
+      renderContext.annotation as PlanarFreehandContourSegmentationAnnotation;
     const { invalidated } = annotation;
+
+    // Render the annotation before triggering events
     const renderResult = super.renderAnnotationInstance(renderContext);
 
-    // Trigger the event only for invalid annotations
     if (invalidated) {
-      const { segmentationId } = (<SplineContourSegmentationAnnotation>(
-        annotation
-      )).data.segmentation;
+      const { segmentationId } = annotation.data.segmentation;
 
+      // This event is trigged by ContourSegmentationBaseTool but PlanarFreehandROITool
+      // is the only contour class that does not call `renderAnnotationInstace` from
+      // its base class.
       triggerSegmentationDataModified(segmentationId);
     }
 

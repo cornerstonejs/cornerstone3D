@@ -15,12 +15,17 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 const { VoxelManager } = csUtils;
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
+  // Allow initialization that is operation specific by keying on the name
+  operationName?: string;
+
   // Additional data for performing the strategy
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;
   centerWorld: Types.Point3;
   viewport: Types.IViewport;
-  imageVoxelManager: csUtils.VoxelManager<number>;
+  imageVoxelManager:
+    | csUtils.VoxelManager<number>
+    | csUtils.VoxelManager<Types.RGB>;
   segmentationVoxelManager: csUtils.VoxelManager<number>;
   segmentationImageData: vtkImageData;
   previewVoxelManager: csUtils.VoxelManager<number>;
@@ -29,6 +34,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  configuration?: Record<string, any>;
 };
 
 export type StrategyFunction = (
@@ -105,6 +111,9 @@ export default class BrushStrategy {
       StrategyCallbacks.Preview,
       false
     ),
+    [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
+      StrategyCallbacks.ComputeInnerCircleRadius
+    ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -152,7 +161,16 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: LabelmapToolOperationDataAny
   ) => {
-    const initializedData = this.initialize(enabledElement, operationData);
+    const initializedData = this.initialize(
+      enabledElement,
+      operationData,
+      StrategyCallbacks.Fill
+    );
+
+    if (!initializedData) {
+      // Happens when there is no label map
+      return;
+    }
 
     const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
@@ -186,7 +204,8 @@ export default class BrushStrategy {
 
   protected initialize(
     enabledElement: Types.IEnabledElement,
-    operationData: LabelmapToolOperationDataAny
+    operationData: LabelmapToolOperationDataAny,
+    operationName?: string
   ): InitializedOperationData {
     const { viewport } = enabledElement;
     const data = getStrategyData({ operationData, viewport });
@@ -194,23 +213,6 @@ export default class BrushStrategy {
     if (!data) {
       console.warn('No data found for BrushStrategy');
       return operationData.preview;
-    }
-
-    if (isVolumeSegmentation(operationData)) {
-      const { referencedVolumeId, volumeId } =
-        operationData as LabelmapToolOperationDataVolume;
-
-      const imageVolume = cache.getVolume(referencedVolumeId);
-      const segmentation = cache.getVolume(volumeId);
-
-      if (
-        !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-        !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-      ) {
-        throw new Error(
-          'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-        );
-      }
     }
 
     const {
@@ -225,6 +227,7 @@ export default class BrushStrategy {
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
     const initializedData: InitializedOperationData = {
+      operationName,
       previewSegmentIndex,
       ...operationData,
       enabledElement,
@@ -260,6 +263,10 @@ export default class BrushStrategy {
       return;
     }
     const initializedData = this.initialize(enabledElement, operationData);
+    if (!initializedData) {
+      // Happens if there isn't a labelmap to apply to
+      return;
+    }
     this._onInteractionStart.forEach((func) =>
       func.call(this, initializedData)
     );
@@ -331,7 +338,8 @@ function addListMethod(name: string, createInitialized?: string) {
       ? (enabledElement, operationData) => {
           const initializedData = brushStrategy[createInitialized](
             enabledElement,
-            operationData
+            operationData,
+            name
           );
           brushStrategy[listName].forEach((func) =>
             func.call(brushStrategy, initializedData)

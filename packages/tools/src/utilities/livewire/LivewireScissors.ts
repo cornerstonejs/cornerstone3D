@@ -105,45 +105,47 @@ export class LivewireScissors {
   }
 
   /**
-   * Returns a smoothing path count for how many items to remove.
-   * This will remove points, up to count which have a high gradient, up to
-   * count of them where the clip value is larger than that provided.
+   * Finds a nearby point with a minimum cost nearby
    *
-   * @returns Count of items to remove from the path.
+   * @param testPoint - to look nearby
+   * @param delta - how long a distance to look
+   * @returns A point having the minimum weighted distance from the testPoint
    */
-  public smoothPathCount(
-    pathPoints: Types.Point2[],
-    lastPoint: Types.Point2,
-    count = 5,
-    clipValue = 0.85
-  ) {
-    const lastIndex =
-      (lastPoint &&
-        pathPoints.findIndex((point) => isEqual(point, lastPoint))) ||
-      -1;
-    if (pathPoints.length - lastIndex < count * 2) {
-      // If a nearby point is clicked, just add it anyways, because that means
-      // the user actually wants the given point
-      return 0;
-    }
-    let removeCount = 0;
-    for (
-      let i = pathPoints.length - 1;
-      i > pathPoints.length - count && i > 0;
-      i--
-    ) {
-      const weighted = this._getWeightedDistance(
-        pathPoints[i],
-        pathPoints[i - 1]
-      );
-      if (weighted < clipValue) {
-        return removeCount ? removeCount + 2 : 0;
+  public findMinNearby(testPoint: Types.Point2, delta = 2) {
+    const [x, y] = testPoint;
+    const { costs } = this;
+
+    const xRange = [
+      Math.max(0, x - delta),
+      Math.min(x + delta + 1, this.width),
+    ];
+    const yRange = [
+      Math.max(0, y - delta),
+      Math.min(y + delta + 1, this.height),
+    ];
+    let minValue = costs[this._getPointIndex(y, x)] * 0.8;
+
+    let minPoint = testPoint;
+    for (let xTest = xRange[0]; xTest < xRange[1]; xTest++) {
+      for (let yTest = yRange[0]; yTest < yRange[1]; yTest++) {
+        // Cost values are 0...1, with 1 being a poor choice for the
+        // livewire fitting - thus, we want to minimize our value, so the
+        // distance cost should be low for the center point.
+        const distanceCost =
+          1 -
+          (Math.abs(xTest - testPoint[0]) + Math.abs(yTest - testPoint[1])) /
+            delta /
+            2;
+        const weightCost = costs[this._getPointIndex(yTest, xTest)];
+
+        const weight = weightCost * 0.8 + distanceCost * 0.2;
+        if (weight < minValue) {
+          minPoint = [xTest, yTest];
+          minValue = weight;
+        }
       }
-      removeCount++;
     }
-    // Tried all of them, they were all too big, so assume they are really moving
-    // along a high gradient.
-    return 0;
+    return minPoint;
   }
 
   /**
@@ -281,7 +283,7 @@ export class LivewireScissors {
 
     // If it is at the end, back up one
     if (y + 1 === height) {
-      index -= height;
+      index -= width;
     }
 
     return data[index] - data[index + width];
@@ -420,14 +422,9 @@ export class LivewireScissors {
     let pixelIndex = 0;
 
     for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width - 1; x++) {
+      for (let x = 0; x < width; x++) {
         gradX[pixelIndex++] = this._getDeltaX(x, y);
       }
-
-      // Make the last column the same as the previous one because there is
-      // no way to calculate `dx` since x+1 gets out of bounds
-      gradX[pixelIndex] = gradX[pixelIndex - 1];
-      pixelIndex++;
     }
 
     return gradX;
@@ -444,16 +441,10 @@ export class LivewireScissors {
     const gradY = new Float32Array(width * height);
     let pixelIndex = 0;
 
-    for (let y = 0; y < height - 1; y++) {
+    for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         gradY[pixelIndex++] = this._getDeltaY(x, y);
       }
-    }
-
-    // Make the last row the same as the previous one because there is
-    // no way to calculate `dy` since y+1 gets out of bounds
-    for (let len = gradY.length; pixelIndex < len; pixelIndex++) {
-      gradY[pixelIndex] = gradY[pixelIndex - width];
     }
 
     return gradY;
@@ -481,7 +472,7 @@ export class LivewireScissors {
   }
 
   /**
-   * Compute the gradiant direction, in radians, between to points
+   * Compute the gradient direction, in radians, between two points
    *
    * @param px - Point `p` x-coordinate of point p.
    * @param py - Point `p` y-coordinate of point p.
@@ -506,23 +497,44 @@ export class LivewireScissors {
       dp = -dp;
       dq = -dq;
     }
-
     if (px !== qx && py !== qy) {
       // It's going diagonally between pixels
       dp *= Math.SQRT1_2;
       dq *= Math.SQRT1_2;
     }
+    dq = Math.min(Math.max(dq, -1), 1);
 
-    return TWO_THIRD_PI * (Math.acos(dp) + Math.acos(dq));
+    const direction =
+      TWO_THIRD_PI * (Math.acos(Math.min(dp, 1)) + Math.acos(dq));
+    if (isNaN(direction) || !isFinite(direction)) {
+      console.warn('Found non-direction:', px, py, qx, qy, dp, dq, direction);
+      return 1;
+    }
+    return direction;
+  }
+
+  /** Gets the cost to go from A to B */
+  public getCost(pointA, pointB): number {
+    return this._getWeightedDistance(pointA, pointB);
   }
 
   /**
    * Return a weighted distance between two points
    */
   private _getWeightedDistance(pointA: Types.Point2, pointB: Types.Point2) {
-    const { _getPointIndex: index } = this;
+    const { _getPointIndex: index, width, height } = this;
     const [aX, aY] = pointA;
     const [bX, bY] = pointB;
+    // Assign a cost of 1 to any points outside the image, prevents using invalid
+    // points
+    if (bX < 0 || bX >= width || bY < 0 || bY >= height) {
+      return 1;
+    }
+    // Use a cost of 0 if the point was outside and is now going inside
+    if (aX < 0 || aY < 0 || aX >= width || aY >= height) {
+      return 0;
+    }
+
     const bIndex = index(bY, bX);
 
     // Weighted distance function

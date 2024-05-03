@@ -82,10 +82,6 @@ html[data-theme='dark'] {
   color: rgb(255, 255, 255);
 }
 
-.medium-zoom-overlay {
-  background: var(--ifm-zoom-image-background-color) !important;
-}
-
 .header-github-link:hover {
   opacity: 0.6;
 }
@@ -155,7 +151,7 @@ article header h3 {
 }
 
 /* to fix the api page footer */
-.tsd-footer{
+.tsd-footer {
   margin-bottom: 400px;
 }
 
@@ -228,15 +224,15 @@ article header h3 {
 
 /* Admonition */
 html[data-theme='dark'] .admonition {
-  background-color: #0B1A42;
-  border-color: #0B1A42;
-  color: #5ACCE6;
+  background-color: #0b1a42;
+  border-color: #0b1a42;
+  color: #5acce6;
 }
 
 html[data-theme='light'] .admonition {
   background-color: #e3eff5;
   border-color: #e3eff5;
-  color: #0B1A42;
+  color: #0b1a42;
 }
 
 .admonition-icon svg {
@@ -365,7 +361,7 @@ html[data-theme='light'] .tsd-flag-public {
   max-width: 60ch;
 }
 
-#open-example-button{
+#open-example-button {
   margin-top: 20px;
   background-color: #0944b3;
   color: white;
@@ -380,7 +376,7 @@ html[data-theme='light'] .tsd-flag-public {
   margin: auto;
 }
 
-#open-ptct-button{
+#open-ptct-button {
   margin-top: 20px;
   background-color: #0944b3;
   color: white;
@@ -394,7 +390,6 @@ html[data-theme='light'] .tsd-flag-public {
   width: 200px;
   margin: auto;
 }
-
 
 a.card > h2 {
   font-size: 1.5rem;

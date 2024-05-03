@@ -11,9 +11,16 @@ module.exports = function (config) {
         stopOnFailure: false,
         failFast: false,
       },
-      captureConsole: false,
+      // Set to true to capture WARN level logging
+      // See browserConsoleLogOptions for setting other log levels
+      captureConsole: true,
       clearContext: false,
     },
+    // Uncomment this out to capture all logging
+    // browserConsoleLogOptions: {
+    //   terminal: true,
+    //   level: '',
+    // },
     specReporter: {
       maxLogLines: 5, // limit number of lines logged per test
       suppressSummary: true, // do not print summary
@@ -65,15 +72,14 @@ module.exports = function (config) {
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
     },
-    coverageIstanbulReporter: {
-      reports: ['html', 'text-summary', 'lcovonly'],
-      dir: path.join(__dirname, 'coverage'),
-      fixWebpackSourcePaths: true,
-      'report-config': {
-        html: { outdir: 'html' },
-        linkMapper: '/',
-      },
+    coverageReporter: {
+      type: 'html',
+      dir: 'coverage/',
     },
+    // The default of 2 seconds is a bit short for some tests
+    browserNoActivityTimeout: 6000,
+    browserDisconnectTimeout: 6000,
+
     /*webpackMiddleware: {
       noInfo: true
     },*/
@@ -85,7 +91,12 @@ module.exports = function (config) {
           {
             test: /\.(js|jsx|ts|tsx)$/,
             exclude: /node_modules/,
-            use: ['babel-loader'],
+            use: {
+              loader: 'babel-loader',
+              options: {
+                plugins: [['babel-plugin-istanbul', {}]],
+              },
+            },
           },
           {
             test: /\.png$/i,
@@ -94,6 +105,10 @@ module.exports = function (config) {
                 loader: 'url-loader',
               },
             ],
+          },
+          {
+            test: /\.wasm/,
+            type: 'asset/resource',
           },
           // NOTE: For better debugging you can comment out the
           // istanbul-instrumenter-loader below
@@ -107,6 +122,9 @@ module.exports = function (config) {
           //   },
           // },
         ],
+      },
+      experiments: {
+        asyncWebAssembly: true,
       },
       resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],

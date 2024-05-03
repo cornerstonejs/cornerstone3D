@@ -7,7 +7,7 @@ export type PointInShape = {
   value: number;
   index: number;
   pointIJK: vec3;
-  pointLPS: vec3;
+  pointLPS: vec3 | number[];
 };
 
 export type PointInShapeCallback = ({
@@ -47,6 +47,7 @@ export default function pointInShapeCallback(
   let iMin, iMax, jMin, jMax, kMin, kMax;
 
   let scalarData;
+  const { numComps } = imageData as any;
 
   // if getScalarData is a method on imageData
   if ((imageData as Types.CPUImageData).getScalarData) {
@@ -103,6 +104,7 @@ export default function pointInShapeCallback(
   );
 
   const xMultiple =
+    numComps ||
     scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
   const yMultiple = dimensions[0] * xMultiple;
   const zMultiple = dimensions[1] * yMultiple;
@@ -134,7 +136,12 @@ export default function pointInShapeCallback(
             value = scalarData[index];
           }
 
-          pointsInShape.push({ value, index, pointIJK, pointLPS: currentPos });
+          pointsInShape.push({
+            value,
+            index,
+            pointIJK,
+            pointLPS: currentPos.slice(),
+          });
           if (callback) {
             callback({ value, index, pointIJK, pointLPS: currentPos });
           }

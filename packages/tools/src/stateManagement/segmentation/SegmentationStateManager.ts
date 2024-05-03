@@ -5,6 +5,7 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
+import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
 import type {
   RepresentationConfig,
   Segmentation,
@@ -19,12 +20,14 @@ import type {
 // Note: when we get other representations, we should set their default representations too.
 const defaultLabelmapConfig = getDefaultLabelmapConfig();
 const defaultContourConfig = getDefaultContourConfig();
+const defaultSurfaceConfig = getDefaultSurfaceConfig();
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveSegmentations: true,
   representations: {
     [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
     [SegmentationRepresentations.Contour]: defaultContourConfig,
+    [SegmentationRepresentations.Surface]: defaultSurfaceConfig,
   },
 };
 
@@ -210,7 +213,7 @@ export default class SegmentationStateManager {
     const toolGroupSegRepresentations =
       this.getSegmentationRepresentations(toolGroupId);
 
-    const segmentationData = toolGroupSegRepresentations.find(
+    const segmentationData = toolGroupSegRepresentations?.find(
       (representation) =>
         representation.segmentationRepresentationUID ===
         segmentationRepresentationUID
@@ -447,7 +450,7 @@ export default class SegmentationStateManager {
       console.warn('Color LUT table already exists, overwriting');
     }
 
-    this.state.colorLUT[lutIndex] = structuredClone(colorLUT);
+    this.state.colorLUT[lutIndex] = cloneDeep(colorLUT);
   }
 
   /**

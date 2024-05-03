@@ -7,9 +7,9 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
-import _cloneDeep from 'lodash.clonedeep';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+import cloneDeep from 'lodash.clonedeep';
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -33,9 +33,15 @@ import type {
   Scaling,
   StackViewportProperties,
   VOIRange,
+  ViewReference,
+  ViewPresentation,
   VolumeActor,
 } from '../types';
-import { TargetSpecifier, ViewportInput } from '../types/IViewport';
+import {
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -91,6 +97,7 @@ import {
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
+import { findMatchingColormap } from '../utilities/colormap';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -183,6 +190,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   // Camera properties
   private initialViewUp: Point3;
+
+  // this flag is used to check
+  // if the viewport used the same actor/mapper to render the image
+  // or because of the new image inconsistency, a new actor/mapper was created
+  public stackActorReInitialized: boolean;
 
   /**
    * Constructor for the StackViewport class
@@ -377,7 +389,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   private setVOI: (voiRange: VOIRange, options?: SetVOIOptions) => void;
 
-  private setInterpolationType: (interpolationType: InterpolationType) => void;
+  protected setInterpolationType: (
+    interpolationType: InterpolationType
+  ) => void;
 
   private setInvertColor: (invert: boolean) => void;
 
@@ -475,12 +489,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           );
           return [pixelCoord[0], pixelCoord[1], 0];
         },
-        indexToWorld: (point: Point3) => {
+        indexToWorld: (point: Point3, destPoint?: Point3) => {
           const canvasPoint = pixelToCanvas(this._cpuFallbackEnabledElement, [
             point[0],
             point[1],
           ]);
-          return this.canvasToWorldCPU(canvasPoint);
+          return this.canvasToWorldCPU(canvasPoint, destPoint);
         },
       },
       scalarData: this.cpuImagePixelData,
@@ -546,7 +560,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const { preferSizeOverAccuracy } = getConfiguration().rendering;
 
     if (preferSizeOverAccuracy) {
-      // @ts-ignore for now until vtk is updated
       mapper.setPreferSizeOverAccuracy(true);
     }
 
@@ -855,6 +868,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       transferFunction,
       this.initialTransferFunctionNodes
     );
+
+    const nodes = getTransferFunctionNodes(transferFunction);
+
+    const RGBPoints = nodes.reduce((acc, node) => {
+      acc.push(node[0], node[1], node[2], node[3]);
+      return acc;
+    }, []);
+
+    const defaultActor = this.getDefaultActor();
+    const matchedColormap = findMatchingColormap(RGBPoints, defaultActor.actor);
+
+    this.setColormap(matchedColormap);
   }
 
   public resetToDefaultProperties(): void {
@@ -1146,12 +1171,16 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       : (360 - initialToCurrentViewUpAngle) % 360;
   };
 
-  private setRotation(rotation: number): void {
+  protected setRotation = (rotation: number) => {
     const previousCamera = this.getCamera();
 
     this.useCPURendering
       ? this.setRotationCPU(rotation)
       : this.setRotationGPU(rotation);
+
+    if (this._suppressCameraModifiedEvents) {
+      return;
+    }
 
     // New camera after rotation
     const camera = this.getCamera();
@@ -1166,7 +1195,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-  }
+  };
 
   private setVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType,
@@ -1195,9 +1224,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     viewport.rotation = rotation;
   }
 
+  /**
+   * The rotation that is being set is intended to be around the currently
+   * display center of the image.  However, the roll operation does it around
+   * another point which can result in the image disappearing.  The set/get
+   * pan values move the center of rotation to the center of the image as
+   * currently actually displayed.
+   */
   private setRotationGPU(rotation: number): void {
+    const panFit = this.getPan(this.fitToCanvasCamera);
     const pan = this.getPan();
-    this.setPan([0, 0]);
+    const panSub = vec2.sub([0, 0], panFit, pan) as Point2;
+    this.setPan(panSub, false);
     const { flipVertical } = this.getCamera();
 
     // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
@@ -1211,7 +1249,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
-    this.setPan(pan);
+    const afterPan = this.getPan();
+    const afterPanFit = this.getPan(this.fitToCanvasCamera);
+    const newCenter = vec2.sub([0, 0], afterPan, afterPanFit);
+    const newOffset = vec2.add([0, 0], panFit, newCenter) as Point2;
+    this.setPan(newOffset, false);
   }
 
   private setInterpolationTypeGPU(interpolationType: InterpolationType): void {
@@ -1962,18 +2004,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     // If Photometric Interpretation is not the same for the next image we are trying to load
-    // invalidate the stack to recreate the VTK imageData
+    // invalidate the stack to recreate the VTK imageData.  Get the PMI from
+    // the base csImage if imageFrame isn't defined, which happens when the images
+    // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const csImgFrame = (<any>this.csImage)?.imageFrame;
     const imgFrame = image?.imageFrame;
+    const photometricInterpretation =
+      csImgFrame?.photometricInterpretation ||
+      this.csImage?.photometricInterpretation;
+    const newPhotometricInterpretation =
+      imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
-    // if a volume is decached into images then the imageFrame will be undefined
-    if (
-      csImgFrame?.photometricInterpretation !==
-        imgFrame?.photometricInterpretation ||
-      this.csImage?.photometricInterpretation !==
-        image?.photometricInterpretation
-    ) {
+    if (photometricInterpretation !== newPhotometricInterpretation) {
       this.stackInvalidated = true;
     }
 
@@ -1987,8 +2030,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       renderingEngineId: this.renderingEngineId,
     };
 
-    triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
     this._updateActorToDisplayImageId(image);
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, eventDetail);
 
     // Trigger the image to be drawn on the next animation frame
     this.render();
@@ -2034,6 +2077,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       },
       useRGBA: false,
       transferSyntaxUID,
+      useNativeDataType: this.useNativeDataType,
       priority: 5,
       requestType: RequestType.Interaction,
       additionalDetails,
@@ -2064,7 +2108,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       })
     );
     const errorList = resultList.filter((item) => item.status === 'rejected');
-    if (errorList) {
+    if (errorList && errorList.length) {
       const event = new CustomEvent(Events.IMAGE_LOAD_ERROR, {
         detail: errorList,
         cancelable: true,
@@ -2226,7 +2270,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = _cloneDeep(this.getCamera());
+    const previousCameraProps = cloneDeep(this.getCamera());
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
@@ -2274,6 +2318,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       );
 
       this._setPropertiesFromCache();
+      this.stackActorReInitialized = false;
 
       return;
     }
@@ -2352,6 +2397,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // Saving position of camera on render, to cache the panning
     this.cameraFocalPointOnRender = this.getCamera().focalPoint;
     this.stackInvalidated = false;
+
+    this.stackActorReInitialized = true;
 
     if (this._publishCalibratedEvent) {
       this.triggerCalibrationEvent();
@@ -2667,7 +2714,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._publishCalibratedEvent = false;
   }
 
-  private canvasToWorldCPU = (canvasPos: Point2): Point3 => {
+  private canvasToWorldCPU = (
+    canvasPos: Point2,
+    worldPos: Point3 = [0, 0, 0]
+  ): Point3 => {
     if (!this._cpuFallbackEnabledElement.image) {
       return;
     }
@@ -2677,8 +2727,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
 
-    const worldPos = vec3.fromValues(0, 0, 0);
-
     // Calculate size of spacing vector in normal direction
     const iVector = direction.slice(0, 3) as Point3;
     const jVector = direction.slice(3, 6) as Point3;
@@ -2687,7 +2735,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
     vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
 
-    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+    return worldPos;
   };
 
   private worldToCanvasCPU = (worldPos: Point3): Point2 => {
@@ -2822,9 +2870,86 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
-  public getTargetId(specifier: TargetSpecifier = {}): string {
-    const { sliceIndex: imageIdIndex = this.currentImageIdIndex } = specifier;
-    return `imageId:${this.imageIds[imageIdIndex]}`;
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  /**
+   * Checks to see if this target is or could be shown in this viewport
+   */
+  public isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+
+    let { imageURI } = options;
+    const { referencedImageId, sliceIndex } = viewRef;
+
+    if (viewRef.volumeId && !referencedImageId) {
+      return options.asVolume === true;
+    }
+
+    let testIndex = this.getCurrentImageIdIndex();
+    if (options.withNavigation && typeof sliceIndex === 'number') {
+      testIndex = sliceIndex;
+    }
+    const imageId = this.imageIds[testIndex];
+    if (!imageId) {
+      return false;
+    }
+    if (!imageURI) {
+      // Remove the dataLoader scheme since that can change
+      const colonIndex = imageId.indexOf(':');
+      imageURI = imageId.substring(colonIndex + 1);
+    }
+    return referencedImageId?.endsWith(imageURI);
+  }
+
+  /**
+   * Gets a standard target to show this image instance.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
+      viewRefSpecifier;
+    return {
+      ...super.getViewReference(viewRefSpecifier),
+      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
+      sliceIndex: sliceIndex,
+    };
+  }
+
+  /**
+   * Applies the view reference, which may navigate the slice index and apply
+   * other camera modifications
+   */
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
+    const camera = this.getCamera();
+    super.setView(viewRef, viewPres);
+    if (viewRef) {
+      const { viewPlaneNormal, sliceIndex } = viewRef;
+      if (
+        viewPlaneNormal &&
+        !isEqual(viewPlaneNormal, camera.viewPlaneNormal)
+      ) {
+        return;
+      }
+      if (sliceIndex || sliceIndex === 0) {
+        this.setImageIdIndex(sliceIndex as number);
+      }
+    }
+  }
+
+  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
+    if (Array.isArray(sliceIndex)) {
+      throw new Error('Use of slice ranges for stacks not supported');
+    }
+    return `imageId:${this.imageIds[sliceIndex]}`;
   }
 
   /**
@@ -2944,6 +3069,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.cpuRenderingInvalidated = true;
 
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: colormapData,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   private setColormapGPU(colormap: ColormapPublic) {
@@ -2972,6 +3103,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.colormap = colormap;
     this.render();
+
+    const eventDetail = {
+      viewportId: this.id,
+      colormap,
+    };
+
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   private unsetColormapGPU() {

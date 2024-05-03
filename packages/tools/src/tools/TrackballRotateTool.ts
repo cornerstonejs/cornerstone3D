@@ -1,10 +1,16 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import { Events } from '../enums';
 
-import { getEnabledElement } from '@cornerstonejs/core';
+import {
+  eventTarget,
+  getEnabledElement,
+  getEnabledElementByIds,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
+import { getToolGroup } from '../store/ToolGroupManager';
 
 /**
  * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.
@@ -13,6 +19,9 @@ class TrackballRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  cleanUp: () => void;
+  _resizeObservers = new Map();
+  _viewportAddedListener: (evt: any) => void;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -28,6 +37,104 @@ class TrackballRotateTool extends BaseTool {
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
+
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const actorEntry = viewport.getDefaultActor();
+    const actor = actorEntry.actor as Types.VolumeActor;
+    const mapper = actor.getMapper();
+    const originalSampleDistance = mapper.getSampleDistance();
+
+    mapper.setSampleDistance(originalSampleDistance * 2);
+
+    if (this.cleanUp !== null) {
+      // Clean up previous event listener
+      document.removeEventListener('mouseup', this.cleanUp);
+    }
+
+    this.cleanUp = () => {
+      mapper.setSampleDistance(originalSampleDistance);
+      viewport.render();
+    };
+
+    document.addEventListener('mouseup', this.cleanUp, { once: true });
+    return true;
+  };
+
+  _getViewportsInfo = () => {
+    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
+
+    return viewports;
+  };
+
+  onSetToolActive = () => {
+    const subscribeToElementResize = () => {
+      const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        if (!this._resizeObservers.has(viewportId)) {
+          const { viewport } = getEnabledElementByIds(
+            viewportId,
+            renderingEngineId
+          ) || { viewport: null };
+
+          if (!viewport) {
+            return;
+          }
+
+          const { element } = viewport;
+
+          const resizeObserver = new ResizeObserver(() => {
+            const element = getEnabledElementByIds(
+              viewportId,
+              renderingEngineId
+            );
+            if (!element) {
+              return;
+            }
+            const { viewport } = element;
+            viewport.resetCamera();
+            viewport.render();
+          });
+
+          resizeObserver.observe(element);
+          this._resizeObservers.set(viewportId, resizeObserver);
+        }
+      });
+    };
+
+    subscribeToElementResize();
+
+    this._viewportAddedListener = (evt) => {
+      if (evt.detail.toolGroupId === this.toolGroupId) {
+        subscribeToElementResize();
+      }
+    };
+
+    eventTarget.addEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._viewportAddedListener
+    );
+  };
+
+  onSetToolDisabled = () => {
+    // Disconnect all resize observers
+    this._resizeObservers.forEach((resizeObserver, viewportId) => {
+      resizeObserver.disconnect();
+      this._resizeObservers.delete(viewportId);
+    });
+
+    if (this._viewportAddedListener) {
+      eventTarget.removeEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._viewportAddedListener
+      );
+      this._viewportAddedListener = null; // Clear the reference to the listener
+    }
+  };
 
   rotateCamera = (viewport, centerWorld, axis, angle) => {
     const vtkCamera = viewport.getVtkActiveCamera();
@@ -70,6 +177,7 @@ class TrackballRotateTool extends BaseTool {
     const { rotateIncrementDegrees } = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
     const camera = viewport.getCamera();
     const width = element.clientWidth;
     const height = element.clientHeight;

@@ -1,5 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
+import {
+  canRenderFloatTextures,
+  getConfiguration,
+  getShouldUseSharedArrayBuffer,
+} from '../init';
 import createFloat32SharedArray from './createFloat32SharedArray';
 import createInt16SharedArray from './createInt16SharedArray';
 import createUint16SharedArray from './createUInt16SharedArray';
@@ -7,6 +11,7 @@ import createUint8SharedArray from './createUint8SharedArray';
 import getScalingParameters from './getScalingParameters';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
+import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { ImageVolumeProps, Mat3, Point3 } from '../types';
 import cache from '../cache';
 import { Events } from '../enums';
@@ -19,10 +24,9 @@ function generateVolumePropsFromImageIds(
     getConfiguration().rendering;
 
   const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
-
   const volumeMetadata = makeVolumeMetadata(imageIds);
 
-  // For a streaming volume, the data type cannot rely on cswil to load
+  // For a streaming volume, the data type cannot rely on CSWIL to load
   // the proper array buffer type. This is because the target buffer container
   // must be decided ahead of time.
   // TODO: move this logic into CSWIL to avoid logic duplication.
@@ -37,9 +41,8 @@ function generateVolumePropsFromImageIds(
 
   // The prescale is ALWAYS used with modality LUT, so we can assume that
   // if the rescale slope is not an integer, we need to use Float32
-  const hasFloatRescale =
-    scalingParameters.rescaleIntercept % 1 !== 0 ||
-    scalingParameters.rescaleSlope % 1 !== 0;
+  const floatAfterScale = hasFloatScalingParameters(scalingParameters);
+  const canRenderFloat = canRenderFloatTextures();
 
   const {
     BitsAllocated,
@@ -111,7 +114,7 @@ function generateVolumePropsFromImageIds(
       // Temporary fix for 16 bit images to use Float32
       // until the new dicom image loader handler the conversion
       // correctly
-      if (!use16BitDataType || hasFloatRescale) {
+      if (!use16BitDataType || (canRenderFloat && floatAfterScale)) {
         sizeInBytes = length * 4;
         scalarData = useSharedArrayBuffer
           ? createFloat32SharedArray(length)

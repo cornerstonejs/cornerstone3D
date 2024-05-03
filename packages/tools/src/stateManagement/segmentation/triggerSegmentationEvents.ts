@@ -12,6 +12,7 @@ import {
   SegmentationRepresentationRemovedEventDetail,
   SegmentationRemovedEventDetail,
 } from '../../types/EventTypes';
+import { setSegmentationDirty } from '../../utilities/segmentation/getUniqueSegmentIndices';
 
 /**
  * Trigger an event that a segmentation is removed
@@ -142,6 +143,10 @@ function triggerSegmentationDataModified(
     segmentationId,
     modifiedSlicesToUse,
   };
+
+  // set it to dirty to force the next call to getUniqueSegmentIndices to
+  // recalculate the segment indices
+  setSegmentationDirty(segmentationId);
 
   triggerEvent(eventTarget, Events.SEGMENTATION_DATA_MODIFIED, eventDetail);
 }

@@ -38,6 +38,7 @@ import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
 import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
+import AnnotationEraserTool from './AnnotationEraserTool';
 
 // Segmentation DisplayTool
 import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
@@ -48,6 +49,7 @@ import CircleScissorsTool from './segmentation/CircleScissorsTool';
 import SphereScissorsTool from './segmentation/SphereScissorsTool';
 import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool';
 import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
+import CircleROIStartEndThresholdTool from './segmentation/CircleROIStartEndThresholdTool';
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
@@ -91,6 +93,7 @@ export {
   CobbAngleTool,
   UltrasoundDirectionalTool,
   KeyImageTool,
+  AnnotationEraserTool as EraserTool,
   // Segmentations Display
   SegmentationDisplayTool,
   // Segmentations Tools
@@ -99,6 +102,7 @@ export {
   SphereScissorsTool,
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
+  CircleROIStartEndThresholdTool,
   SplineContourSegmentationTool,
   BrushTool,
   MagnifyTool,

@@ -3,16 +3,18 @@ import {
   Types,
   Enums,
   eventTarget,
-  triggerEvent,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
+  addToggleButtonToToolbar,
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   addManipulationBindings,
+  addVideoTime,
+  annotationTools,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -39,8 +41,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
-
-const { annotationFrameRange } = cornerstoneTools.utilities;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -73,18 +73,6 @@ element.style.height = '500px';
 
 content.appendChild(element);
 
-const rangeDiv = document.createElement('div');
-rangeDiv.innerHTML =
-  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
-content.appendChild(rangeDiv);
-const rangeElement = document.getElementById('range') as HTMLInputElement;
-rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-
 const instructions = document.createElement('p');
 instructions.innerText = `Play/Pause button will toggle the playing of video
 Clear Frame Range clears and selected from range on playback
@@ -101,56 +89,19 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
-const baseEventDetail = {
-  viewportId,
-  renderingEngineId,
-};
 
 let viewport;
 
-const playButton = addButtonToToolbar({
+addToggleButtonToToolbar({
   id: 'play',
-  title: 'Pause',
-  onClick: (evt) => togglePlay(),
+  title: 'Play',
+  onClick: togglePlay,
+  defaultToggle: false,
 });
 
-const toolsNames = [
-  LengthTool.toolName,
-  KeyImageTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-  PlanarFreehandROITool.toolName,
-  VideoRedactionTool.toolName,
-  LivewireContourTool.toolName,
-];
-let selectedToolName = toolsNames[0];
-
 addDropdownToToolbar({
-  options: { values: toolsNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
-
-    selectedToolName = <string>newSelectedToolName;
-  },
+  options: { map: annotationTools },
+  toolGroupId,
 });
 
 function togglePlay(toggle = undefined) {
@@ -161,7 +112,6 @@ function togglePlay(toggle = undefined) {
   } else {
     viewport.pause();
   }
-  playButton.innerText = toggle ? 'Play' : 'Pause';
 }
 
 addButtonToToolbar({
@@ -173,6 +123,7 @@ addButtonToToolbar({
       cornerstoneTools.annotation.state.removeAnnotation(
         annotation.annotationUID
       );
+      viewport.render();
     }
   },
 });
@@ -225,6 +176,10 @@ function addAnnotationListeners() {
     toolsEvents.ANNOTATION_COMPLETED,
     annotationModifiedListener
   );
+  eventTarget.addEventListener(
+    toolsEvents.ANNOTATION_REMOVED,
+    annotationModifiedListener
+  );
 }
 
 /**
@@ -249,54 +204,21 @@ async function run() {
 
   addAnnotationListeners();
 
-  // Add annotation tools to Cornerstone3D
-  cornerstoneTools.addTool(KeyImageTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
-  cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(VideoRedactionTool);
-  cornerstoneTools.addTool(LivewireContourTool);
+  // Add annotation tools to Cornerstone3D - done in addManipulation
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  annotationTools.get('KeyImage').bindings = [
+    {
+      mouseButton: MouseBindings.Primary,
+      modifierKey: KeyboardBindings.ShiftAlt,
+    },
+  ];
+
+  addManipulationBindings(toolGroup, { toolMap: annotationTools });
 
   // Add tools to the tool group
-  toolGroup.addTool(KeyImageTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
-  toolGroup.addTool(VideoRedactionTool.toolName);
-  toolGroup.addTool(LivewireContourTool.toolName);
-
-  toolGroup.setToolActive(KeyImageTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.ShiftAlt,
-      },
-    ],
-  });
-  toolGroup.setToolActive(LengthTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Middle Click
-      },
-    ],
-  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
@@ -304,7 +226,6 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-
   const viewportInput = {
     viewportId,
     type: ViewportType.VIDEO,
@@ -324,19 +245,8 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 25);
-
-  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
-
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
-    const { time, duration } = evt.detail;
-    rangeElement.value = time;
-    rangeElement.max = duration;
-    const timeElement = document.getElementById('time');
-    timeElement.innerText = seconds(time);
-    const remainingElement = document.getElementById('remaining');
-    remainingElement.innerText = seconds(duration - time);
-  });
+  await viewport.setVideo(videoId, 1);
+  addVideoTime(element, viewport);
 }
 
 run();

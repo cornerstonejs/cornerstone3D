@@ -94,7 +94,7 @@ function getAnnotationsSelected(): Array<string> {
 function getAnnotationsSelectedByToolName(toolName: string): Array<string> {
   return getAnnotationsSelected().filter((annotationUID) => {
     const annotation = getAnnotation(annotationUID);
-    return annotation.metadata.toolName === toolName;
+    return annotation?.metadata?.toolName === toolName;
   });
 }
 

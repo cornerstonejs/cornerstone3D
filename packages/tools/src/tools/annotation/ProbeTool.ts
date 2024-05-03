@@ -425,6 +425,10 @@ class ProbeTool extends AnnotationTool {
 
       const { color } = this.getAnnotationStyle({ annotation, styleSpecifier });
 
+      if (!data.cachedStats) {
+        data.cachedStats = {};
+      }
+
       if (
         !data.cachedStats[targetId] ||
         data.cachedStats[targetId].value == null

@@ -13,7 +13,7 @@ import { CardinalSpline } from './CardinalSpline';
  */
 class LinearSpline extends CardinalSpline {
   constructor() {
-    super({ scale: 0, fixedScale: true });
+    super({ resolution: 0, fixedResolution: true, scale: 0, fixedScale: true });
   }
 }
 

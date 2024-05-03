@@ -86,14 +86,8 @@ export function scrollVolume(
 
   const desiredStepIndex = currentStepIndex + delta;
 
-  if (
-    (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
-    viewport.getCurrentImageId() // Check that we are in the plane of acquistion
-  ) {
-    // One common use case of this trigger might be to load the next
-    // volume in a time series or the next segment of a partially loaded volume.
-
-    const VolumeScrollEventDetail = {
+  const VolumeScrollEventDetail: EventTypes.VolumeScrollOutOfBoundsEventDetail =
+    {
       volumeId,
       viewport,
       delta,
@@ -103,10 +97,23 @@ export function scrollVolume(
       currentImageId: viewport.getCurrentImageId(),
     };
 
+  if (
+    (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
+    viewport.getCurrentImageId() // Check that we are in the plane of acquistion
+  ) {
+    // One common use case of this trigger might be to load the next
+    // volume in a time series or the next segment of a partially loaded volume.
+
     csUtils.triggerEvent(
       eventTarget,
       EVENTS.VOLUME_SCROLL_OUT_OF_BOUNDS,
-      VolumeScrollEventDetail as EventTypes.VolumeScrollOutOfBoundsEventDetail
+      VolumeScrollEventDetail
+    );
+  } else {
+    csUtils.triggerEvent(
+      eventTarget,
+      EVENTS.VOLUME_VIEWPORT_SCROLL,
+      VolumeScrollEventDetail
     );
   }
 }

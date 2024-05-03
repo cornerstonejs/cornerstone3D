@@ -1,7 +1,7 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import {
-  StackViewport,
+  BaseVolumeViewport,
   getEnabledElement,
   Enums,
   getEnabledElementByIds,
@@ -19,7 +19,7 @@ import triggerSegmentationRender from '../../utilities/segmentation/triggerSegme
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
 
-  if (!(viewport instanceof StackViewport)) {
+  if (viewport instanceof BaseVolumeViewport) {
     return;
   }
 
@@ -35,12 +35,6 @@ const enable = function (element: HTMLDivElement): void {
 };
 
 const disable = function (element: HTMLDivElement): void {
-  const { viewport } = getEnabledElement(element);
-
-  if (!(viewport instanceof StackViewport)) {
-    return;
-  }
-
   element.removeEventListener(
     Enums.Events.STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
@@ -50,6 +44,8 @@ const disable = function (element: HTMLDivElement): void {
     _imageChangeEventListener as EventListener
   );
 };
+
+const perToolGroupManualTriggers = new Map();
 
 /**
  *  When the image is rendered, check what tools can be rendered for this element.
@@ -93,14 +89,13 @@ function _imageChangeEventListener(evt) {
       representation.segmentationId
     );
 
-    if (!segmentation) {
+    if (!segmentation || !segmentation.representationData?.LABELMAP) {
       return;
     }
 
-    const labelmapData =
-      segmentation.representationData[Representations.Labelmap];
+    const labelmapData = segmentation.representationData.LABELMAP;
 
-    if (isVolumeSegmentation(labelmapData)) {
+    if (isVolumeSegmentation(labelmapData, viewport)) {
       return;
     }
 
@@ -130,7 +125,11 @@ function _imageChangeEventListener(evt) {
     // where we are in the process of updating the volume conversion to a stack while
     // the data is still coming in. In such situations, we should trigger the render
     // to ensure that the segmentation actors are created, even if the data arrives late.
-    triggerSegmentationRender(toolGroup.id);
+
+    if (!perToolGroupManualTriggers.has(toolGroup.id)) {
+      perToolGroupManualTriggers.set(toolGroup.id, true);
+      triggerSegmentationRender(toolGroup.id);
+    }
 
     // we should return here, since there is no segmentation actor to update
     // we will hit this function later on after the actor is created
@@ -153,6 +152,16 @@ function _imageChangeEventListener(evt) {
       // this means that this slice doesn't have a segmentation for this representation
       // this can be a case where the segmentation was added to certain slices only
       // so we can keep the actor but empty out the imageData
+      if (segmentationImageData.setDerivedImage) {
+        // If the image data has a set derived image, then it should be called
+        // to update any vtk or actor data associated with it.  In this case, null
+        // is used to clear the data.  THis allows intercepting/alternative
+        // to vtk calls.  Eventually the vtk version should also use this.
+        segmentationImageData.setDerivedImage(null);
+        return;
+      }
+      // This is the vtk version of the clearing out the image data, and fails
+      // to work for non scalar image data.
       const scalarArray = vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: 1,
@@ -170,7 +179,11 @@ function _imageChangeEventListener(evt) {
     const { dimensions, spacing, direction } =
       viewport.getImageDataMetadata(derivedImage);
 
-    const currentImage = cache.getImage(currentImageId);
+    const currentImage =
+      cache.getImage(currentImageId) ||
+      ({
+        imageId: currentImageId,
+      } as Types.IImage);
     const { origin: currentOrigin } =
       viewport.getImageDataMetadata(currentImage);
 
@@ -231,10 +244,17 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    utilities.updateVTKImageDataWithCornerstoneImage(
-      segmentationImageData,
-      derivedImage
-    );
+    if (segmentationImageData.setDerivedImage) {
+      // Update the derived image data, whether vtk or other as appropriate
+      // to the actor(s) displaying the data.
+      segmentationImageData.setDerivedImage(derivedImage);
+    } else {
+      // TODO - use setDerivedImage for this functionality
+      utilities.updateVTKImageDataWithCornerstoneImage(
+        segmentationImageData,
+        derivedImage
+      );
+    }
     viewport.render();
 
     // This is put here to make sure that the segmentation is rendered

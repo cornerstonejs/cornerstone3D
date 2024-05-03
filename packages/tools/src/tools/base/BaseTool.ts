@@ -1,9 +1,4 @@
-import {
-  StackViewport,
-  utilities,
-  BaseVolumeViewport,
-  VideoViewport,
-} from '@cornerstonejs/core';
+import { utilities, BaseVolumeViewport } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import StrategyCallbacks from '../../enums/StrategyCallbacks';
@@ -109,6 +104,13 @@ abstract class BaseTool implements IBaseTool {
     callbackType: StrategyCallbacks | string
   ): any {
     const { strategies, activeStrategy } = this.configuration;
+
+    if (!strategies[activeStrategy]) {
+      throw new Error(
+        `applyActiveStrategyCallback: active strategy ${activeStrategy} not found, check tool configuration or spellings`
+      );
+    }
+
     return strategies[activeStrategy][callbackType]?.call(
       this,
       enabledElement,
@@ -206,7 +208,7 @@ abstract class BaseTool implements IBaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = targetId.split(/volumeId:|\?/)[1];
+      const volumeId = utilities.getVolumeId(targetId);
       const viewports = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
@@ -248,7 +250,7 @@ abstract class BaseTool implements IBaseTool {
    * @returns targetId
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
-    const targetId = viewport.getTargetId?.();
+    const targetId = viewport.getReferenceId?.();
     if (targetId) {
       return targetId;
     }

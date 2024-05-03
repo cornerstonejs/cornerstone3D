@@ -35,6 +35,7 @@ export interface RectangleROIAnnotation extends Annotation {
     cachedStats?:
       | ROICachedStats
       | {
+          pointsInVolume?: Types.Point3[];
           projectionPoints?: Types.Point3[];
           projectionPointsImageIds?: string[];
         };
@@ -86,8 +87,9 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
     zoomFactor: number;
     sourceViewportId: string;
     magnifyViewportId: string;
+    isCanvasAnnotation: boolean;
     handles: {
-      points: Types.Point3[]; // [top, right, bottom, left]
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]; // in canvas space
       activeHandleIndex: number | null;
     };
   };
@@ -110,13 +112,18 @@ export interface CircleROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?: ROICachedStats & {
-      [targetId: string]: {
-        radius: number;
-        radiusUnit: string;
-        perimeter: number;
-      };
-    };
+    cachedStats?:
+      | (ROICachedStats & {
+          [targetId: string]: {
+            radius: number;
+            radiusUnit: string;
+            perimeter: number;
+          };
+        })
+      | {
+          pointsInVolume: Types.Point3[];
+          projectionPoints: Types.Point3[][];
+        };
   };
 }
 
@@ -141,11 +148,7 @@ export type SplineROIAnnotation = ContourAnnotation & {
 export type SplineContourSegmentationAnnotation = SplineROIAnnotation &
   ContourSegmentationAnnotationData;
 
-export type LivewireContourAnnotation = ContourAnnotation & {
-  data: {
-    label?: string;
-  };
-};
+export type LivewireContourAnnotation = ContourAnnotation;
 
 export type LivewireContourSegmentationAnnotation = LivewireContourAnnotation &
   ContourSegmentationAnnotationData;
@@ -240,6 +243,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     startSlice: number;
     endSlice: number;
     cachedStats: {
+      pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
     };
@@ -250,21 +254,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
   };
 }
 
-export type PlanarFreehandROIAnnotation = ContourAnnotation & {
-  data: {
-    label?: string;
-    isOpenContour?: boolean;
-    isOpenUShapeContour?: boolean;
-    // Present if isOpenUShapeContour is true:
-    openUShapeContourVectorToPeak?: Types.Point3[];
-    cachedStats?: ROICachedStats;
-  };
-};
-
-export type PlanarFreehandContourSegmentationAnnotation =
-  PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
-
-export type InterpolationROIAnnotation = ContourAnnotation & {
+export interface CircleROIStartEndThresholdAnnotation extends Annotation {
   metadata: {
     cameraPosition?: Types.Point3;
     cameraFocalPoint?: Types.Point3;
@@ -274,10 +264,56 @@ export type InterpolationROIAnnotation = ContourAnnotation & {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
     toolName: string;
-    referencedSliceIndex?: number;
+    enabledElement: any; // Todo: how to remove this from the annotation??
+    volumeId: string;
+    spacingInNormal: number;
   };
-  interpolationUID?: string;
+  data: {
+    label: string;
+    startSlice: number;
+    endSlice: number;
+    cachedStats?: {
+      pointsInVolume: Types.Point3[];
+      projectionPoints: Types.Point3[][];
+    };
+    handles: {
+      points: [Types.Point3, Types.Point3]; // [center, end]
+      activeHandleIndex: number | null;
+    };
+  };
+}
+
+export type PlanarFreehandROIAnnotation = ContourAnnotation & {
+  data: {
+    label?: string;
+    isOpenUShapeContour?: boolean;
+    // Present if isOpenUShapeContour is true:
+    openUShapeContourVectorToPeak?: Types.Point3[];
+    cachedStats?: ROICachedStats;
+  };
 };
+export type PlanarFreehandContourSegmentationAnnotation =
+  PlanarFreehandROIAnnotation & ContourSegmentationAnnotationData;
+
+export type InterpolationROIAnnotation = ContourAnnotation &
+  ContourSegmentationAnnotationData & {
+    metadata: {
+      annotationUID?: string;
+    };
+    /** The interpolationUID links contours which are interpolated together */
+    interpolationUID?: string;
+    /**
+     *  The interpolation completed flag is used to mark interpolations as being done
+     * and no longer elligible for matching.
+     */
+    interpolationCompleted?: boolean;
+    /**
+     * A flag to track updates to annotations caused by things like
+     * spline or livewire regeenration of the data, and which should cause further
+     * updates to occur (or not as the tool decides).
+     */
+    isInterpolationUpdate?: boolean;
+  };
 
 export interface ArrowAnnotation extends Annotation {
   data: {

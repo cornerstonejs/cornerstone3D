@@ -8,6 +8,7 @@ import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import { getMinMax, windowLevel } from '../../utilities';
 import { RequestType } from '../../enums';
+import cache from '../../cache';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;
@@ -40,6 +41,10 @@ async function setDefaultVolumeVOI(
 
   voi = handlePreScaledVolume(imageVolume, voi);
   const { lower, upper } = voi;
+
+  if (lower === 0 && upper === 0) {
+    return;
+  }
 
   volumeActor
     .getProperty()
@@ -161,6 +166,7 @@ async function getVOIFromMinMax(
     },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
+    useNativeDataType,
     preScale: {
       enabled: true,
       scalingParameters: scalingParametersToUse,
@@ -175,19 +181,26 @@ async function getVOIFromMinMax(
   // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
   // slice for the imageScalarData, and for the second scenario we use the getPixelData
   // on the Cornerstone IImage object to get the pixel data.
-  const image = await loadAndCacheImage(imageId, options);
+  // Note: we don't want to use the derived or generated images for setting the
+  // default VOI, because they are not the original. This is ugly but don't
+  // know how to do it better.
+  let image = cache.getImage(imageId);
 
-  let imageScalarData;
-  if (!image) {
-    imageScalarData = _getImageScalarDataFromImageVolume(
-      imageVolume,
-      byteOffset,
-      bytePerPixel,
-      voxelsPerImage
-    );
-  } else {
-    imageScalarData = image.getPixelData();
+  if (!imageVolume.referencedImageIds?.length) {
+    // we should ignore the cache here,
+    // since we want to load the image from with the most
+    // recent prescale settings
+    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
+
+  const imageScalarData = image
+    ? image.getPixelData()
+    : _getImageScalarDataFromImageVolume(
+        imageVolume,
+        byteOffset,
+        bytePerPixel,
+        voxelsPerImage
+      );
 
   // Get the min and max pixel values of the middle slice
   const { min, max } = getMinMax(imageScalarData);

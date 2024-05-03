@@ -26,6 +26,7 @@ type CurveSegmentDistanceSquared = {
 abstract class Spline implements ISpline {
   private _controlPoints: Types.Point2[] = [];
   private _resolution: number;
+  private _fixedResolution: boolean;
   private _closed: boolean;
   private _invalidated = false;
   private _curveSegments: SplineCurveSegment[];
@@ -35,6 +36,7 @@ abstract class Spline implements ISpline {
   constructor(props?: SplineProps) {
     this._controlPoints = [];
     this._resolution = props?.resolution ?? 20;
+    this._fixedResolution = props?.fixedResolution ?? false;
     this._closed = props?.closed ?? false;
     this._invalidated = true;
   }
@@ -61,12 +63,22 @@ abstract class Spline implements ISpline {
 
   /** Set the resolution of the spline curve */
   public set resolution(resolution: number) {
-    if (this._resolution === resolution) {
+    if (this._fixedResolution || this._resolution === resolution) {
       return;
     }
 
     this._resolution = resolution;
     this.invalidated = true;
+  }
+
+  /** Fixed resolution
+   *
+   * Linar spline is one of the splines that does not allow changing the resolution
+   * for better performance otherwise it would calculate and render 20 line segments
+   * instead of a single one..
+   */
+  public get fixedResolution() {
+    return this._fixedResolution;
   }
 
   /** Flag that is set to true when the curve is already closed */

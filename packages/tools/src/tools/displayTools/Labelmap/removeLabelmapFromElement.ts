@@ -1,5 +1,4 @@
-import { StackViewport, getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 
 /**
  * Remove the labelmap segmentation representation from the viewport's HTML Element.
@@ -19,14 +18,7 @@ function removeLabelmapFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  if (viewport instanceof StackViewport) {
-    // Todo: we don't have stack segmentation yet
-    return;
-  }
-
-  (viewport as Types.IVolumeViewport).removeVolumeActors([
-    segmentationRepresentationUID,
-  ]);
+  viewport.removeActors([segmentationRepresentationUID]);
 }
 
 export default removeLabelmapFromElement;

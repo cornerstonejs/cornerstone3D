@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  imageLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -16,6 +15,7 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -30,9 +30,6 @@ const {
   segmentation,
   BrushTool,
   PanTool,
-  ZoomTool,
-  StackScrollTool,
-  StackScrollMouseWheelTool,
   BidirectionalTool,
   utilities: cstUtils,
 } = cornerstoneTools;
@@ -49,11 +46,9 @@ const viewportId1 = 'volumeViewport';
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const segmentationIdVolume = 'volumeSegmentationId';
-const segmentationIdStack = 'stackSegmentationId';
+const segmentationId = 'volumeSegmentationId';
 const toolGroupIds = ['toolgroupIdVolume'];
 const segmentationRepresentationUIDs = [];
-let stackImageIds;
 
 const actionConfiguration = {
   contourBidirectional: {
@@ -166,7 +161,7 @@ addDropdownToToolbar({
 
 addSliderToToolbar({
   title: 'Brush Size',
-  range: [5, 50],
+  range: [5, 100],
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
@@ -182,11 +177,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (segmentIndex) => {
     const indices = String(segmentIndex).split(',');
     segmentation.segmentIndex.setActiveSegmentIndex(
-      segmentationIdVolume,
-      Number(indices[0])
-    );
-    segmentation.segmentIndex.setActiveSegmentIndex(
-      segmentationIdStack,
+      segmentationId,
       Number(indices[0])
     );
   },
@@ -221,46 +212,30 @@ addButtonToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-    volumeId: segmentationIdVolume,
+    volumeId: segmentationId,
   });
-
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(stackImageIds);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
-      segmentationId: segmentationIdVolume,
+      segmentationId,
       representation: {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         // The actual segmentation data, in the case of labelmap this is a
         // reference to the source volume of the segmentation.
         data: {
-          volumeId: segmentationIdVolume,
-        },
-      },
-    },
-    {
-      segmentationId: segmentationIdStack,
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIdReferenceMap: new Map(
-            stackImageIds.map((imageId, index) => [
-              imageId,
-              segmentationImageIds[index],
-            ])
-          ),
+          volumeId: segmentationId,
         },
       },
     },
   ]);
+
   // Add the segmentation representation to the toolgroup
   segmentationRepresentationUIDs.push(
     ...(await segmentation.addSegmentationRepresentations(toolGroupIds[0], [
       {
-        segmentationId: segmentationIdVolume,
+        segmentationId: segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]))
@@ -316,14 +291,6 @@ const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
 const StudyInstanceUID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
-function getPtImageIds() {
-  return createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot,
-  });
-}
 function getCtImageIds() {
   return createImageIdsAndCacheMetaData({
     StudyInstanceUID,
@@ -341,11 +308,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
@@ -353,11 +316,7 @@ async function run() {
   toolGroupIds.forEach((toolGroupId) => {
     const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    // Manipulation Tools
-    toolGroup.addTool(PanTool.toolName);
-    toolGroup.addTool(StackScrollTool.toolName);
-    toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    addManipulationBindings(toolGroup, { enableShiftClickZoom: true });
 
     toolGroup.addTool(BidirectionalTool.toolName, {
       actions: actionConfiguration,
@@ -417,37 +376,14 @@ async function run() {
         },
       ],
     });
-    toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Secondary, // Right Click
-        },
-        {
-          mouseButton: MouseBindings.Primary,
-          modifierKey: KeyboardBindings.Shift,
-        },
-      ],
-    });
-    toolGroup.setToolActive(StackScrollTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-          modifierKey: KeyboardBindings.Alt,
-        },
-      ],
-    });
     // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
     // hook instead of mouse buttons, it does not need to assign any mouse button.
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
     toolGroup.setToolActive(BidirectionalTool.toolName);
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const [imageIds, imageIdsStack] = await Promise.all([
-    getCtImageIds(),
-    getPtImageIds(),
-  ]);
-  stackImageIds = imageIdsStack;
+  const imageIds = await getCtImageIds();
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -490,8 +426,7 @@ async function run() {
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdVolume, 1);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationIdStack, 1);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   // // Add the segmentation representation to the toolgroup
   // Setup configuration for contour bidirectional action

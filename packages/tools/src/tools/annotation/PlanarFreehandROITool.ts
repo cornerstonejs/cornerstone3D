@@ -7,11 +7,8 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import { math, roundNumber } from '../../utilities';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -45,12 +42,15 @@ import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { KeyboardBindings, ChangeTypes } from '../../enums';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
 
 const PARALLEL_THRESHOLD = 1 - EPSILON;
+
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
  * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
@@ -79,7 +79,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *
  * The result of smoothing will be removal of some of the outliers
  * Changing tool configuration (see below) you can fine-tune the smoothing process by changing knotsRatioPercentageOnAdd and knotsRatioPercentageOnEdit value, which smaller values produces a more agressive smoothing.
- * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more agressive smoothing.
+ * A smaller value of knotsRatioPercentageOnAdd/knotsRatioPercentageOnEdit produces a more aggressive smoothing.
  *
  * ```js
  * cornerstoneTools.addTool(PlanarFreehandROITool)
@@ -98,7 +98,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  *   ],
  * })
  *
- * // set smoothing agressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
+ * // set smoothing aggressiveness while adding new annotation (ps: this does not change if smoothing is ON or OFF)
  * toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
  *   smoothing: { knotsRatioPercentageOnAdd: 30 },
  * });
@@ -177,6 +177,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        /**
+         * Specify which modifier key is used to add a hole to a contour. The
+         * modifier must be pressed when the first point of a new contour is added.
+         */
+        contourHoleAdditionModifierKey: KeyboardBindings.Shift,
         alwaysRenderOpenContourHandles: {
           // When true, always render end points when you have an open contour, rather
           // than just rendering a line.
@@ -225,7 +230,19 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           // interpolation is complete.
           onInterpolationComplete: null,
         },
-        calculateStats: false,
+        /**
+         * The polyline may get processed in order to reduce the number of points
+         * for better performance and storage.
+         */
+        decimate: {
+          enabled: false,
+          /** A maximum given distance 'epsilon' to decide if a point should or
+           * shouldn't be added the resulting polyline which will have a lower
+           * number of points for higher `epsilon` values.
+           */
+          epsilon: 0.1,
+        },
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -276,7 +293,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     );
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
+
     evt.preventDefault();
+
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     return annotation;
@@ -332,6 +351,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     } else {
       this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     }
+
+    evt.preventDefault();
   };
 
   /**
@@ -354,7 +375,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const points = annotation.data.contour.polyline;
+    const { polyline: points } = annotation.data.contour;
 
     // NOTE: It is implemented this way so that we do not double calculate
     // points when number crunching adjacent line segments.
@@ -384,7 +405,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return pointCanProjectOnLine(canvasCoords, pStart, pEnd, proximity);
   };
 
-  cancel = (element: HTMLDivElement): void => {
+  public cancel = (element: HTMLDivElement): void => {
     const isDrawing = this.isDrawing;
     const isEditingOpen = this.isEditingOpen;
     const isEditingClosed = this.isEditingClosed;
@@ -403,7 +424,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    * `handles`, which means `filterAnnotationsForDisplay` fails inside
    * `filterAnnotationsWithinSlice`.
    */
-  filterInteractableAnnotationsForElement(
+  public filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
     annotations: Annotations
   ): Annotations | undefined {
@@ -504,7 +525,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   }
 
   protected isContourSegmentationTool(): boolean {
-    // Disable contour segmenatation behavior because it shall be activated only
+    // Disable contour segmentation behavior because it shall be activated only
     // for PlanarFreehandContourSegmentationTool
     return false;
   }
@@ -513,15 +534,26 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const worldPos = evt.detail.currentPoints.world;
     const contourAnnotation = super.createAnnotation(evt);
 
-    return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
-      data: {
-        contour: {
-          polyline: [<Types.Point3>[...worldPos]],
+    const onInterpolationComplete = (annotation) => {
+      // Clear out the handles because they aren't used for straight freeform
+      annotation.data.handles.points.length = 0;
+    };
+
+    const annotation = <PlanarFreehandROIAnnotation>csUtils.deepMerge(
+      contourAnnotation,
+      {
+        data: {
+          contour: {
+            polyline: [<Types.Point3>[...worldPos]],
+          },
+          label: '',
+          cachedStats: {},
         },
-        label: '',
-        cachedStats: {},
-      },
-    });
+        onInterpolationComplete,
+      }
+    );
+
+    return annotation;
   }
 
   protected getAnnotationStyle(context) {
@@ -533,8 +565,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   protected renderAnnotationInstance(
     renderContext: AnnotationRenderContext
   ): boolean {
-    const { enabledElement, targetId, svgDrawingHelper, annotationStyle } =
-      renderContext;
+    const { enabledElement, targetId, svgDrawingHelper } = renderContext;
     const annotation = renderContext.annotation as PlanarFreehandROIAnnotation;
 
     let renderStatus = false;
@@ -658,9 +689,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     enabledElement
   ) => {
     const { data } = annotation;
-    const { element } = viewport;
     const { cachedStats } = data;
-    const { polyline: points } = data.contour;
+    const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
 
@@ -694,11 +724,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
-      const scale = getCalibratedScale(image);
-      let area = polyline.getArea(canvasCoordinates) / scale / scale;
-      // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
-
       const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
       worldPosIndex[1] = Math.floor(worldPosIndex[1]);
@@ -730,6 +755,59 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         kMin = Math.min(kMin, worldPosIndex[2]);
         kMax = Math.max(kMax, worldPosIndex[2]);
       }
+
+      const worldPosIndex2 = csUtils.transformWorldToIndex(
+        imageData,
+        points[1]
+      );
+      worldPosIndex2[0] = Math.floor(worldPosIndex2[0]);
+      worldPosIndex2[1] = Math.floor(worldPosIndex2[1]);
+      worldPosIndex2[2] = Math.floor(worldPosIndex2[2]);
+
+      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+        image,
+        () => {
+          const polyline = data.contour.polyline;
+          const numPoints = polyline.length;
+          const projectedPolyline = new Array(numPoints);
+
+          for (let i = 0; i < numPoints; i++) {
+            projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
+          }
+
+          const {
+            maxX: canvasMaxX,
+            maxY: canvasMaxY,
+            minX: canvasMinX,
+            minY: canvasMinY,
+          } = math.polyline.getAABB(projectedPolyline);
+
+          const topLeftBBWorld = viewport.canvasToWorld([
+            canvasMinX,
+            canvasMinY,
+          ]);
+
+          const topLeftBBIndex = csUtils.transformWorldToIndex(
+            imageData,
+            topLeftBBWorld
+          );
+
+          const bottomRightBBWorld = viewport.canvasToWorld([
+            canvasMaxX,
+            canvasMaxY,
+          ]);
+
+          const bottomRightBBIndex = csUtils.transformWorldToIndex(
+            imageData,
+            bottomRightBBWorld
+          );
+
+          return [topLeftBBIndex, bottomRightBBIndex];
+        }
+      );
+      let area = polyline.getArea(canvasCoordinates) / scale / scale;
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
 
       // Expand bounding box
       const iDelta = 0.01 * (iMax - iMin);
@@ -813,17 +891,22 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        mean: stats[1]?.value,
-        max: stats[0]?.value,
-        stdDev: stats[3]?.value,
-        statsArray: stats,
+        perimeter: calculatePerimeter(canvasCoordinates, closed),
+        mean: stats.mean?.value,
+        max: stats.max?.value,
+        stdDev: stats.stdDev?.value,
+        statsArray: stats.array,
         pointsInShape: pointsInShape,
-        areaUnit: getCalibratedAreaUnits(null, image),
+        areaUnit: areaUnits,
         modalityUnit,
       };
     }
 
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(
+      annotation,
+      enabledElement.viewport.element,
+      ChangeTypes.StatsUpdated
+    );
 
     annotation.invalidated = false;
 
@@ -894,8 +977,16 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats || {};
+  const {
+    area,
+    mean,
+    stdDev,
+    perimeter,
+    max,
+    isEmptyArea,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
 
@@ -916,6 +1007,10 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (stdDev) {
     textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  if (perimeter) {
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${modalityUnit}`);
   }
 
   return textLines;

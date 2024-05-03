@@ -87,6 +87,26 @@ export function getEnabledElementByIds(
 }
 
 /**
+ * Retrieves the enabled element by the specified viewport ID. it searches
+ * through all the rendering engines to find the viewport with the specified
+ *
+ * @param viewportId - The ID of the viewport.
+ * @returns The enabled element associated with the specified viewport ID.
+ */
+export function getEnabledElementByViewportId(viewportId: string) {
+  const renderingEngines = getRenderingEngines();
+
+  for (let i = 0; i < renderingEngines.length; i++) {
+    const renderingEngine = renderingEngines[i];
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    if (viewport) {
+      return getEnabledElementByIds(viewportId, renderingEngine.id);
+    }
+  }
+}
+
+/**
  * Get all the enabled elements from all the rendering engines
  * @returns An array of enabled elements.
  */

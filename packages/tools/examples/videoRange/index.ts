@@ -7,11 +7,14 @@ import {
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
+  addToggleButtonToToolbar,
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
+  addManipulationBindings,
+  addVideoTime,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,10 +27,6 @@ const {
   KeyImageTool,
   VideoRedactionTool,
 
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
-  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -65,24 +64,12 @@ element.style.height = '500px';
 
 content.appendChild(element);
 
-const rangeDiv = document.createElement('div');
-rangeDiv.innerHTML =
-  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
-content.appendChild(rangeDiv);
-const rangeElement = document.getElementById('range') as HTMLInputElement;
-rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-
 const instructions = document.createElement('p');
 instructions.innerText = `Play/Pause button will toggle the playing of video
 Clear Frame Range clears and selected from range on playback
 Click the viewer to apply a key image (range if playing, frame if still).
 Annotation navigation will choose next/previous annotation in the group
-Select start/current/end range to set the start of the range, the current image and the end range
+Select start/remove range/end range to set the start of the range and the end range, as well as to remove the range (make the key image apply to the current frame only)
 `;
 
 content.append(instructions);
@@ -97,10 +84,21 @@ const baseEventDetail = {
 
 let viewport;
 
-const playButton = addButtonToToolbar({
+addToggleButtonToToolbar({
   id: 'play',
-  title: 'Pause',
-  onClick: (evt) => togglePlay(),
+  title: 'Play',
+  onClick: togglePlay,
+  defaultToggle: false,
+});
+
+addButtonToToolbar({
+  id: 'CreateKey',
+  title: 'Create Key Image',
+  onClick: () => {
+    KeyImageTool.createAndAddAnnotation(viewport, {
+      data: { label: 'Demo Key Image' },
+    });
+  },
 });
 
 addButtonToToolbar({
@@ -156,12 +154,11 @@ addButtonToToolbar({
 function togglePlay(toggle = undefined) {
   if (toggle === undefined) {
     toggle = viewport.togglePlayPause();
-  } else if (toggle === true) {
+  } else if (toggle) {
     viewport.play();
   } else {
     viewport.pause();
   }
-  playButton.innerText = toggle ? 'Play' : 'Pause';
 }
 
 addButtonToToolbar({
@@ -189,23 +186,6 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
-  id: 'Set Current',
-  title: 'Current Image',
-  onClick() {
-    const annotation = getActiveAnnotation();
-    if (annotation) {
-      togglePlay(false);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        viewport.getFrameNumber(),
-        baseEventDetail
-      );
-      viewport.render();
-    }
-  },
-});
-
-addButtonToToolbar({
   id: 'End Range',
   title: 'End Range',
   onClick() {
@@ -224,6 +204,23 @@ addButtonToToolbar({
         baseEventDetail
       );
       viewport.setFrameRange(range);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Remove Range',
+  title: 'Remove Range',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      togglePlay(false);
+      annotationFrameRange.setFrameRange(
+        annotation,
+        viewport.getFrameNumber(),
+        baseEventDetail
+      );
       viewport.render();
     }
   },
@@ -337,28 +334,20 @@ async function run() {
   );
 
   addAnnotationListeners();
-
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
   cornerstoneTools.addTool(VideoRedactionTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   // Add tools to the tool group
   toolGroup.addTool(KeyImageTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
-
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
@@ -372,36 +361,6 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary, // Ctrl Left drag
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
       },
     ],
   });
@@ -432,21 +391,8 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 25);
-
-  viewport.play();
-
-  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
-
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
-    const { time, duration } = evt.detail;
-    rangeElement.value = time;
-    rangeElement.max = duration;
-    const timeElement = document.getElementById('time');
-    timeElement.innerText = seconds(time);
-    const remainingElement = document.getElementById('remaining');
-    remainingElement.innerText = seconds(duration - time);
-  });
+  await viewport.setVideo(videoId, 1);
+  addVideoTime(element, viewport);
 }
 
 run();

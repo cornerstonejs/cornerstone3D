@@ -7,6 +7,7 @@ import {
   addDropdownToToolbar,
   setTitleAndDescription,
   addButtonToToolbar,
+  addBrushSizeSlider,
 } from '../../../../utils/demo/helpers';
 import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
@@ -139,6 +140,9 @@ function updateSegmentationDropdownOptions(
   }
 }
 
+addBrushSizeSlider({
+  toolGroupId: toolGroupId,
+});
 // ============================= //
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
@@ -191,7 +195,7 @@ addButtonToToolbar({
     const currentImageId = viewport.getCurrentImageId();
 
     const { imageId: newSegImageId } =
-      await imageLoader.createAndCacheDerivedImage(currentImageId);
+      await imageLoader.createAndCacheDerivedSegmentationImage(currentImageId);
 
     const newSegmentationId = `SEGMENTATION_${newSegImageId}`;
     segmentationIds.push(newSegmentationId);
@@ -401,7 +405,7 @@ async function run() {
   const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
 
   const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(imageIdsArray);
+    await imageLoader.createAndCacheDerivedSegmentationImages(imageIdsArray);
 
   await viewport.setStack(imageIdsArray, 0);
 

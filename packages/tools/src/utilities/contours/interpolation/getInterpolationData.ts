@@ -1,6 +1,11 @@
-import type { InterpolationViewportData, Annotation } from '../../../types';
+import type {
+  InterpolationViewportData,
+  Annotation,
+  ContourSegmentationAnnotation,
+} from '../../../types';
 import { getAnnotations } from '../../../stateManagement/annotation/annotationState';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+
+const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
 export type FilterParam = {
   /**
@@ -38,15 +43,48 @@ export default function getInterpolationData(
 ): Map<number, Annotation[]> {
   const { viewport, sliceData, annotation } = viewportData;
   const interpolationDatas = new Map<number, Annotation[]>();
-  const annotations = getAnnotations(
-    annotation.metadata.toolName,
-    viewport.element
+  const { toolName, originalToolName } = annotation.metadata;
+  const testToolName = originalToolName || toolName;
+  // Get a copy of the annotations list by filtering it for only
+  // items which are originally the right tool name
+  const annotations = (
+    (getAnnotations(
+      testToolName,
+      viewport.element
+    ) as ContourSegmentationAnnotation[]) || []
+  ).filter(
+    (annotation) =>
+      !annotation.metadata.originalToolName ||
+      annotation.metadata.originalToolName === testToolName
   );
+
+  // Then add the default contour seg tool name which has the testTool name
+  // to the segmentations list.
+  if (testToolName !== DEFAULT_CONTOUR_SEG_TOOLNAME) {
+    const modifiedAnnotations = getAnnotations(
+      DEFAULT_CONTOUR_SEG_TOOLNAME,
+      viewport.element
+    ) as ContourSegmentationAnnotation[];
+    if (modifiedAnnotations?.length) {
+      modifiedAnnotations.forEach((annotation) => {
+        const { metadata } = annotation;
+        if (
+          metadata.originalToolName === testToolName &&
+          metadata.originalToolName !== metadata.toolName
+        ) {
+          annotations.push(annotation);
+        }
+      });
+    }
+  }
+
+  if (!annotations?.length) {
+    return interpolationDatas;
+  }
 
   for (let i = 0; i < sliceData.numberOfSlices; i++) {
     const imageAnnotations = annotations.filter(
-      (x) =>
-        (x as InterpolationROIAnnotation).metadata.referencedSliceIndex === i
+      (x) => x.metadata.sliceIndex === i
     );
 
     if (!imageAnnotations?.length) {
@@ -68,7 +106,9 @@ export default function getInterpolationData(
       }
     );
 
-    interpolationDatas.set(i, filteredInterpolatedAnnotations);
+    if (filteredInterpolatedAnnotations.length) {
+      interpolationDatas.set(i, filteredInterpolatedAnnotations);
+    }
   }
 
   return interpolationDatas;

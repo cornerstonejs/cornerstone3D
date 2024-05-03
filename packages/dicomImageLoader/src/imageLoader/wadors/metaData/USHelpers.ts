@@ -16,8 +16,8 @@ function getUSEnhancedRegions(metadata) {
   const regions = sequenceOfUltrasoundRegions.map((sequence) => {
     const physicalDeltaX = getFirstNumberValue(sequence, '0018602C');
     const physicalDeltaY = getFirstNumberValue(sequence, '0018602E');
-    const physicalUnitXDirection = getFirstNumberValue(sequence, '00186024');
-    const physicalUnitYDirection = getFirstNumberValue(sequence, '00186026');
+    const physicalUnitsXDirection = getFirstNumberValue(sequence, '00186024');
+    const physicalUnitsYDirection = getFirstNumberValue(sequence, '00186026');
 
     const regionLocationMinY0 = getFirstNumberValue(sequence, '0018601A');
     const regionLocationMaxY1 = getFirstNumberValue(sequence, '0018601E');
@@ -49,8 +49,8 @@ function getUSEnhancedRegions(metadata) {
       referencePixelY0,
       physicalDeltaX,
       physicalDeltaY,
-      physicalUnitXDirection,
-      physicalUnitYDirection,
+      physicalUnitsXDirection,
+      physicalUnitsYDirection,
       referencePhysicalPixelValueY,
       referencePhysicalPixelValueX,
       regionSpatialFormat,

@@ -1,7 +1,5 @@
-import { getEnabledElements, utilities as csUtils } from '@cornerstonejs/core';
 import type { Annotation } from '../types';
-
-const { isEqual } = csUtils;
+import getViewportsForAnnotation from './getViewportsForAnnotation';
 
 /**
  * Finds a matching viewport in terms of the orientation of the annotation data
@@ -13,17 +11,7 @@ const { isEqual } = csUtils;
  * @returns The viewport to display in
  */
 export default function getViewportForAnnotation(annotation: Annotation) {
-  const { metadata } = annotation;
-  const enabledElement = getEnabledElements().find((enabledElement) => {
-    if (enabledElement.FrameOfReferenceUID === metadata.FrameOfReferenceUID) {
-      const viewport = enabledElement.viewport;
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
-      return (
-        isEqual(viewPlaneNormal, metadata.viewPlaneNormal) &&
-        (!metadata.viewUp || isEqual(viewUp, metadata.viewUp))
-      );
-    }
-    return;
-  });
-  return enabledElement?.viewport;
+  const viewports = getViewportsForAnnotation(annotation);
+
+  return viewports.length ? viewports[0] : undefined;
 }

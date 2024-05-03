@@ -19,12 +19,13 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume } from './cache';
+import cache, { ImageVolume, Surface } from './cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 
 import getEnabledElement, {
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   getEnabledElements,
 } from './getEnabledElement';
 import * as metaData from './metaData';
@@ -41,6 +42,7 @@ import {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
+  canRenderFloatTextures,
 } from './init';
 
 // Classes
@@ -88,6 +90,7 @@ export {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
+  canRenderFloatTextures,
   // enums
   Enums,
   CONSTANTS,
@@ -103,12 +106,14 @@ export {
   VideoViewport,
   RenderingEngine,
   ImageVolume,
+  Surface,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,
   getEnabledElement,
   getEnabledElementByIds,
   getEnabledElements,
+  getEnabledElementByViewportId,
   createVolumeActor,
   getOrCreateCanvas,
   createVolumeMapper,

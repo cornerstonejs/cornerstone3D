@@ -9,13 +9,15 @@ export function fillVolumeSegmentationWithMockData({
   volumeId: segVolumeId,
   cornerstone,
   centerOffset = [0, 0, 0],
+  innerRadius = null,
+  outerRadius = null,
 }) {
   const segmentationVolume = cornerstone.cache.getVolume(segVolumeId);
   const scalarData = segmentationVolume.scalarData;
   const { dimensions } = segmentationVolume;
 
-  const innerRadius = dimensions[0] / 8;
-  const outerRadius = dimensions[0] / 4;
+  innerRadius = innerRadius || dimensions[0] / 8;
+  outerRadius = outerRadius || dimensions[0] / 4;
 
   const center = [
     dimensions[0] / 2 + centerOffset[0],

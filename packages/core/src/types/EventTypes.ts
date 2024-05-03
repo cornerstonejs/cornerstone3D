@@ -11,6 +11,7 @@ import VOILUTFunctionType from '../enums/VOILUTFunctionType';
 import ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import IImageCalibration from './IImageCalibration';
+import { ColormapPublic } from './Colormap';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -46,6 +47,17 @@ type VoiModifiedEventDetail = {
   invert?: boolean;
   /** Indicates if the 'invert' state has changed from the previous state */
   invertStateChanged?: boolean;
+  /** color map */
+  colormap?: ColormapPublic;
+};
+
+type ColormapModifiedEventDetail = {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** The new colormap */
+  colormap: ColormapPublic;
+  /** Unique ID for the volume in the cache */
+  volumeId?: string;
 };
 
 /**
@@ -109,6 +121,10 @@ type ImageVolumeModifiedEventDetail = {
   imageVolume: IImageVolume;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
+  /** number of frames */
+  numberOfFrames: number;
+  /** framesProcessed */
+  framesProcessed: number;
 };
 
 /**
@@ -288,6 +304,11 @@ type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
 type VoiModifiedEvent = CustomEventType<VoiModifiedEventDetail>;
 
 /**
+ * COLORMAP_MODIFIED Event type
+ */
+type ColormapModifiedEvent = CustomEventType<ColormapModifiedEventDetail>;
+
+/**
  * DISPLAY_AREA_MODIFIED Event type
  */
 type DisplayAreaModifiedEvent = CustomEventType<DisplayAreaModifiedEventDetail>;
@@ -398,6 +419,8 @@ export type {
   CameraModifiedEvent,
   VoiModifiedEvent,
   VoiModifiedEventDetail,
+  ColormapModifiedEvent,
+  ColormapModifiedEventDetail,
   DisplayAreaModifiedEvent,
   DisplayAreaModifiedEventDetail,
   ElementDisabledEvent,

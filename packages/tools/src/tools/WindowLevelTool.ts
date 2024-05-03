@@ -2,10 +2,9 @@ import { BaseTool } from './base';
 import {
   getEnabledElement,
   VolumeViewport,
-  StackViewport,
-  utilities,
   cache,
   Types,
+  utilities,
 } from '@cornerstonejs/core';
 import { EventTypes } from '../types';
 
@@ -51,7 +50,7 @@ class WindowLevelTool extends BaseTool {
     const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
       const targetId = this.getTargetId(viewport as Types.IVolumeViewport);
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = utilities.getVolumeId(targetId);
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
@@ -204,7 +203,8 @@ class WindowLevelTool extends BaseTool {
     const dimensions = imageData.getDimensions();
 
     if (imageData.getRange) {
-      return imageData.getRange();
+      const imageDataRange = imageData.getRange();
+      return imageDataRange[1] - imageDataRange[0];
     }
     let scalarData;
     // if getScalarData is a method on imageData

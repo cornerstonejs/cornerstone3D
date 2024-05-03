@@ -10,6 +10,16 @@ export type SplineProps = {
    */
   resolution?: number;
 
+  /**
+   * Fixed resolution (Linear spline)
+   *
+   * Splines with `fixedResolution` set to true shall attempt to change the
+   * resolution (eg: spline.resolution = 10). That is useful, for example, for
+   * linear splines because having more line segments between two control points
+   * would not change its resolution and that is why it is fixed to 0.
+   */
+  fixedResolution?: boolean;
+
   /** Flag that is set to true when the curve is closed */
   closed?: boolean;
 };

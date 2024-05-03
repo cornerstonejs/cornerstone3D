@@ -11,6 +11,9 @@ import {
   setTitleAndDescription,
   addManipulationBindings,
   getLocalUrl,
+  addVideoTime,
+  addSegmentIndexDropdown,
+  contourTools,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -31,16 +34,11 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SplineContourSegmentationTool,
   SegmentationDisplayTool,
-  LivewireContourSegmentationTool,
-  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  TrackballRotateTool,
 } = cornerstoneTools;
-const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define various constants for the tool definition
@@ -50,45 +48,8 @@ const segmentationId = `SEGMENTATION_ID`;
 let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
-let activeSegmentIndex = 1;
 
-const configuredTools = new Map<string, any>();
-const interpolationConfiguration = {
-  interpolation: { enabled: true },
-};
-
-configuredTools.set('CatmullRomSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
-  },
-});
-configuredTools.set('LinearSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
-  },
-});
-
-configuredTools.set('BSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
-  },
-});
-
-configuredTools.set('FreeformInterpolation', {
-  baseTool: PlanarFreehandContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
-configuredTools.set('SplineInterpolation', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
-configuredTools.set('LivewireInterpolation', {
-  baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
+const { toolMap } = contourTools;
 
 // ======== Set up page ======== //
 
@@ -115,18 +76,6 @@ element.style.height = size;
 viewportGrid.appendChild(element);
 
 content.appendChild(viewportGrid);
-
-const rangeDiv = document.createElement('div');
-rangeDiv.innerHTML =
-  '<div id="time" style="float:left;width:2.5em;">0 s</div><input id="range" style="width:400px;height:8px;float: left" value="0" type="range" /><div id="remaining">unknown</div>';
-content.appendChild(rangeDiv);
-const rangeElement = document.getElementById('range') as HTMLInputElement;
-rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
-rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
-};
 
 createInfoSection(content, { ordered: true })
   .addInstruction('Select a segmentation index')
@@ -158,18 +107,6 @@ function updateInputsForCurrentSegmentation() {
   (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
     contourConfig.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
   );
-
-  (document.getElementById('outlineDashActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineDashActive?.split(',')[0] ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineDashActive?.split(',')[0] ??
-        '0'
-    );
-}
-
-function updateActiveSegmentIndex(segmentIndex: number): void {
-  activeSegmentIndex = segmentIndex;
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, segmentIndex);
 }
 
 function getSegmentsVisibilityState() {
@@ -227,41 +164,11 @@ element.addEventListener(
   cancelDrawingEventListener
 );
 
-addDropdownToToolbar({
-  labelText: 'Segment Index',
-  options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    updateActiveSegmentIndex(Number(nameAsStringOrNumber));
-  },
-});
-
-const toolNames = [
-  PlanarFreehandContourSegmentationTool.toolName,
-  LivewireContourSegmentationTool.toolName,
-  ...configuredTools.keys(),
-];
-let selectedToolName = toolNames[0];
+addSegmentIndexDropdown(segmentationId);
 
 addDropdownToToolbar({
-  options: { values: toolNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
-    selectedToolName = <string>newSelectedToolName;
-  },
+  options: { map: toolMap },
+  toolGroupId,
 });
 
 addToggleButtonToToolbar({
@@ -283,6 +190,7 @@ addButtonToToolbar({
   title: 'Show/Hide Current Segment',
   onClick: function () {
     const segmentsVisibility = getSegmentsVisibilityState();
+    const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     segmentation.config.visibility.setSegmentVisibility(
@@ -329,29 +237,6 @@ addSliderToToolbar({
   },
 });
 
-addSliderToToolbar({
-  id: 'outlineDashActive',
-  title: 'Outline Dash',
-  range: [0, 10],
-  step: 1,
-  defaultValue: 0,
-  onSelectedValueChange: (value) => {
-    const outlineDash = value === '0' ? undefined : `${value},${value}`;
-    updateSegmentationConfig({ outlineDashActive: outlineDash });
-  },
-});
-
-function initializeGlobalConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
 /**
  * Runs the demo
  */
@@ -359,35 +244,12 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(SplineContourSegmentationTool);
-  cornerstoneTools.addTool(TrackballRotateTool);
-  cornerstoneTools.addTool(LivewireContourSegmentationTool);
-  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  addManipulationBindings(toolGroup, { toolMap });
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(SplineContourSegmentationTool.toolName);
-  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  for (const [toolName, config] of configuredTools.entries()) {
-    toolGroup.addToolInstance(toolName, config.baseTool, config.configuration);
-  }
-
-  toolGroup.setToolActive(toolNames[0], {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -423,23 +285,13 @@ async function run() {
 
   // Get the stack viewport that was created
   viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  addVideoTime(viewportGrid, viewport);
 
   // Set the stack on the viewport
-  viewport.setVideo(videoId, 1);
+  await viewport.setVideo(videoId, 1);
 
   // Render the image
   renderingEngine.render();
-  const seconds = (time) => `${Math.round(time * 10) / 10} s`;
-
-  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
-    const { time, duration } = evt.detail;
-    rangeElement.value = time;
-    rangeElement.max = duration;
-    const timeElement = document.getElementById('time');
-    timeElement.innerText = seconds(time);
-    const remainingElement = document.getElementById('remaining');
-    remainingElement.innerText = seconds(duration - time);
-  });
 
   // Add a segmentation that will contains the contour annotations
   segmentation.addSegmentations([
@@ -463,7 +315,6 @@ async function run() {
   // Store the segmentation representation that was just created
   [segmentationRepresentationUID] = segmentationRepresentationUIDs;
 
-  initializeGlobalConfig();
   updateInputsForCurrentSegmentation();
 }
 

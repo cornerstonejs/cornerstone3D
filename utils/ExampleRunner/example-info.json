@@ -12,6 +12,9 @@
     "tools-advanced": {
       "description": "Advanced Tools library"
     },
+    "polymorph-segmentation": {
+      "description": "Polymorph Segmentation"
+    },
     "dicom-image-loader": {
       "description": "DICOM image loader"
     },
@@ -130,6 +133,10 @@
       "volumeSlabScroll": {
         "name": "Volume Slab Scroll",
         "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
+      },
+      "resize": {
+        "name": "Resize viewport and change aspect ratio",
+        "description": "Resize the viewport and allow various aspect ratios/conditions"
       },
       "webWorker": {
         "name": "Custom Web Worker Function",
@@ -259,13 +266,13 @@
         "name": "Video Tools",
         "description": "Video annotation tools"
       },
-      "videoSplineROITools": {
-        "name": "Video Spline ROI Tools",
-        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline) on video"
-      },
       "videoGroup": {
         "name": "Video Annotation Grouping",
         "description": "Annotation grouping tools"
+      },
+      "videoSegmentation": {
+        "name": "Video Labelmap Segmentation",
+        "description": "Video Labelmap Based Segmentation"
       },
       "videoContourSegmentation": {
         "name": "Video Contour Segmentation",
@@ -289,10 +296,6 @@
         "name": "Surface Segmentation Representation",
         "description": "Demonstrates how to use the Surface Segmentation Representation"
       },
-      "surfaceRenderingStack": {
-        "name": "Surface Segmentation on Stack Viewport and Volume Viewports",
-        "description": "Demonstrates how to render surface intersections with stack and volume viewports"
-      },
       "labelmapSwapping": {
         "name": "Labelmap Segmentation Swapping",
         "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
@@ -304,10 +307,6 @@
       "contourRenderingConfiguration": {
         "name": "Contour rendering configuration ",
         "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
-      },
-      "interpolationContourSegmentation": {
-        "name": "Interpolation of Contours between slices",
-        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
       },
       "labelmapToolGroupSpecificConfiguration": {
         "name": "ToolGroup Specific Labelmap Segmentation Configuration",
@@ -325,8 +324,12 @@
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
         "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
       },
+      "labelmapSegmentColorChange": {
+        "name": "Labelmap Segment Color Change",
+        "description": "Here we demonstrate how to change the color of a segment in a segmentation representation"
+      },
       "labelmapSegmentLocking": {
-        "name": "Labelmap Segmentation Swapping",
+        "name": "Labelmap Segmentation Locking",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "labelmapRenderingDifferentResolutions": {
@@ -344,6 +347,14 @@
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
+      "interpolationContourSegmentation": {
+        "name": "Interpolation of Contours between slices",
+        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
+      },
+      "contourSegmentationConfiguration": {
+        "name": "Contour Segmentation Configuration",
+        "description": "Demonstrates how to set a configuration for contour segmentations"
       },
       "segmentBidirectionalTool": {
         "name": "Segmentation Bidirectional Tool",
@@ -424,6 +435,44 @@
         "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
       }
     },
+    "polymorph-segmentation": {
+      "PolySegWasmContourToStackLabelmap": {
+        "name": "Convert contour segmentation to stack labelmap",
+        "description": "Demonstrates how to convert a contour segmentation to a stack labelmap"
+      },
+      "PolySegWasmContourToVolumeLabelmap": {
+        "name": "Convert contour segmentation to volume labelmap",
+        "description": "Demonstrates how to convert a contour segmentation to a volume labelmap"
+      },
+      "PolySegWasmContourToSurface": {
+        "name": "Convert contour segmentation to surface",
+        "description": "Demonstrates how to convert a contour segmentation to a closed surface"
+      },
+      "PolySegWasmStackLabelmapToSurface": {
+        "name": "Convert stack labelmap to surface",
+        "description": "Demonstrates how to convert a stack labelmap to a closed surface"
+      },
+      "PolySegWasmVolumeLabelmapToSurface": {
+        "name": "Convert volume labelmap to surface",
+        "description": "Demonstrates how to convert a volume labelmap to a closed surface"
+      },
+      "PolySegWasmSurfaceToVolumeLabelmap": {
+        "name": "Convert surface to volume labelmap",
+        "description": "Demonstrates how to convert a closed surface to a volume labelmap"
+      },
+      "PolySegWasmSurfaceToStackLabelmap": {
+        "name": "Convert surface to stack labelmap",
+        "description": "Demonstrates how to convert a closed surface to a stack labelmap"
+      },
+      "PolySegWasmVolumeLabelmapToContour": {
+        "name": "Convert volume labelmap to contour",
+        "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
+      },
+      "PolySegWasmSurfaceToContour": {
+        "name": "Convert surface to contour",
+        "description": "Demonstrates how to convert a closed surface to a contour segmentation"
+      }
+    },
     "dicom-image-loader": {
       "dicomImageLoaderWADOURI": {
         "name": "WADO-URI (DICOM P10)",
@@ -450,6 +499,14 @@
       "segmentationExport": {
         "name": "DICOM SEG export",
         "description": "Demonstrates how to export a segmentation to DICOM SEG"
+      },
+      "segmentationStack": {
+        "name": "DICOM SEG Stack",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"
+      },
+      "segmentationVolume": {
+        "name": "DICOM SEG Volume",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
       }
     },
     "nifti": {

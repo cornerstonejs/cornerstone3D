@@ -1,4 +1,11 @@
-import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
+import {
+  utilities as csUtils,
+  cache,
+  getEnabledElement,
+  StackViewport,
+  eventTarget,
+  Enums,
+} from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
@@ -112,6 +119,7 @@ class BrushTool extends BaseTool {
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
+        thresholdVolumeId: null,
         brushSize: 25,
         preview: {
           // Have to enable the preview to use this
@@ -126,8 +134,6 @@ class BrushTool extends BaseTool {
           // The time to consider a mouse click a drag when moved less than dragMoveDistance
           dragTimeMs: 500,
         },
-        // Whether to show a center circle/position.  Set to null to not show
-        centerRadius: 2,
         actions: {
           [StrategyCallbacks.AcceptPreview]: {
             method: StrategyCallbacks.AcceptPreview,
@@ -198,19 +204,43 @@ class BrushTool extends BaseTool {
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
 
-    if (isVolumeSegmentation(labelmapData)) {
+    if (isVolumeSegmentation(labelmapData, viewport)) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
-      // Note: For tools that need the source data. Assumed to use
-      // First volume actor for now.
-      const firstVolumeActorUID = actors[0].uid;
+      const isStackViewport = viewport instanceof StackViewport;
+
+      if (isStackViewport) {
+        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+          detail: {
+            type: 'Segmentation',
+            message: 'Cannot perform brush operation on the selected viewport',
+          },
+          cancelable: true,
+        });
+        eventTarget.dispatchEvent(event);
+        return null;
+      }
+
+      // we used to take the first actor here but we should take the one that is
+      // probably the same size as the segmentation volume
+      const volumes = actors.map((actorEntry) =>
+        cache.getVolume(actorEntry.referenceId)
+      );
+
+      const segmentationVolume = cache.getVolume(volumeId);
+
+      const referencedVolumeIdToThreshold =
+        volumes.find((volume) =>
+          csUtils.isEqual(volume.dimensions, segmentationVolume.dimensions)
+        )?.volumeId || volumes[0]?.volumeId;
 
       return {
         volumeId,
-        referencedVolumeId: firstVolumeActorUID,
+        referencedVolumeId:
+          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
         segmentsLocked,
         segmentationRepresentationUID,
       };
@@ -484,7 +514,7 @@ class BrushTool extends BaseTool {
 
     this._previewData.preview = this.applyActiveStrategy(
       enabledElement,
-      this.getOperationData()
+      this.getOperationData(element)
     );
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont
@@ -583,6 +613,18 @@ class BrushTool extends BaseTool {
       leftCursorInWorld,
       rightCursorInWorld,
     ];
+
+    const activeStrategy = this.configuration.activeStrategy;
+    const strategy = this.configuration.strategies[activeStrategy];
+
+    // Note: i don't think this is the best way to implement this
+    // but don't think we have a better way to do it for now
+    if (typeof strategy.computeInnerCircleRadius === 'function') {
+      strategy.computeInnerCircleRadius({
+        configuration: this.configuration,
+        viewport,
+      });
+    }
 
     data.invalidated = false;
   }
@@ -776,15 +818,20 @@ class BrushTool extends BaseTool {
       }
     );
 
-    const { centerRadius } = this.configuration;
-    if (centerRadius >= 0) {
+    const activeStrategy = this.configuration.activeStrategy;
+    const { dynamicRadiusInCanvas } = this.configuration
+      .strategySpecificConfiguration[activeStrategy] || {
+      dynamicRadiusInCanvas: 0,
+    };
+
+    if (dynamicRadiusInCanvas) {
       const circleUID1 = '1';
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
         circleUID1,
         center as Types.Point2,
-        2,
+        dynamicRadiusInCanvas,
         {
           color,
         }

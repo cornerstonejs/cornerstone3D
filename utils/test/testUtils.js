@@ -4,6 +4,7 @@ import { fakeVolumeLoader } from './testUtilsVolumeLoader';
 import { createNormalizedMouseEvent } from './testUtilsMouseEvents';
 import { fillStackSegmentationWithMockData } from './fillStackSegmentationWithMockData';
 import { fillVolumeSegmentationWithMockData } from './fillVolumeSegmentationWithMockData';
+import { addMockContourSegmentation } from './addMockContourSegmentation';
 
 /**
  * TestUtils: used for colorizing the image and comparing it to a baseline,
@@ -54,7 +55,7 @@ function compareImages(imageDataURL, baseline, outputName) {
         // and download the difference image
         // Todo: this should be a configurable threshold
         if (mismatch > 1) {
-          console.log('mismatch of ' + mismatch + '%');
+          console.warn('mismatch of', mismatch, '% to image', imageDataURL);
           const diff = data.getImageDataUrl();
           // Todo: we should store the diff image somewhere
           reject(
@@ -81,4 +82,5 @@ export {
   colors,
   fillStackSegmentationWithMockData,
   fillVolumeSegmentationWithMockData,
+  addMockContourSegmentation,
 };
