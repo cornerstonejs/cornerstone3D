@@ -193,15 +193,6 @@ async function run() {
     },
   ]);
 
-  segmentation.config.setToolGroupSpecificConfig(toolGroupId, {
-    renderInactiveSegmentations: true,
-    representations: {
-      CONTOUR: {
-        outlineWidthActive: 1,
-        renderFill: false,
-      },
-    },
-  });
   // Render the image
   renderingEngine.render();
 }
