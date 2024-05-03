@@ -97,6 +97,7 @@ import {
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
+import { findMatchingColormap } from '../utilities/colormap';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -867,6 +868,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       transferFunction,
       this.initialTransferFunctionNodes
     );
+
+    const nodes = getTransferFunctionNodes(transferFunction);
+
+    const RGBPoints = nodes.reduce((acc, node) => {
+      acc.push(node[0], node[1], node[2], node[3]);
+      return acc;
+    }, []);
+
+    const defaultActor = this.getDefaultActor();
+    const matchedColormap = findMatchingColormap(RGBPoints, defaultActor.actor);
+
+    this.setColormap(matchedColormap);
   }
 
   public resetToDefaultProperties(): void {
