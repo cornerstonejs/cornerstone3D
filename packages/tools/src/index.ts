@@ -71,6 +71,7 @@ import {
   OverlayGridTool,
   SegmentationIntersectionTool,
   EraserTool,
+  SculptorTool,
   SegmentSelectTool,
 } from './tools';
 
@@ -128,6 +129,7 @@ export {
   ReferenceCursors,
   ReferenceLines,
   ScaleOverlayTool,
+  SculptorTool,
   EraserTool,
   // Segmentation Display
   SegmentationDisplayTool,
