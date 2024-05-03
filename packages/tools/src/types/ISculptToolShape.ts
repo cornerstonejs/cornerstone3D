@@ -1,52 +1,54 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper, EventTypes, Annotation } from '../../types';
-import { PushedHandles } from './CircleSculptCursor';
-import { SculptData } from '../SculptorTool';
+import type { SVGDrawingHelper, EventTypes, ContourAnnotation } from '.';
+import type { PushedHandles } from '../tools/SculptorTool/CircleSculptCursor';
+import type { SculptData } from '../tools/SculptorTool';
 
 /**
- * This interface defines a contract for implementing various shapes within sculptor tool.
- * Classes such as `CircleSculptCursor` adhere to this interface, providing specific implementations for sculptor tools to utilize circle shapes during sculpting operations.
+ * This interface defines a contract for implementing various shapes within the sculptor tool.
+ * Classes such as `CircleSculptCursor` adhere to this interface,
+ * providing specific implementations for sculptor tools to utilize the shape
+ * during sculpting operations.
  */
 export interface ISculptToolShape {
   /**
-   * Uesd to render shapes supported for sculptor tool
+   * Used to render shapes supported for sculptor tool
+   *
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
-   * @param canvasLocation - Current canvas location
-   * @param options - Options for drwing shapes
+   * @param canvasLocation - Current canvas location in canvas index coordinates
+   * @param options - Options for drawing shapes
    */
   renderShape(
     svgDrawingHelper: SVGDrawingHelper,
     canvasLocation: Types.Point2,
-    options: any
+    options
   ): void;
   /**
    * Pushes the points radially away from the mouse if they are
    * contained within the shape defined by the freehandSculpter tool
-   * @param viewport
-   * @param sculptData
    */
   pushHandles(viewport: Types.IViewport, sculptData: SculptData): PushedHandles;
+
   /**
    * Function configures the tool size
-   * @param evt
    */
   configureToolSize(evt: EventTypes.InteractionEventType): void;
+
   /**
    * Updates the tool size
    * @param canvasCoords - Current canvas points
-   * @param viewport
-   * @param activeAnnotation
    */
-  UpdateToolsize(
+  updateToolSize(
     canvasCoords: Types.Point2,
     viewport: Types.IViewport,
-    activeAnnotation: Annotation
+    activeAnnotation: ContourAnnotation
   ): void;
+
   /**
    * Function returns max spacing between two handles
    * @param minSpacing -
    */
   getMaxSpacing(minSpacing: number): number;
+
   /**
    * Function returns the the position to insert new handle
    * @param previousIndex - Previous handle index

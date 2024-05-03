@@ -7,7 +7,8 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-  Annotations,
+  ContourAnnotation,
+  ContourAnnotationData,
 } from '../types';
 import { point } from '../utilities/math';
 import { Events, ToolModes, AnnotationStyleStates } from '../enums';
@@ -21,6 +22,7 @@ import { StyleSpecifier } from '../types/AnnotationStyle';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
 import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
+import type { ISculptToolShape } from '../types/ISculptToolShape';
 
 export type SculptData = {
   mousePoint: Types.Point3;
@@ -37,6 +39,10 @@ type CommonData = {
   canvasLocation: Types.Point2 | undefined;
 };
 
+/**
+ * This tool allows modifying the contour data for planar freehand by sculpting
+ * it externally using another shape to push the contour in one direction or the other.
+ */
 class SculptorTool extends BaseTool {
   static toolName: string;
   registeredShapes = new Map();
@@ -66,8 +72,6 @@ class SculptorTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
-    this.endCallback = this.endCallback.bind(this);
-    this.dragCallback = this.dragCallback.bind(this);
     this.registerShapes(CircleSculptCursor.shapeName, CircleSculptCursor);
     this.setToolShape(this.configuration.toolShape);
   }
@@ -77,7 +81,10 @@ class SculptorTool extends BaseTool {
    * @param shapeName name of shape
    * @param shapeClass shape class
    */
-  registerShapes(shapeName: string, shapeClass: any): void {
+  registerShapes<T extends ISculptToolShape>(
+    shapeName: string,
+    shapeClass: new () => T
+  ): void {
     const shape = new shapeClass();
     this.registeredShapes.set(shapeName, shape);
   }
@@ -199,7 +206,7 @@ class SculptorTool extends BaseTool {
     } else {
       const cursorShape = this.registeredShapes.get(this.selectedShape);
       const canvasCoords = eventData.currentPoints.canvas;
-      cursorShape.UpdateToolsize(canvasCoords, viewport, activeAnnotation);
+      cursorShape.updateToolsize(canvasCoords, viewport, activeAnnotation);
     }
 
     triggerAnnotationRenderForViewportIds(
@@ -215,11 +222,11 @@ class SculptorTool extends BaseTool {
    */
   private filterSculptableAnnotationsForElement(
     element: HTMLDivElement
-  ): Annotations {
+  ): ContourAnnotation[] {
     const config = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { renderingEngineId, viewportId } = enabledElement;
-    let sculptableAnnotations = [];
+    const sculptableAnnotations = [];
 
     const toolGroup = ToolGroupManager.getToolGroupForViewport(
       viewportId,
@@ -231,19 +238,17 @@ class SculptorTool extends BaseTool {
     config.referencedToolNames.forEach((referencedToolName: string) => {
       const annotations = getAnnotations(referencedToolName, element);
       if (annotations) {
-        sculptableAnnotations = [...sculptableAnnotations, ...annotations];
+        sculptableAnnotations.push(...annotations);
       }
     });
 
-    sculptableAnnotations =
-      toolInstance.filterInteractableAnnotationsForElement(
-        element,
-        sculptableAnnotations
-      );
-
-    return sculptableAnnotations;
+    return toolInstance.filterInteractableAnnotationsForElement(
+      element,
+      sculptableAnnotations
+    );
   }
 
+  /** Just pass the tool size interaction onto the internal tool size */
   private configureToolSize(evt: EventTypes.InteractionEventType): void {
     const cursorShape = this.registeredShapes.get(this.selectedShape);
     cursorShape.configureToolSize(evt);
@@ -368,7 +373,7 @@ class SculptorTool extends BaseTool {
 
       const distanceFromTool = distanceFromPoint(
         viewport,
-        annotations[i].data,
+        annotations[i],
         canvasPoints
       );
 
@@ -437,7 +442,7 @@ class SculptorTool extends BaseTool {
    *
    * @param evt - The event
    */
-  private dragCallback(evt: EventTypes.InteractionEventType): void {
+  private dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const element = eventData.element;
 
@@ -456,7 +461,7 @@ class SculptorTool extends BaseTool {
     const points = activeAnnotation.data.contour.polyline;
 
     this.sculpt(eventData, points);
-  }
+  };
 
   /**
    * Attaches event listeners to the element such that is is visible, modifiable, and new data can be created.
@@ -556,21 +561,27 @@ class SculptorTool extends BaseTool {
 
 export const distanceFromPoint = (
   viewport: Types.IViewport,
-  data: any,
+  annotation: ContourAnnotationData,
   coords: Types.Point2
 ): number => {
+  if (!annotation?.data?.contour?.polyline?.length) {
+    return;
+  }
+  const { polyline } = annotation.data.contour;
+  const { length } = polyline;
+
   let distance = Infinity;
 
-  for (let i = 0; i < data?.contour?.polyline?.length; i++) {
-    const canvasPoint = viewport.worldToCanvas(data.contour.polyline[i]);
+  for (let i = 0; i < length; i++) {
+    const canvasPoint = viewport.worldToCanvas(polyline[i]);
     const distanceToPoint = point.distanceToPoint(canvasPoint, coords);
 
     distance = Math.min(distance, distanceToPoint);
   }
 
-  // If an error caused distance not to be calculated, return -1.
-  if (distance === Infinity) {
-    return -1;
+  // If an error caused distance not to be calculated, return undefined.
+  if (distance === Infinity || isNaN(distance)) {
+    return;
   }
 
   return distance;
