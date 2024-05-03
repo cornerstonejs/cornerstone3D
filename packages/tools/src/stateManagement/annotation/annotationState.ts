@@ -1,12 +1,6 @@
-import {
-  triggerEvent,
-  eventTarget,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
-import { Events } from '../../enums';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
-import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
 import { AnnotationGroupSelector } from '../../types';
 import {
   triggerAnnotationAddedForElement,
@@ -223,16 +217,6 @@ function removeAnnotation(annotationUID: string): void {
   );
 
   manager.removeAnnotation(annotationUID);
-
-  // trigger annotation removed
-  const eventType = Events.ANNOTATION_REMOVED;
-
-  const eventDetail: AnnotationRemovedEventDetail = {
-    annotation,
-    annotationManagerUID: manager.uid,
-  };
-
-  triggerEvent(eventTarget, eventType, eventDetail);
 }
 
 /**

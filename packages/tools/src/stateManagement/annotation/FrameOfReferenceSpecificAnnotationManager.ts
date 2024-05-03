@@ -10,12 +10,14 @@ import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 
 import {
   Enums,
+  triggerEvent,
   eventTarget,
   getEnabledElement,
   Types,
   utilities,
 } from '@cornerstonejs/core';
 
+import { Events as csToolEvents } from '../../enums';
 import { checkAndDefineIsLockedProperty } from './annotationLocking';
 import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
@@ -257,6 +259,12 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
           (annotation) => annotation.annotationUID === annotationUID
         );
 
+        // Trigger annotation removed event.
+        triggerEvent(eventTarget, csToolEvents.ANNOTATION_REMOVED, {
+          annotation: toolAnnotations[index],
+          annotationManagerUID: this.uid,
+        });
+
         if (index !== -1) {
           toolAnnotations.splice(index, 1);
 
@@ -402,7 +410,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * Removes all annotations in the annotation state.
    */
   removeAllAnnotations = (): void => {
-    this.annotations = {};
+    for (const annotation of this.getAllAnnotations()) {
+      this.removeAnnotation(annotation.annotationUID);
+    }
   };
 }
 
