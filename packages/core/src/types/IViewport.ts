@@ -15,7 +15,12 @@ import BoundsLPS from './BoundsLPS';
  * set of points.
  */
 export type ViewReferenceSpecifier = {
-  /** The slice index within the current viewport camera to get a reference for */
+  /**
+   * The slice index within the current viewport camera to get a reference for.
+   * Note that slice indexes are dependent on the particular view being shown
+   * and cannot be shared across different view types such as stacks and
+   * volumes, or two viewports showing different orientations or slab thicknesses.
+   */
   sliceIndex?: number | [number, number];
   /**
    * Specifies to get a view reference that refers to the generic frame of
@@ -86,15 +91,35 @@ export type ViewReference = {
   referencedImageId?: string;
 
   /**
-   * The focal point of the camera in world space
+   * The focal point of the camera in world space.
+   * The focal point is used for to define the stack positioning, but not the
+   * zoom/pan (which is defined by the view presentation
+   * object.)
+   *
+   * Single point objects (probe etc) should use the probe point as the camera
+   * focal point as that allows omitting the view plane normal and showing the probe
+   * in any orientation.
    */
   cameraFocalPoint?: Point3;
   /**
-   * The normal for the current view
+   * The normal for the current view.  This defines the plane used to show the
+   * 2d annotation.  This should be omitted if the annotation is a point to
+   * allow for single-point annotations.
    */
   viewPlaneNormal?: Point3;
   /**
-   * The slice index or range for this view
+   * The slice index or range for this view.
+   * <b>NOTE</b> The slice index is relative to the volume or stack of images.
+   * You cannot apply a slice index from one volume to another as they do NOT
+   * apply.   The referencedImageId should belong to the volume you are trying
+   * to apply to, the viewPlane normal should be identical, and then you can
+   * apply the sliceIndex.
+   *
+   * For stack viewports, the referencedImageId should occur at the given slice index.
+   *
+   * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
+   * within the stack of images - subsequent slice indexes can be at opposite
+   * ends or can be co-incident but separate types of images.
    */
   sliceIndex?: number | [number, number];
 
@@ -292,6 +317,13 @@ interface IViewport {
   setPan(pan: Point2, storeAsInitialCamera?: boolean);
   /** sets the camera */
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+  /** Resets the camera */
+  resetCamera(
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean,
+    storeAsInitialCamera?: boolean
+  ): boolean;
   /** Gets the number of slices in the current camera orientation */
   getNumberOfSlices(): number;
   /** Gets the current slice in the current camera orientation */

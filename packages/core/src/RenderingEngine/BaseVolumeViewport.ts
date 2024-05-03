@@ -37,11 +37,12 @@ import type {
   VolumeViewportProperties,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
+  ViewPresentation,
+  ViewReference,
+  IVolumeViewport,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
-import type { ViewReference } from '../types/IViewport';
 import {
   actorIsA,
   applyPreset,
@@ -51,6 +52,10 @@ import {
   invertRgbTransferFunction,
   triggerEvent,
   colormap as colormapUtils,
+  isEqualNegative,
+  getVolumeViewportScrollInfo,
+  snapFocalPointToSlice,
+  isEqual,
 } from '../utilities';
 import { createVolumeActor } from './helpers';
 import volumeNewImageEventDispatcher, {
@@ -597,15 +602,36 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
     const target = super.getViewReference(viewRefSpecifier);
+    const volumeId = this.getVolumeId(viewRefSpecifier);
     if (viewRefSpecifier?.forFrameOfReference !== false) {
-      target.volumeId = this.getVolumeId(viewRefSpecifier);
+      target.volumeId = volumeId;
     }
-    // TODO - add referencedImageId as a base URL for an image to allow a generic
-    // method to specify which volumes this should apply to.
-    return {
-      ...target,
-      sliceIndex: this.getCurrentImageIdIndex(),
-    };
+    if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
+      return target;
+    }
+    const { viewPlaneNormal } = target;
+    const delta =
+      (viewRefSpecifier.sliceIndex as number) - this.getCurrentImageIdIndex();
+    // Calculate a camera focal point and position
+    const { sliceRangeInfo } = getVolumeViewportScrollInfo(
+      this,
+      volumeId,
+      true
+    );
+
+    const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
+    const { focalPoint, position } = camera;
+    const { newFocalPoint } = snapFocalPointToSlice(
+      focalPoint,
+      position,
+      sliceRange,
+      viewPlaneNormal,
+      spacingInNormalDirection,
+      delta
+    );
+    target.cameraFocalPoint = newFocalPoint;
+
+    return target;
   }
 
   /**
@@ -633,6 +659,119 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       );
     }
     return sliceIndex === undefined || sliceIndex === currentSliceIndex;
+  }
+
+  /**
+   * Scrolls the viewport in the given direction/amount
+   */
+  public scroll(delta = 1) {
+    const volumeId = this.getVolumeId();
+    const { sliceRangeInfo } = getVolumeViewportScrollInfo(
+      this,
+      volumeId,
+      true
+    );
+
+    if (!sliceRangeInfo) {
+      return;
+    }
+
+    const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
+    const { focalPoint, viewPlaneNormal, position } = camera;
+
+    const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+      focalPoint,
+      position,
+      sliceRange,
+      viewPlaneNormal,
+      spacingInNormalDirection,
+      delta
+    );
+
+    this.setCamera({
+      focalPoint: newFocalPoint,
+      position: newPosition,
+    });
+  }
+
+  /**
+   * Navigates to the specified view reference first, then applies the view
+   * presentation.  Handles both stack references as well as volume references.
+   */
+  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
+    const volumeId = this.getVolumeId();
+    if (!viewRef) {
+      super.setView(viewRef, viewPres);
+      return;
+    }
+
+    const {
+      viewPlaneNormal: refViewPlaneNormal,
+      FrameOfReferenceUID: refFrameOfReference,
+      cameraFocalPoint,
+    } = viewRef;
+    let { sliceIndex } = viewRef;
+    const { focalPoint, viewPlaneNormal, position } = this.getCamera();
+    const isNegativeNormal = isEqualNegative(
+      viewPlaneNormal,
+      refViewPlaneNormal
+    );
+    const isSameNormal = isEqual(viewPlaneNormal, refViewPlaneNormal);
+
+    // Handle slices
+    if (
+      typeof sliceIndex === 'number' &&
+      viewRef.volumeId === volumeId &&
+      (isNegativeNormal || isSameNormal)
+    ) {
+      const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
+        getVolumeViewportScrollInfo(this, volumeId, true);
+
+      const { sliceRange, spacingInNormalDirection } = sliceRangeInfo;
+      if (isNegativeNormal) {
+        // Convert opposite orientation view refs to normal orientation
+        sliceIndex = numScrollSteps - sliceIndex - 1;
+      }
+      const delta = sliceIndex - currentStepIndex;
+      const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+        focalPoint,
+        position,
+        sliceRange,
+        viewPlaneNormal,
+        spacingInNormalDirection,
+        delta
+      );
+      this.setCamera({ focalPoint: newFocalPoint, position: newPosition });
+    } else if (refFrameOfReference === this.getFrameOfReferenceUID()) {
+      // Handle same frame of reference navigation
+
+      if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
+        // Need to update the orientation vectors correctly for this case
+        throw new Error('Changing view plane normal not yet supported');
+      }
+      if (cameraFocalPoint) {
+        const focalDelta = vec3.subtract(
+          [0, 0, 0],
+          cameraFocalPoint,
+          focalPoint
+        );
+        const useNormal = refViewPlaneNormal ?? viewPlaneNormal;
+        const normalDot = vec3.dot(focalDelta, useNormal);
+        if (!isEqual(normalDot, 0)) {
+          // Gets the portion of the focal point in the normal direction
+          vec3.scale(focalDelta, useNormal, normalDot);
+        }
+        const newFocal = <Point3>vec3.add([0, 0, 0], focalPoint, focalDelta);
+        const newPosition = <Point3>vec3.add([0, 0, 0], position, focalDelta);
+        this.setCamera({ focalPoint: newFocal, position: newPosition });
+      }
+    } else {
+      throw new Error(
+        `Incompatible view refs: ${refFrameOfReference}!==${this.getFrameOfReferenceUID()}`
+      );
+    }
+
+    super.setView(viewRef, viewPres);
   }
 
   /**
@@ -1564,19 +1703,26 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   abstract getCurrentImageId(): string;
 
-  /** Gets the volumeId to use for references */
-  protected getVolumeId(specifier: ViewReferenceSpecifier) {
+  /**
+   * Gets the volumeId to use for references.
+   * Returns undefined if the specified volume is NOT in this viewport.
+   */
+  protected getVolumeId(specifier?: ViewReferenceSpecifier) {
+    const actorEntries = this.getActors();
+    if (!actorEntries) {
+      return;
+    }
     if (!specifier?.volumeId) {
-      const actorEntries = this.getActors();
-      if (!actorEntries) {
-        return;
-      }
       // find the first image actor of instance type vtkVolume
       return actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.uid;
     }
-    return specifier.volumeId;
+    return actorEntries.find(
+      (actorEntry) =>
+        actorEntry.actor.getClassName() === 'vtkVolume' &&
+        actorEntry.uid === specifier.volumeId
+    )?.uid;
   }
 
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
@@ -1592,7 +1738,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       )?.uid;
     }
 
-    sliceIndex ??= this.getCurrentImageIdIndex();
+    const currentIndex = this.getCurrentImageIdIndex();
+    sliceIndex ??= currentIndex;
     const { viewPlaneNormal, focalPoint } = this.getCamera();
     const querySeparator = volumeId.indexOf('?') > -1 ? '&' : '?';
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
