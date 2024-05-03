@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.71.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.15...v1.71.0) (2024-05-03)
+
+### Features
+
+- **SculptorTool:** Add sculptor tool ([#967](https://github.com/cornerstonejs/cornerstone3D/issues/967)) ([9864e20](https://github.com/cornerstonejs/cornerstone3D/commit/9864e20c35b3eff0e0cc021779875797584462bc))
+
 ## [1.70.15](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.14...v1.70.15) (2024-04-30)
 
 ### Bug Fixes
