@@ -1,6 +1,6 @@
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import normalizeViewportPlane from './normalizeViewportPlane';
+import normalizeViewportPlane from '../normalizeViewportPlane';
 
 const { RLEVoxelMap, VoxelManager } = utilities;
 
@@ -21,26 +21,73 @@ export enum SegmentationEnum {
 
 /**
  * This class has the fill island, with various options being available.
+ *
+ * The usage of this class is to:
+ *   1. Get the viewport where a labelmap segmentation has been created with
+ *      some data containing islands created.
+ *   2. Initialize the instance of this class using the initialize method,
+ *      providing it the viewport, the segmentation voxel manager and some options
+ *   3. Generate the updated island classification using `floodFillSegmentIsland`
+ *   4. For external island removal, call the `removeExternalIslands`.
+ *      * External islands are segmentation data which not connected to the central
+ *        selected points.
+ *      * External island removal should be done before internal island removal for performance
+ *   5. For internal island removal, call the 'removeInternalIslands'
+ *      * Internal islands are entirely surrounded sections of non-segment marked areas
+ *   6. Trigger a segmentation data updated on the originally provided segmentation voxel manager
+ *      set of slices.
  */
 export default class IslandRemoval {
-  segmentSet: Types.RLEVoxelMap<number>;
+  /**
+   * The segment set is a set that categorizes points in the segmentation
+   * as belonging to one of the categories in SegmentationEnum.  Undefined
+   * here means that it is a non-relevant segment index.
+   * Note this is an RLEVoxelMap for efficiency of storage and running
+   * fill algorithms, as it is expected that the classes will have fairly long
+   * runs.
+   */
+  segmentSet: Types.RLEVoxelMap<SegmentationEnum>;
   segmentIndex: number;
   fillSegments: (index: number) => boolean;
   previewVoxelManager: Types.VoxelManager<number>;
   previewSegmentIndex: number;
-  clickedPoints: Types.Point3[];
-
-  constructor() {
-    // TODO - figure out options to apply here.
-  }
+  /**
+   * The selected points are the points that have been directly identified as
+   * belonging to the segmentation set, either via user selection or some other
+   * process that identifies this set of points as being definitely inside the
+   * island.
+   */
+  selectedPoints: Types.Point3[];
 
   /**
-   * Creates a segment set - an RLE based map of points to segment data.
-   * This function returns the data in the appropriate planar orientation according
-   * to the view, with SegmentationEnum.SEGMENT set for any point within the segment,
-   * either preview or base segment colour.
+   * Initializes the island fill.  This is used by providing a viewport
+   * that is currently display the segment points of interest, plus a voxel manager
+   * that is either a segmentation voxel manager or a preview voxel manager, and
+   * a set of options for things like the segment indices to fill/apply to.
+   *
+   * The `floodFillSegmentIsland` is an additional initialization piece that
+   * internally records additional information on the flood fill.
    *
    * Returns undefined if the data is invalid for some reason.
+   *
+   * @param viewport - showing the current orientation view of an image with the
+   *        desired labelmap to have island removal applied.
+   * @param segmentationVoxels - the voxel manager for the segmentation labelmap.
+   *    * Can be a preview voxel manager or just a basic voxel manager on the segmentation, or
+   *      an RLE history voxel manager for using with undo/redo.
+   *    * May contain getPoints that is the set of starting points which mark
+   *          individual islands
+   * @param options - contains options on how to apply the island removal
+   *    * points - the selected points to start the island removal from
+   *    * segmentIndex - the segment index for the final color segmentation
+   *      * If there is no previewSegmentIndex, then the segment index will be
+   *        used for all operations, otherwise a preview will be updated, filling
+   *        it with the preview segment index.
+   *    * previewSegmentIndex - the preview segment index.
+   *      * Allows for showing a preview of the changes.
+   *      * Omit to perform non-preview displays of segmentation voxels.
+   *      * Should be 255 typically
+   *
    */
   initialize(viewport, segmentationVoxels, options) {
     const hasSource = !!segmentationVoxels.sourceVoxelManager;
@@ -57,6 +104,7 @@ export default class IslandRemoval {
     if (!clickedPoints?.length) {
       return;
     }
+
     // Ensure the bounds includes the clicked points, otherwise the fill
     // fails.
     const boundsIJK = previewVoxelManager
@@ -104,13 +152,28 @@ export default class IslandRemoval {
     this.previewVoxelManager = previewVoxelManager;
     this.segmentIndex = segmentIndex;
     this.previewSegmentIndex = previewSegmentIndex ?? segmentIndex;
-    this.clickedPoints = clickedPoints;
+    this.selectedPoints = clickedPoints;
 
     return true;
   }
 
-  public applyPoints() {
-    const { clickedPoints, segmentSet } = this;
+  /**
+   * This operation starts a flood fill on the set of points that were selected
+   * (typically by clicking on them or hovering over them in some way, but other
+   * options are possible).  All of the selected points are marked as SEGMENT,
+   * and then all the flood fill points that planar connected to them are marked
+   * as being ISLAND points.  Then, this is repeated for planes in both normal and
+   * anti-normal directions for the points which were so marked (this is done
+   * internally to the floodFill algorithm).
+   *
+   * This results in a set of points in the volume which are connected to the
+   * points originally selected, thus an island point, where the island is the island
+   * containing the selected points.
+   *
+   * The return value is the number of such points selected.
+   */
+  public floodFillSegmentIsland() {
+    const { selectedPoints: clickedPoints, segmentSet } = this;
     // Just used to count up how many points got filled.
     let floodedCount = 0;
     const { fromIJK } = segmentSet.normalizer;

@@ -69,7 +69,7 @@ describe('IslandRemove', function () {
       points: [[x, y, z]],
     });
     expect(initialized).toBe(true);
-    const floodedCount = islandRemoval.applyPoints();
+    const floodedCount = islandRemoval.floodFillSegmentIsland();
     expect(floodedCount).toBe((w - 1) * (h - 1));
     expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(1);
     expect(segmentationVoxels.getAtIJK(x + 1, y + 1, z)).toBe(0);
@@ -95,7 +95,7 @@ describe('IslandRemove', function () {
       points: [[x, y, z]],
     });
     expect(initialized).toBe(true);
-    const floodedCount = islandRemoval.applyPoints();
+    const floodedCount = islandRemoval.floodFillSegmentIsland();
     expect(floodedCount).toBe((w - 1) * (h - 1));
     expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(255);
     expect(segmentationVoxels.getAtIJK(x + 1, y + 1, z)).toBe(0);
@@ -120,7 +120,7 @@ describe('IslandRemove', function () {
       points: [[x, y, z]],
     });
     expect(initialized).toBe(true);
-    const floodedCount = islandRemoval.applyPoints();
+    const floodedCount = islandRemoval.floodFillSegmentIsland();
     expect(floodedCount).toBe((w - 1) * (h - 1));
     expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(1);
     expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(1);
@@ -151,7 +151,7 @@ describe('IslandRemove', function () {
       ],
     });
     expect(initialized).toBe(true);
-    const floodedCount = islandRemoval.applyPoints();
+    const floodedCount = islandRemoval.floodFillSegmentIsland();
     expect(floodedCount).toBe((w - 1) * (h - 1));
     expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(previewSegmentIndex);
     expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(previewSegmentIndex);

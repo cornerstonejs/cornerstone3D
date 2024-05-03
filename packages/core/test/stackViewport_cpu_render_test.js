@@ -34,7 +34,7 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 const AXIAL = 'AXIAL';
 
-function createViewport(renderingEngine, _orientation, width, height) {
+function createViewport(renderingEngine, width, height) {
   const element = document.createElement('div');
 
   element.style.width = `${width}px`;
@@ -86,7 +86,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport of square size properly', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 716, 646);
+      const element = createViewport(this.renderingEngine, 716, 646);
       this.DOMElements.push(element);
 
       // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
@@ -112,7 +112,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport of rectangle size properly: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId = 'fakeImageLoader:imageURI_64_33_20_5_1_1_0';
@@ -138,7 +138,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport of square size and 5mm spacing properly: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0';
@@ -206,7 +206,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport, first slice correctly: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0';
@@ -235,7 +235,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport, last slice correctly: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0';
@@ -287,7 +287,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport with voi presets correctly: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';
@@ -318,7 +318,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport with multiple imageIds of different size and different spacing: nearest', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';
@@ -346,7 +346,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport with multiple images with linear interpolation correctly', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0';
@@ -371,7 +371,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport with invert', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
@@ -397,7 +397,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport with rotation', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId1 = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
@@ -446,7 +446,7 @@ describe('StackViewport CPU -- ', () => {
     });
 
     it('Should render one cpu stack viewport with presets correctly', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
+      const element = createViewport(this.renderingEngine, 256, 256);
       this.DOMElements.push(element);
 
       const imageId = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';

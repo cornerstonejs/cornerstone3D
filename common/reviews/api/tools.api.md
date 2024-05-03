@@ -3019,15 +3019,12 @@ function isContourSegmentationAnnotation(annotation: Annotation): annotation is 
 
 // @public (undocumented)
 class IslandRemoval {
-    constructor();
-    // (undocumented)
-    applyPoints(): number;
-    // (undocumented)
-    clickedPoints: Types_2.Point3[];
     // (undocumented)
     static covers(rle: any, row: any): boolean;
     // (undocumented)
     fillSegments: (index: number) => boolean;
+    // (undocumented)
+    floodFillSegmentIsland(): number;
     // (undocumented)
     initialize(viewport: any, segmentationVoxels: any, options: any): boolean;
     // (undocumented)
@@ -3041,7 +3038,9 @@ class IslandRemoval {
     // (undocumented)
     segmentIndex: number;
     // (undocumented)
-    segmentSet: Types_2.RLEVoxelMap<number>;
+    segmentSet: Types_2.RLEVoxelMap<SegmentationEnum>;
+    // (undocumented)
+    selectedPoints: Types_2.Point3[];
 }
 
 // @public (undocumented)
@@ -4827,7 +4826,6 @@ declare namespace segmentation_2 {
         getDefaultRepresentationConfig,
         createLabelmapVolumeForViewport,
         LabelmapMemo,
-        normalizeViewportPlane,
         IslandRemoval,
         rectangleROIThresholdVolumeByRange,
         triggerSegmentationRender,
@@ -6177,6 +6175,7 @@ declare namespace utilities {
         getCalibratedProbeUnitsAndValue,
         getCalibratedAspect,
         segmentation_2 as segmentation,
+        normalizeViewportPlane,
         contours,
         triggerAnnotationRenderForViewportIds,
         triggerAnnotationRenderForToolGroupIds,

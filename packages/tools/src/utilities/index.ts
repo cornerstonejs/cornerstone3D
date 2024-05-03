@@ -28,6 +28,7 @@ import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
+import normalizeViewportPlane from './normalizeViewportPlane';
 
 // name spaces
 import * as contours from './contours';
@@ -71,6 +72,7 @@ export {
   getCalibratedProbeUnitsAndValue,
   getCalibratedAspect,
   segmentation,
+  normalizeViewportPlane,
   contours,
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRenderForToolGroupIds,

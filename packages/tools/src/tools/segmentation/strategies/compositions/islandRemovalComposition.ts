@@ -37,7 +37,7 @@ export default {
     ) {
       return;
     }
-    islandRemoval.applyPoints();
+    islandRemoval.floodFillSegmentIsland();
     islandRemoval.removeExternalIslands();
     islandRemoval.removeInternalIslands();
     const arrayOfSlices = voxelManager.getArrayOfSlices();
