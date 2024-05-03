@@ -302,7 +302,6 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       for (const annotation of annotationsForTool) {
         this.removeAnnotation(annotation.annotationUID);
       }
-      delete annotations[groupKey][toolName];
     } else {
       for (const toolName in annotations[groupKey]) {
         const annotationsForTool = annotations[groupKey][toolName];
@@ -310,7 +309,6 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
           this.removeAnnotation(annotation.annotationUID);
         }
       }
-      delete annotations[groupKey];
     }
   };
 
@@ -429,8 +427,6 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     for (const annotation of this.getAllAnnotations()) {
       this.removeAnnotation(annotation.annotationUID);
     }
-
-    this.annotations = {};
   };
 }
 
