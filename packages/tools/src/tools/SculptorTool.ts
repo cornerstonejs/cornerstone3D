@@ -206,7 +206,7 @@ class SculptorTool extends BaseTool {
     } else {
       const cursorShape = this.registeredShapes.get(this.selectedShape);
       const canvasCoords = eventData.currentPoints.canvas;
-      cursorShape.updateToolsize(canvasCoords, viewport, activeAnnotation);
+      cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
     }
 
     triggerAnnotationRenderForViewportIds(
