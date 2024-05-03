@@ -170,10 +170,14 @@ class OrientationMarkerTool extends BaseTool {
         const resizeObserver = new ResizeObserver(() => {
           // Todo: i wish there was a better way to do this
           setTimeout(() => {
-            const { viewport } = getEnabledElementByIds(
+            const element = getEnabledElementByIds(
               viewportId,
               renderingEngineId
             );
+            if (!element) {
+              return;
+            }
+            const { viewport } = element;
             this.resize(viewportId);
             viewport.render();
           }, 100);

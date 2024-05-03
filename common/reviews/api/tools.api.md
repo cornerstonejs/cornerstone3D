@@ -2983,6 +2983,22 @@ function isClosed(polyline: Types_2.Point2[]): boolean;
 function isContourSegmentationAnnotation(annotation: Annotation): annotation is ContourSegmentationAnnotation;
 
 // @public (undocumented)
+interface ISculptToolShape {
+    // (undocumented)
+    configureToolSize(evt: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    getInsertPosition(previousIndex: number, nextIndex: number, sculptData: SculptData): Types_2.Point3;
+    // (undocumented)
+    getMaxSpacing(minSpacing: number): number;
+    // (undocumented)
+    pushHandles(viewport: Types_2.IViewport, sculptData: SculptData): PushedHandles;
+    // (undocumented)
+    renderShape(svgDrawingHelper: SVGDrawingHelper, canvasLocation: Types_2.Point2, options: any): void;
+    // (undocumented)
+    updateToolSize(canvasCoords: Types_2.Point2, viewport: Types_2.IViewport, activeAnnotation: ContourAnnotation): void;
+}
+
+// @public (undocumented)
 function isObject(value: any): boolean;
 
 // @public (undocumented)
@@ -4712,6 +4728,33 @@ type ScrollOptions_2 = {
 };
 
 // @public (undocumented)
+export class SculptorTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected activateModify(element: HTMLDivElement): void;
+    // (undocumented)
+    protected deactivateModify(element: HTMLDivElement): void;
+    // (undocumented)
+    protected interpolatePointsWithinMaxSpacing(i: number, points: Array<Types_2.Point3>, indicesToInsertAfter: Array<number>, maxSpacing: number): void;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    registeredShapes: Map<any, any>;
+    // (undocumented)
+    registerShapes<T extends ISculptToolShape>(shapeName: string, shapeClass: new () => T): void;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    protected sculpt(eventData: any, points: Array<Types_2.Point3>): void;
+    // (undocumented)
+    setToolShape(toolShape: string): void;
+    // (undocumented)
+    static toolName: string;
+}
+
+// @public (undocumented)
 type Segmentation = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
@@ -5952,6 +5995,7 @@ declare namespace Types {
         FloodFillGetter,
         FloodFillOptions,
         ContourSegmentationData,
+        ISculptToolShape,
         Statistics,
         NamedStatistics,
         LabelmapToolOperationData,
