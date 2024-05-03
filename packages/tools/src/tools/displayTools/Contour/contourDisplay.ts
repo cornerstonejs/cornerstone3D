@@ -124,11 +124,7 @@ function _removeContourFromToolGroupViewports(
       viewportId,
       renderingEngineId
     );
-    removeContourFromElement(
-      enabledElement.viewport.element,
-      segmentationRepresentationUID,
-      toolGroupId
-    );
+    removeContourFromElement(segmentationRepresentationUID, toolGroupId);
   }
 }
 
