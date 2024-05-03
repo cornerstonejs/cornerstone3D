@@ -204,6 +204,10 @@
         "name": "Freehand ROI Tool",
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
+      "SculptorTool": {
+        "name": "Sculptor Tool",
+        "description": "Demonstrates sculpting of freehand ROIs and FreehandContourSegmentations"
+      },
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events"
