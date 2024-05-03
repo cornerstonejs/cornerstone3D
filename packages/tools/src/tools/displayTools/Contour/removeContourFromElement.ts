@@ -1,5 +1,11 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import {
+  getSegmentationRepresentationByUID,
+  getSegmentation,
+} from '../../../stateManagement/segmentation/segmentationState';
+
+import { removeAnnotation } from '../../../stateManagement';
 
 /**
  * Remove the contour representation from the viewport's HTML Element.
@@ -7,6 +13,7 @@ import type { Types } from '@cornerstonejs/core';
  *
  * @param element - The element that the segmentation is being added to.
  * @param segmentationRepresentationUID - The UID of the contour representation to remove.
+ * @param toolGroupId - The ID of the toolGroup that the segmentationRepresentation belongs to.
  * @param removeFromCache - boolean
  *
  * @internal
@@ -14,6 +21,7 @@ import type { Types } from '@cornerstonejs/core';
 function removeContourFromElement(
   element: HTMLDivElement,
   segmentationRepresentationUID: string,
+  toolGroupId: string,
   removeFromCache = false // Todo
 ): void {
   const enabledElement = getEnabledElement(element);
@@ -31,7 +39,22 @@ function removeContourFromElement(
   // @ts-ignore
   viewport.removeActors(actorUIDsToRemove);
 
-  // Todo: add the logic to remove the svg contour segmentation representations as well
+  const segmentationRepresentation = getSegmentationRepresentationByUID(
+    toolGroupId,
+    segmentationRepresentationUID
+  );
+
+  const { segmentationId } = segmentationRepresentation;
+
+  const segmentation = getSegmentation(segmentationId);
+
+  const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
+
+  annotationUIDsMap.forEach((annotationSet) => {
+    annotationSet.forEach((annotationUID) => {
+      removeAnnotation(annotationUID);
+    });
+  });
 }
 
 export default removeContourFromElement;

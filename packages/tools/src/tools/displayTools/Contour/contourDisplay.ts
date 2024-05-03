@@ -1,8 +1,4 @@
-import {
-  getEnabledElementByIds,
-  Types,
-  BaseVolumeViewport,
-} from '@cornerstonejs/core';
+import { getEnabledElementByIds, Types } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -11,11 +7,10 @@ import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-import { addOrUpdateVTKContourSets } from './vtkContour/addOrUpdateVTKContourSets';
 import removeContourFromElement from './removeContourFromElement';
-import { deleteConfigCache } from './vtkContour/contourConfigCache';
+import { deleteConfigCache } from './contourHandler/contourConfigCache';
 import { polySeg } from '../../../stateManagement/segmentation';
-import { handleContourAnnotationSegmentation } from './annotationContour/handleContourAnnotationSegmentation';
+import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
 
 let polySegConversionInProgress = false;
 
@@ -96,22 +91,14 @@ async function render(
     );
   }
 
-  if (!(viewport instanceof BaseVolumeViewport)) {
+  if (!contourData) {
     return;
   }
 
   if (contourData?.geometryIds?.length) {
-    addOrUpdateVTKContourSets(
+    handleContourSegmentation(
       viewport,
       contourData.geometryIds,
-      representationConfig,
-      toolGroupConfig
-    );
-  }
-
-  if (contourData?.annotationUIDsMap?.size) {
-    handleContourAnnotationSegmentation(
-      viewport,
       contourData.annotationUIDsMap,
       representationConfig,
       toolGroupConfig
@@ -139,7 +126,8 @@ function _removeContourFromToolGroupViewports(
     );
     removeContourFromElement(
       enabledElement.viewport.element,
-      segmentationRepresentationUID
+      segmentationRepresentationUID,
+      toolGroupId
     );
   }
 }
