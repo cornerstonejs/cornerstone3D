@@ -16,7 +16,7 @@ interface configSlider extends configElement {
 }
 
 export default function addSliderToToolbar(config: configSlider): void {
-  config = utilities.deepMerge(config, config.merge);
+  config = utilities.deepMerge(config, config.merge || {});
 
   config.container =
     config.container ?? document.getElementById('demo-toolbar');

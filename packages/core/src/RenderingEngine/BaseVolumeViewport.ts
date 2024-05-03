@@ -40,7 +40,6 @@ import type {
   ViewPresentation,
   ViewReference,
   IVolumeViewport,
-  ICamera,
 } from '../types';
 import { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
