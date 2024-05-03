@@ -1,7 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { getEnabledElement } from '@cornerstonejs/core';
 import { ISculptToolShape } from '../../types/ISculptToolShape';
-import { distanceFromPoint, SculptData } from '../SculptorTool';
+import { SculptData } from '../SculptorTool';
+import { distancePointToContour } from '../distancePointToContour';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import { point } from '../../utilities/math';
 import {
@@ -10,14 +11,17 @@ import {
   ContourAnnotationData,
 } from '../../types';
 
-export interface PushedHandles {
+export type PushedHandles = {
   first?: number;
   last?: number;
-}
+};
 
 /**
  * Implements a dynamic radius circle sculpt tool to edit contour annotations.
  * This tool changes radius based on the nearest point on a contour tool.
+ *
+ * TODO: Update this tool to allow modifying spline and other handle containing
+ * contours.
  */
 class CircleSculptCursor implements ISculptToolShape {
   static shapeName = 'Circle';
@@ -112,7 +116,11 @@ class CircleSculptCursor implements ISculptToolShape {
     activeAnnotation: ContourAnnotationData
   ): void {
     const toolInfo = this.toolInfo;
-    const radius = distanceFromPoint(viewport, activeAnnotation, canvasCoords);
+    const radius = distancePointToContour(
+      viewport,
+      activeAnnotation,
+      canvasCoords
+    );
     if (radius > 0) {
       toolInfo.toolSize = Math.min(toolInfo.maxToolSize, radius);
     }

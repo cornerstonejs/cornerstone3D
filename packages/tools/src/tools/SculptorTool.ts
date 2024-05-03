@@ -8,7 +8,6 @@ import {
   ToolProps,
   SVGDrawingHelper,
   ContourAnnotation,
-  ContourAnnotationData,
 } from '../types';
 import { point } from '../utilities/math';
 import { Events, ToolModes, AnnotationStyleStates } from '../enums';
@@ -23,6 +22,7 @@ import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
 import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 import type { ISculptToolShape } from '../types/ISculptToolShape';
+import { distancePointToContour } from './distancePointToContour';
 
 export type SculptData = {
   mousePoint: Types.Point3;
@@ -103,7 +103,7 @@ class SculptorTool extends BaseTool {
     this.isActive = true;
 
     hideElementCursor(element);
-    this.activateSculpt(element);
+    this.activateModify(element);
     return true;
   };
 
@@ -371,7 +371,7 @@ class SculptorTool extends BaseTool {
         continue;
       }
 
-      const distanceFromTool = distanceFromPoint(
+      const distanceFromTool = distancePointToContour(
         viewport,
         annotations[i],
         canvasPoints
@@ -411,7 +411,7 @@ class SculptorTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
 
     this.isActive = false;
-    this.deactivateSculpt(element);
+    this.deactivateModify(element);
     resetElementCursor(element);
 
     const { renderingEngineId, viewportId } = enabledElement;
@@ -467,7 +467,7 @@ class SculptorTool extends BaseTool {
    * Attaches event listeners to the element such that is is visible, modifiable, and new data can be created.
    * @param element - - The viewport element to attach event listeners to.
    */
-  private activateSculpt(element: HTMLDivElement): void {
+  protected activateModify(element: HTMLDivElement): void {
     element.addEventListener(
       Events.MOUSE_UP,
       this.endCallback as EventListener
@@ -478,6 +478,18 @@ class SculptorTool extends BaseTool {
     );
     element.addEventListener(
       Events.MOUSE_DRAG,
+      this.dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this.endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this.endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
       this.dragCallback as EventListener
     );
   }
@@ -486,7 +498,7 @@ class SculptorTool extends BaseTool {
    * Removes event listeners from the element.
    * @param element - The viewport element to remove event listeners from.
    */
-  private deactivateSculpt(element: HTMLDivElement): void {
+  protected deactivateModify(element: HTMLDivElement): void {
     element.removeEventListener(
       Events.MOUSE_UP,
       this.endCallback as EventListener
@@ -499,13 +511,32 @@ class SculptorTool extends BaseTool {
       Events.MOUSE_DRAG,
       this.dragCallback as EventListener
     );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this.endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this.endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this.dragCallback as EventListener
+    );
   }
 
-  private setToolShape(toolShape: string): void {
+  /**
+   * Sets the tool shape to the specified tool
+   */
+  public setToolShape(toolShape: string): void {
     this.selectedShape =
       this.registeredShapes.get(toolShape) ?? CircleSculptCursor.shapeName;
   }
 
+  /**
+   * Renders the cursor annotation on screen so that the user can choose the
+   * annotation size.
+   */
   renderAnnotation(
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
@@ -558,34 +589,6 @@ class SculptorTool extends BaseTool {
     });
   }
 }
-
-export const distanceFromPoint = (
-  viewport: Types.IViewport,
-  annotation: ContourAnnotationData,
-  coords: Types.Point2
-): number => {
-  if (!annotation?.data?.contour?.polyline?.length) {
-    return;
-  }
-  const { polyline } = annotation.data.contour;
-  const { length } = polyline;
-
-  let distance = Infinity;
-
-  for (let i = 0; i < length; i++) {
-    const canvasPoint = viewport.worldToCanvas(polyline[i]);
-    const distanceToPoint = point.distanceToPoint(canvasPoint, coords);
-
-    distance = Math.min(distance, distanceToPoint);
-  }
-
-  // If an error caused distance not to be calculated, return undefined.
-  if (distance === Infinity || isNaN(distance)) {
-    return;
-  }
-
-  return distance;
-};
 
 /**
  * Function calculates the index of a contour given a position `i` and the length of the contour.

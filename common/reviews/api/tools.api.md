@@ -4645,6 +4645,10 @@ type ScrollOptions_2 = {
 export class SculptorTool extends BaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    protected activateModify(element: HTMLDivElement): void;
+    // (undocumented)
+    protected deactivateModify(element: HTMLDivElement): void;
+    // (undocumented)
     protected interpolatePointsWithinMaxSpacing(i: number, points: Array<Types_2.Point3>, indicesToInsertAfter: Array<number>, maxSpacing: number): void;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -4658,6 +4662,8 @@ export class SculptorTool extends BaseTool {
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
     protected sculpt(eventData: any, points: Array<Types_2.Point3>): void;
+    // (undocumented)
+    setToolShape(toolShape: string): void;
     // (undocumented)
     static toolName: string;
 }
