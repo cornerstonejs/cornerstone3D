@@ -49,3 +49,7 @@ temp/
 junit/
 junit.xml
 coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
