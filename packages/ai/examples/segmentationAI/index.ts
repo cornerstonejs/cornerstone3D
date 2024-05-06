@@ -20,7 +20,7 @@ import {
   annotationTools,
 } from '../../../../utils/demo/helpers';
 
-import MLController, { viewportOptions } from './mlController';
+import { ONNXController } from '@cornerstonejs/ai';
 
 // This is for debugging purposes
 console.warn(
@@ -60,7 +60,7 @@ function mlLogger(logName, ...args) {
   element.innerText = args.join(' ');
 }
 
-const ml = new MLController({
+const ml = new ONNXController({
   listeners: [mlLogger],
 });
 
@@ -81,7 +81,7 @@ let cached;
 let toolForPreview;
 
 const toolMap = new Map(annotationTools);
-const defaultTool = MLController.MarkerInclude;
+const defaultTool = ONNXController.MarkerInclude;
 toolMap.set(defaultTool, {
   baseTool: cornerstoneTools.ProbeTool.toolName,
   configuration: {
@@ -90,7 +90,7 @@ toolMap.set(defaultTool, {
 });
 toolStyle.getDefaultToolStyles()[defaultTool] = { color: 'blue' };
 
-const excludeTool = MLController.MarkerExclude;
+const excludeTool = ONNXController.MarkerExclude;
 toolMap.set(excludeTool, {
   baseTool: cornerstoneTools.ProbeTool.toolName,
   bindings: [{ mouseButton: MouseBindings.Secondary }],
@@ -385,7 +385,7 @@ async function run() {
 
   // Set the stack on the viewport
   await viewport.setStack(imageIds);
-  viewport.setOptions(viewportOptions);
+  viewport.setOptions(ONNXController.viewportOptions);
 
   // Add the canvas after the viewport
   // element.appendChild(canvas);

@@ -14,19 +14,6 @@ const { filterAnnotationsForDisplay } = cornerstoneTools.utilities.planar;
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
 
-const viewportOptions = {
-  displayArea: {
-    storeAsInitialCamera: true,
-    imageArea: [1, 1],
-    imageCanvasPoint: {
-      // TODO - fix this so top left corner works
-      imagePoint: [0.5, 0.5],
-      canvasPoint: [0.5, 0.5],
-    },
-  } as Types.DisplayArea,
-  background: <Types.Point3>[0, 0, 0.2],
-};
-
 /**
  * clone tensor
  */
@@ -87,7 +74,7 @@ export enum Loggers {
 }
 
 /**
- * The MLController handles the interaction between CS3D viewports and ONNX segmentation
+ * The ONNXController handles the interaction between CS3D viewports and ONNX segmentation
  * models to allow segmentation of volume and stack viewports using browser local
  * data models.  The process is that a particular view of the viewport is rendered
  * using the loadImageToCanvas to generate the required model size.  This will render
@@ -105,12 +92,25 @@ export enum Loggers {
  * The encoded model data is stored in browser local storage, and each model
  *  typically consumes about 4 mb per frame.
  */
-export default class MLController {
+export default class ONNXController {
   /** Default name for a tool for inclusion points */
   public static MarkerInclude = 'MarkerInclude';
   /** Default name for a tool for exclusion points */
   public static MarkerExclude = 'MarkerExclude';
 
+  /** Some viewport options for loadImageToCanvas */
+  public static viewportOptions = {
+    displayArea: {
+      storeAsInitialCamera: true,
+      imageArea: [1, 1],
+      imageCanvasPoint: {
+        // TODO - fix this so top left corner works
+        imagePoint: [0.5, 0.5],
+        canvasPoint: [0.5, 0.5],
+      },
+    } as Types.DisplayArea,
+    background: <Types.Point3>[0, 0, 0.2],
+  };
   // the image size on canvas
   maxWidth = 1024;
   maxHeight = 1024;
@@ -166,7 +166,7 @@ export default class MLController {
   private loadingAI: Promise<unknown>;
 
   protected viewport;
-  protected excludeTool = MLController.MarkerExclude;
+  protected excludeTool = ONNXController.MarkerExclude;
   protected tool;
   protected currentImage;
   private listeners = [console.log];
@@ -186,8 +186,8 @@ export default class MLController {
   protected annotationsNeedUpdating = false;
   protected maskImageData;
   protected annotationNames = [
-    MLController.MarkerInclude,
-    MLController.MarkerExclude,
+    ONNXController.MarkerInclude,
+    ONNXController.MarkerExclude,
   ];
   protected model = 'sam_b';
 
@@ -221,7 +221,7 @@ export default class MLController {
       this.annotationNames = options.annotationNames;
     }
     if (options.models) {
-      Object.assign(MLController.MODELS, options.models);
+      Object.assign(ONNXController.MODELS, options.models);
     }
     if (options.model) {
       this.model = options.model;
@@ -427,7 +427,7 @@ export default class MLController {
       });
       if (i === 0) {
         loader = this.loadModels(
-          MLController.MODELS[this.config.model],
+          ONNXController.MODELS[this.config.model],
           sessions[i]
         ).catch((e) => {
           this.log(Loggers.Log, "Couldn't load models", e);
@@ -545,7 +545,7 @@ export default class MLController {
         imageId,
         viewportOptions: {
           ...viewport.defaultOptions,
-          ...viewportOptions,
+          ...ONNXController.viewportOptions,
         },
         viewReference: null,
         renderingEngineId: viewport.getRenderingEngine().id,
@@ -967,36 +967,29 @@ export default class MLController {
       this.log(Loggers.Log, 'loading...');
     }
     const start = performance.now();
-    for (const [_name, model] of Object.entries(models)) {
-      try {
-        const opt = {
-          executionProviders: [this.config.provider],
-          enableMemPattern: false,
-          enableCpuMemArena: false,
-          extra: {
-            session: {
-              disable_prepacking: '1',
-              use_device_allocator_for_initializers: '1',
-              use_ort_model_bytes_directly: '1',
-              use_ort_model_bytes_for_initializers: '1',
-            },
+    for (const model of Object.values(models) as any[]) {
+      const opt = {
+        executionProviders: [this.config.provider],
+        enableMemPattern: false,
+        enableCpuMemArena: false,
+        extra: {
+          session: {
+            disable_prepacking: '1',
+            use_device_allocator_for_initializers: '1',
+            use_ort_model_bytes_directly: '1',
+            use_ort_model_bytes_for_initializers: '1',
           },
-          interOpNumThreads: 4,
-          intraOpNumThreads: 2,
-        };
-        const model_bytes = await this.fetchAndCacheModel(
-          model.url,
-          model.name
-        );
-        const extra_opt = model.opt || {};
-        const sess_opt = { ...opt, ...extra_opt };
-        imageSession[model.key] = await ort.InferenceSession.create(
-          model_bytes,
-          sess_opt
-        );
-      } catch (e) {
-        this.log(Loggers.Log, `${model.url} failed, ${e}`);
-      }
+        },
+        interOpNumThreads: 4,
+        intraOpNumThreads: 2,
+      };
+      const model_bytes = await this.fetchAndCacheModel(model.url, model.name);
+      const extra_opt = model.opt || {};
+      const sess_opt = { ...opt, ...extra_opt };
+      imageSession[model.key] = await ort.InferenceSession.create(
+        model_bytes,
+        sess_opt
+      );
     }
     const stop = performance.now();
     this.log(Loggers.Log, `ready, ${(stop - start).toFixed(1)}ms`);
@@ -1105,5 +1098,3 @@ async function findFileEntry(dir, name) {
     }
   }
 }
-
-export { viewportOptions };
