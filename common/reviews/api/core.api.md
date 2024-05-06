@@ -2974,7 +2974,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     delete(index: number): void;
     // (undocumented)
-    protected depth: number;
+    depth: number;
     // (undocumented)
     fillFrom(getter: (i: number, j: number, k: number) => T, boundsIJK: BoundsIJK): void;
     // (undocumented)
@@ -3008,7 +3008,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     has(index: number): boolean;
     // (undocumented)
-    protected height: number;
+    height: number;
     // (undocumented)
     protected jMultiple: number;
     // (undocumented)
@@ -3030,7 +3030,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     toIndex([i, j, k]: Point3): number;
     // (undocumented)
-    protected width: number;
+    width: number;
 }
 
 // @public (undocumented)
