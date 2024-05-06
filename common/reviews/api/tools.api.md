@@ -7,8 +7,6 @@
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
-import { IVolumeViewport as IVolumeViewport_2 } from 'packages/core/dist/types/types';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
@@ -2762,7 +2760,7 @@ function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 function getUniqueSegmentIndices(segmentationId: any): any;
 
 // @public (undocumented)
-function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | IStackViewport_2;
+function getViewportForAnnotation(annotation: Annotation): Types_2.IStackViewport | Types_2.IVolumeViewport | undefined;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
