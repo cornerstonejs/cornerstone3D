@@ -1592,11 +1592,16 @@ class Viewport implements IViewport {
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { focalPoint: cameraFocalPoint, viewPlaneNormal } = this.getCamera();
+    const {
+      focalPoint: cameraFocalPoint,
+      viewPlaneNormal,
+      viewUp,
+    } = this.getCamera();
     const target: ViewReference = {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
       cameraFocalPoint,
       viewPlaneNormal,
+      viewUp,
       sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
     };
     return target;

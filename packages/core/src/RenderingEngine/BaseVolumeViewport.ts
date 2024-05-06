@@ -712,6 +712,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       viewPlaneNormal: refViewPlaneNormal,
       FrameOfReferenceUID: refFrameOfReference,
       cameraFocalPoint,
+      viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
     const { focalPoint, viewPlaneNormal, position } = this.getCamera();
@@ -750,7 +751,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
       if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
         // Need to update the orientation vectors correctly for this case
-        throw new Error('Changing view plane normal not yet supported');
+        console.log(
+          '********* Changing view plane normal',
+          this.id,
+          refViewPlaneNormal,
+          viewUp
+        );
+        // this.setCameraNoEvent({ viewPlaneNormal: refViewPlaneNormal, viewUp });
+        this.setOrientation({ viewPlaneNormal: refViewPlaneNormal, viewUp });
+        return this.setView(null, viewPres);
       }
       if (cameraFocalPoint) {
         const focalDelta = vec3.subtract(
@@ -1226,7 +1235,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
    */
-  public setOrientation(orientation: OrientationAxis, immediate = true): void {
+  public setOrientation(
+    _orientation: OrientationAxis | OrientationVectors,
+    _immediate = true
+  ): void {
     console.warn('Method "setOrientation" needs implementation');
   }
 

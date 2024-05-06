@@ -26,9 +26,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ToolGroupManager, synchronizers } = cornerstoneTools;
-
-const { createPresentationViewSynchronizer } = synchronizers;
+const { ToolGroupManager } = cornerstoneTools;
 
 const { ViewportType, Events } = Enums;
 
@@ -100,11 +98,13 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  There are two lines of viewports, the top line allows controls, while the
-  bottom line shows what happens when a isReferenceViewable applies, and the
+  There are two lines of viewports, the top line allows controls, while the bottom line shows what happens when a isReferenceViewable applies, and the
   setView is updated when it is viewable.
-  You can force certain types of view updates, such as with orientation change,
-  or with navigation, or pass the presentation state for non-compatible views.
+  The left and right most views are stack views, while the middle three are  orthographic views of the left most viewport.
+  Turning on apply orientation will apply the orientation from the source to the destination viewports for compatible viewports.
+  Turning on apply presentation will apply the presentation for viewports that are not compatible with the view reference.
+  There is no automatic conversion of stack to volume to demonstrate compatibility for conversion of viewport types.
+  Note the two acquisition viewports (left two viewports) - these will sync in opposite scroll directions for the destination viewports.
   `;
 
 content.append(instructions);
@@ -352,7 +352,6 @@ function viewportRenderedListener(event) {
         withOrientation,
       })
     ) {
-      console.log('Setting view on', destViewport.id, 'from', viewport.id);
       destViewport.setView(viewRef, viewPres);
       destViewport.render();
     } else if (applyPresentation) {

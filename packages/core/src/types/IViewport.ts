@@ -107,9 +107,13 @@ export type ViewReference = {
   /**
    * The normal for the current view.  This defines the plane used to show the
    * 2d annotation.  This should be omitted if the annotation is a point to
-   * allow for single-point annotations.
+   * allows for single-point annotations.
    */
   viewPlaneNormal?: Point3;
+  /**
+   * The view up - this is only used for resetting orientation
+   */
+  viewUp?: Point3;
   /**
    * The slice index or range for this view.
    * <b>NOTE</b> The slice index is relative to the volume or stack of images.

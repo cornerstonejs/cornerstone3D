@@ -176,7 +176,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     protected setInterpolationType(interpolationType: InterpolationType, volumeId?: string): void;
     // (undocumented)
-    setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
+    setOrientation(_orientation: OrientationAxis | OrientationVectors, _immediate?: boolean): void;
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
@@ -4060,6 +4060,7 @@ type ViewReference = {
     referencedImageId?: string;
     cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
+    viewUp?: Point3;
     sliceIndex?: number | [number, number];
     volumeId?: string;
     bounds?: BoundsLPS;
