@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.71.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.0...v1.71.1) (2024-05-03)
+
+### Bug Fixes
+
+- **video:** video viewport annotation position ([#1231](https://github.com/cornerstonejs/cornerstone3D/issues/1231)) ([4759459](https://github.com/cornerstonejs/cornerstone3D/commit/4759459f99b956db2070efe985208830a15dfbd7))
+
 # [1.71.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.70.15...v1.71.0) (2024-05-03)
 
 **Note:** Version bump only for package @cornerstonejs/core
