@@ -69,14 +69,14 @@ export default class RLEVoxelMap<T> {
    */
   protected rows = new Map<number, RLERun<T>[]>();
   /** The height of the images stored in the voxel map (eg the height of each plane) */
-  protected height = 1;
+  public height = 1;
   /** The width of the image planes */
-  protected width = 1;
+  public width = 1;
   /**
    * The number of image planes stored (the depth of the indices), with the k
    * index going from 0...depth.
    */
-  protected depth = 1;
+  public depth = 1;
   /**
    * A multiplier value to go from j values to overall index values.
    */

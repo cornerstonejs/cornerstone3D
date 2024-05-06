@@ -28,6 +28,9 @@ const ikMapping = {
  * the underlying view space.
  * As well, the function returns a dimension for the total view space that
  * corresponds to a `[0,dimension)` index for the given bounds.
+ *
+ * Basically, this allows creating a view or even instantiating a non-acquisition
+ * plane representation of an MPR view.
  */
 export default function normalizeViewportPlane(
   viewport: Types.IViewport,
