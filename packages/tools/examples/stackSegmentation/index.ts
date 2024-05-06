@@ -7,6 +7,7 @@ import {
   addDropdownToToolbar,
   setTitleAndDescription,
   addButtonToToolbar,
+  addBrushSizeSlider,
 } from '../../../../utils/demo/helpers';
 import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
@@ -139,6 +140,9 @@ function updateSegmentationDropdownOptions(
   }
 }
 
+addBrushSizeSlider({
+  toolGroupId: toolGroupId,
+});
 // ============================= //
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },

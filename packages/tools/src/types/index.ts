@@ -53,6 +53,7 @@ import type {
   SegmentationState,
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
+import { ISculptToolShape } from './ISculptToolShape';
 import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
 import type {
   FloodFillGetter,
@@ -160,6 +161,7 @@ export type {
   FloodFillOptions,
   // Contour
   ContourSegmentationData,
+  ISculptToolShape,
   //Statistics
   Statistics,
   NamedStatistics,
