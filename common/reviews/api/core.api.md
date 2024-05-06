@@ -2797,6 +2797,7 @@ type RangeRetrieveOptions = BaseRetrieveOptions & {
 type ReferenceCompatibleOptions = {
     withNavigation?: boolean;
     asVolume?: boolean;
+    withOrientation?: boolean;
     imageURI?: string;
 };
 

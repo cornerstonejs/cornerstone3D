@@ -52,12 +52,15 @@ export type ReferenceCompatibleOptions = {
   withNavigation?: boolean;
   /**
    * For a stack viewport, return true if this viewport could show the given
-   * view if it were converted into a volume viewport, while for a volume,
-   * could it be shown if the camera/orientation were changed.
-   * That is, is the specified view showing an image in the stack but with a
-   * different orientation than acquisition.
+   * view if it were converted into a volume viewport.  Has no affect on volume
+   * viewports.
    */
   asVolume?: boolean;
+  /**
+   * For volume viewports, return true if this viewport could show the given view
+   * if the orientation was changed.
+   */
+  withOrientation?: boolean;
   /**
    * Use this imageURI for testing - may or may not be the current one.
    * Should be a straight contains URI for the set of imageIds in any of

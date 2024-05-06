@@ -1630,8 +1630,8 @@ class Viewport implements IViewport {
         viewPlaneNormal
       )
     ) {
-      // Could navigate as a volume to the reference
-      return options?.asVolume === true;
+      // Could navigate as a volume to the reference with an orientation change
+      return options?.withOrientation === true;
     }
     return true;
   }

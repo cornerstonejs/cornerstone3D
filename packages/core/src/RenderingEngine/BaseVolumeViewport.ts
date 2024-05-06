@@ -645,6 +645,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
+    if (!viewRef.FrameOfReferenceUID) {
+      return false;
+    }
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }

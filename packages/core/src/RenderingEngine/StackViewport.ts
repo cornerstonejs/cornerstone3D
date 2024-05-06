@@ -1601,13 +1601,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       return;
     }
     const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
-    const {
-      rowCosines = [1, 0, 0],
-      columnCosines = [0, 1, 0],
-      imagePositionPatient,
-      frameOfReferenceUID: FrameOfReferenceUID,
-    } = imagePlaneModule;
-
+    const { imagePositionPatient, frameOfReferenceUID: FrameOfReferenceUID } =
+      imagePlaneModule;
+    let { rowCosines, columnCosines } = imagePlaneModule;
+    // Values are null, not undefined, so need to assign instead of defaulting
+    rowCosines ||= [1, 0, 0];
+    columnCosines ||= [0, 1, 0];
     const viewPlaneNormal = <Point3>(
       vec3.cross([0, 0, 0], columnCosines, rowCosines)
     );
