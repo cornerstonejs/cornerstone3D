@@ -1,11 +1,9 @@
 import {
-  CONSTANTS,
   Enums,
   geometryLoader,
   RenderingEngine,
   setVolumesForViewports,
   Types,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -42,7 +40,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -59,17 +56,12 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
-const element2 = document.createElement('div');
 element1.oncontextmenu = () => false;
-element2.oncontextmenu = () => false;
 
 element1.style.width = size;
 element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
 
 viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
@@ -77,7 +69,6 @@ const instructions = document.createElement('p');
 content.append(instructions);
 
 let planarSegmentationRepresentationUID;
-let volumeSegmentationRepresentationUID;
 
 // ============================= //
 
@@ -86,10 +77,6 @@ addToggleButtonToToolbar({
   onClick: (toggle) => {
     [
       { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-      {
-        representationUID: volumeSegmentationRepresentationUID,
-        toolGroupId: toolGroupId3d,
-      },
     ].forEach(({ representationUID, toolGroupId }) => {
       segmentation.config.visibility.setSegmentationVisibility(
         toolGroupId,
@@ -106,10 +93,6 @@ addToggleButtonToToolbar({
     const segmentIndex = 1;
     [
       { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-      {
-        representationUID: volumeSegmentationRepresentationUID,
-        toolGroupId: toolGroupId3d,
-      },
     ].forEach(({ representationUID, toolGroupId }) => {
       segmentation.config.visibility.setSegmentVisibility(
         toolGroupId,
@@ -127,10 +110,6 @@ addToggleButtonToToolbar({
     const segmentIndex = 2;
     [
       { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-      {
-        representationUID: volumeSegmentationRepresentationUID,
-        toolGroupId: toolGroupId3d,
-      },
     ].forEach(({ representationUID, toolGroupId }) => {
       segmentation.config.visibility.setSegmentVisibility(
         toolGroupId,
@@ -208,20 +187,11 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
   toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-
-  toolGroup3d.addTool(SegmentationDisplayTool.toolName);
-  toolGroup3d.addTool(ZoomTool.toolName);
-  toolGroup3d.addTool(TrackballRotateTool.toolName, {
-    configuration: { volumeId },
-  });
-
-  toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
@@ -240,22 +210,6 @@ async function run() {
   });
 
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-
-  toolGroup3d.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-      },
-    ],
-  });
-
-  toolGroup3d.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -280,7 +234,6 @@ async function run() {
 
   // Create the viewports
   const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_3D';
 
   const viewportInputArray = [
     {
@@ -292,43 +245,17 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D,
-      element: element2,
-      defaultOptions: {
-        background: <Types.Point3>[0.2, 0, 0.2],
-      },
-    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup3d.addViewport(viewportId2, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2]
-  ).then(() => {
-    const viewport3d = renderingEngine.getViewport(viewportId2);
-    const volumeActor = viewport3d.getDefaultActor().actor as Types.VolumeActor;
-    utilities.applyPreset(
-      volumeActor,
-      CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-    );
-
-    const renderer = viewport3d.getRenderer();
-    renderer.getActiveCamera().elevation(-70);
-    viewport3d.setCamera({ parallelScale: 600 });
-
-    viewport3d.render();
-  });
+  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
 
   // // Add the segmentation representation to the toolgroup
   const segRepresentations1 = await segmentation.addSegmentationRepresentations(
@@ -341,18 +268,7 @@ async function run() {
     ]
   );
 
-  const segRepresentations2 = await segmentation.addSegmentationRepresentations(
-    toolGroupId3d,
-    [
-      {
-        segmentationId: `${segmentationId}`,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
-
   planarSegmentationRepresentationUID = segRepresentations1[0];
-  volumeSegmentationRepresentationUID = segRepresentations2[0];
 
   // Render the image
   renderingEngine.render();
