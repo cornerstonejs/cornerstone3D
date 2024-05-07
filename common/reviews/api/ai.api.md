@@ -27,7 +27,7 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public
-export class ONNXController {
+export class ONNXSegmentationController {
     constructor(options?: {
         listeners: any;
         getCurrentAnnotations: any;

@@ -92,7 +92,7 @@ export enum Loggers {
  * The encoded model data is stored in browser local storage, and each model
  *  typically consumes about 4 mb per frame.
  */
-export default class ONNXController {
+export default class ONNXSegmentationController {
   /** Default name for a tool for inclusion points */
   public static MarkerInclude = 'MarkerInclude';
   /** Default name for a tool for exclusion points */
@@ -166,7 +166,7 @@ export default class ONNXController {
   private loadingAI: Promise<unknown>;
 
   protected viewport;
-  protected excludeTool = ONNXController.MarkerExclude;
+  protected excludeTool = ONNXSegmentationController.MarkerExclude;
   protected tool;
   protected currentImage;
   private listeners = [console.log];
@@ -186,8 +186,8 @@ export default class ONNXController {
   protected annotationsNeedUpdating = false;
   protected maskImageData;
   protected annotationNames = [
-    ONNXController.MarkerInclude,
-    ONNXController.MarkerExclude,
+    ONNXSegmentationController.MarkerInclude,
+    ONNXSegmentationController.MarkerExclude,
   ];
   protected model = 'sam_b';
 
@@ -221,7 +221,7 @@ export default class ONNXController {
       this.annotationNames = options.annotationNames;
     }
     if (options.models) {
-      Object.assign(ONNXController.MODELS, options.models);
+      Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
     if (options.model) {
       this.model = options.model;
@@ -427,7 +427,7 @@ export default class ONNXController {
       });
       if (i === 0) {
         loader = this.loadModels(
-          ONNXController.MODELS[this.config.model],
+          ONNXSegmentationController.MODELS[this.config.model],
           sessions[i]
         ).catch((e) => {
           this.log(Loggers.Log, "Couldn't load models", e);
@@ -545,7 +545,7 @@ export default class ONNXController {
         imageId,
         viewportOptions: {
           ...viewport.defaultOptions,
-          ...ONNXController.viewportOptions,
+          ...ONNXSegmentationController.viewportOptions,
         },
         viewReference: null,
         renderingEngineId: viewport.getRenderingEngine().id,

@@ -20,7 +20,7 @@ import {
   annotationTools,
 } from '../../../../utils/demo/helpers';
 
-import { ONNXController } from '@cornerstonejs/ai';
+import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
 // This is for debugging purposes
 console.warn(
@@ -60,7 +60,7 @@ function mlLogger(logName, ...args) {
   element.innerText = args.join(' ');
 }
 
-const ml = new ONNXController({
+const ml = new ONNXSegmentationController({
   listeners: [mlLogger],
 });
 
@@ -81,7 +81,7 @@ let cached;
 let toolForPreview;
 
 const toolMap = new Map(annotationTools);
-const defaultTool = ONNXController.MarkerInclude;
+const defaultTool = ONNXSegmentationController.MarkerInclude;
 toolMap.set(defaultTool, {
   baseTool: cornerstoneTools.ProbeTool.toolName,
   configuration: {
@@ -90,7 +90,7 @@ toolMap.set(defaultTool, {
 });
 toolStyle.getDefaultToolStyles()[defaultTool] = { color: 'blue' };
 
-const excludeTool = ONNXController.MarkerExclude;
+const excludeTool = ONNXSegmentationController.MarkerExclude;
 toolMap.set(excludeTool, {
   baseTool: cornerstoneTools.ProbeTool.toolName,
   bindings: [{ mouseButton: MouseBindings.Secondary }],
@@ -125,7 +125,7 @@ setTitleAndDescription(
 
 const { canvas, canvasMask } = ml;
 
-const size = `512px`;
+const size = `24vw`;
 const content = document.getElementById('content');
 
 addButtonToToolbar({
@@ -140,7 +140,7 @@ const viewportGrid = document.createElement('div');
 let renderingEngine;
 let viewport, volumeViewport, activeViewport;
 
-viewportGrid.style.width = '95vw';
+viewportGrid.style.width = '99vw';
 
 const viewportId = 'Stack';
 const viewportIds = [viewportId, 'AXIAL', 'SAGITAL', 'CORONAL'];
@@ -160,8 +160,9 @@ for (const id of viewportIds) {
   viewportGrid.appendChild(el);
 }
 const [element0, element1, element2, element3] = elements;
-viewportGrid.appendChild(canvas);
-viewportGrid.appendChild(canvasMask);
+// Uncomment these to show the canvas/mask overlays separately
+// viewportGrid.appendChild(canvas);
+// viewportGrid.appendChild(canvasMask);
 
 Object.assign(canvas.style, {
   width: size,
@@ -282,14 +283,6 @@ const handleKeyEvent = (evt) => {
   }
 };
 
-function navigateVolumeListener(_event) {
-  volumeViewport.setView(
-    viewport.getViewReference(),
-    viewport.getViewPresentation()
-  );
-  volumeViewport.render();
-}
-
 /**
  * Runs the demo
  */
@@ -385,14 +378,14 @@ async function run() {
 
   // Set the stack on the viewport
   await viewport.setStack(imageIds);
-  viewport.setOptions(ONNXController.viewportOptions);
+  viewport.setOptions(ONNXSegmentationController.viewportOptions);
 
-  // Add the canvas after the viewport
-  // element.appendChild(canvas);
+  // This init model is waiting for completion, whereas the earlier one just
+  // starts loading in the background.
   await ml.initModel();
+  // Connect the default viewport here to start things off - requires the initModel to be done
   ml.initViewport(viewport, toolForPreview);
 
-  element0.addEventListener(Events.IMAGE_RENDERED, navigateVolumeListener);
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });

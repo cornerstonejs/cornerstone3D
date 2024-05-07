@@ -1,3 +1,3 @@
-import ONNXController from './ONNXController';
+import ONNXSegmentationController from './ONNXSegmentationController';
 
-export { ONNXController };
+export { ONNXSegmentationController };
