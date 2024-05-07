@@ -30,14 +30,12 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 export class ONNXSegmentationController {
     constructor(options?: {
         listeners: any;
-        getCurrentAnnotations: any;
-        annotationNames: any;
+        getPromptAnnotations: any;
+        promptAnnotationTypes: any;
         models: any;
-        model: any;
+        modelName: string;
     });
-    annotationModifiedListener: (_event?: any) => void;
-    // (undocumented)
-    protected annotationNames: string[];
+    protected annotationModifiedListener: (_event?: any) => void;
     // (undocumented)
     protected annotationsNeedUpdating: boolean;
     // (undocumented)
@@ -51,7 +49,7 @@ export class ONNXSegmentationController {
     createLabelmap(mask: any, canvasPosition: any, _points: any, _labels: any): void;
     // (undocumented)
     protected currentImage: any;
-    decoder(points: any, labels: any, useSession?: any): Promise<void>;
+    decode(points: any, labels: any, useSession?: any): Promise<void>;
     // (undocumented)
     protected desiredImage: {
         imageId: any;
@@ -65,10 +63,10 @@ export class ONNXSegmentationController {
     protected excludeTool: string;
     // (undocumented)
     fetchAndCacheModel(url: any, name: any): Promise<ArrayBuffer>;
-    getConfig(): any;
-    protected getCurrentAnnotations: () => cornerstoneTools.Types.Annotations;
+    getConfig(modelName?: string): any;
     getDirectoryForImageId(session: any, imageId: any): Promise<any>;
     getFileNameForImageId(imageId: any): any;
+    protected getPromptAnnotations: (viewport?: any) => cornerstoneTools.Types.Annotations;
     protected handleImage({ imageId, sampleImageId }: {
         imageId: any;
         sampleImageId: any;
@@ -80,8 +78,8 @@ export class ONNXSegmentationController {
     initModel(): Promise<unknown>;
     initViewport(viewport: any, toolForPreview: any): void;
     // (undocumented)
-    protected isClicked: boolean;
-    protected loadAIInternal(): Promise<void>;
+    protected isGpuInUse: boolean;
+    protected load(): Promise<void>;
     // (undocumented)
     loadModels(models: any, imageSession?: any): Promise<void>;
     loadStorageImageEncoding(session: any, imageId: any, index?: any): Promise<any>;
@@ -95,8 +93,6 @@ export class ONNXSegmentationController {
     maxHeight: number;
     // (undocumented)
     maxWidth: number;
-    // (undocumented)
-    protected model: string;
     // (undocumented)
     modelHeight: number;
     static MODELS: {
@@ -115,14 +111,18 @@ export class ONNXSegmentationController {
     };
     // (undocumented)
     modelWidth: number;
+    // (undocumented)
+    protected promptAnnotationTypes: string[];
     restoreImageEncoding(session: any, imageId: any): Promise<any>;
-    protected runDecoder(): Promise<void>;
+    protected runDecode(): Promise<void>;
     // (undocumented)
     protected sharedImageEncoding: any;
     storeImageEncoding(session: any, imageId: any, data: any): Promise<void>;
     // (undocumented)
     protected tool: any;
-    tryLoad(resetImage?: boolean): void;
+    tryLoad(options?: {
+        resetImage: boolean;
+    }): void;
     updateAnnotations(): void;
     // (undocumented)
     protected viewport: any;
@@ -130,7 +130,7 @@ export class ONNXSegmentationController {
         displayArea: Types.DisplayArea;
         background: Types.Point3;
     };
-    viewportRenderedListener: (_event: any) => void;
+    protected viewportRenderedListener: (_event: any) => void;
 }
 
 // (No @packageDocumentation comment for this package)

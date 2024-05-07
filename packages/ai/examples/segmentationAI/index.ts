@@ -120,7 +120,11 @@ toolMap.set(cornerstoneTools.ZoomTool.toolName, {
 
 setTitleAndDescription(
   'Segmentation AI',
-  'Here we demonstrate how to use various predictive AI/ML techniques to aid your segmentation'
+  'Here we demonstrate how to use various predictive AI/ML techniques to aid your segmentation.  ' +
+    'The default model here uses "MarkerInclude" and "MarkerExclude" as segmentation AI prompts ' +
+    'for the Segment Anything Model to use to generate a segmentation of the area of interest.  ' +
+    'Then, these prompts can be copied to the next image by pressing the "n" key to interpolate ' +
+    'markers on the current slice onto the next slice.'
 );
 
 const { canvas, canvasMask } = ml;
@@ -279,7 +283,7 @@ const handleKeyEvent = (evt) => {
   } else if (key === 'Enter') {
     toolForPreview.acceptPreview(element);
   } else if (key === 'n') {
-    interpolateScroll(activeViewport, 1);
+    ml.interpolateScroll(activeViewport, 1);
   }
 };
 

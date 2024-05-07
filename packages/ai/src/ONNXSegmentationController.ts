@@ -309,6 +309,58 @@ export default class ONNXSegmentationController {
   }
 
   /**
+   * The interpolate scroll
+   */
+  // public async interpolateScroll(viewport = this.viewport, dir = 1) {
+  //   const { element } = viewport;
+  //   this.toolForPreview.acceptPreview(element);
+  //   const annotations = [
+  //     ...annotationState.getAnnotations(defaultTool, element),
+  //     ...annotationState.getAnnotations(excludeTool, element),
+  //   ];
+
+  //   const currentAnnotations = filterAnnotationsForDisplay(
+  //     viewport,
+  //     annotations
+  //   );
+
+  //   if (!currentAnnotations.length) {
+  //     return;
+  //   }
+
+  //   const currentSliceIndex = viewport.getCurrentImageIdIndex();
+  //   const { focalPoint } = viewport.getCamera();
+  //   const viewRef = viewport.getViewReference({
+  //     sliceIndex: currentSliceIndex + dir,
+  //   });
+  //   if (!viewRef || viewRef.sliceIndex === currentSliceIndex) {
+  //     console.warn('No next image in direction', dir, currentSliceIndex);
+  //     return;
+  //   }
+
+  //   viewport.scroll(dir);
+  //   await new Promise((resolve) => window.setTimeout(resolve, 250));
+  //   const nextAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+  //   if (nextAnnotations.length > 0) {
+  //     return;
+  //   }
+  //   const { focalPoint: newFocal } = activeViewport.getCamera();
+  //   const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
+  //   for (const annotation of currentAnnotations) {
+  //     annotation.interpolationUID ||= crypto.randomUUID();
+  //     const newAnnotation = structuredClone(annotation);
+  //     newAnnotation.annotationUID = undefined;
+  //     Object.assign(newAnnotation.metadata, viewRef);
+  //     (newAnnotation as any).cachedStats = {};
+  //     for (const handle of newAnnotation.data.handles.points) {
+  //       vec3.add(handle, handle, newDelta);
+  //     }
+  //     annotationState.addAnnotation(newAnnotation, viewport.element);
+  //   }
+  //   viewport.render();
+  // }
+
+  /**
    * Logs the message to the given log level
    */
   protected log(logger: Loggers, ...args) {
