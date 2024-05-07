@@ -90,7 +90,20 @@ export enum Loggers {
  * a CS3D segmentation map, in the segment index currently being worked on.
  *
  * The encoded model data is stored in browser local storage, and each model
- *  typically consumes about 4 mb per frame.
+ *  typically consumes about 4 mb per frame.  The path for the storage is
+ * based on the target id and the study/series/instance attributes.  That
+ * path is:
+ *
+ * `<modelName>/<studyUID>/<seriesUID>/<filePath>`
+ * where the file path is the instance UID, or a made up name based on the
+ * slice index and view normal for orthographic images.
+ *
+ * For encoding images, there are two sessions to consider.  The currently
+ * displaying session has information about the image being worked on, while a
+ * second session allows encoding images not being currently viewed.  This allows
+ * for background encoding of images.  However, note the library does NOT allow
+ * encoding two images at the same time, it is merely that two images can be
+ * queued up for encoding at the same time and can have non-overlapping results.
  */
 export default class ONNXSegmentationController {
   /** Default name for a tool for inclusion points */
@@ -182,140 +195,66 @@ export default class ONNXSegmentationController {
   protected sharedImageEncoding;
   protected boxRadius = 5;
   protected imageImageData;
-  protected isClicked = false;
+  protected isGpuInUse = false;
   protected annotationsNeedUpdating = false;
   protected maskImageData;
-  protected annotationNames = [
+  protected promptAnnotationTypes = [
     ONNXSegmentationController.MarkerInclude,
     ONNXSegmentationController.MarkerExclude,
   ];
-  protected model = 'sam_b';
 
   /**
    * Configure the ML Controller.  No parameters are required, and will default
    * to the basic set of controls using MarkerInclude/Exclude and the default SAM
    * model for segmentation.
    *
+   * The plan is to add additional prompt types and default models which can be
+   * applied, but this version is a simple/basic version.
+   *
    * @param options - a set of options to configure this with
    *    * listeners - a set of functions to call to get log type feedback on the status of the segmentation
-   *    * getCurrentAnnotations - a function to get the annotations to apply for segmentation
-   *    * annotationNames - a list of annotation names to use to generate segmentations
+   *    * getPromptAnnotations - a function to get the annotations which are used as input to the AI segmentation
+   *    * promptAnnotationTypes - a list of annotation type names to use to generate the prompts.  This is an
+   *      alternate to the getPromptAnnotations
    *    * models - a set of model configurations to run - note these are added globally to the static models
+   *    * modelName - the specific model name to choose.  Must exist in models.
    */
   constructor(
     options = {
       listeners: null,
-      getCurrentAnnotations: null,
-      annotationNames: null,
+      getPromptAnnotations: null,
+      promptAnnotationTypes: null,
       models: null,
-      model: null,
+      modelName: 'sam_b',
     }
   ) {
     if (options.listeners) {
       this.listeners = [...options.listeners];
     }
-    if (options.getCurrentAnnotations) {
-      this.getCurrentAnnotations = options.getCurrentAnnotations;
+    if (options.getPromptAnnotations) {
+      this.getPromptAnnotations = options.getPromptAnnotations;
     }
-    if (options.annotationNames) {
-      this.annotationNames = options.annotationNames;
+    if (options.promptAnnotationTypes) {
+      this.promptAnnotationTypes = options.promptAnnotationTypes;
     }
     if (options.models) {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
-    if (options.model) {
-      this.model = options.model;
-    }
+    this.config = this.getConfig(options.modelName);
   }
 
   /**
-   * Logs the message to the given log level
+   * Loads the AI model.  This can take a while and will return a promise
+   * which resolves when the model is completed.  If the model is already loaded,
+   * then the promise returned will be resolved already.  Can safely be called multiple
+   * times to allow starting the model load early, and then waiting for it when done.
    */
-  protected log(logger: Loggers, ...args) {
-    for (const listener of this.listeners) {
-      listener(logger, ...args);
+  public initModel(): Promise<unknown> {
+    if (!this.loadingAI) {
+      this.loadingAI = this.load();
     }
+    return this.loadingAI;
   }
-
-  /**
-   * Gets a list of the include/exclude orientation annotations applying to the
-   * current image id.
-   */
-  protected getCurrentAnnotations = () => {
-    const annotations = [];
-    const { element } = this.viewport;
-    for (const annotationName of this.annotationNames) {
-      annotations.push(
-        ...annotationState.getAnnotations(annotationName, element)
-      );
-    }
-    const currentAnnotations = filterAnnotationsForDisplay(
-      this.viewport,
-      annotations
-    );
-    return currentAnnotations;
-  };
-
-  /**
-   * A listener for viewport being rendered that tried loading/encoding the
-   * new image if it is different from the previous image.  Will return before
-   * the image is encoded.  Can be called without binding as it is already
-   * bound to the this object.
-   * The behaviour of the callback is that if the image has changed in terms
-   * of which image (new view reference), then that image is set as the
-   * currently desired encoded image, and a new encoding will be read from
-   * cache or one will be created and stored in cache.
-   *
-   * This does not need to be manually bound, the initViewport will bind
-   * this to the correct rendering messages.
-   */
-  public viewportRenderedListener = (_event) => {
-    const { viewport, currentImage, desiredImage } = this;
-    desiredImage.imageId =
-      viewport.getCurrentImageId() || viewport.getReferenceId();
-    desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
-    if (!desiredImage.imageId) {
-      return;
-    }
-    if (desiredImage.imageId.startsWith('volumeId:')) {
-      desiredImage.sampleImageId = viewport.getImageIds(
-        viewport.getVolumeId()
-      )[0];
-    } else {
-      desiredImage.sampleImageId = desiredImage.imageId;
-    }
-    if (desiredImage.imageId === currentImage?.imageId) {
-      return;
-    }
-    const { canvasMask } = this;
-    const ctxMask = canvasMask.getContext('2d');
-    ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
-
-    this.tryLoad(true);
-  };
-
-  /**
-   * This is an already bound annotation modified listener, that is added/removed
-   * from the viewport by the initViewport method.
-   * This listener does the following:
-   *   * Gets the annotations, returning immediately if there are no annotations
-   *   * Marks the annotations as needing an update
-   *   * Starts an encoding on the current image if it is not already encoded
-   *   * When the image is encoded, runs the decoder
-   *   * Once the decoder has completed, converts the results into a CS3D segmentation preview
-   *
-   * Note that the decoder run will not occur if the image is changed before the
-   * decoder starts running, and that encoding a new image may not start until
-   * an ongoing decoder operations has completed.
-   */
-  public annotationModifiedListener = (_event?) => {
-    const currentAnnotations = this.getCurrentAnnotations();
-    if (!currentAnnotations.length) {
-      return;
-    }
-    this.annotationsNeedUpdating = true;
-    this.tryLoad();
-  };
 
   /**
    * Connects a viewport up to get anotations and updates
@@ -370,6 +309,95 @@ export default class ONNXSegmentationController {
   }
 
   /**
+   * Logs the message to the given log level
+   */
+  protected log(logger: Loggers, ...args) {
+    for (const listener of this.listeners) {
+      listener(logger, ...args);
+    }
+  }
+
+  /**
+   * Gets a list of the include/exclude orientation annotations applying to the
+   * current image id.
+   */
+  protected getPromptAnnotations = (viewport = this.viewport) => {
+    const annotations = [];
+    const { element } = viewport;
+    for (const annotationName of this.promptAnnotationTypes) {
+      annotations.push(
+        ...annotationState.getAnnotations(annotationName, element)
+      );
+    }
+    const currentAnnotations = filterAnnotationsForDisplay(
+      this.viewport,
+      annotations
+    );
+    return currentAnnotations;
+  };
+
+  /**
+   * A listener for viewport being rendered that tried loading/encoding the
+   * new image if it is different from the previous image.  Will return before
+   * the image is encoded.  Can be called without binding as it is already
+   * bound to the this object.
+   * The behaviour of the callback is that if the image has changed in terms
+   * of which image (new view reference), then that image is set as the
+   * currently desired encoded image, and a new encoding will be read from
+   * cache or one will be created and stored in cache.
+   *
+   * This does not need to be manually bound, the initViewport will bind
+   * this to the correct rendering messages.
+   */
+  protected viewportRenderedListener = (_event) => {
+    const { viewport, currentImage, desiredImage } = this;
+    desiredImage.imageId =
+      viewport.getCurrentImageId() || viewport.getReferenceId();
+    desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
+    if (!desiredImage.imageId) {
+      return;
+    }
+    if (desiredImage.imageId.startsWith('volumeId:')) {
+      desiredImage.sampleImageId = viewport.getImageIds(
+        viewport.getVolumeId()
+      )[0];
+    } else {
+      desiredImage.sampleImageId = desiredImage.imageId;
+    }
+    if (desiredImage.imageId === currentImage?.imageId) {
+      return;
+    }
+    const { canvasMask } = this;
+    const ctxMask = canvasMask.getContext('2d');
+    ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
+
+    this.tryLoad(true);
+  };
+
+  /**
+   * This is an already bound annotation modified listener, that is added/removed
+   * from the viewport by the initViewport method.
+   * This listener does the following:
+   *   * Gets the annotations, returning immediately if there are no annotations
+   *   * Marks the annotations as needing an update
+   *   * Starts an encoding on the current image if it is not already encoded
+   *   * When the image is encoded, runs the decoder
+   *   * Once the decoder has completed, converts the results into a CS3D segmentation preview
+   *
+   * Note that the decoder run will not occur if the image is changed before the
+   * decoder starts running, and that encoding a new image may not start until
+   * an ongoing decoder operations has completed.
+   */
+  protected annotationModifiedListener = (_event?) => {
+    const currentAnnotations = this.getPromptAnnotations();
+    if (!currentAnnotations.length) {
+      return;
+    }
+    this.annotationsNeedUpdating = true;
+    this.tryLoad();
+  };
+
+  /**
    * Disconnects the given viewport, removing the listeners.
    */
   public disconnectViewport(viewport) {
@@ -389,26 +417,12 @@ export default class ONNXSegmentationController {
   }
 
   /**
-   * Loads the AI model.  This can take a while and will return a promise
-   * which resolves when the model is completed.  If the model is already laoded,
-   * then the promise returned will be already resolved.  Can be called multiple
-   * times and will only initialize once.
-   */
-  public initModel(): Promise<unknown> {
-    this.getConfig();
-    if (!this.loadingAI) {
-      this.loadingAI = this.loadAIInternal();
-    }
-    return this.loadingAI;
-  }
-
-  /**
    * Does the actual load, separated from the public method to allow starting
    * the AI to load and then waiting for it once other things are also ready.
    * This is done internally so that only a single load/setup is created, allowing
-   * for hte load to be started and only waited for when other things are ready.
+   * for the load to be started and only waited for when other things are ready.
    */
-  protected async loadAIInternal() {
+  protected async load() {
     const { sessions } = this;
     this.canvas.style.cursor = 'wait';
 
@@ -448,7 +462,7 @@ export default class ONNXSegmentationController {
   public clear(viewport) {
     this.points = [];
     this.labels = [];
-    this.getCurrentAnnotations(viewport).forEach((annotation) =>
+    this.getPromptAnnotations(viewport).forEach((annotation) =>
       annotationState.removeAnnotation(annotation.annotationUID)
     );
   }
@@ -459,6 +473,14 @@ export default class ONNXSegmentationController {
    * position-1 so as to fetch all images.
    * Works with both volume (orthographic) and stack viewports.
    * This will interfere with any image navigation
+   *
+   * @param current - the starting image near which other images should be cached.
+   * @param offset - what offset to the current image should be used, that is,
+   *     for 125 images, if the current was 5, and the offset is 6, then the
+   *     image at sliceIndex 5+6+1 will be used.
+   * @param length - the number of images.  This will be determined dynamically
+   *     based on when the view reference for the next slice returns undefined.
+   *     Defaults to 1,000,000 to start with.
    */
   public async cacheImageEncodings(
     current = this.viewport.getCurrentImageIdIndex(),
@@ -488,7 +510,7 @@ export default class ONNXSegmentationController {
     }
     // Try doing a load, so that UI has priority
     this.tryLoad();
-    if (this.isClicked) {
+    if (this.isGpuInUse) {
       setTimeout(() => this.cacheImageEncodings(current, offset), 500);
       return;
     }
@@ -510,11 +532,11 @@ export default class ONNXSegmentationController {
    * are other high priority tasks to complete.
    */
   protected async handleImage({ imageId, sampleImageId }, imageSession) {
-    if (imageId === imageSession.imageId || this.isClicked) {
+    if (imageId === imageSession.imageId || this.isGpuInUse) {
       return;
     }
     const { viewport, desiredImage } = this;
-    this.isClicked = true;
+    this.isGpuInUse = true;
     imageSession.imageId = imageId;
     imageSession.sampleImageId = sampleImageId;
     try {
@@ -605,28 +627,29 @@ export default class ONNXSegmentationController {
         }
       }
     } finally {
-      this.isClicked = false;
+      this.isGpuInUse = false;
     }
 
     this.tryLoad();
   }
 
   /**
-   * This method tries to run the decoder.  It will succeed if the current image
-   * has been encoded and is not otherwise already being decoded.
+   * This method tries to run the decode that wraps the decode operation in
+   * checks for whether hte GPU is in use, whether the decode has otherwise completed,
+   * and a general try/catch around the decode.
    */
-  protected async runDecoder() {
+  protected async runDecode() {
     const { canvas } = this;
-    if (this.isClicked || !this.currentImage?.imageEmbeddings) {
+    if (this.isGpuInUse || !this.currentImage?.imageEmbeddings) {
       return;
     }
-    this.isClicked = true;
+    this.isGpuInUse = true;
     try {
       this.canvas.style.cursor = 'wait';
-      await this.decoder(this.points, this.labels);
+      await this.decode(this.points, this.labels);
     } finally {
       canvas.style.cursor = 'default';
-      this.isClicked = false;
+      this.isGpuInUse = false;
     }
   }
 
@@ -639,9 +662,9 @@ export default class ONNXSegmentationController {
    * encode/decode at the time the last operation has completed.  If the user
    * performs multiple operations, then only the last set is handled.
    */
-  public tryLoad(resetImage = false) {
+  public tryLoad(options = { resetImage: false }) {
     const { viewport, desiredImage } = this;
-    if (!desiredImage.imageId || resetImage) {
+    if (!desiredImage.imageId || options.resetImage) {
       desiredImage.imageId =
         viewport.getCurrentImageId() || viewport.getReferenceId();
       this.currentImage = null;
@@ -687,10 +710,14 @@ export default class ONNXSegmentationController {
    * it will run the update again once the tryLoad is done at the end of the task.
    */
   updateAnnotations() {
-    if (this.isClicked || !this.annotationsNeedUpdating || !this.currentImage) {
+    if (
+      this.isGpuInUse ||
+      !this.annotationsNeedUpdating ||
+      !this.currentImage
+    ) {
       return;
     }
-    const currentAnnotations = this.getCurrentAnnotations();
+    const currentAnnotations = this.getPromptAnnotations();
     this.annotationsNeedUpdating = false;
     this.points = [];
     this.labels = [];
@@ -705,7 +732,7 @@ export default class ONNXSegmentationController {
       this.points.push(point[1]);
       this.labels.push(label);
     }
-    this.runDecoder();
+    this.runDecode();
   }
 
   /**
@@ -835,7 +862,7 @@ export default class ONNXSegmentationController {
   /**
    * Runs the GPU decoder operation itself.
    */
-  async decoder(points, labels, useSession = this.currentImage) {
+  async decode(points, labels, useSession = this.currentImage) {
     const { canvas, canvasMask, imageImageData, desiredImage, boxRadius } =
       this;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -1049,13 +1076,13 @@ export default class ONNXSegmentationController {
    * Creates a confgiuration for which encoder/decoder to run.  TODO - move
    * this into the constructor.
    */
-  getConfig() {
+  getConfig(modelName = 'sam_b') {
     if (this.config) {
       return this.config;
     }
     const query = window.location.search.substring(1);
     const config = {
-      model: this.model || 'sam_b',
+      model: modelName,
       provider: 'webgpu',
       device: 'gpu',
       threads: 4,

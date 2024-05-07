@@ -2917,9 +2917,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   /**
    * Gets a standard target to show this image instance.
-   * Note that the view plane normal is NEGATIVE of the camera view plane
-   * normal so that the VTK and non VTK references agree on the slice index.
-   * May return undefined if the requested slice index is not available.
+   * Returns undefined if the requested slice index is not available.
+   *
+   * <b>Warning<b>If using sliceIndex for requeseting a specific reference, the slice index MUST come
+   * from the stack of image ids.  Using slice index from a volume or from a different
+   * stack of images ids, EVEN if they contain the same set of images will result in
+   * random images being chosen.
    */
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}

@@ -354,7 +354,13 @@ class VolumeViewport extends BaseVolumeViewport {
    * direction to the distance from the origin location, as the index is a
    * complete index from minimum to maximum.
    *
-   * @returns The slice index in the direction of the view
+   * @returns The slice index in the direction of the view.  This index is in
+   * the same position/size/direction as the scroll utility.  That is,
+   *   scroll(dir)
+   * and
+   *   viewport.setView(viewport.getView({sliceIndex: viewport.getCurrentImageIdIndex()+dir}))
+   *
+   * have the same affect, excluding end/looping conditions.
    */
   public getCurrentImageIdIndex = (
     volumeId?: string,

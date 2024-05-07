@@ -597,6 +597,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Gets a view target, allowing comparison between view positions as well
    * as restoring views later.
+   *
+   * <b>Warning<b>If using sliceIndex for positioning, the slice index MUST come
+   * from this volume using the slab thickness applied to this viewport.
+   * Using slice index from a volume.
    */
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
@@ -1718,6 +1722,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.uid;
     }
+
+    // See if this volumeId can be found in one of the actors for this
+    // viewport.  This check will cause undefined to be returned when the
+    // volumeId isn't currently shown in this viewport.
     return actorEntries.find(
       (actorEntry) =>
         actorEntry.actor.getClassName() === 'vtkVolume' &&

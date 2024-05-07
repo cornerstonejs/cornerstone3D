@@ -56,18 +56,25 @@ a single image typically, and can be used by stack viewports to navigate to a sp
 The value is provided by orthographic viewports when getting a reference to an acquisition
 orientation single image, so that those view references are compatible to stack viewports.
 
-#### sliceIndex
+#### `referencedImageId` and `sliceIndex`
 
 The stack viewport uses the sliceIndex and referencedImageId combined to try to quickly
 guess the `imageIdIndex` value for a given referencedImageId. If the referencedImageId is
 identical to the one at the given sliceIndex then it can directly use the sliceIndex, otherwise it
-needs to find the `imageIdIndex`
+needs to find the `imageIdIndex`. `sliceIndex` is never required.
+
+For video viewports, the referenced image id will be the video image id, while the slice
+index can be either a single frame or it can be an array range
 
 ### Frame of reference, focal point and normal
 
 The frame of reference and focal point/normal values can be used by orthographic viewports to
 specify other views than the acquisition plane views. The values are provided when available from
 the stack viewports and can be consumed by the volume viewport.
+
+Currently all three are required for applying to a volume viewport,
+although in the future it may become possible to specify views in other ways
+than providing a normal.
 
 ### `volumeId`, `sliceIndex` and `viewPlaneNormal`
 
@@ -81,27 +88,48 @@ views.
 Note that a stack viewport will not provide the `volumeId`, so this optimization
 cannot be used for those references.
 
-### Reference Creation and Usage by Stack and Orthographic Viewports
+These values are not required for navigation, but for annotation display detection
+they are required to detect the view applicability.
+
+### Stack Viewport References
 
 The stack viewport creates references containing:
 
 - referencedImageId and sliceIndex
 - Frame of reference, focal point and normal when available
 
-The orthographic viewport creates references containing
+It can do this for both the currently displayed image, and images referenced by
+slice index, where the slice index is the index into the imageIds.
 
-- referencedImageId with a possibly incorrect slice index when displaying acquisition views
+_warning_ do not assume that the slice index for volumes in any way correlates to
+slice indices for stacks, or that two stacks displaying the SAME image use corresponding
+slice indices, or that the frame number has ANY correlation to slice index or vice-versa.
+
+The stack viewport can only navigate to a view reference containing a referencedImageId,
+it will (cannot in fact because of missing information) navigate or discover the appropriate
+images based on volume/camera etc.
+
+The isReferenceCompatible for stack viewports will additionally use the slice
+index for a quick check of whether the image is found at the given location,
+but does not rely on the slice index for that, it is just faster that way.
+
+### Volume Viewport References
+
+Volume viewports create references with:
+
+- referencedImageId appropriate for an acquisition view
 - Frame of reference, focal point and normal
-- volumeId and sliceIndex
 
-The stack viewport can only consume a view reference containing a referencedImageId.
-The isReferenceCompatible for stack viewports will use the slice index for a quick
-check of whether the image is found at the given location, but does not otherwise
-use the sliceIndex.
+Additionally, orthographic viewports add:
 
-The orthographic viewport can consume the volume id, slice index and normal, OR the frame of reference/focal/normal.
+- volumeId and slice index for the view in focus.
 
-3d viewports only provide and require the FOR/focal/normal.
+The orthographic viewport will first use any volume id, slice index and normal to
+determine whether the reference applies or to navigate to it.
+Both volume viewports will then apply the frame of reference/focal/normal.
+
+Specific additional behaviour for detecting 1d and 2d points maybe added in the
+future (to allow lines and points to appear on view other than original).
 
 ## View Presentation
 
@@ -127,7 +155,7 @@ Some typical uses cases for view presentation are:
 
 ## `setView`
 
-The `viewport.setView` command takes both a reference and a preseentation. This
+The `viewport.setView` command takes both a reference and a presentation. This
 combination allows setting both what and how something is viewed at once, or
 setting them individually by passing null/undefined for the other parameter.
 This may reduce the number of events being fired and performs the calculations
