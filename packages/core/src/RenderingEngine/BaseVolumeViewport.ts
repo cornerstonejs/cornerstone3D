@@ -1733,6 +1733,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.uid;
     }
+
+    // See if this volumeId can be found in one of the actors for this
+    // viewport.  This check will cause undefined to be returned when the
+    // volumeId isn't currently shown in this viewport.
     return actorEntries.find(
       (actorEntry) =>
         actorEntry.actor.getClassName() === 'vtkVolume' &&
