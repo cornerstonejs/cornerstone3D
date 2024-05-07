@@ -52,8 +52,9 @@ in order to allow the view to apply to either image type.
 ### referencedImageId
 
 The referenced image id allows specifying non-frame of reference based stack type images. This is
-a single image typically, and can be used by both stack viewports to navigate to a specific image.
-The value is provided by orthographic viewports when displaying a single stack image.
+a single image typically, and can be used by stack viewports to navigate to a specific image.
+The value is provided by orthographic viewports when getting a reference to an acquisition
+orientation single image, so that those view references are compatible to stack viewports.
 
 #### sliceIndex
 
@@ -74,34 +75,45 @@ When a orthographic viewport creates a view reference, it includes the volume
 id, slice index and view plane normal. This allows for quick identification of
 whether a viewport is showing a given reference, as well as navigating quickly to
 the given view. This is primarily used in `isReferenceCompatible` which can
-be called many times on orthographic views. Note that a stack viewport will not
-provide the `volumeId`, so this optimization cannot be used for those references.
+be called many times on orthographic views in order to determine annotation tool
+views.
 
-### Mappings
+Note that a stack viewport will not provide the `volumeId`, so this optimization
+cannot be used for those references.
 
-The stack viewport provides:
+### Reference Creation and Usage by Stack and Orthographic Viewports
+
+The stack viewport creates references containing:
 
 - referencedImageId and sliceIndex
 - Frame of reference, focal point and normal when available
 
-The orthographic viewport provides:
+The orthographic viewport creates references containing
 
 - referencedImageId with a possibly incorrect slice index when displaying acquisition views
 - Frame of reference, focal point and normal
 - volumeId and sliceIndex
 
-The stack viewport can consume only the referencedImageId, with either a correct or incorrect slice index. When used with an incorrect slice index, the referenced image is still found, but takes longer.
+The stack viewport can only consume a view reference containing a referencedImageId.
+The isReferenceCompatible for stack viewports will use the slice index for a quick
+check of whether the image is found at the given location, but does not otherwise
+use the sliceIndex.
 
 The orthographic viewport can consume the volume id, slice index and normal, OR the frame of reference/focal/normal.
 
+3d viewports only provide and require the FOR/focal/normal.
+
 ## View Presentation
 
-The view presentation specifies the relative size and position of the image within
-the viewport, as well as any LUT transforms to be applied beyond the default transform.
-This starts with a display area specifying the basic positioning,
-and then uses a percentage zoom and pan to add relative changes to the display area.
-The typical use case for a view presentation is to allow remembering how an
-image is presented to the user instead of the reference to what image is presented.
+The view presentation specifies the pan, zoom and VOI information for a viewport.
+The pan and zoom are specified as percentage values relative to the viewport size
+and the original display area (which is included if specified). This allows
+applying the same view presentation to a variety of viewport sizes that may
+or may not display the same image instance.
+
+The VOI is relative to the base LUT specified in the image data. That is, it
+excludes modality and presentation LUT transforms. Currently only window width/center
+is specified, although full lookup tables may be allowed later.
 
 Some typical uses cases for view presentation are:
 
