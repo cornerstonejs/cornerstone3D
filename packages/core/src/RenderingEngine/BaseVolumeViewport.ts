@@ -1744,6 +1744,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     )?.uid;
   }
 
+  /**
+   * For a volume viewport, the reference id will be a URN starting with
+   * `volumeId:<volumeId>`, followed by additional arguments to specify
+   * the view orientation.  This will end up being a unique string that
+   * identifies the view reference being shown.  It is different from the
+   * view reference in that the values are all incorporated into a string to
+   * allow using it as a parameter key.
+   */
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     let { volumeId, sliceIndex: sliceIndex } = specifier;
     if (!volumeId) {

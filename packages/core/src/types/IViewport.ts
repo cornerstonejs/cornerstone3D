@@ -335,7 +335,11 @@ interface IViewport {
   getNumberOfSlices(): number;
   /** Gets the current slice in the current camera orientation */
   getCurrentImageIdIndex(): number;
-  /** Gets a referenced image url of some sort - could be a real image id, or could be a URL with parameters */
+  /**
+   * Gets a referenced image url of some sort - could be a real image id, or
+   * could be a URL with parameters. Regardless it refers to the currently displaying
+   * image as a string value.
+   */
   getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
   /**
    * Gets a view target specifying WHAT a view is displaying,
