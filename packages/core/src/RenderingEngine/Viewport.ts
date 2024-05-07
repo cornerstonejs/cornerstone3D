@@ -1097,6 +1097,11 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
+  /**
+   * Gets a referenced image url of some sort - could be a real image id, or
+   * could be a URL with parameters. Regardless it refers to the currently displaying
+   * image as a string value.
+   */
   public getReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return null;
   }

@@ -2974,6 +2974,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     super.setView(viewRef, viewPres);
   }
 
+  /**
+   * Returns the imageId string for the specified view, using the
+   * `imageId:<imageId>` URN format.
+   */
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
     if (Array.isArray(sliceIndex)) {
