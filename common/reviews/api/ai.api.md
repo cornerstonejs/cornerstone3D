@@ -79,7 +79,6 @@ export class ONNXSegmentationController {
     initModel(): Promise<unknown>;
     initViewport(viewport: any): void;
     interpolateScroll(viewport?: any, dir?: number): Promise<void>;
-    // (undocumented)
     protected isGpuInUse: boolean;
     protected load(): Promise<void>;
     // (undocumented)
@@ -120,6 +119,7 @@ export class ONNXSegmentationController {
     protected runDecode(): Promise<void>;
     // (undocumented)
     protected sharedImageEncoding: any;
+    protected skipAnnotationUpdates: boolean;
     storeImageEncoding(session: any, imageId: any, data: any): Promise<void>;
     // (undocumented)
     protected tool: any;

@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import {
   Enums,
   RenderingEngine,
@@ -32,11 +31,8 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  annotation,
   utilities: cstUtils,
 } = cornerstoneTools;
-
-const { filterAnnotationsForDisplay } = cstUtils.planar;
 
 const logs = [];
 
@@ -64,9 +60,8 @@ const ml = new ONNXSegmentationController({
   listeners: [mlLogger],
 });
 
-const { ViewportType, Events } = Enums;
+const { ViewportType } = Enums;
 const { KeyboardBindings, MouseBindings } = csToolsEnums;
-const { state: annotationState } = annotation;
 const { style: toolStyle } = cornerstoneTools.annotation.config;
 const volumeId = 'volumeId';
 const segVolumeId = 'segVolumeId';
@@ -342,7 +337,7 @@ async function run() {
   // starts loading in the background.
   await ml.initModel();
   // Connect the default viewport here to start things off - requires the initModel to be done
-  ml.initViewport(viewport, toolForPreview);
+  ml.initViewport(viewport);
 
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,

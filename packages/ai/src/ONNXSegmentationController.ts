@@ -196,7 +196,16 @@ export default class ONNXSegmentationController {
   protected sharedImageEncoding;
   protected boxRadius = 5;
   protected imageImageData;
+  /**
+   * The ONNX interface code is single threaded, so record whether it is
+   * in use or not.
+   */
   protected isGpuInUse = false;
+  /**
+   * When doing bulk annotation updates, the skip annotation updates prevents
+   * partial renders
+   */
+  protected skipAnnotationUpdates = false;
   protected annotationsNeedUpdating = false;
   protected maskImageData;
   protected promptAnnotationTypes = [
@@ -331,12 +340,12 @@ export default class ONNXSegmentationController {
    */
   public async interpolateScroll(viewport = this.viewport, dir = 1) {
     const { element } = viewport;
-    this.tool.acceptPreview(element);
     const promptAnnotations = this.getPromptAnnotations(viewport);
 
     if (!promptAnnotations.length) {
       return;
     }
+    this.tool.acceptPreview(element);
 
     const currentSliceIndex = viewport.getCurrentImageIdIndex();
     const { focalPoint } = viewport.getCamera();
@@ -361,6 +370,7 @@ export default class ONNXSegmentationController {
     // rotational differences between frames that may occur on stacks
     const { focalPoint: newFocal } = viewport.getCamera();
     const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
+    this.skipAnnotationUpdates = true;
     for (const annotation of promptAnnotations) {
       annotation.interpolationUID ||= crypto.randomUUID();
       const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
@@ -372,7 +382,9 @@ export default class ONNXSegmentationController {
       }
       annotationState.addAnnotation(newAnnotation, viewport.element);
     }
+    this.skipAnnotationUpdates = false;
     viewport.render();
+    this.tryLoad();
   }
 
   /**
@@ -707,7 +719,11 @@ export default class ONNXSegmentationController {
    */
   protected async runDecode() {
     const { canvas } = this;
-    if (this.isGpuInUse || !this.currentImage?.imageEmbeddings) {
+    if (
+      this.isGpuInUse ||
+      !this.currentImage?.imageEmbeddings ||
+      this.skipAnnotationUpdates
+    ) {
       return;
     }
     this.isGpuInUse = true;
@@ -718,6 +734,8 @@ export default class ONNXSegmentationController {
       canvas.style.cursor = 'default';
       this.isGpuInUse = false;
     }
+    // Perform any actions initiated during the run decode.
+    this.tryLoad();
   }
 
   /**
@@ -784,14 +802,14 @@ export default class ONNXSegmentationController {
     ) {
       return;
     }
-    const currentAnnotations = this.getPromptAnnotations();
+    const promptAnnotations = this.getPromptAnnotations();
     this.annotationsNeedUpdating = false;
     this.points = [];
     this.labels = [];
-    if (!currentAnnotations?.length) {
+    if (!promptAnnotations?.length) {
       return;
     }
-    for (const annotation of currentAnnotations) {
+    for (const annotation of promptAnnotations) {
       const handle = annotation.data.handles.points[0];
       const point = this.mapAnnotationPoint(handle);
       const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;

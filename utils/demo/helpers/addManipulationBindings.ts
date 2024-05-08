@@ -59,6 +59,10 @@ export default function addManipulationBindings(
     {
       mouseButton: MouseBindings.Secondary,
     },
+    {
+      mouseButton: MouseBindings.Auxiliary,
+      modifierKey: KeyboardBindings.Ctrl,
+    },
   ];
 
   const panBindings = toolMap.get(PanTool.toolName)?.bindings || [
