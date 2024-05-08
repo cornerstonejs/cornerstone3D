@@ -1044,6 +1044,14 @@ class Viewport implements IViewport {
     ) {
       this.setDisplayArea(this.options?.displayArea);
     }
+    const eventDetail: EventTypes.CameraResetEventDetail = {
+      viewportId: this.id,
+      camera: this.getCamera(),
+      renderingEngineId: this.renderingEngineId,
+      element: this.element,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
 
     return true;
   }

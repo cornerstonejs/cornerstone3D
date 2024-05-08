@@ -684,6 +684,10 @@ class CrosshairsTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
   };
 
+  onResetCamera = (evt) => {
+    this.resetCrosshairs();
+  };
+
   mouseMoveCallback = (
     evt: EventTypes.MouseMoveEventType,
     filteredToolAnnotations: Annotations
