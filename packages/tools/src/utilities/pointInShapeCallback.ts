@@ -81,10 +81,10 @@ export function createPositionCallback(imageData) {
       ) as Types.Point3
     );
   }
-  for (let j = 0; j < dimensions[0]; j++) {
+  for (let j = 0; j < dimensions[1]; j++) {
     positionJ.push(vec3.scale(scaled, columnStep, j) as Types.Point3);
   }
-  for (let k = 0; k < dimensions[0]; k++) {
+  for (let k = 0; k < dimensions[2]; k++) {
     positionK.push(vec3.scale(scaled, scanAxisStep, k) as Types.Point3);
   }
 
