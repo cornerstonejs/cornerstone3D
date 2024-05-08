@@ -450,7 +450,7 @@ export default class ONNXSegmentationController {
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
 
-    this.tryLoad(true);
+    this.tryLoad({ resetImage: true });
   };
 
   /**

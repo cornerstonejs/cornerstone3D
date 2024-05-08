@@ -5,6 +5,7 @@
   "src": "src/index.ts",
   "main": "./dist/@cornerstonejs/ai.es.js",
   "module": "src/index.ts",
+  "private": true,
   "files": [
     "dist"
   ],

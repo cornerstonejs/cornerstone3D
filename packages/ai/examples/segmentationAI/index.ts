@@ -4,6 +4,7 @@ import {
   Types,
   imageLoader,
   volumeLoader,
+  setVolumesForViewports,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -137,12 +138,12 @@ addButtonToToolbar({
 
 const viewportGrid = document.createElement('div');
 let renderingEngine;
-let viewport, volumeViewport, activeViewport;
+let viewport, activeViewport;
 
 viewportGrid.style.width = '99vw';
 
 const viewportId = 'Stack';
-const viewportIds = [viewportId, 'AXIAL', 'SAGITAL', 'CORONAL'];
+const viewportIds = [viewportId, 'AXIAL', 'SAGITTAL', 'CORONAL'];
 
 const elements = [];
 for (const id of viewportIds) {
@@ -342,19 +343,13 @@ async function run() {
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
-  volumeViewport = renderingEngine.getViewport(viewportIds[1]);
   volume.load();
 
-  volumeViewport.setVolumes([{ volumeId }]);
-  const sagViewport = renderingEngine.getViewport(
-    viewportIds[2]
-  ) as Types.IVolumeViewport;
-  sagViewport.setVolumes([{ volumeId }]);
-  const corViewport = renderingEngine.getViewport(
-    viewportIds[3]
-  ) as Types.IVolumeViewport;
-  corViewport.setVolumes([{ volumeId }]);
-
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    viewportIds.slice(1, 4)
+  );
   // Render the image
   renderingEngine.render();
 
@@ -398,11 +393,6 @@ async function run() {
       handleKeyEvent(evt);
     })
   );
-  volumeViewport.setView(
-    viewport.getViewReference(),
-    viewport.getViewPresentation()
-  );
-  volumeViewport.render();
 }
 
 run();
