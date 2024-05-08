@@ -5,12 +5,12 @@ import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEv
 const { Active, Passive, Enabled } = ToolModes;
 
 /**
- * When the camera is modified, check what tools need to react to this.
+ * When the camera is reset, check what tools need to react to this.
  *
  * - First we get all tools which are active, passive or enabled on the element.
- * - If any of these tools have a `onCameraModified` method, we call it.
+ * - If any of these tools have a `onCameraReset` method, we call it.
  *
- * @param evt - The normalized camera modified event.
+ * @param evt - The normalized camera reset event.
  */
 const onCameraReset = function (evt: Types.EventTypes.CameraResetEvent) {
   // @ts-ignore
