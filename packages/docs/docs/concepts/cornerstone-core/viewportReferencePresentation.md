@@ -18,7 +18,7 @@ Some specific use cases for this are:
   - Uses `ViewReference` to specify an image to apply to
   - Uses `isReferenceCompatible` to determine if the tool should be displayed or not
   - Uses `isReferenceCompatible` to determine which of a set of viewports is best suited to navigating to an image
-  - Uses `setView(viewRef)` to navigate to the specified image
+  - Uses `setViewReference(viewRef)` to navigate to the specified image
 - Restoring an earlier view or converting from stack to volume or vice-versa
   - Uses `ViewReference` and `ViewPresentation` to store the image information
 - Applying interpolation to image sets
@@ -26,7 +26,7 @@ Some specific use cases for this are:
     images in between or related to nearby annotations to interpolate
 - Resizing and sync display presentation
   - Uses `getViewPresentation` to get old presentation information and then
-    restores with `setView(null,viewPres)`
+    restores with `setViewPresentation(viewPres)`
 
 ## View Reference
 
@@ -171,7 +171,7 @@ in `viewRef` and `viewPres` respectively.
 ```javascript
 const { metadata } = annotation;
 if (viewport.isReferenceCompatible({ withNavigation: true })) {
-  viewport.setView(metadata);
+  viewport.setViewReference(metadata);
 } else {
   // throw error indicating view isn't compatible or other behaviour
   // such as changing to a volume or display a different set of images ids etc
@@ -247,7 +247,7 @@ function resize() {
     // Restore the presentations as this will reset the relative positions
     // rather than resetting to null.
     viewports.forEach((viewport, idx) => {
-      viewport.setView(null, presentations[idx]);
+      viewport.setViewPresentation(presentations[idx]);
     });
   }
 }

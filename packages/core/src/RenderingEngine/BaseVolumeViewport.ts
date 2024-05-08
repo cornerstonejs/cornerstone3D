@@ -698,16 +698,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   /**
-   * Navigates to the specified view reference first, then applies the view
-   * presentation.  Handles both stack references as well as volume references.
+   * Navigates to the specified view reference.
    */
-  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
-    const volumeId = this.getVolumeId();
+  public setViewReference(viewRef: ViewReference): void {
     if (!viewRef) {
-      super.setView(viewRef, viewPres);
       return;
     }
-
+    const volumeId = this.getVolumeId();
     const {
       viewPlaneNormal: refViewPlaneNormal,
       FrameOfReferenceUID: refFrameOfReference,
@@ -751,15 +748,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
       if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
         // Need to update the orientation vectors correctly for this case
-        console.log(
-          '********* Changing view plane normal',
-          this.id,
-          refViewPlaneNormal,
-          viewUp
-        );
         // this.setCameraNoEvent({ viewPlaneNormal: refViewPlaneNormal, viewUp });
         this.setOrientation({ viewPlaneNormal: refViewPlaneNormal, viewUp });
-        return this.setView(null, viewPres);
+        return this.setViewReference(viewRef);
       }
       if (cameraFocalPoint) {
         const focalDelta = vec3.subtract(
@@ -782,8 +773,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         `Incompatible view refs: ${refFrameOfReference}!==${this.getFrameOfReferenceUID()}`
       );
     }
-
-    super.setView(viewRef, viewPres);
   }
 
   /**

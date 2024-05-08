@@ -184,7 +184,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
@@ -2326,7 +2326,11 @@ interface IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): any;
+    setView(viewRef: ViewReference, viewPres: ViewPresentation): any;
+    // (undocumented)
+    setViewPresentation(viewPres: ViewPresentation): any;
+    // (undocumented)
+    setViewReference(viewRef: ViewReference): any;
     // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
@@ -3233,7 +3237,7 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     stackActorReInitialized: boolean;
     // (undocumented)
@@ -3926,7 +3930,11 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setRotation: (_rotation: number) => void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    setView(viewRef: ViewReference, viewPres: ViewPresentation): void;
+    // (undocumented)
+    setViewPresentation(viewPres: ViewPresentation): void;
+    // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)

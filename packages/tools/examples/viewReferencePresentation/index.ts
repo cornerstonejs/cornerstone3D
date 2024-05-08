@@ -245,15 +245,7 @@ displayAreaOptions.set('Scale Left', scaleLeft);
 displayAreaOptions.set('Scale Left 2', scaleLeft);
 displayAreaOptions.set('Scale Right Bottom', scaleRightBottom);
 
-let storeAsInitialCamera = true;
-addToggleButtonToToolbar({
-  id: 'storeAsInitialCameraToggle',
-  title: 'Store Display Area',
-  defaultToggle: storeAsInitialCamera,
-  onClick: (toggle) => {
-    storeAsInitialCamera = toggle;
-  },
-});
+const storeAsInitialCamera = true;
 
 addDropdownToToolbar({
   id: 'displayArea',
@@ -273,6 +265,7 @@ addButtonToToolbar({
   title: 'Reset Camera',
   onClick: () => {
     viewport.resetCamera();
+    viewport.render();
   },
 });
 
@@ -293,19 +286,19 @@ addDropdownToToolbar({
 let withOrientation = false;
 
 addToggleButtonToToolbar({
-  id: 'applyOrientation',
-  title: 'Apply Orientation',
-  defaultToggle: withOrientation,
+  id: 'matchOrientation',
+  title: 'Match On Orientation',
+  defaultToggle: !withOrientation,
   onClick: (toggle) => {
-    withOrientation = toggle;
+    withOrientation = !toggle;
   },
 });
 
 let applyPresentation = false;
 
 addToggleButtonToToolbar({
-  id: 'applyPresentation',
-  title: 'Apply Presentation',
+  id: 'presentationToAll',
+  title: 'Presentation To All',
   defaultToggle: applyPresentation,
   onClick: (toggle) => {
     applyPresentation = toggle;
@@ -330,19 +323,28 @@ function resize() {
     );
     renderingEngine.resize(true, false);
     viewports.forEach((viewport, idx) => {
-      viewport.setView(null, presentations[idx]);
+      viewport.setViewPresentation(presentations[idx]);
     });
   }
 }
 
 /**
- * Handles the sync between the source and destination viewport
+ * Handles the updates from the source viewports by choosing one or MORE
+ * of the viewports to apply the update to.  By default, only viewports
+ * showing the same orientation and same stack are navigated/applied updates.
+ *
+ * If match on orientation is false, it applies to all viewports that contain
+ * the same image set and are capable of the new orientation.
+ *
+ * If applyPresentation is true, then viewports which do NOT match get the presentation
+ * applied additionally.
  */
 function viewportRenderedListener(event) {
   const { element } = event.detail;
-  const { viewport } = getEnabledElement(element);
-  const viewRef = viewport.getViewReference();
-  const viewPres = viewport.getViewPresentation();
+  const { viewport: renderedViewport } = getEnabledElement(element);
+  viewport = renderedViewport;
+  const viewRef = renderedViewport.getViewReference();
+  const viewPres = renderedViewport.getViewPresentation();
   for (const destElement of setViewElements) {
     const { viewport: destViewport } = getEnabledElement(destElement);
     if (
@@ -355,7 +357,8 @@ function viewportRenderedListener(event) {
       destViewport.setView(viewRef, viewPres);
       destViewport.render();
     } else if (applyPresentation) {
-      destViewport.setView(null, viewPres);
+      // Apply the presentation values even though the reference isn't compatible.
+      destViewport.setViewPresentation(viewPres);
       destViewport.render();
     }
   }
@@ -402,7 +405,7 @@ async function run() {
       type: ViewportType.STACK,
       element: element0,
       defaultOptions: {
-        background: <Types.Point3>[0, 0.5, 0],
+        background: <Types.Point3>[0, 0.3, 0],
       },
     },
     {
@@ -438,7 +441,7 @@ async function run() {
       type: ViewportType.STACK,
       element: element4,
       defaultOptions: {
-        background: <Types.Point3>[0.5, 0, 0],
+        background: <Types.Point3>[0, 0.5, 0],
       },
     },
   ];

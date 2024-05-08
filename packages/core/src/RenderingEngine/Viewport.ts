@@ -1707,19 +1707,36 @@ class Viewport implements IViewport {
    *        * The viewRef must be applicable to the current stack or volume, otherwise an exception will be thrown
    * @param viewPres - the presentation information to apply to the current image (as chosen above)
    */
-  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
-    if (viewPres) {
-      const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
-      if (displayArea !== this.getDisplayArea()) {
-        this.setDisplayArea(displayArea);
-      }
-      this.setZoom(zoom);
-      if (pan) {
-        this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
-      }
-      if (rotation >= 0) {
-        this.setRotation(rotation);
-      }
+  public setView(viewRef: ViewReference, viewPres: ViewPresentation) {
+    this.setViewReference(viewRef);
+    this.setViewPresentation(viewPres);
+  }
+
+  /**
+   * Navigates to the image specified by the viewRef.
+   */
+  public setViewReference(viewRef: ViewReference) {
+    // No-op
+  }
+
+  /**
+   * Applies the display area, zoom, pan and rotation from the view presentation.
+   * No-op is viewPres isn't defined.
+   */
+  public setViewPresentation(viewPres: ViewPresentation) {
+    if (!viewPres) {
+      return;
+    }
+    const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
+    if (displayArea !== this.getDisplayArea()) {
+      this.setDisplayArea(displayArea);
+    }
+    this.setZoom(zoom);
+    if (pan) {
+      this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
+    }
+    if (rotation >= 0) {
+      this.setRotation(rotation);
     }
   }
 

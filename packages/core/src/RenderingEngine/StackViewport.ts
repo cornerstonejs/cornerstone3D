@@ -2950,27 +2950,25 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * other camera modifications.
    * Assumes that the slice index is correct for this viewport
    */
-  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
-    if (viewRef) {
-      const { referencedImageId, sliceIndex, volumeId } = viewRef;
-      if (
-        typeof sliceIndex === 'number' &&
-        referencedImageId &&
-        referencedImageId === this.imageIds[sliceIndex]
-      ) {
-        this.setImageIdIndex(sliceIndex);
+  public setViewReference(viewRef: ViewReference): void {
+    if (!viewRef) {
+      return;
+    }
+    const { referencedImageId, sliceIndex, volumeId } = viewRef;
+    if (
+      typeof sliceIndex === 'number' &&
+      referencedImageId &&
+      referencedImageId === this.imageIds[sliceIndex]
+    ) {
+      this.setImageIdIndex(sliceIndex);
+    } else {
+      const foundIndex = this.imageIds.indexOf(referencedImageId);
+      if (foundIndex !== -1) {
+        this.setImageIdIndex(foundIndex);
       } else {
-        const foundIndex = this.imageIds.indexOf(referencedImageId);
-        if (foundIndex !== -1) {
-          this.setImageIdIndex(foundIndex);
-        } else {
-          throw new Error(
-            'Unsupported - navigating to a volume id specified reference'
-          );
-        }
+        throw new Error('Unsupported - referenced image id not found');
       }
     }
-    super.setView(viewRef, viewPres);
   }
 
   /**
