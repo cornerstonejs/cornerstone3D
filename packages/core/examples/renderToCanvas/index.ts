@@ -30,8 +30,7 @@ setTitleAndDescription(
 );
 
 const pixelSize = 500;
-const devicePixelRatio = window.devicePixelRatio || 1;
-const size = `${Math.round(pixelSize / devicePixelRatio)}px`;
+const size = '35vw';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 const volumeId = 'volumeId';

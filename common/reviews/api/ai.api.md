@@ -34,6 +34,7 @@ export class ONNXSegmentationController {
         promptAnnotationTypes: any;
         models: any;
         modelName: string;
+        previewToolType: string;
     });
     protected annotationModifiedListener: (_event?: any) => void;
     // (undocumented)
@@ -76,7 +77,8 @@ export class ONNXSegmentationController {
     // (undocumented)
     protected imageImageData: any;
     initModel(): Promise<unknown>;
-    initViewport(viewport: any, toolForPreview: any): void;
+    initViewport(viewport: any): void;
+    interpolateScroll(viewport?: any, dir?: number): Promise<void>;
     // (undocumented)
     protected isGpuInUse: boolean;
     protected load(): Promise<void>;
@@ -111,6 +113,7 @@ export class ONNXSegmentationController {
     };
     // (undocumented)
     modelWidth: number;
+    protected previewToolType: string;
     // (undocumented)
     protected promptAnnotationTypes: string[];
     restoreImageEncoding(session: any, imageId: any): Promise<any>;

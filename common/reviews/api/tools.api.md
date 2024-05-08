@@ -266,7 +266,7 @@ type Annotation = {
             [key: string]: any;
         };
         [key: string]: any;
-        cachedStats?: unknown;
+        cachedStats?: Record<string, unknown>;
     };
 };
 

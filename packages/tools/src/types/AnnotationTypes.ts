@@ -78,7 +78,7 @@ type Annotation = {
     };
     [key: string]: any;
     /** Cached Annotation statistics which is specific to the tool */
-    cachedStats?: unknown;
+    cachedStats?: Record<string, unknown>;
   };
 };
 

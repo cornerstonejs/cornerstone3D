@@ -1,5 +1,6 @@
 import { Types, utilities, eventTarget, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import type { Types as cstTypes } from '@cornerstonejs/tools';
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
 
@@ -202,6 +203,8 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.MarkerInclude,
     ONNXSegmentationController.MarkerExclude,
   ];
+  /** The type name of the preview tool used for the accept/reject labelmap preview */
+  protected previewToolType = 'ThresholdCircle';
 
   /**
    * Configure the ML Controller.  No parameters are required, and will default
@@ -226,6 +229,7 @@ export default class ONNXSegmentationController {
       promptAnnotationTypes: null,
       models: null,
       modelName: 'sam_b',
+      previewToolType: 'ThresholdCircle',
     }
   ) {
     if (options.listeners) {
@@ -234,12 +238,12 @@ export default class ONNXSegmentationController {
     if (options.getPromptAnnotations) {
       this.getPromptAnnotations = options.getPromptAnnotations;
     }
-    if (options.promptAnnotationTypes) {
-      this.promptAnnotationTypes = options.promptAnnotationTypes;
-    }
+    this.promptAnnotationTypes =
+      options.promptAnnotationTypes || this.promptAnnotationTypes;
     if (options.models) {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
+    this.previewToolType = options.previewToolType || this.previewToolType;
     this.config = this.getConfig(options.modelName);
   }
 
@@ -270,14 +274,18 @@ export default class ONNXSegmentationController {
    * @param toolForPreview - this tool is used to access the preview object and
    *     create a new preview instance.
    */
-  public initViewport(viewport, toolForPreview) {
+  public initViewport(viewport) {
     const { desiredImage } = this;
     if (this.viewport) {
       this.disconnectViewport(this.viewport);
     }
     this.currentImage = null;
     this.viewport = viewport;
-    this.tool = toolForPreview;
+    const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroupForViewport(
+      viewport.id,
+      viewport.getRenderingEngine()?.id
+    );
+    this.tool = toolGroup.getToolInstance(this.previewToolType);
 
     desiredImage.imageId =
       viewport.getCurrentImageId() || viewport.getReferenceId();
@@ -309,56 +317,63 @@ export default class ONNXSegmentationController {
   }
 
   /**
-   * The interpolate scroll
+   * The interpolateScroll checks to see if there are any annotations on the
+   * current image in the specified viewport, and if so, scrolls in the given
+   * direction and copies the annotations to the new image displayed.
+   * It will not copy any annotations onto a viewport already containing
+   * prompt annotations, nor will it do anything if there are no annotations
+   * on the current viewport.
+   *
+   * Assumes the current and next viewports have the same viewport normal, and
+   * that the difference between positions is entirely contained by the difference
+   * in the focal point between viewports.  This difference is added to each
+   * point in the annotations.
    */
-  // public async interpolateScroll(viewport = this.viewport, dir = 1) {
-  //   const { element } = viewport;
-  //   this.toolForPreview.acceptPreview(element);
-  //   const annotations = [
-  //     ...annotationState.getAnnotations(defaultTool, element),
-  //     ...annotationState.getAnnotations(excludeTool, element),
-  //   ];
+  public async interpolateScroll(viewport = this.viewport, dir = 1) {
+    const { element } = viewport;
+    this.tool.acceptPreview(element);
+    const promptAnnotations = this.getPromptAnnotations(viewport);
 
-  //   const currentAnnotations = filterAnnotationsForDisplay(
-  //     viewport,
-  //     annotations
-  //   );
+    if (!promptAnnotations.length) {
+      return;
+    }
 
-  //   if (!currentAnnotations.length) {
-  //     return;
-  //   }
+    const currentSliceIndex = viewport.getCurrentImageIdIndex();
+    const { focalPoint } = viewport.getCamera();
+    const viewRef = viewport.getViewReference({
+      sliceIndex: currentSliceIndex + dir,
+    });
+    if (!viewRef || viewRef.sliceIndex === currentSliceIndex) {
+      console.warn('No next image in direction', dir, currentSliceIndex);
+      return;
+    }
 
-  //   const currentSliceIndex = viewport.getCurrentImageIdIndex();
-  //   const { focalPoint } = viewport.getCamera();
-  //   const viewRef = viewport.getViewReference({
-  //     sliceIndex: currentSliceIndex + dir,
-  //   });
-  //   if (!viewRef || viewRef.sliceIndex === currentSliceIndex) {
-  //     console.warn('No next image in direction', dir, currentSliceIndex);
-  //     return;
-  //   }
+    viewport.scroll(dir);
+    // Wait for the scroll to complete
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+    const nextAnnotations = this.getPromptAnnotations(viewport);
+    if (nextAnnotations.length > 0) {
+      return;
+    }
 
-  //   viewport.scroll(dir);
-  //   await new Promise((resolve) => window.setTimeout(resolve, 250));
-  //   const nextAnnotations = filterAnnotationsForDisplay(viewport, annotations);
-  //   if (nextAnnotations.length > 0) {
-  //     return;
-  //   }
-  //   const { focalPoint: newFocal } = activeViewport.getCamera();
-  //   const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
-  //   for (const annotation of currentAnnotations) {
-  //     annotation.interpolationUID ||= crypto.randomUUID();
-  //     const newAnnotation = structuredClone(annotation);
-  //     newAnnotation.annotationUID = undefined;
-  //     Object.assign(newAnnotation.metadata, viewRef);
-  //     (newAnnotation as any).cachedStats = {};
-  //     for (const handle of newAnnotation.data.handles.points) {
-  //       vec3.add(handle, handle, newDelta);
-  //     }
-  //     annotationState.addAnnotation(newAnnotation, viewport.element);
-  //   }
-  //   viewport.render();
-  // }
+    // Add the difference between the new and old focal point as being the
+    // position difference between images.  Does not account for any
+    // rotational differences between frames that may occur on stacks
+    const { focalPoint: newFocal } = viewport.getCamera();
+    const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
+    for (const annotation of promptAnnotations) {
+      annotation.interpolationUID ||= crypto.randomUUID();
+      const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
+      newAnnotation.annotationUID = undefined;
+      Object.assign(newAnnotation.metadata, viewRef);
+      newAnnotation.cachedStats = {};
+      for (const handle of newAnnotation.data.handles.points) {
+        vec3.add(handle, handle, newDelta);
+      }
+      annotationState.addAnnotation(newAnnotation, viewport.element);
+    }
+    viewport.render();
+  }
 
   /**
    * Logs the message to the given log level
