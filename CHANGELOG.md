@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.71.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.1...v1.71.2) (2024-05-06)
+
+### Bug Fixes
+
+- **rt:** enhanced RT support, utilize SVGs for rendering. ([#1233](https://github.com/cornerstonejs/cornerstone3D/issues/1233)) ([39711d5](https://github.com/cornerstonejs/cornerstone3D/commit/39711d57afd474d9b7930b44a959260a35af490c))
+
 ## [1.71.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.0...v1.71.1) (2024-05-03)
 
 ### Bug Fixes
