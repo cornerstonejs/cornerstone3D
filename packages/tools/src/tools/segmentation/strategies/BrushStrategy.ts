@@ -120,6 +120,7 @@ export default class BrushStrategy {
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
     ),
+    [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
       StrategyCallbacks.GetStatistics
     ),
@@ -328,6 +329,28 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: LabelmapToolOperationDataAny
   ) => unknown;
+
+  /**
+   * Adds a preview to the view, without filling it with any contents, returning
+   * the initialized preview data.
+   */
+  public addPreview = (
+    enabledElement,
+    operationData: LabelmapToolOperationDataAny
+  ) => {
+    const initializedData = this.initialize(
+      enabledElement,
+      operationData,
+      StrategyCallbacks.AddPreview
+    );
+
+    if (!initializedData) {
+      // Happens when there is no label map
+      return;
+    }
+
+    return initializedData.preview || initializedData;
+  };
 
   /** Interpolate the labelmaps */
   public interpolate: (

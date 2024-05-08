@@ -37,6 +37,19 @@ abstract class BaseTool implements IBaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
+
+  /**
+   * Has the defaults associated with the base tool.
+   */
+  static defaults = {
+    configuration: {
+      strategies: {},
+      defaultStrategy: undefined,
+      activeStrategy: undefined,
+      strategyOptions: {},
+    },
+  };
+
   /**
    * A memo recording the starting state of a tool.  This will be updated
    * as changes are made, and reflects the fact that a memo has been created.
@@ -44,7 +57,11 @@ abstract class BaseTool implements IBaseTool {
   protected memo: utilities.HistoryMemo.Memo;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    const initialProps = utilities.deepMerge(defaultToolProps, toolProps);
+    const mergedDefaults = BaseTool.mergeDefaultProps(
+      BaseTool.defaults,
+      defaultToolProps
+    );
+    const initialProps = utilities.deepMerge(mergedDefaults, toolProps);
 
     const {
       configuration = {},
@@ -52,18 +69,27 @@ abstract class BaseTool implements IBaseTool {
       toolGroupId,
     } = initialProps;
 
-    // If strategies are not initialized in the tool config
-    if (!configuration.strategies) {
-      configuration.strategies = {};
-      configuration.defaultStrategy = undefined;
-      configuration.activeStrategy = undefined;
-      configuration.strategyOptions = {};
-    }
-
     this.toolGroupId = toolGroupId;
     this.supportedInteractionTypes = supportedInteractionTypes || [];
     this.configuration = Object.assign({}, configuration);
     this.mode = ToolModes.Disabled;
+  }
+
+  /**
+   * Does a deep merge of property options.  Allows extending the default values
+   * for a child class.
+   *
+   * @param defaultProps - this is a base set of defaults to merge into
+   * @param additionalProps - the additional properties to merge into the default props
+   *
+   * @returns defaultProps if additional props not defined, or a merge into a new object
+   *     containing additionalProps adding onto and overriding defaultProps.
+   */
+  public static mergeDefaultProps(defaultProps = {}, additionalProps?) {
+    if (!additionalProps) {
+      return defaultProps;
+    }
+    return utilities.deepMerge(defaultProps, additionalProps);
   }
 
   /**
@@ -73,6 +99,13 @@ abstract class BaseTool implements IBaseTool {
   public getToolName(): string {
     // Since toolName is static we get it from the class constructor
     return (<typeof BaseTool>this.constructor).toolName;
+  }
+
+  /**
+   * Newer method for getting the tool name as a property
+   */
+  public get toolName() {
+    return this.getToolName();
   }
 
   /**

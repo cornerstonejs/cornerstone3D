@@ -15,6 +15,7 @@ import {
 } from '../../stateManagement/segmentation';
 import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
 import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { ContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { SegmentationRepresentations } from '../../enums';
 import ContourBaseTool from './ContourBaseTool';
@@ -53,7 +54,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     return true;
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  /**
+   * Creates a contour segmentation annotation
+   */
+  protected createAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): ContourAnnotation {
     const { toolGroupId } = this;
     const contourAnnotation = super.createAnnotation(evt);
 

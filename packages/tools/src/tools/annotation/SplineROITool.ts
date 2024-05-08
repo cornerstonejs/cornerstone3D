@@ -31,6 +31,7 @@ import type {
   PublicToolProps,
   ToolProps,
   AnnotationRenderContext,
+  ContourAnnotation,
 } from '../../types';
 import {
   math,
@@ -869,7 +870,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     points.push(polyline[polyline.length - 1]);
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  protected createAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): ContourAnnotation {
     const contourAnnotation = super.createAnnotation(evt);
     const { world: worldPos } = evt.detail.currentPoints;
     const { type: splineType } = this.configuration.spline;
@@ -897,7 +900,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
           points: [[...worldPos]],
         },
         spline: createSpline(),
-        cachedStats: {},
       },
       onInterpolationComplete,
     });

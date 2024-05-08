@@ -56,6 +56,13 @@ enum StrategyCallbacks {
    */
   Interpolate = 'interpolate',
 
+  /**
+   * Adds a preview interpolation from the given data.  This allows external
+   * methods to set/update the preview and then have it shown/accepted in the
+   * normal fashion.
+   */
+  AddPreview = 'addPreview',
+
   /** inner circle size  */
   ComputeInnerCircleRadius = 'computeInnerCircleRadius',
 

@@ -55,6 +55,7 @@ if (options.fromRoot === true) {
     examples: [
       { path: 'packages/core/examples', regexp: 'index.ts' },
       { path: 'packages/tools/examples', regexp: 'index.ts' },
+      { path: 'packages/ai/examples', regexp: 'index.ts' },
       {
         path: 'packages/streaming-image-volume-loader/examples',
         regexp: 'index.ts',

@@ -35,7 +35,9 @@
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
     "lodash.clonedeep": "4.5.0",
-    "lodash.get": "^4.4.2"
+    "lodash.get": "^4.4.2",
+    "onnxruntime-common": "^1.17.1",
+    "onnxruntime-web": "^1.17.1"
   },
   "devDependencies": {
     "canvas": "^2.11.2"

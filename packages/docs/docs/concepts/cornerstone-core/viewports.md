@@ -9,10 +9,14 @@ A viewport can be thought of as:
 
 - A camera viewing an image from a specific perspective.
 - A canvas to display the output of this camera.
+- A set of transforms from the image data to viewable data (LUT, Window Level, Pan etc)
 
 In `Cornerstone3D` viewports are created from HTML elements, and the consumer should
 pass the `element` for which the viewport should be created. For example, a CT series can be
 viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MPR, A 3D perspective volume render.
+
+See [Viewport Reference and Presentation](./viewportReferencePresentation.md) for more details on the reference
+and presentation details that select which image and how that image is presented.
 
 <div style={{textAlign: 'center'}}>
 
@@ -86,3 +90,75 @@ This means the left (0) middle (0.5) point on the canvas needs to align with the
 left (0) middle (0.5) point on the image. Values are based on % size of the full image.
 In this example, if we had a 1024 x 1024 x-ray image. The imagePoint would be [0, 512].
 Let's say we were on a mobile iPhone in landscape mode (844 x 390). The canvasPoint would be [0, 195].
+
+# Viewport Reference and Presentation
+
+The reference and presentation information for a viewport specify what image a viewport
+is displaying, and the presentation of the image. These are specified in several ways
+so that a view can be transfered from one viewport to another, or can be remembered in order
+to restore a view later.
+
+## View Reference
+
+A view reference specifies what image a view contains, typically identified as the referenced
+image id, as well as the frame of reference/focal point related information.
+
+### referencedImageId
+
+The referenced image id allows specifying non-frame of reference based stack type images. This is
+a single image typically, and can be used by stack viewports to navigate to a specific image.
+The value is provided by orthographic viewports when displaying a single stack image, and can be
+used for volume to stack view reference specifiers.
+
+### Frame of reference, focal point and normal
+
+The frame of reference and focal point/normal values can be used by orthographic viewports to
+specify other views than the acquisition plane views. The values are provided when available from
+the stack viewports and can be consumed by the volume viewport.
+
+### volumeId and sliceIndex
+
+The volumeId and slice index are a quick way to reference specific positions for voolume viewports.
+For stack viewports, the slice index can be used as a fast check to find whether the referenced
+imageId is present.
+
+### Mappings
+
+The stack viewport provides:
+
+- referencedImageId and sliceIndex
+- Frame of reference, focal point and normal
+
+The orthographic viewport provides:
+
+- referencedImageId with a possibly incorrect slice index when displaying acquisition views
+- Frame of reference, focal point and normal
+
+The stack viewport can consume only the referencedImageId, with either a correct or incorrect slice index. When used with an incorrect slice index, the referenced image is still found, but takes longer.
+
+The orthographic viewport can consume the volume id and slice index, OR the frame of reference/focal/normal.
+
+## View Presentation
+
+The view presentation specifies the relative size and position of the image within
+the viewport. This starts with a display area specifying the basic positioning,
+and then uses a percentage zoom and pan to add relative changes to the display area.
+As well, the VOI applied to the image is recorded. This allows applying the same
+presentation information to another view.
+
+## Uses of `setView`
+
+There are a number of different uses of setView, all of them to recover another view
+state, where either or both of the parmeters of reference and presentation are used.
+A comple paired reference/presentation is used to return to an earlier view that is
+different from what is currently being shown, for example, both orientation and pan changes
+having been updated. A view reference only `setView` would be used to display the
+same image, but not necessarily in the same way. This is used for things like returning to
+a tool annotation state, while a presentation only `setView` would be used to apply the same
+sort of presentation information to different images, perhaps as in using magnify mode and undoing
+magnification.
+
+Some types of tools affect both the image and the presentation, such as annotation tools which
+display a region of interest and apply a given VOI appearance. These would be typical tools to
+apply both reference and views. As well, restoring a view such as in displaying a key image/GSPS
+would require providing both reference and presentation objects.

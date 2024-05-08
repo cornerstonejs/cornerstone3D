@@ -49,7 +49,10 @@ export default function getSliceRange(
     ];
     corners = cornersIdx.map((it) => imageData.indexToWorld(it));
   }
+
   // Get rotation matrix from normal to +X (since bounds is aligned to XYZ)
+  // Note the negative view plane normal is used to align stack and volume viewports
+  // by slice position on normal views.
   const transform = vtkMatrixBuilder
     .buildFromDegree()
     .identity()

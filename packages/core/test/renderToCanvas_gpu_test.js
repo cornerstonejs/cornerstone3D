@@ -101,7 +101,11 @@ describe('renderToCanvas -- GPU', () => {
 
     try {
       utilities
-        .loadImageToCanvas({ canvas, imageId, viewportOptions: {} })
+        .loadImageToCanvas({
+          canvas,
+          imageId,
+          viewportOptions: { displayArea: {} },
+        })
         .then(() => {
           vp.setStack([imageId], 0).then(() => {
             vp.setProperties({ interpolationType: InterpolationType.NEAREST });
@@ -205,7 +209,11 @@ describe('renderToCanvas -- GPU', () => {
 
     try {
       utilities
-        .loadImageToCanvas({ canvas, imageId, viewportOptions: {} })
+        .loadImageToCanvas({
+          canvas,
+          imageId,
+          viewportOptions: { displayArea: {} },
+        })
         .then(() => {
           vp.setStack([imageId], 0).then(() => {
             vp.setProperties({ interpolationType: InterpolationType.NEAREST });

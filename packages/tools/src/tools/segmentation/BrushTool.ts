@@ -26,12 +26,7 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import {
-  Events,
-  ToolModes,
-  SegmentationRepresentations,
-  StrategyCallbacks,
-} from '../../enums';
+import { Events, ToolModes, StrategyCallbacks } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -39,18 +34,6 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  config as segmentationConfig,
-  segmentLocking,
-  segmentIndex as segmentIndexController,
-  state as segmentationState,
-  activeSegmentation,
-} from '../../stateManagement/segmentation';
-import {
-  LabelmapSegmentationDataVolume,
-  LabelmapSegmentationDataStack,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
@@ -58,22 +41,6 @@ import LabelmapBaseTool from './LabelmapBaseTool';
  */
 class BrushTool extends LabelmapBaseTool {
   static toolName;
-  private _editData: {
-    segmentsLocked: number[]; //
-    segmentationRepresentationUID?: string;
-    imageIdReferenceMap?: Map<string, string>;
-    volumeId?: string;
-    referencedVolumeId?: string;
-  } | null;
-  private _hoverData?: {
-    brushCursor: any;
-    segmentationId: string;
-    segmentIndex: number;
-    segmentationRepresentationUID: string;
-    segmentColor: [number, number, number, number];
-    viewportIdsToRender: string[];
-    centerCanvas?: Array<number>;
-  };
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -115,6 +82,7 @@ class BrushTool extends LabelmapBaseTool {
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
+            dynamicRadius: 0, // in voxel counts in each direction, only used during dynamic threshold strategies.
           },
         },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
@@ -192,128 +160,21 @@ class BrushTool extends LabelmapBaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  onSetToolPassive = (evt) => {
+  onSetToolPassive = (_evt) => {
     this.disableCursor();
   };
 
-  onSetToolEnabled = () => {
+  onSetToolEnabled = (_evt) => {
     this.disableCursor();
   };
 
-  onSetToolDisabled = (evt) => {
+  onSetToolDisabled = (_evt) => {
     this.disableCursor();
   };
 
   private disableCursor() {
     this._hoverData = undefined;
     this.rejectPreview();
-  }
-
-  createEditData(element) {
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    const toolGroupId = this.toolGroupId;
-
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
-      throw new Error(
-        'No active segmentation detected, create a segmentation representation before using the brush tool'
-      );
-    }
-
-    const { segmentationId, type, segmentationRepresentationUID } =
-      activeSegmentationRepresentation;
-
-    if (type === SegmentationRepresentations.Contour) {
-      throw new Error('Not implemented yet');
-    }
-
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
-
-    const { representationData } =
-      segmentationState.getSegmentation(segmentationId);
-
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
-
-    if (isVolumeSegmentation(labelmapData, viewport)) {
-      const { volumeId } = representationData[
-        type
-      ] as LabelmapSegmentationDataVolume;
-      const actors = viewport.getActors();
-
-      const isStackViewport = viewport instanceof StackViewport;
-
-      if (isStackViewport) {
-        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-          detail: {
-            type: 'Segmentation',
-            message: 'Cannot perform brush operation on the selected viewport',
-          },
-          cancelable: true,
-        });
-        eventTarget.dispatchEvent(event);
-        return null;
-      }
-
-      // we used to take the first actor here but we should take the one that is
-      // probably the same size as the segmentation volume
-      const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referenceId)
-      );
-
-      const segmentationVolume = cache.getVolume(volumeId);
-
-      const referencedVolumeIdToThreshold =
-        volumes.find((volume) =>
-          csUtils.isEqual(volume.dimensions, segmentationVolume.dimensions)
-        )?.volumeId || volumes[0]?.volumeId;
-
-      return {
-        volumeId,
-        referencedVolumeId:
-          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
-        segmentsLocked,
-        segmentationRepresentationUID,
-      };
-    } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
-      const currentImageId = viewport.getCurrentImageId();
-
-      if (!imageIdReferenceMap.get(currentImageId)) {
-        // if there is no stack segmentation slice for the current image
-        // we should not allow the user to perform any operation
-        return;
-      }
-
-      // here we should identify if we can perform sphere manipulation
-      // for these stack of images, if the metadata is not present
-      // to create a volume or if there are inconsistencies between
-      // the image metadata we should not allow the sphere manipulation
-      // and should throw an error or maybe simply just allow circle manipulation
-      // and not sphere manipulation
-      if (this.configuration.activeStrategy.includes('SPHERE')) {
-        throw new Error(
-          'Sphere manipulation is not supported for stacks of image segmentations yet'
-        );
-        // Todo: add sphere (volumetric) manipulation support for stacks of images
-        // we should basically check if the stack constructs a valid volume
-        // meaning all the metadata is present and consistent
-        // then we use a VoxelManager mapping to map a volume like appearance
-        // for the stack data.
-        // csUtils.isValidVolume(referencedImageIds
-      }
-
-      return {
-        imageIdReferenceMap,
-        segmentsLocked,
-        segmentationRepresentationUID,
-      };
-    }
   }
 
   preMouseDownCallback = (
@@ -421,77 +282,6 @@ class BrushTool extends LabelmapBaseTool {
     );
   };
 
-  private createHoverData(element, centerCanvas?) {
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const viewportIdsToRender = [viewport.id];
-
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      segmentColor,
-    } = this.getActiveSegmentationData() || {};
-
-    // Center of circle in canvas Coordinates
-    const brushCursor = {
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
-        toolName: this.getToolName(),
-        segmentColor,
-      },
-      data: {},
-    };
-
-    return {
-      brushCursor,
-      centerCanvas,
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      segmentColor,
-      viewportIdsToRender,
-    };
-  }
-
-  private getActiveSegmentationData() {
-    const toolGroupId = this.toolGroupId;
-
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
-      console.warn(
-        'No active segmentation detected, create one before using the brush tool'
-      );
-      return;
-    }
-
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
-    const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId);
-
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
-      segmentIndex
-    );
-
-    return {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      segmentColor,
-    };
-  }
-
   /**
    * Updates the cursor position and whether it is showing or not.
    * Can be over-ridden to add more cursor details or a preview.
@@ -557,40 +347,6 @@ class BrushTool extends LabelmapBaseTool {
     this._previewData.isDrag = true;
     this._previewData.startPoint = currentPoints.canvas;
   };
-
-  protected getOperationData(element?) {
-    const editData = this._editData || this.createEditData(element);
-
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-    } = this._hoverData || this.createHoverData(element);
-    const { data, metadata = {} } = brushCursor || {};
-    const { viewPlaneNormal, viewUp } = metadata;
-    const operationData = {
-      ...editData,
-      points: data?.handles?.points,
-      segmentIndex,
-      previewColors:
-        this.configuration.preview?.enabled || this._previewData.preview
-          ? this.configuration.preview.previewColors
-          : null,
-      viewPlaneNormal,
-      toolGroupId: this.toolGroupId,
-      segmentationId,
-      segmentationRepresentationUID,
-      viewUp,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
-      // Provide the preview information so that data can be used directly
-      preview: this._previewData?.preview,
-      configuration: this.configuration,
-      createMemo: this.createMemo.bind(this),
-    };
-    return operationData;
-  }
 
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
@@ -717,44 +473,6 @@ class BrushTool extends LabelmapBaseTool {
     );
 
     return stats;
-  }
-
-  /**
-   * Cancels any preview view being shown, resetting any segments being shown.
-   */
-  public rejectPreview(element = this._previewData.element) {
-    if (!element || !this._previewData.preview) {
-      return;
-    }
-    const enabledElement = getEnabledElement(element);
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      this.getOperationData(element),
-      StrategyCallbacks.RejectPreview
-    );
-    this._previewData.preview = null;
-    this._previewData.isDrag = false;
-  }
-
-  /**
-   * Accepts a preview, marking it as the active segment.
-   */
-  public acceptPreview(element = this._previewData.element) {
-    if (!element || !this._previewData?.preview) {
-      return;
-    }
-    this.doneEditMemo();
-    const enabledElement = getEnabledElement(element);
-
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      this.getOperationData(element),
-      StrategyCallbacks.AcceptPreview
-    );
-    this._previewData.isDrag = false;
-    this._previewData.preview = null;
-    // Store the edit memo too
-    this.doneEditMemo();
   }
 
   /**

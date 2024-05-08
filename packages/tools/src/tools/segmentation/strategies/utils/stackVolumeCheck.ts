@@ -28,9 +28,8 @@ function isVolumeSegmentation(
   }
 
   if (volumeId && imageIdReferenceMap && !viewport) {
-    throw new Error(
-      'isVolumeSegmentation: viewport is required when both volumeId and imageIdReferenceMap are provided'
-    );
+    // In this case the labelmap is both stack and volume, so doesn't really matter which we pick if no viewport provided
+    return false;
   }
 
   // we can get the viewport to decide

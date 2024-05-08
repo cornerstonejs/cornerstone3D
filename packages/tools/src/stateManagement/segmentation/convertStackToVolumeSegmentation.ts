@@ -42,13 +42,11 @@ async function computeVolumeSegmentationFromStack({
 /**
  * Converts a stack-based segmentation to a volume-based segmentation.
  *
- * @param params - The parameters for the conversion.
- * @param params.segmentationId - The segmentationId to convert.
- * @param [params.options] - The conversion options.
- * @param params.options.toolGroupId - The new toolGroupId to use for the segmentation.
- * @param [params.options.volumeId] - the new volumeId to use for the segmentation. If not provided, a new ID will be generated.
- * @param [params.options.newSegmentationId] - the new segmentationId to use for the segmentation. If not provided, a new ID will be generated.
- * @param [params.options.removeOriginal] - Whether or not to remove the original segmentation. Defaults to true.
+ * @param segmentationId - The segmentationId to convert
+ * @param options - The conversion options.
+ * @param options.toolGroupId - The new toolGroupId to use for the segmentation.
+ * @param options.volumeId - the new volumeId to use for the segmentation. If not provided, a new ID will be generated.
+ * @param options.removeOriginal - Whether or not to remove the original segmentation. Defaults to true.
  *
  * @returns A promise that resolves when the conversion is complete.
  */
@@ -62,7 +60,7 @@ async function convertStackToVolumeSegmentation({
     volumeId?: string;
     removeOriginal?: boolean;
   };
-}): Promise<void> {
+}): Promise<string[]> {
   const segmentation = getSegmentation(segmentationId);
 
   const data = segmentation.representationData
@@ -73,7 +71,7 @@ async function convertStackToVolumeSegmentation({
     options,
   });
 
-  await updateSegmentationState({
+  return updateSegmentationState({
     segmentationId,
     toolGroupId: options.toolGroupId,
     options,
@@ -94,7 +92,7 @@ async function updateSegmentationState({
   options?: {
     removeOriginal?: boolean;
   };
-}): Promise<void> {
+}): Promise<string[]> {
   const segmentation = getSegmentation(segmentationId);
 
   if (options?.removeOriginal) {
@@ -117,7 +115,7 @@ async function updateSegmentationState({
     };
   }
 
-  await addSegmentationRepresentations(toolGroupId, [
+  const representations = await addSegmentationRepresentations(toolGroupId, [
     {
       segmentationId,
       type: SegmentationRepresentations.Labelmap,
@@ -130,6 +128,7 @@ async function updateSegmentationState({
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
     triggerSegmentationDataModified(segmentationId)
   );
+  return representations;
 }
 
 export { convertStackToVolumeSegmentation, computeVolumeSegmentationFromStack };

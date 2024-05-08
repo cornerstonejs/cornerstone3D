@@ -6,9 +6,9 @@
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
 import { default as default_2 } from '@itk-wasm/morphological-contour-interpolation/dist/morphological-contour-interpolation-options';
+import { default as default_3 } from 'packages/core/dist/types/RenderingEngine/StackViewport';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import { IStackViewport as IStackViewport_2 } from 'packages/core/dist/types/types';
 import { IVolumeViewport as IVolumeViewport_2 } from 'packages/core/dist/types/types';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
@@ -16,10 +16,13 @@ import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
@@ -234,6 +237,7 @@ export class AngleTool extends AnnotationTool {
 type Annotation = {
     annotationUID?: string;
     parentAnnotationUID?: string;
+    interpolationUID?: string;
     childAnnotationUIDs?: string[];
     highlighted?: boolean;
     isLocked?: boolean;
@@ -262,7 +266,7 @@ type Annotation = {
             [key: string]: any;
         };
         [key: string]: any;
-        cachedStats?: unknown;
+        cachedStats?: Record<string, unknown>;
     };
 };
 
@@ -300,6 +304,8 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
+    // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
     // (undocumented)
@@ -667,6 +673,15 @@ export abstract class BaseTool implements IBaseTool {
         restoreMemo: () => void;
     };
     // (undocumented)
+    static defaults: {
+        configuration: {
+            strategies: {};
+            defaultStrategy: any;
+            activeStrategy: any;
+            strategyOptions: {};
+        };
+    };
+    // (undocumented)
     doneEditMemo(): void;
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
@@ -676,6 +691,8 @@ export abstract class BaseTool implements IBaseTool {
     getToolName(): string;
     // (undocumented)
     protected memo: utilities_2.HistoryMemo.Memo;
+    // (undocumented)
+    static mergeDefaultProps(defaultProps?: {}, additionalProps?: any): any;
     // (undocumented)
     mode: ToolModes;
     // (undocumented)
@@ -690,6 +707,8 @@ export abstract class BaseTool implements IBaseTool {
     toolGroupId: string;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    get toolName(): string;
     // (undocumented)
     undo(): void;
 }
@@ -842,58 +861,6 @@ type BoundsIJK_2 = Types_2.BoundsIJK;
 export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    acceptPreview(element?: HTMLDivElement): void;
-    // (undocumented)
-    createEditData(element: any): {
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        segmentationRepresentationUID: string;
-        imageIdReferenceMap?: undefined;
-    } | {
-        imageIdReferenceMap: Map<string, string>;
-        segmentsLocked: number[] | [];
-        segmentationRepresentationUID: string;
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    };
-    // (undocumented)
-    protected getOperationData(element?: any): {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        segmentationRepresentationUID: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        configuration: Record<string, any>;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo_2;
-        segmentsLocked: number[];
-        imageIdReferenceMap?: Map<string, string>;
-        volumeId?: string;
-        referencedVolumeId?: string;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        segmentationRepresentationUID: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        configuration: Record<string, any>;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo_2;
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageIdReferenceMap?: undefined;
-    };
-    // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
     interpolate(element: any, config: any): void;
@@ -902,17 +869,15 @@ export class BrushTool extends LabelmapBaseTool {
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: (evt: any) => void;
+    onSetToolDisabled: (_evt: any) => void;
     // (undocumented)
-    onSetToolEnabled: () => void;
+    onSetToolEnabled: (_evt: any) => void;
     // (undocumented)
-    onSetToolPassive: (evt: any) => void;
+    onSetToolPassive: (_evt: any) => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     previewCallback: () => void;
-    // (undocumented)
-    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
@@ -1680,7 +1645,7 @@ function convertStackToVolumeSegmentation({ segmentationId, options, }: {
         volumeId?: string;
         removeOriginal?: boolean;
     };
-}): Promise<void>;
+}): Promise<string[]>;
 
 // @public (undocumented)
 function convertVolumeToStackSegmentation({ segmentationId, options, }: {
@@ -2847,7 +2812,7 @@ function getToolState(element: HTMLDivElement): CINETypes.ToolData | undefined;
 function getUniqueSegmentIndices(segmentationId: any): any;
 
 // @public (undocumented)
-function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | IStackViewport_2;
+function getViewportForAnnotation(annotation: Annotation): IVolumeViewport_2 | default_3;
 
 // @public (undocumented)
 function getViewportIdsWithToolToRender(element: HTMLDivElement, toolName: string, requireParallelNormals?: boolean): string[];
@@ -4012,7 +3977,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): PlanarFreehandROIAnnotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
@@ -4178,13 +4143,13 @@ interface ProbeAnnotation extends Annotation {
 
 // @public (undocumented)
 export class ProbeTool extends AnnotationTool {
-    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: any);
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, changeType?: ChangeTypes): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4216,6 +4181,15 @@ export class ProbeTool extends AnnotationTool {
     isPointNearTool(): boolean;
     // (undocumented)
     mouseDragCallback: any;
+    // (undocumented)
+    static probeDefaults: {
+        supportedInteractionTypes: string[];
+        configuration: {
+            shadow: boolean;
+            preventHandleOutsideImage: boolean;
+            getTextLines: typeof defaultGetTextLines;
+        };
+    };
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -5274,7 +5248,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel(element: HTMLDivElement): string;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     protected createInterpolatedSplineControl(annotation: any): void;
     // (undocumented)
@@ -5454,6 +5428,8 @@ function stopClip(element: HTMLDivElement, options?: any): void;
 enum StrategyCallbacks {
     // (undocumented)
     AcceptPreview = "acceptPreview",
+    // (undocumented)
+    AddPreview = "addPreview",
     // (undocumented)
     ComputeInnerCircleRadius = "computeInnerCircleRadius",
     // (undocumented)

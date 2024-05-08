@@ -1,0 +1,60 @@
+{
+  "name": "@cornerstonejs/ai",
+  "version": "1.71.0",
+  "description": "AI and ML Interfaces for CS3D",
+  "src": "src/index.ts",
+  "main": "./dist/@cornerstonejs/ai.es.js",
+  "module": "src/index.ts",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "directories": {
+    "build": "dist"
+  },
+  "exports": {
+    "import": "./dist/ai.es.js"
+  },
+  "types": "./dist/types/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "jest --testTimeout 60000",
+    "clean": "rimraf dist",
+    "build": "rollup -c rollup.config.mjs",
+    "build:esm": "rollup -c rollup.config.mjs",
+    "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+    "dev": "rollup --watch  -c rollup.config.mjs",
+    "build:all": "yarn build",
+    "build:update-api": "yarn run build && api-extractor run --local",
+    "start": "rollup --watch -c rollup.config.mjs",
+    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+    "lint": "eslint --fix ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dcmjs-org/dcmjs.git"
+  },
+  "author": "@cornerstonejs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
+  },
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/ai/README.md",
+  "dependencies": {
+    "@babel/runtime-corejs2": "^7.17.8",
+    "@cornerstonejs/tools": "^1.71.0",
+    "buffer": "^6.0.3",
+    "dcmjs": "^0.29.8",
+    "gl-matrix": "^3.4.3",
+    "lodash.clonedeep": "^4.5.0",
+    "ndarray": "^1.0.19",
+    "onnxruntime-web": "^1.17.3"
+  },
+  "devDependencies": {
+    "@cornerstonejs/core": "^1.71.0",
+    "@cornerstonejs/tools": "^1.71.0",
+    "@cornerstonejs/streaming-image-volume-loader": "^1.71.0"
+  }
+}

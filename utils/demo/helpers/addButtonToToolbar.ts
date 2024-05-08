@@ -12,7 +12,7 @@ interface configButton extends configElement {
 export default function addButtonToToolbar(
   config: configButton
 ): HTMLButtonElement {
-  config = utilities.deepMerge(config, config.merge);
+  config = utilities.deepMerge(config, config.merge || {});
 
   config.container =
     config.container ?? document.getElementById('demo-toolbar');

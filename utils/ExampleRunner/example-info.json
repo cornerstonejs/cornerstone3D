@@ -383,6 +383,10 @@
       "livewireContourSegmentation": {
         "name": "Livewire Segmentation Tool",
         "description": "Demonstrates how to create contour segmentations using livewireContour tool"
+      },
+      "segmentationAI": {
+        "name": "Segmentation AI Assistance",
+        "description": "Demonstrates how to use AI/ML assistance tools for segmentation creation"
       }
     },
     "tools-advanced": {

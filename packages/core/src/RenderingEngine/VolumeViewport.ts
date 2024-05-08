@@ -1,8 +1,6 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import { vec3 } from 'gl-matrix';
-
 import cache from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import { BlendModes, OrientationAxis, Events } from '../enums';
@@ -12,6 +10,8 @@ import type {
   IVolumeInput,
   OrientationVectors,
   Point3,
+  ViewReference,
+  ViewReferenceSpecifier,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import {
@@ -28,6 +28,7 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
+import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -261,7 +262,6 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
-    const viewUp = <Point3>activeCamera.getViewUp();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
     // always add clipping planes for the volume viewport. If a use case
@@ -349,32 +349,29 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
-   * Uses the origin and focalPoint to calculate the slice index.
+   * Uses the slice range information to compute the current image id index.
+   * Note that this may be offset from the origin location, or opposite in
+   * direction to the distance from the origin location, as the index is a
+   * complete index from minimum to maximum.
    *
-   * @returns The slice index in the direction of the view
+   * @returns The slice index in the direction of the view.  This index is in
+   * the same position/size/direction as the scroll utility.  That is,
+   *   scroll(dir)
+   * and
+   *   viewport.setView(viewport.getView({sliceIndex: viewport.getCurrentImageIdIndex()+dir}))
+   *
+   * have the same affect, excluding end/looping conditions.
    */
-  public getCurrentImageIdIndex = (volumeId?: string): number => {
-    const { viewPlaneNormal, focalPoint } = this.getCamera();
-
-    const imageData = this.getImageData(volumeId);
-
-    if (!imageData) {
-      return;
-    }
-
-    const { origin, direction, spacing } = imageData;
-
-    const spacingInNormal = getSpacingInNormalDirection(
-      { direction, spacing },
-      viewPlaneNormal
+  public getCurrentImageIdIndex = (
+    volumeId?: string,
+    useSlabThickness = true
+  ): number => {
+    const { currentStepIndex } = getVolumeViewportScrollInfo(
+      this,
+      volumeId || this.getVolumeId(),
+      useSlabThickness
     );
-    const sub = vec3.create();
-    vec3.sub(sub, focalPoint, origin);
-    const distance = vec3.dot(sub, viewPlaneNormal);
-
-    // divide by the spacing in the normal direction to get the
-    // number of steps, and subtract 1 to get the index
-    return Math.round(Math.abs(distance) / spacingInNormal);
+    return currentStepIndex;
   };
 
   /**
@@ -404,6 +401,26 @@ class VolumeViewport extends BaseVolumeViewport {
     return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
 
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   * Add the referenced image id.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const viewRef = super.getViewReference(viewRefSpecifier);
+    if (!viewRef?.volumeId) {
+      return;
+    }
+    const volume = cache.getVolume(viewRef.volumeId);
+    viewRef.referencedImageId = getClosestImageId(
+      volume,
+      viewRef.cameraFocalPoint,
+      viewRef.viewPlaneNormal
+    );
+    return viewRef;
+  }
   /**
    * Reset the viewport properties to the default values
    *

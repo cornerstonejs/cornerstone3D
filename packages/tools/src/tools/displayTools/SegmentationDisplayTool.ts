@@ -61,10 +61,7 @@ class SegmentationDisplayTool extends BaseTool {
     const toolGroupSegmentationRepresentations =
       getSegmentationRepresentations(toolGroupId);
 
-    if (
-      !toolGroupSegmentationRepresentations ||
-      toolGroupSegmentationRepresentations.length === 0
-    ) {
+    if (!toolGroupSegmentationRepresentations?.length) {
       return;
     }
 
@@ -121,10 +118,7 @@ class SegmentationDisplayTool extends BaseTool {
     const toolGroupSegmentationRepresentations =
       getSegmentationRepresentations(toolGroupId);
 
-    if (
-      !toolGroupSegmentationRepresentations ||
-      toolGroupSegmentationRepresentations.length === 0
-    ) {
+    if (!toolGroupSegmentationRepresentations?.length) {
       return;
     }
 
