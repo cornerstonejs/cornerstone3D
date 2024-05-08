@@ -319,6 +319,7 @@ class CrosshairsTool extends AnnotationTool {
         renderingEngineId
       );
       const { viewport } = enabledElement;
+      viewport.resetCamera(true, true, true, true, true);
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
       annotations = this.filterInteractableAnnotationsForElement(

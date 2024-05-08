@@ -137,7 +137,8 @@ export default interface IVolumeViewport extends IViewport {
     resetPan?: boolean,
     resetZoom?: boolean,
     resetToCenter?: boolean,
-    resetRotation?: boolean
+    resetRotation?: boolean,
+    supressEvents?: boolean
   ): boolean;
   /**
    * Sets the blendMode for actors of the viewport.

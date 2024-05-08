@@ -887,7 +887,8 @@ class Viewport implements IViewport {
     resetPan = true,
     resetZoom = true,
     resetToCenter = true,
-    storeAsInitialCamera = true
+    storeAsInitialCamera = true,
+    suppressEvents = false
   ): boolean {
     const renderer = this.getRenderer();
 
@@ -1044,14 +1045,17 @@ class Viewport implements IViewport {
     ) {
       this.setDisplayArea(this.options?.displayArea);
     }
-    const eventDetail: EventTypes.CameraResetEventDetail = {
-      viewportId: this.id,
-      camera: this.getCamera(),
-      renderingEngineId: this.renderingEngineId,
-      element: this.element,
-    };
 
-    triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+    if (!suppressEvents) {
+      const eventDetail: EventTypes.CameraResetEventDetail = {
+        viewportId: this.id,
+        camera: this.getCamera(),
+        renderingEngineId: this.renderingEngineId,
+        element: this.element,
+      };
+
+      triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+    }
 
     return true;
   }
