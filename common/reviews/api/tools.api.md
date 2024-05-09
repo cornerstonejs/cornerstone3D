@@ -1786,6 +1786,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _onNewVolume: (e: any) => void;
     // (undocumented)
+    onResetCamera: (evt: any) => void;
+    // (undocumented)
     onSetToolActive(): void;
     // (undocumented)
     onSetToolDisabled(): void;

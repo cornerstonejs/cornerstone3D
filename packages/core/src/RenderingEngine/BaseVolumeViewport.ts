@@ -126,7 +126,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   }
 
   protected applyViewOrientation(
-    orientation: OrientationAxis | OrientationVectors
+    orientation: OrientationAxis | OrientationVectors,
+    resetCamera = true
   ) {
     const { viewPlaneNormal, viewUp } =
       this._getOrientationVectors(orientation);
@@ -139,7 +140,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     camera.setViewUpFrom(viewUp);
     this.initialViewUp = viewUp;
 
-    this.resetCamera();
+    if (resetCamera) {
+      this.resetCamera();
+    }
   }
 
   private initializeVolumeNewImageEventDispatcher(): void {
@@ -1610,6 +1613,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     slabThickness: number,
     filterActorUIDs?: Array<string>
   ): void;
+
+  abstract resetSlabThickness(): void;
 
   abstract resetProperties(volumeId?: string): void;
 }

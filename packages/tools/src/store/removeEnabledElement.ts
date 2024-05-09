@@ -13,6 +13,7 @@ import {
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
   touchToolEventDispatcher,
+  cameraResetEventDispatcher,
 } from '../eventDispatchers';
 // ~~
 
@@ -52,6 +53,7 @@ function removeEnabledElement(
   imageRenderedEventDispatcher.disable(element);
   cameraModifiedEventDispatcher.disable(element);
   imageSpacingCalibratedEventDispatcher.disable(element);
+  cameraResetEventDispatcher.disable(element);
 
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(element);
