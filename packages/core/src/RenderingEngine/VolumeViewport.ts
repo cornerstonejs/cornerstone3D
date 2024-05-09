@@ -350,6 +350,24 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
+   * Resets the slab thickness of the actors of the viewport to the default value.
+   */
+  public resetSlabThickness(): void {
+    const actorEntries = this.getActors();
+
+    actorEntries.forEach((actorEntry) => {
+      if (actorIsA(actorEntry, 'vtkVolume')) {
+        actorEntry.slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+      }
+    });
+
+    const currentCamera = this.getCamera();
+    this.updateClippingPlanesForActors(currentCamera);
+    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+    this.viewportProperties.slabThickness = undefined;
+  }
+
+  /**
    * Uses the origin and focalPoint to calculate the slice index.
    *
    * @returns The slice index in the direction of the view

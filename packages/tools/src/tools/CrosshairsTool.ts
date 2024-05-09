@@ -331,6 +331,7 @@ class CrosshairsTool extends AnnotationTool {
         resetRotation,
         supressEvents
       );
+      (viewport as Types.IVolumeViewport).resetSlabThickness();
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
       annotations = this.filterInteractableAnnotationsForElement(

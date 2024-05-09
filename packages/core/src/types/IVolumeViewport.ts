@@ -141,6 +141,10 @@ export default interface IVolumeViewport extends IViewport {
     supressEvents?: boolean
   ): boolean;
   /**
+   * Reset the slab thickness for actors of the viewport.
+   */
+  resetSlabThickness(): void;
+  /**
    * Sets the blendMode for actors of the viewport.
    */
   setBlendMode(

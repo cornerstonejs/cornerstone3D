@@ -1611,6 +1611,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     filterActorUIDs?: Array<string>
   ): void;
 
+  abstract resetSlabThickness(): void;
+
   abstract resetProperties(volumeId?: string): void;
 }
 

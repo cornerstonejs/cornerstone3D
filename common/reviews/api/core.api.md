@@ -164,6 +164,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     abstract resetProperties(volumeId?: string): void;
     // (undocumented)
+    abstract resetSlabThickness(): void;
+    // (undocumented)
     resetToDefaultProperties(volumeId: string): void;
     // (undocumented)
     protected resetVolumeViewportClippingRange(): void;
@@ -2428,6 +2430,8 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     resetProperties(volumeId: string): void;
     // (undocumented)
+    resetSlabThickness(): void;
+    // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
     setDefaultProperties(ViewportProperties: VolumeViewportProperties, volumeId?: string): void;
@@ -4208,6 +4212,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
+    resetSlabThickness(): void;
+    // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
     setOrientation(orientation: OrientationAxis | OrientationVectors, immediate?: boolean): void;
@@ -4230,6 +4236,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
     // (undocumented)
