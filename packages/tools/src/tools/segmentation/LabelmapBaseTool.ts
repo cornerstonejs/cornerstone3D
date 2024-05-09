@@ -387,17 +387,14 @@ export default class LabelmapBaseTool extends BaseTool {
     const annotations = annotationState.getAllAnnotations();
     const viewAnnotations = filterAnnotationsForDisplay(viewport, annotations);
     if (!viewAnnotations?.length) {
-      console.log('No annotations for display');
       return;
     }
     const contourAnnotations = viewAnnotations.filter(
       (annotation) => annotation.data.contour?.polyline?.length
     );
     if (!contourAnnotations.length) {
-      console.log("There weren't any contour annotations");
       return;
     }
-    console.log('Found', contourAnnotations.length, 'contour annotations');
 
     const toolGroup = ToolGroupManager.getToolGroupForViewport(
       viewport.id,
@@ -406,7 +403,7 @@ export default class LabelmapBaseTool extends BaseTool {
     // TODO - allow configuration of the tool, or make this a member function?
     const tool = toolGroup.getToolInstance('ThresholdCircle');
     const preview = tool.addPreview(viewport.element);
-    const { previewSegmentIndex, memo, segmentationId } = preview;
+    const { memo, segmentationId } = preview;
     const previewVoxels = memo?.voxelManager || preview.previewVoxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;
@@ -421,7 +418,6 @@ export default class LabelmapBaseTool extends BaseTool {
       .actor.getMapper()
       .getInputData();
 
-    console.time('contourCheck');
     for (const annotation of contourAnnotations) {
       const boundsIJK = [
         [Infinity, -Infinity],
@@ -442,7 +438,6 @@ export default class LabelmapBaseTool extends BaseTool {
         bound[1] = Math.round(Math.min(dimensions[idx] - 1, bound[1]));
       });
 
-      console.log('boundsIJK=', boundsIJK);
       let segmentIndexCount = 0;
       let segmentZeroIndexCount = 0;
 
@@ -481,9 +476,7 @@ export default class LabelmapBaseTool extends BaseTool {
       }
     }
 
-    console.timeEnd('contourCheck');
-    triggerSegmentationDataModified(segmentationId);
-
-    console.log('Found inside/outside contour:', insideCount, outsideCount);
+    const slices = previewVoxels.getArrayOfSlices();
+    triggerSegmentationDataModified(segmentationId, slices);
   }
 }
