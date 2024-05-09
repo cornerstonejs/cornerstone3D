@@ -12,6 +12,7 @@ import type {
   IVolumeInput,
   OrientationVectors,
   Point3,
+  EventTypes,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import {
@@ -256,7 +257,9 @@ class VolumeViewport extends BaseVolumeViewport {
     resetRotation = false,
     supressEvents = false
   ): boolean {
-    super.resetCamera(resetPan, resetZoom, resetToCenter, true, supressEvents);
+    const { orientation } = this.viewportProperties;
+    this.applyViewOrientation(orientation, false);
+    super.resetCamera(resetPan, resetZoom, resetToCenter);
 
     this.resetVolumeViewportClippingRange();
 
@@ -311,6 +314,16 @@ class VolumeViewport extends BaseVolumeViewport {
       });
     }
 
+    if (!supressEvents) {
+      const eventDetail: EventTypes.CameraResetEventDetail = {
+        viewportId: this.id,
+        camera: this.getCamera(),
+        renderingEngineId: this.renderingEngineId,
+        element: this.element,
+      };
+
+      triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+    }
     return true;
   }
 

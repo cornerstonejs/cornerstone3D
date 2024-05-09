@@ -112,7 +112,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
-    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors): void;
+    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors, resetCamera?: boolean): void;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
@@ -3854,7 +3854,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     reset(immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, storeAsInitialCamera?: boolean, suppressEvents?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, storeAsInitialCamera?: boolean): boolean;
     // (undocumented)
     protected resetCameraNoEvent(): void;
     // (undocumented)

@@ -341,6 +341,7 @@ class CrosshairsTool extends AnnotationTool {
       if (annotations.length) {
         removeAnnotation(annotations[0].annotationUID);
       }
+      viewport.render();
     });
 
     this.computeToolCenter(viewportsInfo);
