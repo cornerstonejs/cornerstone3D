@@ -258,7 +258,9 @@ class VolumeViewport extends BaseVolumeViewport {
     supressEvents = false
   ): boolean {
     const { orientation } = this.viewportProperties;
-    this.applyViewOrientation(orientation, false);
+    if (orientation) {
+      this.applyViewOrientation(orientation, false);
+    }
     super.resetCamera(resetPan, resetZoom, resetToCenter);
 
     this.resetVolumeViewportClippingRange();
