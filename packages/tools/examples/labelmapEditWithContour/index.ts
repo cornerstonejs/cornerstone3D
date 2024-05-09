@@ -6,6 +6,7 @@ import {
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
+  getEnabledElement,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -53,19 +54,20 @@ for (const [key, value] of contourTools.toolMap) {
 const planarFreehand = toolMap.get(
   cornerstoneTools.PlanarFreehandContourSegmentationTool.toolName
 );
-(planarFreehand.bindings = [
+planarFreehand.bindings = [
   {
     mouseButton: MouseBindings.Primary,
     modifierKey: KeyboardBindings.Ctrl,
   },
-]),
-  // ======== Set up page ======== //
-  setTitleAndDescription(
-    'Labelmap Edit With Contour',
-    'Here we demonstrate editing of a labelmap with contour tools.  Start inside the ' +
-      'labelmap area to extend it, and have the contour extend outside.  Then hit e to edit ' +
-      'the labelmap data'
-  );
+];
+
+// ======== Set up page ======== //
+setTitleAndDescription(
+  'Labelmap Edit With Contour',
+  'Here we demonstrate editing of a labelmap with contour tools.  Start inside the ' +
+    'labelmap area to extend it, and have the contour extend outside.  Then hit e to edit ' +
+    'the labelmap data'
+);
 
 const size = '32vw';
 const content = document.getElementById('content');
@@ -191,13 +193,19 @@ async function addSegmentationsToState() {
   ]);
 }
 
+function contoursToLabelmap(element) {
+  const { viewport } = getEnabledElement(element);
+  console.warn('Hello accept current bindings', viewport.id);
+  cornerstoneTools.BrushTool.viewportContoursToLabelmap(viewport);
+}
+
 const handleKeyEvent = (evt) => {
   const { key, element } = evt.detail;
   if (key === 'Escape') {
     console.warn('Hello reject current bindings');
     cornerstoneTools.cancelActiveManipulations(element);
   } else if (key === 'Enter') {
-    console.warn('Hello accept current bindings');
+    contoursToLabelmap(element);
   }
 };
 

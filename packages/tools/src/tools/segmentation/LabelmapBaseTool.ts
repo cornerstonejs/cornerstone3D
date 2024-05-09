@@ -11,7 +11,9 @@ import {
   segmentLocking,
   state as segmentationState,
   activeSegmentation,
+  triggerSegmentationEvents,
 } from '../../stateManagement/segmentation';
+import { state as annotationState } from '../../stateManagement/annotation';
 import { LabelmapMemo } from '../../utilities/segmentation';
 import { BaseTool } from '../base';
 import {
@@ -21,6 +23,11 @@ import {
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import { StrategyCallbacks } from '../../enums';
+import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
+import { isPointInsidePolyline3D } from '../../utilities/math/polyline/isPointInsidePolyline3D';
+import * as ToolGroupManager from '../../store/ToolGroupManager';
+
+const { triggerSegmentationDataModified } = triggerSegmentationEvents;
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -366,5 +373,117 @@ export default class LabelmapBaseTool extends BaseTool {
       createMemo: this.createMemo.bind(this),
     };
     return operationData;
+  }
+
+  /**
+   * This function converts contours on this view into labelmap data, using the
+   * handle[0] state
+   */
+  public static viewportContoursToLabelmap(
+    viewport: Types.IViewport,
+    options?: { removeContours: boolean }
+  ) {
+    const removeContours = options?.removeContours ?? true;
+    const annotations = annotationState.getAllAnnotations();
+    const viewAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+    if (!viewAnnotations?.length) {
+      console.log('No annotations for display');
+      return;
+    }
+    const contourAnnotations = viewAnnotations.filter(
+      (annotation) => annotation.data.contour?.polyline?.length
+    );
+    if (!contourAnnotations.length) {
+      console.log("There weren't any contour annotations");
+      return;
+    }
+    console.log('Found', contourAnnotations.length, 'contour annotations');
+
+    const toolGroup = ToolGroupManager.getToolGroupForViewport(
+      viewport.id,
+      viewport.getRenderingEngine().id
+    );
+    // TODO - allow configuration of the tool, or make this a member function?
+    const tool = toolGroup.getToolInstance('ThresholdCircle');
+    const preview = tool.addPreview(viewport.element);
+    const { previewSegmentIndex, memo, segmentationId } = preview;
+    const previewVoxels = memo?.voxelManager || preview.previewVoxelManager;
+    const segmentationVoxels =
+      previewVoxels.sourceVoxelManager || previewVoxels;
+    const { dimensions } = previewVoxels;
+
+    // Create an undo history for the operation
+    // Iterate through the canvas space in canvas index coordinates
+    let insideCount = 0;
+    let outsideCount = 0;
+    const imageData = viewport
+      .getDefaultActor()
+      .actor.getMapper()
+      .getInputData();
+
+    console.time('contourCheck');
+    for (const annotation of contourAnnotations) {
+      const boundsIJK = [
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+      ];
+      const { polyline } = annotation.data.contour;
+      for (const point of polyline) {
+        const indexPoint = imageData.worldToIndex(point);
+        indexPoint.forEach((v, idx) => {
+          boundsIJK[idx][0] = Math.min(boundsIJK[idx][0], v);
+          boundsIJK[idx][1] = Math.max(boundsIJK[idx][1], v);
+        });
+      }
+
+      boundsIJK.forEach((bound, idx) => {
+        bound[0] = Math.round(Math.max(0, bound[0]));
+        bound[1] = Math.round(Math.min(dimensions[idx] - 1, bound[1]));
+      });
+
+      console.log('boundsIJK=', boundsIJK);
+      let segmentIndexCount = 0;
+      let segmentZeroIndexCount = 0;
+
+      const point = annotation.data.handles?.[0] || polyline[0];
+      const indexPoint = imageData.worldToIndex(point).map(Math.round);
+      const pointValue = segmentationVoxels.getAtIJKPoint(indexPoint) || 0;
+
+      for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
+        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+          for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+            const worldPoint = imageData.indexToWorld([i, j, k]);
+            const isContained = isPointInsidePolyline3D(worldPoint, polyline);
+            if (isContained) {
+              insideCount++;
+              const v = segmentationVoxels.getAtIJK(i, j, k);
+              previewVoxels.setAtIJK(i, j, k, pointValue);
+              if (v) {
+                segmentIndexCount++;
+              } else {
+                segmentZeroIndexCount++;
+              }
+            } else {
+              outsideCount++;
+            }
+          }
+        }
+      }
+
+      console.log(
+        'segmentIndex counts',
+        segmentIndexCount,
+        segmentZeroIndexCount
+      );
+      if (removeContours) {
+        annotationState.removeAnnotation(annotation.annotationUID);
+      }
+    }
+
+    console.timeEnd('contourCheck');
+    triggerSegmentationDataModified(segmentationId);
+
+    console.log('Found inside/outside contour:', insideCount, outsideCount);
   }
 }

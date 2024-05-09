@@ -33,6 +33,8 @@ import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
  * and unregister contour segmentation annotations.
  */
 abstract class ContourSegmentationBaseTool extends ContourBaseTool {
+  static PreviewSegmentIndex = 255;
+
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
     if (this.configuration.interpolation?.enabled) {
@@ -89,7 +91,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
     const { segmentationId } = activeSegmentationRepresentation;
     const segmentIndex = isPreview
-      ? 0
+      ? ContourSegmentationBaseTool.PreviewSegmentIndex
       : segmentIndexController.getActiveSegmentIndex(segmentationId);
 
     return <ContourSegmentationAnnotation>utilities.deepMerge(

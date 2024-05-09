@@ -83,7 +83,7 @@ export default function filterAnnotationsWithinSlice(
 
   for (const annotation of annotationsWithParallelNormals) {
     const data = annotation.data;
-    const point = data.handles.points[0];
+    const point = data.handles.points[0] || data.contour?.polyline[0];
 
     if (!annotation.isVisible) {
       continue;
@@ -101,7 +101,7 @@ export default function filterAnnotationsWithinSlice(
     // should just be included.
     if (!point) {
       annotationsWithinSlice.push(annotation);
-      return;
+      continue;
     }
     vec3.sub(dir, focalPoint, point);
 
