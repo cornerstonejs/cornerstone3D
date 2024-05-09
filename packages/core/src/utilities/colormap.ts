@@ -99,6 +99,7 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
 
   return {
     name: matchedColormap.Name,
+    opacity,
   };
 }
 
