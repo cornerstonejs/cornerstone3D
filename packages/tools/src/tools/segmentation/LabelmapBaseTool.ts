@@ -411,8 +411,6 @@ export default class LabelmapBaseTool extends BaseTool {
 
     // Create an undo history for the operation
     // Iterate through the canvas space in canvas index coordinates
-    let insideCount = 0;
-    let outsideCount = 0;
     const imageData = viewport
       .getDefaultActor()
       .actor.getMapper()
@@ -438,39 +436,40 @@ export default class LabelmapBaseTool extends BaseTool {
         bound[1] = Math.round(Math.min(dimensions[idx] - 1, bound[1]));
       });
 
-      let segmentIndexCount = 0;
-      let segmentZeroIndexCount = 0;
-
-      const point = annotation.data.handles?.[0] || polyline[0];
-      const indexPoint = imageData.worldToIndex(point).map(Math.round);
-      const pointValue = segmentationVoxels.getAtIJKPoint(indexPoint) || 0;
-
+      const activeIndex =
+        segmentIndexController.getActiveSegmentIndex(segmentationId);
+      const startPoint = annotation.data.handles?.[0] || polyline[0];
+      const startIndex = imageData.worldToIndex(startPoint).map(Math.round);
+      const startValue = segmentationVoxels.getAtIJKPoint(startIndex) || 0;
+      let hasZeroIndex = false;
+      let hasPositiveIndex = false;
+      for (const polyPoint of polyline) {
+        const polyIndex = imageData.worldToIndex(polyPoint).map(Math.round);
+        const polyValue = segmentationVoxels.getAtIJKPoint(polyIndex);
+        if (polyValue === startValue) {
+          hasZeroIndex = true;
+        } else if (polyValue >= 0) {
+          hasPositiveIndex = true;
+        }
+      }
+      const hasBoth = hasZeroIndex && hasPositiveIndex;
+      const segmentIndex = hasBoth
+        ? startValue
+        : startValue === 0
+        ? activeIndex
+        : 0;
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
             const worldPoint = imageData.indexToWorld([i, j, k]);
             const isContained = isPointInsidePolyline3D(worldPoint, polyline);
             if (isContained) {
-              insideCount++;
-              const v = segmentationVoxels.getAtIJK(i, j, k);
-              previewVoxels.setAtIJK(i, j, k, pointValue);
-              if (v) {
-                segmentIndexCount++;
-              } else {
-                segmentZeroIndexCount++;
-              }
-            } else {
-              outsideCount++;
+              previewVoxels.setAtIJK(i, j, k, segmentIndex);
             }
           }
         }
       }
 
-      console.log(
-        'segmentIndex counts',
-        segmentIndexCount,
-        segmentZeroIndexCount
-      );
       if (removeContours) {
         annotationState.removeAnnotation(annotation.annotationUID);
       }

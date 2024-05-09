@@ -80,19 +80,18 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
     const { type: segmentationType } = activeSegmentationRepresentation;
 
-    let isPreview = false;
+    // let isPreview = false;
+    const { segmentationId } = activeSegmentationRepresentation;
     if (segmentationType !== SegmentationRepresentations.Contour) {
       // throw new Error(`A contour segmentation must be active`);
       console.warn(
         '***** TODO - figure out if we can activate against other annotations'
       );
-      isPreview = true;
+      // isPreview = true;
     }
 
-    const { segmentationId } = activeSegmentationRepresentation;
-    const segmentIndex = isPreview
-      ? ContourSegmentationBaseTool.PreviewSegmentIndex
-      : segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const segmentIndex =
+      segmentIndexController.getActiveSegmentIndex(segmentationId);
 
     return <ContourSegmentationAnnotation>utilities.deepMerge(
       contourAnnotation,
