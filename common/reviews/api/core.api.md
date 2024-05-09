@@ -112,7 +112,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
-    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors): void;
+    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors, resetCamera?: boolean): void;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
@@ -163,6 +163,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
     abstract resetProperties(volumeId?: string): void;
+    // (undocumented)
+    abstract resetSlabThickness(): void;
     // (undocumented)
     resetToDefaultProperties(volumeId: string): void;
     // (undocumented)
@@ -259,6 +261,17 @@ type CameraModifiedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     rotation?: number;
+};
+
+// @public (undocumented)
+type CameraResetEvent = CustomEvent_2<CameraResetEventDetail>;
+
+// @public (undocumented)
+type CameraResetEventDetail = {
+    element: HTMLDivElement;
+    viewportId: string;
+    renderingEngineId: string;
+    camera: ICamera;
 };
 
 // @public (undocumented)
@@ -932,7 +945,9 @@ declare namespace EventTypes {
         StackViewportNewStackEvent,
         StackViewportNewStackEventDetail,
         StackViewportScrollEvent,
-        StackViewportScrollEventDetail
+        StackViewportScrollEventDetail,
+        CameraResetEvent,
+        CameraResetEventDetail
     }
 }
 
@@ -2427,9 +2442,11 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -4257,9 +4274,11 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
@@ -4283,6 +4302,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
     // (undocumented)

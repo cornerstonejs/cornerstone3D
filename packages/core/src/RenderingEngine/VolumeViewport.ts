@@ -10,6 +10,7 @@ import type {
   IVolumeInput,
   OrientationVectors,
   Point3,
+  EventTypes,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../types';
@@ -254,8 +255,13 @@ class VolumeViewport extends BaseVolumeViewport {
     resetPan = true,
     resetZoom = true,
     resetToCenter = true,
-    resetRotation = false
+    resetRotation = false,
+    supressEvents = false
   ): boolean {
+    const { orientation } = this.viewportProperties;
+    if (orientation) {
+      this.applyViewOrientation(orientation, false);
+    }
     super.resetCamera(resetPan, resetZoom, resetToCenter);
 
     this.resetVolumeViewportClippingRange();
@@ -310,6 +316,16 @@ class VolumeViewport extends BaseVolumeViewport {
       });
     }
 
+    if (!supressEvents) {
+      const eventDetail: EventTypes.CameraResetEventDetail = {
+        viewportId: this.id,
+        camera: this.getCamera(),
+        renderingEngineId: this.renderingEngineId,
+        element: this.element,
+      };
+
+      triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+    }
     return true;
   }
 
@@ -346,6 +362,28 @@ class VolumeViewport extends BaseVolumeViewport {
     this.updateClippingPlanesForActors(currentCamera);
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
     this.viewportProperties.slabThickness = slabThickness;
+  }
+
+  /**
+   * Uses the origin and focalPoint to calculate the slice index.
+
+
+
+   * Resets the slab thickness of the actors of the viewport to the default value.
+   */
+  public resetSlabThickness(): void {
+    const actorEntries = this.getActors();
+
+    actorEntries.forEach((actorEntry) => {
+      if (actorIsA(actorEntry, 'vtkVolume')) {
+        actorEntry.slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+      }
+    });
+
+    const currentCamera = this.getCamera();
+    this.updateClippingPlanesForActors(currentCamera);
+    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+    this.viewportProperties.slabThickness = undefined;
   }
 
   /**
