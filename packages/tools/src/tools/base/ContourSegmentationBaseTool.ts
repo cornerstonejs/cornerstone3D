@@ -78,17 +78,13 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       );
     }
 
-    const { type: segmentationType } = activeSegmentationRepresentation;
-
-    // let isPreview = false;
     const { segmentationId } = activeSegmentationRepresentation;
-    if (segmentationType !== SegmentationRepresentations.Contour) {
-      // throw new Error(`A contour segmentation must be active`);
-      console.warn(
-        '***** TODO - figure out if we can activate against other annotations'
-      );
-      // isPreview = true;
-    }
+    // This code is commented out for now as the contours are being allowed to edit the
+    // labelmap data - this may need to be a check/throw or something else here.
+    // const { type: segmentationType } = activeSegmentationRepresentation;
+    // if (segmentationType !== SegmentationRepresentations.Contour) {
+    // throw new Error(`A contour segmentation must be active`);
+    // }
 
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);

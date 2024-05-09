@@ -387,6 +387,10 @@
       "segmentationAI": {
         "name": "Segmentation AI Assistance",
         "description": "Demonstrates how to use AI/ML assistance tools for segmentation creation"
+      },
+      "labelmapEditWithContour": {
+        "name": "Labelmap Editing with Contour",
+        "description": "Use contour tools to edit the labelmap"
       }
     },
     "tools-advanced": {
