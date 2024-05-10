@@ -879,6 +879,13 @@ export class BrushTool extends BaseTool {
 }
 
 // @public (undocumented)
+function calculateMinMaxMean(pixelLuminance: any, globalMin: any, globalMax: any): {
+    min: any;
+    max: any;
+    mean: number;
+};
+
+// @public (undocumented)
 function calculatePerimeter(polyline: number[][], closed: boolean): number;
 
 // @public (undocumented)
@@ -1222,6 +1229,9 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 function clip_2(val: number, low: number, high: number): number;
+
+// @public (undocumented)
+function clip_3(val: any, low: any, high: any): number;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
@@ -2358,6 +2368,20 @@ declare namespace EventTypes_2 {
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
+function extractImageData(viewport: any): {
+    scalarData: any;
+    width: any;
+    height: any;
+    minPixelValue: number;
+    maxPixelValue: number;
+    rows: any;
+    columns: any;
+    color: any;
+    slope: any;
+    intercept: any;
+};
+
+// @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
 
 // @public (undocumented)
@@ -2629,6 +2653,9 @@ function getLineSegmentIntersectionsIndexes(polyline: Types_2.Point2[], p1: Type
 
 // @public (undocumented)
 function getLockedSegments(segmentationId: string): number[] | [];
+
+// @public (undocumented)
+function getLuminance(imageData: any, x: any, y: any, width: any, height: any): any[];
 
 // @public (undocumented)
 function getMeanPoints(points: IPoints[]): IPoints;
@@ -6240,7 +6267,8 @@ declare namespace visibility_2 {
 
 declare namespace voi {
     export {
-        colorbar
+        colorbar,
+        windowLevel_2 as windowLevel
     }
 }
 
@@ -6268,6 +6296,55 @@ type VolumeScrollOutOfBoundsEventDetail = {
 
 // @public (undocumented)
 type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+
+declare namespace windowLevel_2 {
+    export {
+        getLuminance,
+        calculateMinMaxMean,
+        clip_3 as clip,
+        extractImageData
+    }
+}
+
+// @public (undocumented)
+export class WindowLevelRegionTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: any) => void;
+    // (undocumented)
+    _activateModify: () => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => any;
+    // (undocumented)
+    applyWindowLevelRegion: (annotation: any, element: any) => void;
+    // (undocumented)
+    cancel: () => void;
+    // (undocumented)
+    _deactivateDraw: (element: any) => void;
+    // (undocumented)
+    _deactivateModify: () => void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: () => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isPointNearTool: () => any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: () => void;
+}
 
 // @public (undocumented)
 export class WindowLevelTool extends BaseTool {
