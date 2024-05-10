@@ -240,6 +240,10 @@
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
       },
+      "windowLevelRegion": {
+        "name": "Window Level Region",
+        "description": "Demonstrates how to use the window level region tool to adjust the window level of an image"
+      },
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
