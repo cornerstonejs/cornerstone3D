@@ -47,7 +47,7 @@ const viewportsInfo = [
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>[0, 255, 0],
       },
     },
   },
@@ -55,7 +55,7 @@ const viewportsInfo = [
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Dynamically Add Annotations',
-  'Enter the image coords or world coords and press Enter to add an annotation.'
+  'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.'
 );
 
 const demoToolbar = document.getElementById('demo-toolbar');
