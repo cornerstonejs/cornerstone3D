@@ -6,7 +6,6 @@ import {
   volumeLoader,
   getRenderingEngine,
   getEnabledElement,
-  Viewport,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -20,62 +19,64 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { IStackViewport } from 'core/dist/types/types';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ToolGroupManager, synchronizers } = cornerstoneTools;
+const { ToolGroupManager } = cornerstoneTools;
 
-const { createPresentationViewSynchronizer } = synchronizers;
-
-const { ViewportType } = Enums;
+const { ViewportType, Events } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const viewportId0 = 'CT_STACK';
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
 const viewportId3 = 'CT_CORONAL';
-const viewportId4 = 'CT_STACK';
-const viewportId5 = 'TEST_STACK';
+const viewportId4 = 'TEST_STACK';
 const viewportIds = [
+  viewportId0,
   viewportId1,
   viewportId2,
   viewportId3,
   viewportId4,
-  viewportId5,
 ];
 let viewport;
 const viewports = [];
 const renderingEngineId = 'myRenderingEngine';
-const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
-const synchronizerOptions = {
-  ...Viewport.CameraViewPresentation,
-};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Resize',
-  'Here we demonstrate resize, using the display area/relative zoom, pan view reference synchronization.'
+  'ViewReferencePresentation',
+  'Here we demonstrate view reference/presentation syncing.'
 );
 
 const width = `18vw`;
-const height = `25vw`;
+const height = `33vh`;
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.width = '100%';
 
+const element0 = document.createElement('div');
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 const element4 = document.createElement('div');
-const element5 = document.createElement('div');
-const elements = [element3, element4, element1, element2, element5];
+const elements = [element0, element1, element2, element3, element4];
+const controlElements = [...elements];
+const setViewElements = controlElements.map(() => {
+  const newElement = document.createElement('div');
+  elements.push(newElement);
+  return newElement;
+});
+
 elements.forEach((element) => {
   Object.assign(element.style, {
     width,
@@ -97,8 +98,13 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Resize the window with various synchronization options on and see how it
-  affects the different windows.
+  There are two lines of viewports, the top line allows controls, while the bottom line shows what happens when a isReferenceViewable applies, and the
+  setView is updated when it is viewable.
+  The left and right most views are stack views, while the middle three are  orthographic views of the left most viewport.
+  Turning on apply orientation will apply the orientation from the source to the destination viewports for compatible viewports.
+  Turning on apply presentation will apply the presentation for viewports that are not compatible with the view reference.
+  There is no automatic conversion of stack to volume to demonstrate compatibility for conversion of viewport types.
+  Note the two acquisition viewports (left two viewports) - these will sync in opposite scroll directions for the destination viewports.
   `;
 
 content.append(instructions);
@@ -239,15 +245,7 @@ displayAreaOptions.set('Scale Left', scaleLeft);
 displayAreaOptions.set('Scale Left 2', scaleLeft);
 displayAreaOptions.set('Scale Right Bottom', scaleRightBottom);
 
-let storeAsInitialCamera = true;
-addToggleButtonToToolbar({
-  id: 'storeAsInitialCameraToggle',
-  title: 'Store Display Area',
-  defaultToggle: storeAsInitialCamera,
-  onClick: (toggle) => {
-    storeAsInitialCamera = toggle;
-  },
-});
+const storeAsInitialCamera = true;
 
 addDropdownToToolbar({
   id: 'displayArea',
@@ -267,6 +265,7 @@ addButtonToToolbar({
   title: 'Reset Camera',
   onClick: () => {
     viewport.resetCamera();
+    viewport.render();
   },
 });
 
@@ -284,98 +283,27 @@ addDropdownToToolbar({
 });
 
 // ============================= //
+let withOrientation = false;
 
 addToggleButtonToToolbar({
-  id: 'syncDisplayArea',
-  title: 'Sync Display Area',
-  defaultToggle: synchronizerOptions.displayArea,
+  id: 'matchOrientation',
+  title: 'Match On Orientation',
+  defaultToggle: !withOrientation,
   onClick: (toggle) => {
-    synchronizerOptions.displayArea = toggle;
+    withOrientation = !toggle;
   },
 });
+
+let applyPresentation = false;
 
 addToggleButtonToToolbar({
-  id: 'syncZoom',
-  title: 'Sync Zoom',
-  defaultToggle: synchronizerOptions.zoom,
+  id: 'presentationToAll',
+  title: 'Presentation To All',
+  defaultToggle: applyPresentation,
   onClick: (toggle) => {
-    synchronizerOptions.zoom = toggle;
+    applyPresentation = toggle;
   },
 });
-
-addToggleButtonToToolbar({
-  id: 'syncPan',
-  title: 'Sync Pan',
-  defaultToggle: synchronizerOptions.pan,
-  onClick: (toggle) => {
-    synchronizerOptions.pan = toggle;
-  },
-});
-
-addToggleButtonToToolbar({
-  id: 'syncRotation',
-  title: 'Sync Rotation',
-  defaultToggle: synchronizerOptions.rotation,
-  onClick: (toggle) => {
-    synchronizerOptions.rotation = toggle;
-  },
-});
-
-//////////
-// Sets the sizing options for how the images are displayed
-
-const resizeOptions = new Map();
-resizeOptions.set('Original', {
-  viewportStyle: { width, height },
-});
-resizeOptions.set('1:2', {
-  viewportStyle: { width: '19vw', height: '38vw' },
-});
-resizeOptions.set('2:1', {
-  viewportStyle: { width: '40vw', height: '20vw' },
-});
-resizeOptions.set('3:2', {
-  viewportStyle: { width: '30vw', height: '20vw' },
-});
-resizeOptions.set('3:1', {
-  viewportStyle: { width: '30vw', height: '10vw' },
-});
-resizeOptions.set('1:4', {
-  viewportStyle: { width: '10vw', height: '40vw' },
-});
-resizeOptions.set('4:1', {
-  viewportStyle: { width: '40vw', height: '10vw' },
-});
-
-addDropdownToToolbar({
-  id: 'resizeAspect',
-  options: {
-    values: Array.from(resizeOptions.keys()),
-    defaultValue: resizeOptions.keys().next().value,
-  },
-  onSelectedValueChange: (value) => {
-    const aspect = resizeOptions.get(value);
-    Object.assign(viewportGrid.style, aspect.viewportGridStyle);
-    viewports.forEach((viewport) => {
-      Object.assign(viewport.element.style, aspect.viewportStyle);
-    });
-  },
-});
-
-function setUpSynchronizers() {
-  const synchronizer = createPresentationViewSynchronizer(
-    synchronizerId,
-    synchronizerOptions
-  );
-
-  // Add viewports to VOI synchronizers
-  viewportIds.forEach((viewportId) => {
-    synchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-}
 
 let resizeTimeout = null;
 const resizeObserver = new ResizeObserver(() => {
@@ -397,6 +325,43 @@ function resize() {
     viewports.forEach((viewport, idx) => {
       viewport.setViewPresentation(presentations[idx]);
     });
+  }
+}
+
+/**
+ * Handles the updates from the source viewports by choosing one or MORE
+ * of the viewports to apply the update to.  By default, only viewports
+ * showing the same orientation and same stack are navigated/applied updates.
+ *
+ * If match on orientation is false, it applies to all viewports that contain
+ * the same image set and are capable of the new orientation.
+ *
+ * If applyPresentation is true, then viewports which do NOT match get the presentation
+ * applied additionally.
+ */
+function viewportRenderedListener(event) {
+  const { element } = event.detail;
+  const { viewport: renderedViewport } = getEnabledElement(element);
+  viewport = renderedViewport;
+  const viewRef = renderedViewport.getViewReference();
+  const viewPres = renderedViewport.getViewPresentation();
+  for (const destElement of setViewElements) {
+    const { viewport: destViewport } = getEnabledElement(destElement);
+    if (
+      destViewport.isReferenceViewable(viewRef, {
+        withNavigation: true,
+        asVolume: false,
+        withOrientation,
+      })
+    ) {
+      destViewport.setViewReference(viewRef);
+      destViewport.setViewPresentation(viewPres);
+      destViewport.render();
+    } else if (applyPresentation) {
+      // Apply the presentation values even though the reference isn't compatible.
+      destViewport.setViewPresentation(viewPres);
+      destViewport.render();
+    }
   }
 }
 
@@ -436,12 +401,21 @@ async function run() {
   // Create the viewports
   const viewportInputArray = [
     {
+      viewportId: viewportId0,
+      stackImageIds: imageIds,
+      type: ViewportType.STACK,
+      element: element0,
+      defaultOptions: {
+        background: <Types.Point3>[0, 0.3, 0],
+      },
+    },
+    {
       viewportId: viewportId1,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 0, 0.5],
+        background: <Types.Point3>[0, 0, 0.3],
       },
     },
     {
@@ -450,7 +424,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0.5, 0.5, 0],
+        background: <Types.Point3>[0, 0, 0.6],
       },
     },
     {
@@ -459,26 +433,29 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0.5, 0],
+        background: <Types.Point3>[0, 0, 0.9],
       },
     },
     {
       viewportId: viewportId4,
+      stackImageIds,
       type: ViewportType.STACK,
       element: element4,
       defaultOptions: {
-        background: <Types.Point3>[0, 0.5, 0.5],
-      },
-    },
-    {
-      viewportId: viewportId5,
-      type: ViewportType.STACK,
-      element: element5,
-      defaultOptions: {
-        background: <Types.Point3>[0, 0, 0.5],
+        background: <Types.Point3>[0, 0.5, 0],
       },
     },
   ];
+  for (let i = 0; i < setViewElements.length; i++) {
+    const baseViewInput = viewportInputArray[i];
+    const newViewInput = {
+      ...baseViewInput,
+      viewportId: `${baseViewInput.viewportId}-setView`,
+      element: setViewElements[i],
+    };
+    viewportInputArray.push(newViewInput);
+    viewportIds.push(newViewInput.viewportId);
+  }
 
   renderingEngine.setViewports(viewportInputArray);
 
@@ -494,23 +471,23 @@ async function run() {
         callback: setCtTransferFunctionForVolumeActor,
       },
     ],
-    [viewportId1, viewportId2, viewportId3]
+    viewportInputArray
+      .filter((it) => it.type === ViewportType.ORTHOGRAPHIC)
+      .map((it) => it.viewportId)
   );
 
-  const stackViewport5 = renderingEngine.getViewport(
-    viewportId5
-  ) as Types.IStackViewport;
-  await stackViewport5.setStack(stackImageIds);
-  // stackViewport5.setProperties({
-  //   interpolationType: Enums.InterpolationType.NEAREST,
-  // });
-
-  const stackViewport4 = renderingEngine.getViewport(
-    viewportId4
-  ) as Types.IStackViewport;
-  await stackViewport4.setStack(imageIds);
+  for (const viewportInput of viewportInputArray) {
+    const { stackImageIds: idsForStack, viewportId } = viewportInput;
+    if (!idsForStack) {
+      continue;
+    }
+    const stackViewport = <IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    await stackViewport.setStack(idsForStack);
+  }
   // Assign the initial viewport
-  viewport = stackViewport4;
+  viewport = renderingEngine.getViewport(viewportId0);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -524,20 +501,21 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
+  toolGroup.addViewport(viewportId0, renderingEngineId);
   toolGroup.addViewport(viewportId4, renderingEngineId);
-  toolGroup.addViewport(viewportId5, renderingEngineId);
-
-  // Manipulation Tools
-  // Add Crosshairs tool and configure it to link the three viewports
-  // These viewports could use different tool groups. See the PET-CT example
-  // for a more complicated used case.
-
-  setUpSynchronizers();
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
   viewportIds.forEach((id) => viewports.push(renderingEngine.getViewport(id)));
   resizeObserver.observe(viewportGrid);
+
+  for (const element of controlElements) {
+    const { viewport } = getEnabledElement(element);
+    viewport.element.addEventListener(
+      Events.IMAGE_RENDERED,
+      viewportRenderedListener
+    );
+  }
 }
 
 run();

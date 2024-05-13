@@ -15,7 +15,12 @@ import BoundsLPS from './BoundsLPS';
  * set of points.
  */
 export type ViewReferenceSpecifier = {
-  /** The slice index within the current viewport camera to get a reference for */
+  /**
+   * The slice index within the current viewport camera to get a reference for.
+   * Note that slice indexes are dependent on the particular view being shown
+   * and cannot be shared across different view types such as stacks and
+   * volumes, or two viewports showing different orientations or slab thicknesses.
+   */
   sliceIndex?: number | [number, number];
   /**
    * Specifies to get a view reference that refers to the generic frame of
@@ -47,12 +52,15 @@ export type ReferenceCompatibleOptions = {
   withNavigation?: boolean;
   /**
    * For a stack viewport, return true if this viewport could show the given
-   * view if it were converted into a volume viewport, while for a volume,
-   * could it be shown if the camera/orientation were changed.
-   * That is, is the specified view showing an image in the stack but with a
-   * different orientation than acquisition.
+   * view if it were converted into a volume viewport.  Has no affect on volume
+   * viewports.
    */
   asVolume?: boolean;
+  /**
+   * For volume viewports, return true if this viewport could show the given view
+   * if the orientation was changed.
+   */
+  withOrientation?: boolean;
   /**
    * Use this imageURI for testing - may or may not be the current one.
    * Should be a straight contains URI for the set of imageIds in any of
@@ -86,15 +94,39 @@ export type ViewReference = {
   referencedImageId?: string;
 
   /**
-   * The focal point of the camera in world space
+   * The focal point of the camera in world space.
+   * The focal point is used for to define the stack positioning, but not the
+   * zoom/pan (which is defined by the view presentation
+   * object.)
+   *
+   * Single point objects (probe etc) should use the probe point as the camera
+   * focal point as that allows omitting the view plane normal and showing the probe
+   * in any orientation.
    */
   cameraFocalPoint?: Point3;
   /**
-   * The normal for the current view
+   * The normal for the current view.  This defines the plane used to show the
+   * 2d annotation.  This should be omitted if the annotation is a point to
+   * allows for single-point annotations.
    */
   viewPlaneNormal?: Point3;
   /**
-   * The slice index or range for this view
+   * The view up - this is only used for resetting orientation
+   */
+  viewUp?: Point3;
+  /**
+   * The slice index or range for this view.
+   * <b>NOTE</b> The slice index is relative to the volume or stack of images.
+   * You cannot apply a slice index from one volume to another as they do NOT
+   * apply.   The referencedImageId should belong to the volume you are trying
+   * to apply to, the viewPlane normal should be identical, and then you can
+   * apply the sliceIndex.
+   *
+   * For stack viewports, the referencedImageId should occur at the given slice index.
+   *
+   * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
+   * within the stack of images - subsequent slice indexes can be at opposite
+   * ends or can be co-incident but separate types of images.
    */
   sliceIndex?: number | [number, number];
 
@@ -292,11 +324,22 @@ interface IViewport {
   setPan(pan: Point2, storeAsInitialCamera?: boolean);
   /** sets the camera */
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+  /** Resets the camera */
+  resetCamera(
+    resetPan?: boolean,
+    resetZoom?: boolean,
+    resetToCenter?: boolean,
+    storeAsInitialCamera?: boolean
+  ): boolean;
   /** Gets the number of slices in the current camera orientation */
   getNumberOfSlices(): number;
   /** Gets the current slice in the current camera orientation */
   getCurrentImageIdIndex(): number;
-  /** Gets a referenced image url of some sort - could be a real image id, or could be a URL with parameters */
+  /**
+   * Gets a referenced image url of some sort - could be a real image id, or
+   * could be a URL with parameters. Regardless it refers to the currently displaying
+   * image as a string value.
+   */
   getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
   /**
    * Gets a view target specifying WHAT a view is displaying,
@@ -343,20 +386,23 @@ interface IViewport {
    * @param viewPresSel - select which attributes to display.
    */
   getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
+
   /**
-   * Selects both what a viewport is showing (which image/slice) as well as how it
-   * is being presented.  If only one or the other values is provided, the
-   * currently applied view for the other attribute is preserved, allowing for
-   * remember specific sets of attributes.
-   *
-   * @param viewRef - the basic positioning in terms of what image id/slice index/orientation to display
-   *        * The viewRef must be applicable to the current stack or volume, otherwise an exception will be thrown
-   * @param viewPres - the presentation information to apply to the current image (as chosen above)
+   * Navigates this viewport to the specified viewRef.
+   * Throws an exception if that isn't possible on this viewport.
+   * Returns immediately if viewRef isn't defined.
    */
-  setView(viewRef?: ViewReference, viewPres?: ViewPresentation);
+  setViewReference(viewRef: ViewReference);
+
+  /**
+   * Sets the presentation parameters from the specified viewPres object.
+   * Sets display area, zoom, pan, rotation, voi LUT
+   */
+  setViewPresentation(viewPres: ViewPresentation);
 
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
+
   _getCorners(bounds: Array<number>): Array<number>[];
   updateRenderingPipeline: () => void;
 }
