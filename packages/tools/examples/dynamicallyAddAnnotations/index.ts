@@ -226,8 +226,6 @@ const addProgrammaticAnnotation = (
   } = viewport.getCamera();
 
   const annotation = {
-    highlighted: true,
-    invalidated: false,
     metadata: {
       toolName: 'Length',
       referencedImageId,
@@ -240,23 +238,10 @@ const addProgrammaticAnnotation = (
     data: {
       handles: {
         points: [<Types.Point3>[...start], <Types.Point3>[...end]],
-        activeHandleIndex: null,
-        textBox: {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        },
+        textBox: {},
       },
-      label: '',
       cachedStats: {},
     },
-    isLocked: true,
-    isVisible: true,
   };
 
   cornerstoneTools.annotation.state.addAnnotation(annotation, viewport.element);
