@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.71.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.4...v1.71.5) (2024-05-13)
+
+### Bug Fixes
+
+- setView wasn't navigating correctly, nor was getViewReference getting the right ref ([#1235](https://github.com/cornerstonejs/cornerstone3D/issues/1235)) ([0fb4e23](https://github.com/cornerstonejs/cornerstone3D/commit/0fb4e2319b3e399c44554ed280dcfd42fabe63b6))
+
 ## [1.71.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.3...v1.71.4) (2024-05-09)
 
 **Note:** Version bump only for package docs
