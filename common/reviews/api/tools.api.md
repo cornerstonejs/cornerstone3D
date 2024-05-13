@@ -1231,9 +1231,6 @@ function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 function clip_2(val: number, low: number, high: number): number;
 
 // @public (undocumented)
-function clip_3(val: any, low: any, high: any): number;
-
-// @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
     index: number;
 };
@@ -2368,7 +2365,7 @@ declare namespace EventTypes_2 {
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function extractImageData(viewport: any): {
+function extractWindowLevelRegionToolData(viewport: any): {
     scalarData: any;
     width: any;
     height: any;
@@ -2377,8 +2374,6 @@ function extractImageData(viewport: any): {
     rows: any;
     columns: any;
     color: any;
-    slope: any;
-    intercept: any;
 };
 
 // @public (undocumented)
@@ -2655,7 +2650,7 @@ function getLineSegmentIntersectionsIndexes(polyline: Types_2.Point2[], p1: Type
 function getLockedSegments(segmentationId: string): number[] | [];
 
 // @public (undocumented)
-function getLuminance(imageData: any, x: any, y: any, width: any, height: any): any[];
+function getLuminanceFromRegion(imageData: any, x: any, y: any, width: any, height: any): any[];
 
 // @public (undocumented)
 function getMeanPoints(points: IPoints[]): IPoints;
@@ -6299,10 +6294,9 @@ type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutO
 
 declare namespace windowLevel_2 {
     export {
-        getLuminance,
+        getLuminanceFromRegion,
         calculateMinMaxMean,
-        clip_3 as clip,
-        extractImageData
+        extractWindowLevelRegionToolData
     }
 }
 
