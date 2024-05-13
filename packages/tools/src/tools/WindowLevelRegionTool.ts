@@ -51,6 +51,7 @@ class WindowLevelRegionTool extends AnnotationTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // The minimum window width to be applied to the viewport regardless of the calculated value
         minWindowWidth: 10,
       },
     }
@@ -313,7 +314,7 @@ class WindowLevelRegionTool extends AnnotationTool {
   applyWindowLevelRegion = (annotation, element): void => {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const imageData = windowLevel.extractImageData(viewport);
+    const imageData = windowLevel.extractWindowLevelRegionToolData(viewport);
     const { data } = annotation;
     const { points } = data.handles;
 
@@ -332,10 +333,10 @@ class WindowLevelRegionTool extends AnnotationTool {
     height = Math.floor(Math.min(height, Math.abs(imageData.height - top)));
 
     // Get the pixel data in the rectangular region
-    const pixelLuminanceData = windowLevel.getLuminance(
+    const pixelLuminanceData = windowLevel.getLuminanceFromRegion(
       imageData,
-      left,
-      top,
+      Math.round(left),
+      Math.round(top),
       width,
       height
     );

@@ -1,6 +1,11 @@
-import { getLuminance } from './getLuminance';
+import { getLuminanceFromRegion } from './getLuminanceFromRegion';
 import { calculateMinMaxMean } from './calculateMinMaxMean';
 import { clip } from './clip';
-import { extractImageData } from './extractProperties';
+import { extractWindowLevelRegionToolData } from './extractWindowLevelRegionToolData';
 
-export { getLuminance, calculateMinMaxMean, clip, extractImageData };
+export {
+  getLuminanceFromRegion,
+  calculateMinMaxMean,
+  clip,
+  extractWindowLevelRegionToolData,
+};

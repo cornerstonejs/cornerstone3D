@@ -5,7 +5,7 @@ import {
   StackViewport,
 } from '@cornerstonejs/core';
 
-function extractImageData(viewport) {
+function extractWindowLevelRegionToolData(viewport) {
   if (viewport instanceof VolumeViewport) {
     return extractImageDataVolume(viewport);
   }
@@ -27,8 +27,6 @@ function extractImageDataVolume(viewport) {
   const { metadata, cornerstoneImageMetaData } = volume;
   const { Rows: rows, Columns: columns } = metadata;
   const { color } = cornerstoneImageMetaData;
-  const intercept = 0;
-  const slope = 1;
   return {
     scalarData,
     width,
@@ -38,8 +36,6 @@ function extractImageDataVolume(viewport) {
     rows,
     columns,
     color,
-    slope,
-    intercept,
   };
 }
 
@@ -50,8 +46,7 @@ function extractImageDataStack(viewport) {
     csUtils.getMinMax(scalarData);
   const width = imageData.dimensions[0];
   const height = imageData.dimensions[1];
-  const { rows, columns, color, slope, intercept } =
-    viewport.getCornerstoneImage();
+  const { rows, columns, color } = viewport.getCornerstoneImage();
 
   return {
     scalarData,
@@ -62,9 +57,7 @@ function extractImageDataStack(viewport) {
     rows,
     columns,
     color,
-    slope,
-    intercept,
   };
 }
 
-export { extractImageData };
+export { extractWindowLevelRegionToolData };
