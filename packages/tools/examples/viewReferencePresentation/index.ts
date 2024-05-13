@@ -354,7 +354,8 @@ function viewportRenderedListener(event) {
         withOrientation,
       })
     ) {
-      destViewport.setView(viewRef, viewPres);
+      destViewport.setViewReference(viewRef);
+      destViewport.setViewPresentation(viewPres);
       destViewport.render();
     } else if (applyPresentation) {
       // Apply the presentation values even though the reference isn't compatible.

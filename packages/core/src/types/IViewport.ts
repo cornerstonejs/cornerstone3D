@@ -388,18 +388,6 @@ interface IViewport {
   getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
 
   /**
-   * Selects both what a viewport is showing (which image/slice) as well as how it
-   * is being presented.  If only one or the other values is provided, the
-   * currently applied view for the other attribute is preserved, allowing for
-   * remember specific sets of attributes.
-   *
-   * @param viewRef - the basic positioning in terms of what image id/slice index/orientation to display
-   *        * The viewRef must be applicable to the current stack or volume, otherwise an exception will be thrown
-   * @param viewPres - the presentation information to apply to the current image (as chosen above)
-   */
-  setView(viewRef: ViewReference, viewPres: ViewPresentation);
-
-  /**
    * Navigates this viewport to the specified viewRef.
    * Throws an exception if that isn't possible on this viewport.
    * Returns immediately if viewRef isn't defined.

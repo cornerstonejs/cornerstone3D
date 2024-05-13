@@ -40,7 +40,7 @@ where the annotation metadata specifies which image it applies to. The view refe
 case is used both to determine if an image is applicable to a given view, as well as to
 determine if a viewport could navigate to display the given annotation, either with or without
 navigation and/or orientation changes. Then, to navigate to the given reference,
-the `viewport.setView` is called to apply the given navigation. This can apply to
+the `viewport.setViewReference` is called to apply the given navigation. This can apply to
 both orthographic and stack viewports.
 
 The `ViewReference` contains a number of fields that determine the view, the
@@ -153,13 +153,12 @@ Some typical uses cases for view presentation are:
 - Resizing of viewports, used to remember the relative positions so that the
   image remains in the same "relative" position.
 
-## `setView`
+## `setViewReference` and `setViewPresentation`
 
-The `viewport.setView` command takes both a reference and a presentation. This
-combination allows setting both what and how something is viewed at once, or
-setting them individually by passing null/undefined for the other parameter.
-This may reduce the number of events being fired and performs the calculations
-in the correct ordering (eg the presentation needs to occur after the reference).
+The `viewport.setViewReference` and `viewport.setViewPresentation` navigate
+to the specified reference and apply the given presentation. If both are being
+applied, then the view reference must be applied first. A render is required
+afterwards to complete the view change since multiple parts of the view may be affected.
 
 Some example code is shown below for various uses. This assumes that
 `viewports` is an array of viewports of various types, and that `viewport` is

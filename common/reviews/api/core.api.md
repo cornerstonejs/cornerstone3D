@@ -2341,8 +2341,6 @@ interface IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
-    setView(viewRef: ViewReference, viewPres: ViewPresentation): any;
-    // (undocumented)
     setViewPresentation(viewPres: ViewPresentation): any;
     // (undocumented)
     setViewReference(viewRef: ViewReference): any;
@@ -3946,8 +3944,6 @@ export class Viewport implements IViewport {
     setRendered(): void;
     // (undocumented)
     protected setRotation: (_rotation: number) => void;
-    // (undocumented)
-    setView(viewRef: ViewReference, viewPres: ViewPresentation): void;
     // (undocumented)
     setViewPresentation(viewPres: ViewPresentation): void;
     // (undocumented)

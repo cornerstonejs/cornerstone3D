@@ -1699,20 +1699,6 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Sets the given view.  This can apply both the view reference and view presentation
-   * without getting multiple event notifications on shared values like camera updates or
-   * flickers as multiple changes are applied.
-   *
-   * @param viewRef - the basic positioning in terms of what image id/slice index/orientation to display
-   *        * The viewRef must be applicable to the current stack or volume, otherwise an exception will be thrown
-   * @param viewPres - the presentation information to apply to the current image (as chosen above)
-   */
-  public setView(viewRef: ViewReference, viewPres: ViewPresentation) {
-    this.setViewReference(viewRef);
-    this.setViewPresentation(viewPres);
-  }
-
-  /**
    * Navigates to the image specified by the viewRef.
    */
   public setViewReference(viewRef: ViewReference) {
