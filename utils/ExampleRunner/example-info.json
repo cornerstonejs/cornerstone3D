@@ -433,6 +433,10 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
+      },
+      "dynamicallyAddAnnotations": {
+        "name": "Dynamically Add Annotations",
+        "description": "Demonstrates how to dynamically add annotations to a viewport"
       }
     },
     "polymorph-segmentation": {
