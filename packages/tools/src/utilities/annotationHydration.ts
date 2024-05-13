@@ -3,24 +3,26 @@ import {
   utilities,
   BaseVolumeViewport,
   StackViewport,
-  VideoViewport,
   cache,
+  metaData,
 } from '@cornerstonejs/core';
 import { Annotation } from '../types';
 import { addAnnotation } from '../stateManagement';
+import { vec3 } from 'gl-matrix';
 
-function hydration(
+function annotationHydration(
   viewport: Types.IViewport,
   toolName: string,
   worldPoints: Types.Point3[],
   options?: {
     FrameOfReferenceUID?: string;
+    annotationUID?: string;
   }
 ): Annotation {
   const viewReference = viewport.getViewReference();
   const { viewPlaneNormal, FrameOfReferenceUID } = viewReference;
   const annotation = {
-    annotationUID: utilities.uuidv4(),
+    annotationUID: options?.annotationUID || utilities.uuidv4(),
     data: {
       handles: {
         points: worldPoints,
@@ -52,15 +54,16 @@ function getReferencedImageId(
   worldPos: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): string {
-  const targetId = getTargetId(viewport);
-
   let referencedImageId;
 
   if (viewport instanceof StackViewport) {
-    referencedImageId = targetId.split('imageId:')[1];
-  } else if (viewport instanceof VideoViewport) {
-    referencedImageId = targetId.split('videoId:')[1];
-  } else {
+    referencedImageId = getClosestImageIdForStackViewport(
+      viewport,
+      worldPos,
+      viewPlaneNormal
+    );
+  } else if (viewport instanceof BaseVolumeViewport) {
+    const targetId = getTargetId(viewport);
     const volumeId = utilities.getVolumeId(targetId);
     const imageVolume = cache.getVolume(volumeId);
 
@@ -68,6 +71,10 @@ function getReferencedImageId(
       imageVolume,
       worldPos,
       viewPlaneNormal
+    );
+  } else {
+    throw new Error(
+      'getReferencedImageId: viewport must be a StackViewport or BaseVolumeViewport'
     );
   }
 
@@ -95,4 +102,42 @@ function getTargetVolumeId(viewport: Types.IViewport): string | undefined {
     (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
   )?.uid;
 }
-export { hydration };
+
+function getClosestImageIdForStackViewport(
+  viewport: StackViewport,
+  worldPos: Types.Point3,
+  viewPlaneNormal: Types.Point3
+): string {
+  const imageIds = viewport.getImageIds();
+  if (!imageIds || !imageIds.length) {
+    return;
+  }
+
+  const distanceImagePairs = imageIds.map((imageId) => {
+    const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
+    const distance = calculateDistanceToImage(
+      worldPos,
+      imagePositionPatient,
+      viewPlaneNormal
+    );
+    return { imageId, distance };
+  });
+
+  distanceImagePairs.sort((a, b) => a.distance - b.distance);
+
+  return distanceImagePairs[0].imageId;
+}
+
+function calculateDistanceToImage(
+  worldPos: Types.Point3,
+  ImagePositionPatient: Types.Point3,
+  viewPlaneNormal: Types.Point3
+): number {
+  const dir = vec3.create();
+  vec3.sub(dir, worldPos, ImagePositionPatient);
+
+  const dot = vec3.dot(dir, viewPlaneNormal);
+
+  return Math.abs(dot);
+}
+export { annotationHydration };

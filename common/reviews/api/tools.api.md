@@ -362,6 +362,12 @@ type AnnotationGroupSelector = HTMLDivElement | string;
 type AnnotationHandle = Types_2.Point3;
 
 // @public (undocumented)
+function annotationHydration(viewport: Types_2.IViewport, toolName: string, worldPoints: Types_2.Point3[], options?: {
+    FrameOfReferenceUID?: string;
+    annotationUID?: string;
+}): Annotation;
+
+// @public (undocumented)
 type AnnotationInterpolationCompletedEventDetail = {
     annotation: InterpolationROIAnnotation;
     element: HTMLDivElement;
@@ -2785,11 +2791,6 @@ type GroupSpecificAnnotations = {
 
 // @public (undocumented)
 function hideElementCursor(element: HTMLDivElement): void;
-
-// @public (undocumented)
-function hydration(viewport: Types_2.IViewport, toolName: string, worldPoints: Types_2.Point3[], options?: {
-    FrameOfReferenceUID?: string;
-}): Annotation;
 
 // @public (undocumented)
 interface IAnnotationManager {
@@ -6086,7 +6087,7 @@ declare namespace utilities {
         voi,
         AnnotationFrameRange as annotationFrameRange,
         contourSegmentation,
-        hydration
+        annotationHydration
     }
 }
 export { utilities }

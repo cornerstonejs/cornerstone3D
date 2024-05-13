@@ -217,7 +217,7 @@ const addProgrammaticAnnotation = (
     end = viewport.canvasToWorld(<Types.Point2>[...end]);
   }
 
-  cornerstoneTools.utilities.hydration(viewport, 'Length', [
+  cornerstoneTools.utilities.annotationHydration(viewport, 'Length', [
     start as Types.Point3,
     end as Types.Point3,
   ]);
