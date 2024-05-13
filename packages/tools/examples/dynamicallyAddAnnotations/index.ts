@@ -216,35 +216,12 @@ const addProgrammaticAnnotation = (
     start = viewport.canvasToWorld(<Types.Point2>[...start]);
     end = viewport.canvasToWorld(<Types.Point2>[...end]);
   }
-  const referencedImageId = viewport.getCurrentImageId();
-  const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-  const {
-    viewUp,
-    position: cameraPosition,
-    viewPlaneNormal,
-    focalPoint: cameraFocalPoint,
-  } = viewport.getCamera();
 
-  const annotation = {
-    metadata: {
-      toolName: 'Length',
-      referencedImageId,
-      viewUp,
-      cameraPosition,
-      FrameOfReferenceUID,
-      viewPlaneNormal,
-      cameraFocalPoint,
-    },
-    data: {
-      handles: {
-        points: [<Types.Point3>[...start], <Types.Point3>[...end]],
-        textBox: {},
-      },
-      cachedStats: {},
-    },
-  };
+  cornerstoneTools.utilities.hydration(viewport, 'Length', [
+    start as Types.Point3,
+    end as Types.Point3,
+  ]);
 
-  cornerstoneTools.annotation.state.addAnnotation(annotation, viewport.element);
   cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds(
     renderingEngine,
     [viewport.id]
