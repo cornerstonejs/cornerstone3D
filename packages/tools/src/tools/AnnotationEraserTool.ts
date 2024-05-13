@@ -64,7 +64,7 @@ class AnnotationEraserTool extends BaseTool {
         toolInstance.filterInteractableAnnotationsForElement(
           element,
           annotations
-        );
+        ) || [];
 
       for (const annotation of interactableAnnotations) {
         if (
