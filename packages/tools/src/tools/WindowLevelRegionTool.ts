@@ -29,6 +29,8 @@ import { StyleSpecifier } from '../types/AnnotationStyle';
 
 import { windowLevel } from '../utilities/voi';
 
+import { clip } from '../utilities';
+
 /**
  * WindowLevelRegion tool manipulates the windowLevel applied to a viewport. It
  * provides a way to set the windowCenter and windowWidth of a viewport
@@ -327,8 +329,8 @@ class WindowLevelRegionTool extends AnnotationTool {
     let width = Math.abs(startCanvas[0] - endCanvas[0]);
     let height = Math.abs(startCanvas[1] - endCanvas[1]);
 
-    left = windowLevel.clip(left, 0, imageData.width);
-    top = windowLevel.clip(top, 0, imageData.height);
+    left = clip(left, 0, imageData.width);
+    top = clip(top, 0, imageData.height);
     width = Math.floor(Math.min(width, Math.abs(imageData.width - left)));
     height = Math.floor(Math.min(height, Math.abs(imageData.height - top)));
 
