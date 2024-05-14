@@ -73,6 +73,7 @@ import {
   EraserTool,
   SculptorTool,
   SegmentSelectTool,
+  WindowLevelRegionTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -96,6 +97,7 @@ export {
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
+  WindowLevelRegionTool,
   ZoomTool,
   StackScrollTool,
   PlanarRotateTool,

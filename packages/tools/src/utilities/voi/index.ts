@@ -1,3 +1,4 @@
 import * as colorbar from './colorbar';
+import * as windowLevel from './windowlevel';
 
-export { colorbar };
+export { colorbar, windowLevel };
