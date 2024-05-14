@@ -128,6 +128,24 @@ function renderClosedContour(
   const allContours = [canvasPolyline, ...childContours];
   const polylineUID = '1';
 
+  if (annotation.data.contour.isPoint) {
+    // Since there's only one point, we will use it as the center of the circle
+    const center = canvasPolyline[0];
+    const radius = 3;
+    const numberOfPoints = 100;
+    const circlePoints = [];
+
+    for (let i = 0; i < numberOfPoints; i++) {
+      const angle = (i / numberOfPoints) * 2 * Math.PI;
+      const x = center[0] + radius * Math.cos(angle);
+      const y = center[1] + radius * Math.sin(angle);
+      circlePoints.push([x, y]);
+    }
+
+    // Replace the original contour with the generated circle points
+    allContours[0] = circlePoints;
+  }
+
   drawPathSvg(
     svgDrawingHelper,
     annotation.annotationUID,

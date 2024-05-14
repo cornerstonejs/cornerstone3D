@@ -19,6 +19,7 @@ export type ContourAnnotationData = {
       polyline: Types.Point3[];
       closed: boolean;
       windingDirection?: ContourWindingDirection;
+      isPoint?: boolean;
     };
   };
   onInterpolationComplete?: () => void;

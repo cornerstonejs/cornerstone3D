@@ -150,6 +150,7 @@ function addContourSetsToElement(
           contour: {
             closed: true,
             polyline: points,
+            isPoint: points?.length === 1,
           },
           segmentation: {
             segmentationId,
