@@ -138,6 +138,10 @@
         "name": "Resize viewport and change aspect ratio",
         "description": "Resize the viewport and allow various aspect ratios/conditions"
       },
+      "viewReferencePresentation": {
+        "name": "Apply view reference and/or presentation parameters",
+        "description": "Demonstrates how to apply various view/reference presentation parameters."
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
@@ -203,6 +207,10 @@
       "planarFreehandROITool": {
         "name": "Freehand ROI Tool",
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
+      },
+      "SculptorTool": {
+        "name": "Sculptor Tool",
+        "description": "Demonstrates sculpting of freehand ROIs and FreehandContourSegmentations"
       },
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",

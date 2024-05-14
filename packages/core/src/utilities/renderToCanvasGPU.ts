@@ -113,7 +113,7 @@ export default function renderToCanvasGPU(
       if (viewReference) {
         const useViewRef = viewReference;
         viewReference = null;
-        viewport.setView(useViewRef);
+        viewport.setViewReference(useViewRef);
         viewport.render();
         return;
       }

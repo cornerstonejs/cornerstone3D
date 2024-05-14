@@ -1789,6 +1789,8 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _onNewVolume: (e: any) => void;
     // (undocumented)
+    onResetCamera: (evt: any) => void;
+    // (undocumented)
     onSetToolActive(): void;
     // (undocumented)
     onSetToolDisabled(): void;
@@ -2934,6 +2936,22 @@ function isClosed(polyline: Types_2.Point2[]): boolean;
 
 // @public (undocumented)
 function isContourSegmentationAnnotation(annotation: Annotation): annotation is ContourSegmentationAnnotation;
+
+// @public (undocumented)
+interface ISculptToolShape {
+    // (undocumented)
+    configureToolSize(evt: EventTypes_2.InteractionEventType): void;
+    // (undocumented)
+    getInsertPosition(previousIndex: number, nextIndex: number, sculptData: SculptData): Types_2.Point3;
+    // (undocumented)
+    getMaxSpacing(minSpacing: number): number;
+    // (undocumented)
+    pushHandles(viewport: Types_2.IViewport, sculptData: SculptData): PushedHandles;
+    // (undocumented)
+    renderShape(svgDrawingHelper: SVGDrawingHelper, canvasLocation: Types_2.Point2, options: any): void;
+    // (undocumented)
+    updateToolSize(canvasCoords: Types_2.Point2, viewport: Types_2.IViewport, activeAnnotation: ContourAnnotation): void;
+}
 
 // @public (undocumented)
 function isObject(value: any): boolean;
@@ -4629,6 +4647,33 @@ type ScrollOptions_2 = {
 };
 
 // @public (undocumented)
+export class SculptorTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected activateModify(element: HTMLDivElement): void;
+    // (undocumented)
+    protected deactivateModify(element: HTMLDivElement): void;
+    // (undocumented)
+    protected interpolatePointsWithinMaxSpacing(i: number, points: Array<Types_2.Point3>, indicesToInsertAfter: Array<number>, maxSpacing: number): void;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    registeredShapes: Map<any, any>;
+    // (undocumented)
+    registerShapes<T extends ISculptToolShape>(shapeName: string, shapeClass: new () => T): void;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    protected sculpt(eventData: any, points: Array<Types_2.Point3>): void;
+    // (undocumented)
+    setToolShape(toolShape: string): void;
+    // (undocumented)
+    static toolName: string;
+}
+
+// @public (undocumented)
 type Segmentation = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
@@ -5739,15 +5784,25 @@ export class TrackballRotateTool extends BaseTool {
     // (undocumented)
     _dragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
+    _getViewportsInfo: () => any[];
+    // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
+    onSetToolActive: () => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
+    _resizeObservers: Map<any, any>;
     // (undocumented)
     rotateCamera: (viewport: any, centerWorld: any, axis: any, angle: any) => void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _viewportAddedListener: (evt: any) => void;
 }
 
 // @public (undocumented)
@@ -5850,6 +5905,7 @@ declare namespace Types {
         FloodFillGetter,
         FloodFillOptions,
         ContourSegmentationData,
+        ISculptToolShape,
         Statistics,
         NamedStatistics,
         LabelmapToolOperationData,

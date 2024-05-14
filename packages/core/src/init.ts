@@ -95,15 +95,16 @@ function _hasNorm16TextureSupport() {
   return false;
 }
 
-function isMobile() {
-  const ua = navigator.userAgent;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    ua
-  );
-}
-
-function isMobileIOS() {
-  return /iPhone|iPod/.test(navigator.platform);
+function isIOS() {
+  if (/iPad|iPhone|iPod/.test(navigator.platform)) {
+    return true;
+  } else {
+    return (
+      navigator.maxTouchPoints &&
+      navigator.maxTouchPoints > 2 &&
+      /MacIntel/.test(navigator.platform)
+    );
+  }
 }
 
 /**
@@ -123,22 +124,18 @@ async function init(configuration = config): Promise<boolean> {
   // merge configs
   config = deepMerge(defaultConfig, configuration);
 
-  config.isMobile = isMobile();
-
-  if (config.isMobile) {
+  if (isIOS()) {
     // iOS devices don't have support for OES_texture_float_linear
     // and thus we should use native data type if we are on iOS
-    if (isMobileIOS()) {
-      config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
+    config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
 
-      if (!config.rendering.useNorm16Texture) {
-        if (configuration.rendering?.preferSizeOverAccuracy) {
-          config.rendering.preferSizeOverAccuracy = true;
-        } else {
-          console.log(
-            'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
-          );
-        }
+    if (!config.rendering.useNorm16Texture) {
+      if (configuration.rendering?.preferSizeOverAccuracy) {
+        config.rendering.preferSizeOverAccuracy = true;
+      } else {
+        console.log(
+          'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
+        );
       }
     }
   }
@@ -201,16 +198,11 @@ function setPreferSizeOverAccuracy(status: boolean): void {
  * So we should not use float textures on IOS devices.
  */
 function canRenderFloatTextures(): boolean {
-  const isMobile = config.isMobile;
-  if (!isMobile) {
+  if (!isIOS()) {
     return true;
   }
 
-  if (isMobileIOS()) {
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
 /**
