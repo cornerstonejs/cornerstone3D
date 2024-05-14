@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.72.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.7...v1.72.0) (2024-05-14)
+
+### Features
+
+- **tool:** Window Level Region Tool ([#1244](https://github.com/cornerstonejs/cornerstone3D/issues/1244)) ([2baeb59](https://github.com/cornerstonejs/cornerstone3D/commit/2baeb59532df6bcbf9723c1ba36faf29c4014809))
+
 ## [1.71.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.71.6...v1.71.7) (2024-05-13)
 
 ### Bug Fixes
