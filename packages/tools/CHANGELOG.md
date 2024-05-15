@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.73.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.6...v1.73.0) (2024-05-15)
+
+### Features
+
+- **RT:** render single point segments in RT ([#1249](https://github.com/cornerstonejs/cornerstone3D/issues/1249)) ([9daa34e](https://github.com/cornerstonejs/cornerstone3D/commit/9daa34eb631a41250215e0390b25d9a2ff402e1a))
+
 ## [1.72.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.5...v1.72.6) (2024-05-15)
 
 **Note:** Version bump only for package @cornerstonejs/tools

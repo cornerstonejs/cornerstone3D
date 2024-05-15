@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "1.72.6",
+    "version": "1.73.0",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "src": "src/index.ts",
     "main": "./dist/@cornerstonejs/adapters.es.js",
