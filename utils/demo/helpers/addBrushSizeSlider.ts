@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/tools';
+import { utilities as csUtilities } from '@cornerstonejs/tools';
 
 import { configElement } from './createElement';
 import addSliderToToolbar from './addSliderToToolbar';
@@ -27,7 +27,7 @@ export default function addBrushSizeSlider(config: configBrush): void {
     onSelectedValueChange: (valueAsStringOrNumber) => {
       const value = Number(valueAsStringOrNumber);
 
-      utilities.segmentation.setBrushSizeForToolGroup(
+      csUtilities.segmentation.setBrushSizeForToolGroup(
         config.toolGroupId,
         value
       );
