@@ -24,7 +24,7 @@ import {
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-  drawRect as drawRectSvg,
+  drawRectByCoordinates as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
 import { Events } from '../../enums';
@@ -748,8 +748,7 @@ class RectangleROITool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         rectangleUID,
-        canvasCoordinates[0],
-        canvasCoordinates[3],
+        canvasCoordinates,
         {
           color,
           lineDash,
