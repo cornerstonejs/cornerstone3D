@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.72.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.4...v1.72.5) (2024-05-15)
+
+### Bug Fixes
+
+- **dicom-normalization:** Handle case sensitivity in element and group formatting ([#1234](https://github.com/cornerstonejs/cornerstone3D/issues/1234)) ([a7859e2](https://github.com/cornerstonejs/cornerstone3D/commit/a7859e25790a141600defcd792ae27e394d7d3be))
+- **types:** getViewport(s)ForAnnotation ([#1232](https://github.com/cornerstonejs/cornerstone3D/issues/1232)) ([de97ef8](https://github.com/cornerstonejs/cornerstone3D/commit/de97ef84e5ca20d2ec73d743079894897a3371b7))
+
 ## [1.72.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.3...v1.72.4) (2024-05-15)
 
 ### Bug Fixes

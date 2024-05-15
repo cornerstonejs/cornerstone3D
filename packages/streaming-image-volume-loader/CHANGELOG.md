@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.72.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.4...v1.72.5) (2024-05-15)
+
+### Bug Fixes
+
+- **dicom-normalization:** Handle case sensitivity in element and group formatting ([#1234](https://github.com/cornerstonejs/cornerstone3D/issues/1234)) ([a7859e2](https://github.com/cornerstonejs/cornerstone3D/commit/a7859e25790a141600defcd792ae27e394d7d3be))
+
 ## [1.72.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.3...v1.72.4) (2024-05-15)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
