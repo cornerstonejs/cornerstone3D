@@ -131,7 +131,7 @@ function renderClosedContour(
   if (annotation.data.contour.isPoint) {
     // Since there's only one point, we will use it as the center of the circle
     const center = canvasPolyline[0];
-    const radius = 3;
+    const radius = 6;
     const numberOfPoints = 100;
     const circlePoints = [];
 
@@ -142,7 +142,31 @@ function renderClosedContour(
       circlePoints.push([x, y]);
     }
 
-    // Replace the original contour with the generated circle points
+    // Now let's generate the crosshair in the center of the circle
+    const crosshair = [
+      [center[0] - radius * 2, center[1]],
+      [center[0] + radius * 2, center[1]],
+      [center[0], center[1] - radius * 2],
+      [center[0], center[1] + radius * 2],
+    ] as Types.Point2[];
+
+    drawPathSvg(
+      svgDrawingHelper,
+      annotation.annotationUID,
+      polylineUID + '-crosshair_v',
+      [crosshair[0], crosshair[1]],
+      options
+    );
+
+    drawPathSvg(
+      svgDrawingHelper,
+      annotation.annotationUID,
+      polylineUID + '-crosshair_h',
+      [crosshair[2], crosshair[3]],
+      options
+    );
+
+    // Replace the contour points with the circle points
     allContours[0] = circlePoints;
   }
 
