@@ -1,11 +1,10 @@
 import { expect } from '@playwright/test';
 
-const checkForScreenshot = async (page, screenshotPath) => {
+const checkForScreenshot = async (locator, screenshotPath) => {
   try {
-    await expect(page.locator('.cornerstone-canvas').nth(8)).toHaveScreenshot(
-      screenshotPath,
-      { maxDiffPixels: 50 }
-    );
+    await expect(locator).toHaveScreenshot(screenshotPath, {
+      maxDiffPixels: 50,
+    });
     return true;
   } catch (error) {
     return false;

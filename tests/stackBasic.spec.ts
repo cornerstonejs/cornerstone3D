@@ -3,6 +3,7 @@ import {
   visitExample,
   waitForRequest,
   checkForScreenshot,
+  screenShotPaths,
 } from './utils/index';
 
 test.describe('Basic Stack', async () => {
@@ -11,11 +12,15 @@ test.describe('Basic Stack', async () => {
   }) => {
     await visitExample(page, 'stackBasic');
     await waitForRequest(page);
-    //
-    // const screenshotMatches = await checkForScreenshot(page, screenshotPath);
+    const locator = await page.locator('.cornerstone-canvas');
 
-    //   if (!screenshotMatches) {
-    //    throw new Error('Screenshot does not match.');
-    //   }
+    const screenshotMatches = await checkForScreenshot(
+      locator,
+      screenShotPaths.stackBasic.viewport
+    );
+
+    if (!screenshotMatches) {
+      throw new Error('Screenshot does not match.');
+    }
   });
 });
