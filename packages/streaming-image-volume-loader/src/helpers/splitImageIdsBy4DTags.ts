@@ -122,7 +122,7 @@ function getPhilipsPrivateBValue(imageId: string) {
 function getSiemensPrivateBValue(imageId: string) {
   // Siemens Private Diffusion B-factor tag (0019, 100c)
   // Private creator: SIEMENS MR HEADER, VR=IS, VM=1
-  let value = metaData.get('0019100c', imageId);
+  let value = metaData.get('0019100c', imageId) || metaData.get('0019100C', imageId);
 
   try {
     const { InlineBinary } = value;
