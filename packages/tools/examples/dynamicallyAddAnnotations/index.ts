@@ -1,5 +1,6 @@
 import {
   RenderingEngine,
+  utilities,
   Types,
   Enums,
   getRenderingEngine,
@@ -72,6 +73,18 @@ viewportGrid.style.gap = '5px';
 content.appendChild(viewportGrid);
 
 // Add input elements for Image Coords
+const canvasCoordsForm = document.createElement('form');
+canvasCoordsForm.style.marginBottom = '10px';
+canvasCoordsForm.innerHTML = `
+  <label style="margin-right: 20px;">Canvas Coords: Start [x, y]:</label>
+  <input  style="width:40px " type="number" id="start-i" placeholder="Start x" value="0">
+  <input  style="width:40px" type="number" id="start-j" placeholder="Start y" value="0">
+  <label style="margin-left: 52px; margin-right: 21px;">End [i, j]:</label>
+  <input  style="width:40px" type="number" id="end-i" placeholder="End i" value="100">
+  <input  style="width:40px" type="number" id="end-j" placeholder="End j" value="100">
+  <button  style="  margin-left: 52px;" type="button" id="add-canvas-coords-stack">Add Stack</button>
+  <button   type="button" id="add-image-coords-volume">Add Volume</button>
+`;
 const imageCoordsForm = document.createElement('form');
 imageCoordsForm.style.marginBottom = '10px';
 imageCoordsForm.innerHTML = `
@@ -79,8 +92,8 @@ imageCoordsForm.innerHTML = `
   <input  style="width:40px " type="number" id="start-i" placeholder="Start i" value="0">
   <input  style="width:40px" type="number" id="start-j" placeholder="Start j" value="0">
   <label style="margin-left: 52px; margin-right: 21px;">End [i, j]:</label>
-  <input  style="width:40px" type="number" id="end-i" placeholder="End i" value="0">
-  <input  style="width:40px" type="number" id="end-j" placeholder="End j" value="0">
+  <input  style="width:40px" type="number" id="end-i" placeholder="End i" value="100">
+  <input  style="width:40px" type="number" id="end-j" placeholder="End j" value="100">
   <button  style="  margin-left: 52px;" type="button" id="add-image-coords-stack">Add Stack</button>
   <button   type="button" id="add-image-coords-volume">Add Volume</button>
 
@@ -113,6 +126,7 @@ worldPosElement.innerText = 'world:';
 mousePosDiv.appendChild(canvasPosElement);
 mousePosDiv.appendChild(worldPosElement);
 content.appendChild(mousePosDiv);
+demoToolbar.appendChild(canvasCoordsForm);
 demoToolbar.appendChild(imageCoordsForm);
 demoToolbar.appendChild(worldCoordsForm);
 
@@ -134,6 +148,25 @@ document
     ];
 
     addProgrammaticAnnotation(start, end, 'CT_STACK_AXIAL', 'image');
+  });
+
+document
+  .getElementById('add-canvas-coords-stack')
+  .addEventListener('click', () => {
+    const start = [
+      parseFloat(
+        (document.getElementById('start-i') as HTMLInputElement).value
+      ),
+      parseFloat(
+        (document.getElementById('start-j') as HTMLInputElement).value
+      ),
+    ];
+    const end = [
+      parseFloat((document.getElementById('end-i') as HTMLInputElement).value),
+      parseFloat((document.getElementById('end-j') as HTMLInputElement).value),
+    ];
+
+    addProgrammaticAnnotation(start, end, 'CT_STACK_AXIAL', 'canvas');
   });
 
 document
@@ -213,6 +246,14 @@ const addProgrammaticAnnotation = (
   );
   if (type === 'image') {
     // convert image coords to world coords
+    start = utilities.imageToWorldCoords(viewport.getCurrentImageId(), <
+      Types.Point2
+    >[...start]);
+    end = utilities.imageToWorldCoords(viewport.getCurrentImageId(), <
+      Types.Point2
+    >[...end]);
+  } else if (type === 'canvas') {
+    // convert canvas coords to world coords
     start = viewport.canvasToWorld(<Types.Point2>[...start]);
     end = viewport.canvasToWorld(<Types.Point2>[...end]);
   }
@@ -325,7 +366,7 @@ function initializeToolGroup(toolGroupId) {
   // Add the tools to the tool group
   toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
   toolGroup.addTool(cornerstoneTools.StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolActive(cornerstoneTools.LengthTool.toolName);
+  toolGroup.setToolPassive(cornerstoneTools.LengthTool.toolName);
   toolGroup.setToolActive(cornerstoneTools.StackScrollMouseWheelTool.toolName);
 
   return toolGroup;
