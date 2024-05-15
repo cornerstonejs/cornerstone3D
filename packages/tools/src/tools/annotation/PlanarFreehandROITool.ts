@@ -170,7 +170,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     annotation: PlanarFreehandROIAnnotation
   ) => void;
 
-  private renderPointContour: (
+  private renderPointContourWithMarker: (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper,
     annotation: PlanarFreehandROIAnnotation
@@ -589,7 +589,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         this.configuration.displayOnePointAsCrosshairs &&
         annotation.data.contour.polyline.length === 1
       ) {
-        this.renderPointContour(enabledElement, svgDrawingHelper, annotation);
+        this.renderPointContourWithMarker(
+          enabledElement,
+          svgDrawingHelper,
+          annotation
+        );
       } else {
         this.renderContour(enabledElement, svgDrawingHelper, annotation);
       }
@@ -628,7 +632,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           this.configuration.displayOnePointAsCrosshairs &&
           annotation.data.contour.polyline.length === 1
         ) {
-          this.renderPointContour(enabledElement, svgDrawingHelper, annotation);
+          this.renderPointContourWithMarker(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
         } else {
           this.renderContour(enabledElement, svgDrawingHelper, annotation);
         }

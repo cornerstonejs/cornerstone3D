@@ -411,7 +411,7 @@ function renderOpenContourBeingEdited(
  * Renders a point `PlanarFreehandROIAnnotation` annotation by drawing a circle and a crosshair
  */
 
-function renderPointContour(
+function renderPointContourWithMarker(
   enabledElement: Types.IEnabledElement,
   svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
@@ -479,7 +479,8 @@ function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
   toolInstance.renderOpenContour = renderOpenContour.bind(toolInstance);
-  toolInstance.renderPointContour = renderPointContour.bind(toolInstance);
+  toolInstance.renderPointContourWithMarker =
+    renderPointContourWithMarker.bind(toolInstance);
   toolInstance.renderOpenUShapedContour =
     renderOpenUShapedContour.bind(toolInstance);
 
