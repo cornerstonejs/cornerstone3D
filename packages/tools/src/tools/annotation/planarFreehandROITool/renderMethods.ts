@@ -128,48 +128,6 @@ function renderClosedContour(
   const allContours = [canvasPolyline, ...childContours];
   const polylineUID = '1';
 
-  if (annotation.data.contour.isPoint) {
-    // Since there's only one point, we will use it as the center of the circle
-    const center = canvasPolyline[0];
-    const radius = 6;
-    const numberOfPoints = 100;
-    const circlePoints = [];
-
-    for (let i = 0; i < numberOfPoints; i++) {
-      const angle = (i / numberOfPoints) * 2 * Math.PI;
-      const x = center[0] + radius * Math.cos(angle);
-      const y = center[1] + radius * Math.sin(angle);
-      circlePoints.push([x, y]);
-    }
-
-    // Now let's generate the crosshair in the center of the circle
-    const crosshair = [
-      [center[0] - radius * 2, center[1]],
-      [center[0] + radius * 2, center[1]],
-      [center[0], center[1] - radius * 2],
-      [center[0], center[1] + radius * 2],
-    ] as Types.Point2[];
-
-    drawPathSvg(
-      svgDrawingHelper,
-      annotation.annotationUID,
-      polylineUID + '-crosshair_v',
-      [crosshair[0], crosshair[1]],
-      options
-    );
-
-    drawPathSvg(
-      svgDrawingHelper,
-      annotation.annotationUID,
-      polylineUID + '-crosshair_h',
-      [crosshair[2], crosshair[3]],
-      options
-    );
-
-    // Replace the contour points with the circle points
-    allContours[0] = circlePoints;
-  }
-
   drawPathSvg(
     svgDrawingHelper,
     annotation.annotationUID,
@@ -450,12 +408,78 @@ function renderOpenContourBeingEdited(
 }
 
 /**
+ * Renders a point `PlanarFreehandROIAnnotation` annotation by drawing a circle and a crosshair
+ */
+
+function renderPointContour(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: SVGDrawingHelper,
+  annotation: PlanarFreehandROIAnnotation
+): void {
+  if (annotation.parentAnnotationUID) {
+    return;
+  }
+  const { viewport } = enabledElement;
+  const options = this._getRenderingOptions(enabledElement, annotation);
+  const canvasPolyline = annotation.data.contour.polyline.map((worldPos) =>
+    viewport.worldToCanvas(worldPos)
+  );
+  const childContours = getContourHolesDataCanvas(annotation, viewport);
+  const polylineUID = '1';
+
+  const center = canvasPolyline[0];
+  const radius = 6;
+  const numberOfPoints = 100;
+  const circlePoints = [];
+
+  for (let i = 0; i < numberOfPoints; i++) {
+    const angle = (i / numberOfPoints) * 2 * Math.PI;
+    const x = center[0] + radius * Math.cos(angle);
+    const y = center[1] + radius * Math.sin(angle);
+    circlePoints.push([x, y]);
+  }
+
+  const crosshair = [
+    [center[0] - radius * 2, center[1]],
+    [center[0] + radius * 2, center[1]],
+    [center[0], center[1] - radius * 2],
+    [center[0], center[1] + radius * 2],
+  ] as Types.Point2[];
+
+  drawPathSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    polylineUID + '-crosshair_v',
+    [crosshair[0], crosshair[1]],
+    options
+  );
+
+  drawPathSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    polylineUID + '-crosshair_h',
+    [crosshair[2], crosshair[3]],
+    options
+  );
+
+  const allContours = [circlePoints, ...childContours];
+
+  drawPathSvg(
+    svgDrawingHelper,
+    annotation.annotationUID,
+    polylineUID,
+    allContours,
+    options
+  );
+}
+/**
  * Registers the render methods of various contour states to the tool instance.
  */
 function registerRenderMethods(toolInstance) {
   toolInstance.renderContour = renderContour.bind(toolInstance);
   toolInstance.renderClosedContour = renderClosedContour.bind(toolInstance);
   toolInstance.renderOpenContour = renderOpenContour.bind(toolInstance);
+  toolInstance.renderPointContour = renderPointContour.bind(toolInstance);
   toolInstance.renderOpenUShapedContour =
     renderOpenUShapedContour.bind(toolInstance);
 

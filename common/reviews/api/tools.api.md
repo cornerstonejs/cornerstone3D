@@ -1555,7 +1555,6 @@ type ContourAnnotationData = {
             polyline: Types_2.Point3[];
             closed: boolean;
             windingDirection?: ContourWindingDirection;
-            isPoint?: boolean;
         };
     };
     onInterpolationComplete?: () => void;
