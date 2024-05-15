@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "1.72.1",
+  "version": "1.72.2",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
