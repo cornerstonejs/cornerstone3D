@@ -170,6 +170,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     annotation: PlanarFreehandROIAnnotation
   ) => void;
 
+  private renderPointContourWithMarker: (
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: SVGDrawingHelper,
+    annotation: PlanarFreehandROIAnnotation
+  ) => void;
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -242,6 +248,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
            */
           epsilon: 0.1,
         },
+        displayOnePointAsCrosshairs: false,
         calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
@@ -578,7 +585,18 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     if (!(isDrawing || isEditingOpen || isEditingClosed)) {
       // No annotations are currently being modified, so we can just use the
       // render contour method to render all of them
-      this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      if (
+        this.configuration.displayOnePointAsCrosshairs &&
+        annotation.data.contour.polyline.length === 1
+      ) {
+        this.renderPointContourWithMarker(
+          enabledElement,
+          svgDrawingHelper,
+          annotation
+        );
+      } else {
+        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      }
     } else {
       // The active annotation will need special rendering treatment. Render all
       // other annotations not being interacted with using the standard renderContour
@@ -610,7 +628,18 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           );
         }
       } else {
-        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+        if (
+          this.configuration.displayOnePointAsCrosshairs &&
+          annotation.data.contour.polyline.length === 1
+        ) {
+          this.renderPointContourWithMarker(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
+        } else {
+          this.renderContour(enabledElement, svgDrawingHelper, annotation);
+        }
       }
 
       // Todo: return boolean flag for each rendering route in the planar tool.
