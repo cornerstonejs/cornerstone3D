@@ -247,8 +247,8 @@ type Annotation = {
             points?: Types_2.Point3[];
             activeHandleIndex?: number | null;
             textBox?: {
-                hasMoved: boolean;
-                worldPosition: Types_2.Point3;
+                hasMoved?: boolean;
+                worldPosition?: Types_2.Point3;
                 worldBoundingBox?: {
                     topLeft: Types_2.Point3;
                     topRight: Types_2.Point3;
@@ -358,6 +358,12 @@ type AnnotationGroupSelector = HTMLDivElement | string;
 
 // @public (undocumented)
 type AnnotationHandle = Types_2.Point3;
+
+// @public (undocumented)
+function annotationHydration(viewport: Types_2.IViewport, toolName: string, worldPoints: Types_2.Point3[], options?: {
+    FrameOfReferenceUID?: string;
+    annotationUID?: string;
+}): Annotation;
 
 // @public (undocumented)
 type AnnotationInterpolationCompletedEventDetail = {
@@ -6104,7 +6110,8 @@ declare namespace utilities {
         polyDataUtils,
         voi,
         AnnotationFrameRange as annotationFrameRange,
-        contourSegmentation
+        contourSegmentation,
+        annotationHydration
     }
 }
 export { utilities }
