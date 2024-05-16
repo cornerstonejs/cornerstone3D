@@ -1,26 +1,19 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import {
   visitExample,
-  waitForRequest,
   checkForScreenshot,
   screenShotPaths,
 } from './utils/index';
+
+test.beforeEach(async ({ page }) => {
+  await visitExample(page, 'stackBasic');
+});
 
 test.describe('Basic Stack', async () => {
   test('should display a single DICOM image in a Stack viewport.', async ({
     page,
   }) => {
-    await visitExample(page, 'stackBasic');
-    await waitForRequest(page);
-    const locator = await page.locator('.cornerstone-canvas');
-
-    const screenshotMatches = await checkForScreenshot(
-      locator,
-      screenShotPaths.stackBasic.viewport
-    );
-
-    if (!screenshotMatches) {
-      throw new Error('Screenshot does not match.');
-    }
+    const locator = page.locator('.cornerstone-canvas');
+    await checkForScreenshot(locator, screenShotPaths.stackBasic.viewport);
   });
 });

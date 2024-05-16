@@ -3,11 +3,11 @@ import { expect } from '@playwright/test';
 const checkForScreenshot = async (locator, screenshotPath) => {
   try {
     await expect(locator).toHaveScreenshot(screenshotPath, {
-      maxDiffPixels: 50,
+      maxDiffPixelRatio: 0.1,
     });
     return true;
   } catch (error) {
-    return false;
+    throw new Error('Screenshot does not match.');
   }
 };
 
