@@ -1,3 +1,6 @@
+/**
+ * Paths to the screenshots of the tests.
+ */
 const screenShotPaths = {
   stackBasic: {
     viewport: 'viewport.png',
