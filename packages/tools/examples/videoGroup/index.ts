@@ -20,6 +20,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   KeyImageTool,
   ProbeTool,
   RectangleROITool,
@@ -345,6 +346,7 @@ async function run() {
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -368,6 +370,7 @@ async function run() {
 
   // Add tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
@@ -393,6 +396,14 @@ async function run() {
     ],
   });
   toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+    ],
+  });
+  toolGroup.setToolActive(HeightTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary,

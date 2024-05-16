@@ -19,6 +19,7 @@ import {
 
 const {
   LengthTool,
+  HeightTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
   ZoomTool,
@@ -92,6 +93,7 @@ const toolsNames = [
   WindowLevelTool.toolName,
   PanTool.toolName,
   LengthTool.toolName,
+  HeightTool.toolName,
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
@@ -142,6 +144,7 @@ async function setup() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
@@ -164,6 +167,7 @@ async function setup() {
   toolGroup.addTool(EllipticalROITool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(CircleROITool.toolName);

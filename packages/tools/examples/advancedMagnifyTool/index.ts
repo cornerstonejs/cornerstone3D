@@ -25,6 +25,7 @@ const {
   WindowLevelTool,
   StackScrollMouseWheelTool,
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -129,6 +130,7 @@ addInstruction('Click + Drag on the magnifying glass border to move it');
 
 const toolsNames = [
   LengthTool.toolName,
+  HeightTool.toolName,
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
@@ -294,6 +296,7 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
@@ -313,6 +316,14 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
   // This means left click will draw that tool.
   // toolGroup.setToolActive(LengthTool.toolName, {
   toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(HeightTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -369,6 +380,7 @@ async function run() {
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
