@@ -117,7 +117,7 @@ After you have wrote your tests, you can run them by using the following command
 yarn test:e2e:ci
 ```
 
-If you want to use headed mode, you can use the following command:
+If you want to use headed mode, you can use the following command :
 
 ```bash
 yarn test:e2e:headed
