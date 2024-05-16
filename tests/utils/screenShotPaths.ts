@@ -19,6 +19,10 @@ const screenShotPaths = {
     colormap: 'colormap.png',
     resetViewport: 'resetViewport.png',
   },
+  stackManipulationTools: {
+    planarRotate: 'planarRotate.png',
+    windowLevel: 'windowLevel.png',
+  },
 };
 
 export { screenShotPaths };
