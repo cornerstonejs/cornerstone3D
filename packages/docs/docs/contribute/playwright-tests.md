@@ -107,7 +107,7 @@ test.describe('Your Example Name', async () => {
 });
 ```
 
-The test will automatically fail the first time you run it, it will however generate the screenshot for you, you will notice 3 new entries in the `tests/screenshots` folder, under `chromium/your-example.spec.js/measurementAdded.png`, `firefox/your-example.spec.js/measurementAdded.png` and `webkit/your-example.spec.js/measurementAdded.png` folders. You can now run the test again and it will use those screenshots to compare against the current state of the example.
+The test will automatically fail the first time you run it, it will however generate the screenshot for you, you will notice 3 new entries in the `tests/screenshots` folder, under `chromium/your-example.spec.js/measurementAdded.png`, `firefox/your-example.spec.js/measurementAdded.png` and `webkit/your-example.spec.js/measurementAdded.png` folders. You can now run the test again and it will use those screenshots to compare against the current state of the example. Please verify that the ground truth screenshots are correct before committing them or testing against them.
 
 ## Simulating mouse drags
 
