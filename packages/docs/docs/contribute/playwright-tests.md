@@ -109,6 +109,39 @@ test.describe('Your Example Name', async () => {
 
 The test will automatically fail the first time you run it, it will however generate the screenshot for you, you will notice 3 new entries in the `tests/screenshots` folder, under `chromium/your-example.spec.js/measurementAdded.png`, `firefox/your-example.spec.js/measurementAdded.png` and `webkit/your-example.spec.js/measurementAdded.png` folders. You can now run the test again and it will use those screenshots to compare against the current state of the example.
 
+## Simulating mouse drags
+
+If you would like to simulate a mouse drag, you can use the `simulateDrag` function located in `tests/utils/simulateDrag.ts`. You can use this function to simulate a mouse drag on an element. For example, if you would like to simulate a mouse drag on the `cornerstone-canvas` element, you can use the following code snippet:
+
+```ts
+import {
+  visitExample,
+  checkForScreenshot,
+  screenShotPaths,
+  simulateDrag,
+} from './utils/index';
+
+test.beforeEach(async ({ page }) => {
+  await visitExample(page, 'stackManipulationTools');
+});
+
+test.describe('Basic Stack Manipulation', async () => {
+  test('should manipulate the window level using the window level tool', async ({
+    page,
+  }) => {
+    await page.getByRole('combobox').selectOption('WindowLevel');
+    const locator = page.locator('.cornerstone-canvas');
+    await simulateDrag(page, locator);
+    await checkForScreenshot(
+      locator,
+      screenShotPaths.stackManipulationTools.windowLevel
+    );
+  });
+});
+```
+
+Our simulate drag utility can simulate a drag on any element, and avoid going out of bounds. It will calculuate the bounding box of the element and ensure that the drag stays within the bounds of the element. This should be good enough for most tools, and better than providing custom x, and y coordinates which can be error prone and make the code difficult to maintain.
+
 ## Running the tests
 
 After you have wrote your tests, you can run them by using the following command:
