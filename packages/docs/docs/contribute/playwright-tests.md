@@ -70,7 +70,7 @@ This will also make your example appear in our docs page, so that users can see 
 
 ## Screenshots
 
-A good way to check your tests is working as expected is to capture screenshots at different stages of the test. You can use our checkForScreenshot function located in `tests/utils/checkForScreenshot.ts` to capture screenshots. You should also plan your screenshots in advance, screenshots need to be defined in the `tests/utils/screenshotPaths.ts` file. For example, if you would to capture a measurement after a measurement is added, you can define a screenshot path like this:
+A good way to check your tests is working as expected is to capture screenshots at different stages of the test. You can use our `checkForScreenshot` function located in `tests/utils/checkForScreenshot.ts` to capture screenshots. You should also plan your screenshots in advance, screenshots need to be defined in the `tests/utils/screenshotPaths.ts` file. For example, if you would to capture a screenshot after a measurement is added, you can define a screenshot path like this:
 
 ```ts
 const screenShotPaths = {
@@ -81,7 +81,7 @@ const screenShotPaths = {
 };
 ```
 
-It's okay if the screenshot doesn't exist yet, this will be dealt with in the next step. Once you have defined your screenshot path, you can use the `checkForScreenshot` function in your test to capture the screenshot. For example, if you would like to capture a screenshot after a measurement is added, you can use the following code snippet:
+It's okay if the screenshot doesn't exist yet, this will be dealt with in the next step. Once you have defined your screenshot path, you can use the `checkForScreenshot` function in your test to capture the screenshot. For example, if you would like to capture a screenshot of the `cornerstone-canvas` element after a measurement is added, you can use the following code snippet:
 
 ```ts
 import { test } from '@playwright/test';
