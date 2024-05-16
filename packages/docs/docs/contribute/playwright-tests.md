@@ -128,3 +128,7 @@ You will see the test results in your terminal, if you want an indepth report, y
 ```bash
 yarn playwright show-report tests/playwright-report
 ```
+
+## Serving the examples manually for development
+
+By default, when you run the tests, it will call the `yarn build-and-serve-static-examples` command to serve the examples first, then run the tests, if you would like to serve the examples manually, you can use the same command. The examples will be available at `http://localhost:3000`. This could speed up your development process since playwright will skip the build and serve step and use the existing server on port 3000.
