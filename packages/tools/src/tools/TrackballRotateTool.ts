@@ -20,6 +20,8 @@ import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 class TrackballRotateTool extends BaseTool {
   static toolName;
   originalSampleDistance = null;
+  preMouseDownCallback: (evt: EventTypes.InteractionEventType) => void;
+  mouseUpCallback: (evt: EventTypes.InteractionEventType) => void;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
@@ -39,6 +41,8 @@ class TrackballRotateTool extends BaseTool {
 
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
+    this.preMouseDownCallback = this._preMouseDownCallback.bind(this);
+    this.mouseUpCallback = this._mouseUpCallback.bind(this);
   }
 
   _getMapperFromViewport = (
@@ -161,6 +165,22 @@ class TrackballRotateTool extends BaseTool {
     });
   };
 
+  _preMouseDownCallback(evt: EventTypes.InteractionEventType): void {
+    console.log('premousedown');
+    const { element } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    this._reduceSampleDistance(viewport);
+  }
+
+  _mouseUpCallback(evt: EventTypes.InteractionEventType): void {
+    console.log('mouseup');
+    const { element } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    this._restoreSampleDistance(viewport);
+  }
+
   // pseudocode inspired from
   // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
   _dragCallback(evt: EventTypes.InteractionEventType): void {
@@ -170,7 +190,6 @@ class TrackballRotateTool extends BaseTool {
     const { rotateIncrementDegrees } = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    this._reduceSampleDistance(viewport);
 
     const camera = viewport.getCamera();
     const width = element.clientWidth;
@@ -234,7 +253,6 @@ class TrackballRotateTool extends BaseTool {
 
       this.rotateCamera(viewport, centerWorld, rightV, angleY);
 
-      this._restoreSampleDistance(viewport);
       viewport.render();
     }
   }
