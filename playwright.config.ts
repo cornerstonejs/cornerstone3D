@@ -36,5 +36,6 @@ export default defineConfig({
     command: 'yarn build-and-serve-static-examples',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
   },
 });
