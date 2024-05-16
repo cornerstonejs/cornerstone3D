@@ -6,12 +6,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
+  outputDir: './tests/test-results',
+  reporter: [['html', { outputFolder: './tests/playwright-report' }]],
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    video: 'on',
   },
 
   projects: [

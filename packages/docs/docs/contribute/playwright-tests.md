@@ -126,5 +126,5 @@ yarn test:e2e:headed
 You will see the test results in your terminal, if you want an indepth report, you can use the following command:
 
 ```bash
-yarn playwright show-report
+yarn playwright show-report tests/playwright-report
 ```
