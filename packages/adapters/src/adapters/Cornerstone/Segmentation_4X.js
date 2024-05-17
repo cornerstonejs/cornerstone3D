@@ -183,6 +183,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
             Value: ["1.2.840.10008.1.2.5"],
             vr: "UI"
         };
+        segmentation.dataset.SpecificCharacterSet = "ISO_IR 192";
         segmentation.dataset._vrMap.PixelData = "OB";
         segmentation.dataset.PixelData = rleEncodedFrames;
     } else {
@@ -228,7 +229,7 @@ function _createSegFromImages(images, isMultiframe, options) {
         const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
 
         dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-
+        dataset.SpecificCharacterSet = "ISO_IR 192";
         datasets.push(dataset);
     } else {
         for (let i = 0; i < images.length; i++) {
@@ -240,6 +241,7 @@ function _createSegFromImages(images, isMultiframe, options) {
             );
 
             dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+            dataset.SpecificCharacterSet = "ISO_IR 192";
             datasets.push(dataset);
         }
     }

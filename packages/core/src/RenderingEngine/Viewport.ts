@@ -1145,6 +1145,10 @@ class Viewport implements IViewport {
    * the zoom level is 1.  Computed as a function of the camera.
    */
   public getZoom(compareCamera = this.initialCamera): number {
+    if (!compareCamera) {
+      return 1;
+    }
+
     const activeCamera = this.getVtkActiveCamera();
     const { parallelScale: initialParallelScale } = compareCamera;
     return initialParallelScale / activeCamera.getParallelScale();
