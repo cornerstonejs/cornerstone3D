@@ -23,6 +23,16 @@ const screenShotPaths = {
     planarRotate: 'planarRotate.png',
     windowLevel: 'windowLevel.png',
   },
+  stackProperties: {
+    nextImage: 'nextImage.png',
+    previousImage: 'previousImage.png',
+    propertiesAddedForCurrentImage: 'propertiesAddedForCurrentImage.png',
+    propertiesAreSameForNextImage: 'propertiesAreSameForNextImage.png',
+    propertiesRemovedForCurrentImage: 'propertiesRemovedForCurrentImage.png',
+    propertiesAreSameForPreviousImage: 'propertiesAreSameForPreviousImage.png',
+    resetToDefaultViewportProperties: 'resetToDefaultViewportProperties.png',
+    resetMetadata: 'resetMetadata.png',
+  },
 };
 
 export { screenShotPaths };
