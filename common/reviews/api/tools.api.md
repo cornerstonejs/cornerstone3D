@@ -680,11 +680,18 @@ declare namespace BasicStatsCalculator {
 // @public (undocumented)
 class BasicStatsCalculator_2 extends Calculator {
     // (undocumented)
-    static getStatistics: () => NamedStatistics;
+    static getStatistics: (options?: {
+        unit: string;
+    }) => NamedStatistics;
     // (undocumented)
-    static statsCallback: ({ value: newValue }: {
+    static statsCallback: ({ value: newValue, pointLPS }: {
         value: any;
+        pointLPS?: any;
     }) => void;
+    // (undocumented)
+    static statsInit(options: {
+        noPointsCollection: boolean;
+    }): void;
 }
 
 // @public (undocumented)
@@ -3633,11 +3640,11 @@ type NamedStatistics = {
     max: Statistics & {
         name: 'max';
     };
+    min: Statistics & {
+        name: 'min';
+    };
     stdDev: Statistics & {
         name: 'stdDev';
-    };
-    stdDevWithSumSquare: Statistics & {
-        name: 'stdDevWithSumSquare';
     };
     count: Statistics & {
         name: 'count';
@@ -3648,9 +3655,10 @@ type NamedStatistics = {
     volume?: Statistics & {
         name: 'volume';
     };
-    circumferance?: Statistics & {
-        name: 'circumferance';
+    circumference?: Statistics & {
+        name: 'circumference';
     };
+    pointsInShape?: Types_2.PointsManager<Types_2.Point3>;
     array: Statistics[];
 };
 
