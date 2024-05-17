@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.73.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.73.0...v1.73.1) (2024-05-17)
+
+### Bug Fixes
+
+- Improve pre-scaling detection in BaseStreamingImageVolume ([#1254](https://github.com/cornerstonejs/cornerstone3D/issues/1254)) ([f6cea50](https://github.com/cornerstonejs/cornerstone3D/commit/f6cea501a74225088fb8972923eadb5d52c6da66))
+
 # [1.73.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.6...v1.73.0) (2024-05-15)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

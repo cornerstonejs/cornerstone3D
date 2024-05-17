@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.73.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.73.0...v1.73.1) (2024-05-17)
+
+### Bug Fixes
+
+- **BasicCalculator:** Use Welford's algorithm for the standard deviation calculation ([#1255](https://github.com/cornerstonejs/cornerstone3D/issues/1255)) ([f94878e](https://github.com/cornerstonejs/cornerstone3D/commit/f94878ecc42edfe38828754ae8ef6d55d4bf2217))
+- Improve pre-scaling detection in BaseStreamingImageVolume ([#1254](https://github.com/cornerstonejs/cornerstone3D/issues/1254)) ([f6cea50](https://github.com/cornerstonejs/cornerstone3D/commit/f6cea501a74225088fb8972923eadb5d52c6da66))
+
 # [1.73.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.72.6...v1.73.0) (2024-05-15)
 
 ### Features
