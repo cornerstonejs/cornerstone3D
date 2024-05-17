@@ -133,7 +133,6 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * and max pixel values, it calculates the VOI.
  *
  * @param imageVolume - The image volume that we want to get the VOI from.
- * @param useNativeDataType - The image data type is native or Float32Array
  * @returns The VOIRange with lower and upper values
  */
 async function getVOIFromMinMax(
@@ -202,7 +201,7 @@ async function getVOIFromMinMax(
   let image = cache.getImage(imageId);
 
   if (!imageVolume.referencedImageIds?.length) {
-    image = await loadAndCacheImage(imageId, options);
+    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
 
   const imageScalarData = image
