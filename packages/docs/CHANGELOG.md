@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.74.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.73.1...v1.74.0) (2024-05-17)
+
+### Features
+
+- **test:** Playwright testing integration ([#1250](https://github.com/cornerstonejs/cornerstone3D/issues/1250)) ([6ff4a03](https://github.com/cornerstonejs/cornerstone3D/commit/6ff4a0310a53b554b4b4f1cfd9152d8214ebbfe4))
+
 ## [1.73.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.73.0...v1.73.1) (2024-05-17)
 
 **Note:** Version bump only for package docs
