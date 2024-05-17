@@ -169,3 +169,5 @@ By default, when you run the tests, it will call the `yarn build-and-serve-stati
 ## Playwright VSCode Extension and Recording Tests
 
 If you are using VSCode, you can use the Playwright extension to help you write your tests. The extension provides a test runner and many great features such as picking a locator using your mouse, recording a new test, and more. You can install the extension by searching for `Playwright` in the extensions tab in VSCode or by visiting the [Playwright extension page](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright).
+
+<div style="padding:41.88% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/947471524?h=6720407fef&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="Writing playwright tests"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
