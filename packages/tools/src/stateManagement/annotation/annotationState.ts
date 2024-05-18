@@ -2,9 +2,11 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
 import { AnnotationGroupSelector } from '../../types';
+
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
+  triggerAnnotationRemoved,
 } from './helpers/state';
 
 // our default annotation manager
@@ -217,6 +219,8 @@ function removeAnnotation(annotationUID: string): void {
   );
 
   manager.removeAnnotation(annotationUID);
+
+  triggerAnnotationRemoved({ annotation, annotationManagerUID: manager.uid });
 }
 
 /**
@@ -235,7 +239,32 @@ function getAnnotation(annotationUID: string): Annotation {
  */
 function removeAllAnnotations(): void {
   const manager = getAnnotationManager();
-  manager.removeAllAnnotations();
+  const removedAnnotations = manager.removeAllAnnotations();
+
+  for (const annotation of removedAnnotations) {
+    triggerAnnotationRemoved({
+      annotation,
+      annotationManagerUID: manager.uid,
+    });
+  }
+}
+
+/**
+ * Removes all annotations associated with the specified group (FrameOfReferenceUID) and tool, or
+ * all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
+ * @param groupKey - The group key to remove annotations for (in default manager it is FrameOfReferenceUID).
+ * @param toolName - Optional. The name of the tool to remove annotations for.
+ */
+function removeAnnotations(groupKey: string, toolName?: string): void {
+  const manager = getAnnotationManager();
+  const removedAnnotations = manager.removeAnnotations(groupKey, toolName);
+
+  for (const annotation of removedAnnotations) {
+    triggerAnnotationRemoved({
+      annotation,
+      annotationManagerUID: manager.uid,
+    });
+  }
 }
 
 /**
@@ -265,6 +294,7 @@ export {
   addAnnotation,
   getAnnotation,
   removeAnnotation,
+  removeAnnotations,
   removeAllAnnotations,
   // annotation manager
   setAnnotationManager,
