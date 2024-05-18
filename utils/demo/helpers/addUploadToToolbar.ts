@@ -13,6 +13,7 @@ export default function addUploadToToolbar(config: configUpload): void {
   config.container =
     config.container ?? document.getElementById('demo-toolbar');
 
+  //
   const fnClick = () => {
     //
     const elInput = <HTMLInputElement>createElement({

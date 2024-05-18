@@ -174,10 +174,10 @@ class OrientationMarkerTool extends BaseTool {
               viewportId,
               renderingEngineId
             );
-            if (!element){
-              return
+            if (!element) {
+              return;
             }
-            const { viewport } = element
+            const { viewport } = element;
             this.resize(viewportId);
             viewport.render();
           }, 100);

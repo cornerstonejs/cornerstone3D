@@ -56,7 +56,7 @@ class AnnotationEraserTool extends BaseTool {
 
       const annotations = getAnnotations(toolName, element);
 
-      if (!annotations) {
+      if (!annotations.length) {
         continue;
       }
 
@@ -64,7 +64,7 @@ class AnnotationEraserTool extends BaseTool {
         toolInstance.filterInteractableAnnotationsForElement(
           element,
           annotations
-        );
+        ) || [];
 
       for (const annotation of interactableAnnotations) {
         if (
