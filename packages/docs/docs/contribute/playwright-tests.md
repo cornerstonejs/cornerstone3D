@@ -100,6 +100,7 @@ test.describe('Your Example Name', async () => {
     // Your test code here to add a measurement
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenshotPath.your_example_name.measurementAdded
     );
@@ -133,6 +134,7 @@ test.describe('Basic Stack Manipulation', async () => {
     const locator = page.locator('.cornerstone-canvas');
     await simulateDrag(page, locator);
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackManipulationTools.windowLevel
     );

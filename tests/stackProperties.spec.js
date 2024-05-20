@@ -14,6 +14,7 @@ test.describe('Stack Properties', async () => {
     await page.getByRole('button', { name: 'Next Image' }).click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.nextImage
     );
@@ -24,6 +25,7 @@ test.describe('Stack Properties', async () => {
     await page.getByRole('button', { name: 'Previous Image' }).click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.previousImage
     );
@@ -37,11 +39,13 @@ test.describe('Stack Properties', async () => {
       .click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.propertiesAddedForCurrentImage
     );
     await page.getByRole('button', { name: 'Next Image' }).click();
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.propertiesAreSameForNextImage
     );
@@ -60,11 +64,13 @@ test.describe('Stack Properties', async () => {
       .click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.propertiesRemovedForCurrentImage
     );
     await page.getByRole('button', { name: 'Previous Image' }).click();
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.propertiesAreSameForPreviousImage
     );
@@ -80,6 +86,7 @@ test.describe('Stack Properties', async () => {
       .click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.resetToDefaultViewportProperties
     );
@@ -92,6 +99,7 @@ test.describe('Stack Properties', async () => {
     await page.getByRole('button', { name: 'Reset to metadata' }).click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackProperties.resetMetadata
     );
