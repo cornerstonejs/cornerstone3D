@@ -103,7 +103,7 @@ const styles = {
   },
 };
 
-annotation.config.style.setToolGroupToolStyle(toolGroupId, styles);
+annotation.config.style.setToolGroupToolStyles(toolGroupId, styles);
 ```
 
 ### Global(Default)-level tool settings
