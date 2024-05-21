@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities as csUtilities } from '@cornerstonejs/core';
 
 import createElement, { configElement } from './createElement';
 
@@ -11,7 +11,7 @@ interface configLabel extends configElement {
 export default function addLabelToToolbar(
   config: configLabel
 ): HTMLLabelElement {
-  config = utilities.deepMerge(config, config.merge || {});
+  config = csUtilities.deepMerge(config, config.merge || {});
 
   config.container =
     config.container ?? document.getElementById('demo-toolbar');

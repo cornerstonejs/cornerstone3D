@@ -60,7 +60,7 @@ async function convertStackToVolumeViewport({
   });
 
   // Ideally here we should be able to just create a local volume and not use the
-  //  volume louder but we don't know if the stack is already pre-cached for all its
+  // volume louder but we don't know if the stack is already pre-cached for all its
   // imageIds or not so we just let the loader handle it and we have cache
   // optimizations in place to avoid fetching the same imageId if it is already
   // cached

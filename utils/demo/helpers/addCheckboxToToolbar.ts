@@ -29,10 +29,10 @@ export default function addCheckboxToToolbar(config: configCheckbox): void {
 
   //
   const fnChange = (evt: Event) => {
-    const checkboxElement = <HTMLInputElement>evt.target;
+    const elInput = <HTMLInputElement>evt.target;
 
     if (config.onChange) {
-      config.onChange(checkboxElement.checked);
+      config.onChange(elInput.checked);
     }
   };
 

@@ -28,7 +28,7 @@ import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
-
+import { annotationHydration } from './annotationHydration';
 // name spaces
 import * as contours from './contours';
 import * as segmentation from './segmentation';
@@ -97,4 +97,5 @@ export {
   voi,
   annotationFrameRange,
   contourSegmentation,
+  annotationHydration,
 };

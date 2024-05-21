@@ -399,13 +399,8 @@ export default class BaseStreamingImageVolume
       }
     }
 
-    const isSlopeAndInterceptNumbers =
-      typeof scalingParameters.rescaleSlope === 'number' &&
-      typeof scalingParameters.rescaleIntercept === 'number';
-
     const floatAfterScale = hasFloatScalingParameters(scalingParameters);
     const allowFloatRendering = canRenderFloatTextures();
-
     /**
      * So this is has limitation right now, but we need to somehow indicate
      * whether the volume has been scaled with the scaling parameters or not.
@@ -418,7 +413,18 @@ export default class BaseStreamingImageVolume
      * somehow indicate whether the PT image has been corrected with suvbw or
      * not, which we store it in the this.scaling.PT.suvbw.
      */
-    this.isPreScaled = isSlopeAndInterceptNumbers;
+    this.isPreScaled = true;
+
+    if (
+      scalingParameters &&
+      scalingParameters.rescaleSlope !== undefined &&
+      scalingParameters.rescaleIntercept !== undefined
+    ) {
+      const { rescaleSlope, rescaleIntercept } = scalingParameters;
+      this.isPreScaled =
+        typeof rescaleSlope === 'number' &&
+        typeof rescaleIntercept === 'number';
+    }
 
     // in case where the hardware/os does not support float rendering but the
     // requested scaling params are not integers, we need to disable pre-scaling

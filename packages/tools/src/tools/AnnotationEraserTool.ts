@@ -56,7 +56,7 @@ class AnnotationEraserTool extends BaseTool {
 
       const annotations = getAnnotations(toolName, element);
 
-      if (!annotations) {
+      if (!annotations.length) {
         continue;
       }
 
