@@ -51,7 +51,7 @@ content.appendChild(element);
 // ============================= //
 
 addToggleButtonToToolbar({
-  title: 'Load 16 Float',
+  title: 'Load 16 Int',
   defaultToggle: false,
   onClick: (toggle) => {
     if (toggle) {
@@ -63,7 +63,7 @@ addToggleButtonToToolbar({
 });
 
 async function loadImage32Float() {
-  console.log('Loading image 16 float');
+  console.log('Loading image 32 float');
   renderingEngine.disableElement(viewportId);
 
   const viewportInput = {
@@ -94,7 +94,7 @@ async function loadImage32Float() {
 }
 
 async function loadImage16Float() {
-  console.log('Loading image 16 float');
+  console.log('Loading image 16 int');
   renderingEngine.disableElement(viewportId);
 
   const viewportInput = {
