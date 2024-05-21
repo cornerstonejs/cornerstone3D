@@ -18,6 +18,7 @@ test.describe('Basic Stack Manipulation', async () => {
     const locator = page.locator('.cornerstone-canvas');
     await simulateDrag(page, locator);
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackManipulationTools.windowLevel
     );
@@ -29,6 +30,7 @@ test.describe('Basic Stack Manipulation', async () => {
     const locator = page.locator('.cornerstone-canvas');
     await simulateDrag(page, locator);
     await checkForScreenshot(
+      page,
       locator,
       screenShotPaths.stackManipulationTools.planarRotate
     );
