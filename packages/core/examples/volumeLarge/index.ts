@@ -54,6 +54,7 @@ addToggleButtonToToolbar({
   title: 'Load 16 Int',
   defaultToggle: false,
   onClick: (toggle) => {
+    cache.purgeCache();
     if (toggle) {
       loadImage16Float();
     } else {
@@ -129,6 +130,7 @@ async function loadImage16Float() {
       }));
 
     // Set the volume to load
+    // @ts-ignore
     volume.load();
 
     // Set the volume on the viewport
@@ -150,17 +152,16 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   // TODO - move the study into a shared context.
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID: '1.2.250.1.90.4.3706890026.20240517115154.2024.1',
-  //   SeriesInstanceUID: '1.2.250.1.90.3.3384839960.20240517203917.8108.53271',
-  //   wadoRsRoot: 'http://localhost:5000/dicomweb',
-  // });
+  imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID: '1.2.250.1.90.4.3706890026.20240517115154.2024.1',
+    SeriesInstanceUID: '1.2.250.1.90.3.3384839960.20240517203917.8108.53271',
+    wadoRsRoot: 'http://localhost/dicom-web',
+  });
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportId = 'CT_SAGITTAL';
+  // Create a volume viewport
   const viewportInput = {
     viewportId,
     type: ViewportType.ORTHOGRAPHIC,
@@ -174,44 +175,15 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-
-  // Define a unique id for the volume
-  const volumeId = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-  // const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-  // const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
 
   // Define a volume in memory
-
-  // 5 GB
-  cache.setMaxCacheSize(5294967296);
-
-  const dimensions = [750, 750, 1024] as Types.Point3;
-
-  await volumeLoader.createLocalVolume(
-    {
-      dimensions,
-      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-      spacing: [1, 1, 1],
-      origin: [0, 0, 0],
-      // @ts-ignore
-      metadata: {
-        Columns: dimensions[0],
-        Rows: dimensions[1],
-        Modality: 'CT',
-      },
-      targetBuffer: {
-        type: 'Float32Array',
-        sharedArrayBuffer: true,
-      },
-    },
-    volumeId
-  );
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
 
   // Set the volume to load
-  // volume.load();
+  volume.load();
 
   // Set the volume on the viewport
   viewport.setVolumes([
