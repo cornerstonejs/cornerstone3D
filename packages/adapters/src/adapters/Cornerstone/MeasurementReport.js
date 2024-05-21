@@ -247,6 +247,7 @@ export default class MeasurementReport {
         // Merge the derived dataset with the content from the Measurement Report
         report.dataset = Object.assign(report.dataset, contentItem);
         report.dataset._meta = _meta;
+        report.dataset.SpecificCharacterSet = "ISO_IR 192";
 
         return report;
     }

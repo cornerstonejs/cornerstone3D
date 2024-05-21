@@ -18,6 +18,12 @@ import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
 
+const CLASS_MAPPING = Object.create(null);
+
+export function registerOverride(className, fn) {
+  CLASS_MAPPING[className] = fn;
+}
+
 /**
  * vtkStreamingOpenGLViewNodeFactory - A fork of the vtkOpenGLViewNodeFactory,
  * so that we can inject our custom derived "Streaming" classes.
@@ -63,6 +69,8 @@ function vtkStreamingOpenGLViewNodeFactory(publicAPI, model) {
     return vn;
   };
 
+  model.overrides = CLASS_MAPPING;
+
   /**
    * getModelInitialValues - This function allows us to pass textures down from our
    * vtkSharedVolumeMapper to new instances of vtkStreamingOpenGLVolumeMapper.
@@ -104,44 +112,29 @@ export function extend(publicAPI, model, initialValues = {}) {
   vtkStreamingOpenGLViewNodeFactory(publicAPI, model);
 
   // Initialization
-  publicAPI.registerOverride('vtkActor', vtkOpenGLActor.newInstance);
-  publicAPI.registerOverride('vtkActor2D', vtkOpenGLActor2D.newInstance);
-  publicAPI.registerOverride('vtkCamera', vtkOpenGLCamera.newInstance);
-  publicAPI.registerOverride(
-    'vtkGlyph3DMapper',
-    vtkOpenGLGlyph3DMapper.newInstance
-  );
-  publicAPI.registerOverride(
-    'vtkImageMapper',
-    vtkOpenGLImageMapper.newInstance
-  );
-  publicAPI.registerOverride('vtkImageSlice', vtkOpenGLImageSlice.newInstance);
-  publicAPI.registerOverride('vtkMapper', vtkOpenGLPolyDataMapper.newInstance);
-  publicAPI.registerOverride(
+  registerOverride('vtkActor', vtkOpenGLActor.newInstance);
+  registerOverride('vtkActor2D', vtkOpenGLActor2D.newInstance);
+  registerOverride('vtkCamera', vtkOpenGLCamera.newInstance);
+  registerOverride('vtkGlyph3DMapper', vtkOpenGLGlyph3DMapper.newInstance);
+  registerOverride('vtkImageMapper', vtkOpenGLImageMapper.newInstance);
+  registerOverride('vtkImageSlice', vtkOpenGLImageSlice.newInstance);
+  registerOverride('vtkMapper', vtkOpenGLPolyDataMapper.newInstance);
+  registerOverride(
     'vtkPixelSpaceCallbackMapper',
     vtkOpenGLPixelSpaceCallbackMapper.newInstance
   );
-  publicAPI.registerOverride('vtkRenderer', vtkOpenGLRenderer.newInstance);
-  publicAPI.registerOverride('vtkSkybox', vtkOpenGLSkybox.newInstance);
-  publicAPI.registerOverride(
-    'vtkSphereMapper',
-    vtkOpenGLSphereMapper.newInstance
-  );
-  publicAPI.registerOverride(
-    'vtkStickMapper',
-    vtkOpenGLStickMapper.newInstance
-  );
-  publicAPI.registerOverride('vtkTexture', vtkOpenGLTexture.newInstance);
-  publicAPI.registerOverride('vtkVolume', vtkOpenGLVolume.newInstance);
-  publicAPI.registerOverride(
-    'vtkVolumeMapper',
-    vtkOpenGLVolumeMapper.newInstance
-  );
-  publicAPI.registerOverride(
+  registerOverride('vtkRenderer', vtkOpenGLRenderer.newInstance);
+  registerOverride('vtkSkybox', vtkOpenGLSkybox.newInstance);
+  registerOverride('vtkSphereMapper', vtkOpenGLSphereMapper.newInstance);
+  registerOverride('vtkStickMapper', vtkOpenGLStickMapper.newInstance);
+  registerOverride('vtkTexture', vtkOpenGLTexture.newInstance);
+  registerOverride('vtkVolume', vtkOpenGLVolume.newInstance);
+  registerOverride('vtkVolumeMapper', vtkOpenGLVolumeMapper.newInstance);
+  registerOverride(
     'vtkSharedVolumeMapper',
     vtkStreamingOpenGLVolumeMapper.newInstance
   );
-  // publicAPI.registerOverride(
+  // registerOverride(
   //   'vtkWidgetRepresentation',
   //   vtkGenericWidgetRepresentation.newInstance
   // )

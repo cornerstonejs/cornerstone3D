@@ -11,7 +11,7 @@ import {
   getToolGroupForViewport,
 } from '../../store/ToolGroupManager';
 
-import SegmentationDisplayTool from '../../tools/displayTools/SegmentationDisplayTool';
+import { SegmentationDisplayTool } from '../../tools';
 import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 
 /**
@@ -113,18 +113,23 @@ class SegmentationRenderingEngine {
     }
 
     const { viewportsInfo } = toolGroup;
-    const viewports = [];
 
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewports = viewportsInfo
+      .map(({ viewportId, renderingEngineId }) => {
+        const renderingEngine = getRenderingEngine(renderingEngineId);
 
-      if (!renderingEngine) {
-        console.warn('rendering Engine has been destroyed');
-        return;
-      }
+        if (!renderingEngine) {
+          console.warn('rendering Engine has been destroyed');
+          return;
+        }
 
-      viewports.push(renderingEngine.getViewport(viewportId));
-    });
+        const viewport = renderingEngine.getViewport(viewportId);
+
+        if (viewport) {
+          return viewport;
+        }
+      })
+      .filter(Boolean);
 
     const segmentationDisplayToolInstance = toolGroup.getToolInstance(
       SegmentationDisplayTool.toolName
@@ -173,7 +178,7 @@ class SegmentationRenderingEngine {
     viewports.forEach(({ element }) => {
       element.addEventListener(
         Enums.Events.IMAGE_RENDERED,
-        onSegmentationRender
+        onSegmentationRender as EventListener
       );
     });
 

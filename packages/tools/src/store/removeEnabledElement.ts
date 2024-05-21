@@ -4,6 +4,7 @@ import {
   wheelEventListener,
   touchEventListeners,
   keyEventListener,
+  imageChangeEventListener,
 } from '../eventListeners';
 import {
   imageRenderedEventDispatcher,
@@ -12,6 +13,7 @@ import {
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
   touchToolEventDispatcher,
+  cameraResetEventDispatcher,
 } from '../eventDispatchers';
 // ~~
 
@@ -43,12 +45,16 @@ function removeEnabledElement(
   wheelEventListener.disable(element);
   touchEventListeners.disable(element);
   keyEventListener.disable(element);
+
   // labelmap
+  imageChangeEventListener.disable(element);
 
   // Dispatchers: renderer
   imageRenderedEventDispatcher.disable(element);
   cameraModifiedEventDispatcher.disable(element);
   imageSpacingCalibratedEventDispatcher.disable(element);
+  cameraResetEventDispatcher.disable(element);
+
   // Dispatchers: interaction
   mouseToolEventDispatcher.disable(element);
   keyboardToolEventDispatcher.disable(element);

@@ -1,7 +1,7 @@
 import getRenderingEngine, {
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import { IEnabledElement } from './types';
+import { IEnabledElement, IStackViewport, IVolumeViewport } from './types';
 
 /**
  * A convenience method to find an EnabledElement given a reference to its
@@ -67,7 +67,9 @@ export function getEnabledElementByIds(
     return;
   }
 
-  const viewport = renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport(viewportId) as
+    | IStackViewport
+    | IVolumeViewport;
 
   if (!viewport) {
     return;
@@ -82,6 +84,26 @@ export function getEnabledElementByIds(
     renderingEngineId,
     FrameOfReferenceUID,
   };
+}
+
+/**
+ * Retrieves the enabled element by the specified viewport ID. it searches
+ * through all the rendering engines to find the viewport with the specified
+ *
+ * @param viewportId - The ID of the viewport.
+ * @returns The enabled element associated with the specified viewport ID.
+ */
+export function getEnabledElementByViewportId(viewportId: string) {
+  const renderingEngines = getRenderingEngines();
+
+  for (let i = 0; i < renderingEngines.length; i++) {
+    const renderingEngine = renderingEngines[i];
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    if (viewport) {
+      return getEnabledElementByIds(viewportId, renderingEngine.id);
+    }
+  }
 }
 
 /**

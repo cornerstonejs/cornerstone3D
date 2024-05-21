@@ -15,10 +15,10 @@ export function isImageActor(actorEntry: Types.ActorEntry): boolean {
 }
 
 export function actorIsA(
-  actorEntry: Types.ActorEntry,
+  actorEntry: Types.ActorEntry | Types.Actor,
   actorType: actorTypes
 ): boolean {
-  const actor = actorEntry.actor;
+  const actorToCheck = 'isA' in actorEntry ? actorEntry : actorEntry.actor;
 
-  return !!actor.isA(actorType);
+  return !!actorToCheck.isA(actorType);
 }

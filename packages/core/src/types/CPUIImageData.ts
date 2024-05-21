@@ -1,4 +1,4 @@
-import { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
+import type { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
 import IImageCalibration from './IImageCalibration';
 
 type CPUImageData = {

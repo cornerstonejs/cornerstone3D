@@ -2,7 +2,7 @@ import { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import BrushTool from '../../tools/segmentation/BrushTool';
-import getBoundingBoxAroundShape from '../boundingBox/getBoundingBoxAroundShape';
+import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
 
 export type ThresholdInformation = {
   volume: Types.IImageVolume;
@@ -10,10 +10,7 @@ export type ThresholdInformation = {
   upper: number;
 };
 
-export default function getBrushToolInstances(
-  toolGroupId: string,
-  toolName?: string
-) {
+export function getBrushToolInstances(toolGroupId: string, toolName?: string) {
   const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
@@ -56,7 +53,7 @@ export function getVoxelOverlap(
   for (let i = 0; i < 2; i++) {
     for (let j = 0; j < 2; j++) {
       for (let k = 0; k < 2; k++) {
-        const point = voxelCenter;
+        const point = [...voxelCenter]; // Create a new point from voxelCenter
         point[0] = point[0] + ((i * 2 - 1) * voxelSpacing[0]) / 2;
         point[1] = point[1] + ((j * 2 - 1) * voxelSpacing[1]) / 2;
         point[2] = point[2] + ((k * 2 - 1) * voxelSpacing[2]) / 2;
@@ -67,7 +64,10 @@ export function getVoxelOverlap(
   const voxelCornersIJK = voxelCornersWorld.map(
     (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
   );
-  const overlapBounds = getBoundingBoxAroundShape(voxelCornersIJK, dimensions);
+  const overlapBounds = getBoundingBoxAroundShapeIJK(
+    voxelCornersIJK,
+    dimensions
+  );
 
   return overlapBounds;
 }
@@ -79,8 +79,7 @@ export function processVolumes(
   segmentationVolume: Types.IImageVolume,
   thresholdVolumeInformation: ThresholdInformation[]
 ) {
-  const { spacing: segmentationSpacing, imageData: segmentationImageData } =
-    segmentationVolume;
+  const { spacing: segmentationSpacing } = segmentationVolume;
   const scalarData = segmentationVolume.getScalarData();
 
   // prepare a list of volume information objects for callback functions

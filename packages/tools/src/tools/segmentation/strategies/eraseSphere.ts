@@ -1,29 +1,13 @@
-import type { Types } from '@cornerstonejs/core';
+import BrushStrategy from './BrushStrategy';
+import { SPHERE_STRATEGY } from './fillSphere';
+import compositions from './compositions';
 
-import { fillInsideSphere } from './fillSphere';
+const ERASE_SPHERE_STRATEGY = new BrushStrategy(
+  'EraseSphere',
+  compositions.erase,
+  ...SPHERE_STRATEGY.compositions
+);
 
-type OperationData = {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  imageVolume: Types.IImageVolume;
-  volume: Types.IImageVolume;
-  segmentIndex: number;
-  segmentationId: string;
-  segmentsLocked: number[];
-  viewPlaneNormal: Types.Point3;
-  viewUp: Types.Point3;
-  constraintFn: () => boolean;
-  strategySpecificConfiguration: any;
-};
+const eraseInsideSphere = ERASE_SPHERE_STRATEGY.strategyFunction;
 
-export function eraseInsideSphere(
-  enabledElement: Types.IEnabledElement,
-  operationData: OperationData
-): void {
-  // Take the arguments and set the segmentIndex to 0,
-  // Then use existing fillInsideCircle functionality.
-  const eraseOperationData = Object.assign({}, operationData, {
-    segmentIndex: 0,
-  });
-
-  fillInsideSphere(enabledElement, eraseOperationData);
-}
+export { eraseInsideSphere };

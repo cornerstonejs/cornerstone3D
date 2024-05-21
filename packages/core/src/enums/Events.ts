@@ -5,6 +5,7 @@ enum Events {
   /**
    * ERROR CODES
    */
+  ERROR_EVENT = 'CORNERSTONE_ERROR',
 
   /**
    * Error that is thrown when the ImageCache exceeds its max cache size.
@@ -38,6 +39,12 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.VoiModifiedEventDetail | VoiModified Event Detail }
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+  /**
+   * Triggers on the HTML element when viewport modifies its preset (used in volume viewport 3D)
+   *
+   * Make use of {@link EventTypes.PresetModifiedEvent | PresetModified Event Type } for typing your event listeners for PRESET_MODIFIED event,
+   */
+  PRESET_MODIFIED = 'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED',
   /**
    * Triggers on the HTML element when viewport modifies its display area
    *
@@ -85,12 +92,21 @@ enum Events {
    */
   IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
   /**
-   * Triggers on the eventTarget when the image has successfully loaded by imageLoaders
+   * Triggers on the eventTarget when the image has successfully loaded by imageLoaders.
+   * This event may be fired multiple times for different statuses as the image data gets loaded.
    *
    * Make use of {@link EventTypes.ImageLoadedEvent | ImageLoaded Event Type } for typing your event listeners for IMAGE_LOADED event,
    * and see what event detail is included in {@link EventTypes.ImageLoadedEventDetail | ImageLoaded Event Detail }
    */
   IMAGE_LOADED = 'CORNERSTONE_IMAGE_LOADED',
+  /**
+   * Triggers on the eventTarget when progressive loading stages are completed.
+   * That is, the stage is complete for all images included in that stage (which
+   * can be zero).  If you need individual image load information related to
+   * the stage, see the status attribute on the IMAGE_LOADED event - which has
+   * the status of the image, but not the actual stage that loaded it.
+   */
+  IMAGE_RETRIEVAL_STAGE = 'CORNERSTONE_IMAGE_RETRIEVAL_STAGE',
   /**
    * Triggers on the eventTarget when the image has failed loading by imageLoaders
    *
@@ -176,14 +192,6 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageSpacingCalibratedEventDetail | ImageSpacingCalibrated Event Detail }
    */
   IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
-  /**
-   * Triggers on the eventTarget when there is a progress in the image load process. Note: this event
-   * is being used in the dicom-image-loader repository. See {@link https://github.com/cornerstonejs/cornerstoneDICOMImageLoader/blob/master/src/imageLoader/internal/xhrRequest.js | here}
-   *
-   * Make use of {@link EventTypes.ImageLoadProgress | ImageLoadProgress Event Type } for typing your event listeners for IMAGE_LOAD_PROGRESS event,
-   * and see what event detail is included in {@link EventTypes.ImageLoadProgressEventDetail | ImageLoadProgress Event Detail }
-   */
-  IMAGE_LOAD_PROGRESS = 'CORNERSTONE_IMAGE_LOAD_PROGRESS',
 
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.
@@ -208,10 +216,35 @@ enum Events {
    * Triggers when the scroll function is called with a delta that is out of bounds.
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
    */
-  VOLUME_SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_VOLUME_SCROLL_OUT_OF_BOUNDS',
+  VOLUME_SCROLL_OUT_OF_BOUNDS = 'VOLUME_SCROLL_OUT_OF_BOUNDS',
+
+  /**
+   * Triggers when the scroll function is called on a volume.
+   */
+  VOLUME_VIEWPORT_SCROLL = 'VOLUME_VIEWPORT_SCROLL',
+
+  /**
+   * Triggers when the clipping planes has been updated
+   */
+  CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
+
+  /**
+   * Triggers when the webworker has made progress
+   * You should use it with a workerType to indicate the type of worker that is making progress
+   * Checkout the polySEG convertors in the cornerstone tools
+   * to lean how to use it
+   */
+  WEB_WORKER_PROGRESS = 'CORNERSTONE_WEB_WORKER_PROGRESS',
   // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
   // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
   // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
+
+  /**
+   * Triggers on the HTML element when viewport modifies its colormap
+   * Make use of {@link EventTypes.ColormapModifiedEvent | ColormapModified Event Type } for typing your event listeners for COLORMAP_MODIFIED event,
+   * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
+   */
+  COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
 }
 
 export default Events;

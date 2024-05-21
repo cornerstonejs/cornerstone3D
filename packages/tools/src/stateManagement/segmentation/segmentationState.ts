@@ -1,5 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
 import type {
-  ColorLUT,
   RepresentationConfig,
   Segmentation,
   SegmentationPublicInput,
@@ -95,6 +95,65 @@ function getAllSegmentationRepresentations(): Record<
 > {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getAllSegmentationRepresentations();
+}
+
+/**
+ * Finds all segmentation representations with the given segmentationId.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns An array of found segmentation representations.
+ */
+function getSegmentationIdRepresentations(segmentationId) {
+  const allRepresentations = getAllSegmentationRepresentations() || {};
+  const foundRepresentations = [];
+
+  for (const toolGroupId in allRepresentations) {
+    const toolGroupRepresentations = allRepresentations[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) => representation.segmentationId === segmentationId
+    );
+
+    if (foundRepresentation) {
+      foundRepresentations.push(foundRepresentation);
+    }
+  }
+
+  return foundRepresentations;
+}
+
+/**
+ * Finds a segmentation representation by its UID.
+ *
+ * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
+ * @returns The found segmentation representation, or undefined if not found.
+ */
+function findSegmentationRepresentationByUID(
+  segmentationRepresentationUID: string
+): {
+  toolGroupId: string;
+  segmentationRepresentation: ToolGroupSpecificRepresentation;
+} {
+  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
+
+  const toolGroupIds = Object.keys(allToolGroupRepresentations);
+
+  for (const toolGroupId of toolGroupIds) {
+    const toolGroupRepresentations =
+      getAllSegmentationRepresentations()[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) =>
+        representation.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    );
+
+    if (foundRepresentation) {
+      return {
+        segmentationRepresentation: foundRepresentation,
+        toolGroupId,
+      };
+    }
+  }
 }
 
 /**
@@ -247,6 +306,29 @@ function setSegmentSpecificRepresentationConfig(
   }
 }
 
+function getToolGroupIdFromSegmentationRepresentationUID(
+  segmentationRepresentationUID: string
+): string {
+  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
+
+  const toolGroupIds = Object.keys(allToolGroupRepresentations);
+
+  for (const toolGroupId of toolGroupIds) {
+    const toolGroupRepresentations =
+      getAllSegmentationRepresentations()[toolGroupId];
+
+    const foundRepresentation = toolGroupRepresentations.find(
+      (representation) =>
+        representation.segmentationRepresentationUID ===
+        segmentationRepresentationUID
+    );
+
+    if (foundRepresentation) {
+      return toolGroupId;
+    }
+  }
+}
+
 /**
  * Add the given segmentation representation data to the given tool group state. It fires
  * SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
@@ -369,6 +451,22 @@ function removeSegmentationRepresentation(
 }
 
 /**
+ * Removes all segmentation representations associated with a tool group.
+ * @param toolGroupId - The ID of the tool group.
+ */
+function removeSegmentationRepresentations(toolGroupId: string): void {
+  const segmentationRepresentations =
+    getSegmentationRepresentations(toolGroupId) || [];
+
+  segmentationRepresentations.forEach((representation) => {
+    removeSegmentationRepresentation(
+      toolGroupId,
+      representation.segmentationRepresentationUID
+    );
+  });
+}
+
+/**
  * Add a color LUT to the segmentation state manager
  * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
@@ -383,9 +481,14 @@ function removeColorLUT(colorLUTIndex: number): void {
  * @param index - The index of the color lut to retrieve.
  * @returns A ColorLUT array.
  */
-function getColorLUT(index: number): ColorLUT | undefined {
+function getColorLUT(index: number): Types.ColorLUT | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getColorLUT(index);
+}
+
+function getNextColorLUTIndex(): number {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getNextColorLUTIndex();
 }
 
 /**
@@ -393,7 +496,7 @@ function getColorLUT(index: number): ColorLUT | undefined {
  * @param colorLUT - The color LUT array to add.
  * @param index - The index of the color LUT to add.
  */
-function addColorLUT(colorLUT: ColorLUT, index: number): void {
+function addColorLUT(colorLUT: Types.ColorLUT, index: number): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.addColorLUT(colorLUT, index);
   // Todo: trigger event color LUT added
@@ -410,6 +513,7 @@ export {
   getSegmentationRepresentations,
   addSegmentationRepresentation,
   removeSegmentationRepresentation,
+  removeSegmentationRepresentations,
   // config
   getToolGroupSpecificConfig,
   setToolGroupSpecificConfig,
@@ -423,8 +527,13 @@ export {
   getToolGroupIdsWithSegmentation,
   getAllSegmentationRepresentations,
   getSegmentationRepresentationByUID,
+  getSegmentationIdRepresentations,
   // color
   addColorLUT,
   getColorLUT,
+  getNextColorLUTIndex,
   removeColorLUT,
+  //
+  findSegmentationRepresentationByUID,
+  getToolGroupIdFromSegmentationRepresentationUID,
 };

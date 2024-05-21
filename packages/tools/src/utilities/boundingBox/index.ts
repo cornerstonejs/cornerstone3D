@@ -1,4 +1,13 @@
 import extend2DBoundingBoxInViewAxis from './extend2DBoundingBoxInViewAxis';
-import getBoundingBoxAroundShape from './getBoundingBoxAroundShape';
+import {
+  getBoundingBoxAroundShapeIJK,
+  getBoundingBoxAroundShapeWorld,
+} from './getBoundingBoxAroundShape';
 
-export { extend2DBoundingBoxInViewAxis, getBoundingBoxAroundShape };
+export {
+  extend2DBoundingBoxInViewAxis,
+  getBoundingBoxAroundShapeIJK,
+  getBoundingBoxAroundShapeWorld,
+  // backwards compatibility
+  getBoundingBoxAroundShapeIJK as getBoundingBoxAroundShape,
+};

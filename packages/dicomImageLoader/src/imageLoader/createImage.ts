@@ -112,13 +112,17 @@ function createImage(
         : false,
   };
 
-  if (!pixelData || !pixelData.length) {
-    return Promise.reject(new Error('The file does not contain image data.'));
+  if (!pixelData?.length) {
+    return Promise.reject(new Error('The pixel data is missing'));
   }
 
   const { cornerstone } = external;
+  const { MetadataModules } = cornerstone.Enums;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
+  imageFrame.decodeLevel = options.decodeLevel;
+
+  options.allowFloatRendering = cornerstone.canRenderFloatTextures();
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
@@ -143,6 +147,16 @@ function createImage(
     options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
+
+  // check if the options to use the 16 bit data type is set
+  // on the image load options, and prefer that over the global
+  // options of the dicom loader
+  decodeConfig.use16BitDataType =
+    (options && options.targetBuffer?.type === 'Uint16Array') ||
+    options.targetBuffer?.type === 'Int16Array'
+      ? true
+      : options.useNativeDataType || decodeConfig.use16BitDataType;
+
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,
@@ -221,14 +235,17 @@ function createImage(
       }
 
       const imagePlaneModule: MetadataImagePlaneModule =
-        cornerstone.metaData.get('imagePlaneModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.IMAGE_PLANE, imageId) || {};
       const voiLutModule =
-        cornerstone.metaData.get('voiLutModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.VOI_LUT, imageId) || {};
       const modalityLutModule =
-        cornerstone.metaData.get('modalityLutModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
-        cornerstone.metaData.get('sopCommonModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.SOP_COMMON, imageId) || {};
+      const calibrationModule =
+        cornerstone.metaData.get(MetadataModules.CALIBRATION, imageId) || {};
       const { rows, columns } = imageFrame;
+
       if (isColorImage) {
         if (
           TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax] &&
@@ -237,11 +254,20 @@ function createImage(
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');
-          const imageData = context.createImageData(
+          let imageData = context.createImageData(
             imageFrame.columns,
             imageFrame.rows
           );
-
+          if (!useRGBA) {
+            imageData = {
+              ...imageData,
+              data: new Uint8ClampedArray(
+                imageFrame.samplesPerPixel *
+                  imageFrame.columns *
+                  imageFrame.rows
+              ),
+            };
+          }
           convertColorSpace(imageFrame, imageData.data, useRGBA);
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
@@ -282,6 +308,7 @@ function createImage(
       const image: DICOMLoaderIImage = {
         imageId,
         color: isColorImage,
+        calibration: calibrationModule,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
         columns: imageFrame.columns,
         height: imageFrame.rows,
@@ -319,7 +346,6 @@ function createImage(
         numComps: undefined,
       };
 
-      window.image = image;
       if (image.color) {
         image.getCanvas = function () {
           // the getCanvas function is used in the CPU rendering path

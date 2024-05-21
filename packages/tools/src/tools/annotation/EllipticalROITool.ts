@@ -3,17 +3,12 @@ import { AnnotationTool } from '../base';
 import {
   getEnabledElement,
   VolumeViewport,
-  eventTarget,
-  triggerEvent,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import { roundNumber } from '../../utilities';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -23,8 +18,12 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
+import {
   drawCircle as drawCircleSvg,
-  drawEllipse as drawEllipseSvg,
+  drawEllipseByCoordinates as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
@@ -51,17 +50,10 @@ import {
 } from '../../types';
 import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
-import {
-  AnnotationCompletedEventDetail,
-  AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
@@ -446,8 +438,7 @@ class EllipticalROITool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
+    const { renderingEngine } = getEnabledElement(element);
 
     this.editData = null;
     this.isDrawing = false;
@@ -462,13 +453,7 @@ class EllipticalROITool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
 
     if (newAnnotation) {
-      const eventType = Events.ANNOTATION_COMPLETED;
-
-      const eventDetail: AnnotationCompletedEventDetail = {
-        annotation,
-      };
-
-      triggerEvent(eventTarget, eventType, eventDetail);
+      triggerAnnotationCompleted(annotation);
     }
   };
 
@@ -652,8 +637,7 @@ class EllipticalROITool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
+      const { renderingEngine } = getEnabledElement(element);
 
       triggerAnnotationRenderForViewportIds(
         renderingEngine,
@@ -661,13 +645,7 @@ class EllipticalROITool extends AnnotationTool {
       );
 
       if (newAnnotation) {
-        const eventType = Events.ANNOTATION_COMPLETED;
-
-        const eventDetail: AnnotationCompletedEventDetail = {
-          annotation,
-        };
-
-        triggerEvent(eventTarget, eventType, eventDetail);
+        triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;
@@ -774,9 +752,10 @@ class EllipticalROITool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
-      const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
-      const color = this.getStyle('color', styleSpecifier, annotation);
+      const { color, lineWidth, lineDash } = this.getAnnotationStyle({
+        annotation,
+        styleSpecifier,
+      });
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
@@ -785,20 +764,9 @@ class EllipticalROITool extends AnnotationTool {
       const rotation = Math.abs(
         viewport.getRotation() - (data.initialRotation || 0)
       );
-      let canvasCorners;
-
-      if (rotation == 90 || rotation == 270) {
-        canvasCorners = <Array<Types.Point2>>getCanvasEllipseCorners([
-          canvasCoordinates[2], // bottom
-          canvasCoordinates[3], // top
-          canvasCoordinates[0], // left
-          canvasCoordinates[1], // right
-        ]);
-      } else {
-        canvasCorners = <Array<Types.Point2>>(
-          getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
-        );
-      }
+      const canvasCorners = <Array<Types.Point2>>(
+        getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
+      );
 
       const { centerPointRadius } = this.configuration;
 
@@ -817,12 +785,7 @@ class EllipticalROITool extends AnnotationTool {
           areaUnit: null,
         };
 
-        this._calculateCachedStats(
-          annotation,
-          viewport,
-          renderingEngine,
-          enabledElement
-        );
+        this._calculateCachedStats(annotation, viewport, renderingEngine);
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
@@ -905,8 +868,7 @@ class EllipticalROITool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         ellipseUID,
-        canvasCorners[0],
-        canvasCorners[1],
+        canvasCoordinates,
         {
           color,
           lineDash,
@@ -999,14 +961,9 @@ class EllipticalROITool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateCachedStats = (
-    annotation,
-    viewport,
-    renderingEngine,
-    enabledElement
-  ) => {
+  _calculateCachedStats = (annotation, viewport, renderingEngine) => {
     const data = annotation.data;
-    const { viewportId, renderingEngineId } = enabledElement;
+    const { element } = viewport;
 
     const { points } = data.handles;
 
@@ -1037,32 +994,34 @@ class EllipticalROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata, hasPixelSpacing } = image;
+      const { dimensions, imageData, metadata } = image;
 
-      const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
+      const pos1Index = transformWorldToIndex(imageData, worldPos1);
 
-      worldPos1Index[0] = Math.floor(worldPos1Index[0]);
-      worldPos1Index[1] = Math.floor(worldPos1Index[1]);
-      worldPos1Index[2] = Math.floor(worldPos1Index[2]);
+      pos1Index[0] = Math.floor(pos1Index[0]);
+      pos1Index[1] = Math.floor(pos1Index[1]);
+      pos1Index[2] = Math.floor(pos1Index[2]);
 
-      const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
+      const post2Index = transformWorldToIndex(imageData, worldPos2);
 
-      worldPos2Index[0] = Math.floor(worldPos2Index[0]);
-      worldPos2Index[1] = Math.floor(worldPos2Index[1]);
-      worldPos2Index[2] = Math.floor(worldPos2Index[2]);
+      post2Index[0] = Math.floor(post2Index[0]);
+      post2Index[1] = Math.floor(post2Index[1]);
+      post2Index[2] = Math.floor(post2Index[2]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
-        const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
-        const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
+      if (this._isInsideVolume(pos1Index, post2Index, dimensions)) {
+        this.isHandleOutsideImage = false;
 
-        const jMin = Math.min(worldPos1Index[1], worldPos2Index[1]);
-        const jMax = Math.max(worldPos1Index[1], worldPos2Index[1]);
+        const iMin = Math.min(pos1Index[0], post2Index[0]);
+        const iMax = Math.max(pos1Index[0], post2Index[0]);
 
-        const kMin = Math.min(worldPos1Index[2], worldPos2Index[2]);
-        const kMax = Math.max(worldPos1Index[2], worldPos2Index[2]);
+        const jMin = Math.min(pos1Index[1], post2Index[1]);
+        const jMax = Math.max(pos1Index[1], post2Index[1]);
+
+        const kMin = Math.min(pos1Index[2], post2Index[2]);
+        const kMax = Math.max(pos1Index[2], post2Index[2]);
 
         const boundsIJK = [
           [iMin, iMax],
@@ -1090,7 +1049,13 @@ class EllipticalROITool extends AnnotationTool {
           worldPos2
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const scale = getCalibratedScale(image);
+
+        const handles = [pos1Index, post2Index];
+        const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+          image,
+          handles
+        );
+
         const area =
           Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
           scale /
@@ -1114,23 +1079,22 @@ class EllipticalROITool extends AnnotationTool {
 
         const pointsInShape = pointInShapeCallback(
           imageData,
-          (pointLPS, pointIJK) => pointInEllipse(ellipseObj, pointLPS),
+          (pointLPS) => pointInEllipse(ellipseObj, pointLPS, { fast: true }),
           this.configuration.statsCalculator.statsCallback,
           boundsIJK
         );
 
         const stats = this.configuration.statsCalculator.getStatistics();
-
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
-          mean: stats[1]?.value,
-          max: stats[0]?.value,
-          stdDev: stats[2]?.value,
-          statsArray: stats,
-          pointsInShape: pointsInShape,
+          mean: stats.mean?.value,
+          max: stats.max?.value,
+          stdDev: stats.stdDev?.value,
+          statsArray: stats.array,
+          pointsInShape,
           isEmptyArea,
-          areaUnit: getCalibratedAreaUnits(null, image),
+          areaUnit: areaUnits,
           modalityUnit,
         };
       } else {
@@ -1145,15 +1109,7 @@ class EllipticalROITool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail: AnnotationModifiedEventDetail = {
-      annotation,
-      viewportId,
-      renderingEngineId,
-    };
-
-    triggerEvent(eventTarget, eventType, eventDetail);
+    triggerAnnotationModified(annotation, element);
 
     return cachedStats;
   };

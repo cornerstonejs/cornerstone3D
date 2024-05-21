@@ -1,5 +1,4 @@
-import { metaData } from '@cornerstonejs/core';
-import { helpers } from '@cornerstonejs/streaming-image-volume-loader';
+import { metaData, utilities } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 /**
@@ -32,7 +31,7 @@ export function sortImageIds(imageIds) {
     imageIds[0]
   );
   const scanAxisNormal = calculatePlaneNormal(imageOrientationPatient);
-  const { sortedImageIds } = helpers.sortImageIdsAndGetSpacing(
+  const { sortedImageIds } = utilities.sortImageIdsAndGetSpacing(
     imageIds,
     scanAxisNormal
   );

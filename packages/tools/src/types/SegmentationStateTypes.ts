@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import * as Enums from '../enums';
 import {
   ContourConfig,
@@ -9,17 +10,10 @@ import type {
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
 } from './LabelmapTypes';
-
-/**
- * Four elements RGBA as 0-255
- */
-export type Color = [number, number, number, number];
-
-/**
- * Color LUT Array - Array of colors
- * [[0,0,0,0], [200,200,200,200], ....]
- */
-export type ColorLUT = Array<Color>;
+import {
+  SurfaceSegmentationData,
+  SurfaceRenderingConfig,
+} from './SurfaceTypes';
 
 export type SegmentSpecificRepresentationConfig = {
   [key: number | string]: RepresentationConfig;
@@ -30,6 +24,8 @@ export type RepresentationConfig = {
   LABELMAP?: LabelmapConfig;
   /** contour configuration */
   CONTOUR?: ContourConfig;
+  /** surface configuration */
+  SURFACE?: any;
 };
 
 export type SegmentationRepresentationConfig = {
@@ -42,6 +38,7 @@ export type SegmentationRepresentationConfig = {
 export type SegmentationRepresentationData = {
   LABELMAP?: LabelmapSegmentationData;
   CONTOUR?: ContourSegmentationData;
+  SURFACE?: SurfaceSegmentationData;
 };
 
 /**
@@ -110,6 +107,13 @@ export type ToolGroupSpecificRepresentationState = {
    * using to render
    */
   colorLUTIndex: number;
+  /**
+   * Poly Seg generated
+   */
+  polySeg?: {
+    enabled: boolean;
+    options?: any;
+  };
 };
 
 /**
@@ -128,6 +132,13 @@ export type ToolGroupSpecificLabelmapRepresentation =
 export type ToolGroupSpecificContourRepresentation =
   ToolGroupSpecificRepresentationState & {
     config: ContourRenderingConfig;
+    segmentationRepresentationSpecificConfig?: RepresentationConfig;
+    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
+  };
+
+export type ToolGroupSpecificSurfaceRepresentation =
+  ToolGroupSpecificRepresentationState & {
+    config: SurfaceRenderingConfig;
     segmentationRepresentationSpecificConfig?: RepresentationConfig;
     segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
   };
@@ -231,7 +242,7 @@ export type ToolGroupSpecificRepresentations =
  */
 export type SegmentationState = {
   /** Array of colorLUT for segmentation to render */
-  colorLUT: ColorLUT[];
+  colorLUT: Types.ColorLUT[];
   /** segmentations */
   segmentations: Segmentation[];
   /** global segmentation state with config */
@@ -252,11 +263,28 @@ export type SegmentationPublicInput = {
   segmentationId: string;
   representation: {
     type: Enums.SegmentationRepresentations;
-    data: LabelmapSegmentationData | ContourSegmentationData;
+    data?:
+      | LabelmapSegmentationData
+      | ContourSegmentationData
+      | SurfaceSegmentationData;
   };
 };
 
 export type RepresentationPublicInput = {
   segmentationId: string;
   type: Enums.SegmentationRepresentations;
+  options?: RepresentationPublicInputOptions;
+};
+
+export type RepresentationPublicInputOptions = {
+  segmentationRepresentationUID?: string;
+  // color lut to use for this representation (optional), it can
+  // be either a colorLUT array or the index of the colorLUT in the state
+  colorLUTOrIndex?: Types.ColorLUT | number;
+  // whether to use polymorphic segmentation utilities to convert
+  // from other representations to this representation
+  polySeg?: {
+    enabled: boolean;
+    options?: any;
+  };
 };

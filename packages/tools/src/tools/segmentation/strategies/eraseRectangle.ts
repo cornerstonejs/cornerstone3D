@@ -1,64 +1,35 @@
-import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInShapeCallback } from '../../../utilities';
+import { LabelmapToolOperationData } from '../../../types';
+import { fillInsideRectangle } from './fillRectangle';
 
-const { transformWorldToIndex } = csUtils;
-
-type EraseOperationData = {
-  segmentationId: string;
+type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-  volume: ImageVolume;
-  constraintFn: (x: [number, number, number]) => boolean;
-  segmentsLocked: number[];
 };
 
 function eraseRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: EraseOperationData,
+  operationData: OperationData,
   inside = true
 ): void {
-  const {
-    volume: segmentation,
-    points,
-    segmentsLocked,
-    segmentationId,
-  } = operationData;
-  const { imageData, dimensions } = segmentation;
-  const scalarData = segmentation.getScalarData();
-
-  const rectangleCornersIJK = points.map((world) => {
-    return transformWorldToIndex(imageData, world);
+  // Take the arguments and set the segmentIndex to 0,
+  // Then use existing fillRectangle functionality.
+  const eraseOperationData = Object.assign({}, operationData, {
+    segmentIndex: 0,
   });
 
-  const boundsIJK = getBoundingBoxAroundShape(rectangleCornersIJK, dimensions);
-
-  // Since always all points inside the boundsIJK is inside the rectangle...
-  const pointInShape = () => true;
-
-  const callback = ({ value, index }) => {
-    if (segmentsLocked.includes(value)) {
-      return;
-    }
-    scalarData[index] = 0;
-  };
-
-  pointInShapeCallback(imageData, pointInShape, callback, boundsIJK);
-
-  triggerSegmentationDataModified(segmentationId);
+  fillInsideRectangle(enabledElement, eraseOperationData);
 }
 
 /**
  * Erase the rectangle region segment inside the segmentation defined by the operationData.
  * It erases the segmentation pixels inside the defined rectangle.
  * @param enabledElement - The element for which the segment is being erased.
- * @param operationData - EraseOperationData
+ * @param operationData - OperationData
  */
 export function eraseInsideRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: EraseOperationData
+  operationData: OperationData
 ): void {
   eraseRectangle(enabledElement, operationData, true);
 }
@@ -67,11 +38,11 @@ export function eraseInsideRectangle(
  * Erase the rectangle region segment inside the segmentation defined by the operationData.
  * It erases the segmentation pixels outside the defined rectangle.
  * @param enabledElement - The element for which the segment is being erased.
- * @param operationData - EraseOperationData
+ * @param operationData - OperationData
  */
 export function eraseOutsideRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: EraseOperationData
+  operationData: OperationData
 ): void {
   eraseRectangle(enabledElement, operationData, false);
 }

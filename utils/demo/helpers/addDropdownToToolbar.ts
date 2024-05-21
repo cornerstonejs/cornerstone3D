@@ -1,40 +1,132 @@
-export default function addDropDownToToolbar({
-  id,
-  options,
-  container,
-  onSelectedValueChange,
-}: {
+import { Enums as csToolsEnums, ToolGroupManager } from '@cornerstonejs/tools';
+const { MouseBindings } = csToolsEnums;
+
+import createElement, { configElement } from './createElement';
+import addLabelToToolbar from './addLabelToToolbar';
+
+export type optionTypeDefaultValue =
+  | { defaultValue: number | string }
+  | { defaultIndex?: number };
+
+export type optionTypeValues =
+  | { values: number[] | string[] }
+  | { map: Map<string | number, any> };
+
+interface configDropdown extends configElement {
   id?: string;
-  options: { values: number[] | string[]; defaultValue: number | string };
+  placeholder?: string;
+  options: optionTypeDefaultValue & optionTypeValues;
+  onSelectedValueChange: (key: number | string, value?: any) => void;
+  toolGroupId?: string | string[];
+  label?: configElement;
+  labelText?: string;
   container?: HTMLElement;
-  onSelectedValueChange: (value: number | string) => void;
-}) {
-  const { values, defaultValue } = options;
-  const select = document.createElement('select');
+}
 
-  select.id = id;
+export default function addDropDownToToolbar(config: configDropdown): void {
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
 
-  values.forEach((value) => {
-    const optionElement = document.createElement('option');
+  const {
+    map,
+    values = [...map.keys()],
+    defaultValue,
+    defaultIndex = defaultValue === undefined && 0,
+  } = config.options as any;
 
-    optionElement.value = String(value);
-    optionElement.innerText = String(value);
+  // Create label element if labelText is provided
+  if (config.label || config.labelText) {
+    const elLabel = addLabelToToolbar({
+      merge: config.label,
+      title: config.labelText,
+      container: config.container,
+    });
 
-    if (value === defaultValue) {
-      optionElement.selected = true;
+    if (config.id) {
+      elLabel.htmlFor = config.id;
     }
+  }
 
-    select.append(optionElement);
-  });
+  //
+  if (!config.onSelectedValueChange && config.toolGroupId) {
+    config.onSelectedValueChange = changeActiveTool.bind(
+      null,
+      Array.isArray(config.toolGroupId)
+        ? config.toolGroupId
+        : [config.toolGroupId]
+    );
+  }
 
-  select.onchange = (evt) => {
-    const selectElement = <HTMLSelectElement>evt.target;
-
-    if (selectElement) {
-      onSelectedValueChange(selectElement.value);
+  //
+  const fnChange = (evt: Event) => {
+    const elSelect = <HTMLSelectElement>evt.target;
+    const { value: key } = elSelect;
+    if (elSelect) {
+      config.onSelectedValueChange(key, map?.get(key));
     }
   };
 
-  container = container ?? document.getElementById('demo-toolbar');
-  container.append(select);
+  //
+  const elSelect = <HTMLSelectElement>createElement({
+    merge: config,
+    tag: 'select',
+    event: {
+      change: fnChange,
+    },
+  });
+
+  if (config.id) {
+    elSelect.id = config.id;
+  }
+
+  if (config.placeholder) {
+    const elOption = <HTMLOptionElement>createElement({
+      tag: 'option',
+      attr: {
+        disabled: '',
+        hidden: '',
+        selected: '',
+      },
+      html: config.placeholder,
+    });
+    elSelect.append(elOption);
+  }
+
+  values.forEach((value, index) => {
+    const elOption = document.createElement('option');
+    const stringValue = String(value);
+    elOption.value = stringValue;
+    elOption.innerText = stringValue;
+
+    if (value === defaultValue || index === defaultIndex) {
+      elOption.selected = true;
+
+      if (map) {
+        map.get(value).selected = true;
+      }
+    }
+
+    elSelect.append(elOption);
+  });
+}
+
+function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {
+  for (const toolGroupId of toolGroupIds) {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    // Set the old tool passive
+    const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
+    if (selectedToolName) {
+      toolGroup.setToolPassive(selectedToolName);
+    }
+
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+  }
 }

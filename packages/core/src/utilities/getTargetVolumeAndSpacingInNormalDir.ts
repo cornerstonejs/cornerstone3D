@@ -1,9 +1,9 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
-// import type { VolumeViewport } from '../RenderingEngine'
-import { ICamera, IImageVolume, IVolumeViewport } from '../types';
+import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
+import { getVolumeId } from './getVolumeId';
 
 // One EPSILON part larger multiplier
 const EPSILON_PART = 1 + EPSILON;
@@ -21,23 +21,24 @@ const isPrimaryVolume = (volume): boolean =>
 
 /**
  * Given a volume viewport and camera, find the target volume.
- * The imageVolume is retrieved from cache for the specified targetVolumeId or
+ * The imageVolume is retrieved from cache for the specified targetId or
  * in case it is not provided, it chooses the volumeId on the viewport (there
  * might be more than one in case of fusion) that has the finest resolution in the
  * direction of view (normal).
  *
  * @param viewport - volume viewport
  * @param camera - current camera
- * @param targetVolumeId - If a target volumeId is given that volume
- * is forced to be used.
- *
+ * @param targetId - If a targetId is forced to be used.
+ * @param useSlabThickness - If true, the number of steps will be calculated
+ * based on the slab thickness instead of the spacing in the normal direction
  * @returns An object containing the imageVolume and spacingInNormalDirection.
  *
  */
 export default function getTargetVolumeAndSpacingInNormalDir(
   viewport: IVolumeViewport,
   camera: ICamera,
-  targetVolumeId?: string
+  targetId?: string,
+  useSlabThickness = false
 ): {
   imageVolume: IImageVolume;
   spacingInNormalDirection: number;
@@ -64,16 +65,20 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     .filter((iv) => !!iv);
 
   // If a volumeId is defined, set that volume as the target
-  if (targetVolumeId) {
-    const imageVolumeIndex = imageVolumes.findIndex(
-      (iv) => iv.volumeId === targetVolumeId
+  if (targetId) {
+    const targetVolumeId = getVolumeId(targetId);
+    const imageVolumeIndex = imageVolumes.findIndex((iv) =>
+      targetVolumeId.includes(iv.volumeId)
     );
 
     const imageVolume = imageVolumes[imageVolumeIndex];
     const { uid: actorUID } = volumeActors[imageVolumeIndex];
-    const spacingInNormalDirection = getSpacingInNormalDirection(
+
+    const spacingInNormalDirection = getSpacingInNormal(
       imageVolume,
-      viewPlaneNormal
+      viewPlaneNormal,
+      viewport,
+      useSlabThickness
     );
 
     return { imageVolume, spacingInNormalDirection, actorUID };
@@ -104,9 +109,10 @@ export default function getTargetVolumeAndSpacingInNormalDir(
       continue;
     }
 
-    const spacingInNormalDirection = getSpacingInNormalDirection(
+    const spacingInNormalDirection = getSpacingInNormal(
       imageVolume,
-      viewPlaneNormal
+      viewPlaneNormal,
+      viewport
     );
 
     // Allow for EPSILON part larger requirement to prefer earlier volumes
@@ -123,4 +129,22 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   }
 
   return smallest;
+}
+
+function getSpacingInNormal(
+  imageVolume: IImageVolume,
+  viewPlaneNormal: Point3,
+  viewport: IVolumeViewport,
+  useSlabThickness = false
+): number {
+  const { slabThickness } = viewport.getProperties();
+  let spacingInNormalDirection = slabThickness;
+  if (!slabThickness || useSlabThickness === false) {
+    spacingInNormalDirection = getSpacingInNormalDirection(
+      imageVolume,
+      viewPlaneNormal
+    );
+  }
+
+  return spacingInNormalDirection;
 }

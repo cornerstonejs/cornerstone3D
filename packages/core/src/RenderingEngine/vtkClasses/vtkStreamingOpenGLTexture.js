@@ -4,7 +4,7 @@ import HalfFloat from '@kitware/vtk.js/Common/Core/HalfFloat';
 import { getConfiguration } from '../../init';
 
 /**
- * vtkStreamingOpenGLTexture - A dervied class of the core vtkOpenGLTexture.
+ * vtkStreamingOpenGLTexture - A derived class of the core vtkOpenGLTexture.
  * This class has methods to update the texture memory on the GPU slice by slice
  * in an efficient yet GPU-architecture friendly manner.
  *

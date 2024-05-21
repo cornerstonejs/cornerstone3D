@@ -5,10 +5,10 @@ import { Enums, Types } from '@cornerstonejs/core';
  * array of scalar data after performing AVERAGE, SUM or SUBTRACT to be used to
  * create a 3D volume
  *
- * @param dynamicVolume4D: volume to compute time frame data from
- * @param operation: operation to perform on time frame data, operations include
+ * @param dynamicVolume4D - volume to compute time frame data from
+ * @param operation - operation to perform on time frame data, operations include
  * SUM, AVERAGE, and SUBTRACT (can only be used with 2 time frames provided)
- * @param frameNumbers: an array of frame indexs to perform the operation on, if
+ * @param frameNumbers - an array of frame indices to perform the operation on, if
  * left empty, all frames will be used
  * @returns
  */

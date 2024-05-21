@@ -3,11 +3,10 @@ import cornerstoneStreamingDynamicImageVolumeLoader from './cornerstoneStreaming
 import StreamingImageVolume from './StreamingImageVolume';
 import StreamingDynamicImageVolume from './StreamingDynamicImageVolume';
 import getDynamicVolumeInfo from './helpers/getDynamicVolumeInfo';
-import { sortImageIdsAndGetSpacing } from './helpers';
+import * as Enums from './enums';
 
 const helpers = {
   getDynamicVolumeInfo,
-  sortImageIdsAndGetSpacing,
 };
 
 export {
@@ -16,4 +15,5 @@ export {
   StreamingImageVolume,
   StreamingDynamicImageVolume,
   helpers,
+  Enums,
 };
