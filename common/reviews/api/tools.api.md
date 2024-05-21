@@ -5,7 +5,6 @@
 ```ts
 
 import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget/Constants';
-import { default as default_2 } from 'packages/core/dist/types/RenderingEngine/StackViewport';
 import type { GetGPUTier } from 'detect-gpu';
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { mat3 } from 'gl-matrix';
