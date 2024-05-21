@@ -14,6 +14,8 @@ jobs:
       with:
         node-version: 18
     - name: Install dependencies
+      run: brew install pkg-config cairo pango libpng jpeg giflib librsvg
+    - name: Install dependencies
       run: yarn install
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
