@@ -770,13 +770,11 @@ class HeightTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateHeight(pos1, pos2) {
-    const dx = pos2[1] - pos1[1];
-    //45 degree tangent:
-    const m = 1;
-    const height = m * dx;
+  _calculateHeight(iniy, finy) {
+    //Difference between final y and initial y = height
+    const dy = finy - iniy;
     //Convert to positive:
-    return Math.abs(height);
+    return Math.abs(dy);
   }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
@@ -809,7 +807,7 @@ class HeightTool extends AnnotationTool {
       const handles = [index1, index2];
       const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
 
-      const height = this._calculateHeight(worldPos1, worldPos2) / scale;
+      const height = this._calculateHeight(worldPos1[1], worldPos2[1]) / scale;
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)
