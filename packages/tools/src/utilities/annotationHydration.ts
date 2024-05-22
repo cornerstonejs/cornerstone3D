@@ -140,4 +140,4 @@ function calculateDistanceToImage(
 
   return Math.abs(dot);
 }
-export { annotationHydration };
+export { annotationHydration, getClosestImageIdForStackViewport };
