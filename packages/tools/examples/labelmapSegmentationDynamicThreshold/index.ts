@@ -179,6 +179,28 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Enable Center IJK preview',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+
+    brush.enableCenterIJKPreview();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Disable Center IJK preview',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+
+    brush.disableCenterIJKPreview();
+  },
+});
+
 // ============================= //
 
 async function addSegmentationsToState() {
