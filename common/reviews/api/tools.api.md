@@ -884,11 +884,11 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: (evt: any) => void;
+    onSetToolDisabled: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
-    onSetToolPassive: (evt: any) => void;
+    onSetToolPassive: () => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)

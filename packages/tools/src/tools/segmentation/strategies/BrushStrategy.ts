@@ -26,10 +26,9 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   segmentationVoxelManager: csUtils.VoxelManager<number>;
   segmentationImageData: vtkImageData;
   previewVoxelManager: csUtils.VoxelManager<number>;
-  // The index to use for the preview segment.  Currently always undefined or 255
+  // The index to use for the preview segment. Currently, always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
-
   brushStrategy: BrushStrategy;
   configuration?: Record<string, any>;
 };
@@ -169,8 +168,7 @@ export default class BrushStrategy {
       return;
     }
 
-    const { strategySpecificConfiguration = {}, centerIJK = [] } =
-      initializedData;
+    const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
     if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {

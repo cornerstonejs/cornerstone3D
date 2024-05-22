@@ -386,30 +386,80 @@ class BrushTool extends BaseTool {
     }
   };
 
+  /**
+   * Sets the manual preview mode for the BrushTool.
+   * This method updates the `isManualPreviewEnabled` property of the
+   * configuration's preview object. When `isManualPreviewEnabled` is `true`,
+   * the preview mode is manually controlled.
+   *
+   * @param isManualPreviewEnabled - A boolean value to enable or disable manual
+   * preview mode.
+   */
   setManualPreviewMode = (isManualPreviewEnabled: boolean) => {
     this.configuration.preview.isManualPreviewEnabled = isManualPreviewEnabled;
   };
 
+  /**
+   * Retrieves the current state of the manual preview mode for the BrushTool.
+   * This method returns the `isManualPreviewEnabled` property of the configuration's
+   * preview object. When `isManualPreviewEnabled` is `true`, the preview mode
+   * is manually controlled.
+   *
+   * @returns {boolean} - The current state of the manual preview mode.
+   */
   getManualPreviewMode = () => {
     return this.configuration.preview.isManualPreviewEnabled;
   };
 
+  /**
+   * Enables the preview at the center of the IJK coordinate system.
+   * This method sets the `isCenterIJKDisabled` property of the configuration's
+   * preview object to `false`. When `isCenterIJKDisabled` is `false`, the preview
+   * will rely on the center of the IJK coordinate system.
+   */
   enableCenterIJKPreview = () => {
     this.configuration.preview.isCenterIJKDisabled = false;
   };
 
+  /**
+   * Disables the preview at the center of the IJK coordinate system.
+   * This method sets the `isCenterIJKDisabled` property of the configuration's
+   * preview object to `true`. When `isCenterIJKDisabled` is `true`, the preview
+   * will not rely on center of the IJK coordinate system.
+   */
   disableCenterIJKPreview = () => {
     this.configuration.preview.isCenterIJKDisabled = true;
   };
 
+  /**
+   * Enables the hover preview for the BrushTool.
+   * This method sets the `isHoverPreviewDisabled` property of the configuration's
+   * preview object to `false`. When `isHoverPreviewDisabled` is `false`, the hover
+   * preview feature is enabled (default behaviour).
+   */
   enableHoverPreview = () => {
     this.configuration.preview.isHoverPreviewDisabled = false;
   };
 
+  /**
+   * Disables the hover preview for the BrushTool.
+   * This method sets the `isHoverPreviewDisabled` property of the configuration's
+   * preview object to `true`. When `isHoverPreviewDisabled` is `true`, the hover
+   * preview feature is disabled.
+   */
   disableHoverPreview = () => {
     this.configuration.preview.isHoverPreviewDisabled = true;
   };
 
+  /**
+   * Manually triggers a preview operation for the BrushTool.
+   * This method is used to manually control the preview mode of the BrushTool.
+   * It cancels any ongoing preview operation, enables the preview mode if it's
+   * not enabled, and initiates a new preview operation at the center of the viewport.
+   *
+   * @param element - The HTMLDivElement of the viewport where the preview
+   * operation is to be performed.
+   */
   manualPreview = (element: HTMLDivElement) => {
     // If a preview operation is in progress, cancel it
     if (this._previewData.timer) {
