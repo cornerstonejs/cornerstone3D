@@ -1455,8 +1455,7 @@ class CrosshairsTool extends AnnotationTool {
         clientWidth * 0.95,
         clientHeight * 0.05,
       ] as Types.Point2;
-      const circleRadius =
-        (canvasDiagonalLength / window.devicePixelRatio || 1) * 0.01;
+      const circleRadius = canvasDiagonalLength * 0.01;
 
       const circleUID = '0';
       drawCircleSvg(
