@@ -157,6 +157,28 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Manual Preview toggle',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+
+    if (brush.getManualPreviewMode()) {
+      brush.setManualPreviewMode(false);
+      brush.enableCenterIJKPreview();
+      brush.enableHoverPreview();
+      brush.rejectPreview?.(element1);
+    } else {
+      brush.setManualPreviewMode(true);
+      brush.disableCenterIJKPreview();
+      brush.configuration.brushSize = 1000;
+      brush.disableHoverPreview();
+      brush.manualPreview?.(element1);
+    }
+  },
+});
+
 // ============================= //
 
 async function addSegmentationsToState() {

@@ -14,13 +14,9 @@ export default {
       segmentsLocked,
       segmentationImageData,
       segmentationVoxelManager: segmentationVoxelManager,
-      previewVoxelManager: previewVoxelManager,
       imageVoxelManager: imageVoxelManager,
       brushStrategy,
-      centerIJK,
-      isCenterIJKDisabled,
     } = operationData;
-
     const isWithinThreshold =
       brushStrategy.createIsInThreshold?.(operationData);
     const { setValue } = brushStrategy;
@@ -41,9 +37,5 @@ export default {
       callback,
       segmentationVoxelManager.boundsIJK
     );
-
-    if (!isCenterIJKDisabled) {
-      previewVoxelManager.addPoint(centerIJK);
-    }
   },
 };
