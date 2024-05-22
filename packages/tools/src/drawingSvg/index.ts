@@ -5,6 +5,7 @@ import drawEllipseByCoordinates from './drawEllipseByCoordinates';
 import drawHandles from './drawHandles';
 import drawHandle from './drawHandle';
 import drawLine from './drawLine';
+import drawHeight from './drawHeight';
 import drawPolyline from './drawPolyline';
 import drawPath from './drawPath';
 import drawLinkedTextBox from './drawLinkedTextBox';
@@ -23,6 +24,7 @@ export {
   drawHandles,
   drawHandle,
   drawLine,
+  drawHeight,
   drawPolyline,
   drawPath,
   drawLinkedTextBox,

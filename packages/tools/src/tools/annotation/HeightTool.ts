@@ -21,7 +21,7 @@ import * as lineSegment from '../../utilities/math/line';
 
 import {
   drawHandles as drawHandlesSvg,
-  drawLine as drawHeightSvg,
+  drawHeight as drawHeightSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store';
@@ -48,7 +48,7 @@ import { StyleSpecifier } from '../../types/AnnotationStyle';
 const { transformWorldToIndex } = csUtils;
 
 /**
- * HeightTool let you draw annotations that measures the length of two drawing
+ * HeightTool let you draw annotations that measures the height of two drawing
  * points on a slice. You can use the HeightTool in all imaging planes even in oblique
  * reconstructed planes. Note: annotation tools in cornerstone3DTools exists in the exact location
  * in the physical 3d space, as a result, by default, all annotations that are
@@ -211,7 +211,7 @@ class HeightTool extends AnnotationTool {
   };
 
   /**
-   * It returns if the canvas point is near the provided length annotation in the provided
+   * It returns if the canvas point is near the provided height annotation in the provided
    * element or not. A proximity is passed to the function to determine the
    * proximity of the point to the annotation in number of pixels.
    *
@@ -586,7 +586,7 @@ class HeightTool extends AnnotationTool {
   };
 
   /**
-   * it is used to draw the length annotation in each
+   * it is used to draw the height annotation in each
    * request animation frame. It calculates the updated cached statistics if
    * data is invalidated and cache it.
    *
@@ -692,62 +692,20 @@ class HeightTool extends AnnotationTool {
         );
       }
 
-      const dataId = `${annotationUID}-height`;
-      const heightUID = '1';
+      const heightUID = '0';
 
-      //Middle lines:
-      this.midX =
-        canvasCoordinates[1][0] +
-        (canvasCoordinates[0][0] - canvasCoordinates[1][0]) / 2;
-
-      //Line 1:
-      this.endfirstLine = [this.midX, canvasCoordinates[0][1]];
+      //Draw Height:
       drawHeightSvg(
         svgDrawingHelper,
         annotationUID,
         heightUID,
         canvasCoordinates[0],
-        this.endfirstLine,
-        {
-          color,
-          width: lineWidth,
-          lineDash,
-          shadow,
-        },
-        dataId
-      );
-
-      //Height line:
-      this.endsecondLine = [this.midX, canvasCoordinates[1][1]];
-      drawHeightSvg(
-        svgDrawingHelper,
-        annotationUID,
-        heightUID,
-        this.endfirstLine,
-        this.endsecondLine,
-        {
-          color,
-          width: lineWidth,
-          lineDash,
-          shadow,
-        },
-        dataId
-      );
-
-      //Final line:
-      drawHeightSvg(
-        svgDrawingHelper,
-        annotationUID,
-        heightUID,
-        this.endsecondLine,
         canvasCoordinates[1],
         {
           color,
           width: lineWidth,
-          lineDash,
-          shadow,
-        },
-        dataId
+          lineDash: lineDash,
+        }
       );
 
       renderStatus = true;
@@ -812,12 +770,13 @@ class HeightTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  _calculateHeight(pos1, pos2) {
+    const dx = pos2[1] - pos1[1];
+    //45 degree tangent:
+    const m = 1;
+    const height = m * dx;
+    //Convert to positive:
+    return Math.abs(height);
   }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
@@ -850,7 +809,7 @@ class HeightTool extends AnnotationTool {
       const handles = [index1, index2];
       const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
 
-      const length = this._calculateLength(worldPos1, worldPos2) / scale;
+      const height = this._calculateHeight(worldPos1, worldPos2) / scale;
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)
@@ -862,7 +821,7 @@ class HeightTool extends AnnotationTool {
 
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
-        length,
+        height,
         unit: units,
       };
     }
@@ -885,14 +844,14 @@ class HeightTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { length, unit } = cachedVolumeStats;
+  const { height, unit } = cachedVolumeStats;
 
   // Can be null on load
-  if (length === undefined || length === null || isNaN(length)) {
+  if (height === undefined || height === null || isNaN(height)) {
     return;
   }
 
-  const textLines = [`${roundNumber(length)} ${unit}`];
+  const textLines = [`${roundNumber(height)} ${unit}`];
 
   return textLines;
 }
