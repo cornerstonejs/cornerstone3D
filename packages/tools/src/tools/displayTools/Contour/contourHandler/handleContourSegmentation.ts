@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { addAnnotation } from '../../../../stateManagement';
-import { cache, Types, utilities } from '@cornerstonejs/core';
+import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
+import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import {
   SegmentationRepresentationConfig,
@@ -15,7 +16,7 @@ import { addContourSegmentationAnnotation } from '../../../../utilities/contourS
 import { validateGeometry } from './utils';
 
 function handleContourSegmentation(
-  viewport: Types.IVolumeViewport,
+  viewport: StackViewport | Types.IVolumeViewport,
   geometryIds: string[],
   annotationUIDsMap: Map<number, Set<string>>,
   contourRepresentation: ToolGroupSpecificContourRepresentation,
@@ -33,7 +34,7 @@ function handleContourSegmentation(
 }
 
 function updateContourSets(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | StackViewport,
   geometryIds: string[],
   contourRepresentation: ToolGroupSpecificContourRepresentation,
   contourRepresentationConfig: SegmentationRepresentationConfig
@@ -112,7 +113,7 @@ function updateContourSets(
 }
 
 function addContourSetsToElement(
-  viewport: Types.IVolumeViewport,
+  viewport: StackViewport | Types.IVolumeViewport,
   geometryIds: string[],
   contourRepresentation: ToolGroupSpecificContourRepresentation,
   contourRepresentationConfig: SegmentationRepresentationConfig
@@ -166,7 +167,11 @@ function addContourSetsToElement(
         isLocked: true,
         isVisible: true,
         metadata: {
-          referencedImageId: viewport.getCurrentImageId(),
+          referencedImageId: getClosestImageIdForStackViewport(
+            viewport as StackViewport,
+            points[0],
+            viewport.getCamera().viewPlaneNormal
+          ),
           toolName: 'PlanarFreehandContourSegmentationTool',
           FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
           viewPlaneNormal: viewport.getCamera().viewPlaneNormal,

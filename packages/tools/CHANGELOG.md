@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.74.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.5...v1.74.6) (2024-05-23)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.74.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.4...v1.74.5) (2024-05-22)
+
+### Bug Fixes
+
+- **rt:** assign correct imageId for Stack ([#1269](https://github.com/cornerstonejs/cornerstone3D/issues/1269)) ([4845045](https://github.com/cornerstonejs/cornerstone3D/commit/48450453eca53ed7f54e2a0b8fe8ff1ce3b8d3e1))
+
 ## [1.74.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.3...v1.74.4) (2024-05-21)
 
 **Note:** Version bump only for package @cornerstonejs/tools
