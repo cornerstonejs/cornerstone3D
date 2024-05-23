@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.74.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.6...v1.74.7) (2024-05-23)
+
+### Bug Fixes
+
+- **crosshairs:** configurable viewportIndicators ([#1268](https://github.com/cornerstonejs/cornerstone3D/issues/1268)) ([268f1b1](https://github.com/cornerstonejs/cornerstone3D/commit/268f1b1d6bd99781d707c57b7afc764d7f26c824))
+
 ## [1.74.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.5...v1.74.6) (2024-05-23)
 
 ### Bug Fixes
