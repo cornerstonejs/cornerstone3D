@@ -189,6 +189,13 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
       y: 24,
     },
   }),
+  Height: extend(BASE, {
+    iconContent: <path d="m 6 22 l 8.5 0 v -16 h 8" stroke-width="3" fill="none" stroke="{{color}}" />,
+    viewBox: {
+      x: 24,
+      y: 24,
+    },
+  }),
   Probe: extend(BASE, {
     iconContent: `<path fill="{{color}}" d="M1152 896q0 106-75 181t-181 75-181-75-75-181 75-181 181-75 181 75
     75 181zm-256-544q-148 0-273 73t-198 198-73 273 73 273 198 198 273 73 273-73
