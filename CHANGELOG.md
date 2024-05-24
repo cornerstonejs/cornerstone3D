@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.74.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.7...v1.74.8) (2024-05-24)
+
+### Bug Fixes
+
+- **measurements:** include volumeid and other useful properties in annotation metadata ([#1281](https://github.com/cornerstonejs/cornerstone3D/issues/1281)) ([8f4ff3e](https://github.com/cornerstonejs/cornerstone3D/commit/8f4ff3e3b836ca4d5817f90ac7349232635cdac1))
+
 ## [1.74.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.6...v1.74.7) (2024-05-23)
 
 ### Bug Fixes
