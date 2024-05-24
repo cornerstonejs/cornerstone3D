@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "packages/adapters"
+      - "packages/core"
+      - "packages/dicomImageLoader"
+      - "packages/docs"
+      - "packages/nifti-volume-loader"
+      - "packages/streaming-image-volume-loader"
+      - "packages/tools"
+    schedule:
+      interval: "weekly"
+    groups:
+      security:
+        patterns:
+          - "*"
