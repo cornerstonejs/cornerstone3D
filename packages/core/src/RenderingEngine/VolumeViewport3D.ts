@@ -64,6 +64,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
   resetProperties(volumeId?: string): void {
     return null;
   }
+
+  resetSlabThickness(): void {
+    return null;
+  }
 }
 
 export default VolumeViewport3D;

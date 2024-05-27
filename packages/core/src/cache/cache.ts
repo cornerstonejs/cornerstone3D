@@ -38,7 +38,7 @@ class Cache implements ICache {
   private _imageCacheSize = 0;
   private _volumeCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
-  private _maxInstanceSize = 2 * ONE_GB - 8;
+  private _maxInstanceSize = 4 * ONE_GB - 8;
 
   constructor() {
     // used to store object data (contour, surface, etc.)
@@ -918,7 +918,8 @@ class Cache implements ICache {
     const imageCacheOffsetMap = volume.imageCacheOffsetMap;
 
     if (imageCacheOffsetMap.size === 0) {
-      console.warn('No cached images to restore for this volume.');
+      // This happens during testing and isn't an issue
+      // console.warn('No cached images to restore for this volume.');
       return;
     }
 

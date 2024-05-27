@@ -47,6 +47,10 @@ function playClip(
     );
   }
 
+  if (!playClipOptions) {
+    playClipOptions = {};
+  }
+
   // 4D Cine is enabled by default
   playClipOptions.dynamicCineEnabled =
     playClipOptions.dynamicCineEnabled ?? true;
@@ -194,10 +198,10 @@ function playClip(
  * Stops an already playing clip.
  * @param element - HTML Element
  */
-function stopClip(element: HTMLDivElement, viewportId?: string): void {
+function stopClip(element: HTMLDivElement, options = {} as any): void {
   _stopClip(element, {
     stopDynamicCine: true,
-    viewportId,
+    ...options,
   });
 }
 

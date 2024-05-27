@@ -13,6 +13,7 @@ import {
   touchToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
+  cameraResetEventDispatcher,
 } from '../eventDispatchers';
 import { state } from './state';
 
@@ -48,6 +49,7 @@ export default function addEnabledElement(
   imageRenderedEventDispatcher.enable(element);
   cameraModifiedEventDispatcher.enable(element);
   imageSpacingCalibratedEventDispatcher.enable(element);
+  cameraResetEventDispatcher.enable(element);
   // Dispatchers: interaction
   mouseToolEventDispatcher.enable(element);
   keyboardToolEventDispatcher.enable(element);

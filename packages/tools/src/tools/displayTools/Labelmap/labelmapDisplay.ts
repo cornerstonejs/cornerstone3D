@@ -361,6 +361,13 @@ function _setLabelmapColorAndOpacity(
 
   for (let i = 1; i < numColors; i++) {
     // Start from 1 to skip the background segment index.
+    const isHidden = segmentsHidden.has(i);
+
+    if (isHidden) {
+      outlineWidths[i - 1] = 0;
+      continue;
+    }
+
     outlineWidths[i - 1] =
       i === activeSegmentIndex
         ? outlineWidth + toolGroupLabelmapConfig.activeSegmentOutlineWidthDelta

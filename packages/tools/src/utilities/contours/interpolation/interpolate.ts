@@ -248,9 +248,11 @@ function _addInterpolatedContour(
     referencedToolData
   );
 
-  const targetId = viewport.getReferenceId({ sliceIndex });
-  interpolatedAnnotation.metadata.referencedImageId = targetId;
-  interpolatedAnnotation.metadata.sliceIndex = sliceIndex;
+  const viewRef = viewport.getViewReference({ sliceIndex });
+  if (!viewRef) {
+    throw new Error(`Can't find slice ${sliceIndex}`);
+  }
+  Object.assign(interpolatedAnnotation.metadata, viewRef);
   annotationState.state.addAnnotation(interpolatedAnnotation, viewport.element);
   referencedToolData.onInterpolationComplete?.(
     interpolatedAnnotation,

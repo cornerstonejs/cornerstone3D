@@ -1,4 +1,4 @@
-import { _cloneDeep } from 'lodash.clonedeep';
+import cloneDeep from 'lodash.clonedeep';
 import {
   getEnabledElementByIds,
   volumeLoader,
@@ -23,16 +23,16 @@ export default async function createLabelmapVolumeForViewport(input: {
   renderingEngineId: string;
   segmentationId?: string;
   options?: {
-    volumeId?: string;
-    scalarData?: Float32Array | Uint8Array | Uint16Array | Int16Array;
-    targetBuffer?: {
+    volumeId: string;
+    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+    targetBuffer: {
       type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int8Array';
     };
-    metadata?: any;
-    dimensions?: Types.Point3;
-    spacing?: Types.Point3;
-    origin?: Types.Point3;
-    direction?: Float32Array;
+    metadata: Types.Metadata;
+    dimensions: Types.Point3;
+    spacing: Types.Point3;
+    origin: Types.Point3;
+    direction: Types.Mat3;
   };
 }): Promise<string> {
   const { viewportId, renderingEngineId, options } = input;
@@ -60,7 +60,7 @@ export default async function createLabelmapVolumeForViewport(input: {
   if (options) {
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
-    const properties = _cloneDeep(options);
+    const properties = cloneDeep(options);
     await volumeLoader.createLocalVolume(properties, segmentationId);
   } else {
     // create a labelmap from a reference volume

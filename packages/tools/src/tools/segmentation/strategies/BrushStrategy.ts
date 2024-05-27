@@ -1,15 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import compositions from './compositions';
 import { getStrategyData } from './utils/getStrategyData';
-import { isVolumeSegmentation } from './utils/stackVolumeCheck';
 import { StrategyCallbacks } from '../../../enums';
-import type {
-  LabelmapToolOperationDataAny,
-  LabelmapToolOperationDataVolume,
-} from '../../../types/LabelmapToolOperationData';
+import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const { VoxelManager } = csUtils;
@@ -213,26 +209,6 @@ export default class BrushStrategy {
     if (!data) {
       console.warn('No data found for BrushStrategy');
       return operationData.preview;
-    }
-
-    if (isVolumeSegmentation(operationData, viewport)) {
-      const { referencedVolumeId, volumeId } =
-        operationData as LabelmapToolOperationDataVolume;
-
-      const segmentation = cache.getVolume(volumeId);
-
-      if (referencedVolumeId) {
-        const imageVolume = cache.getVolume(referencedVolumeId);
-
-        if (
-          !csUtils.isEqual(segmentation.dimensions, imageVolume.dimensions) ||
-          !csUtils.isEqual(segmentation.direction, imageVolume.direction)
-        ) {
-          throw new Error(
-            'Only source data the same dimensions/size/orientation as the segmentation currently supported.'
-          );
-        }
-      }
     }
 
     const {
