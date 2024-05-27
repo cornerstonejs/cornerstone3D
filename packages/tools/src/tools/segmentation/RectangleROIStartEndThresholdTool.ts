@@ -11,10 +11,7 @@ import {
 import { Types, utilities as coreUtils } from '@cornerstonejs/core';
 import { Events } from '../../enums';
 
-import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
 import {
   addAnnotation,
@@ -38,7 +35,10 @@ import {
   resetElementCursor,
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted, triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 
 import {
   PublicToolProps,
@@ -53,7 +53,6 @@ import { pointInShapeCallback, roundNumber } from '../../utilities/';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
-
 
 const { transformWorldToIndex } = csUtils;
 
@@ -152,7 +151,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const endCoord = this._getEndCoordinate(
       worldPos,
       spacingInNormal,
-      viewPlaneNormal,
+      viewPlaneNormal
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -268,7 +267,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(annotation, targetId, imageVolume, enabledElement);
+      this._computePointsInsideVolume(
+        annotation,
+        targetId,
+        imageVolume,
+        enabledElement
+      );
     }
 
     triggerAnnotationRenderForViewportIds(
@@ -299,10 +303,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
       startIJK[2] = startCoordinate;
       endIJK = vec3.fromValues(startIJK[0], startIJK[1], endCoordinate);
-    } else if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0) {
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
+    ) {
       startIJK[0] = startCoordinate;
       endIJK = vec3.fromValues(endCoordinate, startIJK[1], startIJK[2]);
-    } else if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1) {
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
+    ) {
       startIJK[1] = startCoordinate;
       endIJK = vec3.fromValues(startIJK[0], endCoordinate, startIJK[2]);
     }
@@ -334,7 +342,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   }
 
   //This function return all the points inside the ROI and calculate statistics for every slices between startCoordinate and endCoordinate
-  _computePointsInsideVolume(annotation, targetId, imageVolume, enabledElement) {
+  _computePointsInsideVolume(
+    annotation,
+    targetId,
+    imageVolume,
+    enabledElement
+  ) {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, viewUp } = metadata;
     const { viewport, renderingEngine } = enabledElement;
@@ -353,9 +366,11 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       worldPos1,
       worldPos2
     );
-    const scale = getCalibratedScale(image);
+    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.habdles);
 
-    const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
+    const area =
+      Math.abs(worldWidth * worldHeight) /
+      (measureInfo.scale * measureInfo.scale);
 
     const modalityUnitOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),
@@ -392,13 +407,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         projectionPoint
       );
 
-      const indexOfProjection = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+      const indexOfProjection =
+        this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0]);
       worldPos1Index[1] = Math.floor(worldPos1Index[1]);
       worldPos1Index[2] = Math.floor(worldPos1Index[2]);
 
-      worldPos1Index[indexOfProjection] = worldProjectionPointIndex[indexOfProjection];
+      worldPos1Index[indexOfProjection] =
+        worldProjectionPointIndex[indexOfProjection];
 
       const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
 
@@ -406,7 +423,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       worldPos2Index[1] = Math.floor(worldPos2Index[1]);
       worldPos2Index[2] = Math.floor(worldPos2Index[2]);
 
-      worldPos2Index[indexOfProjection] = worldProjectionPointIndex[indexOfProjection];
+      worldPos2Index[indexOfProjection] =
+        worldProjectionPointIndex[indexOfProjection];
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
@@ -448,7 +466,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       stdDev: stats.stdDev?.value,
       max: stats.max?.value,
       statsArray: stats.array,
-      areaUnit: getCalibratedAreaUnits(null, image),
+      areaUnit: measureInfo.areaUnits,
       modalityUnit,
     };
   }
@@ -525,22 +543,31 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       // np.arange
 
       const focalPoint = viewport.getCamera().focalPoint;
-      const viewplaneNormal = viewport.getCamera().viewPlaneNormal
+      const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
 
       let startCoord: number | vec3 = startCoordinate;
       let endCoord: number | vec3 = endCoordinate;
       if (Array.isArray(startCoordinate)) {
-        startCoord = this._getCoordinateForViewplaneNormal(startCoord, viewplaneNormal)
+        startCoord = this._getCoordinateForViewplaneNormal(
+          startCoord,
+          viewplaneNormal
+        );
       }
 
       if (Array.isArray(endCoordinate)) {
-        endCoord = this._getCoordinateForViewplaneNormal(endCoord, viewplaneNormal);
+        endCoord = this._getCoordinateForViewplaneNormal(
+          endCoord,
+          viewplaneNormal
+        );
       }
 
-      const roundedStartCoord = coreUtils.roundToPrecision(startCoord)
-      const roundedEndCoord = coreUtils.roundToPrecision(endCoord)
+      const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
+      const roundedEndCoord = coreUtils.roundToPrecision(endCoord);
 
-      const coord = this._getCoordinateForViewplaneNormal(focalPoint, viewplaneNormal);
+      const coord = this._getCoordinateForViewplaneNormal(
+        focalPoint,
+        viewplaneNormal
+      );
       const roundedCoord = coreUtils.roundToPrecision(coord);
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
@@ -556,11 +583,13 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         this._throttledCalculateCachedStats(annotation, enabledElement);
       }
 
-
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
       let firstOrLastSlice = false;
-      if (roundedCoord === roundedStartCoord || roundedCoord === roundedEndCoord) {
+      if (
+        roundedCoord === roundedStartCoord ||
+        roundedCoord === roundedEndCoord
+      ) {
         firstOrLastSlice = true;
       }
 
@@ -622,8 +651,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       renderStatus = true;
 
-      if (this.configuration.showTextBox && this.configuration.calculatePointsInsideVolume) {
-
+      if (
+        this.configuration.showTextBox &&
+        this.configuration.calculatePointsInsideVolume
+      ) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
@@ -676,7 +707,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           bottomRight: viewport.canvasToWorld([left + width, top + height]),
         };
       }
-
     }
 
     return renderStatus;
@@ -687,7 +717,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     viewPlaneNormal: Types.Point3
   ): number | undefined {
     const startPos = worldPos;
-    const startCoord = this._getCoordinateForViewplaneNormal(startPos, viewPlaneNormal);
+    const startCoord = this._getCoordinateForViewplaneNormal(
+      startPos,
+      viewPlaneNormal
+    );
 
     return startCoord;
   }
@@ -695,7 +728,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   _getEndCoordinate(
     worldPos: Types.Point3,
     spacingInNormal: number,
-    viewPlaneNormal: Types.Point3,
+    viewPlaneNormal: Types.Point3
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
 
@@ -709,25 +742,37 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       numSlicesToPropagate * spacingInNormal
     );
 
-    const endCoord = this._getCoordinateForViewplaneNormal(endPos, viewPlaneNormal);
+    const endCoord = this._getCoordinateForViewplaneNormal(
+      endPos,
+      viewPlaneNormal
+    );
 
     return endCoord;
   }
 
-  _getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal: Types.Point3): number {
-    const viewplaneNormalAbs = [Math.abs(viewPlaneNormal[0]), Math.abs(viewPlaneNormal[1]), Math.abs(viewPlaneNormal[2])]
-    const indexOfDirection = viewplaneNormalAbs.indexOf(Math.max(...viewplaneNormalAbs));
+  _getIndexOfCoordinatesForViewplaneNormal(
+    viewPlaneNormal: Types.Point3
+  ): number {
+    const viewplaneNormalAbs = [
+      Math.abs(viewPlaneNormal[0]),
+      Math.abs(viewPlaneNormal[1]),
+      Math.abs(viewPlaneNormal[2]),
+    ];
+    const indexOfDirection = viewplaneNormalAbs.indexOf(
+      Math.max(...viewplaneNormalAbs)
+    );
 
     return indexOfDirection;
   }
 
   _getCoordinateForViewplaneNormal(
     pos: vec3 | number,
-    viewPlaneNormal: Types.Point3,
+    viewPlaneNormal: Types.Point3
   ): number | undefined {
-    const indexOfDirection = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+    const indexOfDirection =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    return (pos[indexOfDirection]);
+    return pos[indexOfDirection];
   }
 }
 

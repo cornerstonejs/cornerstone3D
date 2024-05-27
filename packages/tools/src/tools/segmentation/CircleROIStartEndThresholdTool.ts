@@ -4,7 +4,7 @@ import {
   cache,
   getEnabledElement,
   utilities as csUtils,
-  utilities as coreUtils
+  utilities as coreUtils,
 } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
@@ -30,7 +30,10 @@ import {
   resetElementCursor,
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted, triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
 import {
   PublicToolProps,
   ToolProps,
@@ -45,8 +48,7 @@ import {
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
 import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
+  getCalibratedLengthUnitsAndScale,
   getCalibratedAspect,
 } from '../../utilities/getCalibratedUnits';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
@@ -54,7 +56,6 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { pointInShapeCallback, roundNumber } from '../../utilities';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
-
 
 const { transformWorldToIndex } = csUtils;
 
@@ -137,7 +138,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       viewPlaneNormal
     );
 
-    const startIndex = this._getStartCoordinate(worldPos, spacingInNormal, viewPlaneNormal);
+    const startIndex = this._getStartCoordinate(
+      worldPos,
+      spacingInNormal,
+      viewPlaneNormal
+    );
 
     // We cannot simply add numSlicesToPropagate to startIndex because
     // the order of imageIds can be from top to bottom or bottom to top and
@@ -146,9 +151,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const endIndex = this._getEndCoordinate(
       worldPos,
       spacingInNormal,
-      viewPlaneNormal,
+      viewPlaneNormal
     );
-
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
@@ -265,7 +269,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
     if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(annotation, imageVolume, targetId, enabledElement);
+      this._computePointsInsideVolume(
+        annotation,
+        imageVolume,
+        targetId,
+        enabledElement
+      );
     }
 
     triggerAnnotationRenderForViewportIds(
@@ -335,21 +344,30 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // np.arange
 
       const focalPoint = viewport.getCamera().focalPoint;
-      const viewplaneNormal = viewport.getCamera().viewPlaneNormal
+      const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
 
       let startCoord: number | vec3 = startCoordinate;
       let endCoord: number | vec3 = endCoordinate;
       if (Array.isArray(startCoordinate)) {
-        startCoord = this._getCoordinateForViewplaneNormal(startCoord, viewplaneNormal)
+        startCoord = this._getCoordinateForViewplaneNormal(
+          startCoord,
+          viewplaneNormal
+        );
       }
       if (Array.isArray(endCoordinate)) {
-        endCoord = this._getCoordinateForViewplaneNormal(endCoord, viewplaneNormal);
+        endCoord = this._getCoordinateForViewplaneNormal(
+          endCoord,
+          viewplaneNormal
+        );
       }
 
-      const roundedStartCoord = coreUtils.roundToPrecision(startCoord)
-      const roundedEndCoord = coreUtils.roundToPrecision(endCoord)
+      const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
+      const roundedEndCoord = coreUtils.roundToPrecision(endCoord);
 
-      const coord = this._getCoordinateForViewplaneNormal(focalPoint, viewplaneNormal);
+      const coord = this._getCoordinateForViewplaneNormal(
+        focalPoint,
+        viewplaneNormal
+      );
       const roundedCoord = coreUtils.roundToPrecision(coord);
 
       // if the focalpoint is outside the start/end coordinates, we don't render
@@ -365,7 +383,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         this._throttledCalculateCachedStats(annotation, enabledElement);
       }
 
-      const middleCoord = coreUtils.roundToPrecision((startCoord + endCoord) / 2);
+      const middleCoord = coreUtils.roundToPrecision(
+        (startCoord + endCoord) / 2
+      );
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
 
@@ -446,8 +466,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       renderStatus = true;
 
-      if (this.configuration.showTextBox == true && this.configuration.calculatePointsInsideVolume == true) {
-
+      if (
+        this.configuration.showTextBox == true &&
+        this.configuration.calculatePointsInsideVolume == true
+      ) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
@@ -523,10 +545,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
       startIJK[2] = startCoordinate;
       endIJK = vec3.fromValues(startIJK[0], startIJK[1], endCoordinate);
-    } else if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0) {
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
+    ) {
       startIJK[0] = startCoordinate;
       endIJK = vec3.fromValues(endCoordinate, startIJK[1], startIJK[2]);
-    } else if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1) {
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
+    ) {
       startIJK[1] = startCoordinate;
       endIJK = vec3.fromValues(startIJK[0], endCoordinate, startIJK[2]);
     }
@@ -557,7 +583,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
-  _computePointsInsideVolume(annotation, imageVolume, targetId, enabledElement) {
+  _computePointsInsideVolume(
+    annotation,
+    imageVolume,
+    targetId,
+    enabledElement
+  ) {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, viewUp } = metadata;
     const { viewport, renderingEngine } = enabledElement;
@@ -567,7 +598,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const image = this.getTargetIdImage(targetId, renderingEngine);
 
-    const canvasCoordinates = data.handles.points.map((p) => viewport.worldToCanvas(p));
+    const canvasCoordinates = data.handles.points.map((p) =>
+      viewport.worldToCanvas(p)
+    );
     const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
       getCanvasCircleCorners(canvasCoordinates)
     );
@@ -580,12 +613,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       pos1,
       pos2
     );
-    const scale = getCalibratedScale(image);
+    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.handles);
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-      (worldWidth / scale / 2) *
-      (worldHeight / aspect / scale / 2)
+        (worldWidth / measureInfo.scale / 2) *
+        (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {
@@ -690,7 +723,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       stdDev: stats.stdDev?.value,
       max: stats.max?.value,
       statsArray: stats.array,
-      areaUnit: getCalibratedAreaUnits(null, image),
+      areaUnit: measureInfo.areaUnits,
       modalityUnit,
     };
   }
@@ -733,7 +766,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       numSlicesToPropagateFromStart * -spacingInNormal
     );
 
-    const startCoord = this._getCoordinateForViewplaneNormal(startPos, viewPlaneNormal);
+    const startCoord = this._getCoordinateForViewplaneNormal(
+      startPos,
+      viewPlaneNormal
+    );
 
     return startCoord;
   }
@@ -741,10 +777,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   _getEndCoordinate(
     worldPos: Types.Point3,
     spacingInNormal: number,
-    viewPlaneNormal: Types.Point3,
+    viewPlaneNormal: Types.Point3
   ): number | undefined {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
-    const numSlicesToPropagateToEnd = numSlicesToPropagate - Math.round(numSlicesToPropagate / 2);
+    const numSlicesToPropagateToEnd =
+      numSlicesToPropagate - Math.round(numSlicesToPropagate / 2);
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
     // with amount of numSlicesToPropagate * spacingInNormal
@@ -756,25 +793,37 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       numSlicesToPropagateToEnd * spacingInNormal
     );
 
-    const endCoord = this._getCoordinateForViewplaneNormal(endPos, viewPlaneNormal);
+    const endCoord = this._getCoordinateForViewplaneNormal(
+      endPos,
+      viewPlaneNormal
+    );
 
     return endCoord;
   }
 
-  _getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal: Types.Point3): number {
-    const viewplaneNormalAbs = [Math.abs(viewPlaneNormal[0]), Math.abs(viewPlaneNormal[1]), Math.abs(viewPlaneNormal[2])]
-    const indexOfDirection = viewplaneNormalAbs.indexOf(Math.max(...viewplaneNormalAbs));
+  _getIndexOfCoordinatesForViewplaneNormal(
+    viewPlaneNormal: Types.Point3
+  ): number {
+    const viewplaneNormalAbs = [
+      Math.abs(viewPlaneNormal[0]),
+      Math.abs(viewPlaneNormal[1]),
+      Math.abs(viewPlaneNormal[2]),
+    ];
+    const indexOfDirection = viewplaneNormalAbs.indexOf(
+      Math.max(...viewplaneNormalAbs)
+    );
 
     return indexOfDirection;
   }
 
   _getCoordinateForViewplaneNormal(
     pos: vec3 | number,
-    viewPlaneNormal: Types.Point3,
+    viewPlaneNormal: Types.Point3
   ): number | undefined {
-    const indexOfDirection = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+    const indexOfDirection =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    return (pos[indexOfDirection]);
+    return pos[indexOfDirection];
   }
 }
 
