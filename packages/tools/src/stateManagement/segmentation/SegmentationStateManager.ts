@@ -450,7 +450,7 @@ export default class SegmentationStateManager {
       console.warn('Color LUT table already exists, overwriting');
     }
 
-    this.state.colorLUT[lutIndex] = structuredClone(colorLUT);
+    this.state.colorLUT[lutIndex] = cloneDeep(colorLUT);
   }
 
   /**

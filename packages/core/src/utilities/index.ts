@@ -11,7 +11,7 @@ import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
-import isEqual from './isEqual';
+import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
 import createUint8SharedArray from './createUint8SharedArray';
 import createFloat32SharedArray from './createFloat32SharedArray';
@@ -66,11 +66,13 @@ import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageI
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
+import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
+import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 
 // name spaces
 import * as planar from './planar';
@@ -78,6 +80,7 @@ import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as cacheUtils from './cacheUtils';
+import * as color from './color';
 
 export {
   eventListener,
@@ -95,6 +98,8 @@ export {
   getMinMax,
   getRuntimeId,
   isEqual,
+  isEqualAbs,
+  isEqualNegative,
   isOpposite,
   createFloat32SharedArray,
   createUint8SharedArray,
@@ -149,9 +154,10 @@ export {
   isValidVolume,
   genericMetadataProvider,
   isVideoTransferSyntax,
+  generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
-  generateVolumePropsFromImageIds,
+  RLEVoxelMap,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   cacheUtils,
@@ -160,4 +166,6 @@ export {
   getViewportImageIds,
   getRandomSampleFromArray,
   getVolumeId,
+  color,
+  hasFloatScalingParameters,
 };

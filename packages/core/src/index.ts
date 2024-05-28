@@ -42,6 +42,7 @@ import {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
+  canRenderFloatTextures,
 } from './init';
 
 // Classes
@@ -89,6 +90,7 @@ export {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
+  canRenderFloatTextures,
   // enums
   Enums,
   CONSTANTS,

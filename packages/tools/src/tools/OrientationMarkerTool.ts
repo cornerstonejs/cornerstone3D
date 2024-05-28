@@ -7,8 +7,15 @@ import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 
 import { BaseTool } from './base';
-import { getRenderingEngines } from '@cornerstonejs/core';
+import {
+  Enums,
+  eventTarget,
+  getEnabledElementByIds,
+  getRenderingEngines,
+} from '@cornerstonejs/core';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
+import { getToolGroup } from '../store/ToolGroupManager';
+import { Events } from '../enums';
 
 const OverlayMarkerType = {
   ANNOTATED_CUBE: 1,
@@ -27,10 +34,9 @@ class OrientationMarkerTool extends BaseTool {
   static VTPFILE = 3;
   orientationMarkers;
   polyDataURL;
+  _resizeObservers = new Map();
 
   static OVERLAY_MARKER_TYPES = OverlayMarkerType;
-
-  configuration_invalidated = true;
 
   constructor(
     toolProps = {},
@@ -82,21 +88,118 @@ class OrientationMarkerTool extends BaseTool {
   ) {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
-    this.configuration_invalidated = true;
   }
 
   onSetToolEnabled = (): void => {
     this.initViewports();
-    this.configuration_invalidated = true;
+    this._subscribeToViewportEvents();
   };
 
   onSetToolActive = (): void => {
     this.initViewports();
+
+    this._subscribeToViewportEvents();
   };
 
   onSetToolDisabled = (): void => {
     this.cleanUpData();
+    this._unsubscribeToViewportNewVolumeSet();
   };
+
+  _getViewportsInfo = () => {
+    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
+
+    return viewports;
+  };
+
+  resize = (viewportId) => {
+    const orientationMarker = this.orientationMarkers[viewportId];
+    if (!orientationMarker) {
+      return;
+    }
+
+    const { orientationWidget } = orientationMarker;
+    orientationWidget.updateViewport();
+  };
+
+  _unsubscribeToViewportNewVolumeSet() {
+    const unsubscribe = () => {
+      const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        const { viewport } = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        const { element } = viewport;
+
+        element.removeEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          this.initViewports.bind(this)
+        );
+
+        const resizeObserver = this._resizeObservers.get(viewportId);
+        resizeObserver.unobserve(element);
+      });
+    };
+
+    eventTarget.removeEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
+      if (evt.detail.toolGroupId !== this.toolGroupId) {
+        return;
+      }
+      unsubscribe();
+      this.initViewports();
+    });
+  }
+
+  _subscribeToViewportEvents() {
+    const subscribeToElementResize = () => {
+      const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        const { viewport } = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        const { element } = viewport;
+        this.initViewports();
+
+        element.addEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          this.initViewports.bind(this)
+        );
+
+        const resizeObserver = new ResizeObserver(() => {
+          // Todo: i wish there was a better way to do this
+          setTimeout(() => {
+            const element = getEnabledElementByIds(
+              viewportId,
+              renderingEngineId
+            );
+            if (!element) {
+              return;
+            }
+            const { viewport } = element;
+            this.resize(viewportId);
+            viewport.render();
+          }, 100);
+        });
+
+        resizeObserver.observe(element);
+
+        this._resizeObservers.set(viewportId, resizeObserver);
+      });
+    };
+
+    subscribeToElementResize();
+
+    eventTarget.addEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
+      if (evt.detail.toolGroupId !== this.toolGroupId) {
+        return;
+      }
+
+      subscribeToElementResize();
+      this.initViewports();
+    });
+  }
 
   private cleanUpData() {
     const renderingEngines = getRenderingEngines();
@@ -134,7 +237,12 @@ class OrientationMarkerTool extends BaseTool {
 
     let viewports = renderingEngine.getViewports();
     viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
-    viewports.forEach((viewport) => this.addAxisActorInViewport(viewport));
+
+    viewports.forEach((viewport) => {
+      if (!viewport.getWidget(this.getToolName())) {
+        this.addAxisActorInViewport(viewport);
+      }
+    });
   }
 
   async addAxisActorInViewport(viewport) {
@@ -189,10 +297,9 @@ class OrientationMarkerTool extends BaseTool {
       orientationWidget,
       actor,
     };
+    viewport.addWidget(this.getToolName(), orientationWidget);
     renderWindow.render();
     viewport.getRenderingEngine().render();
-
-    this.configuration_invalidated = false;
   }
 
   private async createCustomActor() {

@@ -15,6 +15,8 @@ export default interface IStackViewport extends IViewport {
   modality: string;
   /** Scaling parameters */
   scaling: Scaling;
+
+  stackActorReInitialized: boolean;
   /**
    * Resizes the viewport - only used in CPU fallback for StackViewport. The
    * GPU resizing happens inside the RenderingEngine.

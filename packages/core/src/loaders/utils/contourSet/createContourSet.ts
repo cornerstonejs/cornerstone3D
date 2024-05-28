@@ -15,7 +15,7 @@ export function createContourSet(
     data: contourSetData.data,
     color: contourSetData.color,
     frameOfReferenceUID: contourSetData.frameOfReferenceUID,
-    segmentIndex: 1,
+    segmentIndex: contourSetData.segmentIndex ?? 1,
   });
 
   const geometry: IGeometry = {

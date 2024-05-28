@@ -3,7 +3,7 @@ import RGB from './RGB';
 type ColormapRegistration = {
   ColorSpace: string;
   Name: string;
-  RGBPoints: RGB[];
+  RGBPoints: RGB[] | number[];
 };
 
 type OpacityMapping = {

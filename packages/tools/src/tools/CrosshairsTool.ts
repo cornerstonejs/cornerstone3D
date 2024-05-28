@@ -143,6 +143,12 @@ class CrosshairsTool extends AnnotationTool {
         // renders a colored circle on top right of the viewports whose color
         // matches the color of the reference line
         viewportIndicators: true,
+
+        viewportIndicatorsConfig: {
+          radius: 5,
+          x: null,
+          y: null,
+        },
         // Auto pan is a configuration which will update pan
         // other viewports in the toolGroup if the center of the crosshairs
         // is outside of the viewport. This might be useful for the case
@@ -319,6 +325,19 @@ class CrosshairsTool extends AnnotationTool {
         renderingEngineId
       );
       const { viewport } = enabledElement;
+      const resetPan = true;
+      const resetZoom = true;
+      const resetToCenter = true;
+      const resetRotation = true;
+      const supressEvents = true;
+      viewport.resetCamera(
+        resetPan,
+        resetZoom,
+        resetToCenter,
+        resetRotation,
+        supressEvents
+      );
+      (viewport as Types.IVolumeViewport).resetSlabThickness();
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
       annotations = this.filterInteractableAnnotationsForElement(
@@ -328,6 +347,7 @@ class CrosshairsTool extends AnnotationTool {
       if (annotations.length) {
         removeAnnotation(annotations[0].annotationUID);
       }
+      viewport.render();
     });
 
     this.computeToolCenter(viewportsInfo);
@@ -344,9 +364,10 @@ class CrosshairsTool extends AnnotationTool {
    */
   computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo.length || viewportsInfo.length === 1) {
-      throw new Error(
+      console.warn(
         'For crosshairs to operate, at least two viewports must be given.'
       );
+      return;
     }
 
     // Todo: handle two same view viewport, or more than 3 viewports
@@ -681,6 +702,10 @@ class CrosshairsTool extends AnnotationTool {
     );
 
     triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  };
+
+  onResetCamera = (evt) => {
+    this.resetCrosshairs();
   };
 
   mouseMoveCallback = (
@@ -1430,20 +1455,24 @@ class CrosshairsTool extends AnnotationTool {
     data.handles.slabThicknessPoints = newStpoints;
 
     if (this.configuration.viewportIndicators) {
-      // render a circle to pin point the viewport color
-      // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+      const { viewportIndicatorsConfig } = this.configuration;
+
+      const xOffset = viewportIndicatorsConfig?.xOffset || 0.95;
+      const yOffset = viewportIndicatorsConfig?.yOffset || 0.05;
       const referenceColorCoordinates = [
-        clientWidth * 0.95,
-        clientHeight * 0.05,
-      ] as Types.Point2;
-      const circleRadius = canvasDiagonalLength * 0.01;
+        clientWidth * xOffset,
+        clientHeight * yOffset,
+      ];
+
+      const circleRadius =
+        viewportIndicatorsConfig?.circleRadius || canvasDiagonalLength * 0.01;
 
       const circleUID = '0';
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
         circleUID,
-        referenceColorCoordinates,
+        referenceColorCoordinates as Types.Point2,
         circleRadius,
         { color, fill: color }
       );

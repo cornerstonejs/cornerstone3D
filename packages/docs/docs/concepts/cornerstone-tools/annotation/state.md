@@ -54,14 +54,14 @@ You can get/add annotations using the following API:
 
 ```js
 // Adds annotation
-cornerstone3DTools.annotations.state.addAnnotation(
+cornerstone3DTools.annotation.state.addAnnotation(
   annotation,
   element,
   suppressEvents
 );
 
 // Remove the annotations given the annotation reference.
-cornerstone3DTools.annotations.state.removeAnnotation(
+cornerstone3DTools.annotation.state.removeAnnotation(
   annotationUID,
   suppressEvents
 );

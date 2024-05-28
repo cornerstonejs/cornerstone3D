@@ -29,17 +29,21 @@ import type {
   FlipDirection,
   EventTypes,
   DisplayArea,
+  ViewPresentation,
+  ViewReference,
+  ViewportProperties,
 } from '../types';
 import type {
   ViewportInput,
   IViewport,
   ViewReferenceSpecifier,
-  ViewReference,
   ReferenceCompatibleOptions,
+  ViewPresentationSelector,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
+import { InterpolationType } from '../enums';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -51,6 +55,31 @@ import IImageCalibration from '../types/IImageCalibration';
  * logic.
  */
 class Viewport implements IViewport {
+  /**
+   * CameraViewPresentation is a view preentation selector that has all the
+   * camera related presentation selections, and would typically be used for
+   * choosing presentation information between two viewports showing the same
+   * type of orientation of a view, such as the CT, PT and fusion views in the
+   * same orientation view.
+   */
+  public static readonly CameraViewPresentation: ViewPresentationSelector = {
+    rotation: true,
+    pan: true,
+    zoom: true,
+    displayArea: true,
+  };
+
+  /**
+   * TransferViewPresentation is a view presentation selector that selects all
+   * the transfer function related attributes.  It would typically be used for
+   * synchronizing different orientations of the same series, or for
+   * synchronizing two views of the same type of series such as a CT.
+   */
+  public static readonly TransferViewPresentation: ViewPresentationSelector = {
+    windowLevel: true,
+    paletteLut: true,
+  };
+
   /** unique identifier for the viewport */
   readonly id: string;
   /** HTML element in DOM that is used for rendering the viewport */
@@ -89,7 +118,7 @@ class Viewport implements IViewport {
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
   /** informs if a new actor was added before a resetCameraClippingRange phase */
-  private _suppressCameraModifiedEvents = false;
+  _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
   protected hasPixelSpacing = true;
@@ -101,7 +130,7 @@ class Viewport implements IViewport {
   /** The camera that is defined for resetting displayArea to ensure absolute displayArea
    * settings
    */
-  private fitToCanvasCamera: ICamera;
+  protected fitToCanvasCamera: ICamera;
 
   constructor(props: ViewportInput) {
     this.id = props.id;
@@ -135,13 +164,46 @@ class Viewport implements IViewport {
   worldToCanvas: (worldPos: Point3) => Point2;
   customRenderViewportToCanvas: () => unknown;
   resize: () => void;
-  getProperties: () => void;
+  getProperties: () => ViewportProperties = () => ({});
   updateRenderingPipeline: () => void;
   getNumberOfSlices: () => number;
+  protected setRotation = (_rotation: number) => {
+    /*empty*/
+  };
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
   }
+
+  private viewportWidgets = new Map() as Map<string, any>;
+
+  public addWidget = (widgetId, widget) => {
+    this.viewportWidgets.set(widgetId, widget);
+  };
+
+  public getWidget = (id) => {
+    return this.viewportWidgets.get(id);
+  };
+
+  public getWidgets = () => {
+    return Array.from(this.viewportWidgets.values());
+  };
+
+  public removeWidgets = () => {
+    const widgets = this.getWidgets();
+    widgets.forEach((widget) => {
+      if (widget.getEnabled()) {
+        widget.setEnabled(false);
+      }
+      if (widget.getActor && widget.getRenderer) {
+        const actor = widget.getActor();
+        const renderer = widget.getRenderer();
+        if (renderer && actor) {
+          renderer.removeActor(actor);
+        }
+      }
+    });
+  };
 
   /**
    * Indicate that the image has been rendered.
@@ -591,6 +653,13 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Sets the interpolation type.  No-op in the base.
+   */
+  protected setInterpolationType(_interpolationType: InterpolationType, _arg?) {
+    // No-op - just done to allow setting on the base viewport
+  }
+
+  /**
    * Sets the camera to an initial bounds. If
    * resetPan and resetZoom are true it places the focal point at the center of
    * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
@@ -602,62 +671,10 @@ class Viewport implements IViewport {
     displayArea: DisplayArea,
     suppressEvents = false
   ): void {
-    const { storeAsInitialCamera } = displayArea;
-
-    // Setup the current camera as the fit to canvas camera as the one that is
-    // used as the base for calculations, but it isn't final, so don't fire
-    // events because the camera is still changing.
-    this.setCameraNoEvent(this.fitToCanvasCamera);
-
-    const { imageArea, imageCanvasPoint } = displayArea;
-
-    let zoom = 1;
-    if (imageArea) {
-      const [areaX, areaY] = imageArea;
-      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
-      // Don't set as initial camera because then the zoom interactions don't
-      // work consistently.
-      // TODO: Add a better method to handle initial camera
-      this.setZoom(this.insetImageMultiplier * zoom);
+    if (!displayArea) {
+      return;
     }
-
-    // getting the image info
-    const imageData = this.getDefaultImageData();
-    if (imageCanvasPoint && imageData) {
-      const { imagePoint, canvasPoint } = imageCanvasPoint;
-      const [canvasX, canvasY] = canvasPoint;
-      const devicePixelRatio = window?.devicePixelRatio || 1;
-      const validateCanvasPanX = this.sWidth / devicePixelRatio;
-      const validateCanvasPanY = this.sHeight / devicePixelRatio;
-      const canvasPanX = validateCanvasPanX * (canvasX - 0.5);
-      const canvasPanY = validateCanvasPanY * (canvasY - 0.5);
-      const dimensions = imageData.getDimensions();
-      const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
-      const canvasEdge = this.worldToCanvas(
-        imageData.indexToWorld([
-          dimensions[0] - 1,
-          dimensions[1] - 1,
-          dimensions[2],
-        ])
-      );
-      const canvasImage = [
-        canvasEdge[0] - canvasZero[0],
-        canvasEdge[1] - canvasZero[1],
-      ];
-      const [imgWidth, imgHeight] = canvasImage;
-      const [imageX, imageY] = imagePoint;
-      const imagePanX =
-        (zoom * imgWidth * (0.5 - imageX) * validateCanvasPanY) / imgHeight;
-      const imagePanY = zoom * validateCanvasPanY * (0.5 - imageY);
-
-      const newPositionX = imagePanX + canvasPanX;
-      const newPositionY = imagePanY + canvasPanY;
-
-      const deltaPoint2: Point2 = [newPositionX, newPositionY];
-      // The pan is part of the display area settings, not the initial camera, so
-      // don't store as initial camera here - that breaks rotation and other changes.
-      this.setPan(deltaPoint2);
-    }
+    const { storeAsInitialCamera, type: areaType } = displayArea;
 
     // Instead of storing the camera itself, if initial camera is set,
     // then store the display area as the baseline display area.
@@ -665,7 +682,32 @@ class Viewport implements IViewport {
       this.options.displayArea = displayArea;
     }
 
-    if (!suppressEvents) {
+    // make calculations relative to the fitToCanvasCamera view
+    const { _suppressCameraModifiedEvents } = this;
+    this._suppressCameraModifiedEvents = true;
+
+    // This should only apply for storeAsInitialCamera, but the calculations
+    // currently don't quite work otherwise.
+    // TODO - fix so that the store works for existing transforms
+    this.setCamera(this.fitToCanvasCamera);
+
+    if (areaType === 'SCALE') {
+      this.setDisplayAreaScale(displayArea);
+    } else {
+      this.setInterpolationType(
+        this.getProperties()?.interpolationType || InterpolationType.LINEAR
+      );
+      this.setDisplayAreaFit(displayArea);
+    }
+
+    // Set the initial camera if appropriate
+    if (storeAsInitialCamera) {
+      this.initialCamera = this.getCamera();
+    }
+
+    // Restore event firing
+    this._suppressCameraModifiedEvents = _suppressCameraModifiedEvents;
+    if (!suppressEvents && !_suppressCameraModifiedEvents) {
       const eventDetail: EventTypes.DisplayAreaModifiedEventDetail = {
         viewportId: this.id,
         displayArea: displayArea,
@@ -673,6 +715,156 @@ class Viewport implements IViewport {
       };
 
       triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, eventDetail);
+      this.setCamera(this.getCamera());
+    }
+  }
+
+  /**
+   * Sets the viewport to pixel scaling mode.  Pixel scaling displays
+   * 1 image pixel as 1 (or scale) physical screen pixels.  That is,
+   * a 1024x512 image will be displayed with scale=2, as 2048x1024
+   * physical image pixels.
+   *
+   * @param displayArea - display area to set
+   *    * displayArea.scale - the number of physical pixels to display
+   *        each image pixel in.  Values `< 1` mean smaller than physical,
+   *        while values `> 1` mean more than one pixel.  Default is 1
+   *        Suggest using whole numbers or integer fractions (eg `1/3`)
+   */
+  protected setDisplayAreaScale(displayArea: DisplayArea): void {
+    const { scale = 1 } = displayArea;
+    const canvas = this.canvas;
+    const height = canvas.height;
+    const width = canvas.width;
+    if (height < 8 || width < 8) {
+      return;
+    }
+    const imageData = this.getDefaultImageData();
+    const spacingWorld = imageData.getSpacing();
+    const spacing = spacingWorld[1];
+    // Need nearest interpolation for scale
+    this.setInterpolationType(InterpolationType.NEAREST);
+    this.setCamera({ parallelScale: (height * spacing) / (2 * scale) });
+
+    // If this is scale, then image area isn't allowed, so just delete it to be safe
+    delete displayArea.imageArea;
+    // Apply the pan values from the display area.
+    this.setDisplayAreaFit(displayArea);
+
+    // Need to ensure the focal point is aligned with the canvas size/position
+    // so that we don't get half pixel rendering, which causes additional
+    // moire patterns to be displayed.
+    // This is based on the canvas size having the center pixel be at a fractional
+    // position when the size is even, so matching a fractional position on the
+    // focal point to the center of an image pixel.
+    const { focalPoint, position, viewUp, viewPlaneNormal } = this.getCamera();
+    const focalChange = vec3.create();
+    if (canvas.height % 2) {
+      vec3.scaleAndAdd(focalChange, focalChange, viewUp, scale * 0.5 * spacing);
+    }
+    if (canvas.width % 2) {
+      const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
+      vec3.scaleAndAdd(
+        focalChange,
+        focalChange,
+        viewRight,
+        scale * 0.5 * spacing
+      );
+    }
+    if (!focalChange[0] && !focalChange[1] && !focalChange[2]) {
+      return;
+    }
+    this.setCamera({
+      focalPoint: <Point3>vec3.add(vec3.create(), focalPoint, focalChange),
+      position: <Point3>vec3.add(vec3.create(), position, focalChange),
+    });
+  }
+
+  /**
+   * This applies a display area with a fit of the provided area to the
+   * available area.
+   * The zoom level is controlled by the imageArea parameter, which is a pair
+   * of percentage width in the horizontal and vertical dimension is scaled
+   * to fit the displayable area.  Both values are taken into account, and the
+   * scaling is set so that both fractions of the image area are visible.
+   *
+   * The panning is controlled by the imageCanvasPoint, which has two
+   * values, teh imagePoint and the canvasPoint.  They are fractional
+   * values of the image and canvas respectively, with the panning set to
+   * display the image pixel at the given fraction on top of the canvas at the
+   * given percentage.  The default points are 0.5.
+   *
+   * For example, if the zoom level is [2,1], then the image is displayed
+   * such that at least twice the width is visible, and the height is visible.
+   * That will result in the image width being black, divided up on the left
+   * and right according to the imageCanvasPoint
+   *
+   * Then, if the imagePoint is [1,0] and the canvas point is [1,0], then
+   * the right most edge of the image, at the top of the image, will be
+   * displayed at the right most edge of the canvas, at the top.
+   *
+   */
+  protected setDisplayAreaFit(displayArea: DisplayArea) {
+    const { imageArea, imageCanvasPoint } = displayArea;
+
+    const devicePixelRatio = window?.devicePixelRatio || 1;
+    const imageData = this.getDefaultImageData();
+    if (!imageData) {
+      return;
+    }
+    const canvasWidth = this.sWidth / devicePixelRatio;
+    const canvasHeight = this.sHeight / devicePixelRatio;
+    const dimensions = imageData.getDimensions();
+    const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+    const canvasEdge = this.worldToCanvas(
+      imageData.indexToWorld([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+      ])
+    );
+
+    const canvasImage = [
+      Math.abs(canvasEdge[0] - canvasZero[0]),
+      Math.abs(canvasEdge[1] - canvasZero[1]),
+    ];
+    const [imgWidth, imgHeight] = canvasImage;
+
+    if (imageArea) {
+      const [areaX, areaY] = imageArea;
+      const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
+      const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
+
+      const initZoom = this.getZoom();
+      const fitZoom = this.getZoom(this.fitToCanvasCamera);
+      const absZoom = Math.min(1 / requireX, 1 / requireY);
+      const applyZoom = (absZoom * initZoom) / fitZoom;
+      this.setZoom(applyZoom, false);
+    }
+
+    // getting the image info
+    // getting the image info
+    if (imageCanvasPoint) {
+      const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
+        imageCanvasPoint;
+      const [canvasX, canvasY] = canvasPoint;
+      const canvasPanX = canvasWidth * (canvasX - 0.5);
+      const canvasPanY = canvasHeight * (canvasY - 0.5);
+
+      const [imageX, imageY] = imagePoint || canvasPoint;
+      const useZoom = 1;
+      const imagePanX = useZoom * imgWidth * (0.5 - imageX);
+      const imagePanY = useZoom * imgHeight * (0.5 - imageY);
+
+      const newPositionX = imagePanX + canvasPanX;
+      const newPositionY = imagePanY + canvasPanY;
+
+      const deltaPoint2: Point2 = [newPositionX, newPositionY];
+      // Use getPan from current for the setting
+      vec2.add(deltaPoint2, deltaPoint2, this.getPan());
+      // The pan is part of the display area settings, not the initial camera, so
+      // don't store as initial camera here - that breaks rotation and other changes.
+      this.setPan(deltaPoint2, false);
     }
   }
 
@@ -715,7 +907,10 @@ class Viewport implements IViewport {
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
 
-    // Todo: remove this, this is just for tests passing
+    // The bounds are used to set the clipping view, which is then used to
+    // figure out the center point of each image.  This needs to be the depth
+    // center, so the bounds need to be extended by the spacing such that the
+    // depth center is in the middle of each image.
     if (imageData) {
       const spc = imageData.getSpacing();
 
@@ -741,9 +936,14 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
+      // TODO: This should be the line below, but that causes issues with existing
+      // tests.  Not doing that adds significant fuzziness on rendering, so at
+      // some point it should be fixed.
+      // const middleIJK = dimensions.map((d) => Math.floor((d-1) / 2));
       const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+      // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
 
@@ -755,37 +955,20 @@ class Viewport implements IViewport {
     const boundsAspectRatio = widthWorld / heightWorld;
     const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
-    let radius;
+    const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
-    if (boundsAspectRatio < canvasAspectRatio) {
-      // can fit full height, so use it.
-      radius = heightWorld / 2;
-    } else {
-      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
-
-      radius = (heightWorld * scaleFactor) / 2;
-    }
-
-    //const angle = vtkMath.radiansFromDegrees(activeCamera.getViewAngle())
-    const parallelScale = this.insetImageMultiplier * radius;
-
-    let w1 = bounds[1] - bounds[0];
-    let w2 = bounds[3] - bounds[2];
-    let w3 = bounds[5] - bounds[4];
-    w1 *= w1;
-    w2 *= w2;
-    w3 *= w3;
-    radius = w1 + w2 + w3;
+    const parallelScale =
+      scaleFactor < 1 // can fit full height, so use it.
+        ? (this.insetImageMultiplier * heightWorld) / 2
+        : (this.insetImageMultiplier * heightWorld * scaleFactor) / 2;
 
     // If we have just a single point, pick a radius of 1.0
-    radius = radius === 0 ? 1.0 : radius;
-
     // compute the radius of the enclosing sphere
-    radius = Math.sqrt(radius) * 0.5;
-
     // For 3D viewport, we should increase the radius to make sure the whole
     // volume is visible and we don't get clipping artifacts.
-    radius = this.type === ViewportType.VOLUME_3D ? radius * 10 : radius;
+    const radius =
+      Viewport.boundsRadius(bounds) *
+      (this.type === ViewportType.VOLUME_3D ? 10 : 1);
 
     const distance = this.insetImageMultiplier * radius;
 
@@ -893,19 +1076,19 @@ class Viewport implements IViewport {
    * computed from the current camera, where the initial pan
    * value is [0,0].
    */
-  public getPan(): Point2 {
+  public getPan(initialCamera = this.initialCamera): Point2 {
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
     const zero3 = this.canvasToWorld([0, 0]);
     const initialCanvasFocal = this.worldToCanvas(
-      <Point3>vec3.subtract(vec3.create(), this.initialCamera.focalPoint, zero3)
+      <Point3>vec3.subtract([0, 0, 0], initialCamera.focalPoint, zero3)
     );
     const currentCanvasFocal = this.worldToCanvas(
-      <Point3>vec3.subtract(vec3.create(), focalPoint, zero3)
+      <Point3>vec3.subtract([0, 0, 0], focalPoint, zero3)
     );
     const result = <Point2>(
-      vec2.subtract(vec2.create(), initialCanvasFocal, currentCanvasFocal)
+      vec2.subtract([0, 0], initialCanvasFocal, currentCanvasFocal)
     );
     return result;
   }
@@ -914,6 +1097,11 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
+  /**
+   * Gets a referenced image url of some sort - could be a real image id, or
+   * could be a URL with parameters. Regardless it refers to the currently displaying
+   * image as a string value.
+   */
   public getReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return null;
   }
@@ -926,7 +1114,7 @@ class Viewport implements IViewport {
     const previousCamera = this.getCamera();
     const { focalPoint, position } = previousCamera;
     const zero3 = this.canvasToWorld([0, 0]);
-    const delta2 = vec2.subtract(vec2.create(), pan, this.getPan());
+    const delta2 = vec2.subtract([0, 0], pan, this.getPan());
     if (
       Math.abs(delta2[0]) < 1 &&
       Math.abs(delta2[1]) < 1 &&
@@ -956,9 +1144,13 @@ class Viewport implements IViewport {
    * originally applied to the image.  That is, on initial display,
    * the zoom level is 1.  Computed as a function of the camera.
    */
-  public getZoom(): number {
+  public getZoom(compareCamera = this.initialCamera): number {
+    if (!compareCamera) {
+      return 1;
+    }
+
     const activeCamera = this.getVtkActiveCamera();
-    const { parallelScale: initialParallelScale } = this.initialCamera;
+    const { parallelScale: initialParallelScale } = compareCamera;
     return initialParallelScale / activeCamera.getParallelScale();
   }
 
@@ -1397,19 +1589,40 @@ class Viewport implements IViewport {
     return { widthWorld: maxX - minX, heightWorld: maxY - minY };
   }
 
+  /**
+   * Gets a view target specifying WHAT a view is displaying,
+   * allowing for checking if a given image is displayed or could be displayed
+   * in a given viewport.
+   * See getViewPresentation for HOW a view is displayed.
+   *
+   * @param viewRefSpecifier - choose an alternate view to be specified, typically
+   *      a different slice index in the same set of images.
+   */
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { focalPoint: cameraFocalPoint, viewPlaneNormal } = this.getCamera();
+    const {
+      focalPoint: cameraFocalPoint,
+      viewPlaneNormal,
+      viewUp,
+    } = this.getCamera();
     const target: ViewReference = {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
       cameraFocalPoint,
       viewPlaneNormal,
+      viewUp,
       sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
     };
     return target;
   }
 
+  /**
+   * Find out if this viewport does or could show this view reference.
+   *
+   * @param options - allows specifying whether the view COULD display this with
+   *                  some modification - either navigation or displaying as volume.
+   * @returns true if the viewport could show this view reference
+   */
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
@@ -1431,10 +1644,90 @@ class Viewport implements IViewport {
         viewPlaneNormal
       )
     ) {
-      // Could navigate as a volume to the reference
-      return options?.asVolume === true;
+      // Could navigate as a volume to the reference with an orientation change
+      return options?.withOrientation === true;
     }
     return true;
+  }
+
+  /**
+   * Gets a view presentation information specifying HOW a viewport displays
+   * something, but not what is being displayed.
+   * See getViewReference to get information on WHAT is being displayed.
+   *
+   * This is intended to have information on how an image is presented to the user, without
+   * specifying what image s displayed.  All of this information is available
+   * externally, but this method combines the parts of this that are appropriate
+   * for remember or applying to other views, without necessarily needing to know
+   * what all the atributes are.  That differs from methods like getCamera which
+   * fetch exact view details that are not likely to be identical between viewports
+   * as they change sizes or apply to different images.
+   *
+   * Note that the results of this can be used on different viewports, for example,
+   * the pan values can be applied to a volume viewport showing a CT, and a
+   * stack viewport showing an ultrasound.
+   *
+   * The selector allows choosing which view presentation attributes to return.
+   * Some default values are available from `Viewport.CameraViewPresentation` and
+   * `Viewport.TransferViewPresentation`
+   *
+   * @param viewPresSel - select which attributes to display.
+   */
+  public getViewPresentation(
+    viewPresSel: ViewPresentationSelector = {
+      rotation: true,
+      displayArea: true,
+      zoom: true,
+      pan: true,
+    }
+  ): ViewPresentation {
+    const target: ViewPresentation = {};
+
+    const { rotation, displayArea, zoom, pan } = viewPresSel;
+    if (rotation) {
+      target.rotation = this.getRotation();
+    }
+    if (displayArea) {
+      target.displayArea = this.getDisplayArea();
+    }
+    const initZoom = this.getZoom();
+
+    if (zoom) {
+      target.zoom = initZoom;
+    }
+    if (pan) {
+      target.pan = this.getPan();
+      vec2.scale(target.pan, target.pan, 1 / initZoom);
+    }
+    return target;
+  }
+
+  /**
+   * Navigates to the image specified by the viewRef.
+   */
+  public setViewReference(viewRef: ViewReference) {
+    // No-op
+  }
+
+  /**
+   * Applies the display area, zoom, pan and rotation from the view presentation.
+   * No-op is viewPres isn't defined.
+   */
+  public setViewPresentation(viewPres: ViewPresentation) {
+    if (!viewPres) {
+      return;
+    }
+    const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
+    if (displayArea !== this.getDisplayArea()) {
+      this.setDisplayArea(displayArea);
+    }
+    this.setZoom(zoom);
+    if (pan) {
+      this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
+    }
+    if (rotation >= 0) {
+      this.setRotation(rotation);
+    }
   }
 
   protected _shouldUseNativeDataType() {
@@ -1555,6 +1848,22 @@ class Viewport implements IViewport {
       [p6, p8],
       [p7, p8],
     ];
+  }
+
+  /**
+   * Computes the bounds radius value
+   */
+  static boundsRadius(bounds: number[]) {
+    const w1 = (bounds[1] - bounds[0]) ** 2;
+    const w2 = (bounds[3] - bounds[2]) ** 2;
+    const w3 = (bounds[5] - bounds[4]) ** 2;
+
+    // If we have just a single point, pick a radius of 1.0
+    // compute the radius of the enclosing sphere
+    // For 3D viewport, we should increase the radius to make sure the whole
+    // volume is visible and we don't get clipping artifacts.
+    const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
+    return radius;
   }
 }
 

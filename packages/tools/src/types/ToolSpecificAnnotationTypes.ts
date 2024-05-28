@@ -87,8 +87,9 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
     zoomFactor: number;
     sourceViewportId: string;
     magnifyViewportId: string;
+    isCanvasAnnotation: boolean;
     handles: {
-      points: Types.Point3[]; // [top, right, bottom, left]
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3]; // in canvas space
       activeHandleIndex: number | null;
     };
   };

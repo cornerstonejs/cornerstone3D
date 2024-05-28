@@ -1,6 +1,8 @@
-import { Enums, ToolGroupManager } from '@cornerstonejs/tools';
+import { Enums as csToolsEnums, ToolGroupManager } from '@cornerstonejs/tools';
+const { MouseBindings } = csToolsEnums;
 
-const { MouseBindings } = Enums;
+import createElement, { configElement } from './createElement';
+import addLabelToToolbar from './addLabelToToolbar';
 
 export type optionTypeDefaultValue =
   | { defaultValue: number | string }
@@ -10,76 +12,102 @@ export type optionTypeValues =
   | { values: number[] | string[] }
   | { map: Map<string | number, any> };
 
-export default function addDropDownToToolbar({
-  id,
-  options,
-  container,
-  style,
-  onSelectedValueChange,
-  labelText,
-  toolGroupId,
-}: {
+interface configDropdown extends configElement {
   id?: string;
+  placeholder?: string;
   options: optionTypeDefaultValue & optionTypeValues;
-  container?: HTMLElement;
-  style?: Record<string, any>;
-  onSelectedValueChange?: (key: number | string, value?) => void;
+  onSelectedValueChange: (key: number | string, value?: any) => void;
   toolGroupId?: string | string[];
+  label?: configElement;
   labelText?: string;
-}) {
+  container?: HTMLElement;
+}
+
+export default function addDropDownToToolbar(config: configDropdown): void {
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
+
   const {
     map,
     values = [...map.keys()],
     defaultValue,
     defaultIndex = defaultValue === undefined && 0,
-  } = options as any;
-  container = container ?? document.getElementById('demo-toolbar');
+  } = config.options as any;
 
-  if (!onSelectedValueChange && toolGroupId) {
-    onSelectedValueChange = changeActiveTool.bind(
+  // Create label element if labelText is provided
+  if (config.label || config.labelText) {
+    const elLabel = addLabelToToolbar({
+      merge: config.label,
+      title: config.labelText,
+      container: config.container,
+    });
+
+    if (config.id) {
+      elLabel.htmlFor = config.id;
+    }
+  }
+
+  //
+  if (!config.onSelectedValueChange && config.toolGroupId) {
+    config.onSelectedValueChange = changeActiveTool.bind(
       null,
-      Array.isArray(toolGroupId) ? toolGroupId : [toolGroupId]
+      Array.isArray(config.toolGroupId)
+        ? config.toolGroupId
+        : [config.toolGroupId]
     );
   }
 
-  // Create label element if labelText is provided
-  if (labelText) {
-    const label = document.createElement('label');
-    label.htmlFor = id;
-    label.innerText = labelText;
-    container.append(label);
+  //
+  const fnChange = (evt: Event) => {
+    const elSelect = <HTMLSelectElement>evt.target;
+    const { value: key } = elSelect;
+    if (elSelect) {
+      config.onSelectedValueChange(key, map?.get(key));
+    }
+  };
+
+  //
+  const elSelect = <HTMLSelectElement>createElement({
+    merge: config,
+    tag: 'select',
+    event: {
+      change: fnChange,
+    },
+  });
+
+  if (config.id) {
+    elSelect.id = config.id;
   }
 
-  const select = document.createElement('select');
-  select.id = id;
-
-  if (style) {
-    Object.assign(select.style, style);
+  if (config.placeholder) {
+    const elOption = <HTMLOptionElement>createElement({
+      tag: 'option',
+      attr: {
+        disabled: '',
+        hidden: '',
+        selected: '',
+      },
+      html: config.placeholder,
+    });
+    elSelect.append(elOption);
   }
 
   values.forEach((value, index) => {
-    const optionElement = document.createElement('option');
+    const elOption = document.createElement('option');
     const stringValue = String(value);
-    optionElement.value = stringValue;
-    optionElement.innerText = stringValue;
+    elOption.value = stringValue;
+    elOption.innerText = stringValue;
+
     if (value === defaultValue || index === defaultIndex) {
-      optionElement.selected = true;
+      elOption.selected = true;
+
       if (map) {
         map.get(value).selected = true;
       }
     }
-    select.append(optionElement);
+
+    elSelect.append(elOption);
   });
-
-  select.onchange = (evt) => {
-    const selectElement = <HTMLSelectElement>evt.target;
-    const { value: key } = selectElement;
-    if (selectElement) {
-      onSelectedValueChange(key, map?.get(key));
-    }
-  };
-
-  container.append(select);
 }
 
 function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {

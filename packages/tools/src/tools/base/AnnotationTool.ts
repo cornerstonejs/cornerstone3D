@@ -266,6 +266,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
 
     const { data } = annotation;
+    const { isCanvasAnnotation } = data;
     const { points, textBox } = data.handles;
 
     if (textBox) {
@@ -292,10 +293,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
     for (let i = 0; i < points?.length; i++) {
       const point = points[i];
-      const annotationCanvasCoordinate = viewport.worldToCanvas(point);
+      const annotationCanvasCoordinate = isCanvasAnnotation
+        ? point.slice(0, 2)
+        : viewport.worldToCanvas(point);
 
       const near =
-        vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity;
+        vec2.distance(
+          canvasCoords,
+          annotationCanvasCoordinate as Types.Point2
+        ) < proximity;
 
       if (near === true) {
         data.handles.activeHandleIndex = i;

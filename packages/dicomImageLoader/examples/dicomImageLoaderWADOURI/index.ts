@@ -25,6 +25,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
+import { cache } from '@cornerstonejs/core';
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -45,6 +47,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick(toggle) {
     toggle ? setUseCPURendering(true) : setUseCPURendering(false);
+    cache.purgeCache();
   },
 });
 
@@ -53,6 +56,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick(toggle) {
     toggle ? setPreferSizeOverAccuracy(true) : setPreferSizeOverAccuracy(false);
+    cache.purgeCache();
   },
 });
 
@@ -248,10 +252,19 @@ function handleImageSelection(event) {
   console.log('Selected file:', selectedFile);
 
   if (selectedFile) {
-    downloadAndView(
-      'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/' +
-        selectedFile
-    );
+    let url;
+
+    if (selectedFile.startsWith('TG_18')) {
+      url =
+        'https://raw.githubusercontent.com/OHIF/viewer-testdata/master/dcm/tg18/' +
+        selectedFile.substring(6);
+    } else {
+      url =
+        'https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/' +
+        selectedFile;
+    }
+
+    downloadAndView(url);
   }
 }
 

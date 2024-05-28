@@ -122,7 +122,8 @@ function getPhilipsPrivateBValue(imageId: string) {
 function getSiemensPrivateBValue(imageId: string) {
   // Siemens Private Diffusion B-factor tag (0019, 100c)
   // Private creator: SIEMENS MR HEADER, VR=IS, VM=1
-  let value = metaData.get('0019100c', imageId);
+  let value =
+    metaData.get('0019100c', imageId) || metaData.get('0019100C', imageId);
 
   try {
     const { InlineBinary } = value;
@@ -174,18 +175,34 @@ function getPetFrameReferenceTime(imageId) {
  * @param imageIds - array of imageIds
  * @returns imageIds grouped by 4D tags
  */
-function splitImageIdsBy4DTags(imageIds: string[]): string[][] {
+function splitImageIdsBy4DTags(imageIds: string[]): {
+  imageIdsGroups: string[][];
+  splittingTag: string | null;
+} {
   const positionGroups = getIPPGroups(imageIds);
   if (!positionGroups) {
-    return [imageIds];
+    // When no position groups are found, return the original array wrapped and indicate no tag was used
+    return { imageIdsGroups: [imageIds], splittingTag: null };
   }
 
+  const tags = [
+    'TemporalPositionIdentifier',
+    'DiffusionBValue',
+    'TriggerTime',
+    'EchoTime',
+    'EchoNumber',
+    'PhilipsPrivateBValue',
+    'SiemensPrivateBValue',
+    'GEPrivateBValue',
+    'PetFrameReferenceTime',
+  ];
+
   const fncList2 = [
-    (imageId) => getTagValue(imageId, 'TemporalPositionIdentifier'),
-    (imageId) => getTagValue(imageId, 'DiffusionBValue'),
-    (imageId) => getTagValue(imageId, 'TriggerTime'),
-    (imageId) => getTagValue(imageId, 'EchoTime'),
-    (imageId) => getTagValue(imageId, 'EchoNumber'),
+    (imageId) => getTagValue(imageId, tags[0]),
+    (imageId) => getTagValue(imageId, tags[1]),
+    (imageId) => getTagValue(imageId, tags[2]),
+    (imageId) => getTagValue(imageId, tags[3]),
+    (imageId) => getTagValue(imageId, tags[4]),
     getPhilipsPrivateBValue,
     getSiemensPrivateBValue,
     getGEPrivateBValue,
@@ -202,12 +219,12 @@ function splitImageIdsBy4DTags(imageIds: string[]): string[][] {
       const imageIdsGroups = sortedKeys.map((key) =>
         frame_groups[key].map((item) => item.imageId)
       );
-      return imageIdsGroups;
+      return { imageIdsGroups, splittingTag: tags[i] };
     }
   }
 
-  // return the same imagesIds for non-4D volumes
-  return [imageIds];
+  // Return the same imagesIds for non-4D volumes and indicate no tag was used
+  return { imageIdsGroups: [imageIds], splittingTag: null };
 }
 
 export default splitImageIdsBy4DTags;
