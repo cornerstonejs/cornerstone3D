@@ -73,13 +73,7 @@ async function addLabelmapToElement(
     ];
 
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
-    await addImageSlicesToViewports(
-      renderingEngine,
-      stackInputs,
-      [viewportId],
-      immediateRender,
-      suppressEvents
-    );
+    await addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
   }
 }
 

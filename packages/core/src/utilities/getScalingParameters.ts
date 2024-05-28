@@ -17,8 +17,8 @@ export default function getScalingParameters(
   const { modality } = generalSeriesModule;
 
   const scalingParameters = {
-    rescaleSlope: modalityLutModule.rescaleSlope,
-    rescaleIntercept: modalityLutModule.rescaleIntercept,
+    rescaleSlope: modalityLutModule.rescaleSlope || 1,
+    rescaleIntercept: modalityLutModule.rescaleIntercept ?? 0,
     modality,
   };
 
