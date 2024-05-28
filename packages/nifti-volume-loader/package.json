@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "^1.74.8",
-    "nifti-reader-js": "^0.6.6"
+    "nifti-reader-js": "^0.6.8"
   },
   "contributors": [
     {
