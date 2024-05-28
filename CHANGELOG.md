@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.77.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.1...v1.77.0) (2024-05-28)
+
+### Features
+
+- **nifti:** update nifti-reader-js to 0.6.8 ([#1286](https://github.com/cornerstonejs/cornerstone3D/issues/1286)) ([e3704cd](https://github.com/cornerstonejs/cornerstone3D/commit/e3704cd1889b19549acde27ba97b642c27dd87e5))
+
 ## [1.76.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.0...v1.76.1) (2024-05-28)
 
 **Note:** Version bump only for package root
