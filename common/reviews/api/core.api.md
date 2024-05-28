@@ -62,7 +62,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
+export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>): Promise<void>;
 
 // @public (undocumented)
 function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
@@ -230,7 +230,7 @@ declare namespace cacheUtils {
 }
 
 // @public (undocumented)
-function calculateViewportsSpatialRegistration(viewport1: IStackViewport | IVolumeViewport, viewport2: IStackViewport | IVolumeViewport): void;
+function calculateViewportsSpatialRegistration(viewport1: StackViewport | IVolumeViewport, viewport2: StackViewport | IVolumeViewport): void;
 
 // @public (undocumented)
 enum CalibrationTypes {
@@ -376,7 +376,7 @@ enum ContourType {
 
 // @public (undocumented)
 function convertStackToVolumeViewport({ viewport, options, }: {
-    viewport: IStackViewport;
+    viewport: StackViewport;
     options: {
         volumeId: string;
         viewportId?: string;
@@ -991,7 +991,7 @@ function getBufferConfiguration(targetBufferType: PixelDataTypedArrayString, len
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
 
 // @public (undocumented)
-function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
+function getClosestStackImageIndexForPoint(point: Point3, viewport: StackViewport): number | null;
 
 // @public (undocumented)
 function getColormap(name: any): any;
@@ -1088,7 +1088,7 @@ function getTransferFunctionNodes(transferFunction: any): any[];
 function getUnknownVolumeLoaderSchema(): string;
 
 // @public (undocumented)
-function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
+function getViewportImageCornersInWorld(viewport: StackViewport | IVolumeViewport): Point3[];
 
 // @public (undocumented)
 function getViewportImageIds(viewport: IViewport): string[];
@@ -1339,7 +1339,7 @@ interface IEnabledElement {
     // (undocumented)
     renderingEngineId: string;
     // (undocumented)
-    viewport: IStackViewport | IVolumeViewport;
+    viewport: StackViewport | IVolumeViewport;
     // (undocumented)
     viewportId: string;
 }
@@ -2005,7 +2005,7 @@ interface IRenderingEngine {
     // (undocumented)
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
-    getStackViewports(): Array<IStackViewport>;
+    getStackViewports(): Array<StackViewport>;
     // (undocumented)
     getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
@@ -2077,79 +2077,6 @@ interface IStackInput {
     imageId: string;
     // (undocumented)
     visibility?: boolean;
-}
-
-// @public (undocumented)
-interface IStackViewport extends IViewport {
-    // (undocumented)
-    addImages(stackInputs: Array<IStackInput>, immediateRender: boolean, suppressEvents: boolean): any;
-    // (undocumented)
-    calibrateSpacing(imageId: string): void;
-    // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
-    // (undocumented)
-    clearDefaultProperties(imageId?: string): void;
-    // (undocumented)
-    customRenderViewportToCanvas: () => {
-        canvas: HTMLCanvasElement;
-        element: HTMLDivElement;
-        viewportId: string;
-        renderingEngineId: string;
-    };
-    // (undocumented)
-    getCamera(): ICamera;
-    // (undocumented)
-    getCornerstoneImage: () => IImage;
-    // (undocumented)
-    getCurrentImageId: () => string;
-    // (undocumented)
-    getCurrentImageIdIndex: () => number;
-    // (undocumented)
-    getDefaultProperties: (imageId?: string) => StackViewportProperties;
-    // (undocumented)
-    getFrameOfReferenceUID: () => string;
-    // (undocumented)
-    getImageData(): IImageData | CPUIImageData;
-    // (undocumented)
-    getImageDataMetadata(image: IImage): any;
-    // (undocumented)
-    getImageIds: () => string[];
-    // (undocumented)
-    getProperties: () => StackViewportProperties;
-    // (undocumented)
-    getRenderer(): any;
-    // (undocumented)
-    hasImageId: (imageId: string) => boolean;
-    // (undocumented)
-    hasImageURI: (imageURI: string) => boolean;
-    // (undocumented)
-    modality: string;
-    // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
-    // (undocumented)
-    resetProperties(): void;
-    // (undocumented)
-    resetToDefaultProperties(): void;
-    // (undocumented)
-    resize: () => void;
-    // (undocumented)
-    scaling: Scaling;
-    // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
-    // (undocumented)
-    setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
-    // (undocumented)
-    setImageIdIndex(imageIdIndex: number): Promise<string>;
-    // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, colormap, }: StackViewportProperties, suppressEvents?: boolean): void;
-    // (undocumented)
-    setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
-    // (undocumented)
-    stackActorReInitialized: boolean;
-    // (undocumented)
-    unsetColormap(): void;
-    // (undocumented)
-    worldToCanvas: (worldPos: Point3) => Point2;
 }
 
 // @public (undocumented)
@@ -2476,7 +2403,7 @@ function loadAndCacheImages(imageIds: Array<string>, options?: ImageLoaderOption
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
-function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
+function loadImageToCanvas(options: LoadImageOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<IImageVolume>;
@@ -2865,7 +2792,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
-    getStackViewports(): Array<IStackViewport>;
+    getStackViewports(): Array<StackViewport>;
     // (undocumented)
     getVideoViewports(): Array<IVideoViewport>;
     // (undocumented)
@@ -2897,10 +2824,12 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<string>;
+function renderToCanvasCPU(canvas: HTMLCanvasElement, imageOrVolume: IImage | IVolume, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
-function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions): Promise<string>;
+function renderToCanvasGPU(canvas: HTMLCanvasElement, imageOrVolume: IImage | IVolume, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions & {
+    viewReference?: ViewReference;
+}): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
 enum RequestType {
@@ -3114,7 +3043,7 @@ type StackNewImageEventDetail = {
 };
 
 // @public (undocumented)
-export class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
+export class StackViewport extends Viewport implements StackViewport, IImagesLoader {
     constructor(props: ViewportInput);
     // (undocumented)
     addActor: (actorEntry: ActorEntry) => void;
@@ -3392,7 +3321,7 @@ declare namespace Types {
         IImagesLoader,
         Cornerstone3DConfig,
         ICamera,
-        IStackViewport,
+        StackViewport as IStackViewport,
         IVideoViewport,
         IVolumeViewport,
         IEnabledElement,
