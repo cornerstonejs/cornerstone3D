@@ -160,7 +160,10 @@ export default interface IStackViewport extends IViewport {
    * Loads the image based on the provided imageIdIndex. It is an Async function which
    * returns a promise that resolves to the imageId.
    */
-  setImageIdIndex(imageIdIndex: number): Promise<string>;
+  setImageIdIndex(
+    imageIdIndex: number,
+    overwriteScrollIndex?: boolean
+  ): Promise<string>;
   /**
    * Calibrates the image with new metadata that has been added for imageId. To calibrate
    * a viewport, you should add your calibration data manually to

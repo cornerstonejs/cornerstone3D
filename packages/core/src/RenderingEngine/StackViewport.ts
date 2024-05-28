@@ -2477,8 +2477,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   /**
    * Loads the image based on the provided imageIdIndex
    * @param imageIdIndex - number represents imageId index
+   * @param overwriteScrollIndex - can be used to also set the start position of scroll() to this index
    */
-  private async _setImageIdIndex(imageIdIndex: number): Promise<string> {
+  private async _setImageIdIndex(
+    imageIdIndex: number,
+    overwriteScrollIndex?: boolean
+  ): Promise<string> {
     if (imageIdIndex >= this.imageIds.length) {
       throw new Error(
         `ImageIdIndex provided ${imageIdIndex} is invalid, the stack only has ${this.imageIds.length} elements`
@@ -2487,6 +2491,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Update the state of the viewport to the new imageIdIndex;
     this.currentImageIdIndex = imageIdIndex;
+    if (overwriteScrollIndex) {
+      this.targetImageIdIndex = this.currentImageIdIndex;
+    }
     this.hasPixelSpacing = true;
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
@@ -2615,8 +2622,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @param imageIdIndex - number represents imageId index in the list of
    * provided imageIds in setStack
+   * @param overwriteScrollIndex - can be used to also set the start position of scroll() to this index
    */
-  public setImageIdIndex(imageIdIndex: number): Promise<string> {
+  public setImageIdIndex(
+    imageIdIndex: number,
+    overwriteScrollIndex?
+  ): Promise<string> {
     this._throwIfDestroyed();
 
     // If we are already on this imageId index, stop here
@@ -2625,7 +2636,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     // Otherwise, get the imageId and attempt to display it
-    const imageIdPromise = this._setImageIdIndex(imageIdIndex);
+    const imageIdPromise = this._setImageIdIndex(
+      imageIdIndex,
+      overwriteScrollIndex
+    );
 
     return imageIdPromise;
   }
