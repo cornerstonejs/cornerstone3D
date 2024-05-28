@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.75.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.1...v1.75.2) (2024-05-28)
+
+### Bug Fixes
+
+- **core:** correctly set the orientation of the volume ([#1287](https://github.com/cornerstonejs/cornerstone3D/issues/1287)) ([9637dfb](https://github.com/cornerstonejs/cornerstone3D/commit/9637dfbb64eeb39d92c979d5922604079847b1e9))
+
 ## [1.75.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.0...v1.75.1) (2024-05-28)
 
 **Note:** Version bump only for package @cornerstonejs/core
