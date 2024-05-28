@@ -15,6 +15,7 @@ import {
   addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -94,6 +95,29 @@ instructions.innerText = `
   `;
 
 content.append(instructions);
+
+addButtonToToolbar({
+  title: 'Reset Camera',
+  onClick: () => {
+    const viewport1 = getRenderingEngine(renderingEngineId).getViewport(
+      viewportId1
+    ) as Types.IVolumeViewport;
+    const resetPan = true;
+    const resetZoom = true;
+    const resetToCenter = true;
+    const resetRotation = true;
+    const supressEvents = false;
+    viewport1.resetCamera(
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetRotation,
+      supressEvents
+    );
+
+    viewport1.render();
+  },
+});
 
 // ============================= //
 

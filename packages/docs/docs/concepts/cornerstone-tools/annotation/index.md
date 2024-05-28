@@ -15,22 +15,22 @@ and camera position are stored in this object.
 There are various methods for adding/removing, selection, locking and unlocking of annotations. They can be accessed via the `annotations` name space in the `Cornerstone3DTools` by calling:
 
 ```js
-import { annotations } from '@cornerstonejs/tools';
+import { annotation } from '@cornerstonejs/tools';
 
 // All methods to deal with annotation state can be accessed via
-annotations.state.XYZ;
+annotation.state.XYZ;
 
 // All methods for annotation selection can be accessed via
-annotations.selection.XYZ;
+annotation.selection.XYZ;
 
 // All methods for annotation locking can be accessed via
-annotations.locking.XYZ;
+annotation.locking.XYZ;
 
 // All methods for annotation styling can be accessed via
-annotations.config.XYZ;
+annotation.config.XYZ;
 
 // The AnnotationGroup class allows for grouping of annotations
-annotations.AnnotationGroup;
+annotation.AnnotationGroup;
 ```
 
 Let's start by looking deeper into each of these methods.
