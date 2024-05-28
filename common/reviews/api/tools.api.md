@@ -2414,7 +2414,7 @@ function extractWindowLevelRegionToolData(viewport: any): {
 };
 
 // @public (undocumented)
-function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
+function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions, onSamePlan?: boolean): Annotations;
 
 // @public (undocumented)
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
