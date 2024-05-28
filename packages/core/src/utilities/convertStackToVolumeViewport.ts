@@ -87,9 +87,11 @@ async function convertStackToVolumeViewport({
   );
 
   const volumeViewportNewVolumeHandler = () => {
-    volumeViewport.setCamera({
-      ...prevCamera,
-    });
+    if (!options.orientation) {
+      volumeViewport.setCamera({
+        ...prevCamera,
+      });
+    }
     volumeViewport.render();
 
     element.removeEventListener(
