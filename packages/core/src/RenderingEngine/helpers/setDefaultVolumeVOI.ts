@@ -30,27 +30,27 @@ async function setDefaultVolumeVOI(
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
-  if (!voi) {
+  if (!voi && imageVolume?.imageIds?.length) {
     voi = await getVOIFromMinMax(imageVolume, useNativeDataType);
+    voi = handlePreScaledVolume(imageVolume, voi);
   }
-
-  if (!voi || voi.lower === undefined || voi.upper === undefined) {
-    throw new Error(
-      'Could not get VOI from metadata, nor from the min max of the image middle slice'
-    );
-  }
-
-  voi = handlePreScaledVolume(imageVolume, voi);
-  const { lower, upper } = voi;
-
-  if (lower === 0 && upper === 0) {
+  // if (!voi || voi.lower === undefined || voi.upper === undefined) {
+  //   throw new Error(
+  //     'Could not get VOI from metadata, nor from the min max of the image middle slice'
+  //   );
+  // }
+  if (
+    (voi?.lower === 0 && voi?.upper === 0) ||
+    voi?.lower === undefined ||
+    voi?.upper === undefined
+  ) {
     return;
   }
 
   volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
-    .setMappingRange(lower, upper);
+    .setMappingRange(voi.lower, voi.upper);
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
@@ -128,84 +128,83 @@ async function getVOIFromMinMax(
   useNativeDataType: boolean
 ): Promise<VOIRange> {
   const { imageIds } = imageVolume;
-  const numImages = imageIds?.length || imageVolume.dimensions[2];
-  let image;
-  if (imageIds?.length) {
-    // Get index of the middle image
-    const imageIdIndex = Math.floor(numImages / 2);
-    const imageId = imageVolume.imageIds[imageIdIndex];
-    const generalSeriesModule =
-      metaData.get('generalSeriesModule', imageId) || {};
-    const { modality } = generalSeriesModule;
-    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
-    const scalingParameters: ScalingParameters = {
-      rescaleSlope: modalityLutModule.rescaleSlope,
-      rescaleIntercept: modalityLutModule.rescaleIntercept,
-      modality,
-    };
-    let scalingParametersToUse;
-    if (modality === 'PT') {
-      const suvFactor = metaData.get('scalingModule', imageId);
-      if (suvFactor) {
-        scalingParametersToUse = {
-          ...scalingParameters,
-          suvbw: suvFactor.suvbw,
-        };
-      }
-    }
-    const options = {
-      targetBuffer: {
-        type: useNativeDataType ? undefined : 'Float32Array',
-      },
-      priority: PRIORITY,
-      requestType: REQUEST_TYPE,
-      useNativeDataType,
-      preScale: {
-        enabled: true,
-        scalingParameters: scalingParametersToUse,
-      },
-    };
-    // Loading the middle slice image for a volume has two scenarios, the first one is that
-    // uses the same volumeLoader which might not resolve to an image (since for performance
-    // reasons volumes' pixelData is set via offset and length on the volume arrayBuffer
-    // when each slice is loaded). The second scenario is that the image might not reach
-    // to the volumeLoader, and an already cached image (with Image object) is used
-    // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
-    // slice for the imageScalarData, and for the second scenario we use the getPixelData
-    // on the Cornerstone IImage object to get the pixel data.
-    // Note: we don't want to use the derived or generated images for setting the
-    // default VOI, because they are not the original. This is ugly but don't
-    // know how to do it better.
-    image = cache.getImage(imageId);
-    if (!imageVolume.referencedImageIds?.length) {
-      // we should ignore the cache here,
-      // since we want to load the image from with the most
-      // recent prescale settings
-      image = await loadAndCacheImage(imageId, {
-        ...options,
-        ignoreCache: true,
-      });
+  const scalarData = imageVolume.getScalarData();
+
+  // Get the middle image from the list of imageIds
+  const imageIdIndex = Math.floor(imageIds.length / 2);
+  const imageId = imageVolume.imageIds[imageIdIndex];
+  const generalSeriesModule =
+    metaData.get('generalSeriesModule', imageId) || {};
+  const { modality } = generalSeriesModule;
+  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+
+  const numImages = imageIds.length;
+  const bytesPerImage = scalarData.byteLength / numImages;
+  const voxelsPerImage = scalarData.length / numImages;
+  const bytePerPixel = scalarData.BYTES_PER_ELEMENT;
+
+  const scalingParameters: ScalingParameters = {
+    rescaleSlope: modalityLutModule.rescaleSlope,
+    rescaleIntercept: modalityLutModule.rescaleIntercept,
+    modality,
+  };
+
+  let scalingParametersToUse;
+  if (modality === 'PT') {
+    const suvFactor = metaData.get('scalingModule', imageId);
+
+    if (suvFactor) {
+      scalingParametersToUse = {
+        ...scalingParameters,
+        suvbw: suvFactor.suvbw,
+      };
     }
   }
-  let imageScalarData;
-  if (image) {
-    imageScalarData = image.getPixelData();
-  } else {
-    // If image data is missing such as .nifti and .nrrd image
-    // calculate offset of the middle slice
-    const scalarData = imageVolume.getScalarData();
-    const imageIdIndex = Math.floor(numImages / 2);
-    const bytesPerImage = scalarData.byteLength / numImages;
-    const voxelsPerImage = scalarData.length / numImages;
-    const bytePerPixel = scalarData.BYTES_PER_ELEMENT;
-    const byteOffset = imageIdIndex * bytesPerImage;
-    imageScalarData = _getImageScalarDataFromImageVolume(
-      imageVolume,
-      byteOffset,
-      bytePerPixel,
-      voxelsPerImage
-    );
+
+  const byteOffset = imageIdIndex * bytesPerImage;
+
+  const options = {
+    targetBuffer: {
+      type: useNativeDataType ? undefined : 'Float32Array',
+    },
+    priority: PRIORITY,
+    requestType: REQUEST_TYPE,
+    useNativeDataType,
+    preScale: {
+      enabled: true,
+      scalingParameters: scalingParametersToUse,
+    },
+  };
+
+  // Loading the middle slice image for a volume has two scenarios, the first one is that
+  // uses the same volumeLoader which might not resolve to an image (since for performance
+  // reasons volumes' pixelData is set via offset and length on the volume arrayBuffer
+  // when each slice is loaded). The second scenario is that the image might not reach
+  // to the volumeLoader, and an already cached image (with Image object) is used
+  // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
+  // slice for the imageScalarData, and for the second scenario we use the getPixelData
+  // on the Cornerstone IImage object to get the pixel data.
+  // Note: we don't want to use the derived or generated images for setting the
+  // default VOI, because they are not the original. This is ugly but don't
+  // know how to do it better.
+  let image = cache.getImage(imageId);
+
+  if (!imageVolume.referencedImageIds?.length) {
+    // we should ignore the cache here,
+    // since we want to load the image from with the most
+    // recent prescale settings
+    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
+
+  const imageScalarData = image
+    ? image.getPixelData()
+    : _getImageScalarDataFromImageVolume(
+        imageVolume,
+        byteOffset,
+        bytePerPixel,
+        voxelsPerImage
+      );
+
   // Get the min and max pixel values of the middle slice
   const { min, max } = getMinMax(imageScalarData);
 
