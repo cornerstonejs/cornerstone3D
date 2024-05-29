@@ -3,6 +3,46 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.0...v1.77.1) (2024-05-29)
+
+### Bug Fixes
+
+- **contour:** set default for renderFill to true ([#1289](https://github.com/cornerstonejs/cornerstone3D/issues/1289)) ([ca86dbb](https://github.com/cornerstonejs/cornerstone3D/commit/ca86dbbbf4efd8dd29c14a5d8e50e8adc703b265))
+
+# [1.77.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.1...v1.77.0) (2024-05-28)
+
+### Features
+
+- **nifti:** update nifti-reader-js to 0.6.8 ([#1286](https://github.com/cornerstonejs/cornerstone3D/issues/1286)) ([e3704cd](https://github.com/cornerstonejs/cornerstone3D/commit/e3704cd1889b19549acde27ba97b642c27dd87e5))
+
+## [1.76.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.0...v1.76.1) (2024-05-28)
+
+**Note:** Version bump only for package root
+
+# [1.76.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.2...v1.76.0) (2024-05-28)
+
+### Features
+
+- Add render to canvas for mpr/volume viewports ([#1215](https://github.com/cornerstonejs/cornerstone3D/issues/1215)) ([e400277](https://github.com/cornerstonejs/cornerstone3D/commit/e4002774bcedeb2334d008cb3ab3e294ff1c088b))
+
+## [1.75.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.1...v1.75.2) (2024-05-28)
+
+### Bug Fixes
+
+- **core:** correctly set the orientation of the volume ([#1287](https://github.com/cornerstonejs/cornerstone3D/issues/1287)) ([9637dfb](https://github.com/cornerstonejs/cornerstone3D/commit/9637dfbb64eeb39d92c979d5922604079847b1e9))
+
+## [1.75.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.0...v1.75.1) (2024-05-28)
+
+### Bug Fixes
+
+- **color:** Fix RGB inconsistencies ([#829](https://github.com/cornerstonejs/cornerstone3D/issues/829)) ([2fc22bc](https://github.com/cornerstonejs/cornerstone3D/commit/2fc22bcd1c0cac22b88e964699d55c51bd83283e))
+
+# [1.75.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.8...v1.75.0) (2024-05-28)
+
+### Features
+
+- **nifti:** NIFTI data type enhancement ([#1219](https://github.com/cornerstonejs/cornerstone3D/issues/1219)) ([03a2335](https://github.com/cornerstonejs/cornerstone3D/commit/03a233525a67ac9bc6bc9a6d144334e67756f11f))
+
 ## [1.74.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.7...v1.74.8) (2024-05-24)
 
 ### Bug Fixes

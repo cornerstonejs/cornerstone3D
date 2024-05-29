@@ -43,10 +43,17 @@ declare namespace helpers {
 export { helpers }
 
 // @public (undocumented)
-function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any): Types.Metadata;
+function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any, pixelRepresentation: any): {
+    volumeMetadata: Types.Metadata;
+    dimensions: Types.Point3;
+    direction: Types.Mat3;
+};
 
 // @public (undocumented)
-function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
+function modalityScaleNifti(niftiHeader: any, niftiImageBuffer: any): {
+    scalarData: Types.PixelDataTypedArray;
+    pixelRepresentation: number;
+};
 
 // @public (undocumented)
 export class NiftiImageVolume extends ImageVolume {

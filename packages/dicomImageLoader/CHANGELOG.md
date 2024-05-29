@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.0...v1.77.1) (2024-05-29)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.77.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.1...v1.77.0) (2024-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.76.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.0...v1.76.1) (2024-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [1.76.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.2...v1.76.0) (2024-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.75.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.1...v1.75.2) (2024-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [1.75.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.75.0...v1.75.1) (2024-05-28)
+
+### Bug Fixes
+
+- **color:** Fix RGB inconsistencies ([#829](https://github.com/cornerstonejs/cornerstone3D/issues/829)) ([2fc22bc](https://github.com/cornerstonejs/cornerstone3D/commit/2fc22bcd1c0cac22b88e964699d55c51bd83283e))
+
+# [1.75.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.8...v1.75.0) (2024-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [1.74.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.74.7...v1.74.8) (2024-05-24)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
