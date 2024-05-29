@@ -2337,6 +2337,8 @@ interface IViewport {
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, callResetCamera?: boolean, suppressEvents?: boolean): any;
     // (undocumented)
+    setImageIds(groupId: string, imageIds: string[], webClient: any, frameNumber?: number): void;
+    // (undocumented)
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
     setPan(pan: Point2, storeAsInitialCamera?: boolean): any;
@@ -3759,6 +3761,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setFrameRange(frameRange: number[]): void;
     // (undocumented)
+    setImageIds(_groupId: string, imageIds: string[], _client: any, frameNumber?: number): void;
+    // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
     setProperties(props: VideoViewportProperties): void;
@@ -3955,6 +3959,8 @@ export class Viewport implements IViewport {
     protected setDisplayAreaScale(displayArea: DisplayArea): void;
     // (undocumented)
     protected setFitToCanvasCamera(camera: ICamera): void;
+    // (undocumented)
+    setImageIds(_groupId: string, _imageIds: string[], _client: any, _frameNumber?: number): void;
     // (undocumented)
     protected setInitialCamera(camera: ICamera): void;
     // (undocumented)
@@ -4521,6 +4527,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     setCamera(camera: ICamera): void;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    setImageIds(_groupId: string, imageIds: string[], webClient: any, _frameNumber?: number): void;
     // (undocumented)
     setProperties(props: WSIViewportProperties): void;
     // (undocumented)

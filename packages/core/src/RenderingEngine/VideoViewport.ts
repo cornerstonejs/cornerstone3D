@@ -124,6 +124,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
 
     this.videoElement = document.createElement('video');
+    console.log('************ Created video element', this.videoElement);
     this.videoElement.muted = this.mute;
     this.videoElement.loop = this.loop;
     this.videoElement.autoplay = true;
@@ -212,6 +213,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
       numVoxels: xVoxels * yVoxels * zVoxels,
       imagePlaneModule,
     };
+  }
+
+  /**
+   * This is a wrapper for setVideo to allow generic behaviour
+   */
+  public setImageIds(
+    _groupId: string,
+    imageIds: string[],
+    frameNumber?: number
+  ) {
+    this.setVideo(imageIds[0], frameNumber || 5);
   }
 
   /**
@@ -1058,7 +1070,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
       transformationMatrix[5]
     );
 
-    ctx.drawImage(this.videoElement, 0, 0, this.videoWidth, this.videoHeight);
+    ctx.drawImage(
+      this.videoElement,
+      0,
+      0,
+      this.videoWidth || 1024,
+      this.videoHeight || 1024
+    );
 
     for (const actor of this.getActors()) {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);

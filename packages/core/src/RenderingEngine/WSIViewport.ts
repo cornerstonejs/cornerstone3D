@@ -422,6 +422,19 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return canvasPoint;
   };
 
+  /**
+   * This is a wrapper for setWSI to allow generic behaviour
+   */
+  public setImageIds(
+    _groupId: string,
+    imageIds: string[],
+    _frameNumber?: number
+  ) {
+    const webClient = metaData.get(MetadataModules.WEB_CLIENT, imageId);
+
+    this.setWSI(imageIds, webClient);
+  }
+
   public async setWSI(imageIds: string[], client) {
     this.microscopyElement.style.background = 'red';
     this.microscopyElement.innerText = 'Loading';

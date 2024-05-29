@@ -406,6 +406,20 @@ interface IViewport {
   _getCorners(bounds: Array<number>): Array<number>[];
   updateRenderingPipeline: () => void;
   getTargetId?: () => string;
+
+  /**
+   * This is a wrapper for setVideo to allow generic behaviour
+   * @param groupId - an identifier for the entire group
+   * @param imageIds - a set of image ids that make up the data for this group
+   * @param webClient - A DICOMweb style client, used for fetching images etc
+   * @param frameNumber - an optional initial position
+   */
+  setImageIds(
+    groupId: string,
+    imageIds: string[],
+    webClient,
+    frameNumber?: number
+  ): void;
 }
 
 /**

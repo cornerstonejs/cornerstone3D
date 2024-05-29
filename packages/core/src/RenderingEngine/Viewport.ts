@@ -1865,6 +1865,17 @@ class Viewport implements IViewport {
     const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
     return radius;
   }
+
+  /**
+   * This is a wrapper for setStack/setVideo/etc
+   */
+  public setImageIds(
+    _groupId: string,
+    _imageIds: string[],
+    _frameNumber?: number
+  ) {
+    throw new Error('Unsupported operatoin setImageIds');
+  }
 }
 
 export default Viewport;
