@@ -430,7 +430,12 @@ class WSIViewport extends Viewport implements IWSIViewport {
     imageIds: string[],
     _frameNumber?: number
   ) {
-    const webClient = metaData.get(MetadataModules.WEB_CLIENT, imageId);
+    const webClient = metaData.get(MetadataModules.WEB_CLIENT, imageIds[0]);
+    if (!webClient) {
+      throw new Error(
+        `To use setImageIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
+      );
+    }
 
     this.setWSI(imageIds, webClient);
   }

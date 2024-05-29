@@ -81,7 +81,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private fps = 30;
 
   /** The number of frames in the video */
-  private numberOfFrames = 0;
+  private numberOfFrames: number;
 
   private videoCamera: InternalVideoCamera = {
     panWorld: [0, 0],
@@ -124,7 +124,6 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
 
     this.videoElement = document.createElement('video');
-    console.log('************ Created video element', this.videoElement);
     this.videoElement.muted = this.mute;
     this.videoElement.loop = this.loop;
     this.videoElement.autoplay = true;
@@ -237,13 +236,14 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
     this.metadata = this.getImageDataMetadata(imageId);
+    let { cineRate, numberOfFrames } = metaData.get(
+      MetadataModules.CINE,
+      imageId
+    );
+    this.numberOfFrames = numberOfFrames;
 
     return this.setVideoURL(rendered).then(() => {
-      let { cineRate, numberOfFrames } = metaData.get(
-        MetadataModules.CINE,
-        imageId
-      );
-      if (!numberOfFrames) {
+      if (!numberOfFrames || numberOfFrames === 1) {
         numberOfFrames = Math.round(
           this.videoElement.duration * (cineRate || 30)
         );
@@ -834,9 +834,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   public getNumberOfSlices = (): number => {
-    return Math.round(
+    const computedSlices = Math.round(
       (this.videoElement.duration * this.fps) / this.scrollSpeed
     );
+    return isNaN(computedSlices) ? this.numberOfFrames : computedSlices;
   };
 
   public getFrameOfReferenceUID = (): string => {
