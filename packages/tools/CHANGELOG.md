@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.0...v1.77.1) (2024-05-29)
+
+### Bug Fixes
+
+- **contour:** set default for renderFill to true ([#1289](https://github.com/cornerstonejs/cornerstone3D/issues/1289)) ([ca86dbb](https://github.com/cornerstonejs/cornerstone3D/commit/ca86dbbbf4efd8dd29c14a5d8e50e8adc703b265))
+
 # [1.77.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.76.1...v1.77.0) (2024-05-28)
 
 **Note:** Version bump only for package @cornerstonejs/tools
