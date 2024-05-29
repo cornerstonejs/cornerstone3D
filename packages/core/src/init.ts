@@ -98,13 +98,16 @@ function _hasNorm16TextureSupport() {
 }
 
 function isIOS() {
-  if (/iPad|iPhone|iPod/.test(navigator.platform)) {
+  // Compatibility with node which does not have a navigator.
+  const navigatorPlatform = navigator !== undefined ? navigator.platform : '';
+
+  if (/iPad|iPhone|iPod/.test(navigatorPlatform)) {
     return true;
   } else {
     return (
-      navigator.maxTouchPoints &&
-      navigator.maxTouchPoints > 2 &&
-      /MacIntel/.test(navigator.platform)
+      navigator?.maxTouchPoints &&
+      navigator?.maxTouchPoints > 2 &&
+      /MacIntel/.test(navigatorPlatform)
     );
   }
 }
