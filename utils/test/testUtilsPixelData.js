@@ -1,4 +1,4 @@
-import { colors } from './testUtils';
+import { colors } from './testUtils.js';
 
 function getVerticalBarImage(rows, columns, barStart, barWidth) {
   const pixelData = new Uint8Array(rows * columns);

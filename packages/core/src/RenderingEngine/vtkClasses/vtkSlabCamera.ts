@@ -1,8 +1,8 @@
-import macro from '@kitware/vtk.js/macros';
-import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import macro from '@kitware/vtk.js/macros.js';
+import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera.js';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import { vec3, mat4 } from 'gl-matrix';
-import type { vtkObject } from '@kitware/vtk.js/interfaces';
+import type { vtkObject } from '@kitware/vtk.js/interfaces.js';
 
 // Copied from VTKCamera
 

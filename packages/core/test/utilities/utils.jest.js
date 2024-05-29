@@ -1,4 +1,9 @@
-import { getRuntimeId, isEqual, planar, isOpposite } from '../../src/utilities';
+import {
+  getRuntimeId,
+  isEqual,
+  planar,
+  isOpposite,
+} from '../../src/utilities/index.js';
 import { describe, it, expect } from '@jest/globals';
 
 describe('Cornerstone-render Utilities:', function () {

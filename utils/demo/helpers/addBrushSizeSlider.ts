@@ -1,7 +1,7 @@
 import { utilities as csUtilities } from '@cornerstonejs/tools';
 
-import { configElement } from './createElement';
-import addSliderToToolbar from './addSliderToToolbar';
+import { configElement } from './createElement.js';
+import addSliderToToolbar from './addSliderToToolbar.js';
 
 interface configBrush extends configElement {
   title?: string;

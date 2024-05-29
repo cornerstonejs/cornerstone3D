@@ -1,4 +1,4 @@
-import { VoxelManager } from '../../src/utilities';
+import { VoxelManager } from '../../src/utilities/index.js';
 import { describe, it, expect } from '@jest/globals';
 
 const size = [64, 128, 4];

@@ -1,5 +1,5 @@
-import createElement, { configElement } from './createElement';
-import addButtonToToolbar from './addButtonToToolbar';
+import createElement, { configElement } from './createElement.js';
+import addButtonToToolbar from './addButtonToToolbar.js';
 
 interface configUpload extends configElement {
   id?: string;

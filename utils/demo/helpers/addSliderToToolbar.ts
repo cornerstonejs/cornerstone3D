@@ -1,7 +1,7 @@
 import { utilities as csUtilities } from '@cornerstonejs/core';
 
-import createElement, { configElement } from './createElement';
-import addLabelToToolbar from './addLabelToToolbar';
+import createElement, { configElement } from './createElement.js';
+import addLabelToToolbar from './addLabelToToolbar.js';
 
 interface configSlider extends configElement {
   id?: string;

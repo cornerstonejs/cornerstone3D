@@ -1,7 +1,7 @@
 import {
   getVerticalBarImage,
   getVerticalBarRGBImage,
-} from './testUtilsPixelData';
+} from './testUtilsPixelData.js';
 
 /**
  * It creates an image based on the imageId name for testing purposes. It splits the imageId

@@ -1,4 +1,4 @@
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 
 import { ColormapPublic, ColormapRegistration } from '../types/index.js';
 import isEqual from './isEqual.js';

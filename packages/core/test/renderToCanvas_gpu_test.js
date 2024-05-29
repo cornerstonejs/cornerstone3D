@@ -1,9 +1,9 @@
-import * as cornerstone3D from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
-import * as renderToCanvas_gpu_setStack from './groundTruth/renderToCanvas_gpu_setStack.png';
-import * as renderToCanvas_gpu_canvas from './groundTruth/renderToCanvas_gpu_canvas.png';
-import * as renderToCanvas_gpu_setStack_color from './groundTruth/renderToCanvas_gpu_setStack_color.png';
-import * as renderToCanvas_gpu_canvas_color from './groundTruth/renderToCanvas_gpu_canvas_color.png';
+import * as cornerstone3D from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
+import * as renderToCanvas_gpu_setStack from './groundTruth/renderToCanvas_gpu_setStack.png.js';
+import * as renderToCanvas_gpu_canvas from './groundTruth/renderToCanvas_gpu_canvas.png.js';
+import * as renderToCanvas_gpu_setStack_color from './groundTruth/renderToCanvas_gpu_setStack_color.png.js';
+import * as renderToCanvas_gpu_canvas_color from './groundTruth/renderToCanvas_gpu_canvas_color.png.js';
 
 const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
   cornerstone3D;

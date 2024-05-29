@@ -1,5 +1,5 @@
 import * as cornerstone from '@cornerstonejs/core';
-import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
+import ptScalingMetaDataProvider from './ptScalingMetaDataProvider.js';
 
 const { calibratedPixelSpacingMetadataProvider } = cornerstone.utilities;
 

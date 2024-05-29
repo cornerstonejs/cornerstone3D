@@ -3,9 +3,9 @@ import { setTitleAndDescription } from '../../../../utils/demo/helpers/index.js'
 import { init as csRenderInit } from '@cornerstonejs/core';
 import { init as csToolsInit } from '@cornerstonejs/tools';
 
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource.js';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
 
 // This is for debugging purposes
 console.warn(

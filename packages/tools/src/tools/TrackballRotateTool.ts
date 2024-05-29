@@ -1,4 +1,4 @@
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import { Events } from '../enums/index.js';
 
 import {

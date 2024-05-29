@@ -1,4 +1,4 @@
-import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 import {
   RenderingEngine,
   Types,

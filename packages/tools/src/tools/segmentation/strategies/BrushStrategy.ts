@@ -6,7 +6,7 @@ import compositions from './compositions/index.js';
 import { getStrategyData } from './utils/getStrategyData.js';
 import { StrategyCallbacks } from '../../../enums/index.js';
 import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData.js';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 
 const { VoxelManager } = csUtils;
 

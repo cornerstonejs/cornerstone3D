@@ -1,17 +1,17 @@
-import * as cornerstone3D from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+import * as cornerstone3D from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
 
-import * as cpu_imageURI_64_64_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_64_20_5_1_1_0.png';
-import * as cpu_imageURI_64_33_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_33_20_5_1_1_0.png';
-import * as cpu_imageURI_64_64_30_10_5_5_0 from './groundTruth/cpu_imageURI_64_64_30_10_5_5_0.png';
-import * as cpu_imageURI_64_64_0_10_5_5_0 from './groundTruth/cpu_imageURI_64_64_0_10_5_5_0.png';
-import * as cpu_imageURI_64_64_54_10_5_5_0 from './groundTruth/cpu_imageURI_64_64_54_10_5_5_0.png';
-import * as cpu_imageURI_256_256_100_100_1_1_0_voi from './groundTruth/cpu_imageURI_256_256_100_100_1_1_0_voi.png';
-import * as cpu_imageURI_256_256_100_100_1_1_0 from './groundTruth/cpu_imageURI_256_256_100_100_1_1_0.png';
-import * as cpu_imageURI_256_256_50_10_1_1_0 from './groundTruth/cpu_imageURI_256_256_50_10_1_1_0.png';
-import * as cpu_imageURI_256_256_50_10_1_1_0_invert from './groundTruth/cpu_imageURI_256_256_50_10_1_1_0_invert.png';
-import * as cpu_imageURI_256_256_50_10_1_1_0_rotate from './groundTruth/cpu_imageURI_256_256_50_10_1_1_0_rotate.png';
-import * as cpu_imageURI_256_256_100_100_1_1_0_hotIron from './groundTruth/cpu_imageURI_256_256_100_100_1_1_0_hotIron.png';
+import * as cpu_imageURI_64_64_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_64_20_5_1_1_0.png.js';
+import * as cpu_imageURI_64_33_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_33_20_5_1_1_0.png.js';
+import * as cpu_imageURI_64_64_30_10_5_5_0 from './groundTruth/cpu_imageURI_64_64_30_10_5_5_0.png.js';
+import * as cpu_imageURI_64_64_0_10_5_5_0 from './groundTruth/cpu_imageURI_64_64_0_10_5_5_0.png.js';
+import * as cpu_imageURI_64_64_54_10_5_5_0 from './groundTruth/cpu_imageURI_64_64_54_10_5_5_0.png.js';
+import * as cpu_imageURI_256_256_100_100_1_1_0_voi from './groundTruth/cpu_imageURI_256_256_100_100_1_1_0_voi.png.js';
+import * as cpu_imageURI_256_256_100_100_1_1_0 from './groundTruth/cpu_imageURI_256_256_100_100_1_1_0.png.js';
+import * as cpu_imageURI_256_256_50_10_1_1_0 from './groundTruth/cpu_imageURI_256_256_50_10_1_1_0.png.js';
+import * as cpu_imageURI_256_256_50_10_1_1_0_invert from './groundTruth/cpu_imageURI_256_256_50_10_1_1_0_invert.png.js';
+import * as cpu_imageURI_256_256_50_10_1_1_0_rotate from './groundTruth/cpu_imageURI_256_256_50_10_1_1_0_rotate.png.js';
+import * as cpu_imageURI_256_256_100_100_1_1_0_hotIron from './groundTruth/cpu_imageURI_256_256_100_100_1_1_0_hotIron.png.js';
 
 const {
   cache,

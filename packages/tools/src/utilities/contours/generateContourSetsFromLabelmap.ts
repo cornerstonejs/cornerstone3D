@@ -1,7 +1,7 @@
 import { cache as cornerstoneCache } from '@cornerstonejs/core';
-import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares.js';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 
 import { getDeduplicatedVTKPolyDataPoints } from '../contours/index.js';
 import { findContoursFromReducedSet } from './contourFinder.js';

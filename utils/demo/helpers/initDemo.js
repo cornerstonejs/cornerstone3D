@@ -1,6 +1,6 @@
-import initProviders from './initProviders';
-import initCornerstoneDICOMImageLoader from './initCornerstoneDICOMImageLoader';
-import initVolumeLoader from './initVolumeLoader';
+import initProviders from './initProviders.js';
+import initCornerstoneDICOMImageLoader from './initCornerstoneDICOMImageLoader.js';
+import initVolumeLoader from './initVolumeLoader.js';
 import { init as csRenderInit } from '@cornerstonejs/core';
 import { init as csToolsInit } from '@cornerstonejs/tools';
 

@@ -1,8 +1,8 @@
 import { Enums as csToolsEnums, ToolGroupManager } from '@cornerstonejs/tools';
 const { MouseBindings } = csToolsEnums;
 
-import createElement, { configElement } from './createElement';
-import addLabelToToolbar from './addLabelToToolbar';
+import createElement, { configElement } from './createElement.js';
+import addLabelToToolbar from './addLabelToToolbar.js';
 
 export type optionTypeDefaultValue =
   | { defaultValue: number | string }

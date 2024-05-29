@@ -1,6 +1,6 @@
 import { segmentation } from '@cornerstonejs/tools';
 
-import addDropDownToToolbar from './addDropdownToToolbar';
+import addDropDownToToolbar from './addDropdownToToolbar.js';
 
 type SegmentDropdownType = Function & {
   /** The segmentationId to apply to */

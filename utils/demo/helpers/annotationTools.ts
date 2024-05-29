@@ -1,5 +1,5 @@
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import type { ToolBinding } from './addManipulationBindings';
+import type { ToolBinding } from './addManipulationBindings.js';
 
 const {
   LengthTool,

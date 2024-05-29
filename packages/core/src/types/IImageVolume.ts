@@ -1,4 +1,4 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import type { VoxelManager } from '../utilities/index.js';
 import {
   Metadata,

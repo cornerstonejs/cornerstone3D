@@ -1,5 +1,5 @@
-import { VoxelManager } from '../../src/utilities';
-import RLEVoxelMap from '../../src/utilities/RLEVoxelMap';
+import { VoxelManager } from '../../src/utilities/index.js';
+import RLEVoxelMap from '../../src/utilities/RLEVoxelMap.js';
 import { describe, it, expect, beforeEach } from '@jest/globals';
 
 const size = [64, 128, 4];

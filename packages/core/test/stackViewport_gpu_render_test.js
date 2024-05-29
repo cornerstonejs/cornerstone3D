@@ -1,25 +1,25 @@
-import * as cornerstone3D from '../src/index';
-import * as csTools3d from '../../tools/src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+import * as cornerstone3D from '../src/index.js';
+import * as csTools3d from '../../tools/src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
 
 // nearest neighbor interpolation
-import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png';
-import * as imageURI_64_64_20_5_1_1_0_nearest from './groundTruth/imageURI_64_64_20_5_1_1_0_nearest.png';
-import * as imageURI_64_64_30_10_5_5_0_nearest from './groundTruth/imageURI_64_64_30_10_5_5_0_nearest.png';
-import * as imageURI_256_256_100_100_1_1_0_nearest from './groundTruth/imageURI_256_256_100_100_1_1_0_nearest.png';
-import * as imageURI_256_256_100_100_1_1_0_CT_nearest from './groundTruth/imageURI_256_256_100_100_1_1_0_CT_nearest.png';
-import * as imageURI_64_64_54_10_5_5_0_nearest from './groundTruth/imageURI_64_64_54_10_5_5_0_nearest.png';
-import * as imageURI_64_64_0_10_5_5_0_nearest from './groundTruth/imageURI_64_64_0_10_5_5_0_nearest.png';
-import * as imageURI_100_100_0_10_1_1_1_nearest_color from './groundTruth/imageURI_100_100_0_10_1_1_1_nearest_color.png';
-import * as imageURI_11_11_4_1_1_1_0_nearest_invert_90deg from './groundTruth/imageURI_11_11_4_1_1_1_0_nearest_invert_90deg.png';
-import * as imageURI_64_64_20_5_1_1_0_nearestFlipH from './groundTruth/imageURI_64_64_20_5_1_1_0_nearestFlipH.png';
-import * as imageURI_64_64_20_5_1_1_0_nearestFlipHRotate90 from './groundTruth/imageURI_64_64_20_5_1_1_0_nearestFlipHRotate90.png';
+import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png.js';
+import * as imageURI_64_64_20_5_1_1_0_nearest from './groundTruth/imageURI_64_64_20_5_1_1_0_nearest.png.js';
+import * as imageURI_64_64_30_10_5_5_0_nearest from './groundTruth/imageURI_64_64_30_10_5_5_0_nearest.png.js';
+import * as imageURI_256_256_100_100_1_1_0_nearest from './groundTruth/imageURI_256_256_100_100_1_1_0_nearest.png.js';
+import * as imageURI_256_256_100_100_1_1_0_CT_nearest from './groundTruth/imageURI_256_256_100_100_1_1_0_CT_nearest.png.js';
+import * as imageURI_64_64_54_10_5_5_0_nearest from './groundTruth/imageURI_64_64_54_10_5_5_0_nearest.png.js';
+import * as imageURI_64_64_0_10_5_5_0_nearest from './groundTruth/imageURI_64_64_0_10_5_5_0_nearest.png.js';
+import * as imageURI_100_100_0_10_1_1_1_nearest_color from './groundTruth/imageURI_100_100_0_10_1_1_1_nearest_color.png.js';
+import * as imageURI_11_11_4_1_1_1_0_nearest_invert_90deg from './groundTruth/imageURI_11_11_4_1_1_1_0_nearest_invert_90deg.png.js';
+import * as imageURI_64_64_20_5_1_1_0_nearestFlipH from './groundTruth/imageURI_64_64_20_5_1_1_0_nearestFlipH.png.js';
+import * as imageURI_64_64_20_5_1_1_0_nearestFlipHRotate90 from './groundTruth/imageURI_64_64_20_5_1_1_0_nearestFlipHRotate90.png.js';
 
 // linear interpolation
-import * as imageURI_11_11_4_1_1_1_0 from './groundTruth/imageURI_11_11_4_1_1_1_0.png';
-import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50_10_1_1_0.png';
-import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png';
-import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibrated_1_5_imageURI_11_11_4_1_1_1_0_1.png';
+import * as imageURI_11_11_4_1_1_1_0 from './groundTruth/imageURI_11_11_4_1_1_1_0.png.js';
+import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50_10_1_1_0.png.js';
+import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png.js';
+import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibrated_1_5_imageURI_11_11_4_1_1_1_0_1.png.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const {

@@ -1,12 +1,12 @@
 import { expose } from 'comlink';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
 import ICRPolySeg from '@icr/polyseg-wasm';
 import { utilities } from '@cornerstonejs/core';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
-import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane.js';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
+import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction.js';
+import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter.js';
 
 import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox/index.js';
 import { pointInShapeCallback } from '../utilities/index.js';

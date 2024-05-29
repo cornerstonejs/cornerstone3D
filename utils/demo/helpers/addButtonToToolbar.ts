@@ -1,6 +1,6 @@
 import { utilities as csUtilities } from '@cornerstonejs/core';
 
-import createElement, { configElement } from './createElement';
+import createElement, { configElement } from './createElement.js';
 
 interface configButton extends configElement {
   id?: string;

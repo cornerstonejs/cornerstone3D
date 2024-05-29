@@ -1,7 +1,7 @@
-import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera.js';
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane.js';
 
 import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';

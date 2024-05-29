@@ -1,9 +1,9 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray.js';
 import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport.js';
 
 function addOrUpdateSurfaceToElement(

@@ -1,4 +1,4 @@
-import { roundNumber } from '../../src/utilities';
+import { roundNumber } from '../../src/utilities/index.js';
 import { describe, it, expect } from '@jest/globals';
 
 describe('roundNumber', function () {

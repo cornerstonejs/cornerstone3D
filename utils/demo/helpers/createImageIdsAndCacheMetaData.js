@@ -1,14 +1,14 @@
 import { api } from 'dicomweb-client';
 import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
-import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
+import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata.js';
 import { utilities } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
-import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
-import getPixelSpacingInformation from './getPixelSpacingInformation';
-import { convertMultiframeImageIds } from './convertMultiframeImageIds';
-import removeInvalidTags from './removeInvalidTags';
+import ptScalingMetaDataProvider from './ptScalingMetaDataProvider.js';
+import getPixelSpacingInformation from './getPixelSpacingInformation.js';
+import { convertMultiframeImageIds } from './convertMultiframeImageIds.js';
+import removeInvalidTags from './removeInvalidTags.js';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider } = utilities;

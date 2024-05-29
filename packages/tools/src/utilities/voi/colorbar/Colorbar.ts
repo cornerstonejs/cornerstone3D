@@ -1,4 +1,4 @@
-import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 import { vec2 } from 'gl-matrix';
 import { utilities as csUtils, Types } from '@cornerstonejs/core';
 import type { ColorbarProps, ColorbarVOIRange } from './types/index.js';

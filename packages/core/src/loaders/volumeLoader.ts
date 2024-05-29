@@ -1,8 +1,8 @@
-import '@kitware/vtk.js/Rendering/Profiles/Volume';
+import '@kitware/vtk.js/Rendering/Profiles/Volume.js';
 
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
+import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
 
 import { ImageVolume } from '../cache/classes/ImageVolume.js';
 import cache from '../cache/cache.js';

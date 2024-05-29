@@ -1,5 +1,5 @@
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
 import isTypedArray from '../../utilities/isTypedArray.js';
 import {
   genericMetadataProvider,

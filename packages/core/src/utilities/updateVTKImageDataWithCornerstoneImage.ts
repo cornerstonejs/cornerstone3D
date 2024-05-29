@@ -1,4 +1,4 @@
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import { IImage, PixelDataTypedArray } from '../types/index.js';
 
 function updateVTKImageDataWithCornerstoneImage(

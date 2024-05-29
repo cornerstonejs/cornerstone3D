@@ -1,5 +1,5 @@
-import createElement, { configElement } from './createElement';
-import addLabelToToolbar from './addLabelToToolbar';
+import createElement, { configElement } from './createElement.js';
+import addLabelToToolbar from './addLabelToToolbar.js';
 
 interface configCheckbox extends configElement {
   id?: string;

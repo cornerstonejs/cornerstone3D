@@ -1,4 +1,4 @@
-import getRandomlyTranslatedAndZoomedCameraProperties from './getRandomlyTranslatedAndZoomedCameraProperties';
+import getRandomlyTranslatedAndZoomedCameraProperties from './getRandomlyTranslatedAndZoomedCameraProperties.js';
 
 const camera = { getRandomlyTranslatedAndZoomedCameraProperties };
 
