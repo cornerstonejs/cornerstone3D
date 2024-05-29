@@ -3,6 +3,7 @@
   "version": "1.77.0",
   "description": "",
   "main": "src/index.js",
+  "type": "module",
   "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",

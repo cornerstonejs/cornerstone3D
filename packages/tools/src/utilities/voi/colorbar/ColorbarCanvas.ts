@@ -1,4 +1,4 @@
-import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
+import type { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 import { utilities } from '@cornerstonejs/core';
 import interpolateVec3 from '../../math/vec3/interpolateVec3.js';
 import { ColorbarCanvasProps } from './types/ColorbarCanvasProps.js';

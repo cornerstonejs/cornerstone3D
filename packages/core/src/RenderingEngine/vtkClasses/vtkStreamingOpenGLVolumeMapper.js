@@ -1,9 +1,13 @@
 import macro from '@kitware/vtk.js/macros.js';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper.js';
-import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants.js';
-import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants.js';
+import vtkTextureConstants from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants.js';
+import vtkDataArrayConstants from '@kitware/vtk.js/Common/Core/DataArray/Constants.js';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
-import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants.js';
+import vtkRenderingPropertyConstants from '@kitware/vtk.js/Rendering/Core/Property/Constants.js';
+
+const { Filter } = vtkTextureConstants;
+const { Representation } = vtkRenderingPropertyConstants;
+const { VtkDataTypes } = vtkDataArrayConstants;
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
