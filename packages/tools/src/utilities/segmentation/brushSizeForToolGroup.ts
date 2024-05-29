@@ -1,8 +1,8 @@
-import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
-import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
+import BrushTool from '../../tools/segmentation/BrushTool.js';
+import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds.js';
 import { getRenderingEngine } from '@cornerstonejs/core';
-import { getBrushToolInstances } from './utilities';
+import { getBrushToolInstances } from './utilities.js';
 
 /**
  * Sets the brush size for all brush-based tools in a given tool group.

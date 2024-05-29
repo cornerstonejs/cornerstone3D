@@ -1,7 +1,7 @@
 import { Types, cache } from '@cornerstonejs/core';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import { SegmentationRepresentations } from '../../enums';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck.js';
+import { SegmentationRepresentations } from '../../enums/index.js';
 
 const segmentIndicesCache = new Map<
   string,

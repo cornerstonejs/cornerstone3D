@@ -1,5 +1,5 @@
-import { RetrieveStage, NearbyFrames } from '../../types';
-import { RequestType, ImageQualityStatus } from '../../enums';
+import { RetrieveStage, NearbyFrames } from '../../types/index.js';
+import { RequestType, ImageQualityStatus } from '../../enums/index.js';
 
 // Defines some nearby frames to replicate to
 const nearbyFrames: NearbyFrames[] = [

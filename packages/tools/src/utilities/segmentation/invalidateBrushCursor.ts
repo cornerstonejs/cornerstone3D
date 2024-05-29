@@ -1,8 +1,8 @@
-import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
-import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
+import BrushTool from '../../tools/segmentation/BrushTool.js';
+import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds.js';
 import { getRenderingEngine } from '@cornerstonejs/core';
-import { getBrushToolInstances } from './utilities';
+import { getBrushToolInstances } from './utilities.js';
 
 /**
  * Invalidates the brush cursor for a specific tool group.

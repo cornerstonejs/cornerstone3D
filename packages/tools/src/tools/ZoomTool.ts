@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { getEnabledElement, Types } from '@cornerstonejs/core';
-import { BaseTool } from './base';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { BaseTool } from './base/index.js';
+import { EventTypes, PublicToolProps, ToolProps } from '../types/index.js';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It

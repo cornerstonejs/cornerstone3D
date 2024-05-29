@@ -5,9 +5,9 @@ import {
   utilities as csUtils,
   Types,
 } from '@cornerstonejs/core';
-import JumpToSliceOptions from '../../types/JumpToSliceOptions';
-import clip from '../clip';
-import scroll from '../scroll';
+import JumpToSliceOptions from '../../types/JumpToSliceOptions.js';
+import clip from '../clip.js';
+import scroll from '../scroll.js';
 
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.

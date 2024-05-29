@@ -1,6 +1,6 @@
 import { getRenderingEngine, type Types } from '@cornerstonejs/core';
-import triggerAnnotationRender from './triggerAnnotationRender';
-import { getToolGroup } from '../store/ToolGroupManager';
+import triggerAnnotationRender from './triggerAnnotationRender.js';
+import { getToolGroup } from '../store/ToolGroupManager/index.js';
 
 /**
  * Triggers annotation rendering for the specified tool group IDs.

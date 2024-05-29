@@ -1,5 +1,5 @@
 import { mat3, vec3 } from 'gl-matrix';
-import { IImageVolume, Point3 } from '../types';
+import { IImageVolume, Point3 } from '../types/index.js';
 
 /**
  * Given an `imageVolume` and a normal direction (`viewPlaneNormal`), calculates

@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import * as mathLine from '../line';
+import * as mathLine from '../line/index.js';
 
 const DEFAULT_EPSILON = 0.1;
 

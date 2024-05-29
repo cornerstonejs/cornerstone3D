@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
-import { LabelmapToolOperationData } from '../../../types';
-import { fillInsideRectangle } from './fillRectangle';
+import { LabelmapToolOperationData } from '../../../types/index.js';
+import { fillInsideRectangle } from './fillRectangle.js';
 
 type OperationData = LabelmapToolOperationData & {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];

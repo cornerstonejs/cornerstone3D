@@ -1,6 +1,6 @@
 import { utilities, cache, Types } from '@cornerstonejs/core';
-import { getVoxelOverlap } from '../segmentation/utilities';
-import pointInShapeCallback from '../pointInShapeCallback';
+import { getVoxelOverlap } from '../segmentation/utilities.js';
+import pointInShapeCallback from '../pointInShapeCallback.js';
 
 /**
  * Gets the scalar data for a series of time points for either a single

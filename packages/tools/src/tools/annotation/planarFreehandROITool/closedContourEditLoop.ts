@@ -1,23 +1,23 @@
 import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { state } from '../../../store';
-import { Events } from '../../../enums';
+import { state } from '../../../store/index.js';
+import { Events } from '../../../enums/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../../cursors/elementCursor';
-import type { EventTypes } from '../../../types';
-import { polyline } from '../../../utilities/math';
-import { ContourWindingDirection } from '../../../types/ContourAnnotation';
-import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+} from '../../../cursors/elementCursor.js';
+import type { EventTypes } from '../../../types/index.js';
+import { polyline } from '../../../utilities/math/index.js';
+import { ContourWindingDirection } from '../../../types/ContourAnnotation.js';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
 import {
   getInterpolatedPoints,
   shouldSmooth,
-} from '../../../utilities/planarFreehandROITool/smoothPoints';
-import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import updateContourPolyline from '../../../utilities/contours/updateContourPolyline';
-import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
+} from '../../../utilities/planarFreehandROITool/smoothPoints.js';
+import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds.js';
+import updateContourPolyline from '../../../utilities/contours/updateContourPolyline.js';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state.js';
 
 const { getSubPixelSpacingAndXYDirections, addCanvasPointsToArray, getArea } =
   polyline;

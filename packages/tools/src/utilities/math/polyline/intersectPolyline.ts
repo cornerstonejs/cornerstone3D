@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes';
+import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes.js';
 
 /**
  * Check if two polylines intersect comparing line segment by line segment.

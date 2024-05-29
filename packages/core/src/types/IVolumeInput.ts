@@ -1,5 +1,5 @@
-import { VolumeActor } from './IActor';
-import BlendModes from '../enums/BlendModes';
+import { VolumeActor } from './IActor.js';
+import BlendModes from '../enums/BlendModes.js';
 
 /**
  * Volume input callback type, used to perform operations on the volume data

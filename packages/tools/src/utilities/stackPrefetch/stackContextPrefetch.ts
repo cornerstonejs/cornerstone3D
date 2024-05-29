@@ -6,15 +6,15 @@ import {
   cache,
   getConfiguration as getCoreConfiguration,
 } from '@cornerstonejs/core';
-import { addToolState, getToolState } from './state';
+import { addToolState, getToolState } from './state.js';
 import {
   getStackData,
   requestType,
   priority,
   clearFromImageIds,
   getPromiseRemovedHandler,
-} from './stackPrefetchUtils';
-import { roundNumber } from '../../utilities';
+} from './stackPrefetchUtils.js';
+import { roundNumber } from '../../utilities/index.js';
 
 let configuration = {
   maxImagesToPrefetch: Infinity,

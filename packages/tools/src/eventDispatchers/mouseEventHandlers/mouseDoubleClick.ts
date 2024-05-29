@@ -1,4 +1,4 @@
-import customCallbackHandler from '../shared/customCallbackHandler';
+import customCallbackHandler from '../shared/customCallbackHandler.js';
 
 /**
  * @function mouseDoubleClick - Event handler for mouse double click events. Uses `customCallbackHandler` to fire

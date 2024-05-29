@@ -1,7 +1,7 @@
 import getOrCreateCanvas, {
   EPSILON,
-} from '../RenderingEngine/helpers/getOrCreateCanvas';
-import { ViewportType, Events } from '../enums';
+} from '../RenderingEngine/helpers/getOrCreateCanvas.js';
+import { ViewportType, Events } from '../enums/index.js';
 import {
   IImage,
   IStackViewport,
@@ -9,11 +9,11 @@ import {
   ViewportInputOptions,
   IVolumeViewport,
   ViewReference,
-} from '../types';
-import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
-import RenderingEngine from '../RenderingEngine';
-import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
-import { CanvasLoadPosition } from './loadImageToCanvas';
+} from '../types/index.js';
+import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine.js';
+import RenderingEngine from '../RenderingEngine/index.js';
+import isPTPrescaledWithSUV from './isPTPrescaledWithSUV.js';
+import { CanvasLoadPosition } from './loadImageToCanvas.js';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation

@@ -1,10 +1,10 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool, BaseTool } from '../tools';
-import { Annotation } from '../types';
-import { getAnnotations } from '../stateManagement/annotation/annotationState';
-import * as ToolGroupManager from '../store/ToolGroupManager';
+import { AnnotationTool, BaseTool } from '../tools/index.js';
+import { Annotation } from '../types/index.js';
+import { getAnnotations } from '../stateManagement/annotation/annotationState.js';
+import * as ToolGroupManager from '../store/ToolGroupManager/index.js';
 
 /**
  * Get the annotation that is close to the provided canvas point, it will return

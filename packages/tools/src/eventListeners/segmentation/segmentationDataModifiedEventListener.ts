@@ -1,8 +1,8 @@
-import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
-import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
+import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender.js';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState.js';
+import { SegmentationDataModifiedEventType } from '../../types/EventTypes.js';
+import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified.js';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.

@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from './LabelmapTypes';
+} from './LabelmapTypes.js';
 
 type LabelmapToolOperationData = {
   segmentationId: string;

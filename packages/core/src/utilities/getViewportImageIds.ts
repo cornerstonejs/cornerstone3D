@@ -1,6 +1,6 @@
-import { VolumeViewport } from '../RenderingEngine';
-import cache from '../cache';
-import { IViewport, IStackViewport } from '../types';
+import { VolumeViewport } from '../RenderingEngine/index.js';
+import cache from '../cache/index.js';
+import { IViewport, IStackViewport } from '../types/index.js';
 
 /**
  * Retrieves the image IDs from the given viewport.

@@ -1,4 +1,4 @@
-import { EPSILON } from '../constants';
+import { EPSILON } from '../constants/index.js';
 
 /**
  * Truncates decimal points to that there is at least 1+precision significant

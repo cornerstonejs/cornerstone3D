@@ -1,7 +1,7 @@
-import getInterpolationData from './getInterpolationData';
-import type { InterpolationViewportData } from '../../../types';
-import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import type { FilterParam } from './getInterpolationData';
+import getInterpolationData from './getInterpolationData.js';
+import type { InterpolationViewportData } from '../../../types/index.js';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import type { FilterParam } from './getInterpolationData.js';
 
 /**
  * getInterpolationDataCollection - Gets the array of annotations which match the

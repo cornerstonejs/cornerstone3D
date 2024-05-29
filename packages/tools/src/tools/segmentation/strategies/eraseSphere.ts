@@ -1,6 +1,6 @@
-import BrushStrategy from './BrushStrategy';
-import { SPHERE_STRATEGY } from './fillSphere';
-import compositions from './compositions';
+import BrushStrategy from './BrushStrategy.js';
+import { SPHERE_STRATEGY } from './fillSphere.js';
+import compositions from './compositions/index.js';
 
 const ERASE_SPHERE_STRATEGY = new BrushStrategy(
   'EraseSphere',

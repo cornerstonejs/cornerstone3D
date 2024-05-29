@@ -7,8 +7,8 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
-import eventTarget from '../eventTarget';
-import * as metaData from '../metaData';
+import eventTarget from '../eventTarget.js';
+import * as metaData from '../metaData.js';
 import cloneDeep from 'lodash.clonedeep';
 import type {
   ActorEntry,
@@ -36,12 +36,12 @@ import type {
   ViewReference,
   ViewPresentation,
   VolumeActor,
-} from '../types';
+} from '../types/index.js';
 import {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewportInput,
-} from '../types/IViewport';
+} from '../types/IViewport.js';
 import {
   actorIsA,
   colormap as colormapUtils,
@@ -54,10 +54,10 @@ import {
   triggerEvent,
   updateVTKImageDataWithCornerstoneImage,
   windowLevel as windowLevelUtil,
-} from '../utilities';
-import Viewport from './Viewport';
-import { getColormap } from './helpers/cpuFallback/colors/index';
-import drawImageSync from './helpers/cpuFallback/drawImageSync';
+} from '../utilities/index.js';
+import Viewport from './Viewport.js';
+import { getColormap } from './helpers/cpuFallback/colors/index.js';
+import drawImageSync from './helpers/cpuFallback/drawImageSync.js';
 
 import {
   Events,
@@ -66,38 +66,41 @@ import {
   RequestType,
   VOILUTFunctionType,
   ViewportStatus,
-} from '../enums';
-import { ImageLoaderOptions, loadAndCacheImage } from '../loaders/imageLoader';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
-import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
-import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
-import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
-import resize from './helpers/cpuFallback/rendering/resize';
+} from '../enums/index.js';
+import {
+  ImageLoaderOptions,
+  loadAndCacheImage,
+} from '../loaders/imageLoader.js';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager.js';
+import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform.js';
+import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel.js';
+import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport.js';
+import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas.js';
+import resize from './helpers/cpuFallback/rendering/resize.js';
 
-import cache from '../cache';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
-import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
+import cache from '../cache/index.js';
+import { getConfiguration, getShouldUseCPURendering } from '../init.js';
+import { createProgressive } from '../loaders/ProgressiveRetrieveImages.js';
 import {
   ImagePixelModule,
   ImagePlaneModule,
   PixelDataTypedArray,
-} from '../types';
+} from '../types/index.js';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
-} from '../types/EventTypes';
-import { ImageActor } from '../types/IActor';
-import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+} from '../types/EventTypes.js';
+import { ImageActor } from '../types/IActor.js';
+import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction.js';
 import {
   getTransferFunctionNodes,
   setTransferFunctionNodes,
-} from '../utilities/transferFunctionUtils';
-import correctShift from './helpers/cpuFallback/rendering/correctShift';
-import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { findMatchingColormap } from '../utilities/colormap';
+} from '../utilities/transferFunctionUtils.js';
+import correctShift from './helpers/cpuFallback/rendering/correctShift.js';
+import resetCamera from './helpers/cpuFallback/rendering/resetCamera.js';
+import { Transform } from './helpers/cpuFallback/rendering/transform.js';
+import { findMatchingColormap } from '../utilities/colormap.js';
 
 const EPSILON = 1; // Slice Thickness
 

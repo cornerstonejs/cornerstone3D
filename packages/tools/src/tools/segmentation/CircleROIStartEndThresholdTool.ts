@@ -10,42 +10,42 @@ import {
 } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import {
   addAnnotation,
   removeAnnotation,
   getAnnotations,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+} from '../../stateManagement/annotation/annotationState.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
-} from '../../drawingSvg';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import throttle from '../../utilities/throttle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../drawingSvg/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import throttle from '../../utilities/throttle.js';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 import {
   hideElementCursor,
   resetElementCursor,
-} from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
+} from '../../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state.js';
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
-import { CircleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import CircleROITool from '../annotation/CircleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { CircleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import CircleROITool from '../annotation/CircleROITool.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
-} from '../../utilities/math/circle';
-import { pointInEllipse } from '../../utilities/math/ellipse';
-import { pointInShapeCallback } from '../../utilities';
+} from '../../utilities/math/circle/index.js';
+import { pointInEllipse } from '../../utilities/math/ellipse/index.js';
+import { pointInShapeCallback } from '../../utilities/index.js';
 
 const { transformWorldToIndex } = csUtils;
 

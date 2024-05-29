@@ -1,4 +1,4 @@
-import { BaseTool } from './base';
+import { BaseTool } from './base/index.js';
 import {
   getEnabledElement,
   VolumeViewport,
@@ -6,7 +6,7 @@ import {
   Types,
   utilities,
 } from '@cornerstonejs/core';
-import { EventTypes } from '../types';
+import { EventTypes } from '../types/index.js';
 
 // Todo: should move to configuration
 const DEFAULT_MULTIPLIER = 4;

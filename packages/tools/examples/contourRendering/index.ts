@@ -12,7 +12,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import assetsURL from '../../../../utils/assets/assetsURL.json';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 

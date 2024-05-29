@@ -1,4 +1,4 @@
-import getBoundsIJKFromRectangleAnnotations from './getBoundsIJKFromRectangleAnnotations';
-import { isAxisAlignedRectangle } from './isAxisAlignedRectangle';
+import getBoundsIJKFromRectangleAnnotations from './getBoundsIJKFromRectangleAnnotations.js';
+import { isAxisAlignedRectangle } from './isAxisAlignedRectangle.js';
 
 export { getBoundsIJKFromRectangleAnnotations, isAxisAlignedRectangle };

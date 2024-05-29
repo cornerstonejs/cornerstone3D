@@ -1,6 +1,6 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
-import { getAnnotation } from './annotationState';
+import Events from '../../enums/Events.js';
+import { getAnnotation } from './annotationState.js';
 
 export type BaseEventDetail = {
   viewportId: string;

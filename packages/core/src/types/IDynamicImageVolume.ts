@@ -1,4 +1,4 @@
-import { IImageVolume, PixelDataTypedArray } from '../types';
+import { IImageVolume, PixelDataTypedArray } from '../types/index.js';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class

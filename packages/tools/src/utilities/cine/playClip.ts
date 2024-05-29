@@ -10,10 +10,14 @@ import {
 } from '@cornerstonejs/core';
 
 import { Types } from '@cornerstonejs/core';
-import CINE_EVENTS from './events';
-import { addToolState, getToolState, getToolStateByViewportId } from './state';
-import { CINETypes } from '../../types';
-import scroll from '../scroll';
+import CINE_EVENTS from './events.js';
+import {
+  addToolState,
+  getToolState,
+  getToolStateByViewportId,
+} from './state.js';
+import { CINETypes } from '../../types/index.js';
+import scroll from '../scroll.js';
 
 const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;

@@ -6,19 +6,19 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
-import Events from '../enums/Events';
-import ViewportStatus from '../enums/ViewportStatus';
-import ViewportType from '../enums/ViewportType';
-import renderingEngineCache from './renderingEngineCache';
+import Events from '../enums/Events.js';
+import ViewportStatus from '../enums/ViewportStatus.js';
+import ViewportType from '../enums/ViewportType.js';
+import renderingEngineCache from './renderingEngineCache.js';
 import {
   triggerEvent,
   planar,
   isImageActor,
   actorIsA,
   isEqual,
-} from '../utilities';
-import hasNaNValues from '../utilities/hasNaNValues';
-import { RENDERING_DEFAULTS } from '../constants';
+} from '../utilities/index.js';
+import hasNaNValues from '../utilities/hasNaNValues.js';
+import { RENDERING_DEFAULTS } from '../constants/index.js';
 import type {
   ICamera,
   ActorEntry,
@@ -32,18 +32,18 @@ import type {
   ViewPresentation,
   ViewReference,
   ViewportProperties,
-} from '../types';
+} from '../types/index.js';
 import type {
   ViewportInput,
   IViewport,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
-} from '../types/IViewport';
-import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { getConfiguration } from '../init';
-import IImageCalibration from '../types/IImageCalibration';
-import { InterpolationType } from '../enums';
+} from '../types/IViewport.js';
+import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera.js';
+import { getConfiguration } from '../init.js';
+import IImageCalibration from '../types/IImageCalibration.js';
+import { InterpolationType } from '../enums/index.js';
 
 /**
  * An object representing a single viewport, which is a camera

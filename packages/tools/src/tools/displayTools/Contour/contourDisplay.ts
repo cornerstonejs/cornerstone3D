@@ -4,17 +4,17 @@ import {
   Types,
 } from '@cornerstonejs/core';
 
-import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+import Representations from '../../../enums/SegmentationRepresentations.js';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
-import removeContourFromElement from './removeContourFromElement';
-import { deleteConfigCache } from './contourHandler/contourConfigCache';
-import { polySeg } from '../../../stateManagement/segmentation';
-import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
+} from '../../../types/SegmentationStateTypes.js';
+import removeContourFromElement from './removeContourFromElement.js';
+import { deleteConfigCache } from './contourHandler/contourConfigCache.js';
+import { polySeg } from '../../../stateManagement/segmentation/index.js';
+import { handleContourSegmentation } from './contourHandler/handleContourSegmentation.js';
 
 let polySegConversionInProgress = false;
 

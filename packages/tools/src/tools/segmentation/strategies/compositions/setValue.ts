@@ -1,5 +1,5 @@
-import type { InitializedOperationData } from '../BrushStrategy';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex

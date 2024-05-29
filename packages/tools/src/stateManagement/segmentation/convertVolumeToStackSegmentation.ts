@@ -4,15 +4,15 @@ import {
   eventTarget,
   getRenderingEngines,
 } from '@cornerstonejs/core';
-import { Events, SegmentationRepresentations } from '../../enums';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
+import { Events, SegmentationRepresentations } from '../../enums/index.js';
+import addSegmentationRepresentations from './addSegmentationRepresentations.js';
 import {
   triggerSegmentationRender,
   createImageIdReferenceMap,
-} from '../../utilities/segmentation';
-import { getSegmentation } from './segmentationState';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
+} from '../../utilities/segmentation/index.js';
+import { getSegmentation } from './segmentationState.js';
+import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes.js';
+import { triggerSegmentationDataModified } from './triggerSegmentationEvents.js';
 
 // This function is responsible for the conversion calculations
 export async function computeStackSegmentationFromVolume({

@@ -7,9 +7,9 @@ import {
   utilities,
   getEnabledElement,
 } from '@cornerstonejs/core';
-import { Colorbar } from './Colorbar';
-import type { ViewportColorbarProps, ColorbarVOIRange } from './types';
-import { getVOIMultipliers } from '../../getVOIMultipliers';
+import { Colorbar } from './Colorbar.js';
+import type { ViewportColorbarProps, ColorbarVOIRange } from './types/index.js';
+import { getVOIMultipliers } from '../../getVOIMultipliers.js';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };

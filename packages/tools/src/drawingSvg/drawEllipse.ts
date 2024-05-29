@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import { SVGDrawingHelper } from '../types/index.js';
 
-import _getHash from './_getHash';
-import drawEllipseByCoordinates from './drawEllipseByCoordinates';
+import _getHash from './_getHash.js';
+import drawEllipseByCoordinates from './drawEllipseByCoordinates.js';
 
 function drawEllipse(
   svgDrawingHelper: SVGDrawingHelper,

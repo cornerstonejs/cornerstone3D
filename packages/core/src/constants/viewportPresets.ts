@@ -1,4 +1,4 @@
-import { ViewportPreset } from '../types';
+import { ViewportPreset } from '../types/index.js';
 
 const presets: ViewportPreset[] = [
   {

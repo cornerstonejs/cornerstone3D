@@ -1,5 +1,5 @@
-import { ImageLoadListener } from '../types';
-import { ImageQualityStatus } from '../enums';
+import { ImageLoadListener } from '../types/index.js';
+import { ImageQualityStatus } from '../enums/index.js';
 
 /** Actually fills the nearby frames from the given frame */
 export function fillNearbyFrames(

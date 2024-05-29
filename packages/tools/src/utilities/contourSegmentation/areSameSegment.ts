@@ -1,4 +1,4 @@
-import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
+import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation.js';
 
 /**
  * Check if two contour segmentations are from same segmentId,

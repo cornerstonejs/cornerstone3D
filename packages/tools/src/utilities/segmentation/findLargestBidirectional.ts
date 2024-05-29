@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 
-import { createIsInSegment, isLineInSegment } from './isLineInSegment';
-import type { BidirectionalData } from './createBidirectionalToolData';
+import { createIsInSegment, isLineInSegment } from './isLineInSegment.js';
+import type { BidirectionalData } from './createBidirectionalToolData.js';
 
 const EPSILON = 1e-2;
 

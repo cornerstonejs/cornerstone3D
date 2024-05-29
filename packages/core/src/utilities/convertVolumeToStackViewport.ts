@@ -1,6 +1,6 @@
-import * as Types from '../types';
-import cache, { ImageVolume } from '../cache';
-import { ViewportType } from '../enums';
+import * as Types from '../types/index.js';
+import cache, { ImageVolume } from '../cache/index.js';
+import { ViewportType } from '../enums/index.js';
 
 /**
  * Converts a volume viewport to a stack viewport.

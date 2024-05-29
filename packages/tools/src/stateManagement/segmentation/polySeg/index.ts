@@ -1,7 +1,7 @@
-import { computeAndAddSurfaceRepresentation } from './Surface/computeAndAddSurfaceRepresentation';
-import { computeAndAddLabelmapRepresentation } from './Labelmap/computeAndAddLabelmapRepresentation';
-import { computeAndAddContourRepresentation } from './Contour/computeAndAddContourRepresentation';
-import { canComputeRequestedRepresentation } from './canComputeRequestedRepresentation';
+import { computeAndAddSurfaceRepresentation } from './Surface/computeAndAddSurfaceRepresentation.js';
+import { computeAndAddLabelmapRepresentation } from './Labelmap/computeAndAddLabelmapRepresentation.js';
+import { computeAndAddContourRepresentation } from './Contour/computeAndAddContourRepresentation.js';
+import { canComputeRequestedRepresentation } from './canComputeRequestedRepresentation.js';
 
 export {
   canComputeRequestedRepresentation,

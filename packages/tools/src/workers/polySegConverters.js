@@ -8,14 +8,14 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 
-import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
-import { pointInShapeCallback } from '../utilities';
+import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox/index.js';
+import { pointInShapeCallback } from '../utilities/index.js';
 import {
   containsPoint,
   getAABB,
   projectTo2D,
-} from '../utilities/math/polyline';
-import { isPlaneIntersectingAABB } from '../utilities/planar';
+} from '../utilities/math/polyline/index.js';
+import { isPlaneIntersectingAABB } from '../utilities/planar/index.js';
 
 /**
  * Object containing methods for converting between different representations of

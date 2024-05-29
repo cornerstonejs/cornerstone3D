@@ -1,5 +1,5 @@
-import Events from '../enums/Events';
-import { keyDown, keyUp } from './keyboardEventHandlers';
+import Events from '../enums/Events.js';
+import { keyDown, keyUp } from './keyboardEventHandlers/index.js';
 
 /**
  * Enable Key down and key up listeners

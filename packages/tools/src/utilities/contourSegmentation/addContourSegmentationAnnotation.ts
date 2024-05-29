@@ -1,5 +1,5 @@
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { ContourSegmentationAnnotation } from '../../types';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { ContourSegmentationAnnotation } from '../../types/index.js';
 
 /**
  * Adds a contour segmentation annotation to the specified segmentation.

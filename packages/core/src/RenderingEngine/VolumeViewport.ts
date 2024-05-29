@@ -1,9 +1,9 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import cache from '../cache';
-import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis, Events } from '../enums';
+import cache from '../cache/index.js';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants/index.js';
+import { BlendModes, OrientationAxis, Events } from '../enums/index.js';
 import type {
   ActorEntry,
   IImageVolume,
@@ -13,8 +13,8 @@ import type {
   EventTypes,
   ViewReference,
   ViewReferenceSpecifier,
-} from '../types';
-import type { ViewportInput } from '../types/IViewport';
+} from '../types/index.js';
+import type { ViewportInput } from '../types/IViewport.js';
 import {
   actorIsA,
   getClosestImageId,
@@ -23,13 +23,13 @@ import {
   isImageActor,
   snapFocalPointToSlice,
   triggerEvent,
-} from '../utilities';
-import BaseVolumeViewport from './BaseVolumeViewport';
-import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import { ImageActor } from '../types/IActor';
-import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+} from '../utilities/index.js';
+import BaseVolumeViewport from './BaseVolumeViewport.js';
+import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI.js';
+import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils.js';
+import { ImageActor } from '../types/IActor.js';
+import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport.js';
+import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo.js';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render

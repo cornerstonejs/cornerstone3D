@@ -1,8 +1,8 @@
 import FrameOfReferenceSpecificAnnotationManager, {
   defaultFrameOfReferenceSpecificAnnotationManager,
-} from './annotation/FrameOfReferenceSpecificAnnotationManager';
-import * as annotationLocking from './annotation/annotationLocking';
-import * as annotationSelection from './annotation/annotationSelection';
+} from './annotation/FrameOfReferenceSpecificAnnotationManager.js';
+import * as annotationLocking from './annotation/annotationLocking.js';
+import * as annotationSelection from './annotation/annotationSelection.js';
 
 import {
   getAnnotations,
@@ -18,12 +18,12 @@ import {
   getAnnotationManager,
   resetAnnotationManager,
   invalidateAnnotation,
-} from './annotation/annotationState';
+} from './annotation/annotationState.js';
 
 import {
   addSegmentationRepresentations,
   removeSegmentationsFromToolGroup,
-} from './segmentation';
+} from './segmentation/index.js';
 
 export {
   // annotations

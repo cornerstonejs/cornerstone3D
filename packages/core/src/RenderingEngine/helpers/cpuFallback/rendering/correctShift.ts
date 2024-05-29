@@ -1,4 +1,4 @@
-import { CPUFallbackViewport, Point2 } from '../../../../types';
+import { CPUFallbackViewport, Point2 } from '../../../../types/index.js';
 
 type Shift = {
   x: number;

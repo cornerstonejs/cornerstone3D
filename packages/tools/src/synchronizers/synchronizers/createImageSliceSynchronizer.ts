@@ -1,7 +1,7 @@
-import { createSynchronizer } from '../../store/SynchronizerManager';
+import { createSynchronizer } from '../../store/SynchronizerManager/index.js';
 import { Enums } from '@cornerstonejs/core';
-import imageSliceSyncCallback from '../callbacks/imageSliceSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import imageSliceSyncCallback from '../callbacks/imageSliceSyncCallback.js';
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer.js';
 
 const { STACK_NEW_IMAGE, VOLUME_NEW_IMAGE } = Enums.Events;
 

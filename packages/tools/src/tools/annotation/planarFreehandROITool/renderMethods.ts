@@ -3,13 +3,13 @@ import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
   drawPath as drawPathSvg,
-} from '../../../drawingSvg';
-import { polyline } from '../../../utilities/math';
-import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../../types/AnnotationStyle';
-import { SVGDrawingHelper } from '../../../types';
-import { getContourHolesDataCanvas } from '../../../utilities/contours';
+} from '../../../drawingSvg/index.js';
+import { polyline } from '../../../utilities/math/index.js';
+import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak.js';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../../../types/AnnotationStyle.js';
+import { SVGDrawingHelper } from '../../../types/index.js';
+import { getContourHolesDataCanvas } from '../../../utilities/contours/index.js';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 

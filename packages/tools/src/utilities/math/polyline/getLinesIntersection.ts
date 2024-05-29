@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import * as mathLine from '../line';
+import * as mathLine from '../line/index.js';
 
 // ATTENTION: this is an internal function and it should not be added to "polyline" namespace
 

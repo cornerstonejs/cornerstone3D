@@ -1,11 +1,11 @@
-import mouseClick from './mouseClick';
-import mouseDoubleClick from './mouseDoubleClick';
-import mouseDown from './mouseDown';
-import mouseDownActivate from './mouseDownActivate';
-import mouseDrag from './mouseDrag';
-import mouseMove from './mouseMove';
-import mouseUp from './mouseUp';
-import mouseWheel from './mouseWheel';
+import mouseClick from './mouseClick.js';
+import mouseDoubleClick from './mouseDoubleClick.js';
+import mouseDown from './mouseDown.js';
+import mouseDownActivate from './mouseDownActivate.js';
+import mouseDrag from './mouseDrag.js';
+import mouseMove from './mouseMove.js';
+import mouseUp from './mouseUp.js';
+import mouseWheel from './mouseWheel.js';
 
 export {
   mouseClick,

@@ -1,7 +1,7 @@
-import { SegmentationRepresentations } from '../../../../enums';
-import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
-import { computeLabelmapData } from './labelmapComputationStrategies';
-import { PolySegConversionOptions } from '../../../../types';
+import { SegmentationRepresentations } from '../../../../enums/index.js';
+import { computeAndAddRepresentation } from '../computeAndAddRepresentation.js';
+import { computeLabelmapData } from './labelmapComputationStrategies.js';
+import { PolySegConversionOptions } from '../../../../types/index.js';
 
 /**
  * Computes and adds the labelmap representation for a given segmentation.

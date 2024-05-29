@@ -1,4 +1,4 @@
-import { ImageActor } from './IActor';
+import { ImageActor } from './IActor.js';
 
 /**
  * Stack input callback type, used to perform operations on the image data

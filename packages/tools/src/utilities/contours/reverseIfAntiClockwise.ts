@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import { getSignedArea } from '../math/polyline';
+import { getSignedArea } from '../math/polyline/index.js';
 
 /**
  * _reverseIfAntiClockwise - If the contour's nodes run anti-clockwise,

@@ -1,38 +1,38 @@
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
-import { AnnotationTool } from '../base';
-import throttle from '../../utilities/throttle';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits.js';
+import { roundNumber } from '../../utilities/index.js';
+import { AnnotationTool } from '../base/index.js';
+import throttle from '../../utilities/throttle.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../stateManagement/annotation/annotationState.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
-import * as lineSegment from '../../utilities/math/line';
+} from '../../stateManagement/annotation/helpers/state.js';
+import * as lineSegment from '../../utilities/math/line/index.js';
 
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 
 import {
   EventTypes,
@@ -41,9 +41,9 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 
 const { transformWorldToIndex } = csUtils;
 

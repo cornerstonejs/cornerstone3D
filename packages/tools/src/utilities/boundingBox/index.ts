@@ -1,8 +1,8 @@
-import extend2DBoundingBoxInViewAxis from './extend2DBoundingBoxInViewAxis';
+import extend2DBoundingBoxInViewAxis from './extend2DBoundingBoxInViewAxis.js';
 import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
-} from './getBoundingBoxAroundShape';
+} from './getBoundingBoxAroundShape.js';
 
 export {
   extend2DBoundingBoxInViewAxis,

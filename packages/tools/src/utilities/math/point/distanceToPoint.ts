@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import distanceToPointSquared from './distanceToPointSquared';
+import distanceToPointSquared from './distanceToPointSquared.js';
 
 type Point = Types.Point2 | Types.Point3;
 

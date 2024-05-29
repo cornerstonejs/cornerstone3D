@@ -3,18 +3,18 @@ import {
   canRenderFloatTextures,
   getConfiguration,
   getShouldUseSharedArrayBuffer,
-} from '../init';
-import createFloat32SharedArray from './createFloat32SharedArray';
-import createInt16SharedArray from './createInt16SharedArray';
-import createUint16SharedArray from './createUInt16SharedArray';
-import createUint8SharedArray from './createUint8SharedArray';
-import getScalingParameters from './getScalingParameters';
-import makeVolumeMetadata from './makeVolumeMetadata';
-import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
-import { hasFloatScalingParameters } from './hasFloatScalingParameters';
-import { ImageVolumeProps, Mat3, Point3 } from '../types';
-import cache from '../cache';
-import { Events } from '../enums';
+} from '../init.js';
+import createFloat32SharedArray from './createFloat32SharedArray.js';
+import createInt16SharedArray from './createInt16SharedArray.js';
+import createUint16SharedArray from './createUInt16SharedArray.js';
+import createUint8SharedArray from './createUint8SharedArray.js';
+import getScalingParameters from './getScalingParameters.js';
+import makeVolumeMetadata from './makeVolumeMetadata.js';
+import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing.js';
+import { hasFloatScalingParameters } from './hasFloatScalingParameters.js';
+import { ImageVolumeProps, Mat3, Point3 } from '../types/index.js';
+import cache from '../cache/index.js';
+import { Events } from '../enums/index.js';
 
 function generateVolumePropsFromImageIds(
   imageIds: string[],

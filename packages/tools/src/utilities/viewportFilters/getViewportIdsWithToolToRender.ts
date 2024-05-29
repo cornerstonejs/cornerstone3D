@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID';
-import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled';
-import filterViewportsWithParallelNormals from './filterViewportsWithParallelNormals';
+import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID.js';
+import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled.js';
+import filterViewportsWithParallelNormals from './filterViewportsWithParallelNormals.js';
 
 /**
  * Given a cornerstone3D enabled `element`, and a `toolName`, find all viewportIds

@@ -1,8 +1,8 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type Point3 from './Point3';
-import type Metadata from './Metadata';
-import Mat3 from './Mat3';
-import { PixelDataTypedArray } from './PixelDataTypedArray';
+import type Point3 from './Point3.js';
+import type Metadata from './Metadata.js';
+import Mat3 from './Mat3.js';
+import { PixelDataTypedArray } from './PixelDataTypedArray.js';
 
 /**
  * Properties required to instantiate a Volume object.

@@ -1,6 +1,6 @@
-import type { Annotation } from '../types';
+import type { Annotation } from '../types/index.js';
 import type { Types } from '@cornerstonejs/core';
-import getViewportsForAnnotation from './getViewportsForAnnotation';
+import getViewportsForAnnotation from './getViewportsForAnnotation.js';
 
 /**
  * Finds a matching viewport in terms of the orientation of the annotation data

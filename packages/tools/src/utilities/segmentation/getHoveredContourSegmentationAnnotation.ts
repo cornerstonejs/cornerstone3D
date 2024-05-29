@@ -1,5 +1,5 @@
-import { getAnnotation } from '../../stateManagement';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { getAnnotation } from '../../stateManagement/index.js';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
 
 /**
  * Retrieves the index of the hovered contour segmentation annotation for a given segmentation ID.

@@ -1,11 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import compositions from './compositions';
-import { getStrategyData } from './utils/getStrategyData';
-import { StrategyCallbacks } from '../../../enums';
-import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import compositions from './compositions/index.js';
+import { getStrategyData } from './utils/getStrategyData.js';
+import { StrategyCallbacks } from '../../../enums/index.js';
+import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData.js';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const { VoxelManager } = csUtils;

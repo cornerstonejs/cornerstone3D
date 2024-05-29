@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import getSignedArea from './getSignedArea';
+import getSignedArea from './getSignedArea.js';
 
 /**
  * Calculate the normal of a 2D polyline

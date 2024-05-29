@@ -1,5 +1,8 @@
-import getInterpolationData from './getInterpolationData';
-import type { InterpolationViewportData, Annotation } from '../../../types';
+import getInterpolationData from './getInterpolationData.js';
+import type {
+  InterpolationViewportData,
+  Annotation,
+} from '../../../types/index.js';
 
 /**
  * A pair of slice indices for contours, typically indicating the

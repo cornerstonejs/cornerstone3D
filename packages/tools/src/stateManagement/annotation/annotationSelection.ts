@@ -1,7 +1,7 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
-import { Events } from '../../enums';
-import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes';
-import { getAnnotation } from './annotationState';
+import { Events } from '../../enums/index.js';
+import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes.js';
+import { getAnnotation } from './annotationState.js';
 
 /*
  * Constants

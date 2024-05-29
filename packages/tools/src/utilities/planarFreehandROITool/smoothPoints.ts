@@ -1,6 +1,6 @@
 import { Types } from '@cornerstonejs/core';
-import { point } from '../math';
-import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
+import { point } from '../math/index.js';
+import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints.js';
 
 export function shouldSmooth(
   configuration: Record<any, any>,

@@ -16,8 +16,8 @@ import {
   addVideoTime,
   addBrushSizeSlider,
   addSegmentIndexDropdown,
-} from '../../../../utils/demo/helpers';
-import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
+} from '../../../../utils/demo/helpers/index.js';
+import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils.js';
 
 // This is for debugging purposes
 console.warn(

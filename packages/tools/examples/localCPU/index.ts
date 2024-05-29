@@ -1,12 +1,12 @@
 import { RenderingEngine, Types, Enums, metaData } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import htmlSetup from '../local/htmlSetup';
-import uids from '../local/uids';
+import htmlSetup from '../local/htmlSetup.js';
+import uids from '../local/uids.js';
 
-import initProviders from '../../../../utils/demo/helpers/initProviders';
-import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
-import initVolumeLoader from './../../../../utils/demo/helpers/initVolumeLoader';
+import initProviders from '../../../../utils/demo/helpers/initProviders.js';
+import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader.js';
+import initVolumeLoader from './../../../../utils/demo/helpers/initVolumeLoader.js';
 import { setUseCPURendering } from '@cornerstonejs/core';
 
 const {
@@ -20,7 +20,7 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 
-import { setTitleAndDescription } from '../../../../utils/demo/helpers';
+import { setTitleAndDescription } from '../../../../utils/demo/helpers/index.js';
 
 // This is for debugging purposes
 console.warn(

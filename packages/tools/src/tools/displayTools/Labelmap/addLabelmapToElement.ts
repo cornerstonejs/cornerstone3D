@@ -8,8 +8,8 @@ import {
 import {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
-} from '../../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
+} from '../../../types/LabelmapTypes.js';
+import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck.js';
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
  * NOTE: This function should not be called directly.

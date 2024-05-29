@@ -1,4 +1,4 @@
-import keyDownListener, { getModifierKey } from './keyDownListener';
+import keyDownListener, { getModifierKey } from './keyDownListener.js';
 
 function enable(element: HTMLDivElement): void {
   disable(element);

@@ -1,18 +1,18 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import {
   getSegmentationRepresentations,
   getSegmentations,
-} from '../../stateManagement/segmentation/segmentationState';
+} from '../../stateManagement/segmentation/segmentationState.js';
 import {
   SegmentationRepresentationModifiedEventDetail,
   SegmentationDataModifiedEventDetail,
   SegmentationModifiedEventDetail,
   SegmentationRepresentationRemovedEventDetail,
   SegmentationRemovedEventDetail,
-} from '../../types/EventTypes';
-import { setSegmentationDirty } from '../../utilities/segmentation/getUniqueSegmentIndices';
+} from '../../types/EventTypes.js';
+import { setSegmentationDirty } from '../../utilities/segmentation/getUniqueSegmentIndices.js';
 
 /**
  * Trigger an event that a segmentation is removed

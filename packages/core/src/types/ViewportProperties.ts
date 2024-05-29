@@ -1,6 +1,6 @@
-import { InterpolationType, VOILUTFunctionType } from '../enums';
-import { VOIRange } from './voi';
-import { ColormapPublic } from './Colormap';
+import { InterpolationType, VOILUTFunctionType } from '../enums/index.js';
+import { VOIRange } from './voi.js';
+import { ColormapPublic } from './Colormap.js';
 
 /**
  * Shared Viewport Properties between Stack and Volume Viewports

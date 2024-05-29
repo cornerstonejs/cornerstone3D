@@ -1,5 +1,5 @@
-import { distanceToPoint } from '../point';
-import { canvasCoordinates } from './_types';
+import { distanceToPoint } from '../point/index.js';
+import { canvasCoordinates } from './_types.js';
 
 /**
  * It takes the canvas coordinates of the circle corners and returns the top left and bottom right

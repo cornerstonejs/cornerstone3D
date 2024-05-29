@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import getSignedArea from './getSignedArea';
+import getSignedArea from './getSignedArea.js';
 
 /**
  * Calculate the winding direction (CW or CCW) of a polyline

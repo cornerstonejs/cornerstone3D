@@ -11,7 +11,7 @@ import {
   addButtonToToolbar,
   addDropdownToToolbar,
   getLocalUrl,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 
 // This is for debugging purposes
 console.warn(

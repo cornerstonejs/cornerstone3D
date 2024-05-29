@@ -7,12 +7,12 @@ import {
   initDemo,
   setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import {
   fillStackSegmentationWithMockData,
   fillVolumeSegmentationWithMockData,
   addMockContourSegmentation,
-} from '../../../../utils/test/testUtils';
+} from '../../../../utils/test/testUtils.js';
 
 // This is for debugging purposes
 console.warn(

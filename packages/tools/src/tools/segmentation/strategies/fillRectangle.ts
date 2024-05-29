@@ -4,12 +4,12 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
-} from '../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../utilities';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { LabelmapToolOperationData } from '../../../types';
-import { getStrategyData } from './utils/getStrategyData';
-import { isAxisAlignedRectangle } from '../../../utilities/rectangleROITool/isAxisAlignedRectangle';
+} from '../../../utilities/boundingBox/index.js';
+import { pointInShapeCallback } from '../../../utilities/index.js';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { LabelmapToolOperationData } from '../../../types/index.js';
+import { getStrategyData } from './utils/getStrategyData.js';
+import { isAxisAlignedRectangle } from '../../../utilities/rectangleROITool/isAxisAlignedRectangle.js';
 
 const { transformWorldToIndex } = csUtils;
 

@@ -1,7 +1,7 @@
 import { utilities, type Types, Enums } from '@cornerstonejs/core';
-import { extractContourData } from './extractContourData';
-import { clipAndCacheSurfacesForViewport } from '../../../helpers/clipAndCacheSurfacesForViewport';
-import { createAndAddContourSegmentationsFromClippedSurfaces } from './createAndAddContourSegmentationsFromClippedSurfaces';
+import { extractContourData } from './extractContourData.js';
+import { clipAndCacheSurfacesForViewport } from '../../../helpers/clipAndCacheSurfacesForViewport.js';
+import { createAndAddContourSegmentationsFromClippedSurfaces } from './createAndAddContourSegmentationsFromClippedSurfaces.js';
 
 const currentViewportNormal = new Map();
 

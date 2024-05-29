@@ -13,8 +13,8 @@ import {
   setTitleAndDescription,
   addToggleButtonToToolbar,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
-import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
+} from '../../../../utils/demo/helpers/index.js';
+import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar.js';
 
 // This is for debugging purposes
 console.warn(

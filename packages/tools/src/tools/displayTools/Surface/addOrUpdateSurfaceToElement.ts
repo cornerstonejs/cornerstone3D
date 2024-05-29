@@ -4,7 +4,7 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport';
+import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport.js';
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,

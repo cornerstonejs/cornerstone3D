@@ -1,60 +1,64 @@
-import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
-import PanTool from './PanTool';
-import TrackballRotateTool from './TrackballRotateTool';
-import WindowLevelTool from './WindowLevelTool';
-import WindowLevelRegionTool from './WindowLevelRegionTool';
-import StackScrollTool from './StackScrollTool';
-import PlanarRotateTool from './PlanarRotateTool';
-import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
-import ZoomTool from './ZoomTool';
-import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
-import MIPJumpToClickTool from './MIPJumpToClickTool';
-import CrosshairsTool from './CrosshairsTool';
-import MagnifyTool from './MagnifyTool';
-import AdvancedMagnifyTool from './AdvancedMagnifyTool';
-import ReferenceLinesTool from './ReferenceLinesTool';
-import OverlayGridTool from './OverlayGridTool';
-import SegmentationIntersectionTool from './SegmentationIntersectionTool';
-import ReferenceCursors from './ReferenceCursors';
-import ReferenceLines from './ReferenceLinesTool';
-import ScaleOverlayTool from './ScaleOverlayTool';
-import SculptorTool from './SculptorTool';
+import {
+  BaseTool,
+  AnnotationTool,
+  AnnotationDisplayTool,
+} from './base/index.js';
+import PanTool from './PanTool.js';
+import TrackballRotateTool from './TrackballRotateTool.js';
+import WindowLevelTool from './WindowLevelTool.js';
+import WindowLevelRegionTool from './WindowLevelRegionTool.js';
+import StackScrollTool from './StackScrollTool.js';
+import PlanarRotateTool from './PlanarRotateTool.js';
+import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool.js';
+import ZoomTool from './ZoomTool.js';
+import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool.js';
+import MIPJumpToClickTool from './MIPJumpToClickTool.js';
+import CrosshairsTool from './CrosshairsTool.js';
+import MagnifyTool from './MagnifyTool.js';
+import AdvancedMagnifyTool from './AdvancedMagnifyTool.js';
+import ReferenceLinesTool from './ReferenceLinesTool.js';
+import OverlayGridTool from './OverlayGridTool.js';
+import SegmentationIntersectionTool from './SegmentationIntersectionTool.js';
+import ReferenceCursors from './ReferenceCursors.js';
+import ReferenceLines from './ReferenceLinesTool.js';
+import ScaleOverlayTool from './ScaleOverlayTool.js';
+import SculptorTool from './SculptorTool.js';
 
 // Annotation tools
-import BidirectionalTool from './annotation/BidirectionalTool';
-import LengthTool from './annotation/LengthTool';
-import ProbeTool from './annotation/ProbeTool';
-import DragProbeTool from './annotation/DragProbeTool';
-import RectangleROITool from './annotation/RectangleROITool';
-import EllipticalROITool from './annotation/EllipticalROITool';
-import CircleROITool from './annotation/CircleROITool';
-import SplineROITool from './annotation/SplineROITool';
-import SplineContourSegmentationTool from './annotation/SplineContourSegmentationTool';
-import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
-import PlanarFreehandContourSegmentationTool from './annotation/PlanarFreehandContourSegmentationTool';
-import LivewireContourTool from './annotation/LivewireContourTool';
-import LivewireContourSegmentationTool from './annotation/LivewireContourSegmentationTool';
-import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
-import AngleTool from './annotation/AngleTool';
-import CobbAngleTool from './annotation/CobbAngleTool';
-import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
-import KeyImageTool from './annotation/KeyImageTool';
-import AnnotationEraserTool from './AnnotationEraserTool';
+import BidirectionalTool from './annotation/BidirectionalTool.js';
+import LengthTool from './annotation/LengthTool.js';
+import ProbeTool from './annotation/ProbeTool.js';
+import DragProbeTool from './annotation/DragProbeTool.js';
+import RectangleROITool from './annotation/RectangleROITool.js';
+import EllipticalROITool from './annotation/EllipticalROITool.js';
+import CircleROITool from './annotation/CircleROITool.js';
+import SplineROITool from './annotation/SplineROITool.js';
+import SplineContourSegmentationTool from './annotation/SplineContourSegmentationTool.js';
+import PlanarFreehandROITool from './annotation/PlanarFreehandROITool.js';
+import PlanarFreehandContourSegmentationTool from './annotation/PlanarFreehandContourSegmentationTool.js';
+import LivewireContourTool from './annotation/LivewireContourTool.js';
+import LivewireContourSegmentationTool from './annotation/LivewireContourSegmentationTool.js';
+import ArrowAnnotateTool from './annotation/ArrowAnnotateTool.js';
+import AngleTool from './annotation/AngleTool.js';
+import CobbAngleTool from './annotation/CobbAngleTool.js';
+import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool.js';
+import KeyImageTool from './annotation/KeyImageTool.js';
+import AnnotationEraserTool from './AnnotationEraserTool.js';
 
 // Segmentation DisplayTool
-import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
+import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool.js';
 
 // Segmentation Tools
-import RectangleScissorsTool from './segmentation/RectangleScissorsTool';
-import CircleScissorsTool from './segmentation/CircleScissorsTool';
-import SphereScissorsTool from './segmentation/SphereScissorsTool';
-import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool';
-import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool';
-import CircleROIStartEndThresholdTool from './segmentation/CircleROIStartEndThresholdTool';
-import BrushTool from './segmentation/BrushTool';
-import PaintFillTool from './segmentation/PaintFillTool';
-import OrientationMarkerTool from './OrientationMarkerTool';
-import SegmentSelectTool from './segmentation/SegmentSelectTool';
+import RectangleScissorsTool from './segmentation/RectangleScissorsTool.js';
+import CircleScissorsTool from './segmentation/CircleScissorsTool.js';
+import SphereScissorsTool from './segmentation/SphereScissorsTool.js';
+import RectangleROIThresholdTool from './segmentation/RectangleROIThresholdTool.js';
+import RectangleROIStartEndThresholdTool from './segmentation/RectangleROIStartEndThresholdTool.js';
+import CircleROIStartEndThresholdTool from './segmentation/CircleROIStartEndThresholdTool.js';
+import BrushTool from './segmentation/BrushTool.js';
+import PaintFillTool from './segmentation/PaintFillTool.js';
+import OrientationMarkerTool from './OrientationMarkerTool.js';
+import SegmentSelectTool from './segmentation/SegmentSelectTool.js';
 
 export {
   // ~~ BASE

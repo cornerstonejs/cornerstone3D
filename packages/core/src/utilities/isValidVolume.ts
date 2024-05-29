@@ -1,5 +1,5 @@
-import { metaData } from '..';
-import isEqual from './isEqual';
+import { metaData } from '../index.js';
+import isEqual from './isEqual.js';
 
 /**
  * Checks if the given imageIds form a valid volume. A volume is considered valid if all imageIds

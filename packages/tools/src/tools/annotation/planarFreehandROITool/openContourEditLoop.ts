@@ -1,23 +1,23 @@
 import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { state } from '../../../store';
-import { Events } from '../../../enums';
+import { state } from '../../../store/index.js';
+import { Events } from '../../../enums/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../../cursors/elementCursor';
-import type { EventTypes } from '../../../types';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { polyline } from '../../../utilities/math';
+} from '../../../cursors/elementCursor.js';
+import type { EventTypes } from '../../../types/index.js';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import { polyline } from '../../../utilities/math/index.js';
 import {
   shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/smoothPoints';
-import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { updateContourPolyline } from '../../../utilities/contours';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
-import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
+} from '../../../utilities/planarFreehandROITool/smoothPoints.js';
+import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { updateContourPolyline } from '../../../utilities/contours/index.js';
+import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak.js';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state.js';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
 

@@ -4,7 +4,7 @@ import {
   addAnnotation,
   getAnnotations,
   getChildAnnotations,
-} from '../../stateManagement/annotation/annotationState';
+} from '../../stateManagement/annotation/annotationState.js';
 import type {
   Annotation,
   ContourAnnotation,
@@ -13,13 +13,13 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   AnnotationRenderContext,
-} from '../../types';
-import { drawPath as drawPathSvg } from '../../drawingSvg';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import AnnotationTool from './AnnotationTool';
-import { updateContourPolyline } from '../../utilities/contours/';
-import { getContourHolesDataCanvas } from '../../utilities/contours';
-import { ContourWindingDirection } from '../../types/ContourAnnotation';
+} from '../../types/index.js';
+import { drawPath as drawPathSvg } from '../../drawingSvg/index.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import AnnotationTool from './AnnotationTool.js';
+import { updateContourPolyline } from '../../utilities/contours//index.js';
+import { getContourHolesDataCanvas } from '../../utilities/contours/index.js';
+import { ContourWindingDirection } from '../../types/ContourAnnotation.js';
 
 /**
  * A contour base class responsible for rendering contour instances such as

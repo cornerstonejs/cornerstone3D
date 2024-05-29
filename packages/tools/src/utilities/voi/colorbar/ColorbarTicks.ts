@@ -3,14 +3,14 @@ import type {
   ColorbarVOIRange,
   ColorbarSize,
   ColorbarTicksProps,
-} from './types';
+} from './types/index.js';
 import {
   isColorbarSizeValid,
   isRangeValid,
   areColorbarRangesEqual,
   areColorbarSizesEqual,
-} from './common';
-import { ColorbarRangeTextPosition } from './enums/ColorbarRangeTextPosition';
+} from './common/index.js';
+import { ColorbarRangeTextPosition } from './enums/ColorbarRangeTextPosition.js';
 
 const DEFAULTS = {
   FONT: '10px Arial',

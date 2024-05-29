@@ -1,4 +1,4 @@
-import { ColorbarRangeTextPosition } from '../enums';
+import { ColorbarRangeTextPosition } from '../enums/index.js';
 
 function isRangeTextPositionValid(
   colorbarWidth: number,

@@ -10167,6 +10167,11 @@ eslint-module-utils@^2.8.0:
   dependencies:
     debug "^3.2.7"
 
+eslint-plugin-esm-import@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-esm-import/-/eslint-plugin-esm-import-0.0.1.tgz#c6e1490da5b6fb8026db7889f13bab00872477a1"
+  integrity sha512-xTDN8u1WTWJ8J/AWS2BHli9lI64j+xMdM90ceNiv+QCVXlyLj0fHH0KcN1Can/QYEU41fJlQEmXh64KTkWt0HQ==
+
 eslint-plugin-import@^2.27.5:
   version "2.29.0"
   resolved "https://registry.npmjs.org/eslint-plugin-import/-/eslint-plugin-import-2.29.0.tgz"

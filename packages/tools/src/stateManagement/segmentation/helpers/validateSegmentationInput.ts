@@ -1,6 +1,6 @@
-import * as Enums from '../../../enums';
-import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
-import { validatePublic as validatePublicLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap';
+import * as Enums from '../../../enums/index.js';
+import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes.js';
+import { validatePublic as validatePublicLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap.js';
 
 /**
  * Validates the given segmentationInputArray to ensure it contains

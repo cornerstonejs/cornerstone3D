@@ -1,9 +1,9 @@
-import { invalidateBrushCursor } from '../../utilities/segmentation/';
+import { invalidateBrushCursor } from '../../utilities/segmentation//index.js';
 import {
   getSegmentation,
   getToolGroupIdsWithSegmentation,
-} from './segmentationState';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
+} from './segmentationState.js';
+import { triggerSegmentationModified } from './triggerSegmentationEvents.js';
 
 /**
  * Set the active segment index for a segmentation Id. It fires a global state

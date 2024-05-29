@@ -1,9 +1,9 @@
 import { eventTarget } from '@cornerstonejs/core';
-import { Events, SegmentationRepresentations } from '../../../enums';
-import addRepresentationData from '../addRepresentationData';
-import { triggerSegmentationModified } from '../triggerSegmentationEvents';
-import { debounce } from '../../../utilities';
-import { registerPolySegWorker } from './registerPolySegWorker';
+import { Events, SegmentationRepresentations } from '../../../enums/index.js';
+import addRepresentationData from '../addRepresentationData.js';
+import { triggerSegmentationModified } from '../triggerSegmentationEvents.js';
+import { debounce } from '../../../utilities/index.js';
+import { registerPolySegWorker } from './registerPolySegWorker.js';
 
 const computedRepresentations = new Map<
   string,

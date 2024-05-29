@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { ContourAnnotation } from './ContourAnnotation';
+import { ContourAnnotation } from './ContourAnnotation.js';
 // Import the type so it isn't recursive imports
 
 export type ContourSegmentationAnnotationData = {

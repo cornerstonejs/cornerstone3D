@@ -1,4 +1,4 @@
-import customCallbackHandler from '../shared/customCallbackHandler';
+import customCallbackHandler from '../shared/customCallbackHandler.js';
 
 /**
  * mouseClick - Event handler for mouse up events. Uses `customCallbackHandler` to fire

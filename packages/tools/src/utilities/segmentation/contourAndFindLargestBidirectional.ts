@@ -1,6 +1,6 @@
-import { generateContourSetsFromLabelmap } from '../contours';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import findLargestBidirectional from './findLargestBidirectional';
+import { generateContourSetsFromLabelmap } from '../contours/index.js';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
+import findLargestBidirectional from './findLargestBidirectional.js';
 
 const { Labelmap } = SegmentationRepresentations;
 

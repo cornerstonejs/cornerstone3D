@@ -1,28 +1,28 @@
-import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import AnnotationDisplayTool from './base/AnnotationDisplayTool.js';
 import { vec3 } from 'gl-matrix';
 import {
   getEnabledElementByIds,
   getRenderingEngines,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes.js';
 import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
   getAnnotations,
-} from '../stateManagement/annotation/annotationState';
+} from '../stateManagement/annotation/annotationState.js';
 import {
   drawLine as drawLineSvg,
   drawTextBox as drawTextBoxSvg,
-} from '../drawingSvg';
+} from '../drawingSvg/index.js';
 import {
   EventTypes,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../types';
-import { StyleSpecifier } from '../types/AnnotationStyle';
-import { getToolGroup } from '../store/ToolGroupManager';
+} from '../types/index.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
+import { getToolGroup } from '../store/ToolGroupManager/index.js';
 
 const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';
 const viewportsWithAnnotations = [];

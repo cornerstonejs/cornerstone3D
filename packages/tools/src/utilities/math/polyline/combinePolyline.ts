@@ -1,10 +1,10 @@
 import { Types } from '@cornerstonejs/core';
-import * as mathPoint from '../point';
-import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
-import containsPoint from './containsPoint';
-import getNormal2 from './getNormal2';
+import * as mathPoint from '../point/index.js';
+import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes.js';
+import containsPoint from './containsPoint.js';
+import getNormal2 from './getNormal2.js';
 import { glMatrix, vec3 } from 'gl-matrix';
-import getLinesIntersection from './getLinesIntersection';
+import getLinesIntersection from './getLinesIntersection.js';
 
 enum PolylinePointType {
   Vertex,

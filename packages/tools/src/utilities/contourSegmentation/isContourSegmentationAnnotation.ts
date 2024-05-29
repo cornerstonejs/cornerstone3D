@@ -1,5 +1,5 @@
-import { Annotation } from '../../types';
-import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
+import { Annotation } from '../../types/index.js';
+import { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation.js';
 
 export default function isContourSegmentationAnnotation(
   annotation: Annotation

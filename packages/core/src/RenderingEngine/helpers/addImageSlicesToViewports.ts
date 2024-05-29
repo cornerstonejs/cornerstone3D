@@ -2,7 +2,7 @@ import type {
   IStackViewport,
   IStackInput,
   IRenderingEngine,
-} from '../../types';
+} from '../../types/index.js';
 
 /**
  * For each provided viewport it adds a volume to the viewport using the

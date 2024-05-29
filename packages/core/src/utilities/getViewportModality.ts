@@ -1,5 +1,9 @@
-import type { IViewport, IStackViewport, IVolumeViewport } from '../types';
-import cache from '../cache';
+import type {
+  IViewport,
+  IStackViewport,
+  IVolumeViewport,
+} from '../types/index.js';
+import cache from '../cache/index.js';
 
 function getViewportModality(viewport: IViewport, volumeId?: string): string {
   if ((viewport as IStackViewport).modality) {

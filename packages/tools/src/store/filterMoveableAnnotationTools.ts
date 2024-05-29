@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   ToolAnnotationPair,
   ToolAnnotationsPair,
-} from '../types/InternalToolTypes';
+} from '../types/InternalToolTypes.js';
 
 /**
  * Filters an array of tools with annotations, returning the first annotation

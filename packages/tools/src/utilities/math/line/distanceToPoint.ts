@@ -1,4 +1,4 @@
-import distanceToPointSquared from './distanceToPointSquared';
+import distanceToPointSquared from './distanceToPointSquared.js';
 import type { Types } from '@cornerstonejs/core';
 
 /**

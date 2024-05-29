@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import areLineSegmentsIntersecting from './areLineSegmentsIntersecting';
+import areLineSegmentsIntersecting from './areLineSegmentsIntersecting.js';
 
 /**
  * Checks whether the line (`p1`,`q1`) intersects any of the other lines in the

@@ -1,6 +1,6 @@
 import { Types, utilities } from '@cornerstonejs/core';
 
-import { BucketQueue } from '../BucketQueue';
+import { BucketQueue } from '../BucketQueue.js';
 
 const { isEqual } = utilities;
 const MAX_UINT32 = 4294967295;

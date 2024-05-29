@@ -1,4 +1,4 @@
-import { Point3, Plane } from '../types';
+import { Point3, Plane } from '../types/index.js';
 import { vec3, mat3 } from 'gl-matrix';
 
 /**

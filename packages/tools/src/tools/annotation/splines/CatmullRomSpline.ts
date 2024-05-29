@@ -1,4 +1,4 @@
-import { CardinalSpline } from './CardinalSpline';
+import { CardinalSpline } from './CardinalSpline.js';
 
 // Catmull-Rom spline matrix is a Cardinal spline with scale equal to 1/2. Then
 // it can inherit from CubicSpline using the matrix below or inherit from

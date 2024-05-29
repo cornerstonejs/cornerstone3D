@@ -1,6 +1,6 @@
-import type { IRenderingEngine } from '../types';
-import type IStackViewport from './IStackViewport';
-import type IVolumeViewport from './IVolumeViewport';
+import type { IRenderingEngine } from '../types/index.js';
+import type IStackViewport from './IStackViewport.js';
+import type IVolumeViewport from './IVolumeViewport.js';
 
 /**
  * Cornerstone Enabled Element interface

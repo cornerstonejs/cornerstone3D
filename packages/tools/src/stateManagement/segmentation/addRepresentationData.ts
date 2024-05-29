@@ -1,8 +1,8 @@
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-import { ContourSegmentationData } from '../../types/ContourTypes';
-import { SurfaceSegmentationData } from '../../types/SurfaceTypes';
-import { getSegmentation } from './segmentationState';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes.js';
+import { ContourSegmentationData } from '../../types/ContourTypes.js';
+import { SurfaceSegmentationData } from '../../types/SurfaceTypes.js';
+import { getSegmentation } from './segmentationState.js';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
 
 type SegmentationData =
   | LabelmapSegmentationData

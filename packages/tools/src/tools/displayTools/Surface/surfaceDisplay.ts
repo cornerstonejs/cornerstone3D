@@ -5,14 +5,14 @@ import {
   VolumeViewport3D,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import Representations from '../../../enums/SegmentationRepresentations';
-import { getToolGroup } from '../../../store/ToolGroupManager';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import Representations from '../../../enums/SegmentationRepresentations.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
+import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes.js';
 
-import removeSurfaceFromElement from './removeSurfaceFromElement';
-import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
-import { polySeg } from '../../../stateManagement/segmentation';
+import removeSurfaceFromElement from './removeSurfaceFromElement.js';
+import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement.js';
+import { polySeg } from '../../../stateManagement/segmentation/index.js';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and

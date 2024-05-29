@@ -1,5 +1,5 @@
-import { ImageQualityStatus, RequestType } from '../enums';
-import { ImageLoadListener } from './ImageLoadListener';
+import { ImageQualityStatus, RequestType } from '../enums/index.js';
+import { ImageLoadListener } from './ImageLoadListener.js';
 
 /**
  * Retrieve stages are part of a retrieval of a set of image ids.

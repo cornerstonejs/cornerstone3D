@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import triggerAnnotationRender from './triggerAnnotationRender';
+import triggerAnnotationRender from './triggerAnnotationRender.js';
 
 export function triggerAnnotationRenderForViewportIds(
   renderingEngine: Types.IRenderingEngine,

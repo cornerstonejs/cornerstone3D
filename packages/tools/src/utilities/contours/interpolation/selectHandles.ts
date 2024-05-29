@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { utilities } from '@cornerstonejs/core';
-import type { PointsArray3 } from './interpolate';
+import type { PointsArray3 } from './interpolate.js';
 
 const { PointsManager } = utilities;
 

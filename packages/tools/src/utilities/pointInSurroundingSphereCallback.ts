@@ -3,12 +3,12 @@ import type { Types } from '@cornerstonejs/core';
 
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
-import { pointInSphere } from './math/sphere';
+import { pointInSphere } from './math/sphere/index.js';
 import pointInShapeCallback, {
   PointInShapeCallback,
-} from './pointInShapeCallback';
-import { BoundsIJK } from '../types';
-import { getBoundingBoxAroundShape } from './boundingBox';
+} from './pointInShapeCallback.js';
+import { BoundsIJK } from '../types/index.js';
+import { getBoundingBoxAroundShape } from './boundingBox/index.js';
 
 const { transformWorldToIndex } = csUtils;
 

@@ -1,4 +1,4 @@
-import eventTarget from '../eventTarget';
+import eventTarget from '../eventTarget.js';
 
 /**
  * Small utility to trigger a custom event for a given EventTarget.

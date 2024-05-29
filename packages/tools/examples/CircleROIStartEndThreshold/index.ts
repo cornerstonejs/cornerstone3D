@@ -14,9 +14,9 @@ import {
   addButtonToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import perfusionColorMap from './preset';
+import perfusionColorMap from './preset.js';
 
 // This is for debugging purposes
 console.warn(

@@ -2,7 +2,7 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow';
 import vtkStreamingOpenGLViewNodeFactory, {
   registerOverride,
-} from './vtkStreamingOpenGLViewNodeFactory';
+} from './vtkStreamingOpenGLViewNodeFactory.js';
 
 /**
  * vtkStreamingOpenGLRenderWindow - A derived class of the core vtkOpenGLRenderWindow class.

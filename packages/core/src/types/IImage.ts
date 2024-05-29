@@ -1,11 +1,11 @@
-import type CPUFallbackLUT from './CPUFallbackLUT';
-import type CPUFallbackColormap from './CPUFallbackColormap';
-import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import type { PixelDataTypedArray } from './PixelDataTypedArray';
-import type VoxelManager from '../utilities/VoxelManager';
-import { ImageQualityStatus } from '../enums';
-import IImageCalibration from './IImageCalibration';
-import RGB from './RGB';
+import type CPUFallbackLUT from './CPUFallbackLUT.js';
+import type CPUFallbackColormap from './CPUFallbackColormap.js';
+import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement.js';
+import type { PixelDataTypedArray } from './PixelDataTypedArray.js';
+import type VoxelManager from '../utilities/VoxelManager.js';
+import { ImageQualityStatus } from '../enums/index.js';
+import IImageCalibration from './IImageCalibration.js';
+import RGB from './RGB.js';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering

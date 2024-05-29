@@ -1,6 +1,6 @@
-import { validateParameterUndefinedOrNull } from './validator';
-import getImageSize from './getImageSize';
-import { IImage } from '../../../../types';
+import { validateParameterUndefinedOrNull } from './validator.js';
+import getImageSize from './getImageSize.js';
+import { IImage } from '../../../../types/index.js';
 
 /**
  * Calculates the horizontal, vertical and minimum scale factor for an image

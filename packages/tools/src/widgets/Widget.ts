@@ -1,4 +1,4 @@
-import type { WidgetProps, WidgetSize } from './types';
+import type { WidgetProps, WidgetSize } from './types/index.js';
 
 /**
  * Base class for any widget that can be added to cornerstone. Currently it is

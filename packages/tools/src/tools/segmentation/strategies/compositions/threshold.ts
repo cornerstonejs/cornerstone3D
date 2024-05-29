@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import type { InitializedOperationData } from '../BrushStrategy';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 /**
  * Adds an isWithinThreshold to the operation data that checks that the

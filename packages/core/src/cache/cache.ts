@@ -10,11 +10,11 @@ import {
   ICachedGeometry,
   EventTypes,
   IImageVolume,
-} from '../types';
-import { triggerEvent, imageIdToURI } from '../utilities';
-import eventTarget from '../eventTarget';
-import Events from '../enums/Events';
-import { ImageVolume } from './classes/ImageVolume';
+} from '../types/index.js';
+import { triggerEvent, imageIdToURI } from '../utilities/index.js';
+import eventTarget from '../eventTarget.js';
+import Events from '../enums/Events.js';
+import { ImageVolume } from './classes/ImageVolume.js';
 
 const ONE_GB = 1073741824;
 

@@ -1,6 +1,6 @@
 // `BaseManager` or IManager interface for duplicate API between ToolGroup/Synchronizer?
-import { state as csToolsState } from '../index';
-import destroyToolGroup from './destroyToolGroup';
+import { state as csToolsState } from '../index.js';
+import destroyToolGroup from './destroyToolGroup.js';
 
 // ToolGroups function entirely by their "state" being queried and leveraged
 // removing a ToolGroup from state is equivalent to killing it. Calling

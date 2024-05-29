@@ -1,6 +1,6 @@
 import { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
-import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
+import { Annotation } from './AnnotationTypes.js';
+import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes.js';
 
 /**
  * A base viewport and annotation information used to start interpolating

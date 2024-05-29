@@ -1,4 +1,4 @@
-import CanvasActor from '.';
+import CanvasActor from './index.js';
 
 /**
  * Mimics the VTK mapper functionality, but for non-vtk canvas based rendering

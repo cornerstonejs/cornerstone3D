@@ -1,5 +1,10 @@
-import type { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
-import IImageCalibration from './IImageCalibration';
+import type {
+  Point3,
+  Scaling,
+  Mat3,
+  PixelDataTypedArray,
+} from '../types/index.js';
+import IImageCalibration from './IImageCalibration.js';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;

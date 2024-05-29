@@ -11,7 +11,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   ctVoiRange,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 
 console.warn(
   'Click on index.ts to open source code for this example --------->'

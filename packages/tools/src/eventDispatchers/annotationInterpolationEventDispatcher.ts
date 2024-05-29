@@ -1,6 +1,6 @@
 import { eventTarget } from '@cornerstonejs/core';
-import Events from '../enums/Events';
-import InterpolationManager from '../utilities/segmentation/InterpolationManager/InterpolationManager';
+import Events from '../enums/Events.js';
+import InterpolationManager from '../utilities/segmentation/InterpolationManager/InterpolationManager.js';
 
 /**
  * The enable and disable add/remove the event listeners that dispatch the

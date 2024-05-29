@@ -1,5 +1,5 @@
-import { metaData } from '../';
-import { Metadata } from '../types';
+import { metaData } from '..//index.js';
+import { Metadata } from '../types/index.js';
 
 /**
  * It creates a metadata object for a volume given the imageIds that compose it.

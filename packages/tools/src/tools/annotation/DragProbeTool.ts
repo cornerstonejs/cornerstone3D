@@ -5,20 +5,20 @@ import type { Types } from '@cornerstonejs/core';
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
-} from '../../drawingSvg';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { hideElementCursor } from '../../cursors/elementCursor';
+} from '../../drawingSvg/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import { hideElementCursor } from '../../cursors/elementCursor.js';
 import {
   EventTypes,
   PublicToolProps,
   SVGDrawingHelper,
   ToolProps,
-} from '../../types';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import ProbeTool from './ProbeTool';
-import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+} from '../../types/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import ProbeTool from './ProbeTool.js';
+import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled.js';
 
 class DragProbeTool extends ProbeTool {
   static toolName;

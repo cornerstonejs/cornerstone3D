@@ -1,9 +1,9 @@
-import AnnotationGroupSelector from './AnnotationGroupSelector';
+import AnnotationGroupSelector from './AnnotationGroupSelector.js';
 import {
   Annotation,
   Annotations,
   GroupSpecificAnnotations,
-} from './AnnotationTypes';
+} from './AnnotationTypes.js';
 
 /**
  * The interface for any annotation manager (custom or default)

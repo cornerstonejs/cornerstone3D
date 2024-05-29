@@ -5,13 +5,13 @@ import {
   VolumeViewport,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { SegmentationDataModifiedEventType } from '../../../types/EventTypes.js';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../../types/LabelmapTypes';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+} from '../../../types/LabelmapTypes.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.

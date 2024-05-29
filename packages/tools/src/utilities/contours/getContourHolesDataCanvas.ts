@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import type { Annotation } from '../../types';
-import getContourHolesDataWorld from './getContourHolesDataWorld';
+import type { Annotation } from '../../types/index.js';
+import getContourHolesDataWorld from './getContourHolesDataWorld.js';
 
 /**
  * Get the polylines for the child annotations (holes)

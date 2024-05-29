@@ -2,13 +2,13 @@ import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import BrushStrategy from './BrushStrategy';
-import type { InitializedOperationData, Composition } from './BrushStrategy';
-import compositions from './compositions';
-import StrategyCallbacks from '../../../enums/StrategyCallbacks';
-import { createEllipseInPoint } from './fillCircle';
+import BrushStrategy from './BrushStrategy.js';
+import type { InitializedOperationData, Composition } from './BrushStrategy.js';
+import compositions from './compositions/index.js';
+import StrategyCallbacks from '../../../enums/StrategyCallbacks.js';
+import { createEllipseInPoint } from './fillCircle.js';
 const { transformWorldToIndex } = csUtils;
-import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
+import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo.js';
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {

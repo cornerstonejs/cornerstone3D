@@ -4,9 +4,9 @@ import type {
   PixelDataTypedArray,
   IImage,
   RGB,
-} from '../types';
-import RLEVoxelMap from './RLEVoxelMap';
-import isEqual from './isEqual';
+} from '../types/index.js';
+import RLEVoxelMap from './RLEVoxelMap.js';
+import isEqual from './isEqual.js';
 
 /**
  * Have a default size for cached RLE encoded images.  This is hard to guess

@@ -1,4 +1,4 @@
-import type { ColorbarImageRange } from '../types/ColorbarImageRange';
+import type { ColorbarImageRange } from '../types/ColorbarImageRange.js';
 
 const areColorbarRangesEqual = (
   a: ColorbarImageRange,

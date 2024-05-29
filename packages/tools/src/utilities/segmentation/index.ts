@@ -1,30 +1,30 @@
-import thresholdVolumeByRange from './thresholdVolumeByRange';
-import rectangleROIThresholdVolumeByRange from './rectangleROIThresholdVolumeByRange';
-import createMergedLabelmapForIndex from './createMergedLabelmapForIndex';
-import isValidRepresentationConfig from './isValidRepresentationConfig';
-import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
-import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
-import { triggerSegmentationRender } from './triggerSegmentationRender';
-import floodFill from './floodFill';
+import thresholdVolumeByRange from './thresholdVolumeByRange.js';
+import rectangleROIThresholdVolumeByRange from './rectangleROIThresholdVolumeByRange.js';
+import createMergedLabelmapForIndex from './createMergedLabelmapForIndex.js';
+import isValidRepresentationConfig from './isValidRepresentationConfig.js';
+import getDefaultRepresentationConfig from './getDefaultRepresentationConfig.js';
+import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport.js';
+import { triggerSegmentationRender } from './triggerSegmentationRender.js';
+import floodFill from './floodFill.js';
 import {
   getBrushSizeForToolGroup,
   setBrushSizeForToolGroup,
-} from './brushSizeForToolGroup';
+} from './brushSizeForToolGroup.js';
 import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
-} from './brushThresholdForToolGroup';
-import thresholdSegmentationByRange from './thresholdSegmentationByRange';
-import { createImageIdReferenceMap } from './createImageIdReferenceMap';
-import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
-import createBidirectionalToolData from './createBidirectionalToolData';
-import segmentContourAction from './segmentContourAction';
-import { invalidateBrushCursor } from './invalidateBrushCursor';
-import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
-import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
-import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
-import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
-import { getBrushToolInstances } from './utilities';
+} from './brushThresholdForToolGroup.js';
+import thresholdSegmentationByRange from './thresholdSegmentationByRange.js';
+import { createImageIdReferenceMap } from './createImageIdReferenceMap.js';
+import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional.js';
+import createBidirectionalToolData from './createBidirectionalToolData.js';
+import segmentContourAction from './segmentContourAction.js';
+import { invalidateBrushCursor } from './invalidateBrushCursor.js';
+import { getUniqueSegmentIndices } from './getUniqueSegmentIndices.js';
+import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint.js';
+import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder.js';
+import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation.js';
+import { getBrushToolInstances } from './utilities.js';
 
 export {
   thresholdVolumeByRange,

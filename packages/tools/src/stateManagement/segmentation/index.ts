@@ -1,18 +1,18 @@
-import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup';
-import addSegmentations from './addSegmentations';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
-import addRepresentationData from './addRepresentationData';
-import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation';
-import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation';
+import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup.js';
+import addSegmentations from './addSegmentations.js';
+import addSegmentationRepresentations from './addSegmentationRepresentations.js';
+import addRepresentationData from './addRepresentationData.js';
+import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation.js';
+import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation.js';
 // import { polySegManager } from './polySegManager';
 
-import * as activeSegmentation from './activeSegmentation';
-import * as segmentLocking from './segmentLocking';
-import * as state from './segmentationState';
-import * as config from './config';
-import * as segmentIndex from './segmentIndex';
-import * as triggerSegmentationEvents from './triggerSegmentationEvents';
-import * as polySegManager from './polySeg';
+import * as activeSegmentation from './activeSegmentation.js';
+import * as segmentLocking from './segmentLocking.js';
+import * as state from './segmentationState.js';
+import * as config from './config/index.js';
+import * as segmentIndex from './segmentIndex.js';
+import * as triggerSegmentationEvents from './triggerSegmentationEvents.js';
+import * as polySegManager from './polySeg/index.js';
 
 export {
   // functions

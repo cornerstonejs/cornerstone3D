@@ -1,4 +1,4 @@
-import { IDistance, IPoints, ITouchPoints } from '../../types';
+import { IDistance, IPoints, ITouchPoints } from '../../types/index.js';
 import { Types } from '@cornerstonejs/core';
 
 /**

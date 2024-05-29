@@ -1,7 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import type { SVGDrawingHelper, EventTypes, ContourAnnotation } from '.';
-import type { PushedHandles } from '../tools/SculptorTool/CircleSculptCursor';
-import type { SculptData } from '../tools/SculptorTool';
+import type {
+  SVGDrawingHelper,
+  EventTypes,
+  ContourAnnotation,
+} from './index.js';
+import type { PushedHandles } from '../tools/SculptorTool/CircleSculptCursor.js';
+import type { SculptData } from '../tools/SculptorTool.js';
 
 /**
  * This interface defines a contract for implementing various shapes within the sculptor tool.

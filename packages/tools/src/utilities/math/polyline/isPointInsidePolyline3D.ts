@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import containsPoint from './containsPoint';
-import { projectTo2D } from './projectTo2D';
+import containsPoint from './containsPoint.js';
+import { projectTo2D } from './projectTo2D.js';
 
 /**
  * Determines whether a 3D point is inside a polyline in 3D space.

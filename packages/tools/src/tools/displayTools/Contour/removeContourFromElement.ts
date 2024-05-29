@@ -3,9 +3,9 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getSegmentationRepresentationByUID,
   getSegmentation,
-} from '../../../stateManagement/segmentation/segmentationState';
+} from '../../../stateManagement/segmentation/segmentationState.js';
 
-import { removeAnnotation } from '../../../stateManagement';
+import { removeAnnotation } from '../../../stateManagement/index.js';
 
 /**
  * Remove the contour representation from the viewport's HTML Element.

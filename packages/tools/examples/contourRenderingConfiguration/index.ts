@@ -13,7 +13,7 @@ import {
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes

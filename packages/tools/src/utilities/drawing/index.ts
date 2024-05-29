@@ -1,3 +1,3 @@
-import getTextBoxCoordsCanvas from './getTextBoxCoordsCanvas';
+import getTextBoxCoordsCanvas from './getTextBoxCoordsCanvas.js';
 
 export { getTextBoxCoordsCanvas };

@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import type { InitializedOperationData } from '../BrushStrategy';
-import type BoundsIJK from '../../../../types/BoundsIJK';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import type BoundsIJK from '../../../../types/BoundsIJK.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 /**
  * Initializes the threshold values for the dynamic threshold.

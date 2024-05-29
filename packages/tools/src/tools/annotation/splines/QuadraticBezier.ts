@@ -1,4 +1,4 @@
-import { QuadraticSpline } from './QuadraticSpline';
+import { QuadraticSpline } from './QuadraticSpline.js';
 
 // prettier-ignore
 const TRANSFORM_MATRIX = [

@@ -1,12 +1,12 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import isTypedArray from '../../utilities/isTypedArray';
+import isTypedArray from '../../utilities/isTypedArray.js';
 import {
   genericMetadataProvider,
   getMinMax,
   imageIdToURI,
-} from '../../utilities';
-import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
+} from '../../utilities/index.js';
+import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses/index.js';
 import {
   Metadata,
   Point3,
@@ -16,9 +16,9 @@ import {
   ImageVolumeProps,
   IImage,
   IImageLoadObject,
-} from '../../types';
-import cache from '../cache';
-import * as metaData from '../../metaData';
+} from '../../types/index.js';
+import cache from '../cache.js';
+import * as metaData from '../../metaData.js';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.

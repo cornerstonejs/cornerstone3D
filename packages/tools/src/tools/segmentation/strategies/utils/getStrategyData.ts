@@ -1,7 +1,7 @@
 import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { isVolumeSegmentation } from './stackVolumeCheck';
-import { LabelmapToolOperationDataStack } from '../../../../types';
+import { isVolumeSegmentation } from './stackVolumeCheck.js';
+import { LabelmapToolOperationDataStack } from '../../../../types/index.js';
 
 const { VoxelManager } = utilities;
 

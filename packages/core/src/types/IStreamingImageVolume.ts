@@ -1,4 +1,4 @@
-import { ImageVolume } from './../cache/classes/ImageVolume';
+import { ImageVolume } from './../cache/classes/ImageVolume.js';
 
 /**
  * Cornerstone StreamingImageVolume which extends ImageVolume

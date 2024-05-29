@@ -11,8 +11,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+} from '../../../../utils/demo/helpers/index.js';
+import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes

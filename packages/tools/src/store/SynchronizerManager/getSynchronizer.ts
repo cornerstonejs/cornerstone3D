@@ -1,5 +1,5 @@
-import { state } from '../index';
-import Synchronizer from './Synchronizer';
+import { state } from '../index.js';
+import Synchronizer from './Synchronizer.js';
 
 /**
  * Get the synchronizer with the given id from the state.

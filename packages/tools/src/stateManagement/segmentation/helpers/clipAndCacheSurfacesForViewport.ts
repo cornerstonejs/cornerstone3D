@@ -6,9 +6,9 @@ import {
   triggerEvent,
 } from '@cornerstonejs/core';
 
-import { WorkerTypes } from '../../../enums';
-import { pointToString } from '../../../utilities';
-import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
+import { WorkerTypes } from '../../../enums/index.js';
+import { pointToString } from '../../../utilities/index.js';
+import { registerPolySegWorker } from '../polySeg/registerPolySegWorker.js';
 const workerManager = getWebWorkerManager();
 
 /**

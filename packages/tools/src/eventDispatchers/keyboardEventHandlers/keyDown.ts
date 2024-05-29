@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../../store';
-import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
-import getToolsWithActionsForKeyboardEvent from '../shared/getToolsWithActionsForKeyboardEvents';
-import { KeyDownEventType } from '../../types/EventTypes';
-import ToolModes from '../../enums/ToolModes';
+import { ToolGroupManager } from '../../store/index.js';
+import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent.js';
+import getToolsWithActionsForKeyboardEvent from '../shared/getToolsWithActionsForKeyboardEvents.js';
+import { KeyDownEventType } from '../../types/EventTypes.js';
+import ToolModes from '../../enums/ToolModes.js';
 
 /**
  * KeyDown event listener to handle viewport cursor icon changes

@@ -1,4 +1,4 @@
-import Point3 from './Point3';
+import Point3 from './Point3.js';
 
 export interface ISurface {
   readonly id: string;

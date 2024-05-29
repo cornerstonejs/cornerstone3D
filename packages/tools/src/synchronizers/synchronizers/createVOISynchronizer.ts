@@ -1,7 +1,7 @@
-import { createSynchronizer } from '../../store/SynchronizerManager';
+import { createSynchronizer } from '../../store/SynchronizerManager/index.js';
 import { Enums } from '@cornerstonejs/core';
-import voiSyncCallback from '../callbacks/voiSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import voiSyncCallback from '../callbacks/voiSyncCallback.js';
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer.js';
 
 type VOISynchronizerOptions = {
   syncInvertState: boolean;

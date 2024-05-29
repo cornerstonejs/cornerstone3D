@@ -1,4 +1,4 @@
-import { CPUFallbackEnabledElement, IImage } from '../../../../types';
+import { CPUFallbackEnabledElement, IImage } from '../../../../types/index.js';
 
 /**
  * Sets size and clears canvas

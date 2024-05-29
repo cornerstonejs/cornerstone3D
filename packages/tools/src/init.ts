@@ -1,9 +1,9 @@
 import { eventTarget, Enums } from '@cornerstonejs/core';
-import { getAnnotationManager } from './stateManagement/annotation/annotationState';
-import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState';
-import { Events as TOOLS_EVENTS } from './enums';
-import { addEnabledElement, removeEnabledElement } from './store';
-import { resetCornerstoneToolsState } from './store/state';
+import { getAnnotationManager } from './stateManagement/annotation/annotationState.js';
+import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState.js';
+import { Events as TOOLS_EVENTS } from './enums/index.js';
+import { addEnabledElement, removeEnabledElement } from './store/index.js';
+import { resetCornerstoneToolsState } from './store/state.js';
 import {
   annotationCompletedListener,
   annotationRemovedListener,
@@ -13,10 +13,10 @@ import {
   segmentationRepresentationModifiedEventListener,
   segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
-} from './eventListeners';
-import { annotationInterpolationEventDispatcher } from './eventDispatchers';
+} from './eventListeners/index.js';
+import { annotationInterpolationEventDispatcher } from './eventDispatchers/index.js';
 
-import * as ToolGroupManager from './store/ToolGroupManager';
+import * as ToolGroupManager from './store/ToolGroupManager/index.js';
 
 let csToolsInitialized = false;
 

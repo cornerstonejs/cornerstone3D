@@ -1,4 +1,4 @@
-import { PixelDataTypedArray } from '../types';
+import { PixelDataTypedArray } from '../types/index.js';
 
 /**
  * The RLERun specifies a contigous run of values for a row,

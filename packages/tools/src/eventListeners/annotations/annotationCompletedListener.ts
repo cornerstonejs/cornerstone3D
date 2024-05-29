@@ -1,6 +1,6 @@
-import { AnnotationCompletedEventType } from '../../types/EventTypes';
-import * as contourSegUtils from '../../utilities/contourSegmentation';
-import { contourSegmentationCompleted } from './contourSegmentation';
+import { AnnotationCompletedEventType } from '../../types/EventTypes.js';
+import * as contourSegUtils from '../../utilities/contourSegmentation/index.js';
+import { contourSegmentationCompleted } from './contourSegmentation/index.js';
 
 export default function annotationCompletedListener(
   evt: AnnotationCompletedEventType

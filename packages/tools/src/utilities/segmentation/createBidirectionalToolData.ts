@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import type { Annotation } from '../../types/AnnotationTypes';
+import type { Annotation } from '../../types/AnnotationTypes.js';
 
 export type BidirectionalData = {
   majorAxis: [Types.Point3, Types.Point3];

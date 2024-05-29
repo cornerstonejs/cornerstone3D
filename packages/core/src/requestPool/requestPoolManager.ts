@@ -1,6 +1,6 @@
-import RequestType from '../enums/RequestType';
-import { IImage } from '../types';
-import { uuidv4 } from '../utilities';
+import RequestType from '../enums/RequestType.js';
+import { IImage } from '../types/index.js';
+import { uuidv4 } from '../utilities/index.js';
 
 type AdditionalDetails = {
   imageId?: string;

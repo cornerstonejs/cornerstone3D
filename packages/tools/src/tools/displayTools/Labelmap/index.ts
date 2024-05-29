@@ -1,9 +1,9 @@
-import labelmapDisplay from './labelmapDisplay';
-import labelmapConfig from './labelmapConfig';
+import labelmapDisplay from './labelmapDisplay.js';
+import labelmapConfig from './labelmapConfig.js';
 import {
   validate as validateLabelmap,
   validatePublic as validateLabelmapPublic,
-} from './validateLabelmap';
+} from './validateLabelmap.js';
 
 export {
   labelmapDisplay,

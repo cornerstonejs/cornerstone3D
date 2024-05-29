@@ -1,5 +1,5 @@
-import preventGhostClick from './preventGhostClick';
-import touchStartListener from './touchStartListener';
+import preventGhostClick from './preventGhostClick.js';
+import touchStartListener from './touchStartListener.js';
 
 /**
  * Removes touch event listeners for native touch event. Enables

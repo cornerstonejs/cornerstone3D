@@ -11,10 +11,10 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
-import setPetTransferFunction from '../../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
+import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar.js';
+import setPetTransferFunction from '../../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor.js';
 
 async function getImageStacks() {
   const wadoRsRoot1 = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';

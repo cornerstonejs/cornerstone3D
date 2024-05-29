@@ -1,13 +1,13 @@
-import cache from '../cache/cache';
-import { ImageVolume } from '../cache';
-import Events from '../enums/Events';
-import eventTarget from '../eventTarget';
+import cache from '../cache/cache.js';
+import { ImageVolume } from '../cache/index.js';
+import Events from '../enums/Events.js';
+import eventTarget from '../eventTarget.js';
 import {
   genericMetadataProvider,
   getBufferConfiguration,
   triggerEvent,
   uuidv4,
-} from '../utilities';
+} from '../utilities/index.js';
 import {
   IImage,
   ImageLoaderFn,
@@ -18,9 +18,9 @@ import {
   Mat3,
   PixelDataTypedArrayString,
   PixelDataTypedArray,
-} from '../types';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import { metaData } from '../';
+} from '../types/index.js';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager.js';
+import { metaData } from '..//index.js';
 
 export interface ImageLoaderOptions {
   priority: number;

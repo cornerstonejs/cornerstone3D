@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 
-import _getHash from './_getHash';
-import { SVGDrawingHelper } from '../types';
-import drawRectByCoordinates from './drawRectByCoordinates';
+import _getHash from './_getHash.js';
+import { SVGDrawingHelper } from '../types/index.js';
+import drawRectByCoordinates from './drawRectByCoordinates.js';
 
 // This method is obsolete due to not supporting rotation tool. Please use drawRectByCoordinates instead.
 // <rect x="120" y="100" width="100" height="100" />

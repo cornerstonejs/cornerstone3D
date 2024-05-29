@@ -3,9 +3,9 @@ import {
   IToolBinding,
   SetToolBindingsType,
   ToolOptionsType,
-} from './ISetToolModeOptions';
-import { MouseBindings } from '../enums';
-import { ToolConfiguration } from '../types';
+} from './ISetToolModeOptions.js';
+import { MouseBindings } from '../enums/index.js';
+import { ToolConfiguration } from '../types/index.js';
 /**
  * ToolGroup interface
  * @deprecated - this is going away in favour of using the type import from the

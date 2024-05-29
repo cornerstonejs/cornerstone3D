@@ -1,6 +1,6 @@
 import { utilities } from '@cornerstonejs/core';
-import { NamedStatistics } from '../../../types';
-import Calculator from './Calculator';
+import { NamedStatistics } from '../../../types/index.js';
+import Calculator from './Calculator.js';
 
 const { PointsManager } = utilities;
 

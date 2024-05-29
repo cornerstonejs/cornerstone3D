@@ -1,11 +1,11 @@
-import { BaseTool } from './base';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { ToolGroupManager } from '../store';
+import { BaseTool } from './base/index.js';
+import { EventTypes, PublicToolProps, ToolProps } from '../types/index.js';
+import { ToolGroupManager } from '../store/index.js';
 import {
   getAnnotations,
   removeAnnotation,
-} from '../stateManagement/annotation/annotationState';
-import { setAnnotationSelected } from '../stateManagement/annotation/annotationSelection';
+} from '../stateManagement/annotation/annotationState.js';
+import { setAnnotationSelected } from '../stateManagement/annotation/annotationSelection.js';
 
 class AnnotationEraserTool extends BaseTool {
   static toolName;

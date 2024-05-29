@@ -4,7 +4,7 @@ import type {
   ClosestControlPoint,
   ClosestSplinePoint,
   ControlPointInfo,
-} from './';
+} from './/index.js';
 
 /**
  * Spline curve interface

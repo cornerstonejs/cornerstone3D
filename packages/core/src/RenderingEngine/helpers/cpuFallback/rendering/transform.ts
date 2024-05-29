@@ -2,7 +2,7 @@ import {
   CPUFallbackTransform,
   Point2,
   TransformMatrix2D,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 // By Simon Sarris
 // Www.simonsarris.com

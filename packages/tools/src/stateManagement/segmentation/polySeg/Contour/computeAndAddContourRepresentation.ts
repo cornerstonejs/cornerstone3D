@@ -1,7 +1,7 @@
-import { SegmentationRepresentations } from '../../../../enums';
-import { PolySegConversionOptions } from '../../../../types';
-import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
-import { computeContourData } from './contourComputationStrategies';
+import { SegmentationRepresentations } from '../../../../enums/index.js';
+import { PolySegConversionOptions } from '../../../../types/index.js';
+import { computeAndAddRepresentation } from '../computeAndAddRepresentation.js';
+import { computeContourData } from './contourComputationStrategies.js';
 /**
  * Computes and adds the contour representation for a given segmentation.
  *

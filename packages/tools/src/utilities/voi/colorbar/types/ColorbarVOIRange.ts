@@ -1,3 +1,3 @@
-import type { ColorbarImageRange } from './ColorbarImageRange';
+import type { ColorbarImageRange } from './ColorbarImageRange.js';
 
 export type ColorbarVOIRange = ColorbarImageRange;

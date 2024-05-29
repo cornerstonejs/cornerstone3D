@@ -1,4 +1,7 @@
-import { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
+import {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from '../types/index.js';
 
 /**
  * Creates a target buffer based on the provided options.

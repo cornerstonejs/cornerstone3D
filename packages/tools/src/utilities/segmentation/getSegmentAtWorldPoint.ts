@@ -1,18 +1,21 @@
 import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { SegmentationRepresentations } from '../../enums';
+import { SegmentationRepresentations } from '../../enums/index.js';
 import {
   getSegmentation,
   getSegmentationIdRepresentations,
-} from '../../stateManagement/segmentation/segmentationState';
+} from '../../stateManagement/segmentation/segmentationState.js';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import { ContourSegmentationAnnotation, Segmentation } from '../../types';
-import { getAnnotation } from '../../stateManagement';
-import { isPointInsidePolyline3D } from '../math/polyline';
+} from '../../types/LabelmapTypes.js';
+import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck.js';
+import {
+  ContourSegmentationAnnotation,
+  Segmentation,
+} from '../../types/index.js';
+import { getAnnotation } from '../../stateManagement/index.js';
+import { isPointInsidePolyline3D } from '../math/polyline/index.js';
 
 type Options = {
   representationType?: SegmentationRepresentations;

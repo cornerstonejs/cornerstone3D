@@ -6,17 +6,21 @@ import {
   EventTypes,
   ImageLoadListener,
   RetrieveOptions,
-} from '../types';
-import singleRetrieveStages from './configuration/singleRetrieve';
-import sequentialRetrieveStages from './configuration/sequentialRetrieve';
-import interleavedRetrieveStages from './configuration/interleavedRetrieve';
-import { loadAndCacheImage } from './imageLoader';
-import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import { ImageQualityStatus, RequestType, Events } from '../enums';
-import cache from '../cache';
-import eventTarget from '../eventTarget';
-import { fillNearbyFrames } from './fillNearbyFrames';
+} from '../types/index.js';
+import singleRetrieveStages from './configuration/singleRetrieve.js';
+import sequentialRetrieveStages from './configuration/sequentialRetrieve.js';
+import interleavedRetrieveStages from './configuration/interleavedRetrieve.js';
+import { loadAndCacheImage } from './imageLoader.js';
+import {
+  triggerEvent,
+  ProgressiveIterator,
+  decimate,
+} from '../utilities/index.js';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager.js';
+import { ImageQualityStatus, RequestType, Events } from '../enums/index.js';
+import cache from '../cache/index.js';
+import eventTarget from '../eventTarget.js';
+import { fillNearbyFrames } from './fillNearbyFrames.js';
 
 export {
   sequentialRetrieveStages,

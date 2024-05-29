@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import * as math from '../';
+import * as math from '..//index.js';
 
 /**
  * Calculate the closest point and the squared distance between a reference point and a line segment.

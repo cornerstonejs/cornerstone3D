@@ -1,12 +1,12 @@
-import ICamera from './ICamera';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import ViewportInputOptions from './ViewportInputOptions';
-import { ActorEntry } from './IActor';
-import ViewportType from '../enums/ViewportType';
-import ViewportStatus from '../enums/ViewportStatus';
-import DisplayArea from './displayArea';
-import BoundsLPS from './BoundsLPS';
+import ICamera from './ICamera.js';
+import Point2 from './Point2.js';
+import Point3 from './Point3.js';
+import ViewportInputOptions from './ViewportInputOptions.js';
+import { ActorEntry } from './IActor.js';
+import ViewportType from '../enums/ViewportType.js';
+import ViewportStatus from '../enums/ViewportStatus.js';
+import DisplayArea from './displayArea.js';
+import BoundsLPS from './BoundsLPS.js';
 
 /**
  * Specifies what view to get a reference for.

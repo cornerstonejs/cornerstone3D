@@ -1,8 +1,8 @@
 import { Enums, Types, eventTarget, triggerEvent } from '@cornerstonejs/core';
 import { getWebWorkerManager } from '@cornerstonejs/core';
-import { ContourSegmentationData } from '../../../../types';
-import { getAnnotation } from '../../../annotation/annotationState';
-import { WorkerTypes } from '../../../../enums';
+import { ContourSegmentationData } from '../../../../types/index.js';
+import { getAnnotation } from '../../../annotation/annotationState.js';
+import { WorkerTypes } from '../../../../enums/index.js';
 
 const workerManager = getWebWorkerManager();
 

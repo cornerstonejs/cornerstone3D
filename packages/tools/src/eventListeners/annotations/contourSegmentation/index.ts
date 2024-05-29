@@ -1,2 +1,2 @@
-export { default as contourSegmentationCompleted } from './contourSegmentationCompleted';
-export { default as contourSegmentationRemoved } from './contourSegmentationRemoved';
+export { default as contourSegmentationCompleted } from './contourSegmentationCompleted.js';
+export { default as contourSegmentationRemoved } from './contourSegmentationRemoved.js';

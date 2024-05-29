@@ -5,18 +5,18 @@ import {
   RepresentationPublicInput,
   ToolGroupSpecificRepresentation,
   RepresentationPublicInputOptions,
-} from '../../types/SegmentationStateTypes';
-import * as SegmentationConfig from './config/segmentationConfig';
+} from '../../types/SegmentationStateTypes.js';
+import * as SegmentationConfig from './config/segmentationConfig.js';
 import {
   addSegmentationRepresentation as addSegmentationRepresentationToState,
   getNextColorLUTIndex,
   addColorLUT,
-} from './segmentationState';
-import { getRepresentationSpecificConfig } from './helpers/getRepresentationSpecificConfig';
-import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
-import { getToolGroup } from '../../store/ToolGroupManager';
-import { triggerAnnotationRenderForViewportIds } from '../../utilities';
-import { SegmentationRepresentations } from '../../enums';
+} from './segmentationState.js';
+import { getRepresentationSpecificConfig } from './helpers/getRepresentationSpecificConfig.js';
+import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT.js';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities/index.js';
+import { SegmentationRepresentations } from '../../enums/index.js';
 
 async function addSegmentationRepresentation(
   toolGroupId: string,

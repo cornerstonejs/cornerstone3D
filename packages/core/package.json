@@ -2,7 +2,7 @@
   "name": "@cornerstonejs/core",
   "version": "1.77.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "src/index.js",
   "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",

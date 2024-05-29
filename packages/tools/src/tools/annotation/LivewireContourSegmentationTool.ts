@@ -1,12 +1,12 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
-import LivewireContourTool from './LivewireContourTool';
-import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
-import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { ChangeTypes } from '../../enums';
-import type { ContourSegmentationAnnotation } from '../../types';
-import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
+import LivewireContourTool from './LivewireContourTool.js';
+import { LivewirePath } from '../../utilities/livewire/LiveWirePath.js';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state.js';
+import { ChangeTypes } from '../../enums/index.js';
+import type { ContourSegmentationAnnotation } from '../../types/index.js';
+import { drawPolyline as drawPolylineSvg } from '../../drawingSvg/index.js';
 
 class LivewireContourSegmentationTool extends LivewireContourTool {
   static toolName;

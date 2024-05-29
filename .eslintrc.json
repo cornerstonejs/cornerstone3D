@@ -41,6 +41,7 @@
   // -
   "extends": [
     "eslint:recommended",
+    "plugin:esm-import/recommended",
     "plugin:@typescript-eslint/recommended",
     // sets up the plugin AND eslint-config-prettier
     "plugin:prettier/recommended"
@@ -81,8 +82,6 @@
       "error",
       "ignorePackages",
       {
-        "js": "never",
-        "jsx": "never",
         "ts": "never",
         "tsx": "never"
       }

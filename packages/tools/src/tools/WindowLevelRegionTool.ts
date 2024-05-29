@@ -1,4 +1,4 @@
-import { AnnotationTool } from './base';
+import { AnnotationTool } from './base/index.js';
 
 import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -6,30 +6,30 @@ import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../stateManagement';
-import { triggerAnnotationCompleted } from '../stateManagement/annotation/helpers/state';
-import { drawRect as drawRectSvg } from '../drawingSvg';
-import { state } from '../store';
-import { Events } from '../enums';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+} from '../stateManagement/index.js';
+import { triggerAnnotationCompleted } from '../stateManagement/annotation/helpers/state.js';
+import { drawRect as drawRectSvg } from '../drawingSvg/index.js';
+import { state } from '../store/index.js';
+import { Events } from '../enums/index.js';
+import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+} from '../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   EventTypes,
   ToolProps,
   PublicToolProps,
   SVGDrawingHelper,
-} from '../types';
-import { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+} from '../types/index.js';
+import { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
 
-import { windowLevel } from '../utilities/voi';
+import { windowLevel } from '../utilities/voi/index.js';
 
-import { clip } from '../utilities';
+import { clip } from '../utilities/index.js';
 
 /**
  * WindowLevelRegion tool manipulates the windowLevel applied to a viewport. It

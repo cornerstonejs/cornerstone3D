@@ -1,4 +1,4 @@
-import { CardinalSpline } from './CardinalSpline';
+import { CardinalSpline } from './CardinalSpline.js';
 
 // TODO: LinearSpline should inherit from Spline
 

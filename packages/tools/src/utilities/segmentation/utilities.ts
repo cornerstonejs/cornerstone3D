@@ -1,8 +1,8 @@
 import { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
-import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
-import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
+import BrushTool from '../../tools/segmentation/BrushTool.js';
+import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape.js';
 
 export type ThresholdInformation = {
   volume: Types.IImageVolume;

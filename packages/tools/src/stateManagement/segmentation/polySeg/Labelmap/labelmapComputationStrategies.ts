@@ -1,18 +1,18 @@
 import { VolumeViewport, volumeLoader, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import { getSegmentation } from '../../segmentationState';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/index.js';
+import { getSegmentation } from '../../segmentationState.js';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../../../types/LabelmapTypes';
+} from '../../../../types/LabelmapTypes.js';
 import {
   convertContourToStackLabelmap,
   convertContourToVolumeLabelmap,
-} from './convertContourToLabelmap';
-import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
-import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
-import { PolySegConversionOptions } from '../../../../types';
+} from './convertContourToLabelmap.js';
+import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap.js';
+import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation.js';
+import { PolySegConversionOptions } from '../../../../types/index.js';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume

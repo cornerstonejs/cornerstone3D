@@ -3,13 +3,13 @@ import {
   utilities as csUtils,
   Types,
 } from '@cornerstonejs/core';
-import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
-import getViewportsForAnnotation from '../../../utilities/getViewportsForAnnotation';
+import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation.js';
+import getViewportsForAnnotation from '../../../utilities/getViewportsForAnnotation.js';
 import {
   math,
   triggerAnnotationRenderForViewportIds,
-} from '../../../utilities';
-import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters';
+} from '../../../utilities/index.js';
+import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters/index.js';
 import {
   addAnnotation,
   removeAnnotation,
@@ -17,19 +17,22 @@ import {
   getChildAnnotations,
   addChildAnnotation,
   clearParentAnnotation,
-} from '../../../stateManagement/annotation/annotationState';
+} from '../../../stateManagement/annotation/annotationState.js';
 import {
   AnnotationCompletedEventType,
   ContourAnnotationCompletedEventDetail,
-} from '../../../types/EventTypes';
-import * as contourUtils from '../../../utilities/contours';
-import * as contourSegUtils from '../../../utilities/contourSegmentation';
-import { ToolGroupManager, hasTool as cstHasTool } from '../../../store';
-import { PlanarFreehandContourSegmentationTool } from '../../../tools';
-import type { Annotation } from '../../../types';
-import type { ContourAnnotation } from '../../../types/ContourAnnotation';
-import { ContourWindingDirection } from '../../../types/ContourAnnotation';
-import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
+} from '../../../types/EventTypes.js';
+import * as contourUtils from '../../../utilities/contours/index.js';
+import * as contourSegUtils from '../../../utilities/contourSegmentation/index.js';
+import {
+  ToolGroupManager,
+  hasTool as cstHasTool,
+} from '../../../store/index.js';
+import { PlanarFreehandContourSegmentationTool } from '../../../tools/index.js';
+import type { Annotation } from '../../../types/index.js';
+import type { ContourAnnotation } from '../../../types/ContourAnnotation.js';
+import { ContourWindingDirection } from '../../../types/ContourAnnotation.js';
+import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state.js';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 

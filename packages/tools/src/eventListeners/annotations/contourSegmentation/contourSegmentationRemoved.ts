@@ -1,6 +1,6 @@
-import type { AnnotationRemovedEventType } from '../../../types/EventTypes';
-import type { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
-import { removeContourSegmentationAnnotation } from '../../../utilities/contourSegmentation';
+import type { AnnotationRemovedEventType } from '../../../types/EventTypes.js';
+import type { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation.js';
+import { removeContourSegmentationAnnotation } from '../../../utilities/contourSegmentation/index.js';
 
 export default function contourSegmentationRemovedListener(
   evt: AnnotationRemovedEventType

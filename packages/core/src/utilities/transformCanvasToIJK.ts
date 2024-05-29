@@ -1,5 +1,5 @@
-import { IStackViewport, IVolumeViewport, Point2 } from '../types';
-import transformWorldToIndex from './transformWorldToIndex';
+import { IStackViewport, IVolumeViewport, Point2 } from '../types/index.js';
+import transformWorldToIndex from './transformWorldToIndex.js';
 
 /**
  * Convert coordinates from canvas to index (volume) space

@@ -4,11 +4,11 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
-import { ImageVolume } from '../cache/classes/ImageVolume';
-import cache from '../cache/cache';
-import Events from '../enums/Events';
-import eventTarget from '../eventTarget';
-import triggerEvent from '../utilities/triggerEvent';
+import { ImageVolume } from '../cache/classes/ImageVolume.js';
+import cache from '../cache/cache.js';
+import Events from '../enums/Events.js';
+import eventTarget from '../eventTarget.js';
+import triggerEvent from '../utilities/triggerEvent.js';
 import cloneDeep from 'lodash.clonedeep';
 
 import {
@@ -18,7 +18,7 @@ import {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   uuidv4,
-} from '../utilities';
+} from '../utilities/index.js';
 import {
   Point3,
   Metadata,
@@ -30,12 +30,12 @@ import {
   PixelDataTypedArray,
   IVolumeLoadObject,
   PixelDataTypedArrayString,
-} from '../types';
-import { getConfiguration } from '../init';
+} from '../types/index.js';
+import { getConfiguration } from '../init.js';
 import {
   performCacheOptimizationForVolume,
   setupCacheOptimizationEventListener,
-} from '../utilities/cacheUtils';
+} from '../utilities/cacheUtils.js';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;

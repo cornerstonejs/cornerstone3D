@@ -6,8 +6,8 @@ import {
   cache,
   metaData,
 } from '@cornerstonejs/core';
-import { Annotation } from '../types';
-import { addAnnotation } from '../stateManagement';
+import { Annotation } from '../types/index.js';
+import { addAnnotation } from '../stateManagement/index.js';
 import { vec3 } from 'gl-matrix';
 
 function annotationHydration(

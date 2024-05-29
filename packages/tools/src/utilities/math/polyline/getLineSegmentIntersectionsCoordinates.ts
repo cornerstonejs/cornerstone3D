@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
-import getLinesIntersection from './getLinesIntersection';
+import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes.js';
+import getLinesIntersection from './getLinesIntersection.js';
 
 /**
  * Returns all intersections points between a line segment and a polyline

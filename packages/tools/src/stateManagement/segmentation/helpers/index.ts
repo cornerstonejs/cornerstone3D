@@ -1,3 +1,3 @@
-import validateSegmentationInput from './validateSegmentationInput';
+import validateSegmentationInput from './validateSegmentationInput.js';
 
 export { validateSegmentationInput };

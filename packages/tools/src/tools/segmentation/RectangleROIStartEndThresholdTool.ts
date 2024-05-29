@@ -12,33 +12,33 @@ import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+} from '../../stateManagement/index.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state.js';
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
-} from '../../drawingSvg';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import throttle from '../../utilities/throttle';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../drawingSvg/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import throttle from '../../utilities/throttle.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 import {
   hideElementCursor,
   resetElementCursor,
-} from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state';
+} from '../../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { triggerAnnotationCompleted } from '../../stateManagement/annotation/helpers/state.js';
 
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { pointInShapeCallback } from '../../utilities/';
+} from '../../types/index.js';
+import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import RectangleROITool from '../annotation/RectangleROITool.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import { pointInShapeCallback } from '../../utilities//index.js';
 
 const { transformWorldToIndex } = csUtils;
 

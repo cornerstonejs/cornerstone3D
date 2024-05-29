@@ -1,5 +1,5 @@
 import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
-import { getToolState } from './state';
+import { getToolState } from './state.js';
 
 export const requestType = Enums.RequestType.Prefetch;
 export const priority = 0;

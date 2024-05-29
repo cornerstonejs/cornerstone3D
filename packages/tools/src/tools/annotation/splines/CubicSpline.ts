@@ -1,8 +1,11 @@
 import { vec4, mat4 } from 'gl-matrix';
 import { Types } from '@cornerstonejs/core';
-import { Spline } from './Spline';
-import * as math from '../../../utilities/math';
-import type { SplineCurveSegment, SplineLineSegment } from '../../../types';
+import { Spline } from './Spline.js';
+import * as math from '../../../utilities/math/index.js';
+import type {
+  SplineCurveSegment,
+  SplineLineSegment,
+} from '../../../types/index.js';
 
 // The `u` in Parameter Space used when spliting a curve segment into line segments must
 // be greater than or equal to `curveSegmentIndex` and smaller than `curveSegmentIndex + 1`.

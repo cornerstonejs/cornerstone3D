@@ -1,11 +1,11 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { IViewport } from './IViewport';
-import { IVolumeInput } from './IVolumeInput';
-import FlipDirection from './FlipDirection';
-import IImageData from './IImageData';
-import { BlendModes, OrientationAxis } from '../enums';
-import { VolumeViewportProperties } from '.';
+import Point2 from './Point2.js';
+import Point3 from './Point3.js';
+import { IViewport } from './IViewport.js';
+import { IVolumeInput } from './IVolumeInput.js';
+import FlipDirection from './FlipDirection.js';
+import IImageData from './IImageData.js';
+import { BlendModes, OrientationAxis } from '../enums/index.js';
+import { VolumeViewportProperties } from './index.js';
 
 /**
  * Interface for the Volume Viewport

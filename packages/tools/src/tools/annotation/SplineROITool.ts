@@ -9,20 +9,20 @@ import { vec3 } from 'gl-matrix';
 import {
   getChildAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
+} from '../../stateManagement/annotation/annotationState.js';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
 import {
   Events,
   MouseBindings,
   KeyboardBindings,
   ChangeTypes,
-} from '../../enums';
-import { resetElementCursor } from '../../cursors/elementCursor';
+} from '../../enums/index.js';
+import { resetElementCursor } from '../../cursors/elementCursor.js';
 import type {
   Annotation,
   EventTypes,
@@ -31,30 +31,30 @@ import type {
   PublicToolProps,
   ToolProps,
   AnnotationRenderContext,
-} from '../../types';
+} from '../../types/index.js';
 import {
   math,
   throttle,
   roundNumber,
   triggerAnnotationRenderForViewportIds,
   getCalibratedLengthUnitsAndScale,
-} from '../../utilities';
-import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+} from '../../utilities/index.js';
+import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing/index.js';
 
-import { ContourWindingDirection } from '../../types/ContourAnnotation';
-import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { ContourWindingDirection } from '../../types/ContourAnnotation.js';
+import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
 import type {
   AnnotationModifiedEventDetail,
   ContourAnnotationCompletedEventDetail,
-} from '../../types/EventTypes';
-import { ISpline } from '../../types/ISpline';
-import { CardinalSpline } from './splines/CardinalSpline';
-import { LinearSpline } from './splines/LinearSpline';
-import { CatmullRomSpline } from './splines/CatmullRomSpline';
-import { BSpline } from './splines/BSpline';
-import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+} from '../../types/EventTypes.js';
+import { ISpline } from '../../types/ISpline.js';
+import { CardinalSpline } from './splines/CardinalSpline.js';
+import { LinearSpline } from './splines/LinearSpline.js';
+import { CatmullRomSpline } from './splines/CatmullRomSpline.js';
+import { BSpline } from './splines/BSpline.js';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool.js';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;

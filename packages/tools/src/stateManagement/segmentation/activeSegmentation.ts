@@ -1,9 +1,9 @@
-import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes';
+import { ToolGroupSpecificRepresentation } from '../../types/SegmentationStateTypes.js';
 import {
   getDefaultSegmentationStateManager,
   getSegmentation,
-} from './segmentationState';
-import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
+} from './segmentationState.js';
+import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents.js';
 
 /**
  * Get the active segmentation representation for the tool group with

@@ -1,6 +1,6 @@
 import { utilities } from '@cornerstonejs/core';
-import { PublicToolProps } from '../../types';
-import SplineROITool from './SplineROITool';
+import { PublicToolProps } from '../../types/index.js';
+import SplineROITool from './SplineROITool.js';
 
 class SplineContourSegmentationTool extends SplineROITool {
   static toolName;

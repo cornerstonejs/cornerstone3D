@@ -1,12 +1,12 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
-import type { ContourAnnotation } from '../../types';
-import type { ContourWindingDirection } from '../../types/ContourAnnotation';
-import * as math from '../math';
+import type { ContourAnnotation } from '../../types/index.js';
+import type { ContourWindingDirection } from '../../types/ContourAnnotation.js';
+import * as math from '../math/index.js';
 import {
   getParentAnnotation,
   invalidateAnnotation,
-} from '../../stateManagement';
+} from '../../stateManagement/index.js';
 
 /**
  * Update the contour polyline data

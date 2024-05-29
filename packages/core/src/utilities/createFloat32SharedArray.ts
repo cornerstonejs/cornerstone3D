@@ -1,4 +1,4 @@
-import { getShouldUseSharedArrayBuffer } from '../init';
+import { getShouldUseSharedArrayBuffer } from '../init.js';
 
 const SMALL_MEMORY_LIMIT = 2 * 1024 * 1024 * 1024 - 2;
 const BIG_MEMORY_LIMIT = SMALL_MEMORY_LIMIT * 2;

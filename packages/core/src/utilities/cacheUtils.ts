@@ -1,7 +1,7 @@
-import cache, { ImageVolume } from '../cache';
-import { Events } from '../enums';
-import eventTarget from '../eventTarget';
-import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
+import cache, { ImageVolume } from '../cache/index.js';
+import { Events } from '../enums/index.js';
+import eventTarget from '../eventTarget.js';
+import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init.js';
 
 /**
  * This function will check if the cache optimization is enabled and if it is

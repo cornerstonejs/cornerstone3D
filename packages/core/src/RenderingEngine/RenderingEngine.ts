@@ -1,32 +1,32 @@
-import Events from '../enums/Events';
-import renderingEngineCache from './renderingEngineCache';
-import eventTarget from '../eventTarget';
-import { triggerEvent, uuidv4 } from '../utilities';
-import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
-import ViewportType from '../enums/ViewportType';
-import VolumeViewport from './VolumeViewport';
-import BaseVolumeViewport from './BaseVolumeViewport';
-import StackViewport from './StackViewport';
-import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
-import getOrCreateCanvas from './helpers/getOrCreateCanvas';
-import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
-import type IStackViewport from '../types/IStackViewport';
-import type IVideoViewport from '../types/IVideoViewport';
-import type IRenderingEngine from '../types/IRenderingEngine';
-import type IVolumeViewport from '../types/IVolumeViewport';
-import type { IViewport } from '../types/IViewport';
-import VideoViewport from './VideoViewport';
-import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import Events from '../enums/Events.js';
+import renderingEngineCache from './renderingEngineCache.js';
+import eventTarget from '../eventTarget.js';
+import { triggerEvent, uuidv4 } from '../utilities/index.js';
+import { vtkOffscreenMultiRenderWindow } from './vtkClasses/index.js';
+import ViewportType from '../enums/ViewportType.js';
+import VolumeViewport from './VolumeViewport.js';
+import BaseVolumeViewport from './BaseVolumeViewport.js';
+import StackViewport from './StackViewport.js';
+import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline.js';
+import getOrCreateCanvas from './helpers/getOrCreateCanvas.js';
+import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init.js';
+import type IStackViewport from '../types/IStackViewport.js';
+import type IVideoViewport from '../types/IVideoViewport.js';
+import type IRenderingEngine from '../types/IRenderingEngine.js';
+import type IVolumeViewport from '../types/IVolumeViewport.js';
+import type { IViewport } from '../types/IViewport.js';
+import VideoViewport from './VideoViewport.js';
+import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass.js';
 
-import type * as EventTypes from '../types/EventTypes';
+import type * as EventTypes from '../types/EventTypes.js';
 import type {
   ViewportInput,
   PublicViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
-} from '../types/IViewport';
-import { OrientationAxis } from '../enums';
-import VolumeViewport3D from './VolumeViewport3D';
+} from '../types/IViewport.js';
+import { OrientationAxis } from '../enums/index.js';
+import VolumeViewport3D from './VolumeViewport3D.js';
 
 type ViewportDisplayCoords = {
   sxStartDisplayCoords: number;

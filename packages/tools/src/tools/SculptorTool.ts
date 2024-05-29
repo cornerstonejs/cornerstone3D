@@ -1,28 +1,28 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { BaseTool } from './base';
-import { getAnnotations } from '../stateManagement';
+import { BaseTool } from './base/index.js';
+import { getAnnotations } from '../stateManagement/index.js';
 import {
   EventTypes,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
   ContourAnnotation,
-} from '../types';
-import { point } from '../utilities/math';
-import { Events, ToolModes, AnnotationStyleStates } from '../enums';
-import { ToolGroupManager } from '../store';
-import { triggerAnnotationRenderForViewportIds } from '../utilities/triggerAnnotationRenderForViewportIds';
+} from '../types/index.js';
+import { point } from '../utilities/math/index.js';
+import { Events, ToolModes, AnnotationStyleStates } from '../enums/index.js';
+import { ToolGroupManager } from '../store/index.js';
+import { triggerAnnotationRenderForViewportIds } from '../utilities/triggerAnnotationRenderForViewportIds.js';
 import {
   hideElementCursor,
   resetElementCursor,
-} from '../cursors/elementCursor';
-import { StyleSpecifier } from '../types/AnnotationStyle';
-import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
-import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
-import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
-import type { ISculptToolShape } from '../types/ISculptToolShape';
-import { distancePointToContour } from './distancePointToContour';
+} from '../cursors/elementCursor.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
+import { getStyleProperty } from '../stateManagement/annotation/config/helpers.js';
+import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state.js';
+import CircleSculptCursor from './SculptorTool/CircleSculptCursor.js';
+import type { ISculptToolShape } from '../types/ISculptToolShape.js';
+import { distancePointToContour } from './distancePointToContour.js';
 
 export type SculptData = {
   mousePoint: Types.Point3;

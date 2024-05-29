@@ -14,7 +14,7 @@ import {
   addVideoTime,
   addSegmentIndexDropdown,
   contourTools,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
 // This is for debugging purposes

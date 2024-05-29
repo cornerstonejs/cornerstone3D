@@ -1,4 +1,4 @@
-import { ImageQualityStatus } from '../enums';
+import { ImageQualityStatus } from '../enums/index.js';
 
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */

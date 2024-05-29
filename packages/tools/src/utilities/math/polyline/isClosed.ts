@@ -1,6 +1,6 @@
 import { glMatrix } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import * as math from '..';
+import * as math from '../index.js';
 
 /**
  * A polyline is considered closed if the start and end points are at the same position

@@ -1,7 +1,7 @@
-import { createSynchronizer } from '../../store/SynchronizerManager';
+import { createSynchronizer } from '../../store/SynchronizerManager/index.js';
 import { Enums } from '@cornerstonejs/core';
-import cameraSyncCallback from '../callbacks/cameraSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import cameraSyncCallback from '../callbacks/cameraSyncCallback.js';
+import Synchronizer from '../../store/SynchronizerManager/Synchronizer.js';
 
 const { CAMERA_MODIFIED } = Enums.Events;
 

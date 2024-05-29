@@ -4,15 +4,15 @@ import {
   eventTarget,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
-import { Events, ChangeTypes } from '../../../enums';
-import { Annotation } from '../../../types/AnnotationTypes';
-import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
+import { Events, ChangeTypes } from '../../../enums/index.js';
+import { Annotation } from '../../../types/AnnotationTypes.js';
+import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager/index.js';
 import {
   AnnotationAddedEventDetail,
   AnnotationModifiedEventDetail,
   AnnotationCompletedEventDetail,
   ContourAnnotationCompletedEventDetail,
-} from '../../../types/EventTypes';
+} from '../../../types/EventTypes.js';
 
 /**
  * It triggers an event for the element when an annotation is added

@@ -1,17 +1,17 @@
 import type { mat4 } from 'gl-matrix';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type CustomEventType from '../types/CustomEventType';
-import type ICachedImage from './ICachedImage';
-import type ICachedVolume from './ICachedVolume';
-import type ICamera from './ICamera';
-import type IImage from './IImage';
-import type IImageVolume from './IImageVolume';
-import type { VOIRange } from './voi';
-import VOILUTFunctionType from '../enums/VOILUTFunctionType';
-import ViewportStatus from '../enums/ViewportStatus';
-import type DisplayArea from './displayArea';
-import IImageCalibration from './IImageCalibration';
-import { ColormapPublic } from './Colormap';
+import type CustomEventType from '../types/CustomEventType.js';
+import type ICachedImage from './ICachedImage.js';
+import type ICachedVolume from './ICachedVolume.js';
+import type ICamera from './ICamera.js';
+import type IImage from './IImage.js';
+import type IImageVolume from './IImageVolume.js';
+import type { VOIRange } from './voi.js';
+import VOILUTFunctionType from '../enums/VOILUTFunctionType.js';
+import ViewportStatus from '../enums/ViewportStatus.js';
+import type DisplayArea from './displayArea.js';
+import IImageCalibration from './IImageCalibration.js';
+import { ColormapPublic } from './Colormap.js';
 
 /**
  * CAMERA_MODIFIED Event's data

@@ -1,24 +1,24 @@
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool } from '../base';
+import { AnnotationTool } from '../base/index.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
+} from '../../stateManagement/annotation/annotationState.js';
 
 import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
-import { drawArrow as drawArrowSvg } from '../../drawingSvg';
-import { state } from '../../store';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../stateManagement/annotation/helpers/state.js';
+import { drawArrow as drawArrowSvg } from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
-import { resetElementCursor } from '../../cursors/elementCursor';
+import { resetElementCursor } from '../../cursors/elementCursor.js';
 
 import {
   EventTypes,
@@ -26,9 +26,9 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { Annotation } from '../../types';
+} from '../../types/index.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import { Annotation } from '../../types/index.js';
 
 type Point2 = Types.Point2;
 

@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import * as lineSegment from '../line';
+import * as lineSegment from '../line/index.js';
 
 type rectLineSegments = {
   top: Types.Point2[];

@@ -10,10 +10,10 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { Statistics } from '../../src/types';
-import { Calculator } from '../../src/utilities/math/basic';
+import { Statistics } from '../../src/types/index.js';
+import { Calculator } from '../../src/utilities/math/basic/index.js';
 
 // This is for debugging purposes
 console.warn(

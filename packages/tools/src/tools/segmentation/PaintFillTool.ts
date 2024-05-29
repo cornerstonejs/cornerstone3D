@@ -5,23 +5,23 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
-import { SegmentationRepresentations } from '../../enums';
-import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { BaseTool } from '../base/index.js';
+import { PublicToolProps, ToolProps, EventTypes } from '../../types/index.js';
+import { SegmentationRepresentations } from '../../enums/index.js';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
 import {
   segmentLocking,
   activeSegmentation,
   segmentIndex as segmentIndexController,
-} from '../../stateManagement/segmentation';
-import floodFill from '../../utilities/segmentation/floodFill';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { FloodFillResult, FloodFillGetter } from '../../types';
+} from '../../stateManagement/segmentation/index.js';
+import floodFill from '../../utilities/segmentation/floodFill.js';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { FloodFillResult, FloodFillGetter } from '../../types/index.js';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+} from '../../types/LabelmapTypes.js';
+import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck.js';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 

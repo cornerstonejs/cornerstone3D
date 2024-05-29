@@ -1,9 +1,14 @@
-import cache from '../cache/cache';
-import { EPSILON } from '../constants';
-import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
-import getSpacingInNormalDirection from './getSpacingInNormalDirection';
-import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
-import { getVolumeId } from './getVolumeId';
+import cache from '../cache/cache.js';
+import { EPSILON } from '../constants/index.js';
+import {
+  ICamera,
+  IImageVolume,
+  IVolumeViewport,
+  Point3,
+} from '../types/index.js';
+import getSpacingInNormalDirection from './getSpacingInNormalDirection.js';
+import { getVolumeLoaderSchemes } from '../loaders/volumeLoader.js';
+import { getVolumeId } from './getVolumeId.js';
 
 // One EPSILON part larger multiplier
 const EPSILON_PART = 1 + EPSILON;

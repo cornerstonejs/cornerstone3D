@@ -1,19 +1,19 @@
 import type { Types } from '@cornerstonejs/core';
-import * as Enums from '../enums';
+import * as Enums from '../enums/index.js';
 import {
   ContourConfig,
   ContourRenderingConfig,
   ContourSegmentationData,
-} from './ContourTypes';
+} from './ContourTypes.js';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
-} from './LabelmapTypes';
+} from './LabelmapTypes.js';
 import {
   SurfaceSegmentationData,
   SurfaceRenderingConfig,
-} from './SurfaceTypes';
+} from './SurfaceTypes.js';
 
 export type SegmentSpecificRepresentationConfig = {
   [key: number | string]: RepresentationConfig;

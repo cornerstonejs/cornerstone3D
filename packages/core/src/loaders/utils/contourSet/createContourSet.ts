@@ -1,7 +1,7 @@
-import { IGeometry, PublicContourSetData } from '../../../types';
-import { GeometryType } from '../../../enums';
-import { validateContourSet } from './validateContourSet';
-import { ContourSet } from '../../../cache/classes/ContourSet';
+import { IGeometry, PublicContourSetData } from '../../../types/index.js';
+import { GeometryType } from '../../../enums/index.js';
+import { validateContourSet } from './validateContourSet.js';
+import { ContourSet } from '../../../cache/classes/ContourSet.js';
 
 export function createContourSet(
   geometryId: string,

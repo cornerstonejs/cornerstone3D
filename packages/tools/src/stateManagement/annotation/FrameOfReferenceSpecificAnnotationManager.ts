@@ -4,9 +4,12 @@ import {
   Annotations,
   AnnotationState,
   GroupSpecificAnnotations,
-} from '../../types/AnnotationTypes';
+} from '../../types/AnnotationTypes.js';
 
-import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
+import {
+  AnnotationGroupSelector,
+  IAnnotationManager,
+} from '../../types/index.js';
 
 import {
   Enums,
@@ -16,13 +19,13 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
-import { checkAndDefineIsLockedProperty } from './annotationLocking';
-import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
+import { checkAndDefineIsLockedProperty } from './annotationLocking.js';
+import { checkAndDefineIsVisibleProperty } from './annotationVisibility.js';
 
 import {
   checkAndDefineTextBoxProperty,
   checkAndDefineCachedStatsProperty,
-} from './utilities/defineProperties';
+} from './utilities/defineProperties.js';
 
 /**
  * This is the default annotation manager. It stores annotations by default

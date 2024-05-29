@@ -1,26 +1,26 @@
-import { state } from '../../store';
-import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import { state } from '../../store/index.js';
+import { ToolModes } from '../../enums/index.js';
+import { EventTypes } from '../../types/index.js';
 import {
   ToolAnnotationPair,
   ToolsWithMoveableHandles,
-} from '../../types/InternalToolTypes';
+} from '../../types/InternalToolTypes.js';
 
 import {
   setAnnotationSelected,
   isAnnotationSelected,
-} from '../../stateManagement/annotation/annotationSelection';
+} from '../../stateManagement/annotation/annotationSelection.js';
 
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 
 // Util
-import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles';
-import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
-import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
-import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
-import mouseDownAnnotationAction from './mouseDownAnnotationAction';
+import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableHandles.js';
+import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement.js';
+import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools.js';
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent.js';
+import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent.js';
+import mouseDownAnnotationAction from './mouseDownAnnotationAction.js';
 
 const { Active, Passive } = ToolModes;
 

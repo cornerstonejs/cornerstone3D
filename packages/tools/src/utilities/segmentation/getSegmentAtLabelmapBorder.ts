@@ -3,12 +3,12 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getSegmentation,
   getSegmentationIdRepresentations,
-} from '../../stateManagement/segmentation/segmentationState';
+} from '../../stateManagement/segmentation/segmentationState.js';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
+} from '../../types/LabelmapTypes.js';
+import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck.js';
 
 type Options = {
   viewport?: Types.IViewport;

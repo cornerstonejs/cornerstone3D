@@ -1,10 +1,10 @@
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
-} from '../../types/SegmentationStateTypes';
-import { getToolGroup } from '../../store/ToolGroupManager';
+} from '../../types/SegmentationStateTypes.js';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
 
-import { addSegmentationRepresentation } from './addSegmentationRepresentation';
+import { addSegmentationRepresentation } from './addSegmentationRepresentation.js';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified

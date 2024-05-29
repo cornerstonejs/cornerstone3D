@@ -1,5 +1,5 @@
-import { CubicSpline } from './CubicSpline';
-import { CardinalSplineProps } from '../../../types';
+import { CubicSpline } from './CubicSpline.js';
+import { CardinalSplineProps } from '../../../types/index.js';
 
 class CardinalSpline extends CubicSpline {
   private _scale: number;

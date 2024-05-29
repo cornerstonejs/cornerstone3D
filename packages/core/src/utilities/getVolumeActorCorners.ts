@@ -1,4 +1,4 @@
-import { Point3 } from '../types';
+import { Point3 } from '../types/index.js';
 
 /**
  * Converts `vtkVolumeActor` bounds to corners in world space.

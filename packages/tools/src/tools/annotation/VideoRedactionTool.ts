@@ -8,32 +8,32 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { AnnotationTool } from '../base';
+import { AnnotationTool } from '../base/index.js';
 
-import throttle from '../../utilities/throttle';
+import throttle from '../../utilities/throttle.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement';
+} from '../../stateManagement/index.js';
 import {
   drawHandles as drawHandlesSvg,
   drawRedactionRect as drawRedactionRectSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
-import { Events } from '../../enums';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import * as rectangle from '../../utilities/math/rectangle';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { Events } from '../../enums/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import * as rectangle from '../../utilities/math/rectangle/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
-import { EventTypes, SVGDrawingHelper } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
-import { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { EventTypes, SVGDrawingHelper } from '../../types/index.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints.js';
+import { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
 
 class VideoRedactionTool extends AnnotationTool {
   _throttledCalculateCachedStats: any;

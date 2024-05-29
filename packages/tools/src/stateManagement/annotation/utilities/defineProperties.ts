@@ -1,4 +1,4 @@
-import { Annotation } from '../../../types';
+import { Annotation } from '../../../types/index.js';
 
 const checkAndDefineTextBoxProperty = (annotation: Annotation) => {
   if (!annotation.data) {

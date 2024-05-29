@@ -1,6 +1,6 @@
-import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
-import { RepresentationPublicInput } from '../../../types';
-import { getRepresentationRenderingConfig as getLabelmapRenderingConfig } from '../../../tools/displayTools/Labelmap/labelmapDisplay';
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations.js';
+import { RepresentationPublicInput } from '../../../types/index.js';
+import { getRepresentationRenderingConfig as getLabelmapRenderingConfig } from '../../../tools/displayTools/Labelmap/labelmapDisplay.js';
 
 export function getRepresentationSpecificConfig(
   representationInput: RepresentationPublicInput

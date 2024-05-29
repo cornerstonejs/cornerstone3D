@@ -1,5 +1,5 @@
-import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import * as annotationState from '../../../stateManagement/annotation';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import * as annotationState from '../../../stateManagement/annotation/index.js';
 
 /**
  * Updates child annotation interpolation UIDs to be the parent interpolationUID

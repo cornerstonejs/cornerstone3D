@@ -4,20 +4,20 @@ import {
   AnnotationCompletedEventType,
   AnnotationModifiedEventType,
   AnnotationRemovedEventType,
-} from '../../../types/EventTypes';
-import { state as annotationState } from '../../../stateManagement/annotation';
-import type AnnotationGroupSelector from '../../../types/AnnotationGroupSelector';
-import getInterpolationDataCollection from '../../contours/interpolation/getInterpolationDataCollection';
+} from '../../../types/EventTypes.js';
+import { state as annotationState } from '../../../stateManagement/annotation/index.js';
+import type AnnotationGroupSelector from '../../../types/AnnotationGroupSelector.js';
+import getInterpolationDataCollection from '../../contours/interpolation/getInterpolationDataCollection.js';
 import type {
   InterpolationViewportData,
   AcceptInterpolationSelector,
-} from '../../../types/InterpolationTypes';
-import interpolate from '../../contours/interpolation/interpolate';
-import deleteRelatedAnnotations from './deleteRelatedAnnotations';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import ChangeTypes from '../../../enums/ChangeTypes';
-import getViewportForAnnotation from '../../getViewportForAnnotation';
-import { addContourSegmentationAnnotation } from '../../contourSegmentation/addContourSegmentationAnnotation';
+} from '../../../types/InterpolationTypes.js';
+import interpolate from '../../contours/interpolation/interpolate.js';
+import deleteRelatedAnnotations from './deleteRelatedAnnotations.js';
+import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import ChangeTypes from '../../../enums/ChangeTypes.js';
+import getViewportForAnnotation from '../../getViewportForAnnotation.js';
+import { addContourSegmentationAnnotation } from '../../contourSegmentation/addContourSegmentationAnnotation.js';
 
 const { uuidv4 } = csUtils;
 

@@ -1,5 +1,5 @@
-import type { InitializedOperationData } from '../BrushStrategy';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 /**
  * Sets up a preview to erase/clear the segment values.

@@ -1,4 +1,4 @@
-import type { Point2, Point3, PointsXYZ } from '../types';
+import type { Point2, Point3, PointsXYZ } from '../types/index.js';
 
 export type PolyDataPointConfiguration = {
   /** The dimensionality of the points */

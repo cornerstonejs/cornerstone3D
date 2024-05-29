@@ -2,18 +2,18 @@ import type { Types } from '@cornerstonejs/core';
 import {
   ContourSegmentationData,
   PolySegConversionOptions,
-} from '../../../../types';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import { getSegmentation } from '../../segmentationState';
-import { convertContourToSurface } from './convertContourToSurface';
-import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
+} from '../../../../types/index.js';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/index.js';
+import { getSegmentation } from '../../segmentationState.js';
+import { convertContourToSurface } from './convertContourToSurface.js';
+import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw.js';
 import {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import { convertLabelmapToSurface } from './convertLabelmapToSurface';
+} from '../../../../types/LabelmapTypes.js';
+import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck.js';
+import { convertLabelmapToSurface } from './convertLabelmapToSurface.js';
 
 export type RawSurfacesData = {
   segmentIndex: number;

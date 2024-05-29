@@ -1,4 +1,4 @@
-import smoothAnnotation from './smoothAnnotation';
+import smoothAnnotation from './smoothAnnotation.js';
 
 export default {
   smoothAnnotation,

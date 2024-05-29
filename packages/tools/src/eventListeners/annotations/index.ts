@@ -1,7 +1,7 @@
-import annotationCompletedListener from './annotationCompletedListener';
-import annotationSelectionListener from './annotationSelectionListener';
-import annotationModifiedListener from './annotationModifiedListener';
-import annotationRemovedListener from './annotationRemovedListener';
+import annotationCompletedListener from './annotationCompletedListener.js';
+import annotationSelectionListener from './annotationSelectionListener.js';
+import annotationModifiedListener from './annotationModifiedListener.js';
+import annotationRemovedListener from './annotationRemovedListener.js';
 
 export {
   annotationCompletedListener,

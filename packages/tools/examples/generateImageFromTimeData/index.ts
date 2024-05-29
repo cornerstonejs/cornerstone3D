@@ -13,7 +13,7 @@ import {
   addSliderToToolbar,
   addDropdownToToolbar,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 

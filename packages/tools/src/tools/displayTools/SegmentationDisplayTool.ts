@@ -3,24 +3,24 @@ import {
   Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import Representations from '../../enums/SegmentationRepresentations';
-import { config as segmentationConfig } from '../../stateManagement/segmentation';
-import { setSegmentationVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
-import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../store/ToolGroupManager';
-import { PublicToolProps, ToolProps } from '../../types';
-import { BaseTool } from '../base';
+import Representations from '../../enums/SegmentationRepresentations.js';
+import { config as segmentationConfig } from '../../stateManagement/segmentation/index.js';
+import { setSegmentationVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility.js';
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState.js';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
+import { PublicToolProps, ToolProps } from '../../types/index.js';
+import { BaseTool } from '../base/index.js';
 
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../types/SegmentationStateTypes';
-import { surfaceDisplay } from './Surface';
-import { contourDisplay } from './Contour';
-import { labelmapDisplay } from './Labelmap';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import { addTool, state } from '../../store';
-import PlanarFreehandContourSegmentationTool from '../annotation/PlanarFreehandContourSegmentationTool';
+} from '../../types/SegmentationStateTypes.js';
+import { surfaceDisplay } from './Surface/index.js';
+import { contourDisplay } from './Contour/index.js';
+import { labelmapDisplay } from './Labelmap/index.js';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
+import { addTool, state } from '../../store/index.js';
+import PlanarFreehandContourSegmentationTool from '../annotation/PlanarFreehandContourSegmentationTool.js';
 
 const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
 /**

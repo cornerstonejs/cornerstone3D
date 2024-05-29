@@ -1,8 +1,8 @@
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
-import { getUniqueSegmentIndices } from '../../../utilities/segmentation';
-import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState.js';
+import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes.js';
+import { getUniqueSegmentIndices } from '../../../utilities/segmentation/index.js';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents.js';
 
 /**
  * Set the visibility of a segmentation representation for a given tool group. It fires

@@ -9,12 +9,12 @@ import {
   utilities,
   Types,
 } from '@cornerstonejs/core';
-import { getToolGroupForViewport } from '../../store/ToolGroupManager';
-import Representations from '../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager/index.js';
+import Representations from '../../enums/SegmentationRepresentations.js';
+import * as SegmentationState from '../../stateManagement/segmentation/segmentationState.js';
+import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes.js';
+import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck.js';
+import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender.js';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);

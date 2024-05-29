@@ -1,9 +1,9 @@
-import createCameraPositionSynchronizer from './synchronizers/createCameraPositionSynchronizer';
-import createPresentationViewSynchronizer from './synchronizers/createPresentationViewSynchronizer';
-import createVOISynchronizer from './synchronizers/createVOISynchronizer';
-import createZoomPanSynchronizer from './synchronizers/createZoomPanSynchronizer';
-import createImageSliceSynchronizer from './synchronizers/createImageSliceSynchronizer';
-import createSlabThicknessSynchronizer from './synchronizers/createSlabThicknessSynchronizer';
+import createCameraPositionSynchronizer from './synchronizers/createCameraPositionSynchronizer.js';
+import createPresentationViewSynchronizer from './synchronizers/createPresentationViewSynchronizer.js';
+import createVOISynchronizer from './synchronizers/createVOISynchronizer.js';
+import createZoomPanSynchronizer from './synchronizers/createZoomPanSynchronizer.js';
+import createImageSliceSynchronizer from './synchronizers/createImageSliceSynchronizer.js';
+import createSlabThicknessSynchronizer from './synchronizers/createSlabThicknessSynchronizer.js';
 
 // for backward compatibility
 const createStackImageSynchronizer = createImageSliceSynchronizer;

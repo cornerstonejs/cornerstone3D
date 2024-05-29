@@ -2,8 +2,8 @@ import type {
   InterpolationViewportData,
   Annotation,
   ContourSegmentationAnnotation,
-} from '../../../types';
-import { getAnnotations } from '../../../stateManagement/annotation/annotationState';
+} from '../../../types/index.js';
+import { getAnnotations } from '../../../stateManagement/annotation/annotationState.js';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 

@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix';
-import { CubicSpline } from './CubicSpline';
+import { CubicSpline } from './CubicSpline.js';
 
 // prettier-ignore
 const TRANSFORM_MATRIX = mat4.multiplyScalar(

@@ -1,13 +1,13 @@
-import MouseCursor, { standardCursorNames } from './MouseCursor';
-import ImageMouseCursor from './ImageMouseCursor';
-import SVGMouseCursor from './SVGMouseCursor';
-import * as elementCursor from './elementCursor';
-import setCursorForElement from './setCursorForElement';
+import MouseCursor, { standardCursorNames } from './MouseCursor.js';
+import ImageMouseCursor from './ImageMouseCursor.js';
+import SVGMouseCursor from './SVGMouseCursor.js';
+import * as elementCursor from './elementCursor.js';
+import setCursorForElement from './setCursorForElement.js';
 import {
   registerCursor,
   svgCursorNames,
   CursorSVG,
-} from './SVGCursorDescriptor';
+} from './SVGCursorDescriptor.js';
 
 // Todo: this should be enum
 const CursorNames = [...svgCursorNames, ...standardCursorNames];

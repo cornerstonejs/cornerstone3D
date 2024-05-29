@@ -1,5 +1,5 @@
 import { Types, utilities as csUtils } from '@cornerstonejs/core';
-import { isViewportPreScaled } from './viewport';
+import { isViewportPreScaled } from './viewport/index.js';
 
 const DEFAULT_MULTIPLIER = 4;
 

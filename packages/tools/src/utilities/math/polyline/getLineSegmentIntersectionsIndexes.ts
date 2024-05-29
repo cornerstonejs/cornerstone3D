@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import areLineSegmentsIntersecting from './areLineSegmentsIntersecting';
+import areLineSegmentsIntersecting from './areLineSegmentsIntersecting.js';
 
 /**
  * Get all intersections between a polyline and a line segment.

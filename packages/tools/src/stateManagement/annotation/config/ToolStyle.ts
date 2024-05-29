@@ -3,7 +3,7 @@ import {
   ToolStyleConfig,
   StyleSpecifier,
   AnnotationStyle,
-} from '../../../types/AnnotationStyle';
+} from '../../../types/AnnotationStyle.js';
 
 /**
  * This class handles the configuration of the tool style. You can use it to set

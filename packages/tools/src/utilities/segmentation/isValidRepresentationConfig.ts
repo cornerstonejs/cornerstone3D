@@ -1,6 +1,6 @@
-import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/labelmapConfig';
-import SegmentationRepresentation from '../../enums/SegmentationRepresentations';
-import { RepresentationConfig } from '../../types/SegmentationStateTypes';
+import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/labelmapConfig.js';
+import SegmentationRepresentation from '../../enums/SegmentationRepresentations.js';
+import { RepresentationConfig } from '../../types/SegmentationStateTypes.js';
 
 /**
  * Given a representation type and a configuration, return true if the

@@ -1,8 +1,8 @@
-import createChildEl from './createChildEl';
+import createChildEl from './createChildEl.js';
 import {
   addButtonToToolbar,
   addSliderToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 
 function createSecondStageLayout({
   initialFramesPerSecond,

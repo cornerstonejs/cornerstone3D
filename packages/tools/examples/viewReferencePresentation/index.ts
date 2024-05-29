@@ -17,7 +17,7 @@ import {
   getLocalUrl,
   addToggleButtonToToolbar,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { IStackViewport } from 'core/dist/types/types';
 

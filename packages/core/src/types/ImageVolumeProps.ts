@@ -1,4 +1,4 @@
-import { VolumeProps } from '.';
+import { VolumeProps } from './index.js';
 
 /**
  * ImageVolume which is considered a special case of a Volume, which is

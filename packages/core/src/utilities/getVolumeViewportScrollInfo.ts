@@ -1,5 +1,5 @@
-import { IVolumeViewport } from '../types';
-import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
+import { IVolumeViewport } from '../types/index.js';
+import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo.js';
 
 /**
  * Calculates the number os steps the volume can scroll based on its orientation

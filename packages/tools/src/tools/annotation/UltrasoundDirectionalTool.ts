@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -6,34 +6,34 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool } from '../base';
-import throttle from '../../utilities/throttle';
+import { AnnotationTool } from '../base/index.js';
+import throttle from '../../utilities/throttle.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
+} from '../../stateManagement/annotation/annotationState.js';
 import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
-import { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+} from '../../stateManagement/annotation/helpers/state.js';
+import { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
 
 import {
   drawHandle as drawHandleSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { roundNumber } from '../../utilities';
-import { distanceToPoint } from '../../utilities/math/point';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import { roundNumber } from '../../utilities/index.js';
+import { distanceToPoint } from '../../utilities/math/point/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 
 import {
   EventTypes,
@@ -44,9 +44,9 @@ import {
   SVGDrawingHelper,
   Annotation,
   InteractionTypes,
-} from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
+} from '../../types/index.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits.js';
 const { transformWorldToIndex } = csUtils;
 
 /**

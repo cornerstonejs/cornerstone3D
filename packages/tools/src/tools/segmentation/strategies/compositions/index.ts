@@ -1,11 +1,11 @@
-import determineSegmentIndex from './determineSegmentIndex';
-import dynamicThreshold from './dynamicThreshold';
-import erase from './erase';
-import islandRemoval from './islandRemoval';
-import preview from './preview';
-import regionFill from './regionFill';
-import setValue from './setValue';
-import threshold from './threshold';
+import determineSegmentIndex from './determineSegmentIndex.js';
+import dynamicThreshold from './dynamicThreshold.js';
+import erase from './erase.js';
+import islandRemoval from './islandRemoval.js';
+import preview from './preview.js';
+import regionFill from './regionFill.js';
+import setValue from './setValue.js';
+import threshold from './threshold.js';
 
 export default {
   determineSegmentIndex,

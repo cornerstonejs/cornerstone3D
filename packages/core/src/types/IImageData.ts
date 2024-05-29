@@ -1,6 +1,6 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling, Mat3 } from '../types';
-import IImageCalibration from './IImageCalibration';
+import { Point3, Scaling, Mat3 } from '../types/index.js';
+import IImageCalibration from './IImageCalibration.js';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.

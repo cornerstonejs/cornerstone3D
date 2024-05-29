@@ -1,6 +1,6 @@
-import { getLuminanceFromRegion } from './getLuminanceFromRegion';
-import { calculateMinMaxMean } from './calculateMinMaxMean';
-import { extractWindowLevelRegionToolData } from './extractWindowLevelRegionToolData';
+import { getLuminanceFromRegion } from './getLuminanceFromRegion.js';
+import { calculateMinMaxMean } from './calculateMinMaxMean.js';
+import { extractWindowLevelRegionToolData } from './extractWindowLevelRegionToolData.js';
 
 export {
   getLuminanceFromRegion,

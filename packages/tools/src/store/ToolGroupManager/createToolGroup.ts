@@ -1,6 +1,6 @@
-import { state } from '../index';
-import ToolGroup from './ToolGroup';
-import { IToolGroup } from '../../types';
+import { state } from '../index.js';
+import ToolGroup from './ToolGroup.js';
+import { IToolGroup } from '../../types/index.js';
 
 /**
  * Create a new tool group with the given name. ToolGroups are the new way

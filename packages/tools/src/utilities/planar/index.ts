@@ -1,8 +1,8 @@
-import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
-import getWorldWidthAndHeightFromCorners from './getWorldWidthAndHeightFromCorners';
-import filterAnnotationsForDisplay from './filterAnnotationsForDisplay';
-import getPointInLineOfSightWithCriteria from './getPointInLineOfSightWithCriteria';
-import { isPlaneIntersectingAABB } from './isPlaneIntersectingAABB';
+import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice.js';
+import getWorldWidthAndHeightFromCorners from './getWorldWidthAndHeightFromCorners.js';
+import filterAnnotationsForDisplay from './filterAnnotationsForDisplay.js';
+import getPointInLineOfSightWithCriteria from './getPointInLineOfSightWithCriteria.js';
+import { isPlaneIntersectingAABB } from './isPlaneIntersectingAABB.js';
 
 export default {
   filterAnnotationsWithinSlice,

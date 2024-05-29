@@ -9,23 +9,23 @@ import {
   VolumeViewport,
 } from '@cornerstonejs/core';
 
-import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+import Representations from '../../../enums/SegmentationRepresentations.js';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
-} from '../../../types/LabelmapTypes';
+} from '../../../types/LabelmapTypes.js';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
+} from '../../../types/SegmentationStateTypes.js';
 
-import addLabelmapToElement from './addLabelmapToElement';
-import removeLabelmapFromElement from './removeLabelmapFromElement';
-import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
-import { polySeg } from '../../../stateManagement/segmentation';
+import addLabelmapToElement from './addLabelmapToElement.js';
+import removeLabelmapFromElement from './removeLabelmapFromElement.js';
+import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck.js';
+import { polySeg } from '../../../stateManagement/segmentation/index.js';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();

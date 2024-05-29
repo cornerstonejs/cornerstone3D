@@ -1,4 +1,4 @@
-import RectangleROIStartEndThreshold from './RectangleROIStartEndThreshold';
+import RectangleROIStartEndThreshold from './RectangleROIStartEndThreshold.js';
 
 function validateAnnotation(annotation) {
   if (!annotation?.data) {

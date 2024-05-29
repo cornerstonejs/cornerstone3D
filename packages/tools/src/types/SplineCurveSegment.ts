@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import type { SplineLineSegment } from './SplineLineSegment';
+import type { SplineLineSegment } from './SplineLineSegment.js';
 
 /**
  * Spline curve segment the is part of a spline path

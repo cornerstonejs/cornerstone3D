@@ -1,25 +1,25 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
+import { BaseTool } from '../base/index.js';
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   ToolGroupSpecificRepresentation,
-} from '../../types';
-import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
-import RepresentationTypes from '../../enums/SegmentationRepresentations';
-import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
+} from '../../types/index.js';
+import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation.js';
+import RepresentationTypes from '../../enums/SegmentationRepresentations.js';
+import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex.js';
 import {
   getHoveredContourSegmentationAnnotation,
   getSegmentAtLabelmapBorder,
   getSegmentAtWorldPoint,
-} from '../../utilities/segmentation';
-import { state } from '../../store';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+} from '../../utilities/segmentation/index.js';
+import { state } from '../../store/index.js';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment

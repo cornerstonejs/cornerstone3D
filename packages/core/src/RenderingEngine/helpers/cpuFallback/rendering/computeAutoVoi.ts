@@ -1,4 +1,4 @@
-import type { IImage, CPUFallbackViewport } from '../../../../types';
+import type { IImage, CPUFallbackViewport } from '../../../../types/index.js';
 
 /**
  * Computes the VOI to display all the pixels if no VOI LUT data (Window Width/Window Center or voiLUT) exists on the viewport object.

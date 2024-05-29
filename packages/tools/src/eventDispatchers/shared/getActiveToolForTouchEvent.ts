@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../../store';
-import { MouseBindings, ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
-import getMouseModifier from './getMouseModifier';
-import { keyEventListener } from '../../eventListeners';
+import { ToolGroupManager } from '../../store/index.js';
+import { MouseBindings, ToolModes } from '../../enums/index.js';
+import { EventTypes } from '../../types/index.js';
+import getMouseModifier from './getMouseModifier.js';
+import { keyEventListener } from '../../eventListeners/index.js';
 
 const { Active } = ToolModes;
 

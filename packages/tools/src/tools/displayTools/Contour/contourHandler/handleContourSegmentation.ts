@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { addAnnotation } from '../../../../stateManagement';
+import { addAnnotation } from '../../../../stateManagement/index.js';
 import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
-import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
+import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration.js';
 
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
-} from '../../../../types';
-import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getSegmentSpecificConfig } from './utils';
-import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
+} from '../../../../types/index.js';
+import { getConfigCache, setConfigCache } from './contourConfigCache.js';
+import { getSegmentSpecificConfig } from './utils.js';
+import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation/index.js';
 
-import { validateGeometry } from './utils';
+import { validateGeometry } from './utils.js';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,

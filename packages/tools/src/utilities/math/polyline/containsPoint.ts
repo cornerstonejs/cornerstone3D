@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import isClosed from './isClosed';
+import isClosed from './isClosed.js';
 
 /**
  * Checks if a 2D point is inside the polyline.

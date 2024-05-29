@@ -6,32 +6,35 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
-import { state } from '../../store';
-import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
-import { resetElementCursor } from '../../cursors/elementCursor';
+import { removeAnnotation } from '../../stateManagement/annotation/annotationState.js';
+import { drawHandles as drawHandlesSvg } from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { Events, KeyboardBindings, ChangeTypes } from '../../enums/index.js';
+import { resetElementCursor } from '../../cursors/elementCursor.js';
 import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
-import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
-import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
-import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { ContourWindingDirection } from '../../types/ContourAnnotation';
+} from '../../types/index.js';
+import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier.js';
+import {
+  math,
+  triggerAnnotationRenderForViewportIds,
+} from '../../utilities/index.js';
+import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex.js';
+import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { ContourWindingDirection } from '../../types/ContourAnnotation.js';
 import {
   triggerAnnotationModified,
   triggerContourAnnotationCompleted,
-} from '../../stateManagement/annotation/helpers/state';
+} from '../../stateManagement/annotation/helpers/state.js';
 
-import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
-import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { LivewireScissors } from '../../utilities/livewire/LivewireScissors.js';
+import { LivewirePath } from '../../utilities/livewire/LiveWirePath.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool.js';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 

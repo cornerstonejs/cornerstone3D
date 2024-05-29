@@ -1,15 +1,15 @@
 import type { Types } from '@cornerstonejs/core';
 import { getEnabledElement } from '@cornerstonejs/core';
-import { ISculptToolShape } from '../../types/ISculptToolShape';
-import { SculptData } from '../SculptorTool';
-import { distancePointToContour } from '../distancePointToContour';
-import { drawCircle as drawCircleSvg } from '../../drawingSvg';
-import { point } from '../../utilities/math';
+import { ISculptToolShape } from '../../types/ISculptToolShape.js';
+import { SculptData } from '../SculptorTool.js';
+import { distancePointToContour } from '../distancePointToContour.js';
+import { drawCircle as drawCircleSvg } from '../../drawingSvg/index.js';
+import { point } from '../../utilities/math/index.js';
 import {
   SVGDrawingHelper,
   EventTypes,
   ContourAnnotationData,
-} from '../../types';
+} from '../../types/index.js';
 
 export type PushedHandles = {
   first?: number;

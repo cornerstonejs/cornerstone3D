@@ -1,10 +1,10 @@
-import { SegmentationRepresentations } from '../../../enums';
-import { validateLabelmap } from '../../../tools/displayTools/Labelmap';
-import { SegmentationRepresentationData } from '../../../types';
+import { SegmentationRepresentations } from '../../../enums/index.js';
+import { validateLabelmap } from '../../../tools/displayTools/Labelmap/index.js';
+import { SegmentationRepresentationData } from '../../../types/index.js';
 import {
   findSegmentationRepresentationByUID,
   getSegmentation,
-} from '../segmentationState';
+} from '../segmentationState.js';
 
 // Map of conversion paths between source and target representations
 // You should read it as "source" -> "targets"

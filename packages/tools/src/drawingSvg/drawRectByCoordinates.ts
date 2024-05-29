@@ -1,9 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 
-import _getHash from './_getHash';
-import setAttributesIfNecessary from './setAttributesIfNecessary';
-import setNewAttributesIfValid from './setNewAttributesIfValid';
-import { SVGDrawingHelper } from '../types';
+import _getHash from './_getHash.js';
+import setAttributesIfNecessary from './setAttributesIfNecessary.js';
+import setNewAttributesIfValid from './setNewAttributesIfValid.js';
+import { SVGDrawingHelper } from '../types/index.js';
 
 export default function drawRectByCoordinates(
   svgDrawingHelper: SVGDrawingHelper,

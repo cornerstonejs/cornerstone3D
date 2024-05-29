@@ -1,8 +1,8 @@
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
-import { ColormapPublic, ColormapRegistration } from '../types';
-import isEqual from './isEqual';
-import { actorIsA } from './actorCheck';
+import { ColormapPublic, ColormapRegistration } from '../types/index.js';
+import isEqual from './isEqual.js';
+import { actorIsA } from './actorCheck.js';
 
 const _colormaps = new Map();
 

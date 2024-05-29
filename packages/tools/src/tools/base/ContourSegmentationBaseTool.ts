@@ -5,27 +5,27 @@ import type {
   PublicToolProps,
   ToolProps,
   AnnotationRenderContext,
-} from '../../types';
+} from '../../types/index.js';
 import {
   config as segmentationConfig,
   state as segmentationState,
   segmentLocking,
   segmentIndex as segmentIndexController,
   activeSegmentation,
-} from '../../stateManagement/segmentation';
-import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
-import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { SegmentationRepresentations } from '../../enums';
-import ContourBaseTool from './ContourBaseTool';
-import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import { InterpolationManager } from '../../utilities/contours/interpolation';
+} from '../../stateManagement/segmentation/index.js';
+import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation.js';
+import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import type { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import { SegmentationRepresentations } from '../../enums/index.js';
+import ContourBaseTool from './ContourBaseTool.js';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { InterpolationManager } from '../../utilities/contours/interpolation/index.js';
 import {
   addContourSegmentationAnnotation,
   removeContourSegmentationAnnotation,
-} from '../../utilities/contourSegmentation';
-import { getToolGroupIdsWithSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
+} from '../../utilities/contourSegmentation/index.js';
+import { getToolGroupIdsWithSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { triggerAnnotationRenderForToolGroupIds } from '../../utilities/index.js';
 
 /**
  * A base contour segmentation class responsible for rendering, registering

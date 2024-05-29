@@ -1,6 +1,6 @@
-import type { InitializedOperationData } from '../BrushStrategy';
-import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import pointInShapeCallback from '../../../../utilities/pointInShapeCallback.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 /**
  * Creates a fill strategy that uses the isWithinThreshold created by the

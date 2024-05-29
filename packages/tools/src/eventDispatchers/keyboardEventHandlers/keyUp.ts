@@ -1,7 +1,7 @@
-import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener';
-import { ToolGroupManager } from '../../store';
-import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
-import { KeyDownEventType } from '../../types/EventTypes';
+import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener.js';
+import { ToolGroupManager } from '../../store/index.js';
+import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent.js';
+import { KeyDownEventType } from '../../types/EventTypes.js';
 
 /**
  * KeyDown event listener to handle viewport cursor icon changes

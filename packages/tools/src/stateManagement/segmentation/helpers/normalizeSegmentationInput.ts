@@ -1,9 +1,9 @@
-import { SegmentationRepresentations } from '../../../enums';
+import { SegmentationRepresentations } from '../../../enums/index.js';
 import {
   SegmentationPublicInput,
   Segmentation,
-} from '../../../types/SegmentationStateTypes';
-import type { ContourSegmentationData } from '../../../types/ContourTypes';
+} from '../../../types/SegmentationStateTypes.js';
+import type { ContourSegmentationData } from '../../../types/ContourTypes.js';
 
 /**
  * It takes in a segmentation input and returns a segmentation with default values

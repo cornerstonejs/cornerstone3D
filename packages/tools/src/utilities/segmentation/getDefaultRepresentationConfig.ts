@@ -1,6 +1,6 @@
-import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
-import SegmentationRepresentation from '../../enums/SegmentationRepresentations';
-import { Segmentation } from '../../types/SegmentationStateTypes';
+import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig.js';
+import SegmentationRepresentation from '../../enums/SegmentationRepresentations.js';
+import { Segmentation } from '../../types/SegmentationStateTypes.js';
 
 /**
  * It returns a configuration object for the given representation type.

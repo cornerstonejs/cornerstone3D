@@ -1,4 +1,4 @@
-import { SplineProps } from './SplineProps';
+import { SplineProps } from './SplineProps.js';
 
 /**
  * Cardinal spline properties

@@ -1,19 +1,19 @@
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/index.js';
 import {
   getSegmentation,
   setSegmentationRepresentationSpecificConfig,
-} from '../../segmentationState';
-import { PolySegConversionOptions } from '../../../../types';
-import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies';
+} from '../../segmentationState.js';
+import { PolySegConversionOptions } from '../../../../types/index.js';
+import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies.js';
 import {
   SurfaceClipResult,
   clipAndCacheSurfacesForViewport,
-} from '../../helpers/clipAndCacheSurfacesForViewport';
-import { extractContourData } from './utils/extractContourData';
-import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
-import { getToolGroupForViewport } from '../../../../store/ToolGroupManager';
+} from '../../helpers/clipAndCacheSurfacesForViewport.js';
+import { extractContourData } from './utils/extractContourData.js';
+import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces.js';
+import { getToolGroupForViewport } from '../../../../store/ToolGroupManager/index.js';
 
 // the map between segment index and the intersection points and lines
 export type RawContourData = Map<number, SurfaceClipResult[]>;

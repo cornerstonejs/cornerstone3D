@@ -1,4 +1,4 @@
-import CanvasActor from '.';
+import CanvasActor from './index.js';
 
 /**
  * Properties for rendering on a labelmap canvas actor.

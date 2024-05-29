@@ -3,54 +3,54 @@ import { utilities } from '@cornerstonejs/core';
 import {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
-} from './getAnnotationNearPoint';
+} from './getAnnotationNearPoint.js';
 
 // Lodash/common JS functionality
-import debounce from './debounce';
-import throttle from './throttle';
-import isObject from './isObject';
-import clip from './clip';
-import calibrateImageSpacing from './calibrateImageSpacing';
+import debounce from './debounce.js';
+import throttle from './throttle.js';
+import isObject from './isObject.js';
+import clip from './clip.js';
+import calibrateImageSpacing from './calibrateImageSpacing.js';
 import {
   getCalibratedLengthUnitsAndScale,
   getCalibratedProbeUnitsAndValue,
   getCalibratedAspect,
-} from './getCalibratedUnits';
-import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
-import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds';
-import triggerAnnotationRender from './triggerAnnotationRender';
-import jumpToSlice from './viewport/jumpToSlice';
+} from './getCalibratedUnits.js';
+import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds.js';
+import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds.js';
+import triggerAnnotationRender from './triggerAnnotationRender.js';
+import jumpToSlice from './viewport/jumpToSlice.js';
 
-import pointInShapeCallback from './pointInShapeCallback';
-import { getSphereBoundsInfo } from './getSphereBoundsInfo';
-import scroll from './scroll';
-import { pointToString } from './pointToString';
-import annotationFrameRange from './annotationFrameRange';
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
-import getViewportForAnnotation from './getViewportForAnnotation';
+import pointInShapeCallback from './pointInShapeCallback.js';
+import { getSphereBoundsInfo } from './getSphereBoundsInfo.js';
+import scroll from './scroll.js';
+import { pointToString } from './pointToString.js';
+import annotationFrameRange from './annotationFrameRange.js';
+import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback.js';
+import getViewportForAnnotation from './getViewportForAnnotation.js';
 import {
   annotationHydration,
   getClosestImageIdForStackViewport,
-} from './annotationHydration';
+} from './annotationHydration.js';
 // name spaces
-import * as contours from './contours';
-import * as segmentation from './segmentation';
-import * as drawing from './drawing';
-import * as math from './math';
-import * as planar from './planar';
-import * as viewportFilters from './viewportFilters';
-import * as orientation from './orientation';
-import * as cine from './cine';
-import * as boundingBox from './boundingBox';
-import * as planarFreehandROITool from './planarFreehandROITool';
-import * as rectangleROITool from './rectangleROITool';
-import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
-import * as viewport from './viewport';
-import * as touch from './touch';
-import * as dynamicVolume from './dynamicVolume';
-import * as polyDataUtils from './polyData/utils';
-import * as voi from './voi';
-import * as contourSegmentation from './contourSegmentation';
+import * as contours from './contours/index.js';
+import * as segmentation from './segmentation/index.js';
+import * as drawing from './drawing/index.js';
+import * as math from './math/index.js';
+import * as planar from './planar/index.js';
+import * as viewportFilters from './viewportFilters/index.js';
+import * as orientation from './orientation/index.js';
+import * as cine from './cine/index.js';
+import * as boundingBox from './boundingBox/index.js';
+import * as planarFreehandROITool from './planarFreehandROITool/index.js';
+import * as rectangleROITool from './rectangleROITool/index.js';
+import { stackPrefetch, stackContextPrefetch } from './stackPrefetch/index.js';
+import * as viewport from './viewport/index.js';
+import * as touch from './touch/index.js';
+import * as dynamicVolume from './dynamicVolume/index.js';
+import * as polyDataUtils from './polyData/utils.js';
+import * as voi from './voi/index.js';
+import * as contourSegmentation from './contourSegmentation/index.js';
 
 const roundNumber = utilities.roundNumber;
 

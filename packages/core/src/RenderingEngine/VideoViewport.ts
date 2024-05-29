@@ -3,7 +3,7 @@ import {
   Events as EVENTS,
   VideoEnums as VideoViewportEnum,
   MetadataModules,
-} from '../enums';
+} from '../enums/index.js';
 import type {
   IVideoViewport,
   VideoViewportProperties,
@@ -18,14 +18,14 @@ import type {
   ViewReferenceSpecifier,
   ViewReference,
   ReferenceCompatibleOptions,
-} from '../types';
-import * as metaData from '../metaData';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { triggerEvent } from '../utilities';
-import Viewport from './Viewport';
-import { getOrCreateCanvas } from './helpers';
-import CanvasActor from './CanvasActor';
-import cache from '../cache';
+} from '../types/index.js';
+import * as metaData from '../metaData.js';
+import { Transform } from './helpers/cpuFallback/rendering/transform.js';
+import { triggerEvent } from '../utilities/index.js';
+import Viewport from './Viewport.js';
+import { getOrCreateCanvas } from './helpers/index.js';
+import CanvasActor from './CanvasActor/index.js';
+import cache from '../cache/index.js';
 
 /**
  * A data type for the scalar data for video data.

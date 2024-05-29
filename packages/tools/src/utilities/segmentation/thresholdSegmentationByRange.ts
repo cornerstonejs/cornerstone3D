@@ -1,11 +1,11 @@
 import { Types } from '@cornerstonejs/core';
-import { pointInShapeCallback } from '../../utilities';
-import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { pointInShapeCallback } from '../../utilities/index.js';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
 import {
   getVoxelOverlap,
   processVolumes,
   ThresholdInformation,
-} from './utilities';
+} from './utilities.js';
 
 /**
  * It thresholds a segmentation volume based on a set of threshold values with

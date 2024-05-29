@@ -1,8 +1,8 @@
-import { SegmentationRepresentations } from '../../../../enums';
-import { PolySegConversionOptions } from '../../../../types';
-import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
-import { computeSurfaceData } from './surfaceComputationStrategies';
-import { updateSurfaceData } from './updateSurfaceData';
+import { SegmentationRepresentations } from '../../../../enums/index.js';
+import { PolySegConversionOptions } from '../../../../types/index.js';
+import { computeAndAddRepresentation } from '../computeAndAddRepresentation.js';
+import { computeSurfaceData } from './surfaceComputationStrategies.js';
+import { updateSurfaceData } from './updateSurfaceData.js';
 
 /**
  * Computes and adds a surface representation for a given segmentation.

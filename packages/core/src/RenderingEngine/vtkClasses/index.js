@@ -1,7 +1,7 @@
-import vtkOffscreenMultiRenderWindow from './vtkOffscreenMultiRenderWindow';
-import vtkSharedVolumeMapper from './vtkSharedVolumeMapper';
-import vtkStreamingOpenGLTexture from './vtkStreamingOpenGLTexture';
-import vtkSlabCamera from './vtkSlabCamera';
+import vtkOffscreenMultiRenderWindow from './vtkOffscreenMultiRenderWindow.js';
+import vtkSharedVolumeMapper from './vtkSharedVolumeMapper.js';
+import vtkStreamingOpenGLTexture from './vtkStreamingOpenGLTexture.js';
+import vtkSlabCamera from './vtkSlabCamera.js';
 
 export {
   vtkOffscreenMultiRenderWindow,

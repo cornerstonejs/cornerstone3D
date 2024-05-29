@@ -3,9 +3,9 @@ import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchi
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
-import { getDeduplicatedVTKPolyDataPoints } from '../contours';
-import { findContoursFromReducedSet } from './contourFinder';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import { getDeduplicatedVTKPolyDataPoints } from '../contours/index.js';
+import { findContoursFromReducedSet } from './contourFinder.js';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
 
 const { Labelmap } = SegmentationRepresentations;
 

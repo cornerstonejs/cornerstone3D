@@ -1,6 +1,6 @@
 import { getEnabledElements, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import type { Annotation } from '../types';
+import type { Annotation } from '../types/index.js';
 
 const { isEqual } = csUtils;
 

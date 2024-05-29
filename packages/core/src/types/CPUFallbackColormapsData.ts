@@ -1,4 +1,4 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData';
+import CPUFallbackColormapData from './CPUFallbackColormapData.js';
 
 type CPUFallbackColormapsData = {
   [key: string]: CPUFallbackColormapData;

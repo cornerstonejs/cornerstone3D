@@ -1,13 +1,13 @@
-import RenderingEngine from './RenderingEngine';
-import getRenderingEngine from './getRenderingEngine';
-import VolumeViewport from './VolumeViewport';
-import StackViewport from './StackViewport';
-import VolumeViewport3D from './VolumeViewport3D';
+import RenderingEngine from './RenderingEngine.js';
+import getRenderingEngine from './getRenderingEngine.js';
+import VolumeViewport from './VolumeViewport.js';
+import StackViewport from './StackViewport.js';
+import VolumeViewport3D from './VolumeViewport3D.js';
 import {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
-} from './helpers';
+} from './helpers/index.js';
 
 export {
   getRenderingEngine,

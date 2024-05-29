@@ -1,4 +1,4 @@
-import type { ClosestPoint } from './ClosestPoint';
+import type { ClosestPoint } from './ClosestPoint.js';
 
 export type ClosestControlPoint = ClosestPoint & {
   /** Control point index */

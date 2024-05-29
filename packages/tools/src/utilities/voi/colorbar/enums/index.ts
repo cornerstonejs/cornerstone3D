@@ -1,1 +1,1 @@
-export { ColorbarRangeTextPosition } from './ColorbarRangeTextPosition';
+export { ColorbarRangeTextPosition } from './ColorbarRangeTextPosition.js';

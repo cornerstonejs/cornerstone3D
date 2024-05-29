@@ -1,4 +1,4 @@
-import type Point3 from '../types/Point3';
+import type Point3 from '../types/Point3.js';
 
 /**
  * Given an imageData object and a position in voxel space, return a point

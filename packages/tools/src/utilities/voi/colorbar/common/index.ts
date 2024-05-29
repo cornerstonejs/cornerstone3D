@@ -1,4 +1,4 @@
-export { isRangeValid } from './isRangeValid';
-export { isColorbarSizeValid } from './isColorbarSizeValid';
-export { areColorbarRangesEqual } from './areColorbarRangesEqual';
-export { areColorbarSizesEqual } from './areColorbarSizesEqual';
+export { isRangeValid } from './isRangeValid.js';
+export { isColorbarSizeValid } from './isColorbarSizeValid.js';
+export { areColorbarRangesEqual } from './areColorbarRangesEqual.js';
+export { areColorbarSizesEqual } from './areColorbarSizesEqual.js';

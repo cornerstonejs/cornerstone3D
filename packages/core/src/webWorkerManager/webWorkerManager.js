@@ -1,6 +1,6 @@
 import * as Comlink from 'comlink';
-import { RequestType } from '../enums/';
-import { RequestPoolManager } from '../requestPool/requestPoolManager';
+import { RequestType } from '../enums//index.js';
+import { RequestPoolManager } from '../requestPool/requestPoolManager.js';
 
 class CentralizedWorkerManager {
   constructor() {

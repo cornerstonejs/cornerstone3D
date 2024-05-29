@@ -1,5 +1,5 @@
 import { glMatrix, vec3 } from 'gl-matrix';
-import { ContourAnnotation } from '../../types/ContourAnnotation';
+import { ContourAnnotation } from '../../types/ContourAnnotation.js';
 
 /**
  * Check if two contour segmentation annotations are coplanar.

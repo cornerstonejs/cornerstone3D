@@ -2,16 +2,16 @@ import { triggerEvent, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import createPolylineToolData from './createPolylineToolData';
-import findAnnotationsForInterpolation from './findAnnotationForInterpolation';
-import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
-import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import type { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes';
-import EventTypes from '../../../enums/Events';
-import * as annotationState from '../../../stateManagement/annotation';
-import selectHandles from './selectHandles';
-import updateChildInterpolationUID from './updateChildInterpolationUID';
-import { createPolylineHole } from '../../../eventListeners/annotations/contourSegmentation/contourSegmentationCompleted';
+import createPolylineToolData from './createPolylineToolData.js';
+import findAnnotationsForInterpolation from './findAnnotationForInterpolation.js';
+import type { InterpolationViewportData } from '../../../types/InterpolationTypes.js';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import type { AnnotationInterpolationCompletedEventDetail } from '../../../types/EventTypes.js';
+import EventTypes from '../../../enums/Events.js';
+import * as annotationState from '../../../stateManagement/annotation/index.js';
+import selectHandles from './selectHandles.js';
+import updateChildInterpolationUID from './updateChildInterpolationUID.js';
+import { createPolylineHole } from '../../../eventListeners/annotations/contourSegmentation/contourSegmentationCompleted.js';
 
 const { PointsManager } = utilities;
 

@@ -10,9 +10,9 @@ import {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../../../types/LabelmapTypes';
-import { computeVolumeSegmentationFromStack } from '../../convertStackToVolumeSegmentation';
-import { WorkerTypes } from '../../../../enums';
+} from '../../../../types/LabelmapTypes.js';
+import { computeVolumeSegmentationFromStack } from '../../convertStackToVolumeSegmentation.js';
+import { WorkerTypes } from '../../../../enums/index.js';
 
 const workerManager = getWebWorkerManager();
 

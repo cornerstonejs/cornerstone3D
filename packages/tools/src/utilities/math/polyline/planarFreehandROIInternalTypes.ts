@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
 
 // Note: These types are internal to the drawing/editing processes of the tool.
 

@@ -1,5 +1,5 @@
-import { state } from '../../stateManagement/segmentation';
-import { ContourSegmentationAnnotation } from '../../types';
+import { state } from '../../stateManagement/segmentation/index.js';
+import { ContourSegmentationAnnotation } from '../../types/index.js';
 
 /**
  * Removes a contour segmentation annotation from the given annotation.

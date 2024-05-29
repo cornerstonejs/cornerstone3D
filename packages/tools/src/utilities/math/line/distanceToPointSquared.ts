@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import distanceToPointSquaredInfo from './distanceToPointSquaredInfo';
+import distanceToPointSquaredInfo from './distanceToPointSquaredInfo.js';
 
 /**
  * Calculates the distance-squared of a point to a line segment

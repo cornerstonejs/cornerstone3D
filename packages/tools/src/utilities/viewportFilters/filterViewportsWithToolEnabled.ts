@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
-import type { IToolGroup } from '../../types';
-import { ToolGroupManager } from '../../store';
-import { ToolModes } from '../../enums';
+import type { IToolGroup } from '../../types/index.js';
+import { ToolGroupManager } from '../../store/index.js';
+import { ToolModes } from '../../enums/index.js';
 
 const { Active, Passive, Enabled } = ToolModes;
 

@@ -1,7 +1,7 @@
 import { glMatrix, mat4, vec3 } from 'gl-matrix';
-import { IVolumeViewport, Point3 } from '../types';
-import { transformIJKToCanvas } from './transformIJKToCanvas';
-import { transformCanvasToIJK } from './transformCanvasToIJK';
+import { IVolumeViewport, Point3 } from '../types/index.js';
+import { transformIJKToCanvas } from './transformIJKToCanvas.js';
+import { transformCanvasToIJK } from './transformCanvasToIJK.js';
 
 /**
  * Get the image data for the current slice rendered on the viewport. The image

@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import distanceToPointSquared from './distanceToPointSquared';
+import distanceToPointSquared from './distanceToPointSquared.js';
 
 /**
  * Calculates the squared distance of a point to an AABB using

@@ -1,10 +1,10 @@
-import createViewport from './createViewport';
-import getImageFitScale from './getImageFitScale';
+import createViewport from './createViewport.js';
+import getImageFitScale from './getImageFitScale.js';
 import {
   IImage,
   CPUFallbackColormap,
   CPUFallbackViewport,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 /**
  * Creates a new viewport object containing default values for the image and canvas

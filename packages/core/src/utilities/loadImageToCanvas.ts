@@ -5,16 +5,16 @@ import type {
   ViewportInputOptions,
   Point3,
   IVolume,
-} from '../types';
+} from '../types/index.js';
 
-import { loadAndCacheImage } from '../loaders/imageLoader';
-import * as metaData from '../metaData';
-import { RequestType } from '../enums';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import renderToCanvasGPU from './renderToCanvasGPU';
-import renderToCanvasCPU from './renderToCanvasCPU';
-import { getConfiguration } from '../init';
-import cache from '../cache';
+import { loadAndCacheImage } from '../loaders/imageLoader.js';
+import * as metaData from '../metaData.js';
+import { RequestType } from '../enums/index.js';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager.js';
+import renderToCanvasGPU from './renderToCanvasGPU.js';
+import renderToCanvasCPU from './renderToCanvasCPU.js';
+import { getConfiguration } from '../init.js';
+import cache from '../cache/index.js';
 
 /**
  * The original load image options specified just an image id,  which is optimal

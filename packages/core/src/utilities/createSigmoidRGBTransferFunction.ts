@@ -1,7 +1,7 @@
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import { VOIRange } from '../types';
-import * as windowLevelUtil from './windowLevel';
+import { VOIRange } from '../types/index.js';
+import * as windowLevelUtil from './windowLevel.js';
 
 /**
  * A utility that can be used to generate an Sigmoid RgbTransferFunction.

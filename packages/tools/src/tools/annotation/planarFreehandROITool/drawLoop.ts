@@ -2,23 +2,23 @@ import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../../cursors/elementCursor';
-import { Events } from '../../../enums';
-import { EventTypes } from '../../../types';
-import { state } from '../../../store';
+} from '../../../cursors/elementCursor.js';
+import { Events } from '../../../enums/index.js';
+import { EventTypes } from '../../../types/index.js';
+import { state } from '../../../store/index.js';
 import { vec3 } from 'gl-matrix';
 import {
   shouldSmooth,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/smoothPoints';
-import getMouseModifierKey from '../../../eventDispatchers/shared/getMouseModifier';
-import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
-import { polyline } from '../../../utilities/math';
-import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
-import { ContourWindingDirection } from '../../../types/ContourAnnotation';
+} from '../../../utilities/planarFreehandROITool/smoothPoints.js';
+import getMouseModifierKey from '../../../eventDispatchers/shared/getMouseModifier.js';
+import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state.js';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak.js';
+import { polyline } from '../../../utilities/math/index.js';
+import { removeAnnotation } from '../../../stateManagement/annotation/annotationState.js';
+import { ContourWindingDirection } from '../../../types/ContourAnnotation.js';
 
 const {
   addCanvasPointsToArray,

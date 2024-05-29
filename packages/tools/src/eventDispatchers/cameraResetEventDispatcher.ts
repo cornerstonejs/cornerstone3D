@@ -1,6 +1,6 @@
 import { Enums, Types } from '@cornerstonejs/core';
-import { ToolModes } from '../enums';
-import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent';
+import { ToolModes } from '../enums/index.js';
+import getToolsWithModesForMouseEvent from './shared/getToolsWithModesForMouseEvent.js';
 
 const { Active, Passive, Enabled } = ToolModes;
 

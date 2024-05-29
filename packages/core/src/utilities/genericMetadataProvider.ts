@@ -1,4 +1,4 @@
-import { addProvider } from '../metaData';
+import { addProvider } from '../metaData.js';
 
 let state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
 /**

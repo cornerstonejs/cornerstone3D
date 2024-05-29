@@ -1,11 +1,11 @@
 import { triggerEvent } from '@cornerstonejs/core';
-import * as annotationStateManagement from '../../../stateManagement/annotation';
-import interpolate from '../../contours/interpolation/interpolate';
-import type { InterpolationViewportData } from '../../../types/InterpolationTypes';
-import getInterpolationData from '../../contours/interpolation/getInterpolationData';
-import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import EventTypes from '../../../enums/Events';
-import type { AnnotationInterpolationRemovedEventDetail } from '../../../types/EventTypes';
+import * as annotationStateManagement from '../../../stateManagement/annotation/index.js';
+import interpolate from '../../contours/interpolation/interpolate.js';
+import type { InterpolationViewportData } from '../../../types/InterpolationTypes.js';
+import getInterpolationData from '../../contours/interpolation/getInterpolationData.js';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import EventTypes from '../../../enums/Events.js';
+import type { AnnotationInterpolationRemovedEventDetail } from '../../../types/EventTypes.js';
 
 /**
  * deleteRelatedAnnotations - Delete the same interpolation uid on deleting one of them.

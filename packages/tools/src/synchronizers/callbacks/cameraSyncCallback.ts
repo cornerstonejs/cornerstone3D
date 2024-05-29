@@ -1,5 +1,5 @@
 import { getRenderingEngine, Types } from '@cornerstonejs/core';
-import { Synchronizer } from '../../store';
+import { Synchronizer } from '../../store/index.js';
 
 /**
  * Synchronizer callback to synchronize the camera by updating all camera

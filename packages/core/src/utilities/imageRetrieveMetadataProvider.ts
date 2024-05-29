@@ -1,4 +1,4 @@
-import { addProvider } from '../metaData';
+import { addProvider } from '../metaData.js';
 
 const retrieveConfigurationState = new Map<string, any>();
 

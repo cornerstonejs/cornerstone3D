@@ -1,19 +1,19 @@
-import { BaseTool } from './base';
-import { Events } from '../enums';
+import { BaseTool } from './base/index.js';
+import { Events } from '../enums/index.js';
 
 import { getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { state } from '../store';
+import { EventTypes, PublicToolProps, ToolProps } from '../types/index.js';
+import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters/index.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
+import { state } from '../store/index.js';
 import { Enums } from '@cornerstonejs/core';
 
 import {
   hideElementCursor,
   resetElementCursor,
-} from '../cursors/elementCursor';
-import { IPoints } from '../types';
+} from '../cursors/elementCursor.js';
+import { IPoints } from '../types/index.js';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 

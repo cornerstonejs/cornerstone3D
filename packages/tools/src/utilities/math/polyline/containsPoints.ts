@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import containsPoint from './containsPoint';
+import containsPoint from './containsPoint.js';
 
 /**
  * Checks if a polyline contains a set of points.

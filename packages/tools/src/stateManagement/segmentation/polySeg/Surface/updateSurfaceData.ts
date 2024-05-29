@@ -1,15 +1,15 @@
 import { Types, cache } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/index.js';
 import {
   getSegmentation,
   getSegmentationRepresentations,
   getToolGroupIdsWithSegmentation,
-} from '../../segmentationState';
-import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
-import { ToolGroupSpecificRepresentations } from '../../../../types/SegmentationStateTypes';
-import { SegmentationRepresentations } from '../../../../enums';
-import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
-import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
+} from '../../segmentationState.js';
+import { triggerSegmentationModified } from '../../triggerSegmentationEvents.js';
+import { ToolGroupSpecificRepresentations } from '../../../../types/SegmentationStateTypes.js';
+import { SegmentationRepresentations } from '../../../../enums/index.js';
+import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies.js';
+import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw.js';
 
 export async function updateSurfaceData(segmentationId) {
   const surfacesObj = await computeSurfaceFromLabelmapSegmentation(

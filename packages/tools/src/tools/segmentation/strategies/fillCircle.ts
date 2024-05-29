@@ -5,14 +5,14 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getCanvasEllipseCorners,
   precalculatePointInEllipse,
-} from '../../../utilities/math/ellipse';
-import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
-import BrushStrategy from './BrushStrategy';
-import type { Composition, InitializedOperationData } from './BrushStrategy';
-import type { CanvasCoordinates } from '../../../types';
-import { StrategyCallbacks } from '../../../enums';
-import compositions from './compositions';
-import { pointInSphere } from '../../../utilities/math/sphere';
+} from '../../../utilities/math/ellipse/index.js';
+import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox/index.js';
+import BrushStrategy from './BrushStrategy.js';
+import type { Composition, InitializedOperationData } from './BrushStrategy.js';
+import type { CanvasCoordinates } from '../../../types/index.js';
+import { StrategyCallbacks } from '../../../enums/index.js';
+import compositions from './compositions/index.js';
+import { pointInSphere } from '../../../utilities/math/sphere/index.js';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 

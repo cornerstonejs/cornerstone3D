@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import type { InitializedOperationData } from '../BrushStrategy';
-import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { config as segmentationConfig } from '../../../../stateManagement/segmentation/index.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 function lightenColor(r, g, b, a, factor = 0.4) {
   return [

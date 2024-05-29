@@ -1,4 +1,4 @@
-export { default as areSameSegment } from './areSameSegment';
-export { default as isContourSegmentationAnnotation } from './isContourSegmentationAnnotation';
-export { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation';
-export { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
+export { default as areSameSegment } from './areSameSegment.js';
+export { default as isContourSegmentationAnnotation } from './isContourSegmentationAnnotation.js';
+export { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation.js';
+export { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation.js';

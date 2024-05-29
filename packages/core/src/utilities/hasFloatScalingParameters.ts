@@ -1,4 +1,4 @@
-import { ScalingParameters } from '../types';
+import { ScalingParameters } from '../types/index.js';
 
 /**
  * Checks if the scaling parameters contain a float rescale value.

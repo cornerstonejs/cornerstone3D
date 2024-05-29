@@ -1,7 +1,7 @@
-import type { IViewport } from '../../types/IViewport';
-import type { ICanvasActor } from '../../types/IActor';
-import CanvasProperties from './CanvasProperties';
-import CanvasMapper from './CanvasMapper';
+import type { IViewport } from '../../types/IViewport.js';
+import type { ICanvasActor } from '../../types/IActor.js';
+import CanvasProperties from './CanvasProperties.js';
+import CanvasMapper from './CanvasMapper.js';
 
 /**
  * Handles canvas rendering of derived image data, typically label maps.

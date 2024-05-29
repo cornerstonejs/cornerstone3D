@@ -1,12 +1,12 @@
 import { Types } from '@cornerstonejs/core';
-import { pointInShapeCallback } from '../../utilities';
-import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import { BoundsIJK } from '../../types';
+import { pointInShapeCallback } from '../../utilities/index.js';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { BoundsIJK } from '../../types/index.js';
 import {
   getVoxelOverlap,
   processVolumes,
   ThresholdInformation,
-} from './utilities';
+} from './utilities.js';
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;

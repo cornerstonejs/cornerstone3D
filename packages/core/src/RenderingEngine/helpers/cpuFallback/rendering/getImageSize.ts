@@ -1,5 +1,5 @@
-import { validateParameterUndefinedOrNull } from './validator';
-import { IImage } from '../../../../types';
+import { validateParameterUndefinedOrNull } from './validator.js';
+import { IImage } from '../../../../types/index.js';
 
 /**
  * Check if the angle is rotated

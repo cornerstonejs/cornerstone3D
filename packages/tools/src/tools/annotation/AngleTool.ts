@@ -1,36 +1,36 @@
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool } from '../base';
-import throttle from '../../utilities/throttle';
+import { AnnotationTool } from '../base/index.js';
+import throttle from '../../utilities/throttle.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import * as lineSegment from '../../utilities/math/line';
-import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
-import { roundNumber } from '../../utilities';
+} from '../../stateManagement/annotation/annotationState.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import * as lineSegment from '../../utilities/math/line/index.js';
+import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines.js';
+import { roundNumber } from '../../utilities/index.js';
 
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
+} from '../../stateManagement/annotation/helpers/state.js';
 
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 
 import {
   EventTypes,
@@ -39,9 +39,9 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 
 class AngleTool extends AnnotationTool {
   static toolName;

@@ -7,19 +7,19 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { math, roundNumber } from '../../utilities';
-import { polyline } from '../../utilities/math';
-import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import throttle from '../../utilities/throttle';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import registerDrawLoop from './planarFreehandROITool/drawLoop';
-import registerEditLoopCommon from './planarFreehandROITool/editLoopCommon';
-import registerClosedContourEditLoop from './planarFreehandROITool/closedContourEditLoop';
-import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
-import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
-import registerRenderMethods from './planarFreehandROITool/renderMethods';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits.js';
+import { math, roundNumber } from '../../utilities/index.js';
+import { polyline } from '../../utilities/math/index.js';
+import { filterAnnotationsForDisplay } from '../../utilities/planar/index.js';
+import throttle from '../../utilities/throttle.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import registerDrawLoop from './planarFreehandROITool/drawLoop.js';
+import registerEditLoopCommon from './planarFreehandROITool/editLoopCommon.js';
+import registerClosedContourEditLoop from './planarFreehandROITool/closedContourEditLoop.js';
+import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop.js';
+import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop.js';
+import registerRenderMethods from './planarFreehandROITool/renderMethods.js';
 import type {
   EventTypes,
   ToolHandle,
@@ -30,21 +30,21 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   AnnotationRenderContext,
-} from '../../types';
-import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { drawLinkedTextBox } from '../../drawingSvg';
-import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
+} from '../../types/index.js';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state.js';
+import { drawLinkedTextBox } from '../../drawingSvg/index.js';
+import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing/index.js';
+import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes.js';
 
-import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
-import pointInShapeCallback from '../../utilities/pointInShapeCallback';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
-import { BasicStatsCalculator } from '../../utilities/math/basic';
-import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
-import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import { KeyboardBindings, ChangeTypes } from '../../enums';
+import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline/index.js';
+import pointInShapeCallback from '../../utilities/pointInShapeCallback.js';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled.js';
+import { getModalityUnit } from '../../utilities/getModalityUnit.js';
+import { BasicStatsCalculator } from '../../utilities/math/basic/index.js';
+import calculatePerimeter from '../../utilities/contours/calculatePerimeter.js';
+import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool.js';
+import { KeyboardBindings, ChangeTypes } from '../../enums/index.js';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;

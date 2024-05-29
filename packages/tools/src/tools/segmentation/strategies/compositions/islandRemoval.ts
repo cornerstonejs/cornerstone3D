@@ -1,7 +1,7 @@
-import type { InitializedOperationData } from '../BrushStrategy';
-import floodFill from '../../../../utilities/segmentation/floodFill';
-import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import type { InitializedOperationData } from '../BrushStrategy.js';
+import floodFill from '../../../../utilities/segmentation/floodFill.js';
+import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import StrategyCallbacks from '../../../../enums/StrategyCallbacks.js';
 
 /**
  * Removes external islands and fills internal islands.

@@ -1,4 +1,4 @@
-import { ImageVolumeProps } from './ImageVolumeProps';
+import { ImageVolumeProps } from './ImageVolumeProps.js';
 
 /**
  * Backwards compatibility for IVolume

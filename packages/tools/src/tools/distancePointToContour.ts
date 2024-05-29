@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import { ContourAnnotationData } from '../types';
-import { point } from '../utilities/math';
+import { ContourAnnotationData } from '../types/index.js';
+import { point } from '../utilities/math/index.js';
 
 /**
  * Calculates the shortest distance from the provided point to any contour

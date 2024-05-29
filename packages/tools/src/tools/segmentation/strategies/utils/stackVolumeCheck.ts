@@ -1,12 +1,12 @@
 import {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
-} from '../../../../types/LabelmapTypes';
+} from '../../../../types/LabelmapTypes.js';
 import {
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
-} from '../../../../types';
+} from '../../../../types/index.js';
 import { Types, VolumeViewport } from '@cornerstonejs/core';
 
 function isVolumeSegmentation(

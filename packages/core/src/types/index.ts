@@ -1,18 +1,18 @@
 // @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
-import type Cornerstone3DConfig from './Cornerstone3DConfig';
-import type ICamera from './ICamera';
-import type IEnabledElement from './IEnabledElement';
-import type ICache from './ICache';
-import type { IVolume } from './IVolume';
-import type { VOI, VOIRange } from './voi';
-import type DisplayArea from './displayArea';
-import type ImageLoaderFn from './ImageLoaderFn';
-import type IImageVolume from './IImageVolume';
-import type IDynamicImageVolume from './IDynamicImageVolume';
-import type VolumeLoaderFn from './VolumeLoaderFn';
-import type IRegisterImageLoader from './IRegisterImageLoader';
-import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
-import type CustomEventType from './CustomEventType';
+import type Cornerstone3DConfig from './Cornerstone3DConfig.js';
+import type ICamera from './ICamera.js';
+import type IEnabledElement from './IEnabledElement.js';
+import type ICache from './ICache.js';
+import type { IVolume } from './IVolume.js';
+import type { VOI, VOIRange } from './voi.js';
+import type DisplayArea from './displayArea.js';
+import type ImageLoaderFn from './ImageLoaderFn.js';
+import type IImageVolume from './IImageVolume.js';
+import type IDynamicImageVolume from './IDynamicImageVolume.js';
+import type VolumeLoaderFn from './VolumeLoaderFn.js';
+import type IRegisterImageLoader from './IRegisterImageLoader.js';
+import type IStreamingVolumeProperties from './IStreamingVolumeProperties.js';
+import type CustomEventType from './CustomEventType.js';
 import type {
   IViewport,
   PublicViewportInput,
@@ -21,89 +21,89 @@ import type {
   ViewReference,
   ViewPresentation,
   ViewPresentationSelector,
-} from './IViewport';
+} from './IViewport.js';
 import type {
   VolumeActor,
   Actor,
   ActorEntry,
   ImageActor,
   ICanvasActor,
-} from './IActor';
+} from './IActor.js';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
   IGeometryLoadObject,
-} from './ILoadObject';
-import type Metadata from './Metadata';
-import type OrientationVectors from './OrientationVectors';
-import type AABB2 from './AABB2';
-import type AABB3 from './AABB3';
-import type Point2 from './Point2';
-import type Point3 from './Point3';
-import type Point4 from './Point4';
-import type { PointsXYZ } from './Point3';
-import type Mat3 from './Mat3';
-import type Plane from './Plane';
-import type IStreamingImageVolume from './IStreamingImageVolume';
-import type ViewportInputOptions from './ViewportInputOptions';
-import type IImageData from './IImageData';
-import type IImageCalibration from './IImageCalibration';
-import type CPUIImageData from './CPUIImageData';
-import type { CPUImageData } from './CPUIImageData';
-import type IImage from './IImage';
+} from './ILoadObject.js';
+import type Metadata from './Metadata.js';
+import type OrientationVectors from './OrientationVectors.js';
+import type AABB2 from './AABB2.js';
+import type AABB3 from './AABB3.js';
+import type Point2 from './Point2.js';
+import type Point3 from './Point3.js';
+import type Point4 from './Point4.js';
+import type { PointsXYZ } from './Point3.js';
+import type Mat3 from './Mat3.js';
+import type Plane from './Plane.js';
+import type IStreamingImageVolume from './IStreamingImageVolume.js';
+import type ViewportInputOptions from './ViewportInputOptions.js';
+import type IImageData from './IImageData.js';
+import type IImageCalibration from './IImageCalibration.js';
+import type CPUIImageData from './CPUIImageData.js';
+import type { CPUImageData } from './CPUIImageData.js';
+import type IImage from './IImage.js';
 import type {
   PTScaling,
   Scaling,
   ScalingParameters,
-} from './ScalingParameters';
-import type StackViewportProperties from './StackViewportProperties';
-import type VolumeViewportProperties from './VolumeViewportProperties';
-import type IViewportId from './IViewportId';
-import type FlipDirection from './FlipDirection';
-import type ICachedImage from './ICachedImage';
-import type ICachedVolume from './ICachedVolume';
-import type IStackViewport from './IStackViewport';
-import type IVolumeViewport from './IVolumeViewport';
-import type ViewportPreset from './ViewportPreset';
+} from './ScalingParameters.js';
+import type StackViewportProperties from './StackViewportProperties.js';
+import type VolumeViewportProperties from './VolumeViewportProperties.js';
+import type IViewportId from './IViewportId.js';
+import type FlipDirection from './FlipDirection.js';
+import type ICachedImage from './ICachedImage.js';
+import type ICachedVolume from './ICachedVolume.js';
+import type IStackViewport from './IStackViewport.js';
+import type IVolumeViewport from './IVolumeViewport.js';
+import type ViewportPreset from './ViewportPreset.js';
 
 // CPU types
-import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import type CPUFallbackViewport from './CPUFallbackViewport';
-import type CPUFallbackTransform from './CPUFallbackTransform';
-import type CPUFallbackColormapData from './CPUFallbackColormapData';
-import type CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
-import type CPUFallbackColormapsData from './CPUFallbackColormapsData';
-import type CPUFallbackColormap from './CPUFallbackColormap';
-import type TransformMatrix2D from './TransformMatrix2D';
-import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
-import type CPUFallbackLUT from './CPUFallbackLUT';
-import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
-import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
-import type { IStackInput, StackInputCallback } from './IStackInput';
-import type * as EventTypes from './EventTypes';
-import type IRenderingEngine from './IRenderingEngine';
-import type ActorSliceRange from './ActorSliceRange';
-import type ImageSliceData from './ImageSliceData';
-import type IGeometry from './IGeometry';
+import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement.js';
+import type CPUFallbackViewport from './CPUFallbackViewport.js';
+import type CPUFallbackTransform from './CPUFallbackTransform.js';
+import type CPUFallbackColormapData from './CPUFallbackColormapData.js';
+import type CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea.js';
+import type CPUFallbackColormapsData from './CPUFallbackColormapsData.js';
+import type CPUFallbackColormap from './CPUFallbackColormap.js';
+import type TransformMatrix2D from './TransformMatrix2D.js';
+import type CPUFallbackLookupTable from './CPUFallbackLookupTable.js';
+import type CPUFallbackLUT from './CPUFallbackLUT.js';
+import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools.js';
+import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput.js';
+import type { IStackInput, StackInputCallback } from './IStackInput.js';
+import type * as EventTypes from './EventTypes.js';
+import type IRenderingEngine from './IRenderingEngine.js';
+import type ActorSliceRange from './ActorSliceRange.js';
+import type ImageSliceData from './ImageSliceData.js';
+import type IGeometry from './IGeometry.js';
 import type {
   PublicContourSetData,
   ContourSetData,
   ContourData,
-} from './ContourData';
-import type { PublicSurfaceData, SurfaceData } from './SurfaceData';
-import type ICachedGeometry from './ICachedGeometry';
-import type { IContourSet } from './IContourSet';
-import type { IContour } from './IContour';
-import type RGB from './RGB';
-import { ColormapPublic, ColormapRegistration } from './Colormap';
-import type { ViewportProperties } from './ViewportProperties';
+} from './ContourData.js';
+import type { PublicSurfaceData, SurfaceData } from './SurfaceData.js';
+import type ICachedGeometry from './ICachedGeometry.js';
+import type { IContourSet } from './IContourSet.js';
+import type { IContour } from './IContour.js';
+import type RGB from './RGB.js';
+import { ColormapPublic, ColormapRegistration } from './Colormap.js';
+import type { ViewportProperties } from './ViewportProperties.js';
 import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
-} from './PixelDataTypedArray';
-import type { ImagePixelModule } from './ImagePixelModule';
-import type { ImagePlaneModule } from './ImagePlaneModule';
-import type { AffineMatrix } from './AffineMatrix';
+} from './PixelDataTypedArray.js';
+import type { ImagePixelModule } from './ImagePixelModule.js';
+import type { ImagePlaneModule } from './ImagePlaneModule.js';
+import type { AffineMatrix } from './AffineMatrix.js';
 export type {
   RetrieveStage,
   RetrieveOptions,
@@ -112,23 +112,23 @@ export type {
   NearbyFrames,
   IRetrieveConfiguration,
   IImagesLoader,
-} from './IRetrieveConfiguration';
-import type { ImageLoadListener } from './ImageLoadListener';
-import type { Color, ColorLUT } from './Color';
-import type VideoViewportProperties from './VideoViewportProperties';
-import type IVideoViewport from './IVideoViewport';
+} from './IRetrieveConfiguration.js';
+import type { ImageLoadListener } from './ImageLoadListener.js';
+import type { Color, ColorLUT } from './Color.js';
+import type VideoViewportProperties from './VideoViewportProperties.js';
+import type IVideoViewport from './IVideoViewport.js';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
-} from './VideoViewportTypes';
-import { ISurface } from './ISurface';
-import type BoundsIJK from './BoundsIJK';
-import type { ImageVolumeProps } from './ImageVolumeProps';
-import type { VolumeProps } from './VolumeProps';
-import type BoundsLPS from './BoundsLPS';
+} from './VideoViewportTypes.js';
+import { ISurface } from './ISurface.js';
+import type BoundsIJK from './BoundsIJK.js';
+import type { ImageVolumeProps } from './ImageVolumeProps.js';
+import type { VolumeProps } from './VolumeProps.js';
+import type BoundsLPS from './BoundsLPS.js';
 // Sometimes the type is needed rather than the class, so import
 // the type only here.
-import type PointsManager from '../utilities/PointsManager';
+import type PointsManager from '../utilities/PointsManager.js';
 
 export type {
   // config

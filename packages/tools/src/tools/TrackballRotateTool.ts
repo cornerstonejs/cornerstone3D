@@ -1,5 +1,5 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import { Events } from '../enums';
+import { Events } from '../enums/index.js';
 
 import {
   eventTarget,
@@ -8,9 +8,9 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { BaseTool } from './base';
-import { getToolGroup } from '../store/ToolGroupManager';
+import { EventTypes, PublicToolProps, ToolProps } from '../types/index.js';
+import { BaseTool } from './base/index.js';
+import { getToolGroup } from '../store/ToolGroupManager/index.js';
 
 /**
  * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.

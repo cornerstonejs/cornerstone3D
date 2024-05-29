@@ -1,15 +1,15 @@
 import { getEnabledElement, type Types } from '@cornerstonejs/core';
 
-import type { Annotation } from '../../types/AnnotationTypes';
-import * as segmentation from '../../stateManagement/segmentation';
+import type { Annotation } from '../../types/AnnotationTypes.js';
+import * as segmentation from '../../stateManagement/segmentation/index.js';
 import {
   state as annotationState,
   config as annotationConfig,
-} from '../../stateManagement/annotation';
-import { jumpToSlice } from '../viewport';
-import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
-import createBidirectionalToolData from './createBidirectionalToolData';
-import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
+} from '../../stateManagement/annotation/index.js';
+import { jumpToSlice } from '../viewport/index.js';
+import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional.js';
+import createBidirectionalToolData from './createBidirectionalToolData.js';
+import BidirectionalTool from '../../tools/annotation/BidirectionalTool.js';
 
 export type Segment = {
   segmentationId: string;

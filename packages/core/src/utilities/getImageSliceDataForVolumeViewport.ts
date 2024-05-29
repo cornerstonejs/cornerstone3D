@@ -1,6 +1,10 @@
-import { ImageSliceData, IVolumeViewport, VolumeActor } from '../types';
-import getSliceRange from './getSliceRange';
-import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
+import {
+  ImageSliceData,
+  IVolumeViewport,
+  VolumeActor,
+} from '../types/index.js';
+import getSliceRange from './getSliceRange.js';
+import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir.js';
 
 /**
  * It calculates the number of slices and the current slice index for a given

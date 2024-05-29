@@ -1,7 +1,7 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { ContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { ContourAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
 
 const { isEqual } = csUtils;
 

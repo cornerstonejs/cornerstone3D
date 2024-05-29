@@ -1,8 +1,8 @@
-import distanceToPoint from './distanceToPoint';
-import distanceToPointSquared from './distanceToPointSquared';
-import distanceToPointSquaredInfo from './distanceToPointSquaredInfo';
-import intersectLine from './intersectLine';
-import isPointOnLineSegment from './isPointOnLineSegment';
+import distanceToPoint from './distanceToPoint.js';
+import distanceToPointSquared from './distanceToPointSquared.js';
+import distanceToPointSquaredInfo from './distanceToPointSquaredInfo.js';
+import intersectLine from './intersectLine.js';
+import isPointOnLineSegment from './isPointOnLineSegment.js';
 
 export {
   distanceToPoint,
