@@ -1,4 +1,4 @@
-import detectGPU from 'detect-gpu';
+import { getGPUTier } from 'detect-gpu';
 import { SharedArrayBufferModes } from './enums/index.js';
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine.js';
 let csRenderInitialized = false;
@@ -8,7 +8,7 @@ import { deepMerge } from './utilities/index.js';
 import { Cornerstone3DConfig } from './types/index.js';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager.js';
 
-const getGPUTier = detectGPU.getGPUTier;
+// const getGPUTier = detectGPU.getGPUTier;
 
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
