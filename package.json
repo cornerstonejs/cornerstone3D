@@ -36,6 +36,7 @@
     "dev": "yarn run all-examples",
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
+    "install:yml": "echo Start of YML install && yarn && echo Done YML install",
     "preinstall": "node preinstall.js",
     "prepare": "husky install",
     "commit:prepare": "yarn build:update-api && yarn test:ci && yarn test:unit",
