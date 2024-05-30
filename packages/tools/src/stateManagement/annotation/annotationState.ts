@@ -252,11 +252,15 @@ function removeAllAnnotations(): void {
 /**
  * Removes all annotations associated with the specified group (FrameOfReferenceUID) and tool, or
  * all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
- * @param groupKey - The group key to remove annotations for (in default manager it is FrameOfReferenceUID).
+ * @param annotationGroupSelector - The group (FrameOfReferenceUID) to remove annotations for.
  * @param toolName - Optional. The name of the tool to remove annotations for.
  */
-function removeAnnotations(groupKey: string, toolName?: string): void {
+function removeAnnotations(
+  annotationGroupSelector: AnnotationGroupSelector,
+  toolName?: string
+): void {
   const manager = getAnnotationManager();
+  const groupKey = manager.getGroupKey(annotationGroupSelector);
   const removedAnnotations = manager.removeAnnotations(groupKey, toolName);
 
   for (const annotation of removedAnnotations) {

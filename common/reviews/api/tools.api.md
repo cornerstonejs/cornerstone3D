@@ -4520,7 +4520,7 @@ function removeAllAnnotations(): void;
 function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
-function removeAnnotations(groupKey: string, toolName?: string): void;
+function removeAnnotations(annotationGroupSelector: AnnotationGroupSelector, toolName?: string): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
