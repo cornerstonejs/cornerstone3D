@@ -21,7 +21,8 @@ jobs:
             - packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
             - packages-v1-{{ .Branch }}-
             - packages-v1-
-      - run: yarn install --frozen-lockfile
+      # Was, todo restore it - run: yarn install --frozen-lockfile
+      - run: yarn install -f
       - save_cache:
           name: Save Package Cache
           paths:
