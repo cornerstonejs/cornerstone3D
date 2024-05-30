@@ -5,9 +5,6 @@
 /static/_headers
 /static/_redirects
 /static/.nojekyll
-/static/external-*
-/static/README.md
-
 
 # Production
 /build
