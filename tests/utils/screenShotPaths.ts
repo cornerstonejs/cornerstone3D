@@ -33,6 +33,9 @@ const screenShotPaths = {
     resetToDefaultViewportProperties: 'resetToDefaultViewportProperties.png',
     resetMetadata: 'resetMetadata.png',
   },
+  volumeBasic: {
+    viewport: 'viewport.png',
+  },
 };
 
 export { screenShotPaths };

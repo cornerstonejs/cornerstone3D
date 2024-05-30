@@ -1,5 +1,9 @@
-import global from '../global';
 import { getShouldUseSharedArrayBuffer } from '../init';
+
+const SMALL_MEMORY_LIMIT = 2 * 1024 * 1024 * 1024 - 2;
+const BIG_MEMORY_LIMIT = SMALL_MEMORY_LIMIT * 2;
+// Wasm page size
+const PAGE_SIZE = 65536;
 
 /**
  * A helper function that creates a new Float32Array that utilized a shared
@@ -37,9 +41,20 @@ function createFloat32SharedArray(length: number): Float32Array {
     );
   }
 
-  const sharedArrayBuffer = new SharedArrayBuffer(length * 4);
+  const byteLength = length * 4;
 
-  return new Float32Array(sharedArrayBuffer);
+  if (byteLength < SMALL_MEMORY_LIMIT) {
+    const sharedArrayBuffer = new SharedArrayBuffer(byteLength);
+    return new Float32Array(sharedArrayBuffer);
+  } else if (byteLength < BIG_MEMORY_LIMIT) {
+    const pages = Math.ceil(byteLength / PAGE_SIZE);
+    const memory = new WebAssembly.Memory({
+      initial: pages,
+      maximum: pages,
+      shared: true,
+    });
+    return new Float32Array(memory.buffer, 0, length);
+  }
 }
 
 export default createFloat32SharedArray;

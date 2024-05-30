@@ -13,10 +13,13 @@ import type { TierResult } from 'detect-gpu';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
@@ -2584,6 +2587,9 @@ function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<
 
 // @public (undocumented)
 function getChildAnnotations(annotation: Annotation): Annotation[];
+
+// @public (undocumented)
+function getClosestImageIdForStackViewport(viewport: StackViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3): string;
 
 // @public (undocumented)
 function getClosestLineSegmentIntersection(points: Types_2.Point2[], p1: Types_2.Point2, q1: Types_2.Point2, closed?: boolean): {
@@ -6119,7 +6125,8 @@ declare namespace utilities {
         voi,
         AnnotationFrameRange as annotationFrameRange,
         contourSegmentation,
-        annotationHydration
+        annotationHydration,
+        getClosestImageIdForStackViewport
     }
 }
 export { utilities }

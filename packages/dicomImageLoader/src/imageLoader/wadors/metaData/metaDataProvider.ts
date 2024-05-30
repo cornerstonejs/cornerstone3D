@@ -133,6 +133,7 @@ function metaDataProvider(type, imageId) {
       imageOrientationPatient: extractOrientationFromMetadata(metaData),
       imagePositionPatient: extractPositionFromMetadata(metaData),
       sliceThickness: getNumberValue(metaData['00180050']),
+      spacingBetweenSlices: getNumberValue(metaData['00180088']),
       pixelSpacing: getNumberValues(metaData['00280030'], 2),
       numberOfFrames: getNumberValue(metaData['00280008']),
       isNMReconstructable:

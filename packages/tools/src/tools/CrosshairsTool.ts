@@ -143,6 +143,12 @@ class CrosshairsTool extends AnnotationTool {
         // renders a colored circle on top right of the viewports whose color
         // matches the color of the reference line
         viewportIndicators: true,
+
+        viewportIndicatorsConfig: {
+          radius: 5,
+          x: null,
+          y: null,
+        },
         // Auto pan is a configuration which will update pan
         // other viewports in the toolGroup if the center of the crosshairs
         // is outside of the viewport. This might be useful for the case
@@ -1449,20 +1455,24 @@ class CrosshairsTool extends AnnotationTool {
     data.handles.slabThicknessPoints = newStpoints;
 
     if (this.configuration.viewportIndicators) {
-      // render a circle to pin point the viewport color
-      // TODO: This should not be part of the tool, and definitely not part of the renderAnnotation loop
+      const { viewportIndicatorsConfig } = this.configuration;
+
+      const xOffset = viewportIndicatorsConfig?.xOffset || 0.95;
+      const yOffset = viewportIndicatorsConfig?.yOffset || 0.05;
       const referenceColorCoordinates = [
-        clientWidth * 0.95,
-        clientHeight * 0.05,
-      ] as Types.Point2;
-      const circleRadius = canvasDiagonalLength * 0.01;
+        clientWidth * xOffset,
+        clientHeight * yOffset,
+      ];
+
+      const circleRadius =
+        viewportIndicatorsConfig?.circleRadius || canvasDiagonalLength * 0.01;
 
       const circleUID = '0';
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
         circleUID,
-        referenceColorCoordinates,
+        referenceColorCoordinates as Types.Point2,
         circleRadius,
         { color, fill: color }
       );

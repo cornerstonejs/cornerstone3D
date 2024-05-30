@@ -254,8 +254,16 @@ function metaDataProvider(type, imageId) {
   // Note: this is not a DICOM module, but a useful metadata that can be
   // retrieved from the image
   if (type === 'transferSyntax') {
+    let transferSyntaxUID;
+
+    try {
+      transferSyntaxUID = dataSet.string('x00020010');
+    } catch (error) {
+      // Do nothing
+    }
+
     return {
-      transferSyntaxUID: dataSet.string('x00020010'),
+      transferSyntaxUID,
     };
   }
 
