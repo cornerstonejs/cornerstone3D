@@ -15,9 +15,9 @@
 # COMMENT: Why we specify YARN_FLAGS: https://www.netlify.com/docs/build-gotchas/#yarn
 [build.environment]
   NODE_VERSION = "16.14.0"
-  YARN_VERSION = "1.22.5"
+  YARN_VERSION = "1.22.22"
   NETLIFY_USE_YARN = "true"
-  YARN_FLAGS = "--no-ignore-optional --pure-lockfile"
+  YARN_FLAGS = ""
   NODE_OPTIONS = "--max_old_space_size=16384"
 
 # COMMENT: This a rule for Single Page Applications

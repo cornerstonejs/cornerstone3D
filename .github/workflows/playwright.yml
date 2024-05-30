@@ -13,7 +13,7 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 18
-    - name: Install dependencies
+    - name: Install dependencies playwright
       run: yarn install:yml
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
