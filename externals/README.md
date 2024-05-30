@@ -7,5 +7,12 @@ local to your own build.
 To add a default external dependency, create a sub-folder named `external-<NAME>`,
 for default dependencies, and `local-<NAME>` for site specific dependencies.
 
-You can then install/build with
-`yarn install --force --ignore-optional`
+You can then install with
+`yarn install`
+
+You can skip installation of large/extra packages with:
+`yarn install --ignore-optional`
+
+to re-install optionals, you have to:
+`rm yarn.lock && yarn install`
+(the `yarn install -f` does NOT know how to re-install optionals)

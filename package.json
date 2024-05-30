@@ -37,6 +37,7 @@
     "docs:watch": "npx lerna run docs:watch",
     "preinstall": "node preinstall.js",
     "prepare": "husky install",
+    "commit:prepare": "yarn build:update-api && yarn test:ci && yarn test:unit",
     "start": "yarn run dev",
     "test:e2e:ci": "npx playwright test",
     "test:e2e:headed": "npx playwright test --headed",
