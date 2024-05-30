@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.2...v1.77.3) (2024-05-30)
+
+### Bug Fixes
+
+- Disable viewport indicators in CrosshairsTool by default ([#1296](https://github.com/cornerstonejs/cornerstone3D/issues/1296)) ([dbf3e88](https://github.com/cornerstonejs/cornerstone3D/commit/dbf3e881290cb382ec3dd665711c22cc931a1632))
+
 ## [1.77.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.1...v1.77.2) (2024-05-29)
 
 ### Bug Fixes
