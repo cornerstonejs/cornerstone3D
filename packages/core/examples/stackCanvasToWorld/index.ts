@@ -1,4 +1,4 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Types, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -12,11 +12,12 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const { worldToImageCoords } = utilities;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Stack CanvasToWorld',
-  'Displays the world coordinate when the mouse is moved over the canvas.'
+  'Displays the world and image (ijk) coordinates when the mouse is moved over the canvas.'
 );
 
 const content = document.getElementById('content');
@@ -31,14 +32,17 @@ const mousePosDiv = document.createElement('div');
 
 const canvasPosElement = document.createElement('p');
 const worldPosElement = document.createElement('p');
+const imagePosElement = document.createElement('p');
 
 canvasPosElement.innerText = 'canvas:';
 worldPosElement.innerText = 'world:';
+imagePosElement.innerText = 'image (ijk):';
 
 content.appendChild(mousePosDiv);
 
 mousePosDiv.appendChild(canvasPosElement);
 mousePosDiv.appendChild(worldPosElement);
+mousePosDiv.appendChild(imagePosElement);
 
 // ============================= //
 
@@ -101,11 +105,16 @@ async function run() {
     ];
     // Convert canvas coordinates to world coordinates
     const worldPos = viewport.canvasToWorld(canvasPos);
+    // Convert world coordinates to image (ijk) coordinates
+    const imagePos = worldToImageCoords(viewport.getCurrentImageId(), worldPos);
 
     canvasPosElement.innerText = `canvas: (${canvasPos[0]}, ${canvasPos[1]})`;
     worldPosElement.innerText = `world: (${worldPos[0].toFixed(
       2
     )}, ${worldPos[1].toFixed(2)}, ${worldPos[2].toFixed(2)})`;
+    imagePosElement.innerText = `image (ijk): (${imagePos[0].toFixed(
+      2
+    )}, ${imagePos[1].toFixed(2)}, ${imagePos[2].toFixed(2)})`;
   });
 }
 
