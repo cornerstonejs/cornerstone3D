@@ -25,6 +25,7 @@ module.exports = {
       type: 'umd',
       umdNamedDefine: true,
     },
+    publicPath: '',
     globalObject: 'this',
     path: outputPath,
     filename: '[name].bundle.min.js',
