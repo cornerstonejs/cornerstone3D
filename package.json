@@ -9,6 +9,7 @@
   ],
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
+  "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=12",
     "yarn": ">=1.19.1"
