@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.1...v1.77.2) (2024-05-29)
+
+### Bug Fixes
+
+- **seg:** Handle useSharedArrayBuffer configuration properly in volume creation ([#1290](https://github.com/cornerstonejs/cornerstone3D/issues/1290)) ([561bd4b](https://github.com/cornerstonejs/cornerstone3D/commit/561bd4bcd556d968b8e4f9ec48061aaeb434e045))
+
 ## [1.77.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.0...v1.77.1) (2024-05-29)
 
 ### Bug Fixes

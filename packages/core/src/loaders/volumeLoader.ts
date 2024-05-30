@@ -31,7 +31,7 @@ import {
   IVolumeLoadObject,
   PixelDataTypedArrayString,
 } from '../types';
-import { getConfiguration } from '../init';
+import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 import {
   performCacheOptimizationForVolume,
   setupCacheOptimizationEventListener,
@@ -643,7 +643,7 @@ function generateVolumeScalarData(
   }
 
   let volumeScalarData;
-  if (targetBuffer?.sharedArrayBuffer) {
+  if (targetBuffer?.sharedArrayBuffer ?? getShouldUseSharedArrayBuffer()) {
     switch (targetBuffer.type) {
       case 'Float32Array':
         volumeScalarData = createFloat32SharedArray(scalarLength);
