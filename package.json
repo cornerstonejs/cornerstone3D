@@ -3,7 +3,9 @@
   "description": "Cornerstone.js Monorepo Root",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "externals/local-*",
+    "externals/external-*"
   ],
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
@@ -23,8 +25,6 @@
     "build:update-api:nifti": "cd packages/nifti-volume-loader && npm run build:update-api",
     "build:update-api:streaming": "cd packages/streaming-image-volume-loader && npm run build:update-api",
     "build:update-api": "npm run build:update-api:core && npm run build:update-api:tools && npm run build:update-api:streaming && npm run build:update-api:nifti",
-    "install:externals": "cd externals && yarn install",
-    "clean:externals": "rimraf externals/node_modules externals/package.json",
     "clean": "npx lerna run clean --stream",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
@@ -131,7 +131,7 @@
     "lint-staged": "^13.2.2",
     "lodash": "^4.17.21",
     "mocha": "^9.1.1",
-    "netlify-cli": "^14.3.1",
+    "netlify-cli": "^17.25.0",
     "open-cli": "^7.0.1",
     "path-browserify": "^1.0.1",
     "postcss": "^8.4.23",

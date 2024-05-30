@@ -16,6 +16,8 @@ const exclude = excludeNodeModulesExcept([]);
  */
 module.exports = (env, argv, { DIST_DIR }) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
+  const isProdBuild = argv.mode !== 'development';
+  const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js';
 
   const config = {
     devtool: 'eval-source-map',

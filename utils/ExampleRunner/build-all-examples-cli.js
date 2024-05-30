@@ -130,7 +130,7 @@ if (configuration.examples) {
   shell.cd('../../dicomImageLoader');
   shell.exec(`yarn run webpack:dynamic-import`);
   shell.cd('../..');
-  shell.exec('yarn install:externals');
+  shell.exec('yarn');
 
   shell.cd(currentWD);
 
