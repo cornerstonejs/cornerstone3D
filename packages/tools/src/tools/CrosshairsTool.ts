@@ -54,27 +54,6 @@ import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
-// TODO: nested config is weird
-interface ToolConfiguration {
-  configuration?: {
-    getReferenceLineColor?: (viewportId: string) => string;
-    getReferenceLineControllable?: (viewportId: string) => boolean;
-    getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
-    getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
-    referenceLinesCenterGapRadius?: number;
-    shadow?: boolean;
-    autopan?: {
-      enabled: boolean;
-      panSize: number;
-    };
-    mobile?: {
-      enabled: boolean;
-      opacity: number;
-      handleRadius: number;
-    };
-  };
-}
-
 interface CrosshairsAnnotation extends Annotation {
   data: {
     handles: {
@@ -142,7 +121,7 @@ class CrosshairsTool extends AnnotationTool {
         shadow: true,
         // renders a colored circle on top right of the viewports whose color
         // matches the color of the reference line
-        viewportIndicators: true,
+        viewportIndicators: false,
 
         viewportIndicatorsConfig: {
           radius: 5,
@@ -1454,6 +1433,7 @@ class CrosshairsTool extends AnnotationTool {
     data.handles.rotationPoints = newRtpoints;
     data.handles.slabThicknessPoints = newStpoints;
 
+    debugger;
     if (this.configuration.viewportIndicators) {
       const { viewportIndicatorsConfig } = this.configuration;
 
