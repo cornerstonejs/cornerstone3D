@@ -176,8 +176,5 @@
     "not dead",
     "not ie < 11",
     "not op_mini all"
-  ],
-  "resolutions": {
-    "dicom-microscopy-viewer": "file:./externals/external-dicom-microscopy-viewer/dicom-microscopy-viewer-0.46.1.tgz"
-  }
+  ]
 }
