@@ -614,7 +614,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     const { viewPlaneNormal } = target;
     const delta =
-      (viewRefSpecifier.sliceIndex as number) - this.getCurrentImageIdIndex();
+      (viewRefSpecifier.sliceIndex as number) - this.getSliceIndex();
     // Calculate a camera focal point and position
     const { sliceRangeInfo } = getVolumeViewportScrollInfo(
       this,
@@ -657,7 +657,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (options?.withNavigation) {
       return true;
     }
-    const currentSliceIndex = this.getCurrentImageIdIndex();
+    const currentSliceIndex = this.getSliceIndex();
     const { sliceIndex } = viewRef;
     if (Array.isArray(sliceIndex)) {
       return (
@@ -1757,7 +1757,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       )?.uid;
     }
 
-    const currentIndex = this.getCurrentImageIdIndex();
+    const currentIndex = this.getSliceIndex();
     sliceIndex ??= currentIndex;
     const { viewPlaneNormal, focalPoint } = this.getCamera();
     const querySeparator = volumeId.indexOf('?') > -1 ? '&' : '?';

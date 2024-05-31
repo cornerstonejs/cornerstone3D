@@ -29,7 +29,7 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import { vec3 } from 'gl-matrix';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -90,15 +90,6 @@ class VolumeViewport extends BaseVolumeViewport {
   public getNumberOfSlices = (): number => {
     const { numberOfSlices } = getImageSliceDataForVolumeViewport(this);
     return numberOfSlices;
-  };
-
-  /**
-   * Returns the image index associated with the volume viewport.
-   * @returns The image index.
-   */
-  public getSliceIndex = (): number => {
-    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
-    return imageIndex;
   };
 
   /**
@@ -387,23 +378,52 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
-   * Uses the slice range information to compute the current image id index.
-   * Note that this may be offset from the origin location, or opposite in
-   * direction to the distance from the origin location, as the index is a
-   * complete index from minimum to maximum.
+   * Returns the imageId index of the current slice in the volume viewport.
+   * Note: this is not guaranteed to be the same as the slice index in the view
+   * To get the slice index in the view (scroll position), use getSliceIndex()
+   *
+   * In future we will even delete this method as it should not be used
+   * at all.
    *
    * @returns The slice index in the direction of the view
    */
-  public getCurrentImageIdIndex = (
-    volumeId?: string,
-    useSlabThickness = true
-  ): number => {
-    const { currentStepIndex } = getVolumeViewportScrollInfo(
-      this,
-      volumeId || this.getVolumeId(),
-      useSlabThickness
+  public getCurrentImageIdIndex = (volumeId?: string): number => {
+    const { viewPlaneNormal, focalPoint } = this.getCamera();
+
+    const imageData = this.getImageData(volumeId);
+
+    if (!imageData) {
+      return;
+    }
+
+    const { origin, direction, spacing } = imageData;
+
+    const spacingInNormal = getSpacingInNormalDirection(
+      { direction, spacing },
+      viewPlaneNormal
     );
-    return currentStepIndex;
+    const sub = vec3.create();
+    vec3.sub(sub, focalPoint, origin);
+    const distance = vec3.dot(sub, viewPlaneNormal);
+
+    // divide by the spacing in the normal direction to get the
+    // number of steps, and subtract 1 to get the index
+    return Math.round(Math.abs(distance) / spacingInNormal);
+  };
+
+  /**
+   * Returns the image index associated with the volume viewport in the current view, the difference
+   * between this method and getCurrentImageIdIndex is that this method returns the index of the
+   * slice in the volume in view direction so at the top (scrollbar top) of the viewport the index
+   * will be 0 and at the bottom (scrollbar bottom) the index will be the number of slices - 1.
+   * But the getCurrentImageIdIndex returns the index of current image in the imageIds
+   * which is not guaranteed to be the same as the slice index in the view.
+   *
+   * @returns The image index.
+   */
+  public getSliceIndex = (): number => {
+    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
+    return imageIndex;
   };
 
   /**
