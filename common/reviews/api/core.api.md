@@ -2224,6 +2224,8 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3131,6 +3133,8 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex: () => number;
+    // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3623,6 +3627,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected getScalarData(): CanvasScalarData;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3797,6 +3803,8 @@ export class Viewport implements IViewport {
     getRenderingEngine(): IRenderingEngine;
     // (undocumented)
     getRotation: () => number;
+    // (undocumented)
+    getSliceIndex(): number;
     // (undocumented)
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
@@ -4178,7 +4186,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
-    getCurrentImageIdIndex: (volumeId?: string, useSlabThickness?: boolean) => number;
+    getCurrentImageIdIndex: (volumeId?: string) => number;
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
