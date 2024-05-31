@@ -5,7 +5,7 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: cimg/node:20.14.0-browsers
+    - image: cimg/node:18.19.0-browsers
       environment:
         TERM: xterm # Enable colors in term
 

@@ -4,8 +4,8 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "externals/local-*",
-    "externals/external-*"
+    "addOns/externals/*",
+    "addOns/local/*"
   ],
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
@@ -36,8 +36,9 @@
     "dev": "yarn run all-examples",
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
-    "install:yml": "echo Start of YML install && yarn && echo Done YML install",
+    "install:yml": "yarn && yarn postinstall",
     "preinstall": "node preinstall.js",
+    "postinstall": "node postinstall.js",
     "prepare": "husky install",
     "commit:prepare": "yarn build:update-api && yarn test:ci && yarn test:unit",
     "start": "yarn run dev",
