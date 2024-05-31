@@ -747,7 +747,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     if (options.withNavigation) {
       return true;
     }
-    const currentIndex = this.getCurrentImageIdIndex();
+    const currentIndex = this.getSliceIndex();
     if (Array.isArray(sliceIndex)) {
       return currentIndex >= sliceIndex[0] && currentIndex <= sliceIndex[1];
     }
@@ -796,6 +796,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
   public getCurrentImageIdIndex() {
     return Math.round(this.videoElement.currentTime * this.fps);
+  }
+
+  public getSliceIndex() {
+    return this.getCurrentImageIdIndex();
   }
 
   public getCamera(): ICamera {

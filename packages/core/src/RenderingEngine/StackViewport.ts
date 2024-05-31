@@ -2881,6 +2881,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   };
 
   /**
+   * returns the slice index of the view
+   * @returns slice index
+   */
+  public getSliceIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  /**
    * Checks to see if this target is or could be shown in this viewport
    */
   public isReferenceViewable(
