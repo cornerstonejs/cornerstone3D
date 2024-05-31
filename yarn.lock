@@ -16179,10 +16179,10 @@ netlify@^13.1.10, netlify@^13.1.5:
     p-wait-for "^4.0.0"
     qs "^6.9.6"
 
-nifti-reader-js@^0.6.6:
-  version "0.6.6"
-  resolved "https://registry.npmjs.org/nifti-reader-js/-/nifti-reader-js-0.6.6.tgz"
-  integrity sha512-MsqoX2MxZ7wkRPgLMNNRY3IrbMijfTtnirfhe7laR/YuqSOJytUV4BbKCmynKylbLz5JNjdLi86NRvrOEp0zuQ==
+nifti-reader-js@^0.6.8:
+  version "0.6.8"
+  resolved "https://registry.yarnpkg.com/nifti-reader-js/-/nifti-reader-js-0.6.8.tgz#658ae7b426880f147149b0ec6fffc39e3eb03e0a"
+  integrity sha512-yIKNVzYFiUcSHazoR+sd6Ka7sUmZTabaVqJRFxbdlAKR1hnPBuNP71g3AyApo37nJ3k41c632QPij5q7gF1YPQ==
   dependencies:
     fflate "*"
 
