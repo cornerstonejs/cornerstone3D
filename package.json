@@ -9,7 +9,6 @@
   ],
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
-  "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=18",
     "yarn": ">=1.19.1"
@@ -36,7 +35,6 @@
     "dev": "yarn run all-examples",
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
-    "install:yml": "yarn && yarn postinstall",
     "preinstall": "node preinstall.js",
     "postinstall": "node postinstall.js",
     "prepare": "husky install",
@@ -135,7 +133,7 @@
     "lint-staged": "^13.2.2",
     "lodash": "^4.17.21",
     "mocha": "^9.1.1",
-    "netlify-cli": "^17.25.0",
+    "netlify-cli": "^14.3.1",
     "open-cli": "^7.0.1",
     "path-browserify": "^1.0.1",
     "postcss": "^8.4.23",

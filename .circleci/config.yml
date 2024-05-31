@@ -22,7 +22,7 @@ jobs:
             - packages-v1-{{ .Branch }}-
             - packages-v1-
       # Was, todo restore it - run: yarn install --frozen-lockfile
-      - run: yarn install:yml
+      - run: yarn install --frozen-lockfile
       - save_cache:
           name: Save Package Cache
           paths:

@@ -8,6 +8,6 @@
     "yarn": ">=1.19.1"
   },
   "scripts": {
-    "build": "Installed right now in postinstall.js, todo add as optionalDependency once released"
+    "build": "echo Installed right now in postinstall.js, todo add as optionalDependency once released"
   }
 }

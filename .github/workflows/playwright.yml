@@ -14,7 +14,7 @@ jobs:
       with:
         node-version: 18
     - name: Install dependencies playwright
-      run: yarn install:yml
+      run: yarn install --frozen-lockfile
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
