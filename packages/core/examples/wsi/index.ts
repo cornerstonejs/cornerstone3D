@@ -37,7 +37,7 @@ const viewportId = 'videoViewport';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'WSI - Whole Slide Imaging Viewport',
-  'Demonstrates viewing of whole slide imaging data'
+  'Demonstrates viewing of whole slide imaging data using an external library'
 );
 
 addButtonToToolbar({
