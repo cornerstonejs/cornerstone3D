@@ -103,6 +103,11 @@ export function extend(publicAPI, model, initialValues = {}) {
   // Object methods
   vtkStreamingOpenGLViewNodeFactory(publicAPI, model);
 
+  console.log('vtkStreamingOpenGLViewNodeFactory');
+  console.log(publicAPI);
+  console.log(publicAPI.registerOverride);
+  console.log('vtkStreamingOpenGLViewNodeFactory');
+
   // Initialization
   publicAPI.registerOverride('vtkActor', vtkOpenGLActor.newInstance);
   publicAPI.registerOverride('vtkActor2D', vtkOpenGLActor2D.newInstance);

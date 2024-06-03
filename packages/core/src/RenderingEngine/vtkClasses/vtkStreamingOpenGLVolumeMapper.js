@@ -1,12 +1,16 @@
 import { mat3, mat4, vec3 } from 'gl-matrix';
 import macro from '@kitware/vtk.js/macros.js';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper.js';
-import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants.js';
-import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants.js';
+import vtkTextureConstants from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants.js';
+import vtkDataArrayConstants from '@kitware/vtk.js/Common/Core/DataArray/Constants.js';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
-import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants.js';
+import vtkPropertyConstants from '@kitware/vtk.js/Rendering/Core/Property/Constants.js';
 
 const { vtkWarningMacro } = macro;
+
+const { Filter } = vtkTextureConstants;
+const { Representation } = vtkPropertyConstants;
+const { VtkDataTypes } = vtkDataArrayConstants;
 /**
  * vtkStreamingOpenGLVolumeMapper - A dervied class of the core vtkOpenGLVolumeMapper class.
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
