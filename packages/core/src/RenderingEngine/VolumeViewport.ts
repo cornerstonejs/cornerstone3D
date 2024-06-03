@@ -3,28 +3,28 @@ import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import { vec3 } from 'gl-matrix';
 
-import cache from '../cache';
-import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis, Events } from '../enums';
+import cache from '../cache/index.js';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants/index.js';
+import { BlendModes, OrientationAxis, Events } from '../enums/index.js';
 import type {
   ActorEntry,
   IImageVolume,
   IVolumeInput,
   OrientationVectors,
   Point3,
-} from '../types';
-import type { ViewportInput } from '../types/IViewport';
+} from '../types/index.js';
+import type { ViewportInput } from '../types/IViewport.js';
 import {
   actorIsA,
   getClosestImageId,
   getSpacingInNormalDirection,
   isImageActor,
   triggerEvent,
-} from '../utilities';
-import BaseVolumeViewport from './BaseVolumeViewport';
-import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import { ImageActor } from '../types/IActor';
+} from '../utilities/index.js';
+import BaseVolumeViewport from './BaseVolumeViewport.js';
+import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI.js';
+import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils.js';
+import { ImageActor } from '../types/IActor.js';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render

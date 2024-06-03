@@ -1,7 +1,7 @@
 import {
   SegmentationPublicInput,
   Segmentation,
-} from '../../../types/SegmentationStateTypes';
+} from '../../../types/SegmentationStateTypes.js';
 
 /**
  * It takes in a segmentation input and returns a segmentation with default values

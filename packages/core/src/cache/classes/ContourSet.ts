@@ -1,6 +1,11 @@
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import { Point3, IContourSet, IContour, ContourData } from '../../types';
-import Contour from './Contour';
+import {
+  Point3,
+  IContourSet,
+  IContour,
+  ContourData,
+} from '../../types/index.js';
+import Contour from './Contour.js';
 
 type ContourSetProps = {
   id: string;

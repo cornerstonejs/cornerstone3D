@@ -17,13 +17,17 @@ module.exports = {
   entry: {
     cornerstoneDICOMImageLoader: './imageLoader/index.ts',
   },
-  target: 'web',
+  target: 'node',
+  node: {
+    __filename: true
+  },
   output: {
     library: {
       name: 'cornerstoneDICOMImageLoader',
       type: 'umd',
       umdNamedDefine: true,
     },
+    publicPath: '',
     globalObject: 'this',
     path: outputPath,
     filename: '[name].bundle.min.js',
@@ -40,8 +44,8 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.js'],
     fallback: {
-      fs: false,
-      path: false,
+      // fs: false,
+      // path: false,
     },
   },
   module: {

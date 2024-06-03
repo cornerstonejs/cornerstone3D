@@ -6,13 +6,13 @@ import {
   CONSTANTS,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { AnnotationRemovedEventType } from '../types/EventTypes';
-import { Events as cstEvents } from '../enums';
+import { AnnotationRemovedEventType } from '../types/EventTypes.js';
+import { Events as cstEvents } from '../enums/index.js';
 import {
   AdvancedMagnifyViewport,
   AutoPanCallback,
-} from './AdvancedMagnifyViewport';
-import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
+} from './AdvancedMagnifyViewport.js';
+import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes.js';
 
 // Defined the tool name internally instead of importing
 // AdvangedMagnifyTool due to cyclic dependency

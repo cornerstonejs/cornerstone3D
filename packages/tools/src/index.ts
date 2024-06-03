@@ -1,4 +1,4 @@
-import { init, destroy } from './init';
+import { init, destroy } from './init.js';
 import {
   addTool,
   removeTool,
@@ -7,18 +7,18 @@ import {
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
-} from './store';
+} from './store/index.js';
 
-import * as CONSTANTS from './constants';
+import * as CONSTANTS from './constants/index.js';
 
 // Name spaces
-import * as synchronizers from './synchronizers';
-import * as drawing from './drawingSvg';
-import * as utilities from './utilities';
-import * as cursors from './cursors';
-import * as Types from './types';
-import * as annotation from './stateManagement/annotation';
-import * as segmentation from './stateManagement/segmentation';
+import * as synchronizers from './synchronizers/index.js';
+import * as drawing from './drawingSvg/index.js';
+import * as utilities from './utilities/index.js';
+import * as cursors from './cursors/index.js';
+import * as Types from './types/index.js';
+import * as annotation from './stateManagement/annotation/index.js';
+import * as segmentation from './stateManagement/segmentation/index.js';
 
 import {
   BaseTool,
@@ -62,11 +62,11 @@ import {
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
-} from './tools';
+} from './tools/index.js';
 
-import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
+import VideoRedactionTool from './tools/annotation/VideoRedactionTool.js';
 
-import * as Enums from './enums';
+import * as Enums from './enums/index.js';
 
 export {
   VideoRedactionTool,

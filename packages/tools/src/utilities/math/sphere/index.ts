@@ -1,3 +1,3 @@
-import pointInSphere from './pointInSphere';
+import pointInSphere from './pointInSphere.js';
 
 export { pointInSphere };

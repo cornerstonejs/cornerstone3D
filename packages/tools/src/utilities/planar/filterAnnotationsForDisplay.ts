@@ -6,8 +6,8 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
-import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
-import { Annotations } from '../../types';
+import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice.js';
+import { Annotations } from '../../types/index.js';
 
 /**
  * Given the viewport and the annotations, it filters the annotations array and only

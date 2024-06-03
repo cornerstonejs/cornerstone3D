@@ -1,2 +1,2 @@
-export { WidgetProps } from './WidgetProps';
-export { WidgetSize } from './WidgetSize';
+export { WidgetProps } from './WidgetProps.js';
+export { WidgetSize } from './WidgetSize.js';

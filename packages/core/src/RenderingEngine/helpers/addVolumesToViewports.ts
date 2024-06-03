@@ -1,6 +1,6 @@
-import { VolumeViewport } from '../';
-import BaseVolumeViewport from '../BaseVolumeViewport';
-import type { IVolumeInput, IRenderingEngine } from '../../types';
+import { VolumeViewport } from '..//index.js';
+import BaseVolumeViewport from '../BaseVolumeViewport.js';
+import type { IVolumeInput, IRenderingEngine } from '../../types/index.js';
 
 /**
  * For each provided viewport it adds a volume to the viewport using the

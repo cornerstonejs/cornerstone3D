@@ -7,16 +7,16 @@ import type {
   SegmentSpecificRepresentationConfig,
   ToolGroupSpecificRepresentation,
   ToolGroupSpecificRepresentations,
-} from '../../types/SegmentationStateTypes';
-import { defaultSegmentationStateManager } from './SegmentationStateManager';
+} from '../../types/SegmentationStateTypes.js';
+import { defaultSegmentationStateManager } from './SegmentationStateManager.js';
 import {
   triggerSegmentationModified,
   triggerSegmentationRemoved,
   triggerSegmentationRepresentationModified,
   triggerSegmentationRepresentationRemoved,
-} from './triggerSegmentationEvents';
+} from './triggerSegmentationEvents.js';
 
-import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
+import normalizeSegmentationInput from './helpers/normalizeSegmentationInput.js';
 
 /**
  * It returns the defaultSegmentationStateManager.

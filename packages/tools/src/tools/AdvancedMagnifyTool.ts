@@ -1,4 +1,4 @@
-import { AnnotationTool } from './base';
+import { AnnotationTool } from './base/index.js';
 
 import {
   getEnabledElement,
@@ -11,35 +11,35 @@ import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
   getAnnotations,
-} from '../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
+} from '../stateManagement/annotation/annotationState.js';
+import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking.js';
+import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility.js';
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
-} from '../drawingSvg';
-import { state } from '../store';
-import { Events, MouseBindings, KeyboardBindings } from '../enums';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+} from '../drawingSvg/index.js';
+import { state } from '../store/index.js';
+import { Events, MouseBindings, KeyboardBindings } from '../enums/index.js';
+import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../cursors/elementCursor';
+} from '../cursors/elementCursor.js';
 import {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../types';
-import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
+} from '../types/index.js';
+import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes.js';
 
-import { AnnotationCompletedEventDetail } from '../types/EventTypes';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../types/AnnotationStyle';
-import { getCanvasCircleRadius } from '../utilities/math/circle';
-import AdvancedMagnifyViewportManager from './AdvancedMagnifyViewportManager';
-import type { AutoPanCallbackData } from './AdvancedMagnifyViewport';
+import { AnnotationCompletedEventDetail } from '../types/EventTypes.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
+import { getCanvasCircleRadius } from '../utilities/math/circle/index.js';
+import AdvancedMagnifyViewportManager from './AdvancedMagnifyViewportManager.js';
+import type { AutoPanCallbackData } from './AdvancedMagnifyViewport.js';
 
 class AdvancedMagnifyTool extends AnnotationTool {
   static toolName;

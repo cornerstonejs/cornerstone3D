@@ -1,8 +1,8 @@
-import calculateTransform from './calculateTransform';
+import calculateTransform from './calculateTransform.js';
 import {
   CPUFallbackEnabledElement,
   CPUFallbackTransform,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 export default function (
   enabledElement: CPUFallbackEnabledElement

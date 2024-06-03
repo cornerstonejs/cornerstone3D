@@ -1,6 +1,6 @@
-import { StyleSpecifier } from '../../../types/AnnotationStyle';
-import { ToolModes, AnnotationStyleStates } from '../../../enums';
-import toolStyle from './ToolStyle';
+import { StyleSpecifier } from '../../../types/AnnotationStyle.js';
+import { ToolModes, AnnotationStyleStates } from '../../../enums/index.js';
+import toolStyle from './ToolStyle.js';
 
 /**
  * Build a list of hierarchal property names in ascending order of priority

@@ -1,8 +1,8 @@
-import { IImage, CPUFallbackEnabledElement } from '../types';
+import { IImage, CPUFallbackEnabledElement } from '../types/index.js';
 
-import getDefaultViewport from '../RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
-import calculateTransform from '../RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';
-import drawImageSync from '../RenderingEngine/helpers/cpuFallback/drawImageSync';
+import getDefaultViewport from '../RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport.js';
+import calculateTransform from '../RenderingEngine/helpers/cpuFallback/rendering/calculateTransform.js';
+import drawImageSync from '../RenderingEngine/helpers/cpuFallback/drawImageSync.js';
 
 /**
  * Renders a cornerstone image object to a canvas.

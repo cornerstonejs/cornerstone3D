@@ -1,5 +1,5 @@
-import InterpolationType from '../enums/InterpolationType';
-import { ViewportProperties } from './ViewportProperties';
+import InterpolationType from '../enums/InterpolationType.js';
+import { ViewportProperties } from './ViewportProperties.js';
 
 /**
  * Stack Viewport Properties

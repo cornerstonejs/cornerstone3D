@@ -1,10 +1,10 @@
-import { BaseTool } from './base';
+import { BaseTool } from './base/index.js';
 import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
-import jumpToWorld from '../utilities/viewport/jumpToWorld';
-import { PublicToolProps, ToolProps } from '../types';
-import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { getPointInLineOfSightWithCriteria } from '../utilities/planar/index.js';
+import jumpToWorld from '../utilities/viewport/jumpToWorld.js';
+import { PublicToolProps, ToolProps } from '../types/index.js';
+import { getToolGroupForViewport } from '../store/ToolGroupManager/index.js';
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the

@@ -8,23 +8,23 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
-import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+import Representations from '../../../enums/SegmentationRepresentations.js';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig.js';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
-} from '../../../types/LabelmapTypes';
+} from '../../../types/LabelmapTypes.js';
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
+} from '../../../types/SegmentationStateTypes.js';
 
-import addLabelmapToElement from './addLabelmapToElement';
+import addLabelmapToElement from './addLabelmapToElement.js';
 
-import removeLabelmapFromElement from './removeLabelmapFromElement';
+import removeLabelmapFromElement from './removeLabelmapFromElement.js';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();

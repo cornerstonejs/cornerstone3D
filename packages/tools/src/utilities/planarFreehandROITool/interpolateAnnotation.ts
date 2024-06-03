@@ -1,8 +1,8 @@
 import { Types } from '@cornerstonejs/core';
-import { PlanarFreehandROITool } from '../../tools';
-import { ToolGroupManager } from '../../store';
-import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
+import { PlanarFreehandROITool } from '../../tools/index.js';
+import { ToolGroupManager } from '../../store/index.js';
+import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints.js';
 
 function shouldPreventInterpolation(
   enabledElement: Types.IEnabledElement,

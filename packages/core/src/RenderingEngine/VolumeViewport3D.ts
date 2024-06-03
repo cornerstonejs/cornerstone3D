@@ -1,6 +1,6 @@
-import { BlendModes, OrientationAxis } from '../enums';
-import type { ViewportInput } from '../types/IViewport';
-import BaseVolumeViewport from './BaseVolumeViewport';
+import { BlendModes, OrientationAxis } from '../enums/index.js';
+import type { ViewportInput } from '../types/IViewport.js';
+import BaseVolumeViewport from './BaseVolumeViewport.js';
 
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render

@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationTool } from '../base/index.js';
 
 import {
   getEnabledElement,
@@ -12,32 +12,32 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getCalibratedAreaUnits,
   getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
-import throttle from '../../utilities/throttle';
+} from '../../utilities/getCalibratedUnits.js';
+import roundNumber from '../../utilities/roundNumber.js';
+import throttle from '../../utilities/throttle.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../stateManagement/index.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRect as drawRectSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
-import { Events } from '../../enums';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import * as rectangle from '../../utilities/math/rectangle';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { Events } from '../../enums/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import * as rectangle from '../../utilities/math/rectangle/index.js';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing/index.js';
+import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   EventTypes,
@@ -46,17 +46,17 @@ import {
   ToolProps,
   PublicToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+} from '../../types/index.js';
+import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { pointInShapeCallback } from '../../utilities/';
-import { BasicStatsCalculator } from '../../utilities/math/basic';
+} from '../../types/EventTypes.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
+import { getModalityUnit } from '../../utilities/getModalityUnit.js';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled.js';
+import { pointInShapeCallback } from '../../utilities//index.js';
+import { BasicStatsCalculator } from '../../utilities/math/basic/index.js';
 
 const { transformWorldToIndex } = csUtils;
 

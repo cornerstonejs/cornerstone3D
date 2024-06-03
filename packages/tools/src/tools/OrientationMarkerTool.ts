@@ -6,9 +6,9 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 
-import { BaseTool } from './base';
+import { BaseTool } from './base/index.js';
 import { getRenderingEngines } from '@cornerstonejs/core';
-import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
+import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters/index.js';
 
 const OverlayMarkerType = {
   ANNOTATED_CUBE: 1,

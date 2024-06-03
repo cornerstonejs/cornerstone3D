@@ -1,9 +1,9 @@
 import { cache, Types } from '@cornerstonejs/core';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
-import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
-import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState.js';
+import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes.js';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents.js';
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations.js';
 
 function getSegmentationIndices(segmentationId) {
   const segmentation = SegmentationState.getSegmentation(segmentationId);

@@ -1,5 +1,5 @@
-import { ViewportProperties } from './ViewportProperties';
-import Point2 from './Point2';
+import { ViewportProperties } from './ViewportProperties.js';
+import Point2 from './Point2.js';
 
 /**
  * Stack Viewport Properties

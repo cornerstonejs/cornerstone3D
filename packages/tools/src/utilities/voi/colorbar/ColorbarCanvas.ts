@@ -1,15 +1,15 @@
 import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { utilities } from '@cornerstonejs/core';
-import interpolateVec3 from '../../math/vec3/interpolateVec3';
-import { ColorbarCanvasProps } from './types/ColorbarCanvasProps';
-import type { ColorbarImageRange, ColorbarVOIRange } from './types';
-import type { ColorbarSize } from './types/ColorbarSize';
+import interpolateVec3 from '../../math/vec3/interpolateVec3.js';
+import { ColorbarCanvasProps } from './types/ColorbarCanvasProps.js';
+import type { ColorbarImageRange, ColorbarVOIRange } from './types/index.js';
+import type { ColorbarSize } from './types/ColorbarSize.js';
 import {
   isRangeValid,
   areColorbarRangesEqual,
   isColorbarSizeValid,
   areColorbarSizesEqual,
-} from './common';
+} from './common/index.js';
 
 const { clamp } = utilities;
 

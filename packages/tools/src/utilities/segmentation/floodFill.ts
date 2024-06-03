@@ -2,7 +2,7 @@ import type {
   FloodFillResult,
   FloodFillGetter,
   FloodFillOptions,
-} from '../../types';
+} from '../../types/index.js';
 import { Types } from '@cornerstonejs/core';
 
 /**

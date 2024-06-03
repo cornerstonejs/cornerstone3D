@@ -1,5 +1,5 @@
-import now from './now';
-import { IImage } from '../../../../types';
+import now from './now.js';
+import { IImage } from '../../../../types/index.js';
 
 /**
  * Converts stored RGBA color pixel values to display pixel values using a LUT.

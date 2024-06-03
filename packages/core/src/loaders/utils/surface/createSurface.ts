@@ -1,7 +1,7 @@
-import { IGeometry, PublicSurfaceData } from '../../../types';
-import { GeometryType } from '../../../enums';
-import { validateSurface } from './validateSurface';
-import { Surface } from '../../../cache/classes/Surface';
+import { IGeometry, PublicSurfaceData } from '../../../types/index.js';
+import { GeometryType } from '../../../enums/index.js';
+import { validateSurface } from './validateSurface.js';
+import { Surface } from '../../../cache/classes/Surface.js';
 
 export function createSurface(
   geometryId: string,

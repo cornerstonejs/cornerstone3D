@@ -1,14 +1,14 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { state } from '../../../store';
-import { Events } from '../../../enums';
-import { hideElementCursor } from '../../../cursors/elementCursor';
+import { state } from '../../../store/index.js';
+import { Events } from '../../../enums/index.js';
+import { hideElementCursor } from '../../../cursors/elementCursor.js';
 import type {
   EventTypes,
   Annotation,
   ToolHandle,
   TextBoxHandle,
-} from '../../../types';
-import { polyline } from '../../../utilities/math';
+} from '../../../types/index.js';
+import { polyline } from '../../../utilities/math/index.js';
 
 const { getSubPixelSpacingAndXYDirections } = polyline;
 

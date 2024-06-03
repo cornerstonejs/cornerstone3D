@@ -1,4 +1,4 @@
-import { IImageVolume, IVolumeLoadObject } from '../types';
+import { IImageVolume, IVolumeLoadObject } from '../types/index.js';
 
 interface ICachedVolume {
   volume?: IImageVolume;

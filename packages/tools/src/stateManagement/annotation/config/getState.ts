@@ -1,7 +1,7 @@
-import { Annotation } from '../../../types';
-import { isAnnotationLocked } from '../annotationLocking';
-import { isAnnotationSelected } from '../annotationSelection';
-import { AnnotationStyleStates } from '../../../enums';
+import { Annotation } from '../../../types/index.js';
+import { isAnnotationLocked } from '../annotationLocking.js';
+import { isAnnotationSelected } from '../annotationSelection.js';
+import { AnnotationStyleStates } from '../../../enums/index.js';
 
 /**
  * Given a Annotation object, return the annotationStyle State that it

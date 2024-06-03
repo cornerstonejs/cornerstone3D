@@ -1,8 +1,8 @@
-import { Transform } from './transform';
+import { Transform } from './transform.js';
 import {
   CPUFallbackEnabledElement,
   CPUFallbackTransform,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 /**
  * Calculate the transform for a Cornerstone enabled element

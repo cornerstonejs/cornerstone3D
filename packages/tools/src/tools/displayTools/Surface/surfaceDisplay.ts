@@ -6,18 +6,18 @@ import {
   Enums,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
-import Representations from '../../../enums/SegmentationRepresentations';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig.js';
+import Representations from '../../../enums/SegmentationRepresentations.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
+} from '../../../types/SegmentationStateTypes.js';
 
-import removeSurfaceFromElement from './removeSurfaceFromElement';
-import addSurfaceToElement from './addSurfaceToElement';
+import removeSurfaceFromElement from './removeSurfaceFromElement.js';
+import addSurfaceToElement from './addSurfaceToElement.js';
 
 /**
  * It adds a new segmentation representation to the segmentation state

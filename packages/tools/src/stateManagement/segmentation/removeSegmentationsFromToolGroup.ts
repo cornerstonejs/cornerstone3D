@@ -1,11 +1,11 @@
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { contourDisplay } from '../../tools/displayTools/Contour';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations.js';
+import { labelmapDisplay } from '../../tools/displayTools/Labelmap/index.js';
+import { contourDisplay } from '../../tools/displayTools/Contour/index.js';
 
 import {
   getSegmentationRepresentations,
   getSegmentationRepresentationByUID,
-} from './segmentationState';
+} from './segmentationState.js';
 
 /**
  * Remove the segmentation representation (representation) from the viewports of the toolGroup.

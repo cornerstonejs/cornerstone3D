@@ -1,4 +1,4 @@
-import { Point3 } from '../types';
+import { Point3 } from '../types/index.js';
 
 /**
  * Returns true if the specified index is within the given dimensions.

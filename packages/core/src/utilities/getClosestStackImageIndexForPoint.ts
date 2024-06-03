@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { planar } from '.';
-import { metaData } from '..';
-import { IStackViewport, Point3 } from '../types';
+import { planar } from './index.js';
+import { metaData } from '../index.js';
+import { IStackViewport, Point3 } from '../types/index.js';
 
 /**
  * Given a point in 3D space and a viewport it returns the index of the closest imageId, it assumes that stack images are sorted according to their sliceLocation

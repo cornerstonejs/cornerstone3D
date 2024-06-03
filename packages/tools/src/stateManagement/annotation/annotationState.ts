@@ -3,15 +3,15 @@ import {
   eventTarget,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { Events } from '../../enums';
-import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
-import { Annotations, Annotation } from '../../types/AnnotationTypes';
-import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
-import { AnnotationGroupSelector } from '../../types';
+import { Events } from '../../enums/index.js';
+import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager.js';
+import { Annotations, Annotation } from '../../types/AnnotationTypes.js';
+import { AnnotationRemovedEventDetail } from '../../types/EventTypes.js';
+import { AnnotationGroupSelector } from '../../types/index.js';
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
-} from './helpers/state';
+} from './helpers/state.js';
 
 // our default annotation manager
 let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;

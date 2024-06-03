@@ -1,4 +1,4 @@
-import { CPUFallbackViewport } from '../../../../types';
+import { CPUFallbackViewport } from '../../../../types/index.js';
 
 const state = {
   viewport: {},

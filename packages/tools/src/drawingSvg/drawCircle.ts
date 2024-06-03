@@ -1,10 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import { SVGDrawingHelper } from '../types/index.js';
 
-import _getHash from './_getHash';
+import _getHash from './_getHash.js';
 
-import setAttributesIfNecessary from './setAttributesIfNecessary';
-import setNewAttributesIfValid from './setNewAttributesIfValid';
+import setAttributesIfNecessary from './setAttributesIfNecessary.js';
+import setNewAttributesIfValid from './setNewAttributesIfValid.js';
 
 function drawCircle(
   svgDrawingHelper: SVGDrawingHelper,

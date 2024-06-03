@@ -1,13 +1,13 @@
-import storedPixelDataToCanvasImageData from './storedPixelDataToCanvasImageData';
-import storedPixelDataToCanvasImageDataPET from './storedPixelDataToCanvasImageDataPET';
-import storedPixelDataToCanvasImageDataRGBA from './storedPixelDataToCanvasImageDataRGBA';
-import setToPixelCoordinateSystem from './setToPixelCoordinateSystem';
-import now from './now';
-import getLut from './getLut';
-import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
-import initializeRenderCanvas from './initializeRenderCanvas';
-import saveLastRendered from './saveLastRendered';
-import { IImage, CPUFallbackEnabledElement } from '../../../../types';
+import storedPixelDataToCanvasImageData from './storedPixelDataToCanvasImageData.js';
+import storedPixelDataToCanvasImageDataPET from './storedPixelDataToCanvasImageDataPET.js';
+import storedPixelDataToCanvasImageDataRGBA from './storedPixelDataToCanvasImageDataRGBA.js';
+import setToPixelCoordinateSystem from './setToPixelCoordinateSystem.js';
+import now from './now.js';
+import getLut from './getLut.js';
+import doesImageNeedToBeRendered from './doesImageNeedToBeRendered.js';
+import initializeRenderCanvas from './initializeRenderCanvas.js';
+import saveLastRendered from './saveLastRendered.js';
+import { IImage, CPUFallbackEnabledElement } from '../../../../types/index.js';
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate

@@ -1,8 +1,8 @@
-import { IVolumeViewport } from '../types';
+import { IVolumeViewport } from '../types/index.js';
 import {
   getRenderingEngines,
   getRenderingEngine,
-} from '../RenderingEngine/getRenderingEngine';
+} from '../RenderingEngine/getRenderingEngine.js';
 
 /**
  * Returns the viewports containing the same volume actors (all actors) the same

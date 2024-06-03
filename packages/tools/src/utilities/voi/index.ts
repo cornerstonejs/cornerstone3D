@@ -1,3 +1,3 @@
-import * as colorbar from './colorbar';
+import * as colorbar from './colorbar/index.js';
 
 export { colorbar };

@@ -13,29 +13,29 @@ import { vec3 } from 'gl-matrix';
 import {
   getCalibratedAreaUnits,
   getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import roundNumber from '../../utilities/roundNumber';
-import { Events } from '../../enums';
-import { AnnotationTool } from '../base';
+} from '../../utilities/getCalibratedUnits.js';
+import roundNumber from '../../utilities/roundNumber.js';
+import { Events } from '../../enums/index.js';
+import { AnnotationTool } from '../base/index.js';
 import {
   addAnnotation,
   getAnnotations,
-} from '../../stateManagement/annotation/annotationState';
-import { polyline } from '../../utilities/math';
-import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import throttle from '../../utilities/throttle';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import registerDrawLoop from './planarFreehandROITool/drawLoop';
-import registerEditLoopCommon from './planarFreehandROITool/editLoopCommon';
-import registerClosedContourEditLoop from './planarFreehandROITool/closedContourEditLoop';
-import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop';
-import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop';
-import registerRenderMethods from './planarFreehandROITool/renderMethods';
+} from '../../stateManagement/annotation/annotationState.js';
+import { polyline } from '../../utilities/math/index.js';
+import { filterAnnotationsForDisplay } from '../../utilities/planar/index.js';
+import throttle from '../../utilities/throttle.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import registerDrawLoop from './planarFreehandROITool/drawLoop.js';
+import registerEditLoopCommon from './planarFreehandROITool/editLoopCommon.js';
+import registerClosedContourEditLoop from './planarFreehandROITool/closedContourEditLoop.js';
+import registerOpenContourEditLoop from './planarFreehandROITool/openContourEditLoop.js';
+import registerOpenContourEndEditLoop from './planarFreehandROITool/openContourEndEditLoop.js';
+import registerRenderMethods from './planarFreehandROITool/renderMethods.js';
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
+} from '../../types/EventTypes.js';
 import {
   EventTypes,
   ToolHandle,
@@ -45,20 +45,20 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import { drawLinkedTextBox } from '../../drawingSvg';
-import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
+} from '../../types/index.js';
+import { drawLinkedTextBox } from '../../drawingSvg/index.js';
+import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing/index.js';
+import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes.js';
 
-import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline';
-import pointInShapeCallback from '../../utilities/pointInShapeCallback';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { getIntersectionCoordinatesWithPolyline } from '../../utilities/math/polyline/getIntersectionWithPolyline.js';
+import pointInShapeCallback from '../../utilities/pointInShapeCallback.js';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled.js';
 import {
   ModalityUnitOptions,
   getModalityUnit,
-} from '../../utilities/getModalityUnit';
-import { BasicStatsCalculator } from '../../utilities/math/basic';
+} from '../../utilities/getModalityUnit.js';
+import { BasicStatsCalculator } from '../../utilities/math/basic/index.js';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;

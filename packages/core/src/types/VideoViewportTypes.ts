@@ -1,5 +1,5 @@
-import { ViewportType } from '../enums';
-import Point2 from './Point2';
+import { ViewportType } from '../enums/index.js';
+import Point2 from './Point2.js';
 
 export type InternalVideoCamera = {
   panWorld?: Point2;

@@ -5,9 +5,9 @@ import {
   metaData,
   utilities,
 } from '@cornerstonejs/core';
-import { Synchronizer } from '../../store';
-import { jumpToSlice } from '../../utilities';
-import areViewportsCoplanar from './areViewportsCoplanar ';
+import { Synchronizer } from '../../store/index.js';
+import { jumpToSlice } from '../../utilities/index.js';
+import areViewportsCoplanar from './areViewportsCoplanar .js';
 
 const getSpatialRegistration = (targetId, sourceId) =>
   utilities.spatialRegistrationMetadataProvider.get(

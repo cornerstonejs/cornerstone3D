@@ -4,9 +4,9 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
-} from '../../../types';
-import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getSegmentSpecificConfig } from './utils';
+} from '../../../types/index.js';
+import { getConfigCache, setConfigCache } from './contourConfigCache.js';
+import { getSegmentSpecificConfig } from './utils.js';
 
 export function updateContourSets(
   viewport: Types.IVolumeViewport,

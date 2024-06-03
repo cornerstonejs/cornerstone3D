@@ -1,5 +1,5 @@
-import IGeometry from './IGeometry';
-import { IGeometryLoadObject } from './ILoadObject';
+import IGeometry from './IGeometry.js';
+import { IGeometryLoadObject } from './ILoadObject.js';
 
 interface ICachedGeometry {
   geometryId: string;

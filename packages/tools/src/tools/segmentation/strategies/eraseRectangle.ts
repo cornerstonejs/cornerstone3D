@@ -1,9 +1,9 @@
 import { ImageVolume, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInShapeCallback } from '../../../utilities';
+import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox/index.js';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { pointInShapeCallback } from '../../../utilities/index.js';
 
 const { transformWorldToIndex } = csUtils;
 

@@ -2,12 +2,12 @@ import type { Types } from '@cornerstonejs/core';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
-} from '../../../drawingSvg';
-import { polyline } from '../../../utilities/math';
-import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../../types/AnnotationStyle';
-import { SVGDrawingHelper } from '../../../types';
+} from '../../../drawingSvg/index.js';
+import { polyline } from '../../../utilities/math/index.js';
+import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak.js';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../../../types/AnnotationStyle.js';
+import { SVGDrawingHelper } from '../../../types/index.js';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 

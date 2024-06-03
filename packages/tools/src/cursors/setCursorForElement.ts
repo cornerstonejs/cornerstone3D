@@ -1,6 +1,6 @@
-import { setElementCursor } from './elementCursor';
-import MouseCursor from './MouseCursor';
-import SVGMouseCursor from './SVGMouseCursor';
+import { setElementCursor } from './elementCursor.js';
+import MouseCursor from './MouseCursor.js';
+import SVGMouseCursor from './SVGMouseCursor.js';
 
 /**
  * Set the cursor for an HTML element. cursorNames can be either

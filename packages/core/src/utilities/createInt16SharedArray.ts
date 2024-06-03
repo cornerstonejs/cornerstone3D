@@ -1,4 +1,4 @@
-import global from '../global';
+import global from '../global.js';
 /**
  * A helper function that creates a new Int16 that utilized a shared
  * array buffer. This allows the array to be updated  simultaneously in

@@ -1,6 +1,9 @@
-import * as colors from '../colors';
-import now from './now';
-import type { IImage, CPUFallbackLookupTable } from '../../../../types';
+import * as colors from '../colors/index.js';
+import now from './now.js';
+import type {
+  IImage,
+  CPUFallbackLookupTable,
+} from '../../../../types/index.js';
 
 /**
  *

@@ -1,4 +1,4 @@
-import { IImageLoadObject, IVolumeLoadObject } from './ILoadObject';
+import { IImageLoadObject, IVolumeLoadObject } from './ILoadObject.js';
 
 interface ICache {
   /** Set the maximum cache size  */

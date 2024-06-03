@@ -1,6 +1,6 @@
-import { state } from '../index';
-import Synchronizer from './Synchronizer';
-import { ISynchronizerEventHandler } from '../../types';
+import { state } from '../index.js';
+import Synchronizer from './Synchronizer.js';
+import { ISynchronizerEventHandler } from '../../types/index.js';
 
 /**
  * Create a new synchronizer instance from Synchronizer class

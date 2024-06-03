@@ -1,11 +1,11 @@
-import getSliceRange from './getSliceRange';
-import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
+import getSliceRange from './getSliceRange.js';
+import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir.js';
 import {
   ActorSliceRange,
   IVolumeViewport,
   ICamera,
   VolumeActor,
-} from '../types';
+} from '../types/index.js';
 
 /**
  * Calculates the slice range for the given volume based on its orientation

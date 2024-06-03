@@ -1,4 +1,4 @@
-import { SurfaceData, Point3 } from '../../types';
+import { SurfaceData, Point3 } from '../../types/index.js';
 
 type SurfaceProps = {
   id: string;

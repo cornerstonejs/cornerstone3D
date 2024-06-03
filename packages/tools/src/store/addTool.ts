@@ -1,4 +1,4 @@
-import { state } from './state';
+import { state } from './state.js';
 
 /**
  * Adds the tool class to the cornerstoneTools to be used later. This function

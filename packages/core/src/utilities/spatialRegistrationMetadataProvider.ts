@@ -1,5 +1,5 @@
 import { mat4 } from 'gl-matrix';
-import { addProvider } from '../metaData';
+import { addProvider } from '../metaData.js';
 
 const state = {};
 

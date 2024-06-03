@@ -1,4 +1,4 @@
-import getOrientationStringLPS from './getOrientationStringLPS';
-import invertOrientationStringLPS from './invertOrientationStringLPS';
+import getOrientationStringLPS from './getOrientationStringLPS.js';
+import invertOrientationStringLPS from './invertOrientationStringLPS.js';
 
 export { getOrientationStringLPS, invertOrientationStringLPS };

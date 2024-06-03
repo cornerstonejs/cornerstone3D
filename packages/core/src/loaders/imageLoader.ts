@@ -1,9 +1,14 @@
-import cache from '../cache/cache';
-import Events from '../enums/Events';
-import eventTarget from '../eventTarget';
-import { triggerEvent } from '../utilities';
-import { IImage, ImageLoaderFn, IImageLoadObject, EventTypes } from '../types';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
+import cache from '../cache/cache.js';
+import Events from '../enums/Events.js';
+import eventTarget from '../eventTarget.js';
+import { triggerEvent } from '../utilities/index.js';
+import {
+  IImage,
+  ImageLoaderFn,
+  IImageLoadObject,
+  EventTypes,
+} from '../types/index.js';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager.js';
 
 export interface ImageLoaderOptions {
   priority: number;

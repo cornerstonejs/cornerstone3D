@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import { interpolatePoints } from './algorithms/bspline';
+import { interpolatePoints } from './algorithms/bspline.js';
 
 /**
  * Returns a list of uniform distributed values. This list contains the max amount of values which has at least a minimum distance between two consecutive values.

@@ -1,4 +1,4 @@
-import IPoints from './IPoints';
+import IPoints from './IPoints.js';
 
 type ITouchPoints = IPoints & {
   /** Native Touch object properties which are JSON serializable*/

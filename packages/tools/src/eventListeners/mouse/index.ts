@@ -1,8 +1,8 @@
-import mouseDoubleClickListener from './mouseDoubleClickListener';
+import mouseDoubleClickListener from './mouseDoubleClickListener.js';
 import mouseDownListener, {
   mouseDoubleClickIgnoreListener,
-} from './mouseDownListener';
-import mouseMoveListener from './mouseMoveListener';
+} from './mouseDownListener.js';
+import mouseMoveListener from './mouseMoveListener.js';
 
 /**
  * Removes mouse event listeners for native mouse event. Enables

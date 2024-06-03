@@ -1,7 +1,7 @@
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
-import getVolumeActorCorners from './getVolumeActorCorners';
-import type { VolumeActor, Point3, ActorSliceRange } from '../types';
-import { EPSILON } from '../constants';
+import getVolumeActorCorners from './getVolumeActorCorners.js';
+import type { VolumeActor, Point3, ActorSliceRange } from '../types/index.js';
+import { EPSILON } from '../constants/index.js';
 
 const SMALL_EPSILON = EPSILON * EPSILON;
 const isOne = (v) => Math.abs(Math.abs(v) - 1) < SMALL_EPSILON;

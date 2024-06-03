@@ -4,9 +4,9 @@ import {
   Types,
 } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { BaseTool } from './base';
-import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
-import { PublicToolProps, ToolProps, EventTypes } from '../types';
+import { BaseTool } from './base/index.js';
+import angleBetweenLines from '../utilities/math/angle/angleBetweenLines.js';
+import { PublicToolProps, ToolProps, EventTypes } from '../types/index.js';
 
 /**
  * The PlanarRotateTool is a tool that allows the user to rotate

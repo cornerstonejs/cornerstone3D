@@ -1,7 +1,7 @@
-import { OrientationAxis } from '../enums';
-import OrientationVectors from './OrientationVectors';
-import DisplayArea from './displayArea';
-import RGB from './RGB';
+import { OrientationAxis } from '../enums/index.js';
+import OrientationVectors from './OrientationVectors.js';
+import DisplayArea from './displayArea.js';
+import RGB from './RGB.js';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.

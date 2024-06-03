@@ -1,7 +1,7 @@
-import { getActiveSegmentationRepresentation } from './activeSegmentation';
+import { getActiveSegmentationRepresentation } from './activeSegmentation.js';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { triggerSegmentationModified } from './triggerSegmentationEvents.js';
 
 /**
  * Get the locked status for a segment index in a segmentation

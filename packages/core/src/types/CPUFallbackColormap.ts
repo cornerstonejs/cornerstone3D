@@ -1,5 +1,5 @@
-import Point4 from './Point4';
-import CPUFallbackLookupTable from './CPUFallbackLookupTable';
+import Point4 from './Point4.js';
+import CPUFallbackLookupTable from './CPUFallbackLookupTable.js';
 
 interface CPUFallbackColormap {
   /** Get id of colormap */

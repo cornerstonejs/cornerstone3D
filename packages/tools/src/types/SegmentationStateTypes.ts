@@ -1,18 +1,18 @@
-import * as Enums from '../enums';
+import * as Enums from '../enums/index.js';
 import {
   ContourConfig,
   ContourRenderingConfig,
   ContourSegmentationData,
-} from './ContourTypes';
+} from './ContourTypes.js';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
-} from './LabelmapTypes';
+} from './LabelmapTypes.js';
 import {
   SurfaceSegmentationData,
   SurfaceRenderingConfig,
-} from './SurfaceTypes';
+} from './SurfaceTypes.js';
 
 /**
  * Four elements RGBA as 0-255

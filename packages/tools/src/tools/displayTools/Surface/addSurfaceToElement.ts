@@ -8,7 +8,7 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkClipClosedSurface from '@kitware/vtk.js/Filters/General/ClipClosedSurface';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { pointToString } from '../../../utilities/pointToString';
+import { pointToString } from '../../../utilities/pointToString.js';
 
 const polyDataCache = new Map();
 

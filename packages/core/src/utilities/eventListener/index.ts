@@ -1,2 +1,2 @@
-export { TargetEventListeners } from './TargetEventListeners';
-export { MultiTargetEventListenerManager } from './MultiTargetEventListenerManager';
+export { TargetEventListeners } from './TargetEventListeners.js';
+export { MultiTargetEventListenerManager } from './MultiTargetEventListenerManager.js';

@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import { SVGDrawingHelper } from '../types/index.js';
 
-import _getHash from './_getHash';
-import setAttributesIfNecessary from './setAttributesIfNecessary';
+import _getHash from './_getHash.js';
+import setAttributesIfNecessary from './setAttributesIfNecessary.js';
 
 /**
  * Draws a textBox.

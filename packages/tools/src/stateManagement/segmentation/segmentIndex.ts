@@ -1,5 +1,5 @@
-import { getSegmentation } from './segmentationState';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import { getSegmentation } from './segmentationState.js';
+import { triggerSegmentationModified } from './triggerSegmentationEvents.js';
 
 /**
  * Set the active segment index for a segmentation Id. It fires a global state

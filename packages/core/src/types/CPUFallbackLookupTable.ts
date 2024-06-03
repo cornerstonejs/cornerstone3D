@@ -1,4 +1,4 @@
-import Point4 from './Point4';
+import Point4 from './Point4.js';
 
 interface CPUFallbackLookupTable {
   setNumberOfTableValues: (number: number) => void;

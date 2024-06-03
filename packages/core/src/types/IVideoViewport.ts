@@ -1,5 +1,5 @@
-import { IViewport } from './IViewport';
-import VideoViewportProperties from './VideoViewportProperties';
+import { IViewport } from './IViewport.js';
+import VideoViewportProperties from './VideoViewportProperties.js';
 
 /**
  * Interface for Stack Viewport

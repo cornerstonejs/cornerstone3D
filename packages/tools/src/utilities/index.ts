@@ -1,43 +1,43 @@
 import {
   getAnnotationNearPoint,
   getAnnotationNearPointOnEnabledElement,
-} from './getAnnotationNearPoint';
+} from './getAnnotationNearPoint.js';
 
 // Lodash/common JS functionality
-import debounce from './debounce';
-import throttle from './throttle';
-import isObject from './isObject';
-import clip from './clip';
-import calibrateImageSpacing from './calibrateImageSpacing';
-import getCalibratedLengthUnits from './getCalibratedUnits';
-import { getCalibratedScale } from './getCalibratedUnits';
-import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
-import triggerAnnotationRender from './triggerAnnotationRender';
-import jumpToSlice from './viewport/jumpToSlice';
+import debounce from './debounce.js';
+import throttle from './throttle.js';
+import isObject from './isObject.js';
+import clip from './clip.js';
+import calibrateImageSpacing from './calibrateImageSpacing.js';
+import getCalibratedLengthUnits from './getCalibratedUnits.js';
+import { getCalibratedScale } from './getCalibratedUnits.js';
+import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds.js';
+import triggerAnnotationRender from './triggerAnnotationRender.js';
+import jumpToSlice from './viewport/jumpToSlice.js';
 
-import pointInShapeCallback from './pointInShapeCallback';
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
-import scroll from './scroll';
-import roundNumber from './roundNumber';
-import { pointToString } from './pointToString';
+import pointInShapeCallback from './pointInShapeCallback.js';
+import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback.js';
+import scroll from './scroll.js';
+import roundNumber from './roundNumber.js';
+import { pointToString } from './pointToString.js';
 
 // name spaces
-import * as segmentation from './segmentation';
-import * as drawing from './drawing';
-import * as math from './math';
-import * as planar from './planar';
-import * as viewportFilters from './viewportFilters';
-import * as orientation from './orientation';
-import * as cine from './cine';
-import * as boundingBox from './boundingBox';
-import * as planarFreehandROITool from './planarFreehandROITool';
-import * as rectangleROITool from './rectangleROITool';
-import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
-import * as viewport from './viewport';
-import * as touch from './touch';
-import * as dynamicVolume from './dynamicVolume';
-import * as polyDataUtils from './polyData/utils';
-import * as voi from './voi';
+import * as segmentation from './segmentation/index.js';
+import * as drawing from './drawing/index.js';
+import * as math from './math/index.js';
+import * as planar from './planar/index.js';
+import * as viewportFilters from './viewportFilters/index.js';
+import * as orientation from './orientation/index.js';
+import * as cine from './cine/index.js';
+import * as boundingBox from './boundingBox/index.js';
+import * as planarFreehandROITool from './planarFreehandROITool/index.js';
+import * as rectangleROITool from './rectangleROITool/index.js';
+import { stackPrefetch, stackContextPrefetch } from './stackPrefetch/index.js';
+import * as viewport from './viewport/index.js';
+import * as touch from './touch/index.js';
+import * as dynamicVolume from './dynamicVolume/index.js';
+import * as polyDataUtils from './polyData/utils.js';
+import * as voi from './voi/index.js';
 
 // Events
 import { triggerEvent } from '@cornerstonejs/core';

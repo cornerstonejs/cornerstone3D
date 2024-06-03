@@ -1,4 +1,4 @@
-import { IImage, IImageLoadObject } from '../types';
+import { IImage, IImageLoadObject } from '../types/index.js';
 
 interface ICachedImage {
   image?: IImage;

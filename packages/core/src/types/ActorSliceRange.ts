@@ -1,5 +1,5 @@
-import { VolumeActor } from './IActor';
-import Point3 from './Point3';
+import { VolumeActor } from './IActor.js';
+import Point3 from './Point3.js';
 
 /**
  * Object containing the min, max and current position in the normal direction

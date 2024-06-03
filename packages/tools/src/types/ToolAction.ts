@@ -1,6 +1,6 @@
-import type { Annotation } from './AnnotationTypes';
-import type { InteractionEventType } from './EventTypes';
-import type { SetToolBindingsType } from './ISetToolModeOptions';
+import type { Annotation } from './AnnotationTypes.js';
+import type { InteractionEventType } from './EventTypes.js';
+import type { SetToolBindingsType } from './ISetToolModeOptions.js';
 
 /**
  * An action that may be defined at the tool configuration level

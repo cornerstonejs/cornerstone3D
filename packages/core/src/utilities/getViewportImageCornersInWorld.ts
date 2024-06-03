@@ -4,7 +4,7 @@ import {
   IVolumeViewport,
   Point2,
   Point3,
-} from '../types';
+} from '../types/index.js';
 
 /**
  * Given a viewport, return the corners of the image in the viewport in world coordinates.

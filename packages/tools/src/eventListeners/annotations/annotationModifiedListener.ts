@@ -1,5 +1,5 @@
 import { getRenderingEngine } from '@cornerstonejs/core';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
 /**
  * This is a callback function that is called when an annotation is modified.

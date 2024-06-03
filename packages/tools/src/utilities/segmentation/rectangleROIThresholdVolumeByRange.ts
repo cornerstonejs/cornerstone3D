@@ -1,13 +1,13 @@
 import type { Types } from '@cornerstonejs/core';
-import { state } from '../../stateManagement/annotation';
+import { state } from '../../stateManagement/annotation/index.js';
 import {
   RectangleROIStartEndThresholdTool,
   RectangleROIThresholdTool,
-} from '../../tools';
+} from '../../tools/index.js';
 
-import thresholdVolumeByRange from './thresholdVolumeByRange';
-import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations';
-import { ThresholdInformation } from './utilities';
+import thresholdVolumeByRange from './thresholdVolumeByRange.js';
+import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations.js';
+import { ThresholdInformation } from './utilities.js';
 
 export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice

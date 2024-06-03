@@ -1,4 +1,4 @@
-import wheelListener from './wheelListener';
+import wheelListener from './wheelListener.js';
 
 /**
  * Listens for the wheel event, and handles it. Handled event

@@ -1,20 +1,20 @@
-import thresholdVolumeByRange from './thresholdVolumeByRange';
-import rectangleROIThresholdVolumeByRange from './rectangleROIThresholdVolumeByRange';
-import createMergedLabelmapForIndex from './createMergedLabelmapForIndex';
-import isValidRepresentationConfig from './isValidRepresentationConfig';
-import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
-import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
-import { triggerSegmentationRender } from './triggerSegmentationRender';
-import floodFill from './floodFill';
+import thresholdVolumeByRange from './thresholdVolumeByRange.js';
+import rectangleROIThresholdVolumeByRange from './rectangleROIThresholdVolumeByRange.js';
+import createMergedLabelmapForIndex from './createMergedLabelmapForIndex.js';
+import isValidRepresentationConfig from './isValidRepresentationConfig.js';
+import getDefaultRepresentationConfig from './getDefaultRepresentationConfig.js';
+import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport.js';
+import { triggerSegmentationRender } from './triggerSegmentationRender.js';
+import floodFill from './floodFill.js';
 import {
   getBrushSizeForToolGroup,
   setBrushSizeForToolGroup,
-} from './brushSizeForToolGroup';
+} from './brushSizeForToolGroup.js';
 import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
-} from './brushThresholdForToolGroup';
-import thresholdSegmentationByRange from './thresholdSegmentationByRange';
+} from './brushThresholdForToolGroup.js';
+import thresholdSegmentationByRange from './thresholdSegmentationByRange.js';
 
 export {
   thresholdVolumeByRange,

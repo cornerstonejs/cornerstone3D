@@ -1,5 +1,5 @@
 import { Enums, Types } from '@cornerstonejs/core';
-import triggerAnnotationRender from '../utilities/triggerAnnotationRender';
+import triggerAnnotationRender from '../utilities/triggerAnnotationRender.js';
 
 /**
  *  When the image is rendered, check what tools can be rendered for this element.

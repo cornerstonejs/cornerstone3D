@@ -1,5 +1,5 @@
-import debounce from './debounce';
-import isObject from './isObject';
+import debounce from './debounce.js';
+import isObject from './isObject.js';
 
 /**
  * Creates a throttled function that only invokes `func` at most once per

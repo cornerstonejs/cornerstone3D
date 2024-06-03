@@ -1,33 +1,33 @@
-import * as Enums from './enums';
-import * as CONSTANTS from './constants';
-import { Events } from './enums';
+import * as Enums from './enums/index.js';
+import * as CONSTANTS from './constants/index.js';
+import { Events } from './enums/index.js';
 //
 import {
   createVolumeActor,
   createVolumeMapper,
   getOrCreateCanvas,
-} from './RenderingEngine';
-import RenderingEngine from './RenderingEngine';
-import VolumeViewport from './RenderingEngine/VolumeViewport';
-import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
-import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
-import StackViewport from './RenderingEngine/StackViewport';
-import VideoViewport from './RenderingEngine/VideoViewport';
-import Viewport from './RenderingEngine/Viewport';
-import eventTarget from './eventTarget';
+} from './RenderingEngine/index.js';
+import RenderingEngine from './RenderingEngine/index.js';
+import VolumeViewport from './RenderingEngine/VolumeViewport.js';
+import VolumeViewport3D from './RenderingEngine/VolumeViewport3D.js';
+import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport.js';
+import StackViewport from './RenderingEngine/StackViewport.js';
+import VideoViewport from './RenderingEngine/VideoViewport.js';
+import Viewport from './RenderingEngine/Viewport.js';
+import eventTarget from './eventTarget.js';
 import {
   getRenderingEngine,
   getRenderingEngines,
-} from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume } from './cache';
-import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
-import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
+} from './RenderingEngine/getRenderingEngine.js';
+import cache, { ImageVolume } from './cache/index.js';
+import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager.js';
+import imageLoadPoolManager from './requestPool/imageLoadPoolManager.js';
 
 import getEnabledElement, {
   getEnabledElementByIds,
   getEnabledElements,
-} from './getEnabledElement';
-import * as metaData from './metaData';
+} from './getEnabledElement.js';
+import * as metaData from './metaData.js';
 import {
   init,
   getShouldUseCPURendering,
@@ -41,25 +41,25 @@ import {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
-} from './init';
+} from './init.js';
 
 // Classes
-import Settings from './Settings';
+import Settings from './Settings.js';
 
 // Namespaces
-import * as volumeLoader from './loaders/volumeLoader';
-import * as imageLoader from './loaders/imageLoader';
-import * as geometryLoader from './loaders/geometryLoader';
-import * as Types from './types';
-import * as utilities from './utilities';
-import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
+import * as volumeLoader from './loaders/volumeLoader.js';
+import * as imageLoader from './loaders/imageLoader.js';
+import * as geometryLoader from './loaders/geometryLoader.js';
+import * as Types from './types/index.js';
+import * as utilities from './utilities/index.js';
+import { registerImageLoader } from './loaders/imageLoader.js'; // since it is used by CSWIL right now
 
-import triggerEvent from './utilities/triggerEvent';
+import triggerEvent from './utilities/triggerEvent.js';
 
 import {
   setVolumesForViewports,
   addVolumesToViewports,
-} from './RenderingEngine/helpers';
+} from './RenderingEngine/helpers/index.js';
 
 export type { Types };
 

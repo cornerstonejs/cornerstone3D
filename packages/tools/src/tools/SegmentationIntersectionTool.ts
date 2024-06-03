@@ -4,16 +4,20 @@ import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
   getAnnotations,
-} from '../stateManagement/annotation/annotationState';
-import { drawPolyline } from '../drawingSvg';
-import { getToolGroup } from '../store/ToolGroupManager';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
-import AnnotationDisplayTool from './base/AnnotationDisplayTool';
-import { Annotation } from '../types';
-import { distanceToPoint } from '../utilities/math/point';
-import { pointToString } from '../utilities/pointToString';
-import { polyDataUtils } from '../utilities';
+} from '../stateManagement/annotation/annotationState.js';
+import { drawPolyline } from '../drawingSvg/index.js';
+import { getToolGroup } from '../store/ToolGroupManager/index.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
+import {
+  PublicToolProps,
+  ToolProps,
+  SVGDrawingHelper,
+} from '../types/index.js';
+import AnnotationDisplayTool from './base/AnnotationDisplayTool.js';
+import { Annotation } from '../types/index.js';
+import { distanceToPoint } from '../utilities/math/point/index.js';
+import { pointToString } from '../utilities/pointToString.js';
+import { polyDataUtils } from '../utilities/index.js';
 
 export interface SegmentationIntersectionAnnotation extends Annotation {
   data: {

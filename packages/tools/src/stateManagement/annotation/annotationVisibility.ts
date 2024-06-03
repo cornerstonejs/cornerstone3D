@@ -1,12 +1,12 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
-import { getAnnotation } from './annotationState';
-import { Events } from '../../enums';
-import { Annotation } from '../../types';
-import { AnnotationVisibilityChangeEventDetail } from '../../types/EventTypes';
+import { getAnnotation } from './annotationState.js';
+import { Events } from '../../enums/index.js';
+import { Annotation } from '../../types/index.js';
+import { AnnotationVisibilityChangeEventDetail } from '../../types/EventTypes.js';
 import {
   isAnnotationSelected,
   deselectAnnotation,
-} from './annotationSelection';
+} from './annotationSelection.js';
 
 /*
  * It stores all hidden annotation uids.

@@ -1,4 +1,4 @@
-import { ViewportProperties } from './ViewportProperties';
+import { ViewportProperties } from './ViewportProperties.js';
 
 /**
  * Stack Viewport Properties

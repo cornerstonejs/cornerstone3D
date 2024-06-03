@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-import { fillInsideCircle } from './fillCircle';
+import { fillInsideCircle } from './fillCircle.js';
 
 type OperationData = {
   segmentationId: string;

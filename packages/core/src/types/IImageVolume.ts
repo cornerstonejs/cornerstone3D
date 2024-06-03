@@ -5,7 +5,7 @@ import {
   Point3,
   IImageLoadObject,
   Mat3,
-} from '../types';
+} from '../types/index.js';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class

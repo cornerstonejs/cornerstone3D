@@ -1,5 +1,5 @@
-import * as color from './segmentationColor';
-import * as visibility from './segmentationVisibility';
+import * as color from './segmentationColor.js';
+import * as visibility from './segmentationVisibility.js';
 import {
   getGlobalConfig,
   getGlobalRepresentationConfig,
@@ -11,7 +11,7 @@ import {
   getSegmentSpecificConfig,
   setSegmentationRepresentationSpecificConfig,
   getSegmentationRepresentationSpecificConfig,
-} from './segmentationConfig';
+} from './segmentationConfig.js';
 
 export {
   color,

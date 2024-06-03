@@ -1,10 +1,14 @@
 import '@kitware/vtk.js/Rendering/Profiles/Geometry';
 
-import cache from '../cache';
-import { GeometryType } from '../enums';
-import { IGeometry, PublicContourSetData, PublicSurfaceData } from '../types';
-import { createContourSet } from './utils/contourSet/createContourSet';
-import { createSurface } from './utils/surface/createSurface';
+import cache from '../cache/index.js';
+import { GeometryType } from '../enums/index.js';
+import {
+  IGeometry,
+  PublicContourSetData,
+  PublicSurfaceData,
+} from '../types/index.js';
+import { createContourSet } from './utils/contourSet/createContourSet.js';
+import { createSurface } from './utils/surface/createSurface.js';
 
 type GeometryOptions = {
   type: GeometryType;

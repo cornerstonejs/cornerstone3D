@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { ActorSliceRange, Point3 } from '../types';
+import { ActorSliceRange, Point3 } from '../types/index.js';
 
 /**
  * Given a number of frames, `deltaFrames`,

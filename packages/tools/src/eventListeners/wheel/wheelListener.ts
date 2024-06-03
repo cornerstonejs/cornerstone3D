@@ -1,9 +1,9 @@
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
-import normalizeWheel from './normalizeWheel';
-import Events from '../../enums/Events';
+import normalizeWheel from './normalizeWheel.js';
+import Events from '../../enums/Events.js';
 // ~~ VIEWPORT LIBRARY
-import getMouseEventPoints from '../mouse/getMouseEventPoints';
-import { MouseWheelEventDetail } from '../../types/EventTypes';
+import getMouseEventPoints from '../mouse/getMouseEventPoints.js';
+import { MouseWheelEventDetail } from '../../types/EventTypes.js';
 
 /**
  * wheelListener - Captures and normalizes mouse wheel events. Emits as a

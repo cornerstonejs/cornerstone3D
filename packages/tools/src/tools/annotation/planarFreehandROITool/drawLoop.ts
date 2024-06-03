@@ -3,20 +3,20 @@ import type { Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../../cursors/elementCursor';
-import { Events } from '../../../enums';
-import { EventTypes } from '../../../types';
-import { state } from '../../../store';
+} from '../../../cursors/elementCursor.js';
+import { Events } from '../../../enums/index.js';
+import { EventTypes } from '../../../types/index.js';
+import { state } from '../../../store/index.js';
 import { vec3 } from 'gl-matrix';
 import {
   shouldInterpolate,
   getInterpolatedPoints,
-} from '../../../utilities/planarFreehandROITool/interpolatePoints';
-import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
-import { polyline } from '../../../utilities/math';
-import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
+} from '../../../utilities/planarFreehandROITool/interpolatePoints.js';
+import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes.js';
+import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak.js';
+import { polyline } from '../../../utilities/math/index.js';
+import { removeAnnotation } from '../../../stateManagement/annotation/annotationState.js';
 
 const {
   addCanvasPointsToArray,

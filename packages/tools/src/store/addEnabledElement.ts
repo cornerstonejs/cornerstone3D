@@ -4,7 +4,7 @@ import {
   wheelEventListener,
   touchEventListeners,
   keyEventListener,
-} from '../eventListeners';
+} from '../eventListeners/index.js';
 import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
@@ -12,10 +12,10 @@ import {
   touchToolEventDispatcher,
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
-} from '../eventDispatchers';
-import { state } from './state';
+} from '../eventDispatchers/index.js';
+import { state } from './state.js';
 
-import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender';
+import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender.js';
 
 /**
  * When an element is "enabled", add event listeners and dispatchers to it

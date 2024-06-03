@@ -1,13 +1,13 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
-import Mat3 from './Mat3';
-import IImage from './IImage';
-import CPUFallbackViewport from './CPUFallbackViewport';
-import CPUFallbackTransform from './CPUFallbackTransform';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
-import { ImagePlaneModule } from './ImagePlaneModule';
-import { ImagePixelModule } from './ImagePixelModule';
+import Point2 from './Point2.js';
+import Point3 from './Point3.js';
+import Mat3 from './Mat3.js';
+import IImage from './IImage.js';
+import CPUFallbackViewport from './CPUFallbackViewport.js';
+import CPUFallbackTransform from './CPUFallbackTransform.js';
+import CPUFallbackColormap from './CPUFallbackColormap.js';
+import CPUFallbackRenderingTools from './CPUFallbackRenderingTools.js';
+import { ImagePlaneModule } from './ImagePlaneModule.js';
+import { ImagePixelModule } from './ImagePixelModule.js';
 
 interface CPUFallbackEnabledElement {
   scale?: number;
