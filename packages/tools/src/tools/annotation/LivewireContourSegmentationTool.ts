@@ -96,7 +96,7 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
       // Now, update the rendering
       this.updateAnnotation(acceptedPath);
       this.scissors = null;
-      this.scissorsRight = null;
+      this.scissorsNext = null;
       this.editData = null;
       annotation.data.handles.interpolationSources = null;
 
