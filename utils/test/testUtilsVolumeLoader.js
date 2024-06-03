@@ -1,11 +1,11 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import { ImageVolume } from '@cornerstonejs/core';
 import {
   getVerticalBarRGBVolume,
   getVerticalBarVolume,
   getExactRegionVolume,
-} from './testUtilsPixelData';
+} from './testUtilsPixelData.js';
 
 /**
  * It creates a volume based on the volumeId name for testing purposes. It splits the volumeId

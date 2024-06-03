@@ -1,8 +1,8 @@
 import { cache, Types } from '@cornerstonejs/core';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
+import vtkAppendPolyData from '@kitware/vtk.js/Filters/General/AppendPolyData.js';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
 
 import {
   getPolyData,

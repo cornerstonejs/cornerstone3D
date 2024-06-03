@@ -1,6 +1,6 @@
 import { vec2, vec3 } from 'gl-matrix';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
 
 import { AnnotationTool } from './base/index.js';
 

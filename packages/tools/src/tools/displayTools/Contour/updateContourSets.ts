@@ -1,5 +1,5 @@
 import { cache, Types } from '@cornerstonejs/core';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
 
 import {
   SegmentationRepresentationConfig,

@@ -1,4 +1,4 @@
-import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 import {
   RenderingEngine,
   Types,
@@ -11,7 +11,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { ViewportColorbar } = cstUtils.voi.colorbar;

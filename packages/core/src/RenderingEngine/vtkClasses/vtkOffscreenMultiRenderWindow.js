@@ -1,15 +1,15 @@
-import macro from '@kitware/vtk.js/macros';
+import macro from '@kitware/vtk.js/macros.js';
 import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow.js';
-import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
-import vtkRenderWindowInteractor from '@kitware/vtk.js/Rendering/Core/RenderWindowInteractor';
+import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer.js';
+import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow.js';
+import vtkRenderWindowInteractor from '@kitware/vtk.js/Rendering/Core/RenderWindowInteractor.js';
 
 // Load basic classes for vtk() factory
-import '@kitware/vtk.js/Common/Core/Points';
-import '@kitware/vtk.js/Common/Core/DataArray';
-import '@kitware/vtk.js/Common/DataModel/PolyData';
-import '@kitware/vtk.js/Rendering/Core/Actor';
-import '@kitware/vtk.js/Rendering/Core/Mapper';
+import '@kitware/vtk.js/Common/Core/Points.js';
+import '@kitware/vtk.js/Common/Core/DataArray.js';
+import '@kitware/vtk.js/Common/DataModel/PolyData.js';
+import '@kitware/vtk.js/Rendering/Core/Actor.js';
+import '@kitware/vtk.js/Rendering/Core/Mapper.js';
 
 /**
  * vtkOffscreenMultiRenderWindow - A class to deal with offscreen rendering with multiple renderers.

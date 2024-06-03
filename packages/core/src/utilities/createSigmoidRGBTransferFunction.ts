@@ -1,5 +1,5 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
 import { VOIRange } from '../types/index.js';
 import { windowLevel as windowLevelUtil } from './index.js';
 

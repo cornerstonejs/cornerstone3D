@@ -1,5 +1,5 @@
-import macro from '@kitware/vtk.js/macros';
-import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import macro from '@kitware/vtk.js/macros.js';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper.js';
 
 /**
  * vtkSharedVolumeMapper - A derived class of the core vtkVolumeMapper class

@@ -1,25 +1,25 @@
-import * as cornerstone3D from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import * as cornerstone3D from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource.js';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 
 // poly data
-import * as sphere_default_sagittal from './groundTruth/sphere_default_sagittal.png';
+import * as sphere_default_sagittal from './groundTruth/sphere_default_sagittal.png.js';
 
 // nearest neighbor interpolation
-import * as volumeURI_100_100_10_1_1_1_0_axial_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_axial_nearest.png';
-import * as volumeURI_100_100_10_1_1_1_0_sagittal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_nearest.png';
-import * as volumeURI_100_100_10_1_1_1_0_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_nearest.png';
-import * as volumeURI_100_100_10_1_1_1_1_color_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_nearest.png';
+import * as volumeURI_100_100_10_1_1_1_0_axial_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_axial_nearest.png.js';
+import * as volumeURI_100_100_10_1_1_1_0_sagittal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_nearest.png.js';
+import * as volumeURI_100_100_10_1_1_1_0_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_nearest.png.js';
+import * as volumeURI_100_100_10_1_1_1_1_color_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_nearest.png.js';
 
 // linear interpolation
-import * as volumeURI_100_100_10_1_1_1_0_axial_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_axial_linear.png';
-import * as volumeURI_100_100_10_1_1_1_0_sagittal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_linear.png';
-import * as volumeURI_100_100_10_1_1_1_0_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_linear.png';
-import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_linear.png';
+import * as volumeURI_100_100_10_1_1_1_0_axial_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_axial_linear.png.js';
+import * as volumeURI_100_100_10_1_1_1_0_sagittal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_linear.png.js';
+import * as volumeURI_100_100_10_1_1_1_0_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_linear.png.js';
+import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_linear.png.js';
 
 const {
   cache,

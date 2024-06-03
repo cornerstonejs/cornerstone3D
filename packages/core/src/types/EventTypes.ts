@@ -1,5 +1,5 @@
 import type { mat4 } from 'gl-matrix';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import type CustomEventType from '../types/CustomEventType.js';
 import type ICachedImage from './ICachedImage.js';
 import type ICachedVolume from './ICachedVolume.js';

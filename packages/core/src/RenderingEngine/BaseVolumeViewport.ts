@@ -1,7 +1,7 @@
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction.js';
 
 import cache from '../cache/index.js';
 import {

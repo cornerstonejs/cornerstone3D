@@ -1,4 +1,4 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import { Point3, Scaling, Mat3 } from '../types/index.js';
 import IImageCalibration from './IImageCalibration.js';
 

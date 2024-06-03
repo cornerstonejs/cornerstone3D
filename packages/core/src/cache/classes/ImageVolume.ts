@@ -1,7 +1,7 @@
 import isTypedArray from '../../utilities/isTypedArray.js';
 import { imageIdToURI } from '../../utilities/index.js';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses/index.js';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import {
   IVolume,
   VolumeScalarData,

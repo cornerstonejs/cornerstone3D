@@ -1,4 +1,4 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import { getOrCreateCanvas } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 

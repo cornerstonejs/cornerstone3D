@@ -1,4 +1,4 @@
-import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
+import vtkConstants from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants.js';
 
 const { BlendMode } = vtkConstants;
 
