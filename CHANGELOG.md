@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.4...v1.77.5) (2024-06-03)
+
+### Bug Fixes
+
+- **livewire:** polyline and handles (winding direction) ([11a767d](https://github.com/cornerstonejs/cornerstone3D/commit/11a767db1a0cd1835dbbdbc8ad00505f6bffb8ee))
+
 ## [1.77.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.3...v1.77.4) (2024-05-31)
 
 ### Bug Fixes
