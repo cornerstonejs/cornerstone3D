@@ -244,7 +244,7 @@ function createImage(
       const { rows, columns } = imageFrame;
 
       if (isColorImage) {
-        if (isColorConversionRequired(imageFrame, useRGBA)) {
+        if (isColorConversionRequired(imageFrame, transferSyntax)) {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');
