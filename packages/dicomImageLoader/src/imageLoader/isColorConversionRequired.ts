@@ -8,7 +8,7 @@
  * @param RGBA
  * @returns
  */
-export default function isColorConversionRequired(imageFrame, transferSyntax) {
+export default function isColorConversionRequired(imageFrame) {
   if (imageFrame === undefined) {
     return false;
   }
@@ -16,7 +16,8 @@ export default function isColorConversionRequired(imageFrame, transferSyntax) {
     imageFrame;
 
   // if it is jpeg don't convert
-  if (transferSyntax === '1.2.840.10008.1.2.4.50') {
+  if (pixelDataLength === 4 * columns * rows) {
+    // RGBA - JPEG
     return false;
   }
 
