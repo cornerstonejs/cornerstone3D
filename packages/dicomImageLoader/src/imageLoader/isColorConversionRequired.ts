@@ -15,7 +15,7 @@ export default function isColorConversionRequired(imageFrame) {
   const { rows, columns, photometricInterpretation, pixelDataLength } =
     imageFrame;
 
-  // if it is jpeg don't convert
+  // if it is rgba don't convert (typically jpeg, jpeg-xl, jpeg2000 etc)
   if (pixelDataLength === 4 * columns * rows) {
     // RGBA - JPEG
     return false;
