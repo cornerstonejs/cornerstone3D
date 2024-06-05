@@ -2463,11 +2463,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     // (undocumented)
     _imageVolumeModifiedHandler: (evt: Types_2.EventTypes.ImageVolumeModifiedEvent) => void;
     // (undocumented)
-    removeAllAnnotations: () => void;
+    removeAllAnnotations: () => Annotations;
     // (undocumented)
     removeAnnotation: (annotationUID: string) => void;
     // (undocumented)
-    removeAnnotations: (groupKey: string, toolName?: string) => void;
+    removeAnnotations: (groupKey: string, toolName?: string) => Annotations;
     // (undocumented)
     restoreAnnotations: (state: AnnotationState | GroupSpecificAnnotations | Annotations, groupKey?: string, toolName?: string) => void;
     // (undocumented)
@@ -4566,6 +4566,9 @@ function removeAllAnnotations(): void;
 function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
+function removeAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): void;
+
+// @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -5283,6 +5286,7 @@ declare namespace state_2 {
         addAnnotation,
         getAnnotation,
         removeAnnotation,
+        removeAnnotations,
         removeAllAnnotations,
         setAnnotationManager,
         getAnnotationManager,
