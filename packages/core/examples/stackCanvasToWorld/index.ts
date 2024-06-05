@@ -112,9 +112,9 @@ async function run() {
     worldPosElement.innerText = `world: (${worldPos[0].toFixed(
       2
     )}, ${worldPos[1].toFixed(2)}, ${worldPos[2].toFixed(2)})`;
-    imagePosElement.innerText = `image (ijk): (${imagePos[0].toFixed(
-      2
-    )}, ${imagePos[1].toFixed(2)}, ${imagePos[2].toFixed(2)})`;
+
+    const [i, j, k] = imagePos.map((item) => item.toFixed(2));
+    imagePosElement.innerText = `image (ij): (${i}, ${j})`;
   });
 }
 
