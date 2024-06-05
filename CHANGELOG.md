@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.6...v1.77.7) (2024-06-05)
+
+### Bug Fixes
+
+- **StackViewport:** check if imagePlaneModule exists before destructuring ([#1291](https://github.com/cornerstonejs/cornerstone3D/issues/1291)) ([a4c86ff](https://github.com/cornerstonejs/cornerstone3D/commit/a4c86ff549d5017f099f2166c950e61b1de6ad83))
+
 ## [1.77.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.5...v1.77.6) (2024-06-04)
 
 ### Bug Fixes
