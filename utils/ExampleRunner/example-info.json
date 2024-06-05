@@ -138,6 +138,10 @@
         "name": "Resize viewport and change aspect ratio",
         "description": "Resize the viewport and allow various aspect ratios/conditions"
       },
+      "viewReferencePresentation": {
+        "name": "Apply view reference and/or presentation parameters",
+        "description": "Demonstrates how to apply various view/reference presentation parameters."
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
@@ -239,6 +243,10 @@
       "ultrasoundenhancedregion": {
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
+      },
+      "windowLevelRegion": {
+        "name": "Window Level Region",
+        "description": "Demonstrates how to use the window level region tool to adjust the window level of an image"
       },
       "splineROITools": {
         "name": "Spline ROI Tools",
@@ -433,6 +441,10 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
+      },
+      "dynamicallyAddAnnotations": {
+        "name": "Dynamically Add Annotations",
+        "description": "Demonstrates how to dynamically add annotations to a viewport"
       }
     },
     "polymorph-segmentation": {

@@ -283,14 +283,26 @@ export function createAndCacheDerivedImage(
   );
   const derivedImageId = imageId;
 
-  ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
-    (type) => {
-      genericMetadataProvider.add(derivedImageId, {
-        type,
-        metadata: metaData.get(type, referencedImageId),
-      });
-    }
-  );
+  ['imagePlaneModule', 'generalSeriesModule'].forEach((type) => {
+    genericMetadataProvider.add(derivedImageId, {
+      type,
+      metadata: metaData.get(type, referencedImageId),
+    });
+  });
+
+  const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
+  // TODO - add a general way to specify this
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'imagePixelModule',
+    metadata: {
+      ...imagePixelModule,
+      bitsAllocated: 8,
+      bitsStored: 8,
+      highBit: 7,
+      samplesPerPixel: 1,
+      pixelRepresentation: 0,
+    },
+  });
 
   const localImage = createAndCacheLocalImage(
     { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },

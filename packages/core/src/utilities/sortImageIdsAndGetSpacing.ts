@@ -142,10 +142,11 @@ export default function sortImageIdsAndGetSpacing(
       Math.floor(imageIds.length / 2);
   }
 
-  const { imagePositionPatient: origin, sliceThickness } = metaData.get(
-    'imagePlaneModule',
-    sortedImageIds[0]
-  );
+  const {
+    imagePositionPatient: origin,
+    sliceThickness,
+    spacingBetweenSlices,
+  } = metaData.get('imagePlaneModule', sortedImageIds[0]);
 
   const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
 
@@ -154,8 +155,13 @@ export default function sortImageIdsAndGetSpacing(
   // If possible, we use the sliceThickness, but we warn about this dicom file
   // weirdness. If sliceThickness is not available, we set to 1 just to render
   if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
-    if (sliceThickness) {
-      console.log('Could not calculate zSpacing. Using sliceThickness');
+    if (sliceThickness && spacingBetweenSlices) {
+      console.log('Could not calculate zSpacing. Using spacingBetweenSlices');
+      zSpacing = spacingBetweenSlices;
+    } else if (sliceThickness) {
+      console.log(
+        'Could not calculate zSpacing and no spacingBetweenSlices. Using sliceThickness'
+      );
       zSpacing = sliceThickness;
     } else {
       console.log(

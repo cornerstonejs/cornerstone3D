@@ -25,6 +25,8 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
+import { cache } from '@cornerstonejs/core';
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -45,6 +47,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick(toggle) {
     toggle ? setUseCPURendering(true) : setUseCPURendering(false);
+    cache.purgeCache();
   },
 });
 
@@ -53,6 +56,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick(toggle) {
     toggle ? setPreferSizeOverAccuracy(true) : setPreferSizeOverAccuracy(false);
+    cache.purgeCache();
   },
 });
 

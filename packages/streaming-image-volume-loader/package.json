@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/streaming-image-volume-loader",
-  "version": "1.71.1",
+  "version": "1.77.7",
   "description": "",
   "main": "src/index.ts",
   "types": "dist/esm/index.d.ts",
@@ -29,7 +29,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.71.1",
+    "@cornerstonejs/core": "^1.77.7",
     "comlink": "^4.4.1"
   },
   "contributors": [

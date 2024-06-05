@@ -19,6 +19,11 @@ import {
 import { checkAndDefineIsLockedProperty } from './annotationLocking';
 import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
+import {
+  checkAndDefineTextBoxProperty,
+  checkAndDefineCachedStatsProperty,
+} from './utilities/defineProperties';
+
 /**
  * This is the default annotation manager. It stores annotations by default
  * based on the FrameOfReferenceUID. However, it is possible to override the
@@ -236,6 +241,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     toolSpecificAnnotations.push(annotation);
     checkAndDefineIsLockedProperty(annotation);
     checkAndDefineIsVisibleProperty(annotation);
+    checkAndDefineTextBoxProperty(annotation);
+    checkAndDefineCachedStatsProperty(annotation);
   };
 
   /**

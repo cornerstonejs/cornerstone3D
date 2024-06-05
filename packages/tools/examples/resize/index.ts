@@ -395,7 +395,7 @@ function resize() {
     );
     renderingEngine.resize(true, false);
     viewports.forEach((viewport, idx) => {
-      viewport.setView(null, presentations[idx]);
+      viewport.setViewPresentation(presentations[idx]);
     });
   }
 }

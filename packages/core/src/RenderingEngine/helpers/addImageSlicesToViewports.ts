@@ -1,4 +1,3 @@
-import { StackViewport } from '..';
 import type {
   IStackViewport,
   IStackInput,
@@ -20,9 +19,7 @@ import type {
 async function addImageSlicesToViewports(
   renderingEngine: IRenderingEngine,
   stackInputs: Array<IStackInput>,
-  viewportIds: Array<string>,
-  immediateRender = false,
-  suppressEvents = false
+  viewportIds: Array<string>
 ): Promise<void> {
   // Check if all viewports are volumeViewports
   for (const viewportId of viewportIds) {
@@ -45,7 +42,7 @@ async function addImageSlicesToViewports(
   const addStackPromises = viewportIds.map(async (viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as IStackViewport;
 
-    return viewport.addImages(stackInputs, immediateRender, suppressEvents);
+    return viewport.addImages(stackInputs);
   });
 
   await Promise.all(addStackPromises);

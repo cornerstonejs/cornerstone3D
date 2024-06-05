@@ -511,34 +511,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * metadata, it returns undefined, otherwise, frameOfReferenceUID is returned.
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
-  public getFrameOfReferenceUID = (): string | undefined => {
-    // Get the current image that is displayed in the viewport
-    const imageId = this.getCurrentImageId();
-
-    if (!imageId) {
-      return;
-    }
-
-    // Use the metadata provider to grab its imagePlaneModule metadata
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-
-    // If nothing exists, return undefined
-    if (!imagePlaneModule) {
-      return;
-    }
-
-    // Otherwise, provide the FrameOfReferenceUID so we can map
-    // annotations made on VolumeViewports back to StackViewports
-    // and vice versa
-    return imagePlaneModule.frameOfReferenceUID;
-  };
+  public getFrameOfReferenceUID = (sliceIndex?: number): string =>
+    this.getImagePlaneReferenceData(sliceIndex)?.FrameOfReferenceUID;
 
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
    */
-  public getCornerstoneImage = (): IImage => {
-    return this.csImage;
-  };
+  public getCornerstoneImage = (): IImage => this.csImage;
 
   /**
    * Creates imageMapper based on the provided vtkImageData and also creates
@@ -1610,6 +1589,40 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   }
 
   /**
+   * Gets the view reference data for a given image slice.  This uses the
+   * image plane module to read a default focal point/normal, and also returns
+   * the referenced image id and the frame of reference uid.
+   */
+  public getImagePlaneReferenceData(
+    sliceIndex = this.getCurrentImageIdIndex()
+  ): ViewReference {
+    const imageId = this.imageIds[sliceIndex];
+    if (!imageId) {
+      return;
+    }
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
+    if (!imagePlaneModule) {
+      return;
+    }
+    const { imagePositionPatient, frameOfReferenceUID: FrameOfReferenceUID } =
+      imagePlaneModule;
+    let { rowCosines, columnCosines } = imagePlaneModule;
+    // Values are null, not undefined, so need to assign instead of defaulting
+    rowCosines ||= [1, 0, 0];
+    columnCosines ||= [0, 1, 0];
+    const viewPlaneNormal = <Point3>(
+      vec3.cross([0, 0, 0], columnCosines, rowCosines)
+    );
+    return {
+      FrameOfReferenceUID,
+      viewPlaneNormal,
+      cameraFocalPoint: <Point3>imagePositionPatient,
+      referencedImageId: imageId,
+      sliceIndex,
+    };
+  }
+
+  /**
    * Converts the image direction to camera viewUp and viewplaneNormal
    *
    * @param imageDataDirection - vtkImageData direction
@@ -2215,7 +2228,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
    */
-  public async addImages(stackInputs: Array<IStackInput>): Promise<void> {
+  public addImages(stackInputs: Array<IStackInput>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const image = cache.getImage(stackInput.imageId);
@@ -2870,6 +2883,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this.currentImageIdIndex;
   };
 
+  /**
+   * returns the slice index of the view
+   * @returns slice index
+   */
   public getSliceIndex = (): number => {
     return this.currentImageIdIndex;
   };
@@ -2910,40 +2927,65 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   /**
    * Gets a standard target to show this image instance.
+   * Returns undefined if the requested slice index is not available.
+   *
+   * <b>Warning<b>If using sliceIndex for requeseting a specific reference, the slice index MUST come
+   * from the stack of image ids.  Using slice index from a volume or from a different
+   * stack of images ids, EVEN if they contain the same set of images will result in
+   * random images being chosen.
    */
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { sliceIndex: sliceIndex = this.currentImageIdIndex } =
-      viewRefSpecifier;
-    return {
-      ...super.getViewReference(viewRefSpecifier),
-      referencedImageId: `${this.imageIds[sliceIndex as number]}`,
-      sliceIndex: sliceIndex,
-    };
+    const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
+    const reference = super.getViewReference(viewRefSpecifier);
+    const referencedImageId = this.imageIds[sliceIndex as number];
+    if (!referencedImageId) {
+      return;
+    }
+    reference.referencedImageId = referencedImageId;
+    if (this.getCurrentImageIdIndex() !== sliceIndex) {
+      const referenceData = this.getImagePlaneReferenceData(
+        sliceIndex as number
+      );
+      if (!referenceData) {
+        return;
+      }
+      Object.assign(reference, referenceData);
+    }
+    return reference;
   }
 
   /**
    * Applies the view reference, which may navigate the slice index and apply
-   * other camera modifications
+   * other camera modifications.
+   * Assumes that the slice index is correct for this viewport
    */
-  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void {
-    const camera = this.getCamera();
-    super.setView(viewRef, viewPres);
-    if (viewRef) {
-      const { viewPlaneNormal, sliceIndex } = viewRef;
-      if (
-        viewPlaneNormal &&
-        !isEqual(viewPlaneNormal, camera.viewPlaneNormal)
-      ) {
-        return;
-      }
-      if (sliceIndex || sliceIndex === 0) {
-        this.setImageIdIndex(sliceIndex as number);
+  public setViewReference(viewRef: ViewReference): void {
+    if (!viewRef) {
+      return;
+    }
+    const { referencedImageId, sliceIndex, volumeId } = viewRef;
+    if (
+      typeof sliceIndex === 'number' &&
+      referencedImageId &&
+      referencedImageId === this.imageIds[sliceIndex]
+    ) {
+      this.setImageIdIndex(sliceIndex);
+    } else {
+      const foundIndex = this.imageIds.indexOf(referencedImageId);
+      if (foundIndex !== -1) {
+        this.setImageIdIndex(foundIndex);
+      } else {
+        throw new Error('Unsupported - referenced image id not found');
       }
     }
   }
 
+  /**
+   * Returns the imageId string for the specified view, using the
+   * `imageId:<imageId>` URN format.
+   */
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
     if (Array.isArray(sliceIndex)) {

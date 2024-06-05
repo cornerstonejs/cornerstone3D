@@ -626,7 +626,18 @@ class RenderingEngine implements IRenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      vp.resetCamera();
+      const resetPan = true;
+      const resetZoom = true;
+      const resetToCenter = true;
+      const resetRotation = false;
+      const supressEvents = true;
+      vp.resetCamera(
+        resetPan,
+        resetZoom,
+        resetToCenter,
+        resetRotation,
+        supressEvents
+      );
 
       const displayArea = vp.getDisplayArea();
 

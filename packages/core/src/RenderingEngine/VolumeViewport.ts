@@ -1,8 +1,6 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import { vec3 } from 'gl-matrix';
-
 import cache from '../cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import { BlendModes, OrientationAxis, Events } from '../enums';
@@ -12,6 +10,9 @@ import type {
   IVolumeInput,
   OrientationVectors,
   Point3,
+  EventTypes,
+  ViewReference,
+  ViewReferenceSpecifier,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import {
@@ -28,6 +29,7 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
+import { vec3 } from 'gl-matrix';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -88,15 +90,6 @@ class VolumeViewport extends BaseVolumeViewport {
   public getNumberOfSlices = (): number => {
     const { numberOfSlices } = getImageSliceDataForVolumeViewport(this);
     return numberOfSlices;
-  };
-
-  /**
-   * Returns the image index associated with the volume viewport.
-   * @returns The image index.
-   */
-  public getSliceIndex = (): number => {
-    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
-    return imageIndex;
   };
 
   /**
@@ -253,15 +246,19 @@ class VolumeViewport extends BaseVolumeViewport {
     resetPan = true,
     resetZoom = true,
     resetToCenter = true,
-    resetRotation = false
+    resetRotation = false,
+    supressEvents = false
   ): boolean {
+    const { orientation } = this.viewportProperties;
+    if (orientation) {
+      this.applyViewOrientation(orientation, false);
+    }
     super.resetCamera(resetPan, resetZoom, resetToCenter);
 
     this.resetVolumeViewportClippingRange();
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
-    const viewUp = <Point3>activeCamera.getViewUp();
     const focalPoint = <Point3>activeCamera.getFocalPoint();
 
     // always add clipping planes for the volume viewport. If a use case
@@ -310,6 +307,16 @@ class VolumeViewport extends BaseVolumeViewport {
       });
     }
 
+    if (!supressEvents) {
+      const eventDetail: EventTypes.CameraResetEventDetail = {
+        viewportId: this.id,
+        camera: this.getCamera(),
+        renderingEngineId: this.renderingEngineId,
+        element: this.element,
+      };
+
+      triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+    }
     return true;
   }
 
@@ -350,6 +357,33 @@ class VolumeViewport extends BaseVolumeViewport {
 
   /**
    * Uses the origin and focalPoint to calculate the slice index.
+
+
+
+   * Resets the slab thickness of the actors of the viewport to the default value.
+   */
+  public resetSlabThickness(): void {
+    const actorEntries = this.getActors();
+
+    actorEntries.forEach((actorEntry) => {
+      if (actorIsA(actorEntry, 'vtkVolume')) {
+        actorEntry.slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+      }
+    });
+
+    const currentCamera = this.getCamera();
+    this.updateClippingPlanesForActors(currentCamera);
+    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
+    this.viewportProperties.slabThickness = undefined;
+  }
+
+  /**
+   * Returns the imageId index of the current slice in the volume viewport.
+   * Note: this is not guaranteed to be the same as the slice index in the view
+   * To get the slice index in the view (scroll position), use getSliceIndex()
+   *
+   * In future we will even delete this method as it should not be used
+   * at all.
    *
    * @returns The slice index in the direction of the view
    */
@@ -375,6 +409,21 @@ class VolumeViewport extends BaseVolumeViewport {
     // divide by the spacing in the normal direction to get the
     // number of steps, and subtract 1 to get the index
     return Math.round(Math.abs(distance) / spacingInNormal);
+  };
+
+  /**
+   * Returns the image index associated with the volume viewport in the current view, the difference
+   * between this method and getCurrentImageIdIndex is that this method returns the index of the
+   * slice in the volume in view direction so at the top (scrollbar top) of the viewport the index
+   * will be 0 and at the bottom (scrollbar bottom) the index will be the number of slices - 1.
+   * But the getCurrentImageIdIndex returns the index of current image in the imageIds
+   * which is not guaranteed to be the same as the slice index in the view.
+   *
+   * @returns The image index.
+   */
+  public getSliceIndex = (): number => {
+    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
+    return imageIndex;
   };
 
   /**
@@ -404,6 +453,26 @@ class VolumeViewport extends BaseVolumeViewport {
     return getClosestImageId(volume, focalPoint, viewPlaneNormal);
   };
 
+  /**
+   * Gets a view target, allowing comparison between view positions as well
+   * as restoring views later.
+   * Add the referenced image id.
+   */
+  public getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const viewRef = super.getViewReference(viewRefSpecifier);
+    if (!viewRef?.volumeId) {
+      return;
+    }
+    const volume = cache.getVolume(viewRef.volumeId);
+    viewRef.referencedImageId = getClosestImageId(
+      volume,
+      viewRef.cameraFocalPoint,
+      viewRef.viewPlaneNormal
+    );
+    return viewRef;
+  }
   /**
    * Reset the viewport properties to the default values
    *
