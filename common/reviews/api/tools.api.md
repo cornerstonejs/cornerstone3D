@@ -5827,6 +5827,8 @@ export class TrackballRotateTool extends BaseTool {
     // (undocumented)
     _getViewportsInfo: () => any[];
     // (undocumented)
+    _hasResolutionChanged: boolean;
+    // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     onSetToolActive: () => void;
