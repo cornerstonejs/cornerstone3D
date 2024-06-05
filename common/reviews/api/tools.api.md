@@ -4566,7 +4566,7 @@ function removeAllAnnotations(): void;
 function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
-function removeAnnotations(annotationGroupSelector: AnnotationGroupSelector, toolName?: string): void;
+function removeAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
