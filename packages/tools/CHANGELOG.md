@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.8...v1.77.9) (2024-06-05)
+
+### Bug Fixes
+
+- **TrackballRotateTool:** Resolve resolution reduction and refactor code ([#1306](https://github.com/cornerstonejs/cornerstone3D/issues/1306)) ([16944fb](https://github.com/cornerstonejs/cornerstone3D/commit/16944fbaf73b40f4980865b067d7d8f194b58afd))
+
 ## [1.77.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.7...v1.77.8) (2024-06-05)
 
 **Note:** Version bump only for package @cornerstonejs/tools
