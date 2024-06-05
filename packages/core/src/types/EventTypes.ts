@@ -32,6 +32,23 @@ type CameraModifiedEventDetail = {
 };
 
 /**
+ * CAMERA_RESET Event's data
+ */
+
+type CameraResetEventDetail = {
+  /** Viewport HTML element in the DOM */
+  element: HTMLDivElement;
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** Unique ID for the renderingEngine */
+  renderingEngineId: string;
+  /** Camera properties */
+  camera: ICamera;
+};
+
+type CameraResetEvent = CustomEventType<CameraResetEventDetail>;
+
+/**
  * VOI_MODIFIED Event's data
  */
 type VoiModifiedEventDetail = {
@@ -47,6 +64,8 @@ type VoiModifiedEventDetail = {
   invert?: boolean;
   /** Indicates if the 'invert' state has changed from the previous state */
   invertStateChanged?: boolean;
+  /** color map */
+  colormap?: ColormapPublic;
 };
 
 type ColormapModifiedEventDetail = {
@@ -459,4 +478,6 @@ export type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEvent,
   StackViewportScrollEventDetail,
+  CameraResetEvent,
+  CameraResetEventDetail,
 };

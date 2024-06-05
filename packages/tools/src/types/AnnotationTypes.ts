@@ -55,9 +55,9 @@ type Annotation = {
       /** annotation text box information */
       textBox?: {
         /** whether the text box has moved */
-        hasMoved: boolean;
+        hasMoved?: boolean;
         /** the world location of the text box */
-        worldPosition: Types.Point3;
+        worldPosition?: Types.Point3;
         /** text box bounding box information */
         worldBoundingBox?: {
           /** Top left location of the text box in the world space */

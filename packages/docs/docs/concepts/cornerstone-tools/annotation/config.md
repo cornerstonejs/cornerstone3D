@@ -72,7 +72,7 @@ const styles = {
   colorHighlighted: 'rgb(255, 255, 0)',
 };
 
-annotations.config.styles.setAnnotationToolStyle(annotationUID, style);
+annotation.config.style.setAnnotationToolStyle(annotationUID, style);
 ```
 
 ### Viewport-level tool settings
@@ -88,7 +88,7 @@ const styles = {
   },
 };
 
-annotations.config.styles.setViewportToolStyle(viewportId, styles);
+annotation.config.style.setViewportToolStyle(viewportId, styles);
 ```
 
 ### ToolGroup-level tool settings
@@ -103,13 +103,13 @@ const styles = {
   },
 };
 
-annotations.config.styles.setToolGroupToolStyle(toolGroupId, styles);
+annotation.config.style.setToolGroupToolStyles(toolGroupId, styles);
 ```
 
 ### Global(Default)-level tool settings
 
 ```js
-const styles = annotations.config.styles.getDefaultToolStyle();
+const styles = annotation.config.style.getDefaultToolStyle();
 
 const newStyles = {
   ProbeTool: {
@@ -120,7 +120,7 @@ const newStyles = {
   },
 };
 
-annotations.config.styles.setDefaultToolStyle(deepMerge(styles, newStyles));
+annotation.config.style.setDefaultToolStyle(deepMerge(styles, newStyles));
 ```
 
 ### Configurable Styles

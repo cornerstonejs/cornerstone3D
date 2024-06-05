@@ -2,6 +2,7 @@ import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import WindowLevelTool from './WindowLevelTool';
+import WindowLevelRegionTool from './WindowLevelRegionTool';
 import StackScrollTool from './StackScrollTool';
 import PlanarRotateTool from './PlanarRotateTool';
 import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
@@ -17,6 +18,7 @@ import SegmentationIntersectionTool from './SegmentationIntersectionTool';
 import ReferenceCursors from './ReferenceCursors';
 import ReferenceLines from './ReferenceLinesTool';
 import ScaleOverlayTool from './ScaleOverlayTool';
+import SculptorTool from './SculptorTool';
 
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
@@ -64,6 +66,7 @@ export {
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
+  WindowLevelRegionTool,
   StackScrollTool,
   PlanarRotateTool,
   StackScrollMouseWheelTool,
@@ -110,5 +113,6 @@ export {
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
+  SculptorTool,
   SegmentSelectTool,
 };

@@ -5,6 +5,7 @@ import cameraModifiedEventDispatcher from './cameraModifiedEventDispatcher';
 import imageSpacingCalibratedEventDispatcher from './imageSpacingCalibratedEventDispatcher';
 import touchToolEventDispatcher from './touchToolEventDispatcher';
 import annotationInterpolationEventDispatcher from './annotationInterpolationEventDispatcher';
+import cameraResetEventDispatcher from './cameraResetEventDispatcher';
 
 export {
   imageRenderedEventDispatcher,
@@ -14,4 +15,5 @@ export {
   imageSpacingCalibratedEventDispatcher,
   touchToolEventDispatcher,
   annotationInterpolationEventDispatcher,
+  cameraResetEventDispatcher,
 };

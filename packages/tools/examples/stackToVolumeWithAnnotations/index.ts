@@ -1,18 +1,15 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  getRenderingEngine,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
-import {
-  initDemo,
-  createImageIdsAndCacheMetaData,
-  setTitleAndDescription,
-  addDropdownToToolbar,
-  addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+import * as cornerstone from '@cornerstonejs/core';
+import { Types } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+
+import {
+  addButtonToToolbar,
+  addDropdownToToolbar,
+  createImageIdsAndCacheMetaData,
+  createInfoSection,
+  initDemo,
+  setTitleAndDescription,
+} from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
 console.warn(
@@ -20,51 +17,77 @@ console.warn(
 );
 
 const {
+  Enums: csEnums,
+  RenderingEngine,
+  getRenderingEngine,
+  utilities: csUtilities,
+} = cornerstone;
+const { ViewportType } = csEnums;
+
+const {
+  Enums: csToolsEnums,
   LengthTool,
   PanTool,
-  ZoomTool,
-  ToolGroupManager,
   StackScrollMouseWheelTool,
-  Enums: csToolsEnums,
-  utilities,
+  ToolGroupManager,
+  ZoomTool,
+  utilities: csToolsUtilities,
 } = cornerstoneTools;
-
-const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
+//
+let renderingEngine;
+const renderingEngineId = 'MY_RENDERING_ENGINE_ID';
+let toolGroup;
+const toolGroupId = 'MY_TOOL_GROUP_ID';
+const viewportIds = ['CT_VIEWPORT'];
+let imageIds;
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
+const volumeId = volumeLoaderScheme + ':myVolume';
+
+const toolsNames = [LengthTool.toolName];
+let selectedToolName = toolsNames[0];
+
 // ======== Set up page ======== //
+
 setTitleAndDescription(
   'Stack and VolumeViewport conversions',
   'In this demo, you see how the stack and volume viewport conversions work. The purple background represents a StackViewport while the green background represents a VolumeViewport. You can start annotating the images and annotations will be rendered correctly regardless of the viewport they were drawn on.'
 );
 
+const size = '500px';
+
+const demoToolbar = document.getElementById('demo-toolbar');
+
+const group1 = document.createElement('div');
+group1.style.marginBottom = '10px';
+demoToolbar.appendChild(group1);
+
 const content = document.getElementById('content');
-const element = document.createElement('div');
+
+const viewportGrid = document.createElement('div');
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
+
+const element1 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
 
 // Disable right click context menu so we can have right click tools
-element.oncontextmenu = (e) => e.preventDefault();
+element1.oncontextmenu = (e) => e.preventDefault();
 
-element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+viewportGrid.appendChild(element1);
 
-content.appendChild(element);
+content.appendChild(viewportGrid);
 
-const instructions = document.createElement('p');
-instructions.innerText = 'Left Click to use selected tool';
+createInfoSection(content).addInstruction('Left Click to use selected tool');
 
-content.append(instructions);
 // ============================= //
 
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
-
-const toolsNames = [LengthTool.toolName];
-let selectedToolName = toolsNames[0];
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_VIEWPORT';
-let toolGroup;
-
 addDropdownToToolbar({
+  style: {
+    marginRight: '5px',
+  },
   options: { values: toolsNames, defaultValue: selectedToolName },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
@@ -83,6 +106,7 @@ addDropdownToToolbar({
 
     selectedToolName = <string>newSelectedToolName;
   },
+  container: group1,
 });
 
 addButtonToToolbar({
@@ -91,19 +115,20 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportIds[0]);
 
     let newViewport;
+
     if (viewport.type === ViewportType.STACK) {
-      newViewport = await csUtils.convertStackToVolumeViewport({
+      newViewport = await csUtilities.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
-          volumeId: `cornerstoneStreamingImageVolume:myVolume`,
+          volumeId: volumeId,
         },
       });
     } else {
-      newViewport = await csUtils.convertVolumeToStackViewport({
+      newViewport = await csUtilities.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0.0, 0.4],
@@ -116,7 +141,10 @@ addButtonToToolbar({
       toolGroup.addViewport(newViewport.id, renderingEngineId);
     }
   },
+  container: group1,
 });
+
+// ============================= //
 
 /**
  * Runs the demo
@@ -169,7 +197,7 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
@@ -178,13 +206,13 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
   const viewportInput = {
-    viewportId,
+    viewportId: viewportIds[0],
     type: ViewportType.STACK,
-    element,
+    element: element1,
     defaultOptions: {
       background: <Types.Point3>[0.4, 0, 0.4],
     },
@@ -193,20 +221,17 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Set the tool group on the viewport
-  toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportIds[0], renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
+    renderingEngine.getViewport(viewportIds[0])
   );
 
-  // Define a stack containing a single image
-  const stack = imageIds;
-
   // Set the stack on the viewport
-  viewport.setStack(stack, 80);
+  viewport.setStack(imageIds, 80);
 
-  utilities.stackContextPrefetch.enable(viewport.element);
+  csToolsUtilities.stackContextPrefetch.enable(viewport.element);
 
   renderingEngine.render();
 }

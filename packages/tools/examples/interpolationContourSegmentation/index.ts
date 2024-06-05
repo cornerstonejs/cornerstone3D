@@ -201,7 +201,7 @@ function acceptCurrent() {
           segmentIndex:
             segmentation.segmentIndex.getActiveSegmentIndex(segmentationId),
           segmentationId: segmentationIdStack,
-          sliceIndex: viewport.getCurrentImageIdIndex(),
+          sliceIndex: viewport.getSliceIndex(),
         }
       );
     }
