@@ -34,6 +34,7 @@ export default async function createImageIdsAndCacheMetaData({
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
   const MODALITY = '00080060';
+  const INSTANCE_NUMBER = '00200013';
 
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
@@ -51,7 +52,12 @@ export default async function createImageIdsAndCacheMetaData({
   }
 
   const modality = instances[0][MODALITY].Value[0];
-  let imageIds = instances.map((instanceMetaData) => {
+
+  const sortedInstances = Object.values(instances).sort(
+    (a, b) => a[INSTANCE_NUMBER].Value[0] - b[INSTANCE_NUMBER].Value[0]
+  );
+
+  let imageIds = sortedInstances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
     const SOPInstanceUIDToUse =
       SOPInstanceUID || instanceMetaData[SOP_INSTANCE_UID].Value[0];
