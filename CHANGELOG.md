@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.10...v1.77.11) (2024-06-05)
+
+### Bug Fixes
+
+- **events:** ANNOTATION_REMOVED event listener on removing ALL annotations. ([#1236](https://github.com/cornerstonejs/cornerstone3D/issues/1236)) ([5bddf05](https://github.com/cornerstonejs/cornerstone3D/commit/5bddf057f67c610dec160d33917bf597ed4ed982))
+
 ## [1.77.10](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.9...v1.77.10) (2024-06-05)
 
 **Note:** Version bump only for package root
