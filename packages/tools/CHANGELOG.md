@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.12](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.11...v1.77.12) (2024-06-06)
+
+### Bug Fixes
+
+- **stackContextPrefetch:** fix disable function, reduce duplicated fetching of images ([#1224](https://github.com/cornerstonejs/cornerstone3D/issues/1224)) ([8d3f5c5](https://github.com/cornerstonejs/cornerstone3D/commit/8d3f5c59e41e904d3b4c6ee5c1c3eb97b237d51e))
+
 ## [1.77.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.10...v1.77.11) (2024-06-05)
 
 ### Bug Fixes
