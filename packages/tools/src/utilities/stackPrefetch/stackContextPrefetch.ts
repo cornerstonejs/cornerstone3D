@@ -164,7 +164,7 @@ function prefetch(element) {
     imageLoadPoolManager.filterRequests(clearFromImageIds(stack));
   }
 
-  function doneCallback(imageId) {
+  function doneCallback(imageId: string) {
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
@@ -222,7 +222,7 @@ function prefetch(element) {
 
   const useNativeDataType = useNorm16Texture || preferSizeOverAccuracy;
 
-  indicesToRequestCopy.forEach((imageIdIndex) => {
+  stackPrefetch.indicesToRequest.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
@@ -360,7 +360,7 @@ function disable(element) {
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it
 
-  if (stackPrefetchData && stackPrefetchData.data.length) {
+  if (stackPrefetchData) {
     stackPrefetchData.enabled = false;
     // Don't worry about clearing the requests - there aren't that many too be bothersome
   }
