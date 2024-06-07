@@ -285,16 +285,34 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    *
    * @param groupKey - The group key to remove annotations for (in default manager it is FrameOfReferenceUID).
    * @param toolName - Optional. The name of the tool to remove annotations for.
+   *
+   * @returns The removed annotations
    */
-  removeAnnotations = (groupKey: string, toolName?: string): void => {
+  removeAnnotations = (groupKey: string, toolName?: string): Annotations => {
     const annotations = this.annotations;
-    if (annotations[groupKey]) {
-      if (toolName) {
-        delete annotations[groupKey][toolName];
-      } else {
-        delete annotations[groupKey];
+    const removedAnnotations = [];
+
+    if (!annotations[groupKey]) {
+      return removedAnnotations;
+    }
+
+    if (toolName) {
+      const annotationsForTool = annotations[groupKey][toolName];
+      for (const annotation of annotationsForTool) {
+        this.removeAnnotation(annotation.annotationUID);
+        removedAnnotations.push(annotation);
+      }
+    } else {
+      for (const toolName in annotations[groupKey]) {
+        const annotationsForTool = annotations[groupKey][toolName];
+        for (const annotation of annotationsForTool) {
+          this.removeAnnotation(annotation.annotationUID);
+          removedAnnotations.push(annotation);
+        }
       }
     }
+
+    return removedAnnotations;
   };
 
   /**
@@ -407,9 +425,18 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * Removes all annotations in the annotation state.
+   *
+   * @returns The removed annotations
    */
-  removeAllAnnotations = (): void => {
-    this.annotations = {};
+  removeAllAnnotations = (): Annotations => {
+    const removedAnnotations = [];
+
+    for (const annotation of this.getAllAnnotations()) {
+      this.removeAnnotation(annotation.annotationUID);
+      removedAnnotations.push(annotation);
+    }
+
+    return removedAnnotations;
   };
 }
 

@@ -36,6 +36,15 @@ const screenShotPaths = {
   volumeBasic: {
     viewport: 'viewport.png',
   },
+  ultrasoundColors: {
+    slice1: 'slice1.png',
+    slice2: 'slice2.png',
+    slice3: 'slice3.png',
+    slice4: 'slice4.png',
+    slice5: 'slice5.png',
+    slice6: 'slice6.png',
+    slice7: 'slice7.png',
+  },
 };
 
 export { screenShotPaths };

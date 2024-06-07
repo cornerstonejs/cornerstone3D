@@ -62,11 +62,11 @@ export default async function createImageIdsAndCacheMetaData({
       prefix +
       wadoRsRoot +
       '/studies/' +
-      StudyInstanceUID +
+      StudyInstanceUID.trim() +
       '/series/' +
-      SeriesInstanceUID +
+      SeriesInstanceUID.trim() +
       '/instances/' +
-      SOPInstanceUIDToUse +
+      SOPInstanceUIDToUse.trim() +
       '/frames/1';
 
     cornerstoneDICOMImageLoader.wadors.metaDataManager.add(

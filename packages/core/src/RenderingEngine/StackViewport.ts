@@ -1601,6 +1601,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       return;
     }
     const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
+    if (!imagePlaneModule) {
+      return;
+    }
     const { imagePositionPatient, frameOfReferenceUID: FrameOfReferenceUID } =
       imagePlaneModule;
     let { rowCosines, columnCosines } = imagePlaneModule;
@@ -2877,6 +2880,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns currently shown imageId index
    */
   public getCurrentImageIdIndex = (): number => {
+    return this.currentImageIdIndex;
+  };
+
+  /**
+   * returns the slice index of the view
+   * @returns slice index
+   */
+  public getSliceIndex = (): number => {
     return this.currentImageIdIndex;
   };
 

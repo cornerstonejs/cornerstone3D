@@ -5,9 +5,9 @@ import type { Types } from '@cornerstonejs/core';
  * https://www.youtube.com/watch?v=GpsKrAipXm8&t=1900s
  *
  * This functions has a runtime very close to `getArea` and it is recommended to
- * be called only if you need the area signal (eg: calculate polygon normal). If
- * you do not need the area signal you should always call `getArea`.
- *
+ * be called only if you need the area signal (eg: calculate polygon normal or
+ * winding direction). If you do not need the area signal you should always call
+ * `getArea`.
  *
  * @param polyline - Polyline points (2D)
  * @returns Area of the polyline (with signal)

@@ -2482,11 +2482,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     // (undocumented)
     _imageVolumeModifiedHandler: (evt: Types_2.EventTypes.ImageVolumeModifiedEvent) => void;
     // (undocumented)
-    removeAllAnnotations: () => void;
+    removeAllAnnotations: () => Annotations;
     // (undocumented)
     removeAnnotation: (annotationUID: string) => void;
     // (undocumented)
-    removeAnnotations: (groupKey: string, toolName?: string) => void;
+    removeAnnotations: (groupKey: string, toolName?: string) => Annotations;
     // (undocumented)
     restoreAnnotations: (state: AnnotationState | GroupSpecificAnnotations | Annotations, groupKey?: string, toolName?: string) => void;
     // (undocumented)
@@ -3423,7 +3423,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         lastCanvasPoint?: Types_2.Point2;
         confirmedPath?: LivewirePath;
         currentPath?: LivewirePath;
-        confirmedPathRight?: LivewirePath;
+        confirmedPathNext?: LivewirePath;
         closed?: boolean;
         worldToSlice?: (point: Types_2.Point3) => Types_2.Point2;
         sliceToWorld?: (point: Types_2.Point2) => Types_2.Point3;
@@ -3431,7 +3431,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         contourHoleProcessingEnabled?: boolean;
     } | null;
     // (undocumented)
-    editHandle(worldPos: Types_2.Point3, element: any, annotation: any, handleIndex: number): void;
+    editHandle(worldPos: Types_2.Point3, element: any, annotation: LivewireContourAnnotation, handleIndex: number): void;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType, clearAnnotation?: boolean) => void;
     // (undocumented)
@@ -3459,9 +3459,9 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected scissors: LivewireScissors;
     // (undocumented)
-    protected scissorsRight: LivewireScissors;
+    protected scissorsNext: LivewireScissors;
     // (undocumented)
-    protected setupBaseEditData(worldPos: any, element: any, annotation: any, rightPos?: any, contourHoleProcessingEnabled?: any): void;
+    protected setupBaseEditData(worldPos: any, element: any, annotation: any, nextPos?: any, contourHoleProcessingEnabled?: any): void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -4608,6 +4608,9 @@ function removeAllAnnotations(): void;
 function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
+function removeAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): void;
+
+// @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
 
 // @public (undocumented)
@@ -5325,6 +5328,7 @@ declare namespace state_2 {
         addAnnotation,
         getAnnotation,
         removeAnnotation,
+        removeAnnotations,
         removeAllAnnotations,
         setAnnotationManager,
         getAnnotationManager,
@@ -5869,6 +5873,8 @@ export class TrackballRotateTool extends BaseTool {
     // (undocumented)
     _getViewportsInfo: () => any[];
     // (undocumented)
+    _hasResolutionChanged: boolean;
+    // (undocumented)
     mouseDragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     onSetToolActive: () => void;
@@ -6116,6 +6122,7 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
     targetWindingDirection?: ContourWindingDirection;
 }, transforms: {
     canvasToWorld: (point: Types_2.Point2) => Types_2.Point3;
+    worldToCanvas: (point: Types_2.Point3) => Types_2.Point2;
 }, options?: {
     decimate?: {
         enabled?: boolean;
