@@ -1,7 +1,7 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import { vec3 } from 'gl-matrix';
 import { pointInSphere } from './math/sphere';
 import pointInShapeCallback, {

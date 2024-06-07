@@ -1,4 +1,4 @@
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
 
 import { VolumeActor } from './../../types/IActor';
 import { VoiModifiedEventDetail } from './../../types/EventTypes';

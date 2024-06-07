@@ -1,4 +1,4 @@
-import '@kitware/vtk.js/Rendering/Profiles/Geometry';
+import '@kitware/vtk.js/Rendering/Profiles/Geometry.js';
 
 import cache from '../cache';
 import { GeometryType } from '../enums';

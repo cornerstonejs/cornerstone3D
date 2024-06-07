@@ -1,6 +1,6 @@
-import macro from '@kitware/vtk.js/macros';
-import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
-import HalfFloat from '@kitware/vtk.js/Common/Core/HalfFloat';
+import macro from '@kitware/vtk.js/macros.js';
+import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture.js';
+import HalfFloat from '@kitware/vtk.js/Common/Core/HalfFloat.js';
 import { getConfiguration } from '../../init';
 
 /**

@@ -1,10 +1,10 @@
-import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget';
-import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
-import vtkAxesActor from '@kitware/vtk.js/Rendering/Core/AxesActor';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget.js';
+import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor.js';
+import vtkAxesActor from '@kitware/vtk.js/Rendering/Core/AxesActor.js';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
+import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader.js';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
 
 import { BaseTool } from './base';
 import { getRenderingEngines } from '@cornerstonejs/core';

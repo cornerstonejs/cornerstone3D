@@ -64,7 +64,7 @@
       }
     ],
     "import/extensions": [
-      "error",
+      "warn", // TODO move back to error once https://github.com/bennycode/ts2esm/issues/60 is in ts2esm.
       "ignorePackages",
       {
         "js": "never",

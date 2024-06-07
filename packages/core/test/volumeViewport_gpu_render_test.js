@@ -1,8 +1,8 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource.js';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 

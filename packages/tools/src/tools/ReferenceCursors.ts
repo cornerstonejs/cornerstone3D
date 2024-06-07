@@ -27,7 +27,7 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 import { StyleSpecifier } from '../types/AnnotationStyle';
 import { vec3 } from 'gl-matrix';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import {
   hideElementCursor,
   resetElementCursor,

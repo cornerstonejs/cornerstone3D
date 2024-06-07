@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import { getEnabledElement, Types } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { EventTypes, PublicToolProps, ToolProps } from '../types';

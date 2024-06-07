@@ -1,4 +1,4 @@
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
 import { ContourData, IContour, Point3 } from './';
 
 /**

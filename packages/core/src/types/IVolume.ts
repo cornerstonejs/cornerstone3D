@@ -1,4 +1,4 @@
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
 import Mat3 from './Mat3';

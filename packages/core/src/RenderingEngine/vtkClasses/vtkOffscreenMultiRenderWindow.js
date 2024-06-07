@@ -1,8 +1,8 @@
-import macro from '@kitware/vtk.js/macros';
+import macro from '@kitware/vtk.js/macros.js';
 import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow';
-import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
-import vtkRenderWindowInteractor from '@kitware/vtk.js/Rendering/Core/RenderWindowInteractor';
+import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer.js';
+import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow.js';
+import vtkRenderWindowInteractor from '@kitware/vtk.js/Rendering/Core/RenderWindowInteractor.js';
 
 // Load basic classes for vtk() factory
 import '@kitware/vtk.js/Common/Core/Points';

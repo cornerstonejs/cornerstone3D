@@ -1,5 +1,5 @@
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane.js';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
 
 import { vec3 } from 'gl-matrix';
 

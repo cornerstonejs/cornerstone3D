@@ -1,5 +1,5 @@
 import type { mat4 } from 'gl-matrix';
-import type { vtkObject } from '@kitware/vtk.js/interfaces';
+import type { vtkObject } from '@kitware/vtk.js/interfaces.js';
 
 // Copied from VTKCamera
 

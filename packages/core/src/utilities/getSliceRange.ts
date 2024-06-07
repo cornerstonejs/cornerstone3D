@@ -1,4 +1,4 @@
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import type { VolumeActor, Point3, ActorSliceRange } from '../types';
 import { EPSILON } from '../constants';

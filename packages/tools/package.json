@@ -2,9 +2,14 @@
   "name": "@cornerstonejs/tools",
   "version": "1.28.2",
   "description": "Cornerstone3D Tools",
-  "main": "src/index.ts",
-  "types": "dist/esm/index.d.ts",
-  "module": "dist/esm/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
     "dist/",

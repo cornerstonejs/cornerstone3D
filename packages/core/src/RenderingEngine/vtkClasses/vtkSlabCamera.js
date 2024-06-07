@@ -1,7 +1,7 @@
-import macro from '@kitware/vtk.js/macros';
-import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import macro from '@kitware/vtk.js/macros.js';
+import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera.js';
 import { vec3, mat4 } from 'gl-matrix';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 
 /**
  * vtkSlabCamera - A derived class of the core vtkCamera class

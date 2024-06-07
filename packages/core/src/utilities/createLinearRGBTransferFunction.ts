@@ -1,4 +1,4 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
 import { VOIRange } from '../types';
 
 export default function createLinearRGBTransferFunction(
