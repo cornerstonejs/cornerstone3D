@@ -24,6 +24,7 @@
   "scripts": {
     "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:esm:node": "tsc --project ./tsconfig.esm-node.json",
     "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:esm",
