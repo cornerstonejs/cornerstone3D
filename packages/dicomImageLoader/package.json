@@ -13,7 +13,12 @@
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
   "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
-  "module": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "exports": {
+    ".": {
+      "import": "./dist/cornerstoneDICOMImageLoader.server.bundle.min.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/"
   ],
@@ -25,9 +30,10 @@
     "access": "public"
   },
   "scripts": {
+    "build:server": "cross-env NODE_ENV=production webpack --config .webpack/webpack-server.js",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
-    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle",
+    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle && yarn run build:server",
     "copy-dts": "echo 'not implemented yet'",
     "build": "yarn run build:all && yarn run copy-dts",
     "api-check": "echo 'not implemented yet'",
