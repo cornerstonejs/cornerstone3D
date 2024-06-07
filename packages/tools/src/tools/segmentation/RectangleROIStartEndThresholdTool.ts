@@ -297,29 +297,30 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
-    // substitute the end slice index 2 with startIJK index 2
-    let endIJK;
-
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
-      startIJK[2] = startCoordinate;
-      endIJK = vec3.fromValues(startIJK[0], startIJK[1], endCoordinate);
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
-      startIJK[0] = startCoordinate;
-      endIJK = vec3.fromValues(endCoordinate, startIJK[1], startIJK[2]);
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
-      startIJK[1] = startCoordinate;
-      endIJK = vec3.fromValues(startIJK[0], endCoordinate, startIJK[2]);
-    }
+    const endIJK = transformWorldToIndex(imageData, points[0]);
 
     const startWorld = vec3.create();
     imageData.indexToWorldVec3(startIJK, startWorld);
 
     const endWorld = vec3.create();
     imageData.indexToWorldVec3(endIJK, endWorld);
+
+    // substitute the end slice index 2 with startIJK index 2
+
+    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
+      startWorld[2] = startCoordinate;
+      endWorld[2] = endCoordinate;
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
+    ) {
+      startWorld[0] = startCoordinate;
+      endWorld[0] = endCoordinate;
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
+    ) {
+      startWorld[1] = startCoordinate;
+      endWorld[1] = endCoordinate;
+    }
 
     // distance between start and end slice in the world coordinate
     const distance = vec3.distance(startWorld, endWorld);

@@ -57,6 +57,8 @@ import { pointInEllipse } from '../../utilities/math/ellipse';
 import { pointInShapeCallback, roundNumber } from '../../utilities';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
+import cloneDeep from 'lodash.clonedeep';
+
 const { transformWorldToIndex } = csUtils;
 
 class CircleROIStartEndThresholdTool extends CircleROITool {
@@ -138,7 +140,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       viewPlaneNormal
     );
 
-    const startIndex = this._getStartCoordinate(
+    const startCoord = this._getStartCoordinate(
       worldPos,
       spacingInNormal,
       viewPlaneNormal
@@ -148,7 +150,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // the order of imageIds can be from top to bottom or bottom to top and
     // we want to make sure it is always propagated in the direction of the
     // view and also to make sure we don't go out of bounds.
-    const endIndex = this._getEndCoordinate(
+    const endCoord = this._getEndCoordinate(
       worldPos,
       spacingInNormal,
       viewPlaneNormal
@@ -171,8 +173,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       },
       data: {
         label: '',
-        startCoordinate: startIndex,
-        endCoordinate: endIndex,
+        startCoordinate: startCoord,
+        endCoordinate: endCoord,
 
         handles: {
           textBox: {
@@ -539,29 +541,38 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
-    // substitute the end slice index 2 with startIJK index 2
-    let endIJK;
+    const endIJK = transformWorldToIndex(imageData, points[0]);
 
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
-      startIJK[2] = startCoordinate;
-      endIJK = vec3.fromValues(startIJK[0], startIJK[1], endCoordinate);
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
-      startIJK[0] = startCoordinate;
-      endIJK = vec3.fromValues(endCoordinate, startIJK[1], startIJK[2]);
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
-      startIJK[1] = startCoordinate;
-      endIJK = vec3.fromValues(startIJK[0], endCoordinate, startIJK[2]);
-    }
+    const handlesToStart = cloneDeep(points);
 
     const startWorld = vec3.create();
     imageData.indexToWorldVec3(startIJK, startWorld);
 
     const endWorld = vec3.create();
     imageData.indexToWorldVec3(endIJK, endWorld);
+
+    // substitute the end slice index 2 with startIJK index 2
+
+    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
+      startWorld[2] = startCoordinate;
+      endWorld[2] = endCoordinate;
+      handlesToStart[0][2] = startCoordinate;
+      handlesToStart[1][2] = startCoordinate;
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
+    ) {
+      startWorld[0] = startCoordinate;
+      endWorld[0] = endCoordinate;
+      handlesToStart[0][0] = startCoordinate;
+      handlesToStart[1][0] = startCoordinate;
+    } else if (
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
+    ) {
+      startWorld[1] = startCoordinate;
+      endWorld[1] = endCoordinate;
+      handlesToStart[0][1] = startCoordinate;
+      handlesToStart[1][1] = startCoordinate;
+    }
 
     // distance between start and end slice in the world coordinate
     const distance = vec3.distance(startWorld, endWorld);
@@ -571,7 +582,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const newProjectionPoints = [];
     for (let dist = 0; dist < distance; dist += spacingInNormal) {
       newProjectionPoints.push(
-        points.map((point) => {
+        handlesToStart.map((point) => {
           const newPoint = vec3.create();
           //@ts-ignore
           vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
@@ -662,17 +673,30 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const { dimensions, imageData } = imageVolume;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
-      const worldCenterIndex = transformWorldToIndex(imageData, centerWorld);
+
+      const worldProjectionPointIndex = transformWorldToIndex(
+        imageData,
+        centerWorld
+      );
+
+      const indexOfProjection =
+        this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
       worldPos1Index[0] = Math.floor(worldPos1Index[0]);
       worldPos1Index[1] = Math.floor(worldPos1Index[1]);
-      worldPos1Index[2] = Math.floor(worldCenterIndex[2]);
+      worldPos1Index[2] = Math.floor(worldPos1Index[2]);
+
+      worldPos1Index[indexOfProjection] =
+        worldProjectionPointIndex[indexOfProjection];
 
       const worldPos2Index = transformWorldToIndex(imageData, worldPos2);
 
       worldPos2Index[0] = Math.floor(worldPos2Index[0]);
       worldPos2Index[1] = Math.floor(worldPos2Index[1]);
-      worldPos2Index[2] = Math.floor(worldCenterIndex[2]);
+      worldPos2Index[2] = Math.floor(worldPos2Index[2]);
+
+      worldPos2Index[indexOfProjection] =
+        worldProjectionPointIndex[indexOfProjection];
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.

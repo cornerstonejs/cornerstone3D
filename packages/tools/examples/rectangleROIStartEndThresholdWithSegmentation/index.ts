@@ -14,6 +14,7 @@ import {
   addButtonToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
+  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import perfusionColorMap from '../rectangleROIThreshold/preset';
@@ -28,7 +29,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  CircleROIStartEndThresholdTool,
+  RectangleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
   StackScrollMouseWheelTool,
@@ -42,12 +43,7 @@ const { ViewportType } = Enums;
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-
-const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
-const ptVolumeName = 'PT_VOLUME_ID';
-const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
-const volumeId = ptVolumeId;
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
@@ -56,7 +52,7 @@ let segmentationRepresentationByUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Circle ROI Start End Threshold Tool',
+  'Rectangle ROI Start End Threshold Tool',
   'Here we demonstrate usage of the Start en End ROI tool'
 );
 
@@ -108,7 +104,7 @@ addButtonToToolbar({
   title: 'Set Start Slice',
   onClick: () => {
     const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
-      CircleROIStartEndThresholdTool.toolName
+      RectangleROIStartEndThresholdTool.toolName
     ) as Array<string>;
 
     if (!selectedAnnotationUIDs) {
@@ -118,7 +114,7 @@ addButtonToToolbar({
     const annotationUID = selectedAnnotationUIDs[0];
     const annotation = cornerstoneTools.annotation.state.getAnnotation(
       annotationUID
-    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIStartEndThresholdAnnotation;
 
     if (!annotation) {
       return;
@@ -141,7 +137,7 @@ addButtonToToolbar({
   title: 'Set End Slice',
   onClick: () => {
     const selectedAnnotationUIDs = selection.getAnnotationsSelectedByToolName(
-      CircleROIStartEndThresholdTool.toolName
+      RectangleROIStartEndThresholdTool.toolName
     ) as Array<string>;
 
     if (!selectedAnnotationUIDs) {
@@ -151,7 +147,7 @@ addButtonToToolbar({
     const annotationUID = selectedAnnotationUIDs[0];
     const annotation = cornerstoneTools.annotation.state.getAnnotation(
       annotationUID
-    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.CircleROIStartEndThresholdAnnotation;
+    ) as cornerstoneTools.Types.ToolSpecificAnnotationTypes.RectangleROIStartEndThresholdAnnotation;
 
     if (!annotation) {
       return;
@@ -171,6 +167,61 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Run Segmentation',
+  onClick: () => {
+    const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
+    const labelmapVolume = cache.getVolume(segmentationId);
+    const scalarData = labelmapVolume.getScalarData();
+
+    //We set the segmentation to 0
+    for (let i = 0; i < scalarData.length; i++) {
+      scalarData[i] = 0;
+    }
+
+    annotations.map((annotation, i) => {
+      console.debug(annotation);
+      const pointsInVolume = annotation.data.cachedStats.pointsInVolume;
+      for (let i = 0; i < pointsInVolume.length; i++) {
+        for (let j = 0; j < pointsInVolume[i].length; j++) {
+          if (pointsInVolume[i][j].value > 2) {
+            scalarData[pointsInVolume[i][j].index] = 1;
+          }
+        }
+      }
+      console.debug(labelmapVolume);
+    });
+
+    cornerstoneTools.segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+      labelmapVolume.volumeId
+    );
+    labelmapVolume.modified();
+  },
+});
+
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+}
+
 /**
  * Runs the demo
  */
@@ -183,7 +234,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
+  cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -195,13 +246,13 @@ async function run() {
 
   // Segmentation Tools
   toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
+  toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: true,
   });
   toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
-  toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
+  toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -223,33 +274,22 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-  const wadoRsRoot = 'https://domvja9iplmyu.cloudfront.net/dicomweb';
-  const StudyInstanceUID =
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339';
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const ctImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
+  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
-    wadoRsRoot,
-  });
-
-  const ptImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
-    wadoRsRoot,
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
-    imageIds: ctImageIds,
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
   });
-  // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
-    imageIds: ptImageIds,
-  });
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -296,9 +336,8 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  // Set the volumes to load
-  ptVolume.load();
-  ctVolume.load();
+  // Set the volume to load
+  volume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
@@ -307,24 +346,13 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ctVolumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-      {
-        volumeId: ptVolumeId,
-        callback: ({ volumeActor }) =>
-          setPetColorMapTransferFunctionForVolumeActor({
-            volumeActor,
-            preset: perfusionColorMap,
-          }),
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
-  );
+  // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(toolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
