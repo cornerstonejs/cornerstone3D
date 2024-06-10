@@ -36,7 +36,6 @@
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
     "preinstall": "node preinstall.js",
-    "postinstall": "node postinstall.js",
     "prepare": "husky install",
     "commit:prepare": "yarn build:update-api && yarn test:ci && yarn test:unit",
     "start": "yarn run dev",

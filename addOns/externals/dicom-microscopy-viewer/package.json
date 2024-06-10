@@ -7,7 +7,10 @@
     "node": ">=18",
     "yarn": ">=1.19.1"
   },
+  "dependencies": {
+    "dicom-microscopy-viewer": "^0.46.1"
+  },
   "scripts": {
-    "build": "echo Installed right now in postinstall.js, todo add as optionalDependency once released"
+    "build": "echo addOns externals dependency"
   }
 }
