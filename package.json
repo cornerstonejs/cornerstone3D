@@ -30,7 +30,7 @@
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
     "serve-static-examples": "npx serve .static-examples",
-    "build-and-serve-static-examples": "yarn run build-all-examples && yarn run serve-static-examples",
+    "build-and-serve-static-examples": "cross-env NODE_OPTIONS=--max_old_space_size=8096 yarn run build-all-examples && yarn run serve-static-examples",
     "build:all": "npx lerna run build:all",
     "dev": "yarn run all-examples",
     "docs": "npx lerna run docs",

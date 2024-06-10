@@ -8,26 +8,33 @@
  * @param RGBA
  * @returns
  */
-export default function isColorConversionRequired(imageFrame, RGBA) {
+export default function isColorConversionRequired(imageFrame) {
   if (imageFrame === undefined) {
     return false;
   }
   const { rows, columns, photometricInterpretation, pixelDataLength } =
     imageFrame;
 
+  // if it is rgba don't convert (typically jpeg, jpeg-xl, jpeg2000 etc)
+  if (pixelDataLength === 4 * columns * rows) {
+    // RGBA - JPEG
+    return false;
+  }
+
   if (photometricInterpretation.endsWith('420')) {
     return (
-      pixelDataLength !==
+      pixelDataLength ===
       (3 * Math.ceil(columns / 2) + Math.floor(columns / 2)) * rows
     );
   } else if (photometricInterpretation.endsWith('422')) {
     return (
-      pixelDataLength !==
+      pixelDataLength ===
       (3 * Math.ceil(columns / 2) + Math.floor(columns / 2)) *
         Math.ceil(rows / 2) +
         Math.floor(rows / 2) * columns
     );
   } else {
     return photometricInterpretation !== 'RGB';
+    // and it is one of the rle and lei cases then we need to convert
   }
 }

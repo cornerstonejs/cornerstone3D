@@ -3,6 +3,54 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.12](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.11...v1.77.12) (2024-06-06)
+
+### Bug Fixes
+
+- **stackContextPrefetch:** fix disable function, reduce duplicated fetching of images ([#1224](https://github.com/cornerstonejs/cornerstone3D/issues/1224)) ([8d3f5c5](https://github.com/cornerstonejs/cornerstone3D/commit/8d3f5c59e41e904d3b4c6ee5c1c3eb97b237d51e))
+
+## [1.77.11](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.10...v1.77.11) (2024-06-05)
+
+### Bug Fixes
+
+- **events:** ANNOTATION_REMOVED event listener on removing ALL annotations. ([#1236](https://github.com/cornerstonejs/cornerstone3D/issues/1236)) ([5bddf05](https://github.com/cornerstonejs/cornerstone3D/commit/5bddf057f67c610dec160d33917bf597ed4ed982))
+
+## [1.77.10](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.9...v1.77.10) (2024-06-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.77.9](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.8...v1.77.9) (2024-06-05)
+
+### Bug Fixes
+
+- **TrackballRotateTool:** Resolve resolution reduction and refactor code ([#1306](https://github.com/cornerstonejs/cornerstone3D/issues/1306)) ([16944fb](https://github.com/cornerstonejs/cornerstone3D/commit/16944fbaf73b40f4980865b067d7d8f194b58afd))
+
+## [1.77.8](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.7...v1.77.8) (2024-06-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.77.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.6...v1.77.7) (2024-06-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.77.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.5...v1.77.6) (2024-06-04)
+
+### Bug Fixes
+
+- **color:** Resolve color conversion logic ([#1302](https://github.com/cornerstonejs/cornerstone3D/issues/1302)) ([5e13e05](https://github.com/cornerstonejs/cornerstone3D/commit/5e13e056229a0ae3604cfa02f22b42df2e024a89))
+
+## [1.77.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.4...v1.77.5) (2024-06-03)
+
+### Bug Fixes
+
+- **livewire:** polyline and handles (winding direction) ([11a767d](https://github.com/cornerstonejs/cornerstone3D/commit/11a767db1a0cd1835dbbdbc8ad00505f6bffb8ee))
+
+## [1.77.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.3...v1.77.4) (2024-05-31)
+
+### Bug Fixes
+
+- **imageIndex vs sliceIndex:** imageIndex should be ijk based and slice index view based ([#1299](https://github.com/cornerstonejs/cornerstone3D/issues/1299)) ([67f614b](https://github.com/cornerstonejs/cornerstone3D/commit/67f614b4272a6a45e42e0b54f16693337148c361))
+
 ## [1.77.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.2...v1.77.3) (2024-05-30)
 
 ### Bug Fixes
