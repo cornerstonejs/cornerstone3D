@@ -18,6 +18,7 @@ import type {
   ViewReferenceSpecifier,
   ViewReference,
   ReferenceCompatibleOptions,
+  ImageSetOptions,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -216,13 +217,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
   /**
    * This is a wrapper for setVideo to allow generic behaviour
+   *
+   * @param _groupId - the id for the overall set of image ids.  Unused for video viewport.
+   * @param imageIds - a singleton list containing the imageId of a video.
    */
-  public setImageIds(
-    _groupId: string,
-    imageIds: string[],
-    frameNumber?: number
-  ) {
-    this.setVideo(imageIds[0], frameNumber || 5);
+  public setDataIds(imageIds: string[], options?: ImageSetOptions) {
+    this.setVideo(
+      imageIds[0],
+      (options?.viewReference?.sliceIndex as number) || 1
+    );
   }
 
   /**

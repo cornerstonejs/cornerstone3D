@@ -12,7 +12,7 @@ const viewportTypeToViewportClass = {
   [ViewportType.STACK]: StackViewport,
   [ViewportType.VOLUME_3D]: VolumeViewport3D,
   [ViewportType.VIDEO]: VideoViewport,
-  [ViewportType.WSI]: WSIViewport,
+  [ViewportType.WholeSlide]: WSIViewport,
 };
 
 export default viewportTypeToViewportClass;

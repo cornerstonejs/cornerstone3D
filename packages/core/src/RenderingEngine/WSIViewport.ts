@@ -425,15 +425,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
   /**
    * This is a wrapper for setWSI to allow generic behaviour
    */
-  public setImageIds(
-    _groupId: string,
-    imageIds: string[],
-    _frameNumber?: number
-  ) {
+  public setDataIds(imageIds: string[]) {
     const webClient = metaData.get(MetadataModules.WEB_CLIENT, imageIds[0]);
     if (!webClient) {
       throw new Error(
-        `To use setImageIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
+        `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
       );
     }
 

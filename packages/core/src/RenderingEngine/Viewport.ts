@@ -39,6 +39,7 @@ import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
+  ImageSetOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -1873,12 +1874,8 @@ class Viewport implements IViewport {
   /**
    * This is a wrapper for setStack/setVideo/etc
    */
-  public setImageIds(
-    _groupId: string,
-    _imageIds: string[],
-    _frameNumber?: number
-  ) {
-    throw new Error('Unsupported operatoin setImageIds');
+  public setDataIds(_imageIds: string[], _options?: ImageSetOptions) {
+    throw new Error('Unsupported operatoin setDataIds');
   }
 }
 

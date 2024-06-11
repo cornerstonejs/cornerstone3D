@@ -20,7 +20,7 @@ enum ViewportType {
   /**
    * Whole slide imaging viewport
    */
-  WSI = 'wsi',
+  WholeSlide = 'wholeSlide',
 }
 
 export default ViewportType;

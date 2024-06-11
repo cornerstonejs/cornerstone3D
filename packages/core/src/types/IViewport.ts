@@ -217,6 +217,10 @@ export type ViewPresentationSelector = {
   paletteLut?: boolean;
 };
 
+export type ImageSetOptions = {
+  viewSelector?: ViewPresentationSelector;
+  viewReference?: ViewReferenceSpecifier;
+};
 /**
  * Viewport interface for cornerstone viewports
  */
@@ -411,17 +415,10 @@ interface IViewport {
 
   /**
    * This is a wrapper for setVideo to allow generic behaviour
-   * @param groupId - an identifier for the entire group
-   * @param imageIds - a set of image ids that make up the data for this group
-   * @param webClient - A DICOMweb style client, used for fetching images etc
-   * @param frameNumber - an optional initial position
+   * @param dataIds - a set of data ids that make up the data viewport
+   * @param options - an optional object with view reference/specifier
    */
-  setImageIds(
-    groupId: string,
-    imageIds: string[],
-    webClient,
-    frameNumber?: number
-  ): void;
+  setDataIds(dataIds: string[], options?: ImageSetOptions): void;
 }
 
 /**

@@ -1816,6 +1816,12 @@ const imageRetrieveMetadataProvider: {
 };
 
 // @public (undocumented)
+type ImageSetOptions = {
+    viewSelector?: ViewPresentationSelector;
+    viewReference?: ViewReferenceSpecifier;
+};
+
+// @public (undocumented)
 type ImageSliceData = {
     numberOfSlices: number;
     imageIndex: number;
@@ -2262,9 +2268,9 @@ interface IViewport {
     // (undocumented)
     setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
-    setDisplayArea(displayArea: DisplayArea, callResetCamera?: boolean, suppressEvents?: boolean): any;
+    setDataIds(dataIds: string[], options?: ImageSetOptions): void;
     // (undocumented)
-    setImageIds(groupId: string, imageIds: string[], webClient: any, frameNumber?: number): void;
+    setDisplayArea(displayArea: DisplayArea, callResetCamera?: boolean, suppressEvents?: boolean): any;
     // (undocumented)
     setOptions(options: ViewportInputOptions, immediate: boolean): void;
     // (undocumented)
@@ -3378,6 +3384,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         ViewReference,
+        ImageSetOptions,
         ViewPresentation,
         ViewPresentationSelector,
         ReferenceCompatibleOptions,
@@ -3692,11 +3699,11 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected setColorTransform(): void;
     // (undocumented)
+    setDataIds(imageIds: string[], options?: ImageSetOptions): void;
+    // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)
     setFrameRange(frameRange: number[]): void;
-    // (undocumented)
-    setImageIds(_groupId: string, imageIds: string[], frameNumber?: number): void;
     // (undocumented)
     setPlaybackRate(rate?: number): void;
     // (undocumented)
@@ -3889,6 +3896,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
     // (undocumented)
+    setDataIds(_imageIds: string[], _options?: ImageSetOptions): void;
+    // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
     // (undocumented)
     protected setDisplayAreaFit(displayArea: DisplayArea): void;
@@ -3896,8 +3905,6 @@ export class Viewport implements IViewport {
     protected setDisplayAreaScale(displayArea: DisplayArea): void;
     // (undocumented)
     protected setFitToCanvasCamera(camera: ICamera): void;
-    // (undocumented)
-    setImageIds(_groupId: string, _imageIds: string[], _frameNumber?: number): void;
     // (undocumented)
     protected setInitialCamera(camera: ICamera): void;
     // (undocumented)
@@ -4022,7 +4029,7 @@ enum ViewportType {
     // (undocumented)
     VOLUME_3D = "volume3d",
     // (undocumented)
-    WSI = "wsi"
+    WholeSlide = "wholeSlide"
 }
 
 // @public (undocumented)
@@ -4463,9 +4470,9 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)
-    setFrameNumber(frame: number): Promise<void>;
+    setDataIds(imageIds: string[]): void;
     // (undocumented)
-    setImageIds(_groupId: string, imageIds: string[], _frameNumber?: number): void;
+    setFrameNumber(frame: number): Promise<void>;
     // (undocumented)
     setProperties(props: WSIViewportProperties): void;
     // (undocumented)
