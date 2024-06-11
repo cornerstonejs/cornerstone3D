@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.7](https://github.com/dcmjs-org/dcmjs/compare/v1.77.12...v2.0.0-beta.7) (2024-06-11)
+
+### Features
+
+-   **structuredClone:** drop lodash.clonedeep in favor of structuredClone ([#517](https://github.com/dcmjs-org/dcmjs/issues/517)) ([04c863d](https://github.com/dcmjs-org/dcmjs/commit/04c863d442195ed9ad8271a581be646d78baca70))
+
 ## [1.77.12](https://github.com/dcmjs-org/dcmjs/compare/v1.77.11...v1.77.12) (2024-06-06)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

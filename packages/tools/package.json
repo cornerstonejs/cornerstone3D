@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "2.0.0-beta.6",
+  "version": "2.0.0-beta.7",
   "description": "Cornerstone3D Tools",
   "main": "src/index.ts",
   "types": "dist/types/index.d.ts",
@@ -34,7 +34,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^2.0.0-beta.6",
+    "@cornerstonejs/core": "^2.0.0-beta.7",
     "@icr/polyseg-wasm": "0.4.0",
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
