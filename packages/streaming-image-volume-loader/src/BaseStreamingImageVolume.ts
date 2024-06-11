@@ -460,6 +460,7 @@ export default class BaseStreamingImageVolume
         scalingParameters,
       },
       transferPixelData: true,
+      requestType: requestTypeDefault,
       transferSyntaxUID,
       // The loader is used to load the image into the cache
       loader: imageLoader.loadImage,
