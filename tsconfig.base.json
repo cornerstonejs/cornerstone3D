@@ -15,21 +15,26 @@
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "jsx": "react-jsx",
-    "lib": ["ES2021", "dom"],
-    "module": "esnext", // esnext | commonjs
-    "moduleResolution": "node",
+    "lib": ["ES2022", "dom"],
+
     "noImplicitAny": false,
     "noImplicitThis": false,
-    "outDir": "lib",
+
     "pretty": true,
     "removeComments": true,
     "skipLibCheck": true,
-    "sourceMap": true,
     "strict": true,
     "strictNullChecks": false,
-    "target": "ES2021",
+    "target": "ES2022",
     "downlevelIteration": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    //
+    "module": "esnext", // esnext | commonjs
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "sourceMap": true,
+
   },
   "exclude": [
     "node_modules",

@@ -419,11 +419,11 @@
         "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
       },
       "stackToVolumeWithAnnotations": {
-        "name": "StackViewport <--> VolumeViewport ",
+        "name": "StackViewport to and from VolumeViewport ",
         "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
       },
       "stackToVolumeWithSegmentations": {
-        "name": "Stack Segmentation <--> Volume Segmentation ",
+        "name": "Stack Segmentation to and from Volume Segmentation ",
         "description": "Demonstrates how you can convert stack to volume segmentation and vice versa while the data is preserved and memory is optimized"
       },
       "volumeViewportSynchronization": {
