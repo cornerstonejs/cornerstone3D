@@ -26,7 +26,8 @@ const groupBy = (array, key) => {
 
 function getIPPGroups(imageIds: string[]): { [id: string]: Array<MappedIPP> } {
   const ippMetadata: Array<MappedIPP> = imageIds.map((imageId) => {
-    const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
+    const { imagePositionPatient } =
+      metaData.get('imagePlaneModule', imageId) || {};
     return { imageId, imagePositionPatient };
   });
 
