@@ -8,8 +8,6 @@ import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
-import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
-
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -41,8 +39,6 @@ let config: Cornerstone3DConfig = {
   // cache
   enableCacheOptimization: true,
 };
-
-let webWorkerManager = null;
 
 let webWorkerManager = null;
 
@@ -307,14 +303,6 @@ function _updateRenderingPipelinesForAllViewports(): void {
       .getViewports()
       .forEach((viewport) => viewport.updateRenderingPipeline?.())
   );
-}
-
-function getWebWorkerManager() {
-  if (!webWorkerManager) {
-    webWorkerManager = new CentralizedWebWorkerManager();
-  }
-
-  return webWorkerManager;
 }
 
 function getWebWorkerManager() {
