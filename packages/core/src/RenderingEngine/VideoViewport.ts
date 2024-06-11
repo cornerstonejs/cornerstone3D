@@ -232,7 +232,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
    */
   public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
     this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
-    const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
+    const imageUrlModule = metaData.get(MetadataModules.IMAGE_URL, imageId);
+    if (!imageUrlModule?.rendered) {
+      throw new Error(
+        `Video Image ID ${imageId} does not have a rendered video view`
+      );
+    }
+    const { rendered } = imageUrlModule;
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
     this.metadata = this.getImageDataMetadata(imageId);
