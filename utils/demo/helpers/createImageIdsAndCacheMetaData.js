@@ -41,7 +41,15 @@ export default async function createImageIdsAndCacheMetaData({
   };
 
   client = client || new api.DICOMwebClient({ url: wadoRsRoot });
-  const instances = await client.retrieveSeriesMetadata(studySearchOptions);
+  let instances = await client.retrieveSeriesMetadata(studySearchOptions);
+
+  // if sop instance is provided we should filter the instances to only include the one we want
+  if (SOPInstanceUID) {
+    instances = instances.filter((instance) => {
+      return instance[SOP_INSTANCE_UID].Value[0] === SOPInstanceUID;
+    });
+  }
+
   const modality = instances[0][MODALITY].Value[0];
   let imageIds = instances.map((instanceMetaData) => {
     const SeriesInstanceUID = instanceMetaData[SERIES_INSTANCE_UID].Value[0];
@@ -54,11 +62,11 @@ export default async function createImageIdsAndCacheMetaData({
       prefix +
       wadoRsRoot +
       '/studies/' +
-      StudyInstanceUID +
+      StudyInstanceUID.trim() +
       '/series/' +
-      SeriesInstanceUID +
+      SeriesInstanceUID.trim() +
       '/instances/' +
-      SOPInstanceUIDToUse +
+      SOPInstanceUIDToUse.trim() +
       '/frames/1';
 
     cornerstoneDICOMImageLoader.wadors.metaDataManager.add(

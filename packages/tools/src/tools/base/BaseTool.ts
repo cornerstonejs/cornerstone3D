@@ -1,11 +1,7 @@
-import {
-  StackViewport,
-  utilities,
-  BaseVolumeViewport,
-  VideoViewport,
-} from '@cornerstonejs/core';
+import { utilities, BaseVolumeViewport } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
-import { ToolModes } from '../../enums';
+import ToolModes from '../../enums/ToolModes';
+import StrategyCallbacks from '../../enums/StrategyCallbacks';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
 export interface IBaseTool {
@@ -73,7 +69,8 @@ abstract class BaseTool implements IBaseTool {
   }
 
   /**
-   * It applies the active strategy to the enabled element.
+   * Applies the active strategy function to the enabled element with the specified
+   * operation data.
    * @param enabledElement - The element that is being operated on.
    * @param operationData - The data that needs to be passed to the strategy.
    * @returns The result of the strategy.
@@ -83,7 +80,42 @@ abstract class BaseTool implements IBaseTool {
     operationData: unknown
   ): any {
     const { strategies, activeStrategy } = this.configuration;
-    return strategies[activeStrategy].call(this, enabledElement, operationData);
+    return strategies[activeStrategy]?.call(
+      this,
+      enabledElement,
+      operationData
+    );
+  }
+
+  /**
+   * Applies the active strategy, with a given event type being applied.
+   * The event type function is found by indexing it on the active strategy
+   * function.
+   *
+   * @param enabledElement - The element that is being operated on.
+   * @param operationData - The data that needs to be passed to the strategy.
+   * @param callbackType - the type of the callback
+   *
+   * @returns The result of the strategy.
+   */
+  public applyActiveStrategyCallback(
+    enabledElement: Types.IEnabledElement,
+    operationData: unknown,
+    callbackType: StrategyCallbacks | string
+  ): any {
+    const { strategies, activeStrategy } = this.configuration;
+
+    if (!strategies[activeStrategy]) {
+      throw new Error(
+        `applyActiveStrategyCallback: active strategy ${activeStrategy} not found, check tool configuration or spellings`
+      );
+    }
+
+    return strategies[activeStrategy][callbackType]?.call(
+      this,
+      enabledElement,
+      operationData
+    );
   }
 
   /**
@@ -141,7 +173,10 @@ abstract class BaseTool implements IBaseTool {
 
   /**
    * Get the image that is displayed for the targetId in the cachedStats
-   * which can be either imageId:<imageId> or volumeId:<volumeId>
+   * which can be
+   * * imageId:<imageId>
+   * * volumeId:<volumeId>
+   * * videoId:<basePathForVideo>/frames/<frameSpecifier>
    *
    * @param targetId - annotation targetId stored in the cached stats
    * @param renderingEngine - The rendering engine
@@ -173,9 +208,22 @@ abstract class BaseTool implements IBaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = targetId.split('volumeId:')[1];
+      const volumeId = utilities.getVolumeId(targetId);
       const viewports = utilities.getViewportsWithVolumeId(
         volumeId,
+        renderingEngine.id
+      );
+
+      if (!viewports || !viewports.length) {
+        return;
+      }
+
+      return viewports[0].getImageData();
+    } else if (targetId.startsWith('videoId:')) {
+      // Video id can be multi-valued for the frame information
+      const imageURI = utilities.imageIdToURI(targetId);
+      const viewports = utilities.getViewportsWithImageURI(
+        imageURI,
         renderingEngine.id
       );
 
@@ -202,17 +250,14 @@ abstract class BaseTool implements IBaseTool {
    * @returns targetId
    */
   protected getTargetId(viewport: Types.IViewport): string | undefined {
-    if (viewport instanceof StackViewport) {
-      return `imageId:${viewport.getCurrentImageId()}`;
-    } else if (viewport instanceof BaseVolumeViewport) {
-      return `volumeId:${this.getTargetVolumeId(viewport)}`;
-    } else if (viewport instanceof VideoViewport) {
-      return '';
-    } else {
-      throw new Error(
-        'getTargetId: viewport must be a StackViewport or VolumeViewport'
-      );
+    const targetId = viewport.getReferenceId?.();
+    if (targetId) {
+      return targetId;
     }
+    if (viewport instanceof BaseVolumeViewport) {
+      return `volumeId:${this.getTargetVolumeId(viewport)}`;
+    }
+    throw new Error('getTargetId: viewport must have a getTargetId method');
   }
 }
 

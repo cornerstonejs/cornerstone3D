@@ -5,12 +5,17 @@ export function triggerAnnotationRenderForViewportIds(
   renderingEngine: Types.IRenderingEngine,
   viewportIdsToRender: string[]
 ): void {
-  if (!viewportIdsToRender.length) {
+  if (!viewportIdsToRender.length || !renderingEngine) {
     return;
   }
 
   viewportIdsToRender.forEach((viewportId) => {
-    const { element } = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    if (!viewport) {
+      console.warn(`Viewport not available for ${viewportId}`);
+      return;
+    }
+    const { element } = viewport;
     triggerAnnotationRender(element);
   });
 }

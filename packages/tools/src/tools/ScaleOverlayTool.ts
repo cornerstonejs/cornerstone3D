@@ -139,7 +139,10 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
       addAnnotation(newAnnotation, viewport.element);
       annotation = newAnnotation;
-    } else if (this.editData.annotation.data.viewportId == viewport.id) {
+    } else if (
+      this.editData.annotation &&
+      this.editData.annotation.data.viewportId == viewport.id
+    ) {
       this.editData.annotation.data.handles.points =
         viewportCanvasCornersInWorld;
       this.editData.annotation.data.viewportId = viewport.id;
@@ -201,8 +204,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     };
 
     const canvasSize = {
-      width: canvas.width,
-      height: canvas.height,
+      width: canvas.width / window.devicePixelRatio || 1,
+      height: canvas.height / window.devicePixelRatio || 1,
     };
 
     const topLeft = annotation.data.handles.points[0];

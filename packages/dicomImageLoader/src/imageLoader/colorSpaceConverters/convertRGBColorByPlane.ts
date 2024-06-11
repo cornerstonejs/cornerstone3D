@@ -6,10 +6,12 @@ export default function (
   useRGBA: boolean
 ): void {
   if (imageFrame === undefined) {
-    throw new Error('decodeRGB: rgbBuffer must not be undefined');
+    throw new Error('decodeRGB: rgbBuffer must be defined');
   }
   if (imageFrame.length % 3 !== 0) {
-    throw new Error('decodeRGB: rgbBuffer length must be divisible by 3');
+    throw new Error(
+      `decodeRGB: rgbBuffer length ${imageFrame.length} must be divisible by 3`
+    );
   }
 
   const numPixels = imageFrame.length / 3;

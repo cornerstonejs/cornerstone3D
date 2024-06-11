@@ -3,7 +3,8 @@ import { vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
 import { EventTypes } from '../../../types';
 
-const { addCanvasPointsToArray, getFirstIntersectionWithPolyline } = polyline;
+const { addCanvasPointsToArray, getFirstLineSegmentIntersectionIndexes } =
+  polyline;
 
 /**
  * Check if the `editCanvasPoints` have crossed the `prevCanvasPoints` during
@@ -28,7 +29,7 @@ function checkForFirstCrossing(
   const lastCanvasPoint = lastPoints.canvas;
   const { editCanvasPoints, prevCanvasPoints } = this.editData;
 
-  const crossedLineSegment = getFirstIntersectionWithPolyline(
+  const crossedLineSegment = getFirstLineSegmentIntersectionIndexes(
     prevCanvasPoints,
     canvasPos,
     lastCanvasPoint,
@@ -91,7 +92,7 @@ function checkForFirstCrossing(
       ];
 
       const crossedLineSegmentFromExtendedPoint =
-        getFirstIntersectionWithPolyline(
+        getFirstLineSegmentIntersectionIndexes(
           prevCanvasPoints,
           extendedPoint,
           editCanvasPoints[0],
@@ -133,7 +134,7 @@ function removePointsUpUntilFirstCrossing(isClosedContour: boolean): void {
   for (let i = 0; i < editCanvasPoints.length - 1; i++) {
     const firstLine = [editCanvasPoints[i], editCanvasPoints[i + 1]];
 
-    const didCrossLine = !!getFirstIntersectionWithPolyline(
+    const didCrossLine = !!getFirstLineSegmentIntersectionIndexes(
       prevCanvasPoints,
       firstLine[0],
       firstLine[1],
@@ -173,7 +174,7 @@ function checkForSecondCrossing(
   // for the second crossing of the prevCanvasPoints, by checking if the last
   // mouse drag crossed these. This class method is only called if the edit loop
   // has already has a crossing earlier in the edit.
-  const crossedLineSegment = getFirstIntersectionWithPolyline(
+  const crossedLineSegment = getFirstLineSegmentIntersectionIndexes(
     prevCanvasPoints,
     canvasPos,
     lastCanvasPoint,
@@ -199,7 +200,7 @@ function removePointsAfterSecondCrossing(isClosedContour: boolean): void {
   for (let i = editCanvasPoints.length - 1; i > 0; i--) {
     const lastLine = [editCanvasPoints[i], editCanvasPoints[i - 1]];
 
-    const didCrossLine = !!getFirstIntersectionWithPolyline(
+    const didCrossLine = !!getFirstLineSegmentIntersectionIndexes(
       prevCanvasPoints,
       lastLine[0],
       lastLine[1],
@@ -255,7 +256,7 @@ function findSnapIndex(): number {
     const snapCanvasPosition = prevCanvasPoints[index];
     const lastEditCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
 
-    const crossedLineSegment = getFirstIntersectionWithPolyline(
+    const crossedLineSegment = getFirstLineSegmentIntersectionIndexes(
       editCanvasPointsLessLastOne,
       snapCanvasPosition,
       lastEditCanvasPoint,
@@ -290,7 +291,7 @@ function checkAndRemoveCrossesOnEditLine(
 
   const editCanvasPointsLessLastOne = editCanvasPoints.slice(0, -2);
 
-  const crossedLineSegment = getFirstIntersectionWithPolyline(
+  const crossedLineSegment = getFirstLineSegmentIntersectionIndexes(
     editCanvasPointsLessLastOne,
     canvasPos,
     lastCanvasPoint,

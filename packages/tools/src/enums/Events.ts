@@ -18,6 +18,12 @@ enum Events {
    */
   TOOL_ACTIVATED = 'CORNERSTONE_TOOLS_TOOL_ACTIVATED',
 
+  // fired when a viewport is added to the toolGroup
+  TOOLGROUP_VIEWPORT_ADDED = 'CORNERSTONE_TOOLS_TOOLGROUP_VIEWPORT_ADDED',
+
+  // fired when a viewport is removed from the toolGroup
+  TOOLGROUP_VIEWPORT_REMOVED = 'CORNERSTONE_TOOLS_TOOLGROUP_VIEWPORT_REMOVED',
+
   /**
    * Triggers on the eventTarget when a mode of a tool is changed (active, passive, enabled and disabled).
    *
@@ -95,6 +101,22 @@ enum Events {
    * event detail is included in {@link EventTypes.AnnotationRenderedEventDetail | Annotation Rendered Event Detail}.
    */
   ANNOTATION_RENDERED = 'CORNERSTONE_TOOLS_ANNOTATION_RENDERED',
+
+  /**
+   * Triggers on the eventTarget when an annotation interpolation process completed.
+   * Make use of {@link EventTypes.AnnotationInterpolationCompletedEventType | Annotation Interpolation process Completed Event Type}
+   * for typing your event listeners for this annotation interpolation complete event, and see what
+   * event detail is included in {@link EventTypes.AnnotationInterpolationCompletedEventDetail | Annotation interpolation process Event Detail}.
+   */
+  ANNOTATION_INTERPOLATION_PROCESS_COMPLETED = 'CORNERSTONE_TOOLS_ANNOTATION_INTERPOLATION_PROCESS_COMPLETED',
+
+  /**
+   * Triggers on the eventTarget when interpolated annotations are removed.
+   * Make use of {@link EventTypes.AnnotationInterpolationRemovedEventType | Annotation Interpolation Removed Event Type}
+   * for typing your event listeners for this interpolated annotation removed event, and see what
+   * event detail is included in {@link EventTypes.AnnotationInterpolationRemovedEventDetail | Annotation interpolation removed Event Detail}.
+   */
+  INTERPOLATED_ANNOTATIONS_REMOVED = 'CORNERSTONE_TOOLS_INTERPOLATED_ANNOTATIONS_REMOVED',
 
   ///////////////////////////////////////
   //        Segmentations Events

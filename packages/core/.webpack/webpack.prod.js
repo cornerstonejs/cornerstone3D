@@ -43,14 +43,6 @@ module.exports = (env, argv) => {
           amd: 'detect-gpu',
         },
       },
-      {
-        'lodash.clonedeep': {
-          root: 'window',
-          commonjs: 'lodash.clonedeep',
-          commonjs2: 'lodash.clonedeep',
-          amd: 'lodash.clonedeep',
-        },
-      },
     ],
     // plugins: [new webpackBundleAnalyzer.BundleAnalyzerPlugin()],
   });

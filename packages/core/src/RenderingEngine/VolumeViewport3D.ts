@@ -46,14 +46,6 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return null;
   };
 
-  posProcessNewActors(): void {
-    if (this.newActorAdded) {
-      const renderer = this.getRenderer();
-      renderer.resetCameraClippingRange();
-    }
-    super.posProcessNewActors();
-  }
-
   setSlabThickness(
     slabThickness: number,
     filterActorUIDs?: Array<string>
@@ -70,6 +62,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
   }
 
   resetProperties(volumeId?: string): void {
+    return null;
+  }
+
+  resetSlabThickness(): void {
     return null;
   }
 }

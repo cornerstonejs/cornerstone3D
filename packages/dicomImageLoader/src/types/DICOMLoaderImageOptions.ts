@@ -3,6 +3,8 @@ import { LoadRequestFunction } from './LoadRequestFunction';
 
 export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;
+  useNativeDataType?: boolean;
+  allowFloatRendering?: boolean;
   skipCreateImage?: boolean;
   preScale?: {
     enabled: boolean;
@@ -13,7 +15,12 @@ export interface DICOMLoaderImageOptions {
     arrayBuffer: ArrayBufferLike;
     length: number;
     offset: number;
+    rows?: number;
+    columns?: number;
   };
   isSharedArrayBuffer?: boolean;
   loader?: LoadRequestFunction;
+  decodeLevel?: number;
+  retrieveOptions?: Types.RetrieveOptions;
+  streamingData?: Record<string, unknown>;
 }

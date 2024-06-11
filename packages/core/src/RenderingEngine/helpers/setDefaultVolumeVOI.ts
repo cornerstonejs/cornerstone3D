@@ -8,6 +8,7 @@ import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import { getMinMax, windowLevel } from '../../utilities';
 import { RequestType } from '../../enums';
+import cache from '../../cache';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;
@@ -20,6 +21,7 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * Finally it sets the VOI on the volumeActor transferFunction
  * @param volumeActor - The volume actor
  * @param imageVolume - The image volume that we want to set the VOI for.
+ * @param useNativeDataType -  The image data type is native or Float32Array
  */
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
@@ -28,23 +30,27 @@ async function setDefaultVolumeVOI(
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
-  if (!voi) {
+  if (!voi && imageVolume?.imageIds?.length) {
     voi = await getVOIFromMinMax(imageVolume, useNativeDataType);
+    voi = handlePreScaledVolume(imageVolume, voi);
   }
-
-  if (!voi || voi.lower === undefined || voi.upper === undefined) {
-    throw new Error(
-      'Could not get VOI from metadata, nor from the min max of the image middle slice'
-    );
+  // if (!voi || voi.lower === undefined || voi.upper === undefined) {
+  //   throw new Error(
+  //     'Could not get VOI from metadata, nor from the min max of the image middle slice'
+  //   );
+  // }
+  if (
+    (voi?.lower === 0 && voi?.upper === 0) ||
+    voi?.lower === undefined ||
+    voi?.upper === undefined
+  ) {
+    return;
   }
-
-  voi = handlePreScaledVolume(imageVolume, voi);
-  const { lower, upper } = voi;
 
   volumeActor
     .getProperty()
     .getRGBTransferFunction(0)
-    .setMappingRange(lower, upper);
+    .setMappingRange(voi.lower, voi.upper);
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
@@ -72,35 +78,36 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
 }
 
 /**
- * Get the VOI from the metadata of the middle slice of the image volume. It checks
- * the metadata for the VOI and if it is not found, it returns null
+ * Get the VOI from the metadata of the middle slice of the image volume or the metadata of the image volume
+ * It checks the metadata for the VOI and if it is not found, it returns null
  *
  * @param imageVolume - The image volume that we want to get the VOI from.
  * @returns VOIRange with lower and upper values
  */
 function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
-  const { imageIds } = imageVolume;
-
-  const imageIdIndex = Math.floor(imageIds.length / 2);
-  const imageId = imageIds[imageIdIndex];
-
-  const voiLutModule = metaData.get('voiLutModule', imageId);
-
-  if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
-    const { windowWidth, windowCenter } = voiLutModule;
-
-    const voi = {
-      windowWidth: Array.isArray(windowWidth) ? windowWidth[0] : windowWidth,
-      windowCenter: Array.isArray(windowCenter)
-        ? windowCenter[0]
-        : windowCenter,
-    };
-
+  const { imageIds, metadata } = imageVolume;
+  let voi;
+  if (imageIds.length) {
+    const imageIdIndex = Math.floor(imageIds.length / 2);
+    const imageId = imageIds[imageIdIndex];
+    const voiLutModule = metaData.get('voiLutModule', imageId);
+    if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
+      const { windowWidth, windowCenter } = voiLutModule;
+      voi = {
+        windowWidth: Array.isArray(windowWidth) ? windowWidth[0] : windowWidth,
+        windowCenter: Array.isArray(windowCenter)
+          ? windowCenter[0]
+          : windowCenter,
+      };
+    }
+  } else {
+    voi = metadata?.voiLut?.[0];
+  }
+  if (voi) {
     const { lower, upper } = windowLevel.toLowHighRange(
       Number(voi.windowWidth),
       Number(voi.windowCenter)
     );
-
     return {
       lower,
       upper,
@@ -113,6 +120,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * and max pixel values, it calculates the VOI.
  *
  * @param imageVolume - The image volume that we want to get the VOI from.
+ * @param useNativeDataType -  The image data type is native or Float32Array
  * @returns The VOIRange with lower and upper values
  */
 async function getVOIFromMinMax(
@@ -161,6 +169,7 @@ async function getVOIFromMinMax(
     },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
+    useNativeDataType,
     preScale: {
       enabled: true,
       scalingParameters: scalingParametersToUse,
@@ -175,19 +184,26 @@ async function getVOIFromMinMax(
   // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
   // slice for the imageScalarData, and for the second scenario we use the getPixelData
   // on the Cornerstone IImage object to get the pixel data.
-  const image = await loadAndCacheImage(imageId, options);
+  // Note: we don't want to use the derived or generated images for setting the
+  // default VOI, because they are not the original. This is ugly but don't
+  // know how to do it better.
+  let image = cache.getImage(imageId);
 
-  let imageScalarData;
-  if (!image) {
-    imageScalarData = _getImageScalarDataFromImageVolume(
-      imageVolume,
-      byteOffset,
-      bytePerPixel,
-      voxelsPerImage
-    );
-  } else {
-    imageScalarData = image.getPixelData();
+  if (!imageVolume.referencedImageIds?.length) {
+    // we should ignore the cache here,
+    // since we want to load the image from with the most
+    // recent prescale settings
+    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
+
+  const imageScalarData = image
+    ? image.getPixelData()
+    : _getImageScalarDataFromImageVolume(
+        imageVolume,
+        byteOffset,
+        bytePerPixel,
+        voxelsPerImage
+      );
 
   // Get the min and max pixel values of the middle slice
   const { min, max } = getMinMax(imageScalarData);
@@ -205,7 +221,7 @@ function _getImageScalarDataFromImageVolume(
   voxelsPerImage
 ) {
   const { scalarData } = imageVolume;
-  const { volumeBuffer } = scalarData;
+  const { buffer } = scalarData;
   if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
     byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
   }
@@ -213,11 +229,7 @@ function _getImageScalarDataFromImageVolume(
   const TypedArray = scalarData.constructor;
   const imageScalarData = new TypedArray(voxelsPerImage);
 
-  const volumeBufferView = new TypedArray(
-    volumeBuffer,
-    byteOffset,
-    voxelsPerImage
-  );
+  const volumeBufferView = new TypedArray(buffer, byteOffset, voxelsPerImage);
 
   imageScalarData.set(volumeBufferView);
 

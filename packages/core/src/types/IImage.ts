@@ -1,7 +1,11 @@
-import CPUFallbackLUT from './CPUFallbackLUT';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import { PixelDataTypedArray } from './PixelDataTypedArray';
+import type CPUFallbackLUT from './CPUFallbackLUT';
+import type CPUFallbackColormap from './CPUFallbackColormap';
+import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type VoxelManager from '../utilities/VoxelManager';
+import { ImageQualityStatus } from '../enums';
+import IImageCalibration from './IImageCalibration';
+import RGB from './RGB';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -9,11 +13,14 @@ import { PixelDataTypedArray } from './PixelDataTypedArray';
 interface IImage {
   /** Image Id */
   imageId: string;
+  /** referenced imageId if this image is derived from */
+  referencedImageId?: string;
   sharedCacheKey?: string;
   /** Whether the image is Pre-scaled during loading */
   isPreScaled?: boolean;
   /** preScale object */
   preScale?: {
+    enabled: boolean;
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;
     /** scaling parameters */
@@ -112,6 +119,17 @@ interface IImage {
     lutArray?: Uint8ClampedArray;
     modalityLUT?: unknown;
     voiLUT?: CPUFallbackLUT;
+  };
+
+  imageQualityStatus?: ImageQualityStatus;
+  calibration?: IImageCalibration;
+  imageFrame?: any;
+
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+
+  bufferView?: {
+    buffer: ArrayBuffer;
+    offset: number;
   };
 }
 

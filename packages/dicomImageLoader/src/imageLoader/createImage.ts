@@ -11,26 +11,12 @@ import {
   PixelDataTypedArray,
 } from '../types';
 import convertColorSpace from './convertColorSpace';
+import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
-
-/**
- * When using typical decompressors to decompress compressed color images,
- * the resulting output is in RGB or RGBA format. Additionally, these images
- * are in planar configuration 0, meaning they are arranged by plane rather
- * than by color.  Consequently, the images only require a transformation from
- * RGBA to RGB without needing to use the photometric interpretation to convert
- * to RGB or adjust the planar configuration.
- */
-const TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR = {
-  '1.2.840.10008.1.2.1': 'application/octet-stream',
-  '1.2.840.10008.1.2': 'application/octet-stream',
-  '1.2.840.10008.1.2.2': 'application/octet-stream',
-  '1.2.840.10008.1.2.5': 'image/dicom-rle',
-};
 
 let lastImageIdDrawn = '';
 
@@ -111,13 +97,17 @@ function createImage(
         : false,
   };
 
-  if (!pixelData || !pixelData.length) {
-    return Promise.reject(new Error('The file does not contain image data.'));
+  if (!pixelData?.length) {
+    return Promise.reject(new Error('The pixel data is missing'));
   }
 
   const { cornerstone } = external;
+  const { MetadataModules } = cornerstone.Enums;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
+  imageFrame.decodeLevel = options.decodeLevel;
+
+  options.allowFloatRendering = cornerstone.canRenderFloatTextures();
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
@@ -142,6 +132,28 @@ function createImage(
     options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
 
   const { decodeConfig } = getOptions();
+
+  // check if the options to use the 16 bit data type is set
+  // on the image load options, and prefer that over the global
+  // options of the dicom loader
+  decodeConfig.use16BitDataType =
+    (options && options.targetBuffer?.type === 'Uint16Array') ||
+    options.targetBuffer?.type === 'Int16Array'
+      ? true
+      : options.useNativeDataType || decodeConfig.use16BitDataType;
+
+  // Remove any property of the `imageFrame` that cannot be transferred to the worker,
+  // such as promises and functions.
+  // This is necessary because the `imageFrame` object is passed to the worker.
+  Object.keys(imageFrame).forEach((key) => {
+    if (
+      typeof imageFrame[key] === 'function' ||
+      imageFrame[key] instanceof Promise
+    ) {
+      delete imageFrame[key];
+    }
+  });
+
   const decodePromise = decodeImageFrame(
     imageFrame,
     transferSyntax,
@@ -220,24 +232,36 @@ function createImage(
       }
 
       const imagePlaneModule: MetadataImagePlaneModule =
-        cornerstone.metaData.get('imagePlaneModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.IMAGE_PLANE, imageId) || {};
       const voiLutModule =
-        cornerstone.metaData.get('voiLutModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.VOI_LUT, imageId) || {};
       const modalityLutModule =
-        cornerstone.metaData.get('modalityLutModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
       const sopCommonModule: MetadataSopCommonModule =
-        cornerstone.metaData.get('sopCommonModule', imageId) || {};
+        cornerstone.metaData.get(MetadataModules.SOP_COMMON, imageId) || {};
+      const calibrationModule =
+        cornerstone.metaData.get(MetadataModules.CALIBRATION, imageId) || {};
+      const { rows, columns } = imageFrame;
+
       if (isColorImage) {
-        const { rows, columns } = imageFrame;
-        if (TRANSFER_SYNTAX_USING_PHOTOMETRIC_COLOR[transferSyntax]) {
+        if (isColorConversionRequired(imageFrame)) {
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
           const context = canvas.getContext('2d');
-          const imageData = context.createImageData(
+          let imageData = context.createImageData(
             imageFrame.columns,
             imageFrame.rows
           );
-
+          if (!useRGBA) {
+            imageData = {
+              ...imageData,
+              data: new Uint8ClampedArray(
+                imageFrame.samplesPerPixel *
+                  imageFrame.columns *
+                  imageFrame.rows
+              ),
+            };
+          }
           convertColorSpace(imageFrame, imageData.data, useRGBA);
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
@@ -278,6 +302,7 @@ function createImage(
       const image: DICOMLoaderIImage = {
         imageId,
         color: isColorImage,
+        calibration: calibrationModule,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
         columns: imageFrame.columns,
         height: imageFrame.rows,
@@ -315,7 +340,6 @@ function createImage(
         numComps: undefined,
       };
 
-      window.image = image;
       if (image.color) {
         image.getCanvas = function () {
           // the getCanvas function is used in the CPU rendering path

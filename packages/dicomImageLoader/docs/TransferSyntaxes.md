@@ -20,7 +20,8 @@ Compressed (requires codec, see below)
 * 1.2.840.10008.1.2.4.81 JPEG-LS Lossy (Near-Lossless) Image Compression
 * 1.2.840.10008.1.2.4.90 JPEG 2000 Image Compression (Lossless Only)
 * 1.2.840.10008.1.2.4.91 JPEG 2000 Image Compression
-* 3.2.840.10008.1.2.4.96 HTJ2K (experimental TSUID)
+* 3.2.840.10008.1.2.4.96 HTJ2K (private TSUID for HTJ2K)
+* 1.2.840.10008.1.2.4.202 High Throughput JPEG 2000 (HTJ2K with RPCL)
 * 1.2.840.10008.1.2.1.99 Deflate Transfer Syntax
 
 Photometric Interpretations
@@ -32,4 +33,4 @@ Photometric Interpretations
 * YBR_FULL
 * YBR_FULL_422
 * YBR_RCT
-* YBR_ICT 
+* YBR_ICT

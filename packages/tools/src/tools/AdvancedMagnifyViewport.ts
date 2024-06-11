@@ -91,7 +91,7 @@ class AdvancedMagnifyViewport {
     this._sourceEnabledElement = sourceEnabledElement;
     this._autoPan = autoPan;
 
-    // Pulic properties
+    // Public properties
     this.radius = radius;
     this.position = position;
     this.zoomFactor = zoomFactor;
@@ -234,7 +234,7 @@ class AdvancedMagnifyViewport {
     return magnifyElement;
   }
 
-  private _convertZoomFactorToParalellScale(
+  private _convertZoomFactorToParallelScale(
     viewport,
     magnifyViewport,
     zoomFactor
@@ -556,7 +556,7 @@ class AdvancedMagnifyViewport {
     const worldPos = sourceViewport.canvasToWorld(this.position);
 
     // Use the original viewport for the base for parallelScale
-    const parallelScale = this._convertZoomFactorToParalellScale(
+    const parallelScale = this._convertZoomFactorToParallelScale(
       sourceViewport,
       magnifyViewport,
       this.zoomFactor
@@ -601,6 +601,11 @@ class AdvancedMagnifyViewport {
     const { viewport: sourceViewport } = this._sourceEnabledElement;
     const { viewport: magnifyViewport } = this._enabledElement;
     const sourceProperties = sourceViewport.getProperties();
+    const imageData = magnifyViewport.getImageData();
+
+    if (!imageData) {
+      return;
+    }
 
     magnifyViewport.setProperties(sourceProperties);
     this._syncViewportsCameras(sourceViewport, magnifyViewport);
@@ -611,6 +616,9 @@ class AdvancedMagnifyViewport {
         magnifyViewport as Types.IStackViewport
       );
     }
+
+    this._syncViewportsCameras(sourceViewport, magnifyViewport);
+    magnifyViewport.render();
   }
 
   private _resizeViewport() {

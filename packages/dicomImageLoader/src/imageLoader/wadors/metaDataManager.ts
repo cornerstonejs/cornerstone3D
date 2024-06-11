@@ -15,9 +15,9 @@ function add(imageId: string, metadata: WADORSMetaData) {
   metadataByImageURI[imageURI] = metadata;
 }
 
-// multiframes images will have only one imageid returned by the dicomweb
+// multiframes images will have only one imageId returned by the dicomweb
 // client and registered in metadataByImageURI for all the n frames. If an
-// iamgeid does not have metadata, or it does not have at all, or the imageid
+// imageId does not have metadata, or it does not have at all, or the imageID
 // belongs to a frame, not registered in metadataByImageURI
 function get(imageId: string): WADORSMetaData {
   const imageURI = imageIdToURI(imageId);

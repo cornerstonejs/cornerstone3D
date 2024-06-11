@@ -1,79 +1,22 @@
 import {
   getEnabledElementByIds,
-  Types,
-  utilities as csUtils,
   StackViewport,
+  Types,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
-  RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
-import { addOrUpdateContourSets } from './addOrUpdateContourSets';
 import removeContourFromElement from './removeContourFromElement';
-import { deleteConfigCache } from './contourConfigCache';
+import { deleteConfigCache } from './contourHandler/contourConfigCache';
+import { polySeg } from '../../../stateManagement/segmentation';
+import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
 
-/**
- * It adds a new segmentation representation to the segmentation state
- * @param toolGroupId - The id of the toolGroup that the segmentation
- * belongs to
- * @param representationInput - RepresentationPublicInput
- * @param toolGroupSpecificConfig - The configuration that is specific to the toolGroup.
- * @returns The segmentationRepresentationUID
- */
-async function addSegmentationRepresentation(
-  toolGroupId: string,
-  representationInput: RepresentationPublicInput,
-  toolGroupSpecificConfig?: SegmentationRepresentationConfig
-): Promise<string> {
-  const { segmentationId } = representationInput;
-  const segmentationRepresentationUID = csUtils.uuidv4();
-  // Todo: make these configurable during representation input by user
-  const segmentsHidden = new Set() as Set<number>;
-  const visibility = true;
-  const colorLUTIndex = 0;
-  const active = true;
-  const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
-    segmentationId,
-    segmentationRepresentationUID,
-    type: Representations.Contour,
-    segmentsHidden,
-    colorLUTIndex,
-    active,
-    segmentationRepresentationSpecificConfig: {},
-    segmentSpecificConfig: {},
-    config: {},
-  };
-  // Update the toolGroup specific configuration
-  if (toolGroupSpecificConfig) {
-    // Since setting configuration on toolGroup will trigger a segmentationRepresentation
-    // update event, we don't want to trigger the event twice, so we suppress
-    // the first one
-    const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-    const mergedConfig = csUtils.deepMerge(
-      currentToolGroupConfig,
-      toolGroupSpecificConfig
-    );
-    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations:
-        mergedConfig.renderInactiveSegmentations || true,
-      representations: {
-        ...mergedConfig.representations,
-      },
-    });
-  }
-  SegmentationState.addSegmentationRepresentation(
-    toolGroupId,
-    toolGroupSpecificRepresentation
-  );
-  return segmentationRepresentationUID;
-}
+let polySegConversionInProgress = false;
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -120,34 +63,51 @@ function removeSegmentationRepresentation(
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: Types.IVolumeViewport,
+  viewport: StackViewport | Types.IVolumeViewport,
   representationConfig: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {
   const { segmentationId } = representationConfig;
   const segmentation = SegmentationState.getSegmentation(segmentationId);
-  const contourData = segmentation.representationData[Representations.Contour];
-  const { geometryIds } = contourData;
 
-  // We don't have a good way to handle stack viewports for contours at the moment.
-  // Plus, if we add a segmentation to one viewport, it gets added to all the viewports in the toolGroup too.
-  if (viewport instanceof StackViewport) {
+  if (!segmentation) {
     return;
   }
 
-  if (!geometryIds?.length) {
-    console.warn(
-      `No contours found for segmentationId ${segmentationId}. Skipping render.`
+  let contourData = segmentation.representationData[Representations.Contour];
+
+  if (
+    !contourData &&
+    polySeg.canComputeRequestedRepresentation(
+      representationConfig.segmentationRepresentationUID
+    ) &&
+    !polySegConversionInProgress
+  ) {
+    polySegConversionInProgress = true;
+
+    contourData = await polySeg.computeAndAddContourRepresentation(
+      segmentationId,
+      {
+        segmentationRepresentationUID:
+          representationConfig.segmentationRepresentationUID,
+        viewport,
+      }
     );
   }
 
-  // add the contour sets to the viewport
-  addOrUpdateContourSets(
-    viewport,
-    geometryIds,
-    representationConfig,
-    toolGroupConfig
-  );
+  if (!contourData) {
+    return;
+  }
+
+  if (contourData?.geometryIds?.length) {
+    handleContourSegmentation(
+      viewport,
+      contourData.geometryIds,
+      contourData.annotationUIDsMap,
+      representationConfig,
+      toolGroupConfig
+    );
+  }
 }
 
 function _removeContourFromToolGroupViewports(
@@ -168,15 +128,11 @@ function _removeContourFromToolGroupViewports(
       viewportId,
       renderingEngineId
     );
-    removeContourFromElement(
-      enabledElement.viewport.element,
-      segmentationRepresentationUID
-    );
+    removeContourFromElement(segmentationRepresentationUID, toolGroupId);
   }
 }
 
 export default {
   render,
-  addSegmentationRepresentation,
   removeSegmentationRepresentation,
 };

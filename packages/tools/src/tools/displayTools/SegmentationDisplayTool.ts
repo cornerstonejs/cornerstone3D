@@ -18,7 +18,11 @@ import {
 import { surfaceDisplay } from './Surface';
 import { contourDisplay } from './Contour';
 import { labelmapDisplay } from './Labelmap';
+import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import { addTool, state } from '../../store';
+import PlanarFreehandContourSegmentationTool from '../annotation/PlanarFreehandContourSegmentationTool';
 
+const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
 /**
  * In Cornerstone3DTools, displaying of segmentations are handled by the SegmentationDisplayTool.
  * Generally, any Segmentation can be viewed in various representations such as
@@ -151,6 +155,12 @@ class SegmentationDisplayTool extends BaseTool {
           [Representations.Surface]: surfaceDisplay,
         };
 
+        if (representation.type === SegmentationRepresentations.Contour) {
+          // if the representation is contour we need to make sure
+          // that the planarFreeHandTool is added to the toolGroup
+          this.addPlanarFreeHandToolIfAbsent(toolGroupId);
+        }
+
         const display = renderers[representation.type];
 
         for (const viewport of toolGroupViewports) {
@@ -173,6 +183,22 @@ class SegmentationDisplayTool extends BaseTool {
       });
     });
   };
+
+  addPlanarFreeHandToolIfAbsent(toolGroupId) {
+    // if it is contour we should check if the toolGroup and more importantly
+    // the cornerstoneTools have the planarFreeHandTool added
+    if (!(planarContourToolName in state.tools)) {
+      addTool(PlanarFreehandContourSegmentationTool);
+    }
+
+    const toolGroup = getToolGroup(toolGroupId);
+
+    // check if toolGroup has this tool
+    if (!toolGroup.hasTool(planarContourToolName)) {
+      toolGroup.addTool(planarContourToolName);
+      toolGroup.setToolPassive(planarContourToolName);
+    }
+  }
 
   /**
    * Merge the toolGroup specific configuration with the default global configuration

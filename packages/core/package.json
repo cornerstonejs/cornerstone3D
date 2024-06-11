@@ -1,9 +1,9 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "1.28.2",
+  "version": "2.0.0-beta.7",
   "description": "",
   "main": "src/index.ts",
-  "types": "dist/esm/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
@@ -14,14 +14,19 @@
     "test": "test"
   },
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
   "scripts": {
-    "build:cjs": "tsc --project ./tsconfig.cjs.json",
     "build:esm": "tsc --project ./tsconfig.esm.json",
     "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:esm",
     "clean": "shx rm -rf dist",
-    "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/cjs && copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
+    "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
     "build": "yarn run build:all && yarn run copy-dts",
     "dev": "tsc --project ./tsconfig.esm.json --watch",
     "api-check": "api-extractor --debug run",
@@ -30,11 +35,10 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@kitware/vtk.js": "27.3.1",
+    "@kitware/vtk.js": "30.4.1",
+    "comlink": "^4.4.1",
     "detect-gpu": "^5.0.22",
-    "gl-matrix": "^3.4.3",
-    "lodash.clonedeep": "4.5.0",
-    "comlink": "^4.4.1"
+    "gl-matrix": "^3.4.3"
   },
   "contributors": [
     {

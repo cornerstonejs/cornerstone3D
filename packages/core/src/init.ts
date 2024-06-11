@@ -8,35 +8,41 @@ import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
+import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
+
 // TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
   gpuTier: undefined,
   detectGPUConfig: {},
+  isMobile: false, // is mobile device
   rendering: {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
 
 let config: Cornerstone3DConfig = {
   gpuTier: undefined,
   detectGPUConfig: {},
+  isMobile: false, // is mobile device
   rendering: {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false, // _hasNorm16TextureSupport(),
+    useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
   // cache
-  // ...
+  enableCacheOptimization: true,
 };
+
+let webWorkerManager = null;
 
 let webWorkerManager = null;
 
@@ -77,23 +83,33 @@ function hasSharedArrayBuffer() {
   }
 }
 
-// Todo: commenting this out until proper support for int16 textures
-// are added to browsers, current implementation is buggy
-// function _hasNorm16TextureSupport() {
-//   const gl = _getGLContext();
+function _hasNorm16TextureSupport() {
+  const gl = _getGLContext();
 
-//   if (gl) {
-//     const ext = (gl as WebGL2RenderingContext).getExtension(
-//       'EXT_texture_norm16'
-//     );
+  if (gl) {
+    const ext = (gl as WebGL2RenderingContext).getExtension(
+      'EXT_texture_norm16'
+    );
 
-//     if (ext) {
-//       return true;
-//     }
-//   }
+    if (ext) {
+      return true;
+    }
+  }
 
-//   return false;
-// }
+  return false;
+}
+
+function isIOS() {
+  if (/iPad|iPhone|iPod/.test(navigator.platform)) {
+    return true;
+  } else {
+    return (
+      navigator.maxTouchPoints &&
+      navigator.maxTouchPoints > 2 &&
+      /MacIntel/.test(navigator.platform)
+    );
+  }
+}
 
 /**
  * Initialize the cornerstone-core. If the browser has a webgl context and
@@ -112,6 +128,22 @@ async function init(configuration = config): Promise<boolean> {
   // merge configs
   config = deepMerge(defaultConfig, configuration);
 
+  if (isIOS()) {
+    // iOS devices don't have support for OES_texture_float_linear
+    // and thus we should use native data type if we are on iOS
+    config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
+
+    if (!config.rendering.useNorm16Texture) {
+      if (configuration.rendering?.preferSizeOverAccuracy) {
+        config.rendering.preferSizeOverAccuracy = true;
+      } else {
+        console.log(
+          'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
+        );
+      }
+    }
+  }
+
   // gpuTier
   const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
@@ -124,7 +156,7 @@ async function init(configuration = config): Promise<boolean> {
       'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
       config.gpuTier
     );
-    if (config.gpuTier.tier < 1) {
+    if (config.gpuTier?.tier < 1) {
       console.log(
         'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
       );
@@ -163,6 +195,18 @@ function setPreferSizeOverAccuracy(status: boolean): void {
   config.rendering.preferSizeOverAccuracy = status;
   csRenderInitialized = true;
   _updateRenderingPipelinesForAllViewports();
+}
+
+/**
+ * Only IPhone IOS cannot render float textures right now due to the lack of support for OES_texture_float_linear.
+ * So we should not use float textures on IOS devices.
+ */
+function canRenderFloatTextures(): boolean {
+  if (!isIOS()) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -273,6 +317,14 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
+function getWebWorkerManager() {
+  if (!webWorkerManager) {
+    webWorkerManager = new CentralizedWebWorkerManager();
+  }
+
+  return webWorkerManager;
+}
+
 export {
   init,
   getShouldUseCPURendering,
@@ -286,4 +338,5 @@ export {
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
+  canRenderFloatTextures,
 };

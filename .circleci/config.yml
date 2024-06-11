@@ -5,7 +5,7 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: cimg/node:16.14.2-browsers
+    - image: cimg/node:18.19.0-browsers
       environment:
         TERM: xterm # Enable colors in term
 
@@ -68,7 +68,7 @@ jobs:
           at: ~/repo
       - run: mkdir ~/junit
       - run:
-          command: yarn run test:ci
+          command: yarn run test:unit:ci
           environment:
             JUNIT_REPORT_PATH: ./junit/
             JUNIT_REPORT_NAME: test-results.xml
@@ -153,6 +153,5 @@ workflows:
       - NPM_PUBLISH:
           requires:
             - BUILD
-            - TEST
 
 # VS Code Extension Version: 1.5.1

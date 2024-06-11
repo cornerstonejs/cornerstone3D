@@ -1,4 +1,3 @@
-import cloneDeep from 'lodash.clonedeep';
 import {
   Annotation,
   Annotations,
@@ -18,6 +17,11 @@ import {
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking';
 import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
+
+import {
+  checkAndDefineTextBoxProperty,
+  checkAndDefineCachedStatsProperty,
+} from './utilities/defineProperties';
 
 /**
  * This is the default annotation manager. It stores annotations by default
@@ -127,6 +131,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * @param toolName - Optional. The name of the tool to retrieve annotations for.
    * @returns The annotations associated with the specified group (default FrameOfReferenceUID) and tool,
    * or all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
+   * WARNING: The list returned here is internal tool data, not a copy, so do NOT modify it.
    */
   getAnnotations = (
     groupKey: string,
@@ -139,7 +144,9 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     }
 
     if (toolName) {
-      return annotations[groupKey][toolName];
+      return annotations[groupKey][toolName]
+        ? annotations[groupKey][toolName]
+        : [];
     }
 
     return annotations[groupKey];
@@ -233,6 +240,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     toolSpecificAnnotations.push(annotation);
     checkAndDefineIsLockedProperty(annotation);
     checkAndDefineIsVisibleProperty(annotation);
+    checkAndDefineTextBoxProperty(annotation);
+    checkAndDefineCachedStatsProperty(annotation);
   };
 
   /**
@@ -275,16 +284,34 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    *
    * @param groupKey - The group key to remove annotations for (in default manager it is FrameOfReferenceUID).
    * @param toolName - Optional. The name of the tool to remove annotations for.
+   *
+   * @returns The removed annotations
    */
-  removeAnnotations = (groupKey: string, toolName?: string): void => {
+  removeAnnotations = (groupKey: string, toolName?: string): Annotations => {
     const annotations = this.annotations;
-    if (annotations[groupKey]) {
-      if (toolName) {
-        delete annotations[groupKey][toolName];
-      } else {
-        delete annotations[groupKey];
+    const removedAnnotations = [];
+
+    if (!annotations[groupKey]) {
+      return removedAnnotations;
+    }
+
+    if (toolName) {
+      const annotationsForTool = annotations[groupKey][toolName];
+      for (const annotation of annotationsForTool) {
+        this.removeAnnotation(annotation.annotationUID);
+        removedAnnotations.push(annotation);
+      }
+    } else {
+      for (const toolName in annotations[groupKey]) {
+        const annotationsForTool = annotations[groupKey][toolName];
+        for (const annotation of annotationsForTool) {
+          this.removeAnnotation(annotation.annotationUID);
+          removedAnnotations.push(annotation);
+        }
       }
     }
+
+    return removedAnnotations;
   };
 
   /**
@@ -314,14 +341,14 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       const toolSpecificAnnotations =
         frameOfReferenceSpecificAnnotations[toolName];
 
-      return cloneDeep(toolSpecificAnnotations);
+      return structuredClone(toolSpecificAnnotations);
     } else if (groupKey) {
       const frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
-      return cloneDeep(frameOfReferenceSpecificAnnotations);
+      return structuredClone(frameOfReferenceSpecificAnnotations);
     }
 
-    return cloneDeep(annotations);
+    return structuredClone(annotations);
   };
 
   /**
@@ -361,8 +388,19 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       annotations[groupKey] = <GroupSpecificAnnotations>state;
     } else {
       // Set entire annotations
-      this.annotations = <AnnotationState>cloneDeep(state);
+      this.annotations = <AnnotationState>structuredClone(state);
     }
+  };
+
+  /**
+   * return all annotations as a single array
+   */
+  getAllAnnotations = (): Annotations => {
+    return Object.values(this.annotations)
+      .map((frameOfReferenceSpecificAnnotations) =>
+        Object.values(frameOfReferenceSpecificAnnotations)
+      )
+      .flat(2);
   };
 
   /**
@@ -386,9 +424,18 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * Removes all annotations in the annotation state.
+   *
+   * @returns The removed annotations
    */
-  removeAllAnnotations = (): void => {
-    this.annotations = {};
+  removeAllAnnotations = (): Annotations => {
+    const removedAnnotations = [];
+
+    for (const annotation of this.getAllAnnotations()) {
+      this.removeAnnotation(annotation.annotationUID);
+      removedAnnotations.push(annotation);
+    }
+
+    return removedAnnotations;
   };
 }
 

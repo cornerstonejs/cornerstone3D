@@ -7,22 +7,25 @@ import { Types } from '@cornerstonejs/core';
 
 /**
  * floodFill.js - Taken from MIT OSS lib - https://github.com/tuzz/n-dimensional-flood-fill
- * Refactored to ES6.
+ * Refactored to ES6.  Fixed the bounds/visits checks to use integer keys, restricting the
+ * total search spacing to +/- 32k in each dimension, but resulting in about a hundred time
+ * performance gain for larger regions since JavaScript does not have a hash map to allow the
+ * map to work on keys.
  *
- * @param {function} getter The getter to the elements of your data structure,
+ * @param getter The getter to the elements of your data structure,
  *                          e.g. getter(x,y) for a 2D interprettation of your structure.
- * @param {number[]} seed The seed for your fill. The dimensionality is infered
+ * @param seed The seed for your fill. The dimensionality is infered
  *                        by the number of dimensions of the seed.
- * @param {function} [options.onFlood] An optional callback to execute when each pixel is flooded.
+ * @param options.onFlood - An optional callback to execute when each pixel is flooded.
  *                             e.g. onFlood(x,y).
- * @param {function} [options.onBoundary] An optional callback to execute whenever a boundary is reached.
+ * @param options.onBoundary - An optional callback to execute whenever a boundary is reached.
  *                                a boundary could be another segmentIndex, or the edge of your
  *                                data structure (i.e. when your getter returns undefined).
- * @param {function} [options.equals] An optional equality method for your datastructure.
+ * @param options.equals - An optional equality method for your datastructure.
  *                            Default is simply value1 = value2.
- * @param {boolean} [options.diagonals] Whether you allow flooding through diagonals. Defaults to false.
+ * @param options.diagonals - Whether you allow flooding through diagonals. Defaults to false.
  *
- * @returns {Object}
+ * @returns Flood fill results
  */
 function floodFill(
   getter: FloodFillGetter,
@@ -31,14 +34,14 @@ function floodFill(
 ): FloodFillResult {
   const onFlood = options.onFlood;
   const onBoundary = options.onBoundary;
-  const equals = options.equals || defaultEquals;
+  const equals = options.equals;
   const diagonals = options.diagonals || false;
   const startNode = get(seed);
   const permutations = prunedPermutations();
   const stack = [];
   const flooded = [];
-  const visits = {};
-  const bounds = {};
+  const visits = new Set();
+  const bounds = new Map();
 
   stack.push({ currentArgs: seed });
 
@@ -68,18 +71,28 @@ function floodFill(
     }
   }
 
+  /**
+   * Indicates if the key has been visited.
+   * @param key is a 2 or 3 element vector with values -32768...32767
+   */
   function visited(key) {
-    return visits[key] === true;
+    const [x, y, z = 0] = key;
+    // Use an integer key value for checking visited, since JavaScript does not
+    // provide a generic hash key indexed hash map.
+    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
+    return visits.has(iKey);
   }
 
   function markAsVisited(key) {
-    visits[key] = true;
+    const [x, y, z = 0] = key;
+    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
+    visits.add(iKey);
   }
 
   function member(getArgs) {
-    const node = safely(get, [getArgs]);
+    const node = get(getArgs);
 
-    return safely(equals, [node, startNode]);
+    return equals ? equals(node, startNode) : node === startNode;
   }
 
   function markAsFlooded(getArgs) {
@@ -91,7 +104,11 @@ function floodFill(
   }
 
   function markAsBoundary(prevArgs) {
-    bounds[prevArgs] = prevArgs;
+    const [x, y, z = 0] = prevArgs;
+    // Use an integer key value for checking visited, since JavaScript does not
+    // provide a generic hash key indexed hash map.
+    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
+    bounds.set(iKey, prevArgs);
     if (onBoundary) {
       //@ts-ignore
       onBoundary(...prevArgs);
@@ -119,13 +136,15 @@ function floodFill(
     return getter(...getArgs);
   }
 
-  function safely(f, args) {
-    try {
-      return f(...args);
-    } catch (error) {
-      return;
-    }
-  }
+  // This is a significant performance hit - should be done as a wrapper
+  // only when needed.
+  // function safely(f, args) {
+  //   try {
+  //     return f(...args);
+  //   } catch (error) {
+  //     return;
+  //   }
+  // }
 
   function prunedPermutations() {
     const permutations = permute(seed.length);
@@ -156,14 +175,8 @@ function floodFill(
   }
 
   function boundaries() {
-    const array = [];
-
-    for (const key in bounds) {
-      if (bounds[key] !== undefined) {
-        array.unshift(bounds[key]);
-      }
-    }
-
+    const array = Array.from(bounds.values());
+    array.reverse();
     return array;
   }
 }

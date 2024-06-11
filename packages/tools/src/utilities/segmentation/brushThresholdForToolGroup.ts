@@ -2,11 +2,12 @@ import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
 import { getRenderingEngine } from '@cornerstonejs/core';
-import getBrushToolInstances from './utilities';
+import { getBrushToolInstances } from './utilities';
 
 export function setBrushThresholdForToolGroup(
   toolGroupId: string,
-  threshold: Types.Point2
+  threshold: Types.Point2,
+  otherArgs: Record<string, unknown> = { isDynamic: false }
 ) {
   const toolGroup = getToolGroup(toolGroupId);
 
@@ -15,10 +16,16 @@ export function setBrushThresholdForToolGroup(
   }
 
   const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
+  const configuration = {
+    ...otherArgs,
+    ...(threshold !== undefined && { threshold }),
+  };
 
   brushBasedToolInstances.forEach((tool) => {
-    tool.configuration.strategySpecificConfiguration.THRESHOLD_INSIDE_CIRCLE.threshold =
-      threshold;
+    tool.configuration.strategySpecificConfiguration.THRESHOLD = {
+      ...tool.configuration.strategySpecificConfiguration.THRESHOLD,
+      ...configuration,
+    };
   });
 
   // Trigger an annotation render for any viewports on the toolgroup
@@ -60,6 +67,6 @@ export function getBrushThresholdForToolGroup(toolGroupId: string) {
   }
 
   // TODO -> Assumes the
-  return brushToolInstance.configuration.strategySpecificConfiguration
-    .THRESHOLD_INSIDE_CIRCLE.threshold;
+  return brushToolInstance.configuration.strategySpecificConfiguration.THRESHOLD
+    .threshold;
 }

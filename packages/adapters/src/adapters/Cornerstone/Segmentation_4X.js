@@ -6,7 +6,6 @@ import {
     derivations
 } from "dcmjs";
 import ndarray from "ndarray";
-import cloneDeep from "lodash.clonedeep";
 
 import { Events } from "../enums";
 
@@ -183,6 +182,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
             Value: ["1.2.840.10008.1.2.5"],
             vr: "UI"
         };
+        segmentation.dataset.SpecificCharacterSet = "ISO_IR 192";
         segmentation.dataset._vrMap.PixelData = "OB";
         segmentation.dataset.PixelData = rleEncodedFrames;
     } else {
@@ -228,7 +228,7 @@ function _createSegFromImages(images, isMultiframe, options) {
         const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
 
         dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-
+        dataset.SpecificCharacterSet = "ISO_IR 192";
         datasets.push(dataset);
     } else {
         for (let i = 0; i < images.length; i++) {
@@ -240,6 +240,7 @@ function _createSegFromImages(images, isMultiframe, options) {
             );
 
             dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+            dataset.SpecificCharacterSet = "ISO_IR 192";
             datasets.push(dataset);
         }
     }
@@ -359,11 +360,11 @@ async function generateToolState(
     // we don't have to call metadataProvider.get() for each imageId over
     // and over again.
     const sopUIDImageIdIndexMap = imageIds.reduce((acc, imageId) => {
-        const { sopInstanceUid } = metadataProvider.get(
+        const { sopInstanceUID } = metadataProvider.get(
             "generalImageModule",
             imageId
         );
-        acc[sopInstanceUid] = imageId;
+        acc[sopInstanceUID] = imageId;
         return acc;
     }, {});
 
@@ -417,7 +418,7 @@ async function generateToolState(
     const labelmapBufferArray = [];
     labelmapBufferArray[0] = new ArrayBuffer(arrayBufferLength);
 
-    // Precompute the indices and metadata so that we don't have to call
+    // Pre-compute the indices and metadata so that we don't have to call
     // a function for each imageId in the for loop.
     const imageIdMaps = imageIds.reduce(
         (acc, curr, index) => {
@@ -434,7 +435,7 @@ async function generateToolState(
     // segment in the labelmapBuffer
     const segmentsPixelIndices = new Map();
 
-    await insertFunction(
+    const overlappingSegments = await insertFunction(
         segmentsOnFrame,
         segmentsOnFrameArray,
         labelmapBufferArray,
@@ -473,7 +474,8 @@ async function generateToolState(
         segMetadata,
         segmentsOnFrame,
         segmentsOnFrameArray,
-        centroids: centroidXYZ
+        centroids: centroidXYZ,
+        overlappingSegments
     };
 }
 
@@ -695,9 +697,7 @@ function findReferenceSourceImageId(
     }
 
     let frameSourceImageSequence = undefined;
-    if (SourceImageSequence && SourceImageSequence.length !== 0) {
-        frameSourceImageSequence = SourceImageSequence[frameSegment];
-    } else if (PerFrameFunctionalGroup.DerivationImageSequence) {
+    if (PerFrameFunctionalGroup.DerivationImageSequence) {
         let DerivationImageSequence =
             PerFrameFunctionalGroup.DerivationImageSequence;
         if (Array.isArray(DerivationImageSequence)) {
@@ -719,6 +719,11 @@ function findReferenceSourceImageId(
                 }
             }
         }
+    } else if (SourceImageSequence && SourceImageSequence.length !== 0) {
+        console.warn(
+            "DerivationImageSequence not present, using SourceImageSequence assuming SEG has the same geometry as the source image."
+        );
+        frameSourceImageSequence = SourceImageSequence[frameSegment];
     }
 
     if (frameSourceImageSequence) {
@@ -923,7 +928,7 @@ function insertOverlappingPixelDataPlanar(
     let tempBuffer = labelmapBufferArray[m].slice(0);
 
     // temp list for checking overlaps
-    let tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
+    let tempSegmentsOnFrame = structuredClone(segmentsOnFrameArray[m]);
 
     /** split overlapping SEGs algorithm for each segment:
      *  A) copy the labelmapBuffer in the array with index 0
@@ -1049,7 +1054,7 @@ function insertOverlappingPixelDataPlanar(
                             M++;
                         }
                         tempBuffer = labelmapBufferArray[m].slice(0);
-                        tempSegmentsOnFrame = cloneDeep(
+                        tempSegmentsOnFrame = structuredClone(
                             segmentsOnFrameArray[m]
                         );
 
@@ -1078,12 +1083,12 @@ function insertOverlappingPixelDataPlanar(
         }
 
         labelmapBufferArray[m] = tempBuffer.slice(0);
-        segmentsOnFrameArray[m] = cloneDeep(tempSegmentsOnFrame);
+        segmentsOnFrameArray[m] = structuredClone(tempSegmentsOnFrame);
 
         // reset temp variables/buffers for new segment
         m = 0;
         tempBuffer = labelmapBufferArray[m].slice(0);
-        tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
+        tempSegmentsOnFrame = structuredClone(segmentsOnFrameArray[m]);
     }
 }
 
@@ -1138,6 +1143,7 @@ function insertPixelDataPlanar(
 
     const shouldTriggerEvent = triggerEvent && eventTarget;
 
+    let overlapping = false;
     // Below, we chunk the processing of the frames to avoid blocking the main thread
     // if the segmentation is large. We also use a promise to allow the caller to
     // wait for the processing to finish.
@@ -1241,6 +1247,9 @@ function insertPixelDataPlanar(
                     if (data[j]) {
                         for (let x = j; x < len; ++x) {
                             if (data[x]) {
+                                if (!overlapping && labelmap2DView[x] !== 0) {
+                                    overlapping = true;
+                                }
                                 labelmap2DView[x] = segmentIndex;
                                 indexCache.push(x);
                             }
@@ -1275,7 +1284,7 @@ function insertPixelDataPlanar(
                 setTimeout(processInChunks, 0);
             } else {
                 // resolve the Promise when all chunks have been processed
-                resolve();
+                resolve(overlapping);
             }
         }
 

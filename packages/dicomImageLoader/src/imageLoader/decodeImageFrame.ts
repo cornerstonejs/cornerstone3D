@@ -14,9 +14,17 @@ function processDecodeTask(
   imageFrame: ImageFrame,
   transferSyntax: string,
   pixelData: ByteArray,
-  options,
+  srcOptions,
   decodeConfig: LoaderDecodeOptions
 ): Promise<ImageFrame> {
+  const options = { ...srcOptions };
+  // If a loader is specified, it can't be passed through because it is a function
+  // and can't be safely cloned/copied externally.
+  delete options.loader;
+  // Similarly, the streamData may contain larger data information and
+  // although it can be passed to the decoder, it isn't needed and is slow
+  delete options.streamingData;
+
   const webWorkerManager = external.cornerstone.getWebWorkerManager();
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
@@ -178,6 +186,9 @@ function decodeImageFrame(
       );
 
     case '3.2.840.10008.1.2.4.96':
+    case '1.2.840.10008.1.2.4.201':
+    case '1.2.840.10008.1.2.4.202':
+    case '1.2.840.10008.1.2.4.203':
       // HTJ2K
       return processDecodeTask(
         imageFrame,

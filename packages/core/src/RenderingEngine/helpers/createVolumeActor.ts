@@ -66,13 +66,7 @@ async function createVolumeActor(
     volumeActor.getProperty().setIndependentComponents(false);
   }
 
-  // If the volume is composed of imageIds, we can apply a default VOI based
-  // on either the metadata or the min/max of the middle slice. Example of other
-  // types of volumes which might not be composed of imageIds would be e.g., nrrd, nifti
-  // format volumes
-  if (imageVolume.imageIds) {
-    await setDefaultVolumeVOI(volumeActor, imageVolume, useNativeDataType);
-  }
+  await setDefaultVolumeVOI(volumeActor, imageVolume, useNativeDataType);
 
   if (callback) {
     callback({ volumeActor, volumeId });
