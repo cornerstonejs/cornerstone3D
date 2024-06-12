@@ -5,7 +5,7 @@
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
     "preinstall": "node preinstall.js",
-    "build": "yarn run build:docs",
+    "build": "echo 'No build step yet'",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 yarn run prep-examples && docusaurus build",
     "copy-coverage-to-docs": "cp -R ../../coverage/*Chrome*/. ./static/test-coverage/",
     "copy-examples-to-docs": "cp -R ../../.static-examples/. ./static/live-examples/",
