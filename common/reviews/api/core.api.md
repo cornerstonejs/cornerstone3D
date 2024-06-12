@@ -4437,6 +4437,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     protected getScalarData(): any;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
     getView(): any;

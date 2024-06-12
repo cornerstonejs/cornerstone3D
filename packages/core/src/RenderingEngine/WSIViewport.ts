@@ -545,6 +545,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return transform.transformPoint(indexPos);
   };
 
+  /** This can be implemented later when multi-slice WSI is supported */
+  public getSliceIndex() {
+    return 0;
+  }
+
   /**
    * Gets the internal OpenLayers view object being rendered
    * Note this is not typeds right now, but might add typing later.
