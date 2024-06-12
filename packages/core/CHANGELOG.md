@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.77.13](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.12...v1.77.13) (2024-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [1.77.12](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.11...v1.77.12) (2024-06-06)
 
 **Note:** Version bump only for package @cornerstonejs/core
