@@ -29,7 +29,7 @@
 # COMMENT: For sharedArrayBuffer, see https://developer.chrome.com/blog/enabling-shared-array-buffer/
 [[headers]]
   # Define which paths this specific [[headers]] block will cover.
-  for = "/*"
+  for = "/live-examples/*"
     [headers.values]
     Cross-Origin-Embedder-Policy = "require-corp"
     Cross-Origin-Opener-Policy =  "same-origin"
