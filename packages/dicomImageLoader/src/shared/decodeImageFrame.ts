@@ -2,6 +2,8 @@
 import { ByteArray } from 'dicom-parser';
 import bilinear from './scaling/bilinear';
 import replicate from './scaling/replicate';
+import { expose } from 'comlink';
+
 import decodeLittleEndian from './decoders/decodeLittleEndian';
 import decodeBigEndian from './decoders/decodeBigEndian';
 import decodeRLE from './decoders/decodeRLE';
@@ -454,4 +456,24 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
   return imageFrame;
 }
 
-export default decodeImageFrame;
+const obj = {
+  decodeTask({
+    imageFrame,
+    transferSyntax,
+    decodeConfig,
+    options,
+    pixelData,
+    callbackFn,
+  }) {
+    return decodeImageFrame(
+      imageFrame,
+      transferSyntax,
+      pixelData,
+      decodeConfig,
+      options,
+      callbackFn
+    );
+  },
+};
+
+expose(obj);

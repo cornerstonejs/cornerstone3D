@@ -43,8 +43,8 @@ Cornerstone does not specify what the contents of the URL are - it is up to the 
 
 Here are some examples of what an ImageId could look like for different Image Loader plugins:
 
-- example://1
-- dicomweb://server/wado/{uid}/{uid}/{uid}
-- http://server/image.jpeg
-- custom://server/uuid
-- wadors://server/{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}
+- `example://1`
+- `dicomweb://server/wado/{uid}/{uid}/{uid}`
+- `http://server/image.jpeg`
+- `custom://server/uuid`
+- `wadors://server/{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}`
