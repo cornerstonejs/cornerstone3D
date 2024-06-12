@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2024-06-12)
+
+### Features
+
+- **workers:** use the new webworker api for image decoders ([#1313](https://github.com/cornerstonejs/cornerstone3D/issues/1313)) ([440bb57](https://github.com/cornerstonejs/cornerstone3D/commit/440bb57602ea5faaf7c5056ce428d669779a7cd3))
+
 # [2.0.0-beta.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.77.12...v2.0.0-beta.7) (2024-06-11)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader

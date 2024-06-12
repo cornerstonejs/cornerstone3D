@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.8](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2024-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 # [2.0.0-beta.7](https://github.com/dcmjs-org/dcmjs/compare/v1.77.12...v2.0.0-beta.7) (2024-06-11)
 
 ### Features
