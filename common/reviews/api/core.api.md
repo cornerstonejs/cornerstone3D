@@ -4405,6 +4405,7 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     getImageData(): {
         dimensions: any;
         spacing: any;
+        numComps: number;
         origin: any;
         direction: any;
         metadata: {
