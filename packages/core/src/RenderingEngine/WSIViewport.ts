@@ -215,6 +215,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return {
       dimensions: metadata.dimensions,
       spacing,
+      numComps: 3,
       origin: metadata.origin,
       direction: metadata.direction,
       metadata: { Modality: this.modality },
