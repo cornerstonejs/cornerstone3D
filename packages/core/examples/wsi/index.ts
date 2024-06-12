@@ -22,13 +22,11 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
-
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { ToolGroupManager } = cornerstoneTools;
 
 const { wadors } = dicomImageLoader;
 
-const { ViewportType, Events } = Enums;
+const { ViewportType } = Enums;
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -102,7 +100,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.WSI,
+    type: ViewportType.WholeSlide,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

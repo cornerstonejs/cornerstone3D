@@ -729,6 +729,13 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
+type DataSetOptions = {
+    groupId?: string;
+    viewSelector?: ViewPresentationSelector;
+    viewReference?: ViewReferenceSpecifier;
+};
+
+// @public (undocumented)
 function decimate(list: Array<unknown>, interleave: number, offset?: number): number[];
 
 // @public (undocumented)
@@ -1816,12 +1823,6 @@ const imageRetrieveMetadataProvider: {
 };
 
 // @public (undocumented)
-type ImageSetOptions = {
-    viewSelector?: ViewPresentationSelector;
-    viewReference?: ViewReferenceSpecifier;
-};
-
-// @public (undocumented)
 type ImageSliceData = {
     numberOfSlices: number;
     imageIndex: number;
@@ -2268,7 +2269,7 @@ interface IViewport {
     // (undocumented)
     setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
     // (undocumented)
-    setDataIds(dataIds: string[], options?: ImageSetOptions): void;
+    setDataIds(dataIds: string[], options?: DataSetOptions): void;
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, callResetCamera?: boolean, suppressEvents?: boolean): any;
     // (undocumented)
@@ -3384,7 +3385,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         ViewReference,
-        ImageSetOptions,
+        DataSetOptions as ImageSetOptions,
         ViewPresentation,
         ViewPresentationSelector,
         ReferenceCompatibleOptions,
@@ -3699,7 +3700,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected setColorTransform(): void;
     // (undocumented)
-    setDataIds(imageIds: string[], options?: ImageSetOptions): void;
+    setDataIds(imageIds: string[], options?: DataSetOptions): void;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)
@@ -3896,7 +3897,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
     // (undocumented)
-    setDataIds(_imageIds: string[], _options?: ImageSetOptions): void;
+    setDataIds(_imageIds: string[], _options?: DataSetOptions): void;
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
     // (undocumented)

@@ -217,10 +217,18 @@ export type ViewPresentationSelector = {
   paletteLut?: boolean;
 };
 
-export type ImageSetOptions = {
+export type DataSetOptions = {
+  /**
+   * The group id is a volume, display set or other identification for the
+   * overall set of data.  If set, then two sets of images can be compared for
+   * equality by comparing the group id.
+   * For volumes, if set, the groupId must be the primary volumeId.
+   */
+  groupId?: string;
   viewSelector?: ViewPresentationSelector;
   viewReference?: ViewReferenceSpecifier;
 };
+
 /**
  * Viewport interface for cornerstone viewports
  */
@@ -418,7 +426,7 @@ interface IViewport {
    * @param dataIds - a set of data ids that make up the data viewport
    * @param options - an optional object with view reference/specifier
    */
-  setDataIds(dataIds: string[], options?: ImageSetOptions): void;
+  setDataIds(dataIds: string[], options?: DataSetOptions): void;
 }
 
 /**
