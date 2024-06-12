@@ -21,8 +21,8 @@
     "adapters": {
       "description": "Adapters"
     },
-    "video": {
-      "description": "Video Viewport"
+    "viewports": {
+      "description": "Other Viewports (video,wsi)"
     },
     "nifti": {
       "description": "Nifti Volume loader"
@@ -233,12 +233,12 @@
         "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
       },
       "colorBar": {
-        "name": "Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack viewport"
+        "name": "ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack viewport"
       },
       "advancedColorBar": {
-        "name": "Advanced Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
+        "name": "Advanced ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack and volume viewports with PT/CT volumes"
       },
       "ultrasoundenhancedregion": {
         "name": "Ultrasound Enhanced Region",
@@ -257,7 +257,7 @@
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
-    "video": {
+    "viewports" : {
       "video": {
         "name": "Video Display",
         "description": "Basic video display"
@@ -289,9 +289,17 @@
       "videoRange": {
         "name": "Video Range Selection",
         "description": "Video range selection"
+      },
+      "wsi": {
+        "name": "Whole Slide Imaging",
+        "description": "Dispaly WSI Series"
+      },
+      "wsiAnnotationTools": {
+        "name": "WSI Annotation Tools",
+        "description": "WSI with length and other annotation tools"
       }
     },
-    "tools-segmentation": {
+    "tools-segmentation" : {
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
@@ -447,12 +455,12 @@
         "description": "Demonstrates how to dynamically add annotations to a viewport"
       }
     },
-    "polymorph-segmentation": {
-      "PolySegWasmContourToStackLabelmap": {
+    "polymorph-segmentation":{
+      "PolySegWasmContourToStackLabelmap":{
         "name": "Convert contour segmentation to stack labelmap",
         "description": "Demonstrates how to convert a contour segmentation to a stack labelmap"
       },
-      "PolySegWasmContourToVolumeLabelmap": {
+      "PolySegWasmContourToVolumeLabelmap":{
         "name": "Convert contour segmentation to volume labelmap",
         "description": "Demonstrates how to convert a contour segmentation to a volume labelmap"
       },
@@ -460,27 +468,27 @@
         "name": "Convert contour segmentation to surface",
         "description": "Demonstrates how to convert a contour segmentation to a closed surface"
       },
-      "PolySegWasmStackLabelmapToSurface": {
+      "PolySegWasmStackLabelmapToSurface":{
         "name": "Convert stack labelmap to surface",
         "description": "Demonstrates how to convert a stack labelmap to a closed surface"
       },
-      "PolySegWasmVolumeLabelmapToSurface": {
+      "PolySegWasmVolumeLabelmapToSurface":{
         "name": "Convert volume labelmap to surface",
         "description": "Demonstrates how to convert a volume labelmap to a closed surface"
       },
-      "PolySegWasmSurfaceToVolumeLabelmap": {
+      "PolySegWasmSurfaceToVolumeLabelmap":{
         "name": "Convert surface to volume labelmap",
         "description": "Demonstrates how to convert a closed surface to a volume labelmap"
       },
-      "PolySegWasmSurfaceToStackLabelmap": {
+      "PolySegWasmSurfaceToStackLabelmap":{
         "name": "Convert surface to stack labelmap",
         "description": "Demonstrates how to convert a closed surface to a stack labelmap"
       },
-      "PolySegWasmVolumeLabelmapToContour": {
+      "PolySegWasmVolumeLabelmapToContour":{
         "name": "Convert volume labelmap to contour",
         "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
       },
-      "PolySegWasmSurfaceToContour": {
+      "PolySegWasmSurfaceToContour":{
         "name": "Convert surface to contour",
         "description": "Demonstrates how to convert a closed surface to a contour segmentation"
       }

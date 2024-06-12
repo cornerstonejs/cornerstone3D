@@ -13,8 +13,8 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 18
-    - name: Install dependencies
-      run: yarn install
+    - name: Install dependencies playwright
+      run: yarn install --frozen-lockfile
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests

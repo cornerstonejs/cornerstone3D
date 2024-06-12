@@ -1030,7 +1030,7 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
+  if (Number.isFinite(max)) {
     textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
   }
 

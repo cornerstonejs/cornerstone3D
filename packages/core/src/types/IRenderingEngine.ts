@@ -2,7 +2,6 @@ import IStackViewport from './IStackViewport';
 import { PublicViewportInput } from './IViewport';
 import IVolumeViewport from './IVolumeViewport';
 import { IViewport } from './IViewport';
-import IVideoViewport from './IVideoViewport';
 
 export default interface IRenderingEngine {
   id: string;
@@ -25,7 +24,6 @@ export default interface IRenderingEngine {
   disableElement(viewportId: string): void;
   getStackViewports(): Array<IStackViewport>;
   getVolumeViewports(): Array<IVolumeViewport>;
-  getVideoViewports(): Array<IVideoViewport>;
   destroy(): void;
   _debugRender(): void;
 }
