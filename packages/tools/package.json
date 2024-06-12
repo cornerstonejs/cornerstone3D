@@ -34,13 +34,12 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^2.0.0-beta.7",
+    "@cornerstonejs/core": "^2.0.0-beta.8",
     "@icr/polyseg-wasm": "0.4.0",
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",
     "lodash.clonedeep": "4.5.0",
-    "lodash.get": "^4.4.2",
-    "comlink": "^4.4.1"
+    "lodash.get": "^4.4.2"
   },
   "devDependencies": {
     "canvas": "^2.11.2"
