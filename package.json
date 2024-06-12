@@ -37,6 +37,7 @@
     "prepare": "husky install",
     "start": "yarn run dev",
     "test:e2e:ci": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",
     "test:chrome": "karma start ./karma.conf.js --browsers Chrome",

@@ -45,6 +45,12 @@ const screenShotPaths = {
     slice6: 'slice6.png',
     slice7: 'slice7.png',
   },
+  splineContourSegmentationTools: {
+    catmullRomSplineROI: 'catmullRomSplineROI.png',
+    linearSplineROI: 'linearSplineROI.png',
+    bsplineROI: 'bsplineROI.png',
+    splinesOnSegmentTwo: 'splinesOnSegmentTwo.png',
+  },
 };
 
 export { screenShotPaths };
