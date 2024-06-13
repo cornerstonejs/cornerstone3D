@@ -1959,9 +1959,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId, imageIdIndex };
       const options = {
-        preScale: {
-          enabled: true,
-        },
         useRGBA: true,
         requestType,
       };
@@ -2062,9 +2059,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const options = {
       targetBuffer: {
         type: this.useNativeDataType ? undefined : 'Float32Array',
-      },
-      preScale: {
-        enabled: true,
       },
       useRGBA: false,
       transferSyntaxUID,

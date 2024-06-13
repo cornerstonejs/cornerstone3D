@@ -95,7 +95,7 @@ function createImage(
     enabled:
       options.preScale && options.preScale.enabled !== undefined
         ? options.preScale.enabled
-        : false,
+        : true,
   };
 
   if (!pixelData?.length) {

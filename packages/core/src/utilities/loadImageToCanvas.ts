@@ -176,9 +176,6 @@ export default function loadImageToCanvas(
       targetBuffer: {
         type: useNorm16Texture ? undefined : 'Float32Array',
       },
-      preScale: {
-        enabled: true,
-      },
       useRGBA: !!useCPURendering,
       requestType,
     };
