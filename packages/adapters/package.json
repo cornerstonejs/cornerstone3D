@@ -44,14 +44,14 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "@cornerstonejs/tools": "^2.0.0-beta.9",
+        "@cornerstonejs/tools": "^2.0.0-beta.10",
         "buffer": "^6.0.3",
         "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "^2.0.0-beta.9",
-        "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.9"
+        "@cornerstonejs/core": "^2.0.0-beta.10",
+        "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.10"
     }
 }
