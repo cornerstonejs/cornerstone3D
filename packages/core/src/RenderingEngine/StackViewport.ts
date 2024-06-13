@@ -9,7 +9,6 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
-import cloneDeep from 'lodash.clonedeep';
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -1753,7 +1752,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       currentImageIdIndex: currentImageIdIndex,
     };
 
-    triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
+    triggerEvent(this.element, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
 
     return imageId;
   }
