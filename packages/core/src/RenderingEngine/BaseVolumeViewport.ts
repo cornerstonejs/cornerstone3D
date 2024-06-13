@@ -37,7 +37,6 @@ import type {
   VolumeViewportProperties,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
-  ViewPresentation,
   ViewReference,
   IVolumeViewport,
 } from '../types';

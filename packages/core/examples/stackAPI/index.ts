@@ -248,7 +248,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as unknown as Types.IStackViewport;
+    ) as Types.IStackViewport;
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
@@ -294,7 +294,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as unknown as Types.IStackViewport;
+    ) as Types.IStackViewport;
 
     // Resets the viewport's camera
     viewport.resetCamera();
@@ -339,7 +339,7 @@ async function run() {
   // Get the stack viewport that was created
   const viewport = renderingEngine.getViewport(
     viewportId
-  ) as unknown as Types.IStackViewport;
+  ) as Types.IStackViewport;
 
   // Define a stack containing a few images
   const stack = [imageIds[0], imageIds[1], imageIds[2]];

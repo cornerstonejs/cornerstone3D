@@ -312,7 +312,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  public resetCamera: (resetPan?: boolean, resetZoom?: boolean) => boolean;
+  public resetCamera: (options?) => boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -2531,7 +2531,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
     const resetToCenter = true;
-    return super.resetCamera(resetPan, resetZoom, resetToCenter);
+    return super.resetCamera({ resetPan, resetZoom, resetToCenter });
   }
 
   /**

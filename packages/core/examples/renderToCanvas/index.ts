@@ -216,10 +216,7 @@ async function run() {
       setTimeout(async () => {
         // Get the stack viewport that was created
         const viewport = renderingEngine.getViewport(viewportId);
-        await (viewport as unknown as Types.IStackViewport).setStack(
-          [imageId],
-          0
-        );
+        await (viewport as Types.IStackViewport).setStack([imageId], 0);
         viewport.resetCamera();
         viewport.render();
       }, 200);

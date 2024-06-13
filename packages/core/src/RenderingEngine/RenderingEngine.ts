@@ -630,14 +630,14 @@ class RenderingEngine implements IRenderingEngine {
       const resetZoom = true;
       const resetToCenter = true;
       const resetRotation = false;
-      const supressEvents = true;
-      vp.resetCamera(
+      const suppressEvents = true;
+      vp.resetCamera({
         resetPan,
         resetZoom,
         resetToCenter,
         resetRotation,
-        supressEvents
-      );
+        suppressEvents,
+      });
 
       const displayArea = vp.getDisplayArea();
 
@@ -872,7 +872,7 @@ class RenderingEngine implements IRenderingEngine {
     const viewport = new ViewportType(viewportInput);
 
     // 5. Storing the viewports
-    this._viewports.set(viewportId, viewport);
+    this._viewports.set(viewportId, viewport as IViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
