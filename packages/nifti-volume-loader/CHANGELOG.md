@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.8...v2.0.0-beta.9) (2024-06-13)
+
+### Features
+
+- **dicom loader:** switch the build to es modules with types ([#1322](https://github.com/cornerstonejs/cornerstone3D/issues/1322)) ([89e95eb](https://github.com/cornerstonejs/cornerstone3D/commit/89e95eba292e3322c031d92bcc71a39bdd65e330))
+
 # [2.0.0-beta.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2024-06-12)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
