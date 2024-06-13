@@ -263,10 +263,9 @@ const addProgrammaticAnnotation = (
     end as Types.Point3,
   ]);
 
-  cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds(
-    renderingEngine,
-    [viewport.id]
-  );
+  cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds([
+    viewport.id,
+  ]);
   viewport.render();
 };
 

@@ -22,7 +22,7 @@ function annotationSelectionListener(evt): void {
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getViewports();
     const viewportIds = viewports.map((vp) => vp.id);
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+    triggerAnnotationRenderForViewportIds(viewportIds);
   });
 }
 

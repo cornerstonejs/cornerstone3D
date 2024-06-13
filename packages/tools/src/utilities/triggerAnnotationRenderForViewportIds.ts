@@ -1,16 +1,15 @@
-import type { Types } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import triggerAnnotationRender from './triggerAnnotationRender';
 
 export function triggerAnnotationRenderForViewportIds(
-  renderingEngine: Types.IRenderingEngine,
   viewportIdsToRender: string[]
 ): void {
-  if (!viewportIdsToRender.length || !renderingEngine) {
+  if (!viewportIdsToRender.length) {
     return;
   }
 
   viewportIdsToRender.forEach((viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId);
+    const { viewport } = getEnabledElementByViewportId(viewportId);
     if (!viewport) {
       console.warn(`Viewport not available for ${viewportId}`);
       return;

@@ -165,7 +165,7 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
     }
   }
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -258,7 +258,7 @@ function completeDrawClosedContour(
   this.drawData = undefined;
   this.commonData = undefined;
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
   this.deactivateDraw(element);
 
@@ -358,7 +358,7 @@ function completeDrawOpenContour(
   this.drawData = undefined;
   this.commonData = undefined;
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
   this.deactivateDraw(element);
 
@@ -506,7 +506,7 @@ function haltDrawing(element: HTMLDivElement, canvasPoints: any): boolean {
     this.drawData = undefined;
     this.commonData = undefined;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.deactivateDraw(element);
 
