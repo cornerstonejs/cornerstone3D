@@ -38,12 +38,14 @@ function getPixelData(
     options.streamingData = { url };
   }
 
-  if (retrieveOptions.rangeIndex !== undefined) {
+  if (
+    (retrieveOptions as Types.RangeRetrieveOptions).rangeIndex !== undefined
+  ) {
     return rangeRequest(url, imageId, headers, options);
   }
 
   // Use the streaming parser only when configured to do so
-  if (retrieveOptions.streaming) {
+  if ((retrieveOptions as Types.StreamingRetrieveOptions).streaming) {
     return streamRequest(url, imageId, headers, options);
   }
 

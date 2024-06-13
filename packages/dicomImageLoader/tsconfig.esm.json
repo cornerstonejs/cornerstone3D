@@ -4,9 +4,6 @@
     "declarationDir": "./dist/types",
     "declarationMap": true,
     "outDir": "./dist/esm",
-    "paths": {
-      "@cornerstonejs/core": ["../core/dist/types", "../core/src"],
-    }
   },
   "include": ["src"]
 }

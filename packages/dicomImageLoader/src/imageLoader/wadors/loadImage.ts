@@ -105,7 +105,7 @@ export interface CornerstoneWadoRsLoaderOptions
   retrieveType?: string;
   transferSyntaxUID?: string;
   // Retrieve options are stored to provide sub-options for nested calls
-  retrieveOptions?: Types.RetrieveOptions;
+  retrieveOptions?: Types.RangeRetrieveOptions;
   // Streaming data adds information about already streamed results.
   streamingData?: StreamingData;
 }

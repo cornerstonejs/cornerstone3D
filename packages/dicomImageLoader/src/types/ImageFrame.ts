@@ -23,14 +23,16 @@ interface ImageFrame {
   imageData?: ImageData;
   pixelDataLength?: number;
   preScale?: {
-    enabled?: boolean;
+    enabled: boolean;
+    scaled: boolean;
     scalingParameters?: {
-      intercept: number;
-      slope: number;
+      intercept?: number;
+      slope?: number;
+      rescaleSlope?: number;
+      rescaleIntercept?: number;
       modality?: string;
       suvbw?: number;
     };
-    scaled?: boolean;
   };
   minAfterScale?: number;
   maxAfterScale?: number;
@@ -45,7 +47,7 @@ interface ImageFrame {
    * loss image can be replaced by a lower loss one.
    */
   imageQualityStatus?: Enums.ImageQualityStatus;
-  decodeLevel?: unkonwn;
+  decodeLevel?: any;
 }
 
 export default ImageFrame;
