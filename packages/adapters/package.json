@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "2.0.0-beta.9",
+    "version": "2.0.0-beta.12",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "src": "src/index.ts",
     "main": "./dist/@cornerstonejs/adapters.es.js",
@@ -44,14 +44,14 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "@cornerstonejs/tools": "^2.0.0-beta.9",
+        "@cornerstonejs/tools": "^2.0.0-beta.12",
         "buffer": "^6.0.3",
         "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "^2.0.0-beta.9",
-        "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.9"
+        "@cornerstonejs/core": "^2.0.0-beta.12",
+        "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.12"
     }
 }
