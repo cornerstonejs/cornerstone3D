@@ -2613,7 +2613,7 @@ function getContourHolesDataWorld(annotation: Annotation): Types_2.Point3[][];
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
     frameNumbers?: any;
     maskVolumeId?: any;
-    imageCoordinate?: any;
+    worldCoordinate?: any;
 }): number[] | number[][];
 
 // @public (undocumented)
@@ -5859,7 +5859,7 @@ function triggerAnnotationRender(element: HTMLDivElement): void;
 function triggerAnnotationRenderForToolGroupIds(toolGroupIds: string[]): void;
 
 // @public (undocumented)
-function triggerAnnotationRenderForViewportIds(renderingEngine: Types_2.IRenderingEngine, viewportIdsToRender: string[]): void;
+function triggerAnnotationRenderForViewportIds(viewportIdsToRender: string[]): void;
 
 // @public (undocumented)
 function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
