@@ -216,7 +216,7 @@ enum Events {
    * Triggers when the scroll function is called with a delta that is out of bounds.
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
    */
-  VOLUME_SCROLL_OUT_OF_BOUNDS = 'VOLUME_SCROLL_OUT_OF_BOUNDS',
+  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS = 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
 
   /**
    * Triggers when the scroll function is called on a volume.

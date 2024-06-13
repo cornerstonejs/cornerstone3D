@@ -18,7 +18,7 @@ const {
   getEnabledElement,
 } = cornerstone3D;
 
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { unregisterAllImageLoaders } = imageLoader;
 const { ViewportType } = Enums;
 
@@ -169,8 +169,8 @@ describe('Segmentation Controller --', () => {
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
-        createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-          createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
             setVolumesForViewports(
               this.renderingEngine,
               [{ volumeId: volumeId }],
@@ -242,8 +242,8 @@ describe('Segmentation Controller --', () => {
     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
-    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
     //         setVolumesForViewports(
     //           this.renderingEngine,
     //           [{ volumeId: volumeId }],
@@ -334,8 +334,8 @@ describe('Segmentation Controller --', () => {
     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
-    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
     //         setVolumesForViewports(
     //           this.renderingEngine,
     //           [{ volumeId: volumeId }],

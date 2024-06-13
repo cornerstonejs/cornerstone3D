@@ -17,7 +17,7 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
@@ -270,7 +270,7 @@ describe('Segmentation Tools --', () => {
       this.segToolGroup.addViewport(vp3.id, this.renderingEngine.id);
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],

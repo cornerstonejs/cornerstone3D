@@ -3,7 +3,6 @@ import {
   utilities as toolsUtilities,
   segmentation,
 } from '@cornerstonejs/tools';
-import cloneDeep from 'lodash.clonedeep';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import EventTypes from '../src/enums/Events';

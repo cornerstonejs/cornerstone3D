@@ -1,5 +1,4 @@
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
-import cloneDeep from 'lodash.clonedeep';
 import Events from '../../enums/Events';
 import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes';
 

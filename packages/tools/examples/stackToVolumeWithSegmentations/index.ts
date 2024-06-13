@@ -315,9 +315,12 @@ async function _startFromVolume(
   const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
   const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
   // Define a volume in memory
-  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
+  const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
+    volumeId,
+    {
+      imageIds,
+    }
+  );
 
   // Set the volume to load
   volume.load();

@@ -553,11 +553,11 @@ async function setUpDisplay() {
   });
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
 

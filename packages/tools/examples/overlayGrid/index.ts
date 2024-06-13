@@ -143,13 +143,13 @@ async function run() {
   const ptVolumeId = 'myVolume-pt';
   const ctVolumeId = 'myVolume-ct';
 
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
     imageIds: ptStacks,
   });
 
   ptVolume.load();
 
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
     imageIds: ctStacks,
   });
 
