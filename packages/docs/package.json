@@ -19,6 +19,8 @@
     "dev:watch": "cross-env NODE_OPTIONS=--max_old_space_size=16384 TYPEDOC_WATCH=true docusaurus start",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist && yarn run clear",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "clear": "docusaurus clear",
     "prep-coverage": "cd ../.. && yarn run test:ci && cd packages/docs && yarn run copy-coverage-to-docs",
     "prep-examples": "cd ../.. && yarn run build-all-examples && cd packages/docs && yarn run copy-examples-to-docs",

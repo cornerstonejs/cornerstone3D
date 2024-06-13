@@ -24,6 +24,7 @@
     "build:update-api:streaming": "cd packages/streaming-image-volume-loader && npm run build:update-api",
     "build:update-api": "npm run build:update-api:core && npm run build:update-api:tools && npm run build:update-api:streaming && npm run build:update-api:nifti",
     "clean": "npx lerna run clean --stream",
+    "clean:deep": "npx lerna run clean:deep --stream",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot",
