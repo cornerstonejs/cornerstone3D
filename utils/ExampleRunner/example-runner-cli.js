@@ -268,7 +268,7 @@ function run() {
 
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run build:esm:watch`);
+  shell.exec(`yarn run build:esm`);
   shell.cd(currentWD);
 
   if (buildExample) {

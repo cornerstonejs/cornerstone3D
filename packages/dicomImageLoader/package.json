@@ -14,6 +14,7 @@
   "license": "MIT",
   "main": "dist/esm/src/imageLoader/index.js",
   "module": "dist/esm/src/imageLoader/index.js",
+  "types": "dist/types/src/imageLoader/index.d.ts",
   "files": [
     "dist/"
   ],
@@ -31,7 +32,7 @@
     }
   },
   "scripts": {
-    "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:esm": "tsc --project ./tsconfig.esm.json --noEmit fasle",
     "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
