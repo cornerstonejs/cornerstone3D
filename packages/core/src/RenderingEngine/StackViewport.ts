@@ -702,7 +702,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       VOILUTFunction,
       invert,
       interpolationType,
-      rotation,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -717,7 +716,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         VOILUTFunction,
         invert,
         interpolationType,
-        rotation,
       });
     }
 
@@ -742,20 +740,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (typeof interpolationType !== 'undefined') {
       this.setInterpolationType(interpolationType);
     }
-
-    if (typeof rotation !== 'undefined') {
-      // TODO: check with VTK about rounding errors here.
-      if (this.getRotation() !== rotation) {
-        this.setRotation(rotation);
-      }
-    }
   }
 
   /**
    * Retrieve the viewport default properties
    * @param imageId If given, we retrieve the default properties of an image index if it exists
    * If not given,we return the global properties of the viewport
-   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
+   * @returns viewport properties including voi, invert, interpolation type,
    */
   public getDefaultProperties = (imageId?: string): StackViewportProperties => {
     let imageProperties;
@@ -769,13 +760,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     return {
       ...this.globalDefaultProperties,
-      rotation: this.getRotation(),
     };
   };
 
   /**
    * Retrieve the viewport properties
-   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
+   * @returns viewport properties including voi, invert, interpolation type,
    */
   public getProperties = (): StackViewportProperties => {
     const {
@@ -786,7 +776,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       invert,
       voiUpdatedWithSetProperties,
     } = this;
-    const rotation = this.getRotation();
 
     return {
       colormap,
@@ -794,7 +783,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       VOILUTFunction,
       interpolationType,
       invert,
-      rotation,
       isComputedVOI: !voiUpdatedWithSetProperties,
     };
   };
@@ -836,10 +824,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.setInvertColor(this.initialInvert);
 
     this.setInterpolationType(InterpolationType.LINEAR);
-
-    if (this.getRotation() !== 0) {
-      this.setRotation(0);
-    }
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
@@ -891,9 +875,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
-    if (this.getRotation() !== 0) {
-      this.setRotation(0);
-    }
     this.setInterpolationType(InterpolationType.LINEAR);
     this.setInvertColor(false);
 
@@ -1054,7 +1035,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation: this.getRotation(),
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
@@ -1169,7 +1149,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation,
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);

@@ -1254,6 +1254,7 @@ class Viewport implements IViewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
+      rotation: this.getRotation(),
     };
   }
 

@@ -553,11 +553,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation,
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-    this.viewportProperties.rotation = rotation;
   };
 
   private rotateCamera(rotation: number): void {
@@ -801,7 +799,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       preset,
       interpolationType,
       slabThickness,
-      rotation,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -815,7 +812,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         colormap,
         preset,
         slabThickness,
-        rotation,
       });
     }
 
@@ -854,10 +850,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = slabThickness;
     }
-
-    if (rotation !== undefined) {
-      this.setRotation(rotation);
-    }
   }
 
   /**
@@ -889,10 +881,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
-    }
-
-    if (properties.rotation !== undefined) {
-      this.setRotation(properties.rotation);
     }
 
     this.render();
@@ -969,7 +957,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Retrieve the viewport properties
    * @param volumeId - The volume id to get the properties for (if undefined, the first volume)
-   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
+   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert
    */
   public getProperties = (volumeId?: string): VolumeViewportProperties => {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
@@ -983,7 +971,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       interpolationType,
       invert,
       slabThickness,
-      rotation,
       preset,
     } = this.viewportProperties;
 
@@ -1020,7 +1007,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       interpolationType: interpolationType,
       invert: invert,
       slabThickness: slabThickness,
-      rotation: rotation,
       preset,
     };
   };
