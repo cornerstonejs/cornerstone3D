@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.9...v2.0.0-beta.10) (2024-06-13)
+
+### Bug Fixes
+
+- try to publish esm dicom loader ([#1323](https://github.com/cornerstonejs/cornerstone3D/issues/1323)) ([bd58aaf](https://github.com/cornerstonejs/cornerstone3D/commit/bd58aaf89888297e9e7ee87dfc4103ebca776c7d))
+
 # [2.0.0-beta.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.8...v2.0.0-beta.9) (2024-06-13)
 
 ### Features
