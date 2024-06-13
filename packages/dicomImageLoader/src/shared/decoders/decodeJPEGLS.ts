@@ -2,8 +2,9 @@ import type {
   CharlsModule,
   JpegLSDecoder,
 } from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
-
+// @ts-ignore
 import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
+// @ts-ignore
 import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
 
 import { ByteArray } from 'dicom-parser';
