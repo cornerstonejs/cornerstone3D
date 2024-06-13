@@ -1095,7 +1095,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
-        referenceId: volumeId,
+        referencedId: volumeId,
       });
     }
 
@@ -1168,11 +1168,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         actor,
         slabThickness,
         // although the actor UID is defined, we need to use the volumeId for the
-        // referenceId, since the actor UID is used to reference the actor in the
+        // referencedId, since the actor UID is used to reference the actor in the
         // viewport, however, the actor is created from its volumeId
         // and if later we need to grab the referenced volume from cache,
-        // we can use the referenceId to get the volume from the cache
-        referenceId: volumeId,
+        // we can use the referencedId to get the volume from the cache
+        referencedId: volumeId,
       });
     }
 

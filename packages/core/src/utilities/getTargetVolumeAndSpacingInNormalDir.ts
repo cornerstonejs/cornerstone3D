@@ -59,7 +59,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     .map((va) => {
       // prefer the referenceUID if it is set, since it can be a derived actor
       // and the uid does not necessarily match the volumeId
-      const actorUID = va.referenceId ?? va.uid;
+      const actorUID = va.referencedId ?? va.uid;
       return cache.getVolume(actorUID);
     })
     .filter((iv) => !!iv);

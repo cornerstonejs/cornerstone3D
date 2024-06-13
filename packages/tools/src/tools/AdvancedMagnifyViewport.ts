@@ -26,7 +26,7 @@ const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
 
 // TODO: find a better to identify segmentation actors
-const isSegmentation = (actor) => actor.uid !== actor.referenceId;
+const isSegmentation = (actor) => actor.uid !== actor.referencedId;
 
 export type AutoPanCallbackData = {
   points: {
@@ -291,7 +291,7 @@ class AdvancedMagnifyViewport {
     sourceActors.filter(isSegmentation).forEach((actor) => {
       segmentation.addSegmentationRepresentations(magnifyToolGroupId, [
         {
-          segmentationId: actor.referenceId,
+          segmentationId: actor.referencedId,
           type: SegmentationRepresentations.Labelmap,
         },
       ]);
