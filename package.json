@@ -13,7 +13,7 @@
   },
   "scripts": {
     "api-check": "npx lerna run api-check",
-    "build": "npx lerna run build --stream",
+    "build": "npx lerna run build --stream && npx lerna run build:loader",
     "build:esm": "npx lerna run build:esm --stream",
     "build:umd": "npx lerna run build:umd --stream",
     "watch": "npx lerna watch -- lerna run build --scope=$LERNA_PACKAGE_NAME --include-dependents",
