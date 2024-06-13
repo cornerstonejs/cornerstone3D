@@ -163,9 +163,12 @@ async function run() {
 
   // _handleStackViewports(volumeImageIds);
   // _handleVolumeViewports(volumeImageIds, renderingEngine);
-  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: volumeImageIds,
-  });
+  const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
+    volumeId,
+    {
+      imageIds: volumeImageIds,
+    }
+  );
 
   // Set the volume to load
   volume.load();

@@ -1,4 +1,4 @@
-import { getRenderingEngine, utilities } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   SegmentationRepresentationConfig,
@@ -79,9 +79,8 @@ async function addSegmentationRepresentation(
   if (representationInput.type === SegmentationRepresentations.Contour) {
     getToolGroup(toolGroupId)
       .getViewportsInfo()
-      .forEach(({ viewportId, renderingEngineId }) => {
-        const renderingEngine = getRenderingEngine(renderingEngineId);
-        triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId]);
+      .forEach(({ viewportId }) => {
+        triggerAnnotationRenderForViewportIds([viewportId]);
       });
   }
 

@@ -67,8 +67,10 @@ class PlanarRotateTool extends BaseTool {
       const rotatedViewUp = vec3.transformMat4(vec3.create(), viewUp, rotMat);
       viewport.setCamera({ viewUp: rotatedViewUp as Types.Point3 });
     } else {
-      const { rotation } = (viewport as Types.IStackViewport).getProperties();
-      viewport.setProperties({ rotation: rotation + angle });
+      const { rotation } = (
+        viewport as Types.IStackViewport
+      ).getViewPresentation();
+      viewport.setViewPresentation({ rotation: rotation + angle });
     }
 
     viewport.render();

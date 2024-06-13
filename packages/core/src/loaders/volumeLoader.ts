@@ -9,7 +9,6 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
-import cloneDeep from 'lodash.clonedeep';
 
 import {
   createUint16SharedArray,
@@ -242,13 +241,13 @@ export function loadVolume(
  *
  * @returns Volume Loader Object
  */
-export async function createAndCacheVolume(
+export async function createAndCacheEmptyVolume(
   volumeId: string,
   options?: VolumeLoaderOptions
 ): Promise<Record<string, any>> {
   if (volumeId === undefined) {
     throw new Error(
-      'createAndCacheVolume: parameter volumeId must not be undefined'
+      'createAndCacheEmptyVolume: parameter volumeId must not be undefined'
     );
   }
 

@@ -15,7 +15,7 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
@@ -173,14 +173,14 @@ describe('Segmentation State -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId]
           );
           vp.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -250,14 +250,14 @@ describe('Segmentation State -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId]
           );
           vp.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,

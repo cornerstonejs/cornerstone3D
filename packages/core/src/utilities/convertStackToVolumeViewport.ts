@@ -1,7 +1,7 @@
 import { IStackViewport, IVolumeViewport, Point3 } from '../types';
 import { setVolumesForViewports } from '../RenderingEngine/helpers';
 import {
-  createAndCacheVolume,
+  createAndCacheEmptyVolume,
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
 import { Events, OrientationAxis, ViewportType } from '../enums';
@@ -64,7 +64,7 @@ async function convertStackToVolumeViewport({
   // imageIds or not so we just let the loader handle it and we have cache
   // optimizations in place to avoid fetching the same imageId if it is already
   // cached
-  const volume = await createAndCacheVolume(volumeId, {
+  const volume = await createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

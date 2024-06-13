@@ -27,8 +27,6 @@ type CameraModifiedEventDetail = {
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
-  /** Rotation Optional */
-  rotation?: number;
 };
 
 /**

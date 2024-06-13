@@ -209,7 +209,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -252,10 +252,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       this._computePointsInsideVolume(annotation, imageVolume, enabledElement);
     }
 
-    triggerAnnotationRenderForViewportIds(
-      enabledElement.renderingEngine,
-      viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);

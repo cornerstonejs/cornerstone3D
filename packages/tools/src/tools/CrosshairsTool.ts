@@ -303,19 +303,19 @@ class CrosshairsTool extends AnnotationTool {
         viewportId,
         renderingEngineId
       );
-      const { viewport } = enabledElement;
+      const viewport = enabledElement.viewport as Types.IVolumeViewport;
       const resetPan = true;
       const resetZoom = true;
       const resetToCenter = true;
       const resetRotation = true;
-      const supressEvents = true;
-      viewport.resetCamera(
+      const suppressEvents = true;
+      viewport.resetCamera({
         resetPan,
         resetZoom,
         resetToCenter,
         resetRotation,
-        supressEvents
-      );
+        suppressEvents,
+      });
       (viewport as Types.IVolumeViewport).resetSlabThickness();
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
@@ -387,13 +387,8 @@ class CrosshairsTool extends AnnotationTool {
     this.toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane)
 
     // assuming all viewports are in the same rendering engine
-    const { renderingEngine } = getEnabledElementByIds(
-      viewportsInfo[0].viewportId,
-      viewportsInfo[0].renderingEngineId
-    );
 
     triggerAnnotationRenderForViewportIds(
-      renderingEngine,
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
   };
@@ -680,7 +675,7 @@ class CrosshairsTool extends AnnotationTool {
       requireSameOrientation
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   onResetCamera = (evt) => {
@@ -1995,9 +1990,6 @@ class CrosshairsTool extends AnnotationTool {
 
     this.editData = null;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     const requireSameOrientation = false;
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -2005,7 +1997,7 @@ class CrosshairsTool extends AnnotationTool {
       requireSameOrientation
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {

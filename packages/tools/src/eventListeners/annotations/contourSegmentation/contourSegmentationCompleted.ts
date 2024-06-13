@@ -237,8 +237,6 @@ export function createPolylineHole(
   );
 
   const { element } = viewport;
-  const enabledElement = getEnabledElement(element);
-  const { renderingEngine } = enabledElement;
 
   // Updating a Spline contours, for example, should also update freehand contours
   const updatedToolNames = new Set([
@@ -252,7 +250,7 @@ export function createPolylineHole(
       element,
       toolName
     );
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   }
 }
 
@@ -430,7 +428,6 @@ function combinePolylines(
 function updateViewports(enabledElement, targetAnnotation, sourceAnnotation) {
   const { viewport } = enabledElement;
   const { element } = viewport;
-  const { renderingEngine } = enabledElement;
 
   const updatedTtoolNames = new Set([
     DEFAULT_CONTOUR_SEG_TOOLNAME,
@@ -443,7 +440,7 @@ function updateViewports(enabledElement, targetAnnotation, sourceAnnotation) {
       element,
       toolName
     );
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   }
 
   return new Promise((resolve) => window.requestAnimationFrame(resolve));

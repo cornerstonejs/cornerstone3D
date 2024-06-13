@@ -20,7 +20,7 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
@@ -139,14 +139,14 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId1]
           );
           vp.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -242,14 +242,14 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId1, viewportId2, viewportUID3]
           );
           this.renderingEngine.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -308,47 +308,49 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId1]
           );
           this.renderingEngine.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
-              addSegmentations([
-                {
-                  segmentationId: segVolumeId,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      volumeId: segVolumeId,
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
+            createAndCacheEmptyVolume(segVolumeId2, { imageIds: [] }).then(
+              () => {
+                addSegmentations([
+                  {
+                    segmentationId: segVolumeId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segVolumeId,
+                      },
                     },
                   },
-                },
-                {
-                  segmentationId: segVolumeId2,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      volumeId: segVolumeId2,
+                  {
+                    segmentationId: segVolumeId2,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segVolumeId2,
+                      },
                     },
                   },
-                },
-              ]);
+                ]);
 
-              addSegmentationRepresentations(this.segToolGroup.id, [
-                {
-                  segmentationId: segVolumeId,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-                {
-                  segmentationId: segVolumeId2,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-              ]);
-            });
+                addSegmentationRepresentations(this.segToolGroup.id, [
+                  {
+                    segmentationId: segVolumeId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                  {
+                    segmentationId: segVolumeId2,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                ]);
+              }
+            );
           });
         });
       } catch (e) {
@@ -418,14 +420,14 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId1]
           );
           this.renderingEngine.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,

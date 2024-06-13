@@ -9,7 +9,6 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
-import cloneDeep from 'lodash.clonedeep';
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -313,7 +312,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  public resetCamera: (resetPan?: boolean, resetZoom?: boolean) => boolean;
+  public resetCamera: (options?) => boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -703,7 +702,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       VOILUTFunction,
       invert,
       interpolationType,
-      rotation,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -718,7 +716,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         VOILUTFunction,
         invert,
         interpolationType,
-        rotation,
       });
     }
 
@@ -743,20 +740,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (typeof interpolationType !== 'undefined') {
       this.setInterpolationType(interpolationType);
     }
-
-    if (typeof rotation !== 'undefined') {
-      // TODO: check with VTK about rounding errors here.
-      if (this.getRotation() !== rotation) {
-        this.setRotation(rotation);
-      }
-    }
   }
 
   /**
    * Retrieve the viewport default properties
    * @param imageId If given, we retrieve the default properties of an image index if it exists
    * If not given,we return the global properties of the viewport
-   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
+   * @returns viewport properties including voi, invert, interpolation type,
    */
   public getDefaultProperties = (imageId?: string): StackViewportProperties => {
     let imageProperties;
@@ -770,13 +760,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     return {
       ...this.globalDefaultProperties,
-      rotation: this.getRotation(),
     };
   };
 
   /**
    * Retrieve the viewport properties
-   * @returns viewport properties including voi, invert, interpolation type, rotation, flip
+   * @returns viewport properties including voi, invert, interpolation type,
    */
   public getProperties = (): StackViewportProperties => {
     const {
@@ -787,7 +776,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       invert,
       voiUpdatedWithSetProperties,
     } = this;
-    const rotation = this.getRotation();
 
     return {
       colormap,
@@ -795,7 +783,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       VOILUTFunction,
       interpolationType,
       invert,
-      rotation,
       isComputedVOI: !voiUpdatedWithSetProperties,
     };
   };
@@ -837,10 +824,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.setInvertColor(this.initialInvert);
 
     this.setInterpolationType(InterpolationType.LINEAR);
-
-    if (this.getRotation() !== 0) {
-      this.setRotation(0);
-    }
 
     const transferFunction = this.getTransferFunction();
     setTransferFunctionNodes(
@@ -892,9 +875,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.setVOI(voiRange);
 
-    if (this.getRotation() !== 0) {
-      this.setRotation(0);
-    }
     this.setInterpolationType(InterpolationType.LINEAR);
     this.setInvertColor(false);
 
@@ -1055,7 +1035,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation: this.getRotation(),
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
@@ -1119,7 +1098,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       viewUp: currentViewUp,
       viewPlaneNormal,
       flipVertical,
-    } = this.getCamera();
+    } = this.getCameraNoRotation();
 
     // The initial view up vector without any rotation, but incorporating vertical flip.
     const initialViewUp = flipVertical
@@ -1170,7 +1149,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation,
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
@@ -1753,7 +1731,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       currentImageIdIndex: currentImageIdIndex,
     };
 
-    triggerEvent(eventTarget, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
+    triggerEvent(this.element, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
 
     return imageId;
   }
@@ -1981,9 +1959,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const requestType = RequestType.Interaction;
       const additionalDetails = { imageId, imageIdIndex };
       const options = {
-        preScale: {
-          enabled: true,
-        },
         useRGBA: true,
         requestType,
       };
@@ -2084,9 +2059,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const options = {
       targetBuffer: {
         type: this.useNativeDataType ? undefined : 'Float32Array',
-      },
-      preScale: {
-        enabled: true,
       },
       useRGBA: false,
       transferSyntaxUID,
@@ -2553,7 +2525,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
     const resetToCenter = true;
-    return super.resetCamera(resetPan, resetZoom, resetToCenter);
+    return super.resetCamera({ resetPan, resetZoom, resetToCenter });
   }
 
   /**

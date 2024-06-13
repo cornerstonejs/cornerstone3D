@@ -51,7 +51,7 @@ async function setup() {
     'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/MRHead.nii.gz';
   const volumeId = 'nifti:' + niftiURL;
 
-  const volume = await volumeLoader.createAndCacheVolume(volumeId);
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId);
 
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);

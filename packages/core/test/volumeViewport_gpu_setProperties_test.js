@@ -107,7 +107,7 @@ describe('Volume Viewport SetProperties -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,

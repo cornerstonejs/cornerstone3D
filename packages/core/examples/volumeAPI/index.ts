@@ -164,7 +164,7 @@ addButtonToToolbar({
     );
 
     // Apply the rotation to the camera of the viewport
-    viewport.setProperties({ rotation: Math.random() * 360 });
+    viewport.getViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
   },
 });
@@ -321,7 +321,7 @@ async function run() {
   );
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

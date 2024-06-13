@@ -227,7 +227,7 @@ class BrushTool extends BaseTool {
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
       const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referenceId)
+        cache.getVolume(actorEntry.referencedId)
       );
 
       const segmentationVolume = cache.getVolume(volumeId);
@@ -288,7 +288,6 @@ class BrushTool extends BaseTool {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     this._editData = this.createEditData(element);
     this._activateDraw(element);
@@ -303,10 +302,7 @@ class BrushTool extends BaseTool {
 
     const hoverData = this._hoverData || this.createHoverData(element);
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      hoverData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportUIDs(hoverData.viewportIdsToRender);
 
     this.applyActiveStrategyCallback(
       enabledElement,
@@ -475,10 +471,7 @@ class BrushTool extends BaseTool {
       return;
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      getEnabledElement(element).renderingEngine,
-      this._hoverData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -491,10 +484,7 @@ class BrushTool extends BaseTool {
 
     const { viewportIdsToRender } = this._hoverData;
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
 
     const delta = vec2.distance(
       currentPoints.canvas,

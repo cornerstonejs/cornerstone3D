@@ -657,7 +657,8 @@ describe('renderingCore -- Stack', () => {
           const image = canvas.toDataURL('image/png');
 
           let props = vp.getProperties();
-          expect(props.rotation).toBe(90);
+          const rotation = vp.getViewPresentation().rotation;
+          expect(rotation).toBe(90);
           expect(props.interpolationType).toBe(InterpolationType.NEAREST);
           expect(props.invert).toBe(true);
 
@@ -701,7 +702,8 @@ describe('renderingCore -- Stack', () => {
         );
 
         let props = vp.getProperties();
-        expect(props.rotation).toBe(90);
+        const rotation = vp.getViewPresentation().rotation;
+        expect(rotation).toBe(90);
         expect(props.interpolationType).toBe(InterpolationType.NEAREST);
         expect(props.invert).toBe(true);
 
@@ -719,7 +721,8 @@ describe('renderingCore -- Stack', () => {
       const secondImageRenderedCallback = () => {
         console.log('resetProperties callback');
         const props = vp.getProperties();
-        expect(props.rotation).toBe(0);
+        const rotation = vp.getViewPresentation().rotation;
+        expect(rotation).toBe(0);
         expect(props.interpolationType).toBe(InterpolationType.LINEAR);
         expect(props.invert).toBe(false);
 

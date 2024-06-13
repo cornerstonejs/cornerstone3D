@@ -277,7 +277,7 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    viewport.setProperties({ rotation: value });
+    viewport.setViewPresentation({ rotation: value });
     viewport.render();
   },
 });
@@ -391,7 +391,7 @@ async function run() {
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

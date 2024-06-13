@@ -1,4 +1,3 @@
-import cloneDeep from 'lodash.clonedeep';
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
@@ -450,7 +449,7 @@ export default class SegmentationStateManager {
       console.warn('Color LUT table already exists, overwriting');
     }
 
-    this.state.colorLUT[lutIndex] = cloneDeep(colorLUT);
+    this.state.colorLUT[lutIndex] = structuredClone(colorLUT);
   }
 
   /**

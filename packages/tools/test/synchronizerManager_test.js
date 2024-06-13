@@ -19,7 +19,7 @@ const {
 const { Events, ViewportType } = Enums;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { createAndCacheVolume, registerVolumeLoader } = volumeLoader;
+const { createAndCacheEmptyVolume, registerVolumeLoader } = volumeLoader;
 
 const {
   StackScrollMouseWheelTool,
@@ -182,14 +182,14 @@ describe('Synchronizer Manager: ', () => {
         viewportId: this.renderingEngine.getViewport(viewportId2).id,
       });
 
-      createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
+      createAndCacheEmptyVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: ctVolumeId }],
           [viewportId1]
         );
       });
-      createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
+      createAndCacheEmptyVolume(ptVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: ptVolumeId }],
@@ -350,7 +350,7 @@ describe('Synchronizer Manager: ', () => {
         viewportId: this.renderingEngine.getViewport(viewportId2).id,
       });
 
-      createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
+      createAndCacheEmptyVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: ctVolumeId }],

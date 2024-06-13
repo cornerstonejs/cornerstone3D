@@ -316,7 +316,7 @@ describe('LengthTool:', () => {
 
       try {
         volumeLoader
-          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,

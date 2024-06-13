@@ -325,12 +325,17 @@ interface IViewport {
   /** sets the camera */
   setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
   /** Resets the camera */
-  resetCamera(
-    resetPan?: boolean,
-    resetZoom?: boolean,
-    resetToCenter?: boolean,
-    storeAsInitialCamera?: boolean
-  ): boolean;
+  resetCamera({
+    resetPan,
+    resetZoom,
+    resetToCenter,
+    storeAsInitialCamera,
+  }?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
+  }): boolean;
   /** Gets the number of slices in the current camera orientation */
   getNumberOfSlices(): number;
   /** Gets the index of the current image, it is not guaranteed to be the slice index in the view, use getSliceIndex for positional information */

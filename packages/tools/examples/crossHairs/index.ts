@@ -106,14 +106,14 @@ addButtonToToolbar({
     const resetZoom = true;
     const resetToCenter = true;
     const resetRotation = true;
-    const supressEvents = false;
-    viewport1.resetCamera(
+    const suppressEvents = false;
+    viewport1.resetCamera({
       resetPan,
       resetZoom,
       resetToCenter,
       resetRotation,
-      supressEvents
-    );
+      suppressEvents,
+    });
 
     viewport1.render();
   },
@@ -268,7 +268,7 @@ async function run() {
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

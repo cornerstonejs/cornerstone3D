@@ -37,7 +37,6 @@ import type {
   VolumeViewportProperties,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
-  ViewPresentation,
   ViewReference,
   IVolumeViewport,
 } from '../types';
@@ -553,11 +552,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      rotation,
     };
 
     triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-    this.viewportProperties.rotation = rotation;
   };
 
   private rotateCamera(rotation: number): void {
@@ -801,7 +798,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       preset,
       interpolationType,
       slabThickness,
-      rotation,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -815,7 +811,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         colormap,
         preset,
         slabThickness,
-        rotation,
       });
     }
 
@@ -854,10 +849,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = slabThickness;
     }
-
-    if (rotation !== undefined) {
-      this.setRotation(rotation);
-    }
   }
 
   /**
@@ -889,10 +880,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
-    }
-
-    if (properties.rotation !== undefined) {
-      this.setRotation(properties.rotation);
     }
 
     this.render();
@@ -969,7 +956,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   /**
    * Retrieve the viewport properties
    * @param volumeId - The volume id to get the properties for (if undefined, the first volume)
-   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert, rotation, flip
+   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert
    */
   public getProperties = (volumeId?: string): VolumeViewportProperties => {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
@@ -983,7 +970,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       interpolationType,
       invert,
       slabThickness,
-      rotation,
       preset,
     } = this.viewportProperties;
 
@@ -1020,7 +1006,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       interpolationType: interpolationType,
       invert: invert,
       slabThickness: slabThickness,
-      rotation: rotation,
       preset,
     };
   };
@@ -1110,7 +1095,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         uid,
         actor,
         slabThickness,
-        referenceId: volumeId,
+        referencedId: volumeId,
       });
     }
 
@@ -1183,11 +1168,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         actor,
         slabThickness,
         // although the actor UID is defined, we need to use the volumeId for the
-        // referenceId, since the actor UID is used to reference the actor in the
+        // referencedId, since the actor UID is used to reference the actor in the
         // viewport, however, the actor is created from its volumeId
         // and if later we need to grab the referenced volume from cache,
-        // we can use the referenceId to get the volume from the cache
-        referenceId: volumeId,
+        // we can use the referencedId to get the volume from the cache
+        referencedId: volumeId,
       });
     }
 
@@ -1319,7 +1304,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       viewUp: currentViewUp,
       viewPlaneNormal,
       flipVertical,
-    } = this.getCamera();
+    } = this.getCameraNoRotation();
 
     // The initial view up vector without any rotation, but incorporating vertical flip.
     const initialViewUp = flipVertical

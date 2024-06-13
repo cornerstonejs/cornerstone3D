@@ -212,10 +212,10 @@ async function run() {
   const [ctImageIds, ptImageIds] = await getImageStacks();
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
 

@@ -125,7 +125,7 @@ async function loadImage16Float() {
 
     const volume =
       cache.getVolume(volumeId16) ||
-      (await volumeLoader.createAndCacheVolume(volumeId16, {
+      (await volumeLoader.createAndCacheEmptyVolume(volumeId16, {
         imageIds,
       }));
 
@@ -178,7 +178,7 @@ async function run() {
   viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

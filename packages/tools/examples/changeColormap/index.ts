@@ -188,7 +188,7 @@ async function run() {
   viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
 
@@ -206,7 +206,7 @@ async function run() {
   // Load the PT in the background as we know we'll need it
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
 

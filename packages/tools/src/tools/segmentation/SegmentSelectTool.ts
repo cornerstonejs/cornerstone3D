@@ -169,7 +169,7 @@ class SegmentSelectTool extends BaseTool {
 
     // update states
     triggerSegmentationModified(segmentationId);
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+    triggerAnnotationRenderForViewportIds(viewportIds);
   }
 }
 
