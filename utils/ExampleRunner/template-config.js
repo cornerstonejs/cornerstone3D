@@ -7,7 +7,7 @@ const csStreamingBasePath = path.resolve(
   'packages/streaming-image-volume-loader/src/index'
 );
 const csDICOMImageLoaderDistPath = path.resolve(
-  'packages/dicomImageLoader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js'
+  'packages/dicomImageLoader/dist/esm/src/imageLoader/index'
 );
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
@@ -37,15 +37,6 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       __BASE_PATH__: "''",
-    }),
-    new CopyPlugin({
-      patterns: [
-        {
-          from:
-            '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
-          to: '${destPath.replace(/\\/g, '/')}',
-        },
-      ],
     }),
     // new BundleAnalyzerPlugin()
   ],

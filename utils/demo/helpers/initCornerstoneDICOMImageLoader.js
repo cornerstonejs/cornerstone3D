@@ -15,6 +15,7 @@ export default function initCornerstoneDICOMImageLoader() {
     maxWebWorkers = Math.min(navigator.hardwareConcurrency, 7);
   }
 
+  // cornerstoneDICOMImageLoader.
   cornerstoneDICOMImageLoader.configure({
     cornerstone,
     dicomParser,

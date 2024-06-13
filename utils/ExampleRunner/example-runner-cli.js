@@ -260,9 +260,15 @@ function run() {
 
   // run the build for dicom image loader
   const currentWD = process.cwd();
+
+  // for some reason the esm build of the dicom image loader
+  // requires the core to be built first and cannot link it
+  shell.cd('../../core');
+  shell.exec(`yarn run build:esm`);
+
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run webpack:dynamic-import`);
+  shell.exec(`yarn run build:esm:watch`);
   shell.cd(currentWD);
 
   if (buildExample) {
