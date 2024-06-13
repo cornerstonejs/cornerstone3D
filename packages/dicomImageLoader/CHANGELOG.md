@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.13](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.12...v2.0.0-beta.13) (2024-06-13)
+
+### Bug Fixes
+
+- remove pako from window ([#1326](https://github.com/cornerstonejs/cornerstone3D/issues/1326)) ([fdf704b](https://github.com/cornerstonejs/cornerstone3D/commit/fdf704b4f175b213c19131c24fbd1d5d810ec891))
+
 # [2.0.0-beta.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.11...v2.0.0-beta.12) (2024-06-13)
 
 ### Bug Fixes
