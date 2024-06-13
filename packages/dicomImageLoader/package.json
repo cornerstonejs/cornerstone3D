@@ -69,7 +69,7 @@
     "webpack:dynamic-import:watch": "webpack --progress --watch --config .webpack/webpack-dynamic-import",
     "webpack:dynamic-import:debug": "webpack --progress --watch --config .webpack/webpack-dynamic-import-debug",
     "webpack:watch": "webpack --progress --watch  --config .webpack",
-    "prepublishOnly": "yarn run build"
+    "prepublishOnly": "yarn run build:loader"
   },
   "dependencies": {
     "@cornerstonejs/codec-charls": "^1.2.3",
