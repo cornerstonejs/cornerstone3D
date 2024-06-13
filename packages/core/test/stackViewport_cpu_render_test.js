@@ -415,7 +415,7 @@ xdescribe('StackViewport CPU -- ', () => {
       });
       try {
         vp.setStack([imageId1], 0).then(() => {
-          vp.setProperties({ rotation: 90 });
+          vp.setViewPresentation({ rotation: 90 });
           vp.render();
         });
       } catch (e) {

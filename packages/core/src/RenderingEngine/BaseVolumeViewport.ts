@@ -1305,7 +1305,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       viewUp: currentViewUp,
       viewPlaneNormal,
       flipVertical,
-    } = this.getCamera();
+    } = this.getCameraNoRotation();
 
     // The initial view up vector without any rotation, but incorporating vertical flip.
     const initialViewUp = flipVertical

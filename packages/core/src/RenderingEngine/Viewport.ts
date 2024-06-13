@@ -1237,11 +1237,7 @@ class Viewport implements IViewport {
     return renderer.getActiveCamera();
   }
 
-  /**
-   * Get the camera's current state
-   * @returns The camera object.
-   */
-  public getCamera(): ICamera {
+  protected getCameraNoRotation(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
     return {
@@ -1254,6 +1250,18 @@ class Viewport implements IViewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
+    };
+  }
+
+  /**
+   * Get the camera's current state
+   * @returns The camera object.
+   */
+  public getCamera(): ICamera {
+    const camera = this.getCameraNoRotation();
+
+    return {
+      ...camera,
       rotation: this.getRotation(),
     };
   }
@@ -1416,7 +1424,6 @@ class Viewport implements IViewport {
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
-        rotation: this.getRotation(),
       };
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);

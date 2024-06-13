@@ -278,7 +278,7 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    viewport.setProperties({ rotation: value });
+    viewport.setViewPresentation({ rotation: value });
     viewport.render();
   },
 });

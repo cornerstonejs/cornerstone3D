@@ -649,7 +649,7 @@ class RenderingEngine implements IRenderingEngine {
             vp.setCamera({ flipHorizontal });
           }
           if (rotation) {
-            vp.setProperties({ rotation });
+            vp.setViewPresentation({ rotation });
           }
         } else {
           vp.setCamera(prevCamera);

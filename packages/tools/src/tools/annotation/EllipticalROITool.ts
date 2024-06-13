@@ -762,9 +762,6 @@ class EllipticalROITool extends AnnotationTool {
         viewport.worldToCanvas(p)
       ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
 
-      const rotation = Math.abs(
-        viewport.getRotation() - (data.initialRotation || 0)
-      );
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
       );
