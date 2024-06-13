@@ -1,4 +1,12 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {}
+  "include": ["src"],
+  "compilerOptions": {
+    "outDir": "./dist/esm",
+    "noImplicitAny": false,
+    "module": "ES2022",
+    "target": "ES2022",
+    "sourceMap": true,
+    "allowJs": true,
+    "moduleResolution": "node"
+  }
 }

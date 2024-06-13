@@ -399,6 +399,7 @@ function _handlePreScaleSetup(
 
 function _getDefaultPixelDataArray(min, max, imageFrame) {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
+  // @ts-ignore
   const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
   typedArray.set(imageFrame.pixelData, 0);
 

@@ -3,9 +3,9 @@ import { getOptions } from './options';
 import { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
+import { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 
 const { ProgressiveIterator } = utilities;
-type RetrieveOptions = Types.RetrieveOptions;
 
 /**
  * This function does a streaming parse from an http request, delivering
@@ -25,7 +25,7 @@ export default function streamRequest(
 ) {
   const globalOptions = getOptions();
   const { retrieveOptions = {}, streamingData = {} } = options;
-  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
+  const minChunkSize = retrieveOptions.chunkSize || 128 * 1024;
 
   const errorInterceptor = (err: any) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
