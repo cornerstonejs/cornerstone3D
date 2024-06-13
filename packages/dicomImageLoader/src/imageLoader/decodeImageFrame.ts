@@ -4,11 +4,8 @@ import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
 import { ByteArray } from 'dicom-parser';
-import { inflateRaw } from 'pako/lib/inflate';
 import { ImageFrame, LoaderDecodeOptions } from '../types';
 import external from '../externalModules';
-
-(window as any).pako = { inflateRaw };
 
 function processDecodeTask(
   imageFrame: ImageFrame,
