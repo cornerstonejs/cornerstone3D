@@ -876,18 +876,22 @@ class Viewport implements IViewport {
    * resetPan and resetZoom are true it places the focal point at the center of
    * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
    * is reset for the current view.
-   * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
-   * @param resetZoom - If true, the camera zoom is reset to the default zoom
-   * @param storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
+   * @param options - The reset options
+   * @param options.resetPan - If true, the camera focal point is reset to the center of the volume (slice)
+   * @param options.resetZoom - If true, the camera zoom is reset to the default zoom
+   * @param options.resetToCenter - If true, the camera is reset to the center of the volume (slice)
+   * @param options.storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  public resetCamera(
-    resetPan = true,
-    resetZoom = true,
-    resetToCenter = true,
-    storeAsInitialCamera = true
-  ): boolean {
+  public resetCamera(options?): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetToCenter = true,
+      storeAsInitialCamera = true,
+    } = options || {};
+
     const renderer = this.getRenderer();
 
     // fix the flip right away, since we rely on the viewPlaneNormal and

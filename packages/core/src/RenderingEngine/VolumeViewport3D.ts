@@ -31,7 +31,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     resetZoom = true,
     resetToCenter = true
   ): boolean {
-    super.resetCamera(resetPan, resetZoom, resetToCenter);
+    super.resetCamera({ resetPan, resetZoom, resetToCenter });
     this.resetVolumeViewportClippingRange();
     return;
   }

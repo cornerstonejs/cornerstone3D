@@ -83,5 +83,11 @@ export default interface IVideoViewport extends IViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+  resetCamera({
+    resetPan,
+    resetZoom,
+  }: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+  }): void;
 }

@@ -95,7 +95,7 @@ addButtonToToolbar({
       renderingEngine.getViewport(selectedViewportId)
     );
 
-    viewport.resetCamera(resetPan, resetZoom, resetToCenter);
+    viewport.resetCamera({ resetPan, resetZoom, resetToCenter });
 
     renderingEngine.render();
   },

@@ -303,19 +303,19 @@ class CrosshairsTool extends AnnotationTool {
         viewportId,
         renderingEngineId
       );
-      const { viewport } = enabledElement;
+      const viewport = enabledElement.viewport as Types.IVolumeViewport;
       const resetPan = true;
       const resetZoom = true;
       const resetToCenter = true;
       const resetRotation = true;
-      const supressEvents = true;
-      viewport.resetCamera(
+      const suppressEvents = true;
+      viewport.resetCamera({
         resetPan,
         resetZoom,
         resetToCenter,
         resetRotation,
-        supressEvents
-      );
+        suppressEvents,
+      });
       (viewport as Types.IVolumeViewport).resetSlabThickness();
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
