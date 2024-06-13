@@ -45,6 +45,7 @@ interface ImageFrame {
    * loss image can be replaced by a lower loss one.
    */
   imageQualityStatus?: Enums.ImageQualityStatus;
+  decodeLevel?: unkonwn;
 }
 
 export default ImageFrame;
