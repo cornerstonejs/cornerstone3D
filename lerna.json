@@ -1,9 +1,9 @@
 {
   "version": "2.0.0-beta.8",
   "packages": [
-    "packages/adapters",
     "packages/core",
     "packages/tools",
+    "packages/adapters",
     "packages/streaming-image-volume-loader",
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader"

@@ -43,6 +43,7 @@ function setPixelDataType(imageFrame) {
   const TypedArray = getPixelDataTypeFromMinMax(minValue, maxValue);
 
   if (TypedArray) {
+    // @ts-ignore
     const typedArray = new TypedArray(imageFrame.pixelData);
     imageFrame.pixelData = typedArray;
   } else {

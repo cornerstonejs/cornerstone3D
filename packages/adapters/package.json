@@ -23,6 +23,8 @@
         "build": "rollup -c rollup.config.mjs",
         "build:esm": "rollup -c rollup.config.mjs",
         "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+        "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+        "clean:deep": "yarn run clean && shx rm -rf node_modules",
         "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
         "build:update-api": "yarn run build && api-extractor run --local",

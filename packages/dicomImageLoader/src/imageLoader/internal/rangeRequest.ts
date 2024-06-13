@@ -38,7 +38,8 @@ export default function rangeRequest(
   percentComplete: number;
 }> {
   const globalOptions = getOptions();
-  const { retrieveOptions = {}, streamingData } = options;
+  const { retrieveOptions = {} as RangeRetrieveOptions, streamingData } =
+    options;
   const chunkSize =
     streamingData.chunkSize ||
     getValue(imageId, retrieveOptions, 'chunkSize') ||

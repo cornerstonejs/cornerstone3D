@@ -7,7 +7,7 @@ let dicomParser;
 
 const workerFn = () => {
   const instance = new Worker(
-    new URL('./shared/decodeImageFrame.ts', import.meta.url)
+    new URL('./shared/decodeImageFrame.js', import.meta.url)
   );
   return instance;
 };

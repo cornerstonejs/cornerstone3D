@@ -32,12 +32,12 @@ const imageUtils = {
  * callbackFn that is called with the results.
  */
 async function decodeImageFrame(
-  imageFrame: ImageFrame,
-  transferSyntax: string,
-  pixelData: ByteArray,
-  decodeConfig: LoaderDecodeOptions,
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  decodeConfig,
   options,
-  callbackFn?: (...args: any[]) => void
+  callbackFn
 ) {
   const start = new Date().getTime();
 
@@ -176,12 +176,7 @@ async function decodeImageFrame(
   return postProcessed;
 }
 
-function postProcessDecodedPixels(
-  imageFrame: ImageFrame,
-  options,
-  start: number,
-  decodeConfig: LoaderDecodeOptions
-) {
+function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const { use16BitDataType } = decodeConfig || {};
 
   const shouldShift =
@@ -289,6 +284,7 @@ function postProcessDecodedPixels(
     }
   } else if (disableScale) {
     imageFrame.preScale = {
+      enabled: true,
       scaled: false,
     };
 
@@ -315,15 +311,10 @@ function postProcessDecodedPixels(
 }
 
 function _handleTargetBuffer(
-  options: any,
-  imageFrame: ImageFrame,
-  typedArrayConstructors: {
-    Uint8Array: Uint8ArrayConstructor;
-    Uint16Array: Uint16ArrayConstructor;
-    Int16Array: Int16ArrayConstructor;
-    Float32Array: Float32ArrayConstructor;
-  },
-  pixelDataArray: PixelDataTypedArray
+  options,
+  imageFrame,
+  typedArrayConstructors,
+  pixelDataArray
 ) {
   const {
     arrayBuffer,
@@ -399,6 +390,7 @@ function _handlePreScaleSetup(
 
 function _getDefaultPixelDataArray(min, max, imageFrame) {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
+  // @ts-ignore
   const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
   typedArray.set(imageFrame.pixelData, 0);
 

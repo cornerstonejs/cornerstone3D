@@ -1,5 +1,5 @@
-import { Enums, utilities, metaData } from '@cornerstonejs/core';
-import type { Types, RetrieveOptions } from '@cornerstonejs/core';
+import { Enums, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 import external from '../../externalModules';
 import createImage from '../createImage';
@@ -105,7 +105,7 @@ export interface CornerstoneWadoRsLoaderOptions
   retrieveType?: string;
   transferSyntaxUID?: string;
   // Retrieve options are stored to provide sub-options for nested calls
-  retrieveOptions?: RetrieveOptions;
+  retrieveOptions?: Types.RangeRetrieveOptions;
   // Streaming data adds information about already streamed results.
   streamingData?: StreamingData;
 }
