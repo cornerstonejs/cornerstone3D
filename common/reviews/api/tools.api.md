@@ -1682,6 +1682,9 @@ function createBidirectionalToolData(bidirectionalData: BidirectionalData, viewp
 function createCameraPositionSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
+function createFrameViewSynchronizer(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
 function createImageIdReferenceMap(imageIdsArray: string[], segmentationImageIds: string[]): Map<string, string>;
 
 // @public (undocumented)
@@ -5490,7 +5493,8 @@ declare namespace synchronizers {
         createZoomPanSynchronizer,
         createImageSliceSynchronizer,
         createStackImageSynchronizer,
-        createPresentationViewSynchronizer_2 as createSlabThicknessSynchronizer
+        createPresentationViewSynchronizer_2 as createSlabThicknessSynchronizer,
+        createFrameViewSynchronizer
     }
 }
 export { synchronizers }
