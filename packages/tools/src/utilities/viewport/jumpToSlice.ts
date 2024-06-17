@@ -32,6 +32,9 @@ async function jumpToSlice(
 
   const { viewport } = enabledElement;
 
+  if (!_getImageSliceData(viewport, debounceLoading)) {
+    return;
+  }
   const { imageIndex: currentImageIndex, numberOfSlices } = _getImageSliceData(
     viewport,
     debounceLoading

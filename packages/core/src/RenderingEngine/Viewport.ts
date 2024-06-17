@@ -1078,6 +1078,9 @@ class Viewport implements IViewport {
    * value is [0,0].
    */
   public getPan(initialCamera = this.initialCamera): Point2 {
+    if (!initialCamera) {
+      initialCamera = this.getCamera();
+    }
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 

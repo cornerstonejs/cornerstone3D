@@ -37,6 +37,10 @@ export default async function frameViewSyncCallback(
     Number(targetViewportIndex) - Number(sourceViewportIndex);
   const targetSliceIndex = sourceSliceIndex + sliceDifference;
 
+  if (targetSliceIndex === tViewport.getSliceIndex()) {
+    return;
+  }
+
   jumpToSlice(tViewport.element, {
     imageIndex: targetSliceIndex,
   });
