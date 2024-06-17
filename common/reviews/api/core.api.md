@@ -2925,9 +2925,19 @@ class RLEVoxelMap<T> {
     // (undocumented)
     defaultValue: T;
     // (undocumented)
+    delete(index: number): void;
+    // (undocumented)
     protected depth: number;
     // (undocumented)
+    fillFrom(getter: any, boundsIJK: any): void;
+    // (undocumented)
     protected findIndex(row: RLERun<T>[], i: number): number;
+    // (undocumented)
+    forEach(callback: any, options?: {
+        rowModified?: boolean;
+    }): void;
+    // (undocumented)
+    forEachRow(callback: any): void;
     // (undocumented)
     get: (index: number) => T;
     // (undocumented)
@@ -2936,6 +2946,8 @@ class RLEVoxelMap<T> {
     protected getRLE(i: number, j: number, k?: number): RLERun<T>;
     // (undocumented)
     getRun: (j: number, k: number) => RLERun<T>[];
+    // (undocumented)
+    has(index: number): boolean;
     // (undocumented)
     protected height: number;
     // (undocumented)
@@ -2952,6 +2964,10 @@ class RLEVoxelMap<T> {
     protected rows: Map<number, RLERun<T>[]>;
     // (undocumented)
     set: (index: number, value: T) => void;
+    // (undocumented)
+    toIJK(index: number): Point3;
+    // (undocumented)
+    toIndex([i, j, k]: Point3): number;
     // (undocumented)
     protected width: number;
 }

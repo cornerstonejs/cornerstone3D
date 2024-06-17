@@ -300,7 +300,7 @@ export async function createAndCacheDerivedVolume(
 
   let { volumeId } = options;
   const { targetBuffer, voxelRepresentation } = options;
-  const { type } = targetBuffer;
+  const type = targetBuffer.type as string;
 
   if (volumeId === undefined) {
     volumeId = uuidv4();
@@ -650,7 +650,7 @@ function generateVolumeScalarData(
 ) {
   const { useNorm16Texture } = getConfiguration().rendering;
 
-  if (targetBuffer?.type === 'singlePlane') {
+  if ((targetBuffer?.type as string) === 'singlePlane') {
     return { volumeScalarData: null, numBytes: scalarLength };
   }
   const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
