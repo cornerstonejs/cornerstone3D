@@ -4,6 +4,7 @@ import {
   StackViewport,
   cache,
   VideoViewport,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -15,7 +16,6 @@ import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotation
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getVolumeId } from '../../utilities/getVolumeId';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -131,14 +131,10 @@ abstract class AnnotationDisplayTool extends BaseTool {
   ): string {
     const targetId = this.getTargetId(viewport);
 
-    let referencedImageId;
+    let referencedImageId = targetId.split(/^[a-zA-Z]+:/)[1];
 
-    if (viewport instanceof StackViewport) {
-      referencedImageId = targetId.split('imageId:')[1];
-    } else if (viewport instanceof VideoViewport) {
-      referencedImageId = targetId.split('videoId:')[1];
-    } else {
-      const volumeId = getVolumeId(targetId);
+    if (viewport instanceof BaseVolumeViewport) {
+      const volumeId = utilities.getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
 
       referencedImageId = utilities.getClosestImageId(

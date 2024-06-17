@@ -63,3 +63,30 @@ export default function isEqual<ValueType>(
 
   return false;
 }
+
+const negative = (v) =>
+  typeof v === 'number' ? -v : v?.map ? v.map(negative) : !v;
+
+const abs = (v) =>
+  typeof v === 'number' ? Math.abs(v) : v?.map ? v.map(abs) : v;
+
+/**
+ *  Compare negative values of both single numbers and vectors
+ */
+const isEqualNegative = <ValueType>(
+  v1: ValueType,
+  v2: ValueType,
+  tolerance = undefined
+) => isEqual(v1, negative(v2) as unknown as ValueType, tolerance);
+
+/**
+ * Compare absolute values for single numbers and vectors.
+ * Not recommended for large vectors as this creates a copy
+ */
+const isEqualAbs = <ValueType>(
+  v1: ValueType,
+  v2: ValueType,
+  tolerance = undefined
+) => isEqual(abs(v1), abs(v2) as unknown as ValueType, tolerance);
+
+export { isEqualNegative, isEqual, isEqualAbs };

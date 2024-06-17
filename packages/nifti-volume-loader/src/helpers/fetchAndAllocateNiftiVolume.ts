@@ -1,22 +1,11 @@
 import * as NiftiReader from 'nifti-reader-js';
-import {
-  cache,
-  utilities,
-  Enums,
-  eventTarget,
-  triggerEvent,
-} from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
-import makeVolumeMetadata from './makeVolumeMetadata';
+import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 import NiftiImageVolume from '../NiftiImageVolume';
-import * as NIFTICONSTANTS from './niftiConstants';
-import { invertDataPerFrame, rasToLps } from './convert';
-import modalityScaleNifti from './modalityScaleNifti';
+import { rasToLps } from './convert';
 import Events from '../enums/Events';
 import { NIFTI_LOADER_SCHEME } from '../constants';
-
-const { createUint8SharedArray, createFloat32SharedArray } = utilities;
+import makeVolumeMetadata from './makeVolumeMetadata';
+import modalityScaleNifti from './modalityScaleNifti';
 
 export const urlsMap = new Map();
 
@@ -67,19 +56,6 @@ function fetchArrayBuffer(url, onProgress, signal, onload) {
   });
 }
 
-export const getTypedNiftiArray = (datatypeCode, niftiImageBuffer) => {
-  switch (datatypeCode) {
-    case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
-      return new Uint8Array(niftiImageBuffer);
-    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT32:
-      return new Float32Array(niftiImageBuffer);
-    case NIFTICONSTANTS.NIFTI_TYPE_INT16:
-      return new Int16Array(niftiImageBuffer);
-    default:
-      throw new Error(`datatypeCode ${datatypeCode} is not yet supported`);
-  }
-};
-
 export default async function fetchAndAllocateNiftiVolume(
   volumeId: string
 ): Promise<NiftiImageVolume> {
@@ -126,120 +102,21 @@ export default async function fetchAndAllocateNiftiVolume(
     niftiImage = NiftiReader.readImage(niftiHeader, niftiBuffer);
   }
 
-  const typedNiftiArray = getTypedNiftiArray(
-    niftiHeader.datatypeCode,
+  const { scalarData, pixelRepresentation } = modalityScaleNifti(
+    niftiHeader,
     niftiImage
   );
-
-  // Convert to LPS for display in OHIF.
+  // TODO: Comment it as no need invert data of each frame
+  // invertDataPerFrame(niftiHeader.dims.slice(1, 4), scalarData);
 
   const { orientation, origin, spacing } = rasToLps(niftiHeader);
-  invertDataPerFrame(niftiHeader.dims.slice(1, 4), typedNiftiArray);
-
-  modalityScaleNifti(typedNiftiArray, niftiHeader);
-
-  const volumeMetadata = makeVolumeMetadata(
+  const { volumeMetadata, dimensions, direction } = makeVolumeMetadata(
     niftiHeader,
     orientation,
-    typedNiftiArray
+    scalarData,
+    pixelRepresentation
   );
-
-  const scanAxisNormal = vec3.create();
-  vec3.set(scanAxisNormal, orientation[6], orientation[7], orientation[8]);
-
-  const {
-    BitsAllocated,
-    PixelRepresentation,
-    PhotometricInterpretation,
-    ImageOrientationPatient,
-    Columns,
-    Rows,
-  } = volumeMetadata;
-
-  const rowCosineVec = vec3.fromValues(
-    ImageOrientationPatient[0],
-    ImageOrientationPatient[1],
-    ImageOrientationPatient[2]
-  );
-  const colCosineVec = vec3.fromValues(
-    ImageOrientationPatient[3],
-    ImageOrientationPatient[4],
-    ImageOrientationPatient[5]
-  );
-
-  const { dims } = niftiHeader;
-
-  const numFrames = dims[3];
-
-  // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const dimensions = <Types.Point3>[Columns, Rows, numFrames];
-  const direction = new Float32Array([
-    rowCosineVec[0],
-    rowCosineVec[1],
-    rowCosineVec[2],
-    colCosineVec[0],
-    colCosineVec[1],
-    colCosineVec[2],
-    scanAxisNormal[0],
-    scanAxisNormal[1],
-    scanAxisNormal[2],
-  ]) as Types.Mat3;
-  const signed = PixelRepresentation === 1;
-
-  // Check if it fits in the cache before we allocate data
-  // TODO Improve this when we have support for more types
-  // NOTE: We use 4 bytes per voxel as we are using Float32.
-  let bytesPerVoxel = 1;
-  if (BitsAllocated === 16 || BitsAllocated === 32) {
-    bytesPerVoxel = 4;
-  }
-  const sizeInBytesPerComponent =
-    bytesPerVoxel * dimensions[0] * dimensions[1] * dimensions[2];
-
-  let numComponents = 1;
-  if (PhotometricInterpretation === 'RGB') {
-    numComponents = 3;
-  }
-
-  const sizeInBytes = sizeInBytesPerComponent * numComponents;
-
-  // check if there is enough space in unallocated + image Cache
-  const isCacheable = cache.isCacheable(sizeInBytes);
-  if (!isCacheable) {
-    throw new Error(Enums.Events.CACHE_SIZE_EXCEEDED);
-  }
-
-  cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
-
-  let scalarData;
-
-  switch (BitsAllocated) {
-    case 8:
-      if (signed) {
-        throw new Error(
-          '8 Bit signed images are not yet supported by this plugin.'
-        );
-      } else {
-        scalarData = createUint8SharedArray(
-          dimensions[0] * dimensions[1] * dimensions[2]
-        );
-      }
-
-      break;
-
-    case 16:
-    case 32:
-      scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
-      );
-
-      break;
-  }
-
-  // Set the scalar data from the nifti typed view into the SAB
-  scalarData.set(typedNiftiArray);
-
-  const niftiImageVolume = new NiftiImageVolume(
+  return new NiftiImageVolume(
     // ImageVolume properties
     {
       volumeId,
@@ -249,7 +126,7 @@ export default async function fetchAndAllocateNiftiVolume(
       origin,
       direction,
       scalarData,
-      sizeInBytes,
+      sizeInBytes: scalarData.byteLength,
       imageIds: [],
     },
     // Streaming properties
@@ -262,6 +139,4 @@ export default async function fetchAndAllocateNiftiVolume(
       controller,
     }
   );
-
-  return niftiImageVolume;
 }

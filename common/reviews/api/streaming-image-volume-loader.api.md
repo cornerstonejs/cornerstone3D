@@ -5,11 +5,14 @@
 ```ts
 
 import type { GetGPUTier } from 'detect-gpu';
-import type { mat4 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
@@ -43,7 +46,9 @@ export const helpers: {
 
 // @public (undocumented)
 export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
-    constructor(imageVolumeProperties: Types.ImageVolumeProps, streamingProperties: Types.IStreamingVolumeProperties);
+    constructor(imageVolumeProperties: Types.ImageVolumeProps & {
+        splittingTag: string;
+    }, streamingProperties: Types.IStreamingVolumeProperties);
     // (undocumented)
     getImageIdsToLoad(): string[];
     // (undocumented)
@@ -54,6 +59,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     isDynamicVolume(): boolean;
     // (undocumented)
     get numTimePoints(): number;
+    // (undocumented)
+    get splittingTag(): string;
     // (undocumented)
     get timePointIndex(): number;
     set timePointIndex(newTimePointIndex: number);

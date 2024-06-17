@@ -3,7 +3,6 @@ import { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import StrategyCallbacks from '../../enums/StrategyCallbacks';
 import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
-import { getVolumeId } from '../../utilities/getVolumeId';
 
 export interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */
@@ -209,7 +208,7 @@ abstract class BaseTool implements IBaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = getVolumeId(targetId);
+      const volumeId = utilities.getVolumeId(targetId);
       const viewports = utilities.getViewportsWithVolumeId(
         volumeId,
         renderingEngine.id
@@ -258,7 +257,7 @@ abstract class BaseTool implements IBaseTool {
     if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;
     }
-    throw new Error('getTargetId: viewport must have a getTargetId method');
+    throw new Error('getTargetId: viewport must have a getReferenceId method');
   }
 }
 

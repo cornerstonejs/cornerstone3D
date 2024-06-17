@@ -11,7 +11,7 @@ import {
   getToolGroupForViewport,
 } from '../../store/ToolGroupManager';
 
-import SegmentationDisplayTool from '../../tools/displayTools/SegmentationDisplayTool';
+import { SegmentationDisplayTool } from '../../tools';
 import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 
 /**

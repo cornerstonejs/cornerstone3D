@@ -12,9 +12,9 @@ import isObject from './isObject';
 import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import {
-  getCalibratedLengthUnits,
-  getCalibratedAreaUnits,
-  getCalibratedScale,
+  getCalibratedLengthUnitsAndScale,
+  getCalibratedProbeUnitsAndValue,
+  getCalibratedAspect,
 } from './getCalibratedUnits';
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds';
@@ -28,7 +28,10 @@ import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
-
+import {
+  annotationHydration,
+  getClosestImageIdForStackViewport,
+} from './annotationHydration';
 // name spaces
 import * as contours from './contours';
 import * as segmentation from './segmentation';
@@ -67,9 +70,9 @@ export {
   touch,
   triggerEvent,
   calibrateImageSpacing,
-  getCalibratedLengthUnits,
-  getCalibratedAreaUnits,
-  getCalibratedScale,
+  getCalibratedLengthUnitsAndScale,
+  getCalibratedProbeUnitsAndValue,
+  getCalibratedAspect,
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,
@@ -97,4 +100,6 @@ export {
   voi,
   annotationFrameRange,
   contourSegmentation,
+  annotationHydration,
+  getClosestImageIdForStackViewport,
 };

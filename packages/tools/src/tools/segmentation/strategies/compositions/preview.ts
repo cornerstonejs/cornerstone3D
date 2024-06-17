@@ -4,10 +4,19 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
 import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
+function lightenColor(r, g, b, a, factor = 0.4) {
+  return [
+    Math.round(r + (255 - r) * factor),
+    Math.round(g + (255 - g) * factor),
+    Math.round(b + (255 - b) * factor),
+    a,
+  ];
+}
+
 /**
- * Sets up a preview to use an alternate set of colours.  First fills the
+ * Sets up a preview to use an alternate set of colors.  First fills the
  * preview segment index with the final one for all pixels, then resets
- * the preview colours.
+ * the preview colors.
  * This is only activated when the preview segment index is defined, either
  * from the initial state or from the global state.
  */
@@ -71,7 +80,8 @@ export default {
     if (!configColor && !segmentColor) {
       return;
     }
-    const previewColor = configColor || segmentColor.map((it) => it * 0.9);
+    const previewColor = configColor || lightenColor(...segmentColor);
+
     segmentationConfig.color.setColorForSegmentIndex(
       toolGroupId,
       segmentationRepresentationUID,
@@ -88,7 +98,7 @@ export default {
       previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
       preview,
-    } = operationData;
+    } = operationData || {};
     if (previewSegmentIndex === undefined) {
       return;
     }

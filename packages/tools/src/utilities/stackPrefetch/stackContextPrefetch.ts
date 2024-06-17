@@ -164,7 +164,7 @@ function prefetch(element) {
     imageLoadPoolManager.filterRequests(clearFromImageIds(stack));
   }
 
-  function doneCallback(imageId) {
+  function doneCallback(imageId: string) {
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
@@ -217,19 +217,23 @@ function prefetch(element) {
       .loadAndCacheImage(imageId, options)
       .then(() => doneCallback(imageId));
 
-  const { useNorm16Texture } = getCoreConfiguration().rendering;
+  const { useNorm16Texture, preferSizeOverAccuracy } =
+    getCoreConfiguration().rendering;
 
-  indicesToRequestCopy.forEach((imageIdIndex) => {
+  const useNativeDataType = useNorm16Texture || preferSizeOverAccuracy;
+
+  stackPrefetch.indicesToRequest.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
       targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
+        type: useNativeDataType ? undefined : 'Float32Array',
       },
       preScale: {
         enabled: true,
       },
+      useNativeDataType,
       requestType,
     };
 
@@ -356,7 +360,7 @@ function disable(element) {
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it
 
-  if (stackPrefetchData && stackPrefetchData.data.length) {
+  if (stackPrefetchData) {
     stackPrefetchData.enabled = false;
     // Don't worry about clearing the requests - there aren't that many too be bothersome
   }

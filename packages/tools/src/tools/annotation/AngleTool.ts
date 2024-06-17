@@ -128,6 +128,7 @@ class AngleTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
+        ...viewport.getViewReference({ points: [worldPos] }),
       },
       data: {
         handles: {
@@ -836,6 +837,11 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (angle === undefined) {
     return;
+  }
+
+  if (isNaN(angle)) {
+    // The verbiage for incomplete angle is set in cachedStats
+    return [`${angle}`];
   }
 
   const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];

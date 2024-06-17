@@ -45,6 +45,8 @@ const disable = function (element: HTMLDivElement): void {
   );
 };
 
+const perToolGroupManualTriggers = new Map();
+
 /**
  *  When the image is rendered, check what tools can be rendered for this element.
  *
@@ -123,7 +125,11 @@ function _imageChangeEventListener(evt) {
     // where we are in the process of updating the volume conversion to a stack while
     // the data is still coming in. In such situations, we should trigger the render
     // to ensure that the segmentation actors are created, even if the data arrives late.
-    triggerSegmentationRender(toolGroup.id);
+
+    if (!perToolGroupManualTriggers.has(toolGroup.id)) {
+      perToolGroupManualTriggers.set(toolGroup.id, true);
+      triggerSegmentationRender(toolGroup.id);
+    }
 
     // we should return here, since there is no segmentation actor to update
     // we will hit this function later on after the actor is created
@@ -206,33 +212,29 @@ function _imageChangeEventListener(evt) {
       // I tried calling modified on everything, but seems like we should remove
       // and add the actor again below
       viewport.removeActors([actor.uid]);
-      viewport.addImages(
-        [
-          {
-            imageId: derivedImageId,
-            actorUID: actor.uid,
-            callback: ({ imageActor }) => {
-              const scalarArray = vtkDataArray.newInstance({
-                name: 'Pixels',
-                numberOfComponents: 1,
-                values: [...derivedImage.getPixelData()],
-              });
+      viewport.addImages([
+        {
+          imageId: derivedImageId,
+          actorUID: actor.uid,
+          callback: ({ imageActor }) => {
+            const scalarArray = vtkDataArray.newInstance({
+              name: 'Pixels',
+              numberOfComponents: 1,
+              values: [...derivedImage.getPixelData()],
+            });
 
-              const imageData = vtkImageData.newInstance();
+            const imageData = vtkImageData.newInstance();
 
-              imageData.setDimensions(dimensions[0], dimensions[1], 1);
-              imageData.setSpacing(spacing);
-              imageData.setDirection(direction);
-              imageData.setOrigin(originToUse);
-              imageData.getPointData().setScalars(scalarArray);
+            imageData.setDimensions(dimensions[0], dimensions[1], 1);
+            imageData.setSpacing(spacing);
+            imageData.setDirection(direction);
+            imageData.setOrigin(originToUse);
+            imageData.getPointData().setScalars(scalarArray);
 
-              imageActor.getMapper().setInputData(imageData);
-            },
+            imageActor.getMapper().setInputData(imageData);
           },
-        ],
-        true,
-        false
-      );
+        },
+      ]);
 
       triggerSegmentationRender(toolGroup.id);
       return;

@@ -204,8 +204,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     };
 
     const canvasSize = {
-      width: canvas.width,
-      height: canvas.height,
+      width: canvas.width / window.devicePixelRatio || 1,
+      height: canvas.height / window.devicePixelRatio || 1,
     };
 
     const topLeft = annotation.data.handles.points[0];

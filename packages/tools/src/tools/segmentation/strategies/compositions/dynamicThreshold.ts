@@ -77,9 +77,15 @@ export default {
     const { configuration, viewport } = operationData;
     const { THRESHOLD: { dynamicRadius = 0 } = {} } =
       configuration.strategySpecificConfiguration || {};
+
+    if (dynamicRadius === 0) {
+      return;
+    }
+
     const { spacing } = (
       viewport as Types.IStackViewport | Types.IVolumeViewport
     ).getImageData();
+
     const centerCanvas = [
       viewport.element.clientWidth / 2,
       viewport.element.clientHeight / 2,

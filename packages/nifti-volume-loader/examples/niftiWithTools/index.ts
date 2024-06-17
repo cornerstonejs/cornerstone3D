@@ -12,10 +12,7 @@ import {
   Enums as NiftiEnums,
 } from '@cornerstonejs/nifti-volume-loader';
 
-import {
-  addDropdownToToolbar,
-  setCtTransferFunctionForVolumeActor,
-} from '../../../../utils/demo/helpers';
+import { addDropdownToToolbar } from '../../../../utils/demo/helpers';
 
 const {
   LengthTool,
@@ -276,7 +273,7 @@ async function setup() {
 
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [{ volumeId }],
     viewportInputArray.map((v) => v.viewportId)
   );
 

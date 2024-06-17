@@ -53,6 +53,7 @@ import type {
   SegmentationState,
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
+import { ISculptToolShape } from './ISculptToolShape';
 import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
 import type {
   FloodFillGetter,
@@ -64,7 +65,7 @@ import type { ContourSegmentationData } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type AnnotationRenderContext from './AnnotationRenderContext';
-import type { Statistics } from './CalculatorTypes';
+import type { Statistics, NamedStatistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
@@ -160,8 +161,12 @@ export type {
   FloodFillOptions,
   // Contour
   ContourSegmentationData,
+  ISculptToolShape,
   //Statistics
   Statistics,
+  NamedStatistics,
+
+  // Labelmap data
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,

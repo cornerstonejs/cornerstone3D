@@ -129,7 +129,7 @@ addDropdownToToolbar({
   },
 });
 
-addBrushSizeSlider();
+addBrushSizeSlider({});
 
 addSegmentIndexDropdown(segmentationId);
 

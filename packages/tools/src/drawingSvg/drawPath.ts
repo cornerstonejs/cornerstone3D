@@ -32,7 +32,7 @@ export default function drawPath(
 
   const pointsArrays = hasSubArrays ? points : [points];
   const {
-    color = 'dodgerblue',
+    color = 'rgb(0, 255, 0)',
     width = 10,
     fillColor = 'none',
     fillOpacity = 0,

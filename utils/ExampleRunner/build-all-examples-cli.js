@@ -129,6 +129,8 @@ if (configuration.examples) {
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
   shell.exec(`yarn run webpack:dynamic-import`);
+  shell.cd('../..');
+  shell.exec('yarn');
 
   shell.cd(currentWD);
 
@@ -158,7 +160,7 @@ if (configuration.examples) {
   //shell.cd(rootPath);
 
   if (options.build == true) {
-    shell.exec(`webpack --progress --config ${webpackConfigPath}`);
+    shell.exec(`node --max_old_space_size=16384 ${currentWD.endsWith('examples') ? '../../../': ''}node_modules/webpack/bin/webpack.js --progress --config ${webpackConfigPath}`);
   } else {
     shell.exec(
       `webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`

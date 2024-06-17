@@ -13,20 +13,20 @@ the visibility API to show/hide annotations.
 There are various APIs for showing and hiding annotations along with get/set methods
 
 ```js
-import { annotations } from '@cornerstonejs/tools';
+import { annotation } from '@cornerstonejs/tools';
 
 // changing an annotation visibility to be visible (implicit visible param).
-annotations.visibility.setAnnotationVisibility(annotationUID);
+annotation.visibility.setAnnotationVisibility(annotationUID);
 
 // changing an annotation visibility to NOT be visible.
-annotations.visibility.setAnnotationVisibility(annotationUID, false);
+annotation.visibility.setAnnotationVisibility(annotationUID, false);
 
 // show all annotation(hidden)
-annotations.visibility.showAllAnnotations();
+annotation.visibility.showAllAnnotations();
 
 // get if an annotation is visible or not.
 // Possible results are: undefined if there is no annotation for given UID, true if visible and false if not.
-annotations.visibility.isAnnotationVisible(annotationUID);
+annotation.visibility.isAnnotationVisible(annotationUID);
 ```
 
 ## Read more

@@ -66,6 +66,13 @@ class Synchronizer {
     this._viewportOptions[viewportId] = options;
   }
 
+  /**
+   * Sets a synchronizer enabled
+   */
+  public setEnabled(enabled: boolean) {
+    this._enabled = enabled;
+  }
+
   /** Gets the options for the given viewport id */
   public getOptions(viewportId: string): Record<string, unknown> | undefined {
     return this._viewportOptions[viewportId];
@@ -326,6 +333,11 @@ class Synchronizer {
       }
 
       const viewport = renderingEngine.getViewport(vUid.viewportId);
+
+      if (!viewport) {
+        return;
+      }
+
       const { element } = viewport;
 
       element.removeEventListener(

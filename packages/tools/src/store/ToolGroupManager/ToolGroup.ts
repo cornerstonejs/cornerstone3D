@@ -1,6 +1,6 @@
 import { MouseBindings, ToolModes } from '../../enums';
-import cloneDeep from 'lodash.clonedeep';
 import get from 'lodash.get';
+import cloneDeep from 'lodash.clonedeep';
 import {
   triggerEvent,
   eventTarget,
@@ -48,6 +48,8 @@ export default class ToolGroup implements IToolGroup {
   id: string;
   viewportsInfo = [];
   toolOptions = {};
+  currentActivePrimaryToolName: string | null = null;
+  prevActivePrimaryToolName: string | null = null;
   /**
    * Options used for restoring a tool
    */
@@ -88,6 +90,15 @@ export default class ToolGroup implements IToolGroup {
     }
 
     return toolInstance;
+  }
+
+  /**
+   * Retrieves the tool instances associated with this tool group.
+   *
+   * @returns A record containing the tool instances, where the keys are the tool names and the values are the tool instances.
+   */
+  public getToolInstances(): Record<string, any> {
+    return this._toolInstances;
   }
 
   /**
@@ -228,6 +239,14 @@ export default class ToolGroup implements IToolGroup {
     if (runtimeSettings.get('useCursors')) {
       this.setViewportsCursorByToolName(toolName);
     }
+
+    const eventDetail = {
+      toolGroupId: this.id,
+      viewportId,
+      renderingEngineId: renderingEngineUIDToUse,
+    };
+
+    triggerEvent(eventTarget, Events.TOOLGROUP_VIEWPORT_ADDED, eventDetail);
   }
 
   /**
@@ -262,6 +281,14 @@ export default class ToolGroup implements IToolGroup {
         this.viewportsInfo.splice(indices[i], 1);
       }
     }
+
+    const eventDetail = {
+      toolGroupId: this.id,
+      viewportId,
+      renderingEngineId,
+    };
+
+    triggerEvent(eventTarget, Events.TOOLGROUP_VIEWPORT_REMOVED, eventDetail);
   }
 
   public setActiveStrategy(toolName: string, strategyName: string) {
@@ -396,6 +423,18 @@ export default class ToolGroup implements IToolGroup {
         const cursor = MouseCursor.getDefinedCursor('default');
         this._setCursorForViewports(cursor);
       }
+    }
+
+    // if it is a primary tool binding, we should store it as the previous primary tool
+    // so that we can restore it when the tool is disabled if desired
+    if (this._hasMousePrimaryButtonBinding(toolBindingsOptions)) {
+      if (this.prevActivePrimaryToolName === null) {
+        this.prevActivePrimaryToolName = toolName;
+      } else {
+        this.prevActivePrimaryToolName = this.currentActivePrimaryToolName;
+      }
+
+      this.currentActivePrimaryToolName = toolName;
     }
 
     if (typeof toolInstance.onSetToolActive === 'function') {
@@ -658,7 +697,8 @@ export default class ToolGroup implements IToolGroup {
     configuration: ToolConfiguration,
     overwrite?: boolean
   ): boolean {
-    if (this._toolInstances[toolName] === undefined) {
+    const toolInstance = this._toolInstances[toolName];
+    if (toolInstance === undefined) {
       console.warn(
         `Tool ${toolName} not present, can't set tool configuration.`
       );
@@ -673,13 +713,14 @@ export default class ToolGroup implements IToolGroup {
       // We should not deep copy here, it is the job of the application to
       // deep copy the configuration before passing it to the toolGroup, otherwise
       // some strange appending behaviour happens for the arrays
-      _configuration = Object.assign(
-        this._toolInstances[toolName].configuration,
-        configuration
-      );
+      _configuration = Object.assign(toolInstance.configuration, configuration);
     }
 
-    this._toolInstances[toolName].configuration = _configuration;
+    toolInstance.configuration = _configuration;
+
+    if (typeof toolInstance.onSetToolConfiguration === 'function') {
+      toolInstance.onSetToolConfiguration();
+    }
 
     this._renderViewports();
 
@@ -723,6 +764,14 @@ export default class ToolGroup implements IToolGroup {
       this._toolInstances[toolName].configuration;
 
     return cloneDeep(_configuration);
+  }
+
+  /**
+   * Gets the name of the previously active tool.
+   * @returns The name of the previously active tool.
+   */
+  public getPrevActivePrimaryToolName(): string {
+    return this.prevActivePrimaryToolName;
   }
 
   /**

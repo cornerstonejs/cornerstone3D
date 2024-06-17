@@ -172,6 +172,12 @@ function loadImage(
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);
+
+  // IMPORTANT: if you have a custom loader that you want to use for a specific
+  // scheme, you should create your own loader and register it with the scheme
+  // in the image loader, and NOT just pass it in as an option. This is because
+  // the scheme is used to determine the loader to use and is more maintainable
+
   // The loader isn't transferable, so ensure it is deleted
   delete options.loader;
   // The options might have a loader above, but it is a loader into the cache,

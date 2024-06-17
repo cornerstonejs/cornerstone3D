@@ -45,6 +45,12 @@ module.exports = {
             '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
           to: '${destPath.replace(/\\/g, '/')}',
         },
+        {
+          from:
+          '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
+          to: '${destPath.replace(/\\/g, '/')}',
+          noErrorOnMissing: true,
+        },
       ],
     }),
     // new BundleAnalyzerPlugin()
@@ -59,6 +65,12 @@ module.exports = {
   },
   experiments: {
     asyncWebAssembly: true
+  },
+  externals: {
+    "dicom-microscopy-viewer": {
+      root: "window",
+      commonjs: "dicomMicroscopyViewer",
+    },
   },
   resolve: {
     alias: {
@@ -78,7 +90,7 @@ module.exports = {
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'
-      )}'
+      )}',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

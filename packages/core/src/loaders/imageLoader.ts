@@ -26,6 +26,7 @@ export interface ImageLoaderOptions {
   priority: number;
   requestType: string;
   additionalDetails?: Record<string, unknown>;
+  ignoreCache?: boolean;
 }
 
 interface DerivedImages {
@@ -126,6 +127,10 @@ function loadImageFromCacheOrVolume(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
+  if (options.ignoreCache) {
+    return loadImageFromImageLoader(imageId, options);
+  }
+
   // 1. Check inside the image cache for imageId
   let imageLoadObject = cache.getImageLoadObject(imageId);
   if (imageLoadObject !== undefined) {
@@ -278,14 +283,26 @@ export function createAndCacheDerivedImage(
   );
   const derivedImageId = imageId;
 
-  ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
-    (type) => {
-      genericMetadataProvider.add(derivedImageId, {
-        type,
-        metadata: metaData.get(type, referencedImageId),
-      });
-    }
-  );
+  ['imagePlaneModule', 'generalSeriesModule'].forEach((type) => {
+    genericMetadataProvider.add(derivedImageId, {
+      type,
+      metadata: metaData.get(type, referencedImageId),
+    });
+  });
+
+  const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
+  // TODO - add a general way to specify this
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'imagePixelModule',
+    metadata: {
+      ...imagePixelModule,
+      bitsAllocated: 8,
+      bitsStored: 8,
+      highBit: 7,
+      samplesPerPixel: 1,
+      pixelRepresentation: 0,
+    },
+  });
 
   const localImage = createAndCacheLocalImage(
     { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },

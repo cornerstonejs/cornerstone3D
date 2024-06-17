@@ -5,11 +5,14 @@
 ```ts
 
 import type { GetGPUTier } from 'detect-gpu';
-import type { mat4 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type { vtkObject } from '@kitware/vtk.js/interfaces';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
@@ -43,10 +46,17 @@ declare namespace helpers {
 export { helpers }
 
 // @public (undocumented)
-function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any): Types.Metadata;
+function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any, pixelRepresentation: any): {
+    volumeMetadata: Types.Metadata;
+    dimensions: Types.Point3;
+    direction: Types.Mat3;
+};
 
 // @public (undocumented)
-function modalityScaleNifti(array: Float32Array | Int16Array | Uint8Array, niftiHeader: any): void;
+function modalityScaleNifti(niftiHeader: any, niftiImageBuffer: any): {
+    scalarData: Types.PixelDataTypedArray;
+    pixelRepresentation: number;
+};
 
 // @public (undocumented)
 export class NiftiImageVolume extends ImageVolume {

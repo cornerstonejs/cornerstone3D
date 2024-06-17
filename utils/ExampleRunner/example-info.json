@@ -21,8 +21,8 @@
     "adapters": {
       "description": "Adapters"
     },
-    "video": {
-      "description": "Video Viewport"
+    "viewports": {
+      "description": "Other Viewports (video,wsi)"
     },
     "nifti": {
       "description": "Nifti Volume loader"
@@ -134,6 +134,14 @@
         "name": "Volume Slab Scroll",
         "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
       },
+      "resize": {
+        "name": "Resize viewport and change aspect ratio",
+        "description": "Resize the viewport and allow various aspect ratios/conditions"
+      },
+      "viewReferencePresentation": {
+        "name": "Apply view reference and/or presentation parameters",
+        "description": "Demonstrates how to apply various view/reference presentation parameters."
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
@@ -200,6 +208,10 @@
         "name": "Freehand ROI Tool",
         "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
       },
+      "SculptorTool": {
+        "name": "Sculptor Tool",
+        "description": "Demonstrates sculpting of freehand ROIs and FreehandContourSegmentations"
+      },
       "polyDataActorManipulationTools": {
         "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events"
@@ -221,16 +233,20 @@
         "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
       },
       "colorBar": {
-        "name": "Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack viewport"
+        "name": "ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack viewport"
       },
       "advancedColorBar": {
-        "name": "Advanced Colorbar",
-        "description": "Demonstrates how to add an interactive colobar to stack and volume viewports with PT/CT volumes"
+        "name": "Advanced ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack and volume viewports with PT/CT volumes"
       },
       "ultrasoundenhancedregion": {
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
+      },
+      "windowLevelRegion": {
+        "name": "Window Level Region",
+        "description": "Demonstrates how to use the window level region tool to adjust the window level of an image"
       },
       "splineROITools": {
         "name": "Spline ROI Tools",
@@ -241,7 +257,7 @@
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
-    "video" : {
+    "viewports" : {
       "video": {
         "name": "Video Display",
         "description": "Basic video display"
@@ -273,6 +289,14 @@
       "videoRange": {
         "name": "Video Range Selection",
         "description": "Video range selection"
+      },
+      "wsi": {
+        "name": "Whole Slide Imaging",
+        "description": "Dispaly WSI Series"
+      },
+      "wsiAnnotationTools": {
+        "name": "WSI Annotation Tools",
+        "description": "WSI with length and other annotation tools"
       }
     },
     "tools-segmentation" : {
@@ -316,8 +340,12 @@
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
         "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
       },
+      "labelmapSegmentColorChange": {
+        "name": "Labelmap Segment Color Change",
+        "description": "Here we demonstrate how to change the color of a segment in a segmentation representation"
+      },
       "labelmapSegmentLocking": {
-        "name": "Labelmap Segmentation Swapping",
+        "name": "Labelmap Segmentation Locking",
         "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
       },
       "labelmapRenderingDifferentResolutions": {
@@ -421,6 +449,10 @@
       "generateImageFromTimeData": {
         "name": "Generate 3D Volume From 4D Data",
         "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
+      },
+      "dynamicallyAddAnnotations": {
+        "name": "Dynamically Add Annotations",
+        "description": "Demonstrates how to dynamically add annotations to a viewport"
       }
     },
     "polymorph-segmentation":{
@@ -487,6 +519,14 @@
       "segmentationExport": {
         "name": "DICOM SEG export",
         "description": "Demonstrates how to export a segmentation to DICOM SEG"
+      },
+      "segmentationStack": {
+        "name": "DICOM SEG Stack",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"
+      },
+      "segmentationVolume": {
+        "name": "DICOM SEG Volume",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
       }
     },
     "nifti": {

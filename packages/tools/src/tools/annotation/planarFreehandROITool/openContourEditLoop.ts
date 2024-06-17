@@ -562,13 +562,21 @@ function completeOpenContourEdit(element: HTMLDivElement) {
         )
       : fusedCanvasPoints;
 
+    const decimateConfig = this.configuration?.decimate || {};
+
     updateContourPolyline(
       annotation,
       {
         points: updatedPoints,
         closed: false,
       },
-      viewport
+      viewport,
+      {
+        decimate: {
+          enabled: !!decimateConfig.enabled,
+          epsilon: decimateConfig.epsilon,
+        },
+      }
     );
 
     const worldPoints = annotation.data.contour.polyline;

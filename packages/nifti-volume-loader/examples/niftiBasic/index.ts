@@ -2,14 +2,11 @@ import {
   RenderingEngine,
   Enums,
   init as csInit,
-  Types,
   volumeLoader,
   setVolumesForViewports,
 } from '@cornerstonejs/core';
 import { init as csTools3dInit } from '@cornerstonejs/tools';
 import { cornerstoneNiftiImageVolumeLoader } from '@cornerstonejs/nifti-volume-loader';
-
-import { setCtTransferFunctionForVolumeActor } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
 console.warn(
@@ -90,7 +87,7 @@ async function setup() {
 
   setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [{ volumeId }],
     viewportInputArray.map((v) => v.viewportId)
   );
 
