@@ -51,6 +51,9 @@ const screenShotPaths = {
     bsplineROI: 'bsplineROI.png',
     splinesOnSegmentTwo: 'splinesOnSegmentTwo.png',
   },
+  surfaceRendering: {
+    viewport: 'viewport.png',
+  },
 };
 
 export { screenShotPaths };
