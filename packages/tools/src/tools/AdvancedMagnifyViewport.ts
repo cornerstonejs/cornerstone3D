@@ -15,11 +15,7 @@ import { debounce } from '../utilities';
 import { ToolModeChangedEventType } from '../types/EventTypes';
 import { segmentation } from '..';
 import { EventTypes, IToolGroup } from '../types';
-import {
-  AnnotationTool,
-  AdvancedMagnifyTool,
-  SegmentationDisplayTool,
-} from './';
+import { AnnotationTool, AdvancedMagnifyTool } from './';
 import { distanceToPoint } from '../utilities/math/point';
 
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';

@@ -2,7 +2,7 @@ import { SegmentationRepresentations } from '../../../enums';
 import { validateLabelmap } from '../../../tools/displayTools/Labelmap';
 import { SegmentationRepresentationData } from '../../../types';
 import {
-  findSegmentationRepresentationByUID,
+  getSegmentationRepresentationByUID,
   getSegmentation,
 } from '../segmentationState';
 
@@ -46,7 +46,7 @@ const conversionPaths = new Map<
 function canComputeRequestedRepresentation(
   segmentationRepresentationUID: string
 ): boolean {
-  const representationInfo = findSegmentationRepresentationByUID(
+  const representationInfo = getSegmentationRepresentationByUID(
     segmentationRepresentationUID
   );
 

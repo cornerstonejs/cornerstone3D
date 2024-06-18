@@ -1,8 +1,5 @@
 import { invalidateBrushCursor } from '../../utilities/segmentation/';
-import {
-  getSegmentation,
-  getToolGroupIdsWithSegmentation,
-} from './segmentationState';
+import { getSegmentation } from './segmentationState';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 /**

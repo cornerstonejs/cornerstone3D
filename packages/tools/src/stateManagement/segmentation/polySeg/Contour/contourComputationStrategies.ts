@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import {
   getSegmentation,
-  setSegmentationRepresentationSpecificConfig,
+  setSegmentationRepresentationConfig,
 } from '../../segmentationState';
 import { PolySegConversionOptions } from '../../../../types';
 import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies';
@@ -81,7 +81,7 @@ export async function computeContourData(
   // Todo: add hole support
   const toolGroupId = getToolGroupForViewport(viewport.id)?.id;
 
-  setSegmentationRepresentationSpecificConfig(
+  setSegmentationRepresentationConfig(
     toolGroupId,
     segmentationRepresentationUID,
     {

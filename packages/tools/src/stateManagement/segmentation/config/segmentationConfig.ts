@@ -65,51 +65,16 @@ function setGlobalRepresentationConfig(
 }
 
 /**
- * Get the toolGroup specific segmentation config
- * @param toolGroupId - The Id of the tool group
- * @returns A SegmentationConfig object.
- */
-function getToolGroupSpecificConfig(
-  toolGroupId: string
-): SegmentationRepresentationConfig {
-  return SegmentationState.getToolGroupSpecificConfig(toolGroupId);
-}
-
-/**
- * Sets the tool group specific configuration for the segmentation
- * representation. This will apply to all segmentation representations.
- * @param toolGroupId - The tool group id where the segmentation representation belongs to.
- * @param segmentationRepresentationConfig - This is the configuration object that you will use to set the default values for
- * the segmentation representation.
- */
-function setToolGroupSpecificConfig(
-  toolGroupId: string,
-  segmentationRepresentationConfig: SegmentationRepresentationConfig
-): void {
-  SegmentationState.setToolGroupSpecificConfig(
-    toolGroupId,
-    segmentationRepresentationConfig
-  );
-}
-
-/**
  * Give the segmentation representation UID, return the corresponding config
- * which is shared by all segments in the segmentation representation. This is
- * an optional level of configuration that can be set by the user, by default
- * it will fallback to the toolGroup specific config, if not set, it will fallback
- * to the global config.
+ * which is shared by all segments in the segmentation representation.
  *
  * @param segmentationRepresentationUID - The uid of the segmentation representation
- * @param config - The configuration for the representation. This is an object
- * only containing the representation type as key and the config as value.
  * @returns - The configuration for the representation.
  */
-function getSegmentationRepresentationSpecificConfig(
-  toolGroupId: string,
+function getSegmentationRepresentationConfig(
   segmentationRepresentationUID: string
 ): RepresentationConfig {
-  return SegmentationState.getSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  return SegmentationState.getSegmentationRepresentationConfig(
     segmentationRepresentationUID
   );
 }
@@ -117,20 +82,17 @@ function getSegmentationRepresentationSpecificConfig(
 /**
  * Set the segmentation representation specific configuration for the
  * segmentation representation. This will apply to all segments in the
- * segmentation representation and has higher priority than the toolGroup
- * specific config.
+ * segmentation representation.
  *
  * @param segmentationRepresentationUID - The uid of the segmentation representation
  * @param config - The configuration for the representation. This is an object
  * only containing the representation type as key and the config as value.
  */
-function setSegmentationRepresentationSpecificConfig(
-  toolGroupId: string,
+function setSegmentationRepresentationConfig(
   segmentationRepresentationUID: string,
   config: RepresentationConfig
 ): void {
-  SegmentationState.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  SegmentationState.setSegmentationRepresentationConfig(
     segmentationRepresentationUID,
     config
   );
@@ -139,18 +101,15 @@ function setSegmentationRepresentationSpecificConfig(
 /**
  * Get the segment specific configuration for the segmentation representation.
  *
- * @param toolGroupId - The tool group id where the segmentation representation belongs to.
  * @param segmentationRepresentationUID  - The uid of the segmentation representation
  * @param segmentIndex - The index of the segment
- * @returns - The configuration for the segment index in the segmentation representation that is shown in the toolGroup's viewport
+ * @returns - The configuration for the segment index in the segmentation representation
  */
 function getSegmentSpecificConfig(
-  toolGroupId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): RepresentationConfig {
-  return SegmentationState.getSegmentSpecificRepresentationConfig(
-    toolGroupId,
+  return SegmentationState.getSegmentSpecificConfig(
     segmentationRepresentationUID,
     segmentIndex
   );
@@ -158,20 +117,18 @@ function getSegmentSpecificConfig(
 
 /**
  * Set the segment specific configuration for the segmentation representation.
- * This configuration, if specified, has higher priority than the segmentation representation specific config,
- * and the toolGroup specific config. The order of priority is: segment specific config > segmentation representation specific config > toolGroup specific config > global config
- * @param toolGroupId - The tool group id where the segmentation representation belongs to.
+ * This configuration, if specified, has higher priority than the segmentation representation specific config.
+ * The order of priority is: segment specific config > segmentation representation specific config > global config
+ *
  * @param segmentationRepresentationUID - The uid of the segmentation representation
  * @param segmentIndex - The index of the segment
  * @param config - The configuration for the representation. This is an object
  */
 function setSegmentSpecificConfig(
-  toolGroupId: string,
   segmentationRepresentationUID: string,
   config: SegmentSpecificRepresentationConfig
 ): void {
-  SegmentationState.setSegmentSpecificRepresentationConfig(
-    toolGroupId,
+  SegmentationState.setSegmentSpecificConfig(
     segmentationRepresentationUID,
     config
   );
@@ -183,12 +140,9 @@ export {
   setGlobalConfig,
   getGlobalRepresentationConfig,
   setGlobalRepresentationConfig,
-  // ToolGroup Specific
-  getToolGroupSpecificConfig,
-  setToolGroupSpecificConfig,
-  // segmentation representation specific config
-  getSegmentationRepresentationSpecificConfig,
-  setSegmentationRepresentationSpecificConfig,
+  // segmentation representation config
+  getSegmentationRepresentationConfig,
+  setSegmentationRepresentationConfig,
   // segment specific config
   getSegmentSpecificConfig,
   setSegmentSpecificConfig,

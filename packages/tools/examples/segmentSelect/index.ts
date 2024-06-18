@@ -21,7 +21,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   Enums: csToolsEnums,
   SegmentSelectTool,
   segmentation,

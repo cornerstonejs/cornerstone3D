@@ -11,7 +11,6 @@ import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getToolGroup } from '../../../store/ToolGroupManager';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -24,9 +23,6 @@ const onLabelmapSegmentationDataModified = function (
   const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId);
 
-  const toolGroupIds =
-    SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
-
   const labelmapRepresentationData = representationData[type];
 
   if ('volumeId' in labelmapRepresentationData) {
@@ -37,6 +33,8 @@ const onLabelmapSegmentationDataModified = function (
       type,
     });
   }
+
+  const toolGroupIds = [];
 
   if ('imageIdReferenceMap' in labelmapRepresentationData) {
     // get the stack from cache, we need the imageData to be updated to GPU

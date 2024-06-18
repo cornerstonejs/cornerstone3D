@@ -17,7 +17,6 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
   Enums: csToolsEnums,
   SegmentSelectTool,
   segmentation,
@@ -85,7 +84,6 @@ const viewportId2 = 'viewport2';
 
 // ============================= //
 
-cornerstoneTools.addTool(SegmentationDisplayTool);
 cornerstoneTools.addTool(SegmentSelectTool);
 cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -101,10 +99,8 @@ function setupTools(toolGroupId, isContour = false) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SegmentSelectTool.toolName);
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(SegmentSelectTool.toolName);
 
   if (isContour) {

@@ -69,7 +69,7 @@ async function addSegmentationRepresentation(
     // });
   }
 
-  addSegmentationRepresentationToState(viewportId, representation);
+  addSegmentationRepresentationToViewport(viewportId, representation);
 
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);

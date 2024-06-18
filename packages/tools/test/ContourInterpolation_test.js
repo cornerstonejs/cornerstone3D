@@ -22,7 +22,7 @@ const {
 
 const {
   PlanarFreehandContourSegmentationTool,
-  SegmentationDisplayTool,
+
   ToolGroupManager,
   annotation,
   Enums: csToolsEnums,

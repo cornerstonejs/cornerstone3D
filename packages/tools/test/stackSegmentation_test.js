@@ -13,7 +13,7 @@
 
 // const {
 //   ToolGroupManager,
-//   SegmentationDisplayTool,
+//
 //   segmentation,
 //   Enums: csToolsEnums,
 //   ZoomTool,

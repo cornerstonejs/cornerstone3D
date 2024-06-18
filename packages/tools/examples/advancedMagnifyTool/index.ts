@@ -35,7 +35,6 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   AdvancedMagnifyTool,
-  SegmentationDisplayTool,
   segmentation,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -304,11 +303,6 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(AdvancedMagnifyTool.toolName);
 
-  if (segmentationEnabled) {
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  }
-
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
   // toolGroup.setToolActive(LengthTool.toolName, {
@@ -361,9 +355,6 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);

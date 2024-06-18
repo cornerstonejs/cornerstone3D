@@ -25,7 +25,7 @@ const { ViewportType } = Enums;
 const {
   ToolGroupManager,
   Enums: csToolsEnums,
-  SegmentationDisplayTool,
+
   segmentation,
   RectangleScissorsTool,
 } = csTools3d;

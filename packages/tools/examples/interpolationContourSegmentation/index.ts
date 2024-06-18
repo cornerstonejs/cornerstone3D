@@ -27,7 +27,6 @@ const {
   SplineROITool,
   LivewireContourSegmentationTool,
   LivewireContourTool,
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,

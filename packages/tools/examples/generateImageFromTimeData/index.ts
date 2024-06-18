@@ -18,7 +18,6 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 const {
-  SegmentationDisplayTool,
   utilities: csToolsUtilities,
   Enums: csToolsEnums,
   PanTool,

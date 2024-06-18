@@ -16,17 +16,6 @@ function getActiveSegmentationRepresentation(
 ): ToolGroupSpecificRepresentation {
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
-  const toolGroupSegmentationRepresentations =
-    segmentationStateManager.getSegmentationRepresentations(toolGroupId);
-
-  if (!toolGroupSegmentationRepresentations) {
-    return;
-  }
-
-  const activeRepresentation = toolGroupSegmentationRepresentations.find(
-    (representation) => representation.active
-  );
-
   return activeRepresentation;
 }
 

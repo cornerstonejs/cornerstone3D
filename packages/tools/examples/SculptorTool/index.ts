@@ -30,7 +30,6 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
   PlanarFreehandROITool,
   SculptorTool,

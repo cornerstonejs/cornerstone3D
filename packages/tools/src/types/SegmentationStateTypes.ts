@@ -111,7 +111,7 @@ export type BaseSegmentationRepresentation = {
   };
 
   config: {
-    default?: RepresentationConfig;
+    base?: RepresentationConfig;
     overrides?: SegmentSpecificRepresentationConfig;
   };
 };

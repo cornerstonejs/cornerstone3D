@@ -36,7 +36,7 @@ const DEFAULT_SEGMENT_CONFIG = {
 
 const {
   SplineContourSegmentationTool,
-  SegmentationDisplayTool,
+
   PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -287,12 +287,12 @@ function getCurrentSegmentationConfig(
     segmentationRepresentationUIDs[toolGroupdId][segmentationIndex];
 
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
+    segmentation.config.getSegmentationRepresentationConfig(
       toolGroupdId,
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add CONTOUR object because getSegmentationRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -312,7 +312,7 @@ function updateCurrentSegmentationConfig(config) {
 
     Object.assign(segmentationConfig.CONTOUR, config);
 
-    segmentation.config.setSegmentationRepresentationSpecificConfig(
+    segmentation.config.setSegmentationRepresentationConfig(
       toolGroupId,
       segmentationRepresentationUID,
       segmentationConfig

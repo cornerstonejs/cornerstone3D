@@ -1537,8 +1537,8 @@ declare namespace config_2 {
         setToolGroupSpecificConfig_2 as setToolGroupSpecificConfig,
         setSegmentSpecificConfig,
         getSegmentSpecificConfig,
-        setSegmentationRepresentationSpecificConfig_2 as setSegmentationRepresentationSpecificConfig,
-        getSegmentationRepresentationSpecificConfig_2 as getSegmentationRepresentationSpecificConfig
+        setSegmentationRepresentationConfig_2 as setSegmentationRepresentationConfig,
+        getSegmentationRepresentationConfig_2 as getSegmentationRepresentationConfig
     }
 }
 
@@ -2722,10 +2722,10 @@ function getSegmentationRepresentationByUID(toolGroupId: string, segmentationRep
 function getSegmentationRepresentations(toolGroupId: string): ToolGroupSpecificRepresentations | [];
 
 // @public (undocumented)
-function getSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string): RepresentationConfig;
+function getSegmentationRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string): RepresentationConfig;
 
 // @public (undocumented)
-function getSegmentationRepresentationSpecificConfig_2(toolGroupId: string, segmentationRepresentationUID: string): RepresentationConfig;
+function getSegmentationRepresentationConfig_2(toolGroupId: string, segmentationRepresentationUID: string): RepresentationConfig;
 
 // @public (undocumented)
 function getSegmentations(): Segmentation[] | [];
@@ -2743,7 +2743,7 @@ function getSegmentAtWorldPoint(segmentationId: string, worldPoint: Types_2.Poin
 function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
 
 // @public (undocumented)
-function getSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
+function getSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): RepresentationConfig;
 
 // @public (undocumented)
 function getSegmentVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndex: number): boolean;
@@ -5005,10 +5005,10 @@ function setGlobalRepresentationConfig(representationType: SegmentationRepresent
 function setNewAttributesIfValid(attributes: any, svgNode: any): void;
 
 // @public (undocumented)
-function setSegmentationRepresentationSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
+function setSegmentationRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setSegmentationRepresentationSpecificConfig_2(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig): void;
+function setSegmentationRepresentationConfig_2(toolGroupId: string, segmentationRepresentationUID: string, config: RepresentationConfig): void;
 
 // @public (undocumented)
 function setSegmentationVisibility(toolGroupId: string, segmentationRepresentationUID: string, visibility: boolean): void;
@@ -5020,7 +5020,7 @@ function setSegmentIndexLocked(segmentationId: string, segmentIndex: number, loc
 function setSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: SegmentSpecificRepresentationConfig): void;
 
 // @public (undocumented)
-function setSegmentSpecificRepresentationConfig(toolGroupId: string, segmentationRepresentationUID: string, config: SegmentSpecificRepresentationConfig, suppressEvents?: boolean): void;
+function setSegmentSpecificConfig(toolGroupId: string, segmentationRepresentationUID: string, config: SegmentSpecificRepresentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
 function setSegmentsVisibility(toolGroupId: string, segmentationRepresentationUID: string, segmentIndices: number[], visibility: boolean): void;
@@ -5310,10 +5310,10 @@ declare namespace state_3 {
         setToolGroupSpecificConfig,
         getGlobalConfig,
         setGlobalConfig,
-        getSegmentationRepresentationSpecificConfig,
-        setSegmentationRepresentationSpecificConfig,
-        getSegmentSpecificRepresentationConfig,
-        setSegmentSpecificRepresentationConfig,
+        getSegmentationRepresentationConfig,
+        setSegmentationRepresentationConfig,
+        getSegmentSpecificConfig,
+        setSegmentSpecificConfig,
         getToolGroupIdsWithSegmentation,
         getAllSegmentationRepresentations,
         getSegmentationRepresentationByUID,

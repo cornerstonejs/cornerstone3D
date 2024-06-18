@@ -3,10 +3,8 @@ import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import {
   getSegmentation,
   getSegmentationRepresentations,
-  getToolGroupIdsWithSegmentation,
 } from '../../segmentationState';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
-import { ToolGroupSpecificRepresentations } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';

@@ -3,14 +3,12 @@ import * as visibility from './segmentationVisibility';
 import {
   getGlobalConfig,
   getGlobalRepresentationConfig,
-  getToolGroupSpecificConfig,
   setGlobalConfig,
   setGlobalRepresentationConfig,
-  setToolGroupSpecificConfig,
   setSegmentSpecificConfig,
   getSegmentSpecificConfig,
-  setSegmentationRepresentationSpecificConfig,
-  getSegmentationRepresentationSpecificConfig,
+  setSegmentationRepresentationConfig,
+  getSegmentationRepresentationConfig,
 } from './segmentationConfig';
 
 export {
@@ -18,12 +16,10 @@ export {
   visibility,
   getGlobalConfig,
   getGlobalRepresentationConfig,
-  getToolGroupSpecificConfig,
   setGlobalConfig,
   setGlobalRepresentationConfig,
-  setToolGroupSpecificConfig,
   setSegmentSpecificConfig,
   getSegmentSpecificConfig,
-  setSegmentationRepresentationSpecificConfig,
-  getSegmentationRepresentationSpecificConfig,
+  setSegmentationRepresentationConfig,
+  getSegmentationRepresentationConfig,
 };

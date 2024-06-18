@@ -23,7 +23,7 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  SegmentationDisplayTool,
+
   ToolGroupManager,
   BrushTool,
   StackScrollMouseWheelTool,

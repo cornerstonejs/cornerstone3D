@@ -7,8 +7,8 @@ import { triggerSegmentationRepresentationModified } from '../triggerSegmentatio
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
  * If no colorLUT is provided, a new color LUT is generated.
  *
- * @param colorLUTIndex - the index of the colorLUT in the state
  * @param colorLUT - An array of The colorLUT to set.
+ * @param colorLUTIndex - the index of the colorLUT in the state
  * @returns
  */
 function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex: number): void {
@@ -28,20 +28,17 @@ function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex: number): void {
 }
 
 /**
- * It sets the toolGroup's segmentationRepresentation to use the provided
+ * It sets the segmentationRepresentation to use the provided
  * colorLUT at the given colorLUTIndex.
- * @param toolGroupId - the id of the toolGroup that renders the representation
  * @param segmentationRepresentationUID - the representationUID for the segmentation
  * @param colorLUTIndex - the index of the colorLUT to use
  */
 function setColorLUT(
-  toolGroupId: string,
   segmentationRepresentationUID: string,
   colorLUTIndex: number
 ): void {
   const segRepresentation =
     SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
       segmentationRepresentationUID
     );
 
@@ -59,36 +56,30 @@ function setColorLUT(
 
   segRepresentation.colorLUTIndex = colorLUTIndex;
 
-  triggerSegmentationRepresentationModified(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  triggerSegmentationRepresentationModified(segmentationRepresentationUID);
 }
 
 /**
- * Given a tool group UID, a segmentation representationUID, and a segment index, return the
+ * Given a segmentation representationUID and a segment index, return the
  * color for that segment. It can be used for segmentation tools that need to
  * display the color of their annotation.
  *
- * @param toolGroupId - The Id of the tool group that owns the segmentation representation.
  * @param segmentationRepresentationUID - The uid of the segmentation representation
  * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.
  */
 function getColorForSegmentIndex(
-  toolGroupId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): Types.Color {
   const segmentationRepresentation =
     SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
       segmentationRepresentationUID
     );
 
   if (!segmentationRepresentation) {
     throw new Error(
-      `segmentation representation with UID ${segmentationRepresentationUID} does not exist for tool group ${toolGroupId}`
+      `segmentation representation with UID ${segmentationRepresentationUID} does not exist`
     );
   }
 
@@ -107,14 +98,12 @@ function getColorForSegmentIndex(
 }
 
 function setColorForSegmentIndex(
-  toolGroupId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number,
   color: Types.Color
 ): void {
   // Get the reference to the color in the colorLUT.
   const colorReference = getColorForSegmentIndex(
-    toolGroupId,
     segmentationRepresentationUID,
     segmentIndex
   );
@@ -124,10 +113,7 @@ function setColorForSegmentIndex(
     colorReference[i] = color[i];
   }
 
-  triggerSegmentationRepresentationModified(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  triggerSegmentationRepresentationModified(segmentationRepresentationUID);
 }
 
 export {

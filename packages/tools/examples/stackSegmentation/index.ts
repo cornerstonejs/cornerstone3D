@@ -18,7 +18,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   StackScrollMouseWheelTool,
   ZoomTool,
   StackScrollTool,

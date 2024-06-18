@@ -18,8 +18,8 @@ import type {
   LabelmapSegmentationData,
 } from '../../../types/LabelmapTypes';
 import {
+  LabelmapRepresentation,
   SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 
 import addLabelmapToElement from './addLabelmapToElement';
@@ -118,17 +118,14 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
  * @param configuration - The configuration object for the labelmap.
  */
 async function render(
-  viewport: Types.IVolumeViewport | Types.IStackViewport,
-  representation: ToolGroupSpecificRepresentation,
-  toolGroupConfig: SegmentationRepresentationConfig
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  representation: LabelmapRepresentation
 ): Promise<void> {
   const {
     colorLUTIndex,
-    active,
     segmentationId,
     segmentationRepresentationUID,
-    segmentsHidden,
-    config: renderingConfig,
+    rendering,
   } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
@@ -233,42 +230,38 @@ async function render(
     return;
   }
 
-  const { cfun, ofun } = renderingConfig as LabelmapRenderingConfig;
-
-  const renderInactiveSegmentations =
-    toolGroupConfig.renderInactiveSegmentations;
-
-  _setLabelmapColorAndOpacity(
-    viewport.id,
-    actorEntry,
-    cfun,
-    ofun,
-    colorLUTIndex,
-    toolGroupConfig.representations[Representations.Labelmap],
-    representation,
-    active,
-    renderInactiveSegmentations,
-    segmentsHidden
-  );
+  _setLabelmapColorAndOpacity(viewport.id, actorEntry, representation);
 }
 
 function _setLabelmapColorAndOpacity(
   viewportId: string,
   actorEntry: Types.ActorEntry,
-  cfun: vtkColorTransferFunction,
-  ofun: vtkPiecewiseFunction,
-  colorLUTIndex: number,
-  toolGroupLabelmapConfig: LabelmapConfig,
-  segmentationRepresentation: ToolGroupSpecificRepresentation,
-  isActiveLabelmap: boolean,
-  renderInactiveSegmentations: boolean,
-  segmentsHidden: Set<number>
+  segmentationRepresentation: LabelmapRepresentation
 ): void {
-  const { segmentSpecificConfig, segmentationRepresentationSpecificConfig } =
+  const { rendering, config, colorLUTIndex, segmentsHidden, segmentationId } =
     segmentationRepresentation;
 
-  const segmentationRepresentationLabelmapConfig =
-    segmentationRepresentationSpecificConfig[Representations.Labelmap];
+  const segmentation = SegmentationState.getSegmentation(segmentationId);
+
+  // todo fix this
+  const isActiveLabelmap = true;
+
+  const { cfun, ofun } = rendering as LabelmapRenderingConfig;
+
+  const { base, overrides } = config;
+
+  const globalLabelmapConfig =
+    SegmentationState.getGlobalConfig().representations[
+      Representations.Labelmap
+    ];
+
+  // merge the base config with the global config
+  const configToUse = {
+    ...globalLabelmapConfig,
+    ...base[Representations.Labelmap],
+  };
+
+  const labelmapConfig = configToUse;
 
   // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
   // the default color table uses RGB.
@@ -279,11 +272,12 @@ function _setLabelmapColorAndOpacity(
   // Note: right now outlineWidth and renderOutline are not configurable
   // at the segment level, so we don't need to check for segment specific
   // configuration in the loop, Todo: make them configurable at the segment level
-  const { outlineWidth, renderOutline, outlineOpacity } = _getLabelmapConfig(
-    toolGroupLabelmapConfig,
-    segmentationRepresentationLabelmapConfig,
-    isActiveLabelmap
-  );
+  const {
+    outlineWidth,
+    renderOutline,
+    outlineOpacity,
+    activeSegmentOutlineWidthDelta,
+  } = _getLabelmapConfig(labelmapConfig, false);
 
   // Todo: the below loop probably can be optimized so that we don't hit it
   // unless a config has changed. Right now we get into the following loop
@@ -293,12 +287,11 @@ function _setLabelmapColorAndOpacity(
     const segmentColor = colorLUT[segmentIndex];
 
     const segmentSpecificLabelmapConfig =
-      segmentSpecificConfig[segmentIndex]?.[Representations.Labelmap];
+      overrides[segmentIndex]?.[Representations.Labelmap];
 
     const { fillAlpha, outlineWidth, renderFill, renderOutline } =
       _getLabelmapConfig(
-        toolGroupLabelmapConfig,
-        segmentationRepresentationLabelmapConfig,
+        labelmapConfig,
         isActiveLabelmap,
         segmentSpecificLabelmapConfig
       );
@@ -370,11 +363,14 @@ function _setLabelmapColorAndOpacity(
 
     outlineWidths[i - 1] =
       i === activeSegmentIndex
-        ? outlineWidth + toolGroupLabelmapConfig.activeSegmentOutlineWidthDelta
+        ? outlineWidth + activeSegmentOutlineWidthDelta
         : outlineWidth;
   }
 
   actor.getProperty().setLabelOutlineThickness(outlineWidths);
+
+  // todo: fix this
+  const renderInactiveSegmentations = true;
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
@@ -384,16 +380,14 @@ function _setLabelmapColorAndOpacity(
 }
 
 function _getLabelmapConfig(
-  toolGroupLabelmapConfig: LabelmapConfig,
-  segmentationRepresentationLabelmapConfig: LabelmapConfig,
+  labelmapConfig: LabelmapConfig,
   isActiveLabelmap: boolean,
   segmentsLabelmapConfig?: LabelmapConfig
 ) {
   const segmentLabelmapConfig = segmentsLabelmapConfig || {};
 
   const configToUse = {
-    ...toolGroupLabelmapConfig,
-    ...segmentationRepresentationLabelmapConfig,
+    ...labelmapConfig,
     ...segmentLabelmapConfig,
   };
 
@@ -414,12 +408,16 @@ function _getLabelmapConfig(
     ? configToUse.outlineOpacity
     : configToUse.outlineOpacityInactive;
 
+  const activeSegmentOutlineWidthDelta =
+    configToUse.activeSegmentOutlineWidthDelta;
+
   return {
     fillAlpha,
     outlineWidth,
     renderFill,
     renderOutline,
     outlineOpacity,
+    activeSegmentOutlineWidthDelta,
   };
 }
 

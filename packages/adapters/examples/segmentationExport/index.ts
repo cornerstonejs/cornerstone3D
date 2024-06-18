@@ -27,7 +27,6 @@ console.warn(
 const { Cornerstone3D } = adaptersSEG;
 
 const {
-    SegmentationDisplayTool,
     StackScrollMouseWheelTool,
     ToolGroupManager,
     Enums: csToolsEnums,
@@ -222,15 +221,12 @@ async function run() {
     await initDemo();
 
     // Add tools to Cornerstone3D
-    cornerstoneTools.addTool(SegmentationDisplayTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
     // Define tool groups to add the segmentation display tool to
     const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM

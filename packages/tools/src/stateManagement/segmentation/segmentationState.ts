@@ -5,8 +5,7 @@ import type {
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
   SegmentSpecificRepresentationConfig,
-  ToolGroupSpecificRepresentation,
-  ToolGroupSpecificRepresentations,
+  SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import {
@@ -34,7 +33,7 @@ function getDefaultSegmentationStateManager() {
 /**
  * Get the segmentation for the given segmentationId
  * @param segmentationId - The Id of the segmentation
- * @returns A GlobalSegmentationData object
+ * @returns A Segmentation object
  */
 function getSegmentation(segmentationId: string): Segmentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
@@ -73,28 +72,13 @@ function addSegmentation(
 }
 
 /**
- * Get the segmentation state for a tool group. It will return an array of
- * segmentation representation objects.
- * @param toolGroupId - The unique identifier of the tool group.
- * @returns An array of segmentation representation objects.
- */
-function getSegmentationRepresentations(
-  toolGroupId: string
-): ToolGroupSpecificRepresentations | [] {
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getSegmentationRepresentations(toolGroupId);
-}
-
-/**
  * Get all segmentation representations in the state
  * @returns An array of segmentation representation objects.
  */
-function getAllSegmentationRepresentations(): Record<
-  string,
-  ToolGroupSpecificRepresentation[]
-> {
+function getAllSegmentationRepresentations(): SegmentationRepresentation[] {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getAllSegmentationRepresentations();
+  const state = segmentationStateManager.getState();
+  return Object.values(state.representations);
 }
 
 /**
@@ -102,23 +86,13 @@ function getAllSegmentationRepresentations(): Record<
  * @param segmentationId - The ID of the segmentation.
  * @returns An array of found segmentation representations.
  */
-function getSegmentationIdRepresentations(segmentationId) {
-  const allRepresentations = getAllSegmentationRepresentations() || {};
-  const foundRepresentations = [];
-
-  for (const toolGroupId in allRepresentations) {
-    const toolGroupRepresentations = allRepresentations[toolGroupId];
-
-    const foundRepresentation = toolGroupRepresentations.find(
-      (representation) => representation.segmentationId === segmentationId
-    );
-
-    if (foundRepresentation) {
-      foundRepresentations.push(foundRepresentation);
-    }
-  }
-
-  return foundRepresentations;
+function getSegmentationRepresentations(
+  segmentationId: string
+): SegmentationRepresentation[] {
+  const allRepresentations = getAllSegmentationRepresentations();
+  return allRepresentations.filter(
+    (representation) => representation.segmentationId === segmentationId
+  );
 }
 
 /**
@@ -127,241 +101,112 @@ function getSegmentationIdRepresentations(segmentationId) {
  * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
  * @returns The found segmentation representation, or undefined if not found.
  */
-function findSegmentationRepresentationByUID(
+function getSegmentationRepresentationByUID(
   segmentationRepresentationUID: string
-): {
-  toolGroupId: string;
-  segmentationRepresentation: ToolGroupSpecificRepresentation;
-} {
-  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
-
-  const toolGroupIds = Object.keys(allToolGroupRepresentations);
-
-  for (const toolGroupId of toolGroupIds) {
-    const toolGroupRepresentations =
-      getAllSegmentationRepresentations()[toolGroupId];
-
-    const foundRepresentation = toolGroupRepresentations.find(
-      (representation) =>
-        representation.segmentationRepresentationUID ===
-        segmentationRepresentationUID
-    );
-
-    if (foundRepresentation) {
-      return {
-        segmentationRepresentation: foundRepresentation,
-        toolGroupId,
-      };
-    }
-  }
-}
-
-/**
- * Get the tool group IDs that have a segmentation representation with the given
- * segmentationId
- * @param segmentationId - The id of the segmentation
- * @returns An array of tool group IDs.
- */
-function getToolGroupIdsWithSegmentation(segmentationId: string): string[] {
-  if (!segmentationId) {
-    throw new Error('getToolGroupIdsWithSegmentation: segmentationId is empty');
-  }
-
+): SegmentationRepresentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  const state = segmentationStateManager.getState();
-  const toolGroupIds = Object.keys(state.toolGroups);
-
-  const foundToolGroupIds = [];
-  toolGroupIds.forEach((toolGroupId) => {
-    const toolGroupSegmentationRepresentations =
-      segmentationStateManager.getSegmentationRepresentations(toolGroupId);
-
-    toolGroupSegmentationRepresentations.forEach((representation) => {
-      if (representation.segmentationId === segmentationId) {
-        foundToolGroupIds.push(toolGroupId);
-      }
-    });
-  });
-
-  return foundToolGroupIds;
+  return segmentationStateManager.getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 }
 
 /**
- * Get the segmentation representations config for a given tool group
- * @param toolGroupId - The Id of the tool group that the segmentation
- * config belongs to.
- * @returns A SegmentationConfig object.
+ * Get the segmentation representations config for a given representation
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns A RepresentationConfig object.
  */
-function getToolGroupSpecificConfig(
-  toolGroupId: string
-): SegmentationRepresentationConfig {
+function getSegmentationRepresentationConfig(
+  segmentationRepresentationUID: string
+): RepresentationConfig {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getToolGroupSpecificConfig(toolGroupId);
+  return segmentationStateManager.getRepresentationConfig(
+    segmentationRepresentationUID
+  );
 }
 
 /**
- * Set the segmentation representation config for the provided toolGroup. ToolGroup specific
- * configuration overwrites the global configuration for each representation.
+ * Set the segmentation representation config for the provided representation.
  * It fires SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
  *
  * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
- * @param toolGroupId - The Id of the tool group that the segmentation
- * config is being set for.
- * @param config - The new configuration for the tool group.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param config - The new configuration for the representation.
  * @param suppressEvents - If true, the event will not be triggered.
  */
-function setToolGroupSpecificConfig(
-  toolGroupId: string,
-  config: SegmentationRepresentationConfig,
+function setSegmentationRepresentationConfig(
+  segmentationRepresentationUID: string,
+  config: RepresentationConfig,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.setSegmentationRepresentationConfig(
-    toolGroupId,
-    config
-  );
-
-  if (!suppressEvents) {
-    triggerSegmentationRepresentationModified(toolGroupId);
-  }
-}
-
-/**
- * It sets the segmentation representation specific config for all the segments
- * inside the segmentation.
- * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
- * @param config  - The new configuration for the segmentation representation it is an object with keys of
- * different representation types, and values of the configuration for each representation type.
- */
-function setSegmentationRepresentationSpecificConfig(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
-  config: RepresentationConfig,
-  suppressEvents = false
-): void {
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  segmentationStateManager.setRepresentationConfig(
     segmentationRepresentationUID,
     config
   );
 
   if (!suppressEvents) {
-    triggerSegmentationRepresentationModified(
-      toolGroupId,
-      segmentationRepresentationUID
-    );
+    triggerSegmentationRepresentationModified(segmentationRepresentationUID);
   }
 }
 
-/**
- * It returns the segmentation representation specific config which is the same for all the segments
- * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
- * @returns - The segmentation representation specific config.
- */
-function getSegmentationRepresentationSpecificConfig(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): RepresentationConfig {
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getSegmentationRepresentationSpecificConfig(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-}
-
-function getSegmentSpecificRepresentationConfig(
-  toolGroupId: string,
+function getSegmentSpecificConfig(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): RepresentationConfig {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getSegmentSpecificConfig(
-    toolGroupId,
     segmentationRepresentationUID,
     segmentIndex
   );
 }
 
-function setSegmentSpecificRepresentationConfig(
-  toolGroupId: string,
+function setSegmentSpecificConfig(
   segmentationRepresentationUID: string,
+  segmentIndex: number,
   config: SegmentSpecificRepresentationConfig,
   suppressEvents = false
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.setSegmentSpecificConfig(
-    toolGroupId,
     segmentationRepresentationUID,
+    segmentIndex,
     config
   );
 
-  // Todo: this can be even more performant if we create a new event for
-  // triggering a specific segment config change.
   if (!suppressEvents) {
-    triggerSegmentationRepresentationModified(
-      toolGroupId,
-      segmentationRepresentationUID
-    );
+    triggerSegmentationRepresentationModified(segmentationRepresentationUID);
   }
 }
 
-function getToolGroupIdFromSegmentationRepresentationUID(
-  segmentationRepresentationUID: string
-): string {
-  const allToolGroupRepresentations = getAllSegmentationRepresentations() || [];
+function getViewportSegmentationRepresentations(
+  viewportId: string
+): SegmentationRepresentation[] {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
 
-  const toolGroupIds = Object.keys(allToolGroupRepresentations);
-
-  for (const toolGroupId of toolGroupIds) {
-    const toolGroupRepresentations =
-      getAllSegmentationRepresentations()[toolGroupId];
-
-    const foundRepresentation = toolGroupRepresentations.find(
-      (representation) =>
-        representation.segmentationRepresentationUID ===
-        segmentationRepresentationUID
-    );
-
-    if (foundRepresentation) {
-      return toolGroupId;
-    }
-  }
+  return segmentationStateManager.getViewportSegmentationRepresentations(
+    viewportId
+  );
 }
 
-/**
- * Add the given segmentation representation data to the given tool group state. It fires
- * SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
- *
- * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
- *
- * @param toolGroupId - The Id of the tool group that the segmentation representation is for.
- * @param segmentationData - The data to add to the segmentation state.
- * @param suppressEvents - boolean
- */
-function addSegmentationRepresentation(
-  toolGroupId: string,
-  segmentationRepresentation: ToolGroupSpecificRepresentation,
-  suppressEvents?: boolean
+function addSegmentationRepresentationToViewport(
+  viewportId: string,
+  segmentationRepresentation: SegmentationRepresentation
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
+
+  // check if the segmentation representation is already in the state
   segmentationStateManager.addSegmentationRepresentation(
-    toolGroupId,
     segmentationRepresentation
   );
 
-  if (!suppressEvents) {
-    triggerSegmentationRepresentationModified(
-      toolGroupId,
-      segmentationRepresentation.segmentationRepresentationUID
-    );
-  }
+  segmentationStateManager.addSegmentationRepresentationToViewport(
+    viewportId,
+    segmentationRepresentation.segmentationRepresentationUID
+  );
 }
 
 /**
- * It returns the global segmentation config. Note that the toolGroup-specific
- * configuration has higher priority than the global configuration and overwrites
- * the global configuration for each representation.
+ * It returns the global segmentation config.
  * @returns The global segmentation configuration for all segmentations.
  */
 function getGlobalConfig(): SegmentationRepresentationConfig {
@@ -390,26 +235,6 @@ function setGlobalConfig(
 }
 
 /**
- * Get the segmentation data object for a given tool group and
- * segmentation data UID. It searches all the toolGroup specific segmentation
- * data objects and returns the first one that matches the UID.
- * @param toolGroupId - The Id of the tool group that the segmentation
- * data belongs to.
- * @param segmentationRepresentationUID - The uid of the segmentation representation
- * @returns Segmentation Data object.
- */
-function getSegmentationRepresentationByUID(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): ToolGroupSpecificRepresentation | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getSegmentationRepresentationByUID(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-}
-
-/**
  * It removes the segmentation from the segmentation state manager
  *
  * @triggers SEGMENTATION_REMOVED
@@ -423,47 +248,22 @@ function removeSegmentation(segmentationId: string): void {
 }
 
 /**
- * Remove a segmentation representation from the segmentation state manager for a toolGroup.
- * It fires SEGMENTATION_REPRESENTATION_MODIFIED event.
+ * Remove a segmentation representation from the segmentation state manager.
+ * It fires SEGMENTATION_REPRESENTATION_REMOVED event.
  *
  * @triggers SEGMENTATION_REPRESENTATION_REMOVED
  *
- * @param toolGroupId - The Id of the tool group that the segmentation
- * data belongs to.
  * @param segmentationRepresentationUID - The uid of the segmentation representation to remove.
- * remove.
- * @param - immediate - If true, the viewports will be updated immediately.
  */
 function removeSegmentationRepresentation(
-  toolGroupId: string,
   segmentationRepresentationUID: string
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   segmentationStateManager.removeSegmentationRepresentation(
-    toolGroupId,
     segmentationRepresentationUID
   );
 
-  triggerSegmentationRepresentationRemoved(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-}
-
-/**
- * Removes all segmentation representations associated with a tool group.
- * @param toolGroupId - The ID of the tool group.
- */
-function removeSegmentationRepresentations(toolGroupId: string): void {
-  const segmentationRepresentations =
-    getSegmentationRepresentations(toolGroupId) || [];
-
-  segmentationRepresentations.forEach((representation) => {
-    removeSegmentationRepresentation(
-      toolGroupId,
-      representation.segmentationRepresentationUID
-    );
-  });
+  triggerSegmentationRepresentationRemoved(segmentationRepresentationUID);
 }
 
 /**
@@ -502,6 +302,42 @@ function addColorLUT(colorLUT: Types.ColorLUT, index: number): void {
   // Todo: trigger event color LUT added
 }
 
+/**
+ * Returns the visibility of a segmentation representation in a specific viewport.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns The visibility of the segmentation representation in the viewport.
+ */
+function getSegmentationRepresentationVisibility(
+  viewportId: string,
+  segmentationRepresentationUID: string
+): boolean {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getViewportVisibility(
+    viewportId,
+    segmentationRepresentationUID
+  );
+}
+
+/**
+ * Sets the visibility of a segmentation representation in a specific viewport.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param visible - The visibility to set for the segmentation representation in the viewport.
+ */
+function setSegmentationRepresentationVisibility(
+  viewportId: string,
+  segmentationRepresentationUID: string,
+  visible: boolean
+): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.setViewportVisibility(
+    viewportId,
+    segmentationRepresentationUID,
+    visible
+  );
+}
+
 export {
   getDefaultSegmentationStateManager,
   // Segmentation
@@ -509,31 +345,27 @@ export {
   getSegmentations,
   addSegmentation,
   removeSegmentation,
-  // ToolGroup specific Segmentation Representation
+  // Segmentation Representation
+  getAllSegmentationRepresentations,
   getSegmentationRepresentations,
-  addSegmentationRepresentation,
+  getSegmentationRepresentationByUID,
   removeSegmentationRepresentation,
-  removeSegmentationRepresentations,
   // config
-  getToolGroupSpecificConfig,
-  setToolGroupSpecificConfig,
   getGlobalConfig,
   setGlobalConfig,
-  getSegmentationRepresentationSpecificConfig,
-  setSegmentationRepresentationSpecificConfig,
-  getSegmentSpecificRepresentationConfig,
-  setSegmentSpecificRepresentationConfig,
-  // helpers s
-  getToolGroupIdsWithSegmentation,
-  getAllSegmentationRepresentations,
-  getSegmentationRepresentationByUID,
-  getSegmentationIdRepresentations,
+  getSegmentationRepresentationConfig,
+  setSegmentationRepresentationConfig,
+  getSegmentSpecificConfig,
+  setSegmentSpecificConfig,
+  // viewport
+  getViewportSegmentationRepresentations,
+  addSegmentationRepresentationToViewport,
   // color
   addColorLUT,
   getColorLUT,
   getNextColorLUTIndex,
   removeColorLUT,
-  //
-  findSegmentationRepresentationByUID,
-  getToolGroupIdFromSegmentationRepresentationUID,
+  // visibility
+  getSegmentationRepresentationVisibility,
+  setSegmentationRepresentationVisibility,
 };

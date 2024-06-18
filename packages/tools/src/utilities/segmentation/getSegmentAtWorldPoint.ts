@@ -1,10 +1,7 @@
 import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
-import {
-  getSegmentation,
-  getSegmentationIdRepresentations,
-} from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,

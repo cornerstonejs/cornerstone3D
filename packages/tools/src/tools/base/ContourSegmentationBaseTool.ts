@@ -24,7 +24,6 @@ import {
   addContourSegmentationAnnotation,
   removeContourSegmentationAnnotation,
 } from '../../utilities/contourSegmentation';
-import { getToolGroupIdsWithSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
 
 /**
@@ -203,8 +202,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
     const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
       toolGroupId,
-      segmentationRepresentationUID,
-      segmentIndex
+      segmentationRepresentationUID
     );
 
     const segmentationVisible =
@@ -216,10 +214,10 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const globalConfig = segmentationConfig.getGlobalConfig();
 
     const toolGroupConfig =
-      segmentationConfig.getToolGroupSpecificConfig(toolGroupId);
+      segmentationConfig.getSegmentationRepresentationConfig(toolGroupId);
 
     const segmentationRepresentationConfig =
-      segmentationConfig.getSegmentationRepresentationSpecificConfig(
+      segmentationConfig.getSegmentationRepresentationConfig(
         toolGroupId,
         segmentationRepresentationUID
       );

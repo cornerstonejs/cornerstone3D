@@ -20,7 +20,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -120,9 +119,6 @@ async function run() {
     imageIds,
   });
 
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
-
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -171,23 +167,22 @@ async function run() {
   // Set the volume to load
   volume.load();
 
+  const viewportIds = [viewportId1, viewportId2, viewportId3];
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2, viewportId3]
-  );
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
-  // // Add the segmentation representation to the toolgroup
+  // Render the image
+  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
+
   await segmentation.addSegmentationRepresentations(viewportIds, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-
-  // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
 }
 
 run();

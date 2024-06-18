@@ -13,9 +13,6 @@ const onSegmentationDataModified = function (
   const { segmentationId } = evt.detail;
   const { type } = SegmentationState.getSegmentation(segmentationId);
 
-  const toolGroupIds =
-    SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
-
   if (type === SegmentationRepresentations.Labelmap) {
     onLabelmapSegmentationDataModified(evt);
   }

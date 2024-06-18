@@ -34,7 +34,6 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -124,12 +123,12 @@ function getSegmentationConfig(
   toolGroupdId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
+    segmentation.config.getSegmentationRepresentationConfig(
       toolGroupdId,
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add CONTOUR object because getSegmentationRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -143,7 +142,7 @@ function updateSegmentationConfig(config) {
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationSpecificConfig(
+  segmentation.config.setSegmentationRepresentationConfig(
     toolGroupId,
     segmentationRepresentationUID,
     segmentationConfig
