@@ -15,10 +15,10 @@ import { getRepresentationRenderingConfig } from './helpers/getRepresentationRen
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { SegmentationRepresentations } from '../../enums';
-import triggerSegmentationRenderForViewports from '../../utilities/segmentation/triggerSegmentationRenderForViewports';
+import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 async function addSegmentationRepresentation(
-  viewportId: string,
+  viewportIds: string[],
   representationInput: RepresentationPublicInput,
   segmentationRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
@@ -44,7 +44,7 @@ async function addSegmentationRepresentation(
     rendering: getRepresentationRenderingConfig(representationInput),
     polySeg: options.polySeg,
     config: {
-      default: {},
+      base: {},
       overrides: {},
     },
   };
@@ -69,11 +69,14 @@ async function addSegmentationRepresentation(
     // });
   }
 
-  addSegmentationRepresentationToViewport(viewportId, representation);
+  viewportIds.forEach((viewportId) => {
+    addSegmentationRepresentationToViewport(viewportId, representation);
+    if (representationInput.type === SegmentationRepresentations.Contour) {
+      triggerAnnotationRenderForViewportIds([viewportId]);
+    }
+  });
 
-  if (representationInput.type === SegmentationRepresentations.Contour) {
-    triggerAnnotationRenderForViewportIds([viewportId]);
-  }
+  triggerSegmentationModified(segmentationId);
 
   return segmentationRepresentationUID;
 }
