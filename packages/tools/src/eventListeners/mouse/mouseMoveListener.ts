@@ -1,7 +1,7 @@
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
-import getMouseEventPoints from './getMouseEventPoints';
-import { MouseMoveEventDetail } from '../../types/EventTypes';
+import Events from '../../enums/Events.js';
+import getMouseEventPoints from './getMouseEventPoints.js';
+import { MouseMoveEventDetail } from '../../types/EventTypes.js';
 
 const eventName = Events.MOUSE_MOVE;
 

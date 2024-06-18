@@ -1,4 +1,4 @@
-import interpolateAnnotation from './interpolateAnnotation';
+import interpolateAnnotation from './interpolateAnnotation.js';
 
 export default {
   interpolateAnnotation,

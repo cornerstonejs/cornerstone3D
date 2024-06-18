@@ -1,4 +1,4 @@
-import customCallbackHandler from '../shared/customCallbackHandler';
+import customCallbackHandler from '../shared/customCallbackHandler.js';
 
 /**
  * Event handler for mouse wheel events. Uses `customCallbackHandler` to fire

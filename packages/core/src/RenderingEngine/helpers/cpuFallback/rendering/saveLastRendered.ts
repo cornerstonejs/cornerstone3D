@@ -1,7 +1,7 @@
 import {
   CPUFallbackEnabledElement,
   CPUFallbackRenderingTools,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 /**
  * Saves the parameters of the last render into renderingTools, used later to decide if data can be reused.

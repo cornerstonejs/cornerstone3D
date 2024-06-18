@@ -3,10 +3,10 @@ import {
   triggerEvent,
   getRenderingEngine,
 } from '@cornerstonejs/core';
-import { Events, ToolModes } from '../enums';
-import { draw as drawSvg } from '../drawingSvg';
-import getToolsWithModesForElement from './getToolsWithModesForElement';
-import { AnnotationRenderedEventDetail } from '../types/EventTypes';
+import { Events, ToolModes } from '../enums/index.js';
+import { draw as drawSvg } from '../drawingSvg/index.js';
+import getToolsWithModesForElement from './getToolsWithModesForElement.js';
+import { AnnotationRenderedEventDetail } from '../types/EventTypes.js';
 const { Active, Passive, Enabled } = ToolModes;
 
 /**

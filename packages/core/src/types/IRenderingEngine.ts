@@ -1,8 +1,8 @@
-import IStackViewport from './IStackViewport';
-import { PublicViewportInput } from './IViewport';
-import IVolumeViewport from './IVolumeViewport';
-import { IViewport } from './IViewport';
-import IVideoViewport from './IVideoViewport';
+import IStackViewport from './IStackViewport.js';
+import { PublicViewportInput } from './IViewport.js';
+import IVolumeViewport from './IVolumeViewport.js';
+import { IViewport } from './IViewport.js';
+import IVideoViewport from './IVideoViewport.js';
 
 export default interface IRenderingEngine {
   id: string;

@@ -1,4 +1,4 @@
-import Events from '../enums/Events';
+import Events from '../enums/Events.js';
 
 import {
   mouseClick,
@@ -9,7 +9,7 @@ import {
   mouseMove,
   mouseUp,
   mouseWheel,
-} from './mouseEventHandlers';
+} from './mouseEventHandlers/index.js';
 
 /**
  * Enable these listeners are emitted in order, and can be cancelled/prevented from bubbling

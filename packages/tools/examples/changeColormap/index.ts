@@ -12,7 +12,7 @@ import {
   initDemo,
   setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 
 // This is for debugging purposes

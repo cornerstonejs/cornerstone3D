@@ -1,11 +1,11 @@
 import {
   getImageSliceDataForVolumeViewport,
   triggerEvent,
-} from '../../utilities';
-import { EventTypes } from '../../types';
-import { Events } from '../../enums';
-import { getRenderingEngine } from '../getRenderingEngine';
-import BaseVolumeViewport from '../BaseVolumeViewport';
+} from '../../utilities/index.js';
+import { EventTypes } from '../../types/index.js';
+import { Events } from '../../enums/index.js';
+import { getRenderingEngine } from '../getRenderingEngine.js';
+import BaseVolumeViewport from '../BaseVolumeViewport.js';
 
 // Keeping track of previous imageIndex for each viewportId
 type VolumeImageState = Record<string, number>;

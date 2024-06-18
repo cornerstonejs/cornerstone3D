@@ -3,11 +3,11 @@ import {
   IImageVolume,
   VOIRange,
   ScalingParameters,
-} from '../../types';
-import { loadAndCacheImage } from '../../loaders/imageLoader';
-import * as metaData from '../../metaData';
-import { getMinMax, windowLevel } from '../../utilities';
-import { RequestType } from '../../enums';
+} from '../../types/index.js';
+import { loadAndCacheImage } from '../../loaders/imageLoader.js';
+import * as metaData from '../../metaData.js';
+import { getMinMax, windowLevel } from '../../utilities/index.js';
+import { RequestType } from '../../enums/index.js';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;

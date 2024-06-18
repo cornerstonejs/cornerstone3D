@@ -1,5 +1,5 @@
 import { utilities } from '@cornerstonejs/core';
-import MouseCursor from './MouseCursor';
+import MouseCursor from './MouseCursor.js';
 
 const DEFAULT_NAME = 'image-cursor';
 

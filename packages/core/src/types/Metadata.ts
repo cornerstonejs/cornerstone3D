@@ -1,4 +1,4 @@
-import type { VOI } from './voi';
+import type { VOI } from './voi.js';
 
 /**
  * Metadata for images, More information can be found in the

@@ -1,4 +1,4 @@
-import { Events as EVENTS, VideoViewport as VideoViewportEnum } from '../enums';
+import { Events as EVENTS, VideoViewport as VideoViewportEnum } from '../enums/index.js';
 import {
   IVideoViewport,
   VideoViewportProperties,
@@ -7,11 +7,11 @@ import {
   ICamera,
   InternalVideoCamera,
   VideoViewportInput,
-} from '../types';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { triggerEvent } from '../utilities';
-import Viewport from './Viewport';
-import { getOrCreateCanvas } from './helpers';
+} from '../types/index.js';
+import { Transform } from './helpers/cpuFallback/rendering/transform.js';
+import { triggerEvent } from '../utilities/index.js';
+import Viewport from './Viewport.js';
+import { getOrCreateCanvas } from './helpers/index.js';
 
 /**
  * An object representing a single stack viewport, which is a camera

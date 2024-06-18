@@ -11,7 +11,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addDropdownToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes

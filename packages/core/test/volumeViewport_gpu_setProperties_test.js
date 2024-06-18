@@ -1,5 +1,5 @@
-import * as cornerstone3D from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+import * as cornerstone3D from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
 
 // linear interpolation
 import * as volumeURI_32_32_10_1_1_1_0 from './groundTruth/volumeURI_32_32_10_1_1_1_0.png';

@@ -6,15 +6,15 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { addAnnotation } from '../stateManagement/annotation/annotationState';
+import { addAnnotation } from '../stateManagement/annotation/annotationState.js';
 
-import { drawLine as drawLineSvg } from '../drawingSvg';
-import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
-import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
-import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import { drawLine as drawLineSvg } from '../drawingSvg/index.js';
+import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters/index.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
+import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types/index.js';
+import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
+import AnnotationDisplayTool from './base/AnnotationDisplayTool.js';
 
 const { EPSILON } = CONSTANTS;
 

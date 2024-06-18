@@ -1,4 +1,4 @@
-import * as cornerstone3D from '../src/index';
+import * as cornerstone3D from '../src/index.js';
 
 const { eventTarget: events } = cornerstone3D;
 

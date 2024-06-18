@@ -1,7 +1,7 @@
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
-import getMouseEventPoints from './getMouseEventPoints';
-import { EventTypes, IPoints } from '../../types';
+import Events from '../../enums/Events.js';
+import getMouseEventPoints from './getMouseEventPoints.js';
+import { EventTypes, IPoints } from '../../types/index.js';
 
 /**
  * Captures and normalizes the double click event. Emits as a cornerstoneTools3D

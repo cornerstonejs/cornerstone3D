@@ -7,9 +7,9 @@ import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper.js';
 import * as vtkImageSliceModule from '@kitware/vtk.js/Rendering/Core/ImageSlice.js';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
-import * as metaData from '../metaData';
-import Viewport from './Viewport';
-import eventTarget from '../eventTarget';
+import * as metaData from '../metaData.js';
+import Viewport from './Viewport.js';
+import eventTarget from '../eventTarget.js';
 
 type vtkImageSlice = vtkImageSliceModule.vtkImageSlice;
 type vtkImageData = vtkImageDataModule.vtkImageData;
@@ -26,7 +26,7 @@ import {
   isImageActor,
   actorIsA,
   colormap as colormapUtils,
-} from '../utilities';
+} from '../utilities/index.js';
 import {
   Point2,
   Point3,
@@ -48,47 +48,47 @@ import {
   Mat3,
   ColormapPublic,
   IImageCalibration,
-} from '../types';
-import { ViewportInput } from '../types/IViewport';
-import drawImageSync from './helpers/cpuFallback/drawImageSync';
-import { getColormap } from './helpers/cpuFallback/colors/index';
+} from '../types/index.js';
+import { ViewportInput } from '../types/IViewport.js';
+import drawImageSync from './helpers/cpuFallback/drawImageSync.js';
+import { getColormap } from './helpers/cpuFallback/colors/index.js';
 
-import { loadAndCacheImage } from '../loaders/imageLoader';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
+import { loadAndCacheImage } from '../loaders/imageLoader.js';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager.js';
 import {
   InterpolationType,
   RequestType,
   Events,
   VOILUTFunctionType,
-} from '../enums';
-import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
-import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
-import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
-import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
-import resize from './helpers/cpuFallback/rendering/resize';
+} from '../enums/index.js';
+import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel.js';
+import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas.js';
+import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport.js';
+import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform.js';
+import resize from './helpers/cpuFallback/rendering/resize.js';
 
-import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
-import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
+import resetCamera from './helpers/cpuFallback/rendering/resetCamera.js';
+import { Transform } from './helpers/cpuFallback/rendering/transform.js';
+import { getConfiguration, getShouldUseCPURendering } from '../init.js';
 import {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
-} from '../types/EventTypes';
-import cache from '../cache';
-import correctShift from './helpers/cpuFallback/rendering/correctShift';
-import { ImageActor } from '../types/IActor';
-import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+} from '../types/EventTypes.js';
+import cache from '../cache/index.js';
+import correctShift from './helpers/cpuFallback/rendering/correctShift.js';
+import { ImageActor } from '../types/IActor.js';
+import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction.js';
 import {
   PixelDataTypedArray,
   ImagePixelModule,
   ImagePlaneModule,
-} from '../types';
-import ViewportStatus from '../enums/ViewportStatus';
+} from '../types/index.js';
+import ViewportStatus from '../enums/ViewportStatus.js';
 import {
   getTransferFunctionNodes,
   setTransferFunctionNodes,
-} from '../utilities/transferFunctionUtils';
+} from '../utilities/transferFunctionUtils.js';
 
 const EPSILON = 1; // Slice Thickness
 

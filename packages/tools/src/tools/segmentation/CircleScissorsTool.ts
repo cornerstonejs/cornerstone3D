@@ -1,31 +1,31 @@
 import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
+import { BaseTool } from '../base/index.js';
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
+} from '../../types/index.js';
 
-import { fillInsideCircle } from './strategies/fillCircle';
-import { Events } from '../../enums';
-import { drawCircle as drawCircleSvg } from '../../drawingSvg';
+import { fillInsideCircle } from './strategies/fillCircle.js';
+import { Events } from '../../enums/index.js';
+import { drawCircle as drawCircleSvg } from '../../drawingSvg/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 import {
   segmentLocking,
   activeSegmentation,
   segmentIndex as segmentIndexController,
   config as segmentationConfig,
-} from '../../stateManagement/segmentation';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+} from '../../stateManagement/segmentation/index.js';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes.js';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the

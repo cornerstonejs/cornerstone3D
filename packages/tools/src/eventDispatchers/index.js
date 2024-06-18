@@ -1,9 +1,9 @@
-import imageRenderedEventDispatcher from './imageRenderedEventDispatcher';
-import mouseToolEventDispatcher from './mouseToolEventDispatcher';
-import keyboardToolEventDispatcher from './keyboardToolEventDispatcher';
-import cameraModifiedEventDispatcher from './cameraModifiedEventDispatcher';
-import imageSpacingCalibratedEventDispatcher from './imageSpacingCalibratedEventDispatcher';
-import touchToolEventDispatcher from './touchToolEventDispatcher';
+import imageRenderedEventDispatcher from './imageRenderedEventDispatcher.js';
+import mouseToolEventDispatcher from './mouseToolEventDispatcher.js';
+import keyboardToolEventDispatcher from './keyboardToolEventDispatcher.js';
+import cameraModifiedEventDispatcher from './cameraModifiedEventDispatcher.js';
+import imageSpacingCalibratedEventDispatcher from './imageSpacingCalibratedEventDispatcher.js';
+import touchToolEventDispatcher from './touchToolEventDispatcher.js';
 
 export {
   imageRenderedEventDispatcher,

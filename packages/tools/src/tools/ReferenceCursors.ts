@@ -9,10 +9,10 @@ import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
   getAnnotations,
-} from '../stateManagement/annotation/annotationState';
-import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
-import { drawLine } from '../drawingSvg';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+} from '../stateManagement/annotation/annotationState.js';
+import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility.js';
+import { drawLine } from '../drawingSvg/index.js';
+import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters/index.js';
 import {
   EventTypes,
   PublicToolProps,
@@ -20,19 +20,19 @@ import {
   SVGDrawingHelper,
   Annotation,
   Annotations,
-} from '../types';
-import { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
+} from '../types/index.js';
+import { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes.js';
 
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
 import { vec3 } from 'gl-matrix';
-import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import AnnotationDisplayTool from './base/AnnotationDisplayTool.js';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import {
   hideElementCursor,
   resetElementCursor,
-} from '../cursors/elementCursor';
-import { getToolGroup } from '../store/ToolGroupManager';
+} from '../cursors/elementCursor.js';
+import { getToolGroup } from '../store/ToolGroupManager/index.js';
 
 /**
  * ReferenceCursors is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.

@@ -1,9 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import * as metaData from '../metaData';
-import type { IImageVolume, Point3 } from '../types';
+import * as metaData from '../metaData.js';
+import type { IImageVolume, Point3 } from '../types/index.js';
 
-import getSpacingInNormalDirection from './getSpacingInNormalDirection';
-import { EPSILON } from '../constants';
+import getSpacingInNormalDirection from './getSpacingInNormalDirection.js';
+import { EPSILON } from '../constants/index.js';
 
 /**
  * Given an image, a point in space and the viewPlaneNormal it returns the

@@ -1,10 +1,10 @@
-import { BaseTool } from './base';
+import { BaseTool } from './base/index.js';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { mat4, vec3 } from 'gl-matrix';
-import { PublicToolProps, ToolProps } from '../types';
-import { MouseWheelEventType } from '../types/EventTypes';
+import { PublicToolProps, ToolProps } from '../types/index.js';
+import { MouseWheelEventType } from '../types/EventTypes.js';
 
 const DIRECTIONS = {
   X: [1, 0, 0],

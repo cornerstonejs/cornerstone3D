@@ -1,5 +1,5 @@
-import { RequestPoolManager } from './requestPoolManager';
-import RequestType from '../enums/RequestType';
+import { RequestPoolManager } from './requestPoolManager.js';
+import RequestType from '../enums/RequestType.js';
 
 /**
  * You can use the imageLoadPoolManager to load images, by providing a `requestFn`

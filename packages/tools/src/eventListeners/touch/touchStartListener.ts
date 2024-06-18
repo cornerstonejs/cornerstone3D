@@ -1,10 +1,10 @@
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
-import { Swipe } from '../../enums/Touch';
+import Events from '../../enums/Events.js';
+import { Swipe } from '../../enums/Touch.js';
 
-import { EventTypes, ITouchPoints, IPoints, IDistance } from '../../types';
+import { EventTypes, ITouchPoints, IPoints, IDistance } from '../../types/index.js';
 
-import getTouchEventPoints from './getTouchEventPoints';
+import getTouchEventPoints from './getTouchEventPoints.js';
 import {
   copyPoints,
   copyPointsList,
@@ -13,7 +13,7 @@ import {
   getDeltaPoints,
   getMeanTouchPoints,
   // getRotation
-} from '../../utilities/touch';
+} from '../../utilities/touch/index.js';
 import { Settings } from '@cornerstonejs/core';
 
 const runtimeSettings = Settings.getRuntimeSettings();

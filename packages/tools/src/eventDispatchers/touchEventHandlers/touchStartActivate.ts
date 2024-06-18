@@ -1,8 +1,8 @@
-import { state } from '../../store';
-import { EventTypes } from '../../types';
-import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
+import { state } from '../../store/index.js';
+import { EventTypes } from '../../types/index.js';
+import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection.js';
 
-import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
+import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent.js';
 
 /**
  * If the `touchStart` handler does not consume an event,

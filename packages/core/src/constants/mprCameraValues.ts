@@ -1,4 +1,4 @@
-import deepFreeze from '../utilities/deepFreeze';
+import deepFreeze from '../utilities/deepFreeze.js';
 
 const MPR_CAMERA_VALUES = {
   axial: {

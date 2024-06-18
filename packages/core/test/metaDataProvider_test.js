@@ -1,4 +1,4 @@
-import * as cornerstone3D from '../src';
+import * as cornerstone3D from '../src/index.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { metaData } = cornerstone3D;

@@ -1,5 +1,5 @@
-import Point2 from './Point2';
-import TransformMatrix2D from './TransformMatrix2D';
+import Point2 from './Point2.js';
+import TransformMatrix2D from './TransformMatrix2D.js';
 
 interface CPUFallbackTransform {
   reset: () => void;

@@ -1,6 +1,6 @@
 import * as cornerstoneStreamingImageVolumeLoader from '@cornerstonejs/streaming-image-volume-loader';
-import * as cornerstone from '../src/index';
-import { createFloat32SharedArray } from '../src/utilities';
+import * as cornerstone from '../src/index.js';
+import { createFloat32SharedArray } from '../src/utilities/index.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { cache, Enums } = cornerstone;

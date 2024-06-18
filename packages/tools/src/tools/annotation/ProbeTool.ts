@@ -11,29 +11,29 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool } from '../base';
+import { AnnotationTool } from '../base/index.js';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
+} from '../../stateManagement/annotation/annotationState.js';
 import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store';
-import { Events } from '../../enums';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+} from '../../drawingSvg/index.js';
+import { state } from '../../store/index.js';
+import { Events } from '../../enums/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 import {
   AnnotationCompletedEventDetail,
   AnnotationModifiedEventDetail,
-} from '../../types/EventTypes';
+} from '../../types/EventTypes.js';
 
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   EventTypes,
@@ -41,14 +41,14 @@ import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
-} from '../../types';
-import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 import {
   ModalityUnitOptions,
   getModalityUnit,
-} from '../../utilities/getModalityUnit';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+} from '../../utilities/getModalityUnit.js';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled.js';
 
 const { transformWorldToIndex } = csUtils;
 

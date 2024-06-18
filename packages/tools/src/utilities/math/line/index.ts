@@ -1,5 +1,5 @@
-import distanceToPoint from './distanceToPoint';
-import distanceToPointSquared from './distanceToPointSquared';
-import intersectLine from './intersectLine';
+import distanceToPoint from './distanceToPoint.js';
+import distanceToPointSquared from './distanceToPointSquared.js';
+import intersectLine from './intersectLine.js';
 
 export { distanceToPoint, distanceToPointSquared, intersectLine };

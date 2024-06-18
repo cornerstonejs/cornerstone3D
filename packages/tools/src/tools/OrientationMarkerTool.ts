@@ -6,9 +6,9 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';
 import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader.js';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
 
-import { BaseTool } from './base';
+import { BaseTool } from './base/index.js';
 import { getRenderingEngines } from '@cornerstonejs/core';
-import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
+import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters/index.js';
 
 const vtkOrientationMarkerWidget =
   vtkOrientationMarkerWidgetModule.vtkOrientationMarkerWidget;

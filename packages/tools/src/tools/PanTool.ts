@@ -1,8 +1,8 @@
-import { BaseTool } from './base';
+import { BaseTool } from './base/index.js';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { EventTypes, PublicToolProps, ToolProps } from '../types/index.js';
 
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.

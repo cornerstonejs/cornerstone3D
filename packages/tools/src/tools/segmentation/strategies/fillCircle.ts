@@ -5,11 +5,11 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import {
   getCanvasEllipseCorners,
   pointInEllipse,
-} from '../../../utilities/math/ellipse';
-import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInShapeCallback } from '../../../utilities';
-import isWithinThreshold from './utils/isWithinThreshold';
+} from '../../../utilities/math/ellipse/index.js';
+import { getBoundingBoxAroundShape } from '../../../utilities/boundingBox/index.js';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { pointInShapeCallback } from '../../../utilities/index.js';
+import isWithinThreshold from './utils/isWithinThreshold.js';
 
 const { transformWorldToIndex } = csUtils;
 

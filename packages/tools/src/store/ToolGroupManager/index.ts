@@ -1,10 +1,10 @@
-import createToolGroup from './createToolGroup';
-import destroyToolGroup from './destroyToolGroup';
-import destroy from './destroy';
-import getToolGroup from './getToolGroup';
-import getToolGroupForViewport from './getToolGroupForViewport';
-import getAllToolGroups from './getAllToolGroups';
-import getToolGroupsWithToolName from './getToolGroupsWithToolName';
+import createToolGroup from './createToolGroup.js';
+import destroyToolGroup from './destroyToolGroup.js';
+import destroy from './destroy.js';
+import getToolGroup from './getToolGroup.js';
+import getToolGroupForViewport from './getToolGroupForViewport.js';
+import getAllToolGroups from './getAllToolGroups.js';
+import getToolGroupsWithToolName from './getToolGroupsWithToolName.js';
 
 export {
   createToolGroup,

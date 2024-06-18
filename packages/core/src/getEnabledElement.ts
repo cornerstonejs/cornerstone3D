@@ -1,7 +1,7 @@
 import getRenderingEngine, {
   getRenderingEngines,
-} from './RenderingEngine/getRenderingEngine';
-import { IEnabledElement, IStackViewport, IVolumeViewport } from './types';
+} from './RenderingEngine/getRenderingEngine.js';
+import { IEnabledElement, IStackViewport, IVolumeViewport } from './types/index.js';
 
 /**
  * A convenience method to find an EnabledElement given a reference to its

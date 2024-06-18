@@ -1,4 +1,4 @@
-import type Point3 from '../types/Point3';
+import type Point3 from '../types/Point3.js';
 
 /**
  * returns equal if the two vec3s are opposite within the

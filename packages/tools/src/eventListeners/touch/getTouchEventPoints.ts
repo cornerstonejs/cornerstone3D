@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { ITouchPoints } from '../../types';
+import { ITouchPoints } from '../../types/index.js';
 
 /**
  * Given a native touch event, get the associated cornerstone3D enabled element

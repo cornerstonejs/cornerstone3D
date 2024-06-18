@@ -1,7 +1,7 @@
 import * as vtkColorTransferFunctionModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
-import { VOIRange } from '../types';
-import { windowLevel as windowLevelUtil } from '.';
+import { VOIRange } from '../types/index.js';
+import { windowLevel as windowLevelUtil } from './index.js';
 
 type vtkColorTransferFunctionInstance = ReturnType<
   typeof vtkColorTransferFunctionModule.vtkColorTransferFunction.newInstance

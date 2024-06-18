@@ -1,4 +1,4 @@
-import customCallbackHandler from '../shared/customCallbackHandler';
+import customCallbackHandler from '../shared/customCallbackHandler.js';
 
 /**
  * touchEnd - Event handler for touchEnd events. Uses `customCallbackHandler` to fire

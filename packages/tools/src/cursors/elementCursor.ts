@@ -1,4 +1,4 @@
-import { MouseCursor } from '.';
+import { MouseCursor } from './index.js';
 
 const ELEMENT_CURSORS_MAP = Symbol('ElementCursorsMap');
 

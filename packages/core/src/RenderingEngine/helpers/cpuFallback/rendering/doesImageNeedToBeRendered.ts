@@ -1,4 +1,4 @@
-import { CPUFallbackEnabledElement, IImage } from '../../../../types';
+import { CPUFallbackEnabledElement, IImage } from '../../../../types/index.js';
 
 /**
  * Determine whether or not an Enabled Element needs to be re-rendered.

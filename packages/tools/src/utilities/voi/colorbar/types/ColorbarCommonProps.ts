@@ -1,9 +1,9 @@
-import { ColorbarRangeTextPosition } from '../enums/ColorbarRangeTextPosition';
+import { ColorbarRangeTextPosition } from '../enums/ColorbarRangeTextPosition.js';
 import type {
   ColorbarImageRange,
   ColorbarTicksStyle,
   ColorbarVOIRange,
-} from '.';
+} from './index.js';
 
 export type ColorbarCommonProps = {
   // Image range from minPixelValue (lower) to maxPixelValue (upper)

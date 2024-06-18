@@ -1,4 +1,4 @@
-import Settings from '../src/Settings';
+import Settings from '../src/Settings.js';
 
 describe('Settings', () => {
   it('should support setting properties', () => {

@@ -8,13 +8,13 @@ import {
   getPolyData,
   getSegmentSpecificConfig,
   validateGeometry,
-} from './utils';
+} from './utils.js';
 
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
-} from '../../../types';
-import { getConfigCache, setConfigCache } from './contourConfigCache';
+} from '../../../types/index.js';
+import { getConfigCache, setConfigCache } from './contourConfigCache.js';
 
 export function addContourSetsToElement(
   viewport: Types.IVolumeViewport,

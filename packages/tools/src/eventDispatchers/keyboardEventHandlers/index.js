@@ -1,4 +1,4 @@
-import keyDown from './keyDown';
-import keyUp from './keyUp';
+import keyDown from './keyDown.js';
+import keyUp from './keyUp.js';
 
 export { keyDown, keyUp };

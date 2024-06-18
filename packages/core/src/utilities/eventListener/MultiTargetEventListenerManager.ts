@@ -1,4 +1,4 @@
-import TargetEventListeners from './TargetEventListeners';
+import TargetEventListeners from './TargetEventListeners.js';
 
 /**
  * MultiTargetEventListenerManager allows you to add event listeners to multiple

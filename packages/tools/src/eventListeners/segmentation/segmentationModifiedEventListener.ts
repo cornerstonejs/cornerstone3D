@@ -1,9 +1,9 @@
-import { SegmentationModifiedEventType } from '../../types/EventTypes';
+import { SegmentationModifiedEventType } from '../../types/EventTypes.js';
 import {
   getToolGroupIdsWithSegmentation,
   getSegmentationRepresentations,
-} from '../../stateManagement/segmentation/segmentationState';
-import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+} from '../../stateManagement/segmentation/segmentationState.js';
+import { triggerSegmentationRepresentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
 
 /** A function that listens to the `segmentationModified` event and triggers
  * the triggerSegmentationRepresentationModified on each toolGroup that

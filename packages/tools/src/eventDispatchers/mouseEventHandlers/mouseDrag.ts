@@ -1,6 +1,6 @@
-import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
-import { state } from '../../store';
-import { MouseDragEventType } from '../../types/EventTypes';
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent.js';
+import { state } from '../../store/index.js';
+import { MouseDragEventType } from '../../types/EventTypes.js';
 
 /**
  * mouseDrag - Event handler for mouse drag events. Fires the `mouseDragCallback`

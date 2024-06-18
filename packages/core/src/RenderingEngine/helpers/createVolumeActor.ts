@@ -1,13 +1,13 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
 
-import { VolumeActor } from './../../types/IActor';
-import { VoiModifiedEventDetail } from './../../types/EventTypes';
-import { loadVolume } from '../../loaders/volumeLoader';
-import createVolumeMapper from './createVolumeMapper';
-import BlendModes from '../../enums/BlendModes';
-import { triggerEvent } from '../../utilities';
-import { Events } from '../../enums';
-import setDefaultVolumeVOI from './setDefaultVolumeVOI';
+import { VolumeActor } from './../../types/IActor.js';
+import { VoiModifiedEventDetail } from './../../types/EventTypes.js';
+import { loadVolume } from '../../loaders/volumeLoader.js';
+import createVolumeMapper from './createVolumeMapper.js';
+import BlendModes from '../../enums/BlendModes.js';
+import { triggerEvent } from '../../utilities/index.js';
+import { Events } from '../../enums/index.js';
+import setDefaultVolumeVOI from './setDefaultVolumeVOI.js';
 
 interface createVolumeActorInterface {
   volumeId: string;

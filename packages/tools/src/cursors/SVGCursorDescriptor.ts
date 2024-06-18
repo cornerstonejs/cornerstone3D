@@ -1,4 +1,4 @@
-import { SVGCursorDescriptor } from '../types';
+import { SVGCursorDescriptor } from '../types/index.js';
 
 /*
  * Definitions

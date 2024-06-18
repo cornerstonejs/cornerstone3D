@@ -1,4 +1,4 @@
-import type { ColorbarCommonProps, ColorbarSize } from '.';
+import type { ColorbarCommonProps, ColorbarSize } from './index.js';
 
 export type ColorbarTicksProps = ColorbarCommonProps & {
   top?: number;

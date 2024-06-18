@@ -1,5 +1,5 @@
-import { Point3, ContourData, IContour } from '../../types';
-import { ContourType } from '../../enums';
+import { Point3, ContourData, IContour } from '../../types/index.js';
+import { ContourType } from '../../enums/index.js';
 
 type ContourProps = {
   id: string;

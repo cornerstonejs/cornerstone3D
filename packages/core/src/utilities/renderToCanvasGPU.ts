@@ -1,10 +1,10 @@
-import getOrCreateCanvas from '../RenderingEngine/helpers/getOrCreateCanvas';
-import { ViewportType, Events } from '../enums';
-import StackViewport from '../RenderingEngine/StackViewport';
-import { IImage } from '../types';
-import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
-import RenderingEngine from '../RenderingEngine';
-import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
+import getOrCreateCanvas from '../RenderingEngine/helpers/getOrCreateCanvas.js';
+import { ViewportType, Events } from '../enums/index.js';
+import StackViewport from '../RenderingEngine/StackViewport.js';
+import { IImage } from '../types/index.js';
+import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine.js';
+import RenderingEngine from '../RenderingEngine/index.js';
+import isPTPrescaledWithSUV from './isPTPrescaledWithSUV.js';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation

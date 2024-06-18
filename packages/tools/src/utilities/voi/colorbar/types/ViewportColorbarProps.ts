@@ -1,4 +1,4 @@
-import type { ColorbarProps } from './ColorbarProps';
+import type { ColorbarProps } from './ColorbarProps.js';
 
 export type ViewportColorbarProps = ColorbarProps & {
   element: HTMLDivElement;

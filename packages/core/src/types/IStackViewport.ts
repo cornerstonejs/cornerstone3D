@@ -1,14 +1,14 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData';
-import CPUIImageData from './CPUIImageData';
-import ICamera from './ICamera';
-import IImageData from './IImageData';
-import { IViewport } from './IViewport';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { Scaling } from './ScalingParameters';
-import StackViewportProperties from './StackViewportProperties';
-import { ColormapPublic } from './Colormap';
-import IImage from './IImage';
+import CPUFallbackColormapData from './CPUFallbackColormapData.js';
+import CPUIImageData from './CPUIImageData.js';
+import ICamera from './ICamera.js';
+import IImageData from './IImageData.js';
+import { IViewport } from './IViewport.js';
+import Point2 from './Point2.js';
+import Point3 from './Point3.js';
+import { Scaling } from './ScalingParameters.js';
+import StackViewportProperties from './StackViewportProperties.js';
+import { ColormapPublic } from './Colormap.js';
+import IImage from './IImage.js';
 
 /**
  * Interface for Stack Viewport

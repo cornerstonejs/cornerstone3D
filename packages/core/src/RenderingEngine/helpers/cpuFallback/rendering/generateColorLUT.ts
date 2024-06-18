@@ -1,5 +1,5 @@
-import getVOILUT from './getVOILut';
-import { IImage, CPUFallbackLUT } from '../../../../types';
+import getVOILUT from './getVOILut.js';
+import { IImage, CPUFallbackLUT } from '../../../../types/index.js';
 
 /**
  * Creates a LUT used while rendering to convert stored pixel values to

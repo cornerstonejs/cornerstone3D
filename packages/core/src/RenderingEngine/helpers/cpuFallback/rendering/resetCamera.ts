@@ -1,5 +1,5 @@
-import getImageFitScale from './getImageFitScale';
-import { CPUFallbackEnabledElement } from '../../../../types';
+import getImageFitScale from './getImageFitScale.js';
+import { CPUFallbackEnabledElement } from '../../../../types/index.js';
 
 /**
  * Resets the camera to the default position. which would be the center of the image.

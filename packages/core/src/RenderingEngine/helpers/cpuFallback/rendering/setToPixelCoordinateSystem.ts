@@ -1,5 +1,5 @@
-import calculateTransform from './calculateTransform';
-import { CPUFallbackEnabledElement } from '../../../../types';
+import calculateTransform from './calculateTransform.js';
+import { CPUFallbackEnabledElement } from '../../../../types/index.js';
 
 /**
  * Sets the canvas context transformation matrix to the pixel coordinate system.  This allows

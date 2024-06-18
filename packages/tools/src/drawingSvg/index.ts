@@ -1,16 +1,16 @@
-import draw from './draw';
-import drawCircle from './drawCircle';
-import drawEllipse from './drawEllipse';
-import drawHandles from './drawHandles';
-import drawLine from './drawLine';
-import drawPolyline from './drawPolyline';
-import drawLinkedTextBox from './drawLinkedTextBox';
-import drawRect from './drawRect';
-import drawTextBox from './drawTextBox';
-import drawArrow from './drawArrow';
-import drawRedactionRect from './drawRedactionRect';
-import setAttributesIfNecessary from './setAttributesIfNecessary';
-import setNewAttributesIfValid from './setNewAttributesIfValid';
+import draw from './draw.js';
+import drawCircle from './drawCircle.js';
+import drawEllipse from './drawEllipse.js';
+import drawHandles from './drawHandles.js';
+import drawLine from './drawLine.js';
+import drawPolyline from './drawPolyline.js';
+import drawLinkedTextBox from './drawLinkedTextBox.js';
+import drawRect from './drawRect.js';
+import drawTextBox from './drawTextBox.js';
+import drawArrow from './drawArrow.js';
+import drawRedactionRect from './drawRedactionRect.js';
+import setAttributesIfNecessary from './setAttributesIfNecessary.js';
+import setNewAttributesIfValid from './setNewAttributesIfValid.js';
 
 export {
   draw,

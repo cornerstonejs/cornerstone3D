@@ -10,29 +10,29 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
-import { addAnnotation, getAnnotations } from '../../stateManagement';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { Events } from '../../enums/index.js';
+import { addAnnotation, getAnnotations } from '../../stateManagement/index.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
-} from '../../drawingSvg';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import throttle from '../../utilities/throttle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import { hideElementCursor } from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../drawingSvg/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import throttle from '../../utilities/throttle.js';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
+import { hideElementCursor } from '../../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import RectangleROITool from '../annotation/RectangleROITool.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 
 const { transformWorldToIndex } = csUtils;
 

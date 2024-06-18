@@ -1,6 +1,6 @@
-import { ToolModes } from '../enums';
-import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement';
-import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement';
+import { ToolModes } from '../enums/index.js';
+import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement.js';
+import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement.js';
 
 /**
  * Cancel the current active manipulation that is being performed on the provided

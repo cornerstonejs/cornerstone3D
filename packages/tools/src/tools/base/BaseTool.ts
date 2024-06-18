@@ -5,8 +5,8 @@ import {
   VideoViewport,
 } from '@cornerstonejs/core';
 import { Types } from '@cornerstonejs/core';
-import { ToolModes } from '../../enums';
-import { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
+import { ToolModes } from '../../enums/index.js';
+import { InteractionTypes, ToolProps, PublicToolProps } from '../../types/index.js';
 
 export interface IBaseTool {
   /** ToolGroup ID the tool instance belongs to */

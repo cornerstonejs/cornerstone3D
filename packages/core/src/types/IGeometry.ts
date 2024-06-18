@@ -1,6 +1,6 @@
-import { Surface } from '../cache/classes/Surface';
-import { GeometryType } from '../enums';
-import { IContourSet } from './IContourSet';
+import { Surface } from '../cache/classes/Surface.js';
+import { GeometryType } from '../enums/index.js';
+import { IContourSet } from './IContourSet.js';
 
 // interface IGeometry can be array of IContourSet
 interface IGeometry {

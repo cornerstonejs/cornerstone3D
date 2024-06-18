@@ -1,11 +1,11 @@
 import { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
-import IPoints from './IPoints';
-import ITouchPoints from './ITouchPoints';
-import IDistance from './IDistance';
-import { SetToolBindingsType } from './ISetToolModeOptions';
-import { Swipe } from '../enums/Touch';
-import { ToolModes } from '../enums';
+import { Annotation } from './AnnotationTypes.js';
+import IPoints from './IPoints.js';
+import ITouchPoints from './ITouchPoints.js';
+import IDistance from './IDistance.js';
+import { SetToolBindingsType } from './ISetToolModeOptions.js';
+import { Swipe } from '../enums/Touch.js';
+import { ToolModes } from '../enums/index.js';
 
 /**
  * The normalized interaction event detail

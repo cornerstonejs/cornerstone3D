@@ -1,10 +1,10 @@
-import LookupTable from './lookupTable';
-import CPU_COLORMAPS from '../../../../constants/cpuColormaps';
+import LookupTable from './lookupTable.js';
+import CPU_COLORMAPS from '../../../../constants/cpuColormaps.js';
 import {
   CPUFallbackColormap,
   CPUFallbackColormapData,
   Point4,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 const COLOR_TRANSPARENT: Point4 = [0, 0, 0, 0];
 

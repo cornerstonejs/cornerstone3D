@@ -1,4 +1,4 @@
-import CalibrationTypes from '../enums/CalibrationTypes';
+import CalibrationTypes from '../enums/CalibrationTypes.js';
 
 /**
  * IImageCalibration is an object that stores information about the type

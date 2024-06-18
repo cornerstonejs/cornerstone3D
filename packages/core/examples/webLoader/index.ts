@@ -12,9 +12,9 @@ import {
   initDemo,
   setTitleAndDescription,
   addSliderToToolbar,
-} from '../../../../utils/demo/helpers';
-import hardcodedMetaDataProvider from './hardcodedMetaDataProvider';
-import registerWebImageLoader from './registerWebImageLoader';
+} from '../../../../utils/demo/helpers/index.js';
+import hardcodedMetaDataProvider from './hardcodedMetaDataProvider.js';
+import registerWebImageLoader from './registerWebImageLoader.js';
 
 // This is for debugging purposes
 console.warn(

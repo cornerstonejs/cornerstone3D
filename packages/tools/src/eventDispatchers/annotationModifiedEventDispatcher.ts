@@ -1,7 +1,7 @@
 import { eventTarget, getRenderingEngine } from '@cornerstonejs/core';
-import Events from '../enums/Events';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { AnnotationModifiedEventType } from '../types/EventTypes';
+import Events from '../enums/Events.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
+import { AnnotationModifiedEventType } from '../types/EventTypes.js';
 
 /**
  * This is a callback function that is called when an annotation is modified.

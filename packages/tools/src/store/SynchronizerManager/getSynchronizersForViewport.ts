@@ -1,5 +1,5 @@
-import { state } from '../index';
-import Synchronizer from './Synchronizer';
+import { state } from '../index.js';
+import Synchronizer from './Synchronizer.js';
 
 /**
  * It returns all synchronizers that are not disabled and have a source viewport

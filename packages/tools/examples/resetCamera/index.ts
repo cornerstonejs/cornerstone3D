@@ -17,7 +17,7 @@ import {
   camera as cameraHelpers,
   setCtTransferFunctionForVolumeActor,
   addToggleButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 
 const {
   PanTool,

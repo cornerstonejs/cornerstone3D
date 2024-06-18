@@ -6,19 +6,19 @@ import * as vtkPlaneModule from '@kitware/vtk.js/Common/DataModel/Plane.js';
 import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
 
-import Events from '../enums/Events';
-import ViewportStatus from '../enums/ViewportStatus';
-import ViewportType from '../enums/ViewportType';
-import renderingEngineCache from './renderingEngineCache';
+import Events from '../enums/Events.js';
+import ViewportStatus from '../enums/ViewportStatus.js';
+import ViewportType from '../enums/ViewportType.js';
+import renderingEngineCache from './renderingEngineCache.js';
 import {
   triggerEvent,
   planar,
   isImageActor,
   actorIsA,
   isEqual,
-} from '../utilities';
-import hasNaNValues from '../utilities/hasNaNValues';
-import { EPSILON, RENDERING_DEFAULTS } from '../constants';
+} from '../utilities/index.js';
+import hasNaNValues from '../utilities/hasNaNValues.js';
+import { EPSILON, RENDERING_DEFAULTS } from '../constants/index.js';
 import type {
   ICamera,
   ActorEntry,
@@ -29,11 +29,11 @@ import type {
   FlipDirection,
   EventTypes,
   DisplayArea,
-} from '../types';
-import type { ViewportInput, IViewport } from '../types/IViewport';
-import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { getConfiguration } from '../init';
-import IImageCalibration from '../types/IImageCalibration';
+} from '../types/index.js';
+import type { ViewportInput, IViewport } from '../types/IViewport.js';
+import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera.js';
+import { getConfiguration } from '../init.js';
+import IImageCalibration from '../types/IImageCalibration.js';
 
 type vtkPlane = vtkPlaneModule.vtkPlane;
 

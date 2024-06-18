@@ -8,28 +8,28 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { addAnnotation, getAnnotations } from '../../stateManagement';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { Events } from '../../enums';
+import { addAnnotation, getAnnotations } from '../../stateManagement/index.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import { Events } from '../../enums/index.js';
 
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
-} from '../../drawingSvg';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { hideElementCursor } from '../../cursors/elementCursor';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../drawingSvg/index.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
+import { hideElementCursor } from '../../cursors/elementCursor.js';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
-import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
-import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes.js';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes.js';
+import RectangleROITool from '../annotation/RectangleROITool.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,

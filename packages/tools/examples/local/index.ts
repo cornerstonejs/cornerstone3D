@@ -1,8 +1,8 @@
 import { RenderingEngine, Types, Enums, metaData } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import htmlSetup from './htmlSetup';
-import uids from './uids';
+import htmlSetup from './htmlSetup.js';
+import uids from './uids.js';
 
 const {
   PanTool,
@@ -18,11 +18,11 @@ const { MouseBindings } = csToolsEnums;
 import {
   initDemo,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import {
   convertMultiframeImageIds,
   prefetchMetadataInformation,
-} from '../../../../utils/demo/helpers/convertMultiframeImageIds';
+} from '../../../../utils/demo/helpers/convertMultiframeImageIds.js';
 
 // This is for debugging purposes
 console.warn(

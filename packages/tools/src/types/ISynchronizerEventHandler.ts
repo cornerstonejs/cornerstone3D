@@ -1,5 +1,5 @@
 import { Types } from '@cornerstonejs/core';
-import { Synchronizer } from '../store';
+import { Synchronizer } from '../store/index.js';
 
 export default interface ISynchronizerEventHandler {
   (

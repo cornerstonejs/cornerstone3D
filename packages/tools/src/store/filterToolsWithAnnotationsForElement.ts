@@ -1,5 +1,5 @@
-import { getAnnotations } from '../stateManagement/annotation/annotationState';
-import { ToolAnnotationsPair } from '../types/InternalToolTypes';
+import { getAnnotations } from '../stateManagement/annotation/annotationState.js';
+import { ToolAnnotationsPair } from '../types/InternalToolTypes.js';
 import type AnnotationTool from '../tools/base/AnnotationTool.js';
 import BaseTool from '../tools/base/BaseTool.js';
 import { getEnabledElement } from '@cornerstonejs/core';

@@ -16,7 +16,7 @@ import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture.js';
 import vtkOpenGLVolume from '@kitware/vtk.js/Rendering/OpenGL/Volume.js';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper.js';
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory.js';
-import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
+import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper.js';
 
 /**
  * vtkStreamingOpenGLViewNodeFactory - A fork of the vtkOpenGLViewNodeFactory,

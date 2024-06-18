@@ -1,4 +1,4 @@
-import isObject from './isObject';
+import isObject from './isObject.js';
 
 /**
  * Creates a debounced function that delays invoking `func` until after `wait`

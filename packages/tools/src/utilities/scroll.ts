@@ -8,7 +8,7 @@ import {
   getEnabledElement,
   VideoViewport,
 } from '@cornerstonejs/core';
-import { ScrollOptions, EventTypes } from '../types';
+import { ScrollOptions, EventTypes } from '../types/index.js';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided

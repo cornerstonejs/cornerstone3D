@@ -1,4 +1,4 @@
-import getCanvasCircleRadius from './getCanvasCircleRadius';
-import getCanvasCircleCorners from './getCanvasCircleCorners';
+import getCanvasCircleRadius from './getCanvasCircleRadius.js';
+import getCanvasCircleCorners from './getCanvasCircleCorners.js';
 
 export { getCanvasCircleRadius, getCanvasCircleCorners };

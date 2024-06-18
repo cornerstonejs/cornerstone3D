@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-import { fillInsideSphere } from './fillSphere';
+import { fillInsideSphere } from './fillSphere.js';
 
 type OperationData = {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];

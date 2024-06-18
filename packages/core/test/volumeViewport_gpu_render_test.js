@@ -1,5 +1,5 @@
-import * as cornerstone3D from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+import * as cornerstone3D from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource.js';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper.js';

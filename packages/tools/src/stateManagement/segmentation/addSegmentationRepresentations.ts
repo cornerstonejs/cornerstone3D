@@ -2,13 +2,13 @@ import _cloneDeep from 'lodash.clonedeep';
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
-} from '../../types/SegmentationStateTypes';
-import Representations from '../../enums/SegmentationRepresentations';
-import { getToolGroup } from '../../store/ToolGroupManager';
+} from '../../types/SegmentationStateTypes.js';
+import Representations from '../../enums/SegmentationRepresentations.js';
+import { getToolGroup } from '../../store/ToolGroupManager/index.js';
 
-import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { contourDisplay } from '../../tools/displayTools/Contour';
-import { surfaceDisplay } from '../../tools/displayTools/Surface';
+import { labelmapDisplay } from '../../tools/displayTools/Labelmap/index.js';
+import { contourDisplay } from '../../tools/displayTools/Contour/index.js';
+import { surfaceDisplay } from '../../tools/displayTools/Surface/index.js';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified

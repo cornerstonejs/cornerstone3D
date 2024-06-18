@@ -1,5 +1,5 @@
 import macro from '@kitware/vtk.js/macros.js';
-import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow';
+import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow.js';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer.js';
 import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow.js';
 import vtkRenderWindowInteractor from '@kitware/vtk.js/Rendering/Core/RenderWindowInteractor.js';

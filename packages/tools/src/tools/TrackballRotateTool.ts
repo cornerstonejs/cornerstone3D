@@ -3,8 +3,8 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { BaseTool } from './base';
+import { EventTypes, PublicToolProps, ToolProps } from '../types/index.js';
+import { BaseTool } from './base/index.js';
 
 /**
  * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.

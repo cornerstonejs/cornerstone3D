@@ -1,6 +1,6 @@
-import { IViewport } from '../types';
-import { StackViewport, VolumeViewport } from '../RenderingEngine';
-import cache from '../cache';
+import { IViewport } from '../types/index.js';
+import { StackViewport, VolumeViewport } from '../RenderingEngine/index.js';
+import cache from '../cache/index.js';
 
 function getViewportModality(viewport: IViewport, volumeId?: string): string {
   if (viewport instanceof StackViewport) {

@@ -1,6 +1,6 @@
-import * as cornerstone3D from '../src/index';
-import * as csTools3d from '../../tools/src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+import * as cornerstone3D from '../src/index.js';
+import * as csTools3d from '../../tools/src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
 
 // nearest neighbor interpolation
 import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png';

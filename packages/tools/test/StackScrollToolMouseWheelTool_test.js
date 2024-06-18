@@ -1,6 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
-import * as csTools3d from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+import * as csTools3d from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
 
 import * as volumeURI_100_100_10_1_1_1_0_scrolled from './groundTruth/volumeURI_100_100_10_1_1_1_0_scrolled.png';
 import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_64_0_20_1_1_0_scrolled.png';

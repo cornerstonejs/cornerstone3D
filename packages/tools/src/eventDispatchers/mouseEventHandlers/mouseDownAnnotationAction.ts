@@ -1,12 +1,12 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { state } from '../../store';
-import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import { state } from '../../store/index.js';
+import { ToolModes } from '../../enums/index.js';
+import { EventTypes } from '../../types/index.js';
 
 // Util
-import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
-import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
-import getToolsWithActionsForMouseEvent from '../shared/getToolsWithActionsForMouseEvent';
+import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement.js';
+import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools.js';
+import getToolsWithActionsForMouseEvent from '../shared/getToolsWithActionsForMouseEvent.js';
 
 const { Active, Passive } = ToolModes;
 

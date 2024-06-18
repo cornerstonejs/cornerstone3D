@@ -1,5 +1,5 @@
-import { fillInsideRectangle, fillOutsideRectangle } from './fillRectangle';
-import { fillInsideCircle, fillOutsideCircle } from './fillCircle';
+import { fillInsideRectangle, fillOutsideRectangle } from './fillRectangle.js';
+import { fillInsideCircle, fillOutsideCircle } from './fillCircle.js';
 
 export {
   fillInsideRectangle,

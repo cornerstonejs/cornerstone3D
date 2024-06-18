@@ -1,3 +1,3 @@
-import surfaceDisplay from './surfaceDisplay';
+import surfaceDisplay from './surfaceDisplay.js';
 
 export { surfaceDisplay };

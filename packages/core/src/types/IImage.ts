@@ -1,7 +1,7 @@
-import CPUFallbackLUT from './CPUFallbackLUT';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import { PixelDataTypedArray } from './PixelDataTypedArray';
+import CPUFallbackLUT from './CPUFallbackLUT.js';
+import CPUFallbackColormap from './CPUFallbackColormap.js';
+import CPUFallbackEnabledElement from './CPUFallbackEnabledElement.js';
+import { PixelDataTypedArray } from './PixelDataTypedArray.js';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering

@@ -1,4 +1,4 @@
-import { vec2 } from '../src/utilities/math';
+import { vec2 } from '../src/utilities/math/index.js';
 
 describe('Cornerstone-tools Utilities:', function () {
   it('Should successfully find the closest point to the target point', () => {

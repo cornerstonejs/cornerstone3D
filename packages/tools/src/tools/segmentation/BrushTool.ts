@@ -7,34 +7,34 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
-import { BaseTool } from '../base';
+} from '../../types/index.js';
+import { BaseTool } from '../base/index.js';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
-} from './strategies/fillSphere';
-import { eraseInsideSphere } from './strategies/eraseSphere';
+} from './strategies/fillSphere.js';
+import { eraseInsideSphere } from './strategies/eraseSphere.js';
 import {
   thresholdInsideCircle,
   fillInsideCircle,
-} from './strategies/fillCircle';
-import { eraseInsideCircle } from './strategies/eraseCircle';
-import { Events, ToolModes } from '../../enums';
-import { drawCircle as drawCircleSvg } from '../../drawingSvg';
+} from './strategies/fillCircle.js';
+import { eraseInsideCircle } from './strategies/eraseCircle.js';
+import { Events, ToolModes } from '../../enums/index.js';
+import { drawCircle as drawCircleSvg } from '../../drawingSvg/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 
-import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 import {
   config as segmentationConfig,
   segmentLocking,
   segmentIndex as segmentIndexController,
   state as segmentationState,
   activeSegmentation,
-} from '../../stateManagement/segmentation';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+} from '../../stateManagement/segmentation/index.js';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes.js';
 
 /**
  * @public

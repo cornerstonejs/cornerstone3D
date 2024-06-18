@@ -4,7 +4,7 @@ import {
   wheelEventListener,
   touchEventListeners,
   keyEventListener,
-} from '../eventListeners';
+} from '../eventListeners/index.js';
 import {
   imageRenderedEventDispatcher,
   cameraModifiedEventDispatcher,
@@ -12,17 +12,17 @@ import {
   keyboardToolEventDispatcher,
   imageSpacingCalibratedEventDispatcher,
   touchToolEventDispatcher,
-} from '../eventDispatchers';
+} from '../eventDispatchers/index.js';
 // ~~
 
-import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement';
-import { state } from './state';
-import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement';
-import { ToolModes } from '../enums';
-import { removeAnnotation } from '../stateManagement';
-import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersForViewport';
-import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport';
-import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender';
+import filterToolsWithAnnotationsForElement from './filterToolsWithAnnotationsForElement.js';
+import { state } from './state.js';
+import getToolsWithModesForElement from '../utilities/getToolsWithModesForElement.js';
+import { ToolModes } from '../enums/index.js';
+import { removeAnnotation } from '../stateManagement/index.js';
+import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersForViewport.js';
+import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport.js';
+import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender.js';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 

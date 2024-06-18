@@ -1,4 +1,4 @@
-import { Point2, Point4, CPUFallbackLookupTable } from '../../../../types';
+import { Point2, Point4, CPUFallbackLookupTable } from '../../../../types/index.js';
 
 // This code was created based on vtkLookupTable
 // http://www.vtk.org/doc/release/5.0/html/a01697.html

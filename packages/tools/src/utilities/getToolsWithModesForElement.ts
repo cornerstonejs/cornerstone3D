@@ -1,5 +1,5 @@
-import { ToolGroupManager } from '../store';
-import { ToolModes } from '../enums';
+import { ToolGroupManager } from '../store/index.js';
+import { ToolModes } from '../enums/index.js';
 import { getEnabledElement } from '@cornerstonejs/core';
 
 type ModesFilter = Array<ToolModes>;

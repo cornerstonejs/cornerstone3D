@@ -1,4 +1,4 @@
-import ImageLoaderFn from './ImageLoaderFn';
+import ImageLoaderFn from './ImageLoaderFn.js';
 
 /**
  * Register image loader interface

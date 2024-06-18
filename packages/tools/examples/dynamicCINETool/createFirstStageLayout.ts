@@ -1,8 +1,8 @@
-import createChildEl from './createChildEl';
+import createChildEl from './createChildEl.js';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 
 const MAX_NUM_TIMEPOINTS = 40;
 

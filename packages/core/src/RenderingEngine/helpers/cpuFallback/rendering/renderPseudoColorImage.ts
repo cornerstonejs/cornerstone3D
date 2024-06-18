@@ -1,14 +1,14 @@
-import setToPixelCoordinateSystem from './setToPixelCoordinateSystem';
-import now from './now';
-import initializeRenderCanvas from './initializeRenderCanvas';
-import getLut from './getLut';
-import saveLastRendered from './saveLastRendered';
-import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
-import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToCanvasImageDataPseudocolorLUT';
-import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
-import * as colors from '../colors/index';
-import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
-import { clamp } from '../../../../utilities';
+import setToPixelCoordinateSystem from './setToPixelCoordinateSystem.js';
+import now from './now.js';
+import initializeRenderCanvas from './initializeRenderCanvas.js';
+import getLut from './getLut.js';
+import saveLastRendered from './saveLastRendered.js';
+import doesImageNeedToBeRendered from './doesImageNeedToBeRendered.js';
+import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToCanvasImageDataPseudocolorLUT.js';
+import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET.js';
+import * as colors from '../colors/index.js';
+import type { IImage, CPUFallbackEnabledElement } from '../../../../types/index.js';
+import { clamp } from '../../../../utilities/index.js';
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate

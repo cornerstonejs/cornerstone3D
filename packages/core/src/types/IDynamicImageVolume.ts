@@ -1,4 +1,4 @@
-import { IImageVolume, VolumeScalarData } from '../types';
+import { IImageVolume, VolumeScalarData } from '../types/index.js';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class

@@ -1,5 +1,5 @@
-import { state } from '../index';
-import Synchronizer from './Synchronizer';
+import { state } from '../index.js';
+import Synchronizer from './Synchronizer.js';
 
 /**
  * Return the array of synchronizers

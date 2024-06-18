@@ -1,16 +1,16 @@
-import now from './now';
-import generateColorLUT from './generateColorLUT';
-import storedColorPixelDataToCanvasImageData from './storedColorPixelDataToCanvasImageData';
-import storedRGBAPixelDataToCanvasImageData from './storedRGBAPixelDataToCanvasImageData';
-import setToPixelCoordinateSystem from './setToPixelCoordinateSystem';
-import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
-import initializeRenderCanvas from './initializeRenderCanvas';
-import saveLastRendered from './saveLastRendered';
+import now from './now.js';
+import generateColorLUT from './generateColorLUT.js';
+import storedColorPixelDataToCanvasImageData from './storedColorPixelDataToCanvasImageData.js';
+import storedRGBAPixelDataToCanvasImageData from './storedRGBAPixelDataToCanvasImageData.js';
+import setToPixelCoordinateSystem from './setToPixelCoordinateSystem.js';
+import doesImageNeedToBeRendered from './doesImageNeedToBeRendered.js';
+import initializeRenderCanvas from './initializeRenderCanvas.js';
+import saveLastRendered from './saveLastRendered.js';
 import {
   IImage,
   CPUFallbackViewport,
   CPUFallbackEnabledElement,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 /**
  * Generates an appropriate Look Up Table to render the given image with the given window width and level (specified in the viewport)

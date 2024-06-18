@@ -1,5 +1,5 @@
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
-import { ContourData, IContour, Point3 } from './';
+import { ContourData, IContour, Point3 } from './/index.js';
 
 /**
  * This class represents a set of contours in 3d space.

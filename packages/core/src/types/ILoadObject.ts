@@ -1,6 +1,6 @@
-import { ImageVolume } from './../cache/classes/ImageVolume';
-import IGeometry from './IGeometry';
-import IImage from './IImage';
+import { ImageVolume } from './../cache/classes/ImageVolume.js';
+import IGeometry from './IGeometry.js';
+import IImage from './IImage.js';
 
 /**
  * ImageLoadObject interface which any imageLoader should return

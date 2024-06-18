@@ -1,6 +1,6 @@
-import getModalityLut from './getModalityLut';
-import getVOILUT from './getVOILut';
-import { IImage, CPUFallbackLUT } from '../../../../types';
+import getModalityLut from './getModalityLut.js';
+import getVOILUT from './getVOILut.js';
+import { IImage, CPUFallbackLUT } from '../../../../types/index.js';
 
 /**
  * Creates a LUT used while rendering to convert stored pixel values to

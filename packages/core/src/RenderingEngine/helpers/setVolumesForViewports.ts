@@ -1,9 +1,9 @@
-import BaseVolumeViewport from '../BaseVolumeViewport';
+import BaseVolumeViewport from '../BaseVolumeViewport.js';
 import type {
   IVolumeInput,
   IRenderingEngine,
   IVolumeViewport,
-} from '../../types';
+} from '../../types/index.js';
 
 /**
  * Similar to {@link addVolumesToViewports} it adds volumes to viewports; however,

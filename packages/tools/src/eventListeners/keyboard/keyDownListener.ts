@@ -1,7 +1,7 @@
 import _cloneDeep from 'lodash.clonedeep';
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
-import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes';
+import Events from '../../enums/Events.js';
+import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes.js';
 
 interface IKeyDownListenerState {
   renderingEngineId: string;

@@ -3,36 +3,36 @@ import type {
   Annotations,
   AnnotationState,
   GroupSpecificAnnotations,
-} from './AnnotationTypes';
-import type * as EventTypes from './EventTypes';
-import type * as LabelmapTypes from './LabelmapTypes';
-import type IPoints from './IPoints';
-import type ITouchPoints from './ITouchPoints';
-import type IDistance from './IDistance';
-import type PlanarBoundingBox from './PlanarBoundingBox';
+} from './AnnotationTypes.js';
+import type * as EventTypes from './EventTypes.js';
+import type * as LabelmapTypes from './LabelmapTypes.js';
+import type IPoints from './IPoints.js';
+import type ITouchPoints from './ITouchPoints.js';
+import type IDistance from './IDistance.js';
+import type PlanarBoundingBox from './PlanarBoundingBox.js';
 import type {
   SetToolBindingsType,
   IToolBinding,
   ToolOptionsType,
-} from './ISetToolModeOptions';
-import type IToolGroup from './IToolGroup';
-import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
-import type * as AnnotationStyle from './AnnotationStyle';
-import type ToolHandle from './ToolHandle';
-import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
-import type InteractionTypes from './InteractionTypes';
-import type ToolAction from './ToolAction';
+} from './ISetToolModeOptions.js';
+import type IToolGroup from './IToolGroup.js';
+import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes.js';
+import type * as AnnotationStyle from './AnnotationStyle.js';
+import type ToolHandle from './ToolHandle.js';
+import type { AnnotationHandle, TextBoxHandle } from './ToolHandle.js';
+import type InteractionTypes from './InteractionTypes.js';
+import type ToolAction from './ToolAction.js';
 import type {
   ToolProps,
   PublicToolProps,
   ToolConfiguration,
-} from './ToolProps';
-import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
-import type JumpToSliceOptions from './JumpToSliceOptions';
-import type ScrollOptions from './ScrollOptions';
-import type BoundsIJK from './BoundsIJK';
-import type SVGDrawingHelper from './SVGDrawingHelper';
-import type * as CINETypes from './CINETypes';
+} from './ToolProps.js';
+import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes.js';
+import type JumpToSliceOptions from './JumpToSliceOptions.js';
+import type ScrollOptions from './ScrollOptions.js';
+import type BoundsIJK from './BoundsIJK.js';
+import type SVGDrawingHelper from './SVGDrawingHelper.js';
+import type * as CINETypes from './CINETypes.js';
 import type {
   Color,
   ColorLUT,
@@ -46,18 +46,18 @@ import type {
   ToolGroupSpecificRepresentation,
   SegmentationState,
   RepresentationPublicInput,
-} from './SegmentationStateTypes';
-import ISynchronizerEventHandler from './ISynchronizerEventHandler';
+} from './SegmentationStateTypes.js';
+import ISynchronizerEventHandler from './ISynchronizerEventHandler.js';
 import {
   FloodFillGetter,
   FloodFillOptions,
   FloodFillResult,
-} from './FloodFillTypes';
-import IToolClassReference from './IToolClassReference';
-import { ContourSegmentationData } from './ContourTypes';
-import IAnnotationManager from './IAnnotationManager';
-import AnnotationGroupSelector from './AnnotationGroupSelector';
-import { Statistics } from './CalculatorTypes';
+} from './FloodFillTypes.js';
+import IToolClassReference from './IToolClassReference.js';
+import { ContourSegmentationData } from './ContourTypes.js';
+import IAnnotationManager from './IAnnotationManager.js';
+import AnnotationGroupSelector from './AnnotationGroupSelector.js';
+import { Statistics } from './CalculatorTypes.js';
 
 export type {
   // AnnotationState

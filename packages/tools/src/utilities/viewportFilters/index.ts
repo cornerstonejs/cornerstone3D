@@ -1,7 +1,7 @@
-import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID';
-import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled';
-import getViewportIdsWithToolToRender from './getViewportIdsWithToolToRender';
-import filterViewportsWithParallelNormals from './filterViewportsWithParallelNormals';
+import filterViewportsWithFrameOfReferenceUID from './filterViewportsWithFrameOfReferenceUID.js';
+import filterViewportsWithToolEnabled from './filterViewportsWithToolEnabled.js';
+import getViewportIdsWithToolToRender from './getViewportIdsWithToolToRender.js';
+import filterViewportsWithParallelNormals from './filterViewportsWithParallelNormals.js';
 
 export {
   filterViewportsWithToolEnabled,

@@ -10,12 +10,12 @@ type vtkVolume = vtkVolumeModule.vtkVolume;
 
 const vtkColorMaps = vtkColorMapsModule.vtkColorMaps;
 
-import cache from '../cache';
+import cache from '../cache/index.js';
 import {
   MPR_CAMERA_VALUES,
   RENDERING_DEFAULTS,
   VIEWPORT_PRESETS,
-} from '../constants';
+} from '../constants/index.js';
 import {
   BlendModes,
   Events,
@@ -23,11 +23,11 @@ import {
   OrientationAxis,
   ViewportStatus,
   VOILUTFunctionType,
-} from '../enums';
-import ViewportType from '../enums/ViewportType';
-import eventTarget from '../eventTarget';
-import { getShouldUseCPURendering } from '../init';
-import { loadVolume } from '../loaders/volumeLoader';
+} from '../enums/index.js';
+import ViewportType from '../enums/ViewportType.js';
+import eventTarget from '../eventTarget.js';
+import { getShouldUseCPURendering } from '../init.js';
+import { loadVolume } from '../loaders/volumeLoader.js';
 import type {
   ActorEntry,
   ColormapPublic,
@@ -39,10 +39,10 @@ import type {
   Point3,
   VOIRange,
   VolumeViewportProperties,
-} from '../types';
-import { VoiModifiedEventDetail } from '../types/EventTypes';
-import type { ViewportInput } from '../types/IViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
+} from '../types/index.js';
+import { VoiModifiedEventDetail } from '../types/EventTypes.js';
+import type { ViewportInput } from '../types/IViewport.js';
+import type IVolumeViewport from '../types/IVolumeViewport.js';
 import {
   actorIsA,
   applyPreset,
@@ -52,16 +52,16 @@ import {
   invertRgbTransferFunction,
   triggerEvent,
   colormap as colormapUtils,
-} from '../utilities';
-import { createVolumeActor } from './helpers';
+} from '../utilities/index.js';
+import { createVolumeActor } from './helpers/index.js';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
-} from './helpers/volumeNewImageEventDispatcher';
-import Viewport from './Viewport';
-import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
-import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import transformWorldToIndex from '../utilities/transformWorldToIndex';
-import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+} from './helpers/volumeNewImageEventDispatcher.js';
+import Viewport from './Viewport.js';
+import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera.js';
+import vtkSlabCamera from './vtkClasses/vtkSlabCamera.js';
+import transformWorldToIndex from '../utilities/transformWorldToIndex.js';
+import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils.js';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render

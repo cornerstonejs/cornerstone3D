@@ -10,21 +10,21 @@ import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
   getAnnotations,
-} from '../stateManagement/annotation/annotationState';
+} from '../stateManagement/annotation/annotationState.js';
 
-import { getToolGroup } from '../store/ToolGroupManager';
+import { getToolGroup } from '../store/ToolGroupManager/index.js';
 
-import { drawLine as drawLineSvg } from '../drawingSvg';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import { drawLine as drawLineSvg } from '../drawingSvg/index.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
 
 import {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
   Annotation,
-} from '../types';
-import { StyleSpecifier } from '../types/AnnotationStyle';
-import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+} from '../types/index.js';
+import { StyleSpecifier } from '../types/AnnotationStyle.js';
+import AnnotationDisplayTool from './base/AnnotationDisplayTool.js';
 
 const { EPSILON } = CONSTANTS;
 

@@ -1,5 +1,5 @@
-import { vtkSharedVolumeMapper } from '../vtkClasses';
-import { getConfiguration } from '../../init';
+import { vtkSharedVolumeMapper } from '../vtkClasses/index.js';
+import { getConfiguration } from '../../init.js';
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
  * from which various volume actors can be created.

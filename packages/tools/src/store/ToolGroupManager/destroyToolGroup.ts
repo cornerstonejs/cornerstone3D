@@ -1,6 +1,6 @@
-import { state } from '../index';
-import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmentation';
-import { segmentationRenderingEngine } from '../../utilities/segmentation/triggerSegmentationRender';
+import { state } from '../index.js';
+import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmentation/index.js';
+import { segmentationRenderingEngine } from '../../utilities/segmentation/triggerSegmentationRender.js';
 // ToolGroups function entirely by their "state" being queried and leveraged
 // removing a ToolGroup from state is equivalent to killing it
 

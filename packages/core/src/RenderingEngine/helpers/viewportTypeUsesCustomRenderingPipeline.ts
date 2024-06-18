@@ -1,4 +1,4 @@
-import viewportTypeToViewportClass from './viewportTypeToViewportClass';
+import viewportTypeToViewportClass from './viewportTypeToViewportClass.js';
 
 export default function viewportTypeUsesCustomRenderingPipeline(
   viewportType: string

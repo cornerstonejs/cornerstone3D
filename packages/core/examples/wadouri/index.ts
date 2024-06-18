@@ -8,8 +8,8 @@ import {
   addButtonToToolbar,
   setTitleAndDescription,
   ctVoiRange,
-} from '../../../../utils/demo/helpers';
-import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
+} from '../../../../utils/demo/helpers/index.js';
+import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader.js';
 import { init as csRenderInit } from '@cornerstonejs/core';
 
 // This is for debugging purposes

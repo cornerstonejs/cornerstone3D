@@ -1,7 +1,7 @@
-import computeAutoVoi from './computeAutoVoi';
-import lutMatches from './lutMatches';
-import generateLut from './generateLut';
-import { IImage, CPUFallbackViewport } from '../../../../types';
+import computeAutoVoi from './computeAutoVoi.js';
+import lutMatches from './lutMatches.js';
+import generateLut from './generateLut.js';
+import { IImage, CPUFallbackViewport } from '../../../../types/index.js';
 
 /**
  * Retrieve or generate a LUT Array for an Image and Viewport

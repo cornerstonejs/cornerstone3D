@@ -1,4 +1,4 @@
-import { Types } from '..';
+import { Types } from '../index.js';
 
 type actorTypes = 'vtkActor' | 'vtkVolume' | 'vtkImageSlice';
 

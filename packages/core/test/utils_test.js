@@ -1,4 +1,4 @@
-import { getRuntimeId, isEqual, planar, isOpposite } from '../src/utilities';
+import { getRuntimeId, isEqual, planar, isOpposite } from '../src/utilities/index.js';
 
 describe('Cornerstone-render Utilities:', function () {
   it('Should correctly get runtimeIds', () => {

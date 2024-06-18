@@ -1,4 +1,4 @@
-import customCallbackHandler from '../shared/customCallbackHandler';
+import customCallbackHandler from '../shared/customCallbackHandler.js';
 
 /**
  * touchTap - Event handler for touch tap events. Uses `customCallbackHandler` to fire

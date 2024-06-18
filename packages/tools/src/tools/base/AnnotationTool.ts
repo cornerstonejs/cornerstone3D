@@ -9,9 +9,9 @@ import type { Types } from '@cornerstonejs/core';
 
 import { vec2 } from 'gl-matrix';
 
-import AnnotationDisplayTool from './AnnotationDisplayTool';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import AnnotationDisplayTool from './AnnotationDisplayTool.js';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking.js';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility.js';
 import {
   Annotation,
   Annotations,
@@ -20,8 +20,8 @@ import {
   InteractionTypes,
   ToolProps,
   PublicToolProps,
-} from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../types/index.js';
+import { StyleSpecifier } from '../../types/AnnotationStyle.js';
 
 /**-q
  * Abstract class for tools which create and display annotations on the

@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { BaseTool } from './base';
-import { MouseWheelEventType } from '../types/EventTypes';
-import scroll from '../utilities/scroll';
+import { BaseTool } from './base/index.js';
+import { MouseWheelEventType } from '../types/EventTypes.js';
+import scroll from '../utilities/scroll.js';
 
 /**
  * The StackScrollMouseWheelTool is a tool that allows the user to scroll through a

@@ -1,4 +1,4 @@
-import { ToolModes, MouseBindings, KeyboardBindings } from '../enums';
+import { ToolModes, MouseBindings, KeyboardBindings } from '../enums/index.js';
 
 type ToolBindingMouseType = (typeof MouseBindings)[keyof typeof MouseBindings];
 

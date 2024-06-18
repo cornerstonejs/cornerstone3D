@@ -1,7 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
-import * as csTools3d from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
-import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import * as csTools3d from '../src/index.js';
+import * as testUtils from '../../../utils/test/testUtils.js';
+import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents.js';
 
 const {
   cache,

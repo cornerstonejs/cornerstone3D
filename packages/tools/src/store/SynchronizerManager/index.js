@@ -1,9 +1,9 @@
-import createSynchronizer from './createSynchronizer';
-import destroy from './destroy';
-import getSynchronizersForViewport from './getSynchronizersForViewport';
-import getSynchronizer from './getSynchronizer';
-import getAllSynchronizers from './getAllSynchronizers';
-import destroySynchronizer from './destroySynchronizer';
+import createSynchronizer from './createSynchronizer.js';
+import destroy from './destroy.js';
+import getSynchronizersForViewport from './getSynchronizersForViewport.js';
+import getSynchronizer from './getSynchronizer.js';
+import getAllSynchronizers from './getAllSynchronizers.js';
+import destroySynchronizer from './destroySynchronizer.js';
 
 export {
   createSynchronizer,

@@ -3,9 +3,9 @@ import { Types } from '@cornerstonejs/core';
 import {
   SegmentationRepresentationConfig,
   ToolGroupSpecificContourRepresentation,
-} from '../../../types';
-import { addContourSetsToElement } from './addContourSetsToElement';
-import { updateContourSets } from './updateContourSets';
+} from '../../../types/index.js';
+import { addContourSetsToElement } from './addContourSetsToElement.js';
+import { updateContourSets } from './updateContourSets.js';
 
 export function addOrUpdateContourSets(
   viewport: Types.IVolumeViewport,

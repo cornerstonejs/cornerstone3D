@@ -1,6 +1,6 @@
-import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
-import { state } from '../../store';
-import { TouchDragEventType } from '../../types/EventTypes';
+import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent.js';
+import { state } from '../../store/index.js';
+import { TouchDragEventType } from '../../types/EventTypes.js';
 
 /**
  * touchDrag - Event handler for touchDrag events. Uses `customCallbackHandler` to fire

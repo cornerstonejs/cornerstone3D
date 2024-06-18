@@ -1,4 +1,4 @@
-import { KeyboardBindings as kb } from '../../enums';
+import { KeyboardBindings as kb } from '../../enums/index.js';
 
 /**
  * Gets the mouse modifier key from a mouse event.

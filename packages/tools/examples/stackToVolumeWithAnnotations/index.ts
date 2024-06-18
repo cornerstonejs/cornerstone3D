@@ -10,12 +10,12 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   _convertVolumeToStackViewport,
   _convertStackToVolumeViewport,
-} from './_setViewports';
+} from './_setViewports.js';
 
 // This is for debugging purposes
 console.warn(

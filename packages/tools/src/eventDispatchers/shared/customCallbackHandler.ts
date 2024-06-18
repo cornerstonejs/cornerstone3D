@@ -1,5 +1,5 @@
-import { state, ToolGroupManager } from '../../store';
-import ToolModes from '../../enums/ToolModes';
+import { state, ToolGroupManager } from '../../store/index.js';
+import ToolModes from '../../enums/ToolModes.js';
 
 const { Active } = ToolModes;
 

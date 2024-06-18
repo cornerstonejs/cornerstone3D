@@ -1,5 +1,5 @@
-import { Statistics } from '../../../types';
-import Calculator from './Calculator';
+import { Statistics } from '../../../types/index.js';
+import Calculator from './Calculator.js';
 
 export default class BasicStatsCalculator extends Calculator {
   private static max = -Infinity;

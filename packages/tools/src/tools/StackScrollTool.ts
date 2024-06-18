@@ -4,9 +4,9 @@ import {
   StackViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { BaseTool } from './base';
-import { scroll } from '../utilities';
-import { PublicToolProps, ToolProps, EventTypes } from '../types';
+import { BaseTool } from './base/index.js';
+import { scroll } from '../utilities/index.js';
+import { PublicToolProps, ToolProps, EventTypes } from '../types/index.js';
 
 /**
  * The StackScrollTool is a tool that allows the user to scroll through a

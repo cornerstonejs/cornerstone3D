@@ -1,9 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { pointInSurroundingSphereCallback } from '../../../utilities';
-import isWithinThreshold from './utils/isWithinThreshold';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents.js';
+import { pointInSurroundingSphereCallback } from '../../../utilities/index.js';
+import isWithinThreshold from './utils/isWithinThreshold.js';
 
 type OperationData = {
   points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];

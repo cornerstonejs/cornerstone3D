@@ -1,4 +1,4 @@
-import { Statistics } from '../../../types';
+import { Statistics } from '../../../types/index.js';
 
 abstract class Calculator {
   static run: ({ value }) => void;

@@ -1,7 +1,7 @@
 import macro from '@kitware/vtk.js/macros.js';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture.js';
 import HalfFloat from '@kitware/vtk.js/Common/Core/HalfFloat.js';
-import { getConfiguration } from '../../init';
+import { getConfiguration } from '../../init.js';
 
 /**
  * vtkStreamingOpenGLTexture - A dervied class of the core vtkOpenGLTexture.

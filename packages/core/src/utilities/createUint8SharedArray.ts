@@ -1,5 +1,5 @@
-import global from '../global';
-import { getShouldUseSharedArrayBuffer } from '../init';
+import global from '../global.js';
+import { getShouldUseSharedArrayBuffer } from '../init.js';
 
 /**
  * A helper function that creates a new Float32Array that utilized a shared

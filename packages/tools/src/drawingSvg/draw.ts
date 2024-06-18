@@ -1,4 +1,4 @@
-import getSvgDrawingHelper from './getSvgDrawingHelper';
+import getSvgDrawingHelper from './getSvgDrawingHelper.js';
 
 function draw(
   element: HTMLDivElement,

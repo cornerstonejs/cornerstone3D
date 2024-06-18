@@ -1,6 +1,6 @@
-import { state } from '../index';
-import { IToolGroup } from '../../types';
-import { ToolModes } from '../../enums';
+import { state } from '../index.js';
+import { IToolGroup } from '../../types/index.js';
+import { ToolModes } from '../../enums/index.js';
 
 const MODES = [ToolModes.Active, ToolModes.Passive, ToolModes.Enabled];
 

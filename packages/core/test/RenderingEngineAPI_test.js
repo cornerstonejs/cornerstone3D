@@ -1,4 +1,4 @@
-import * as cornerstone3D from '../src/index';
+import * as cornerstone3D from '../src/index.js';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { RenderingEngine, cache, utilities, Enums } = cornerstone3D;

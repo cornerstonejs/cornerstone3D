@@ -15,8 +15,8 @@ import {
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
-} from '../../../../utils/demo/helpers';
-import circle from './Circle.json';
+} from '../../../../utils/demo/helpers/index.js';
+import circle from './Circle.json' with { type: 'json' };
 
 // This is for debugging purposes
 console.warn(

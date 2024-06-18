@@ -2,7 +2,7 @@ import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
 import * as vtkMatrixBuilderModule from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
 
-import { AnnotationTool } from './base';
+import { AnnotationTool } from './base/index.js';
 
 import {
   getEnabledElementByIds,
@@ -15,29 +15,29 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getToolGroup,
   getToolGroupForViewport,
-} from '../store/ToolGroupManager';
+} from '../store/ToolGroupManager/index.js';
 
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../stateManagement/annotation/annotationState';
+} from '../stateManagement/annotation/annotationState.js';
 
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
-} from '../drawingSvg';
-import { state } from '../store';
-import { Events } from '../enums';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+} from '../drawingSvg/index.js';
+import { state } from '../store/index.js';
+import { Events } from '../enums/index.js';
+import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../cursors/elementCursor';
-import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
+} from '../cursors/elementCursor.js';
+import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip.js';
 
-import * as lineSegment from '../utilities/math/line';
+import * as lineSegment from '../utilities/math/line/index.js';
 import {
   Annotation,
   Annotations,
@@ -47,9 +47,9 @@ import {
   ToolProps,
   InteractionTypes,
   SVGDrawingHelper,
-} from '../types';
-import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+} from '../types/index.js';
+import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking.js';
+import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds.js';
 import { CONSTANTS } from '@cornerstonejs/core';
 
 const vtkMatrixBuilder = vtkMatrixBuilderModule.vtkMatrixBuilder;

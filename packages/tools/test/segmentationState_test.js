@@ -1,6 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
-import * as testUtils from '../../../utils/test/testUtils';
-import * as csTools3d from '../src/index';
+import * as testUtils from '../../../utils/test/testUtils.js';
+import * as csTools3d from '../src/index.js';
 
 const {
   cache,

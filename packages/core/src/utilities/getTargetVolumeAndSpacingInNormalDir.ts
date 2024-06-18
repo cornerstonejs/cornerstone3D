@@ -1,9 +1,9 @@
-import cache from '../cache/cache';
-import { EPSILON } from '../constants';
+import cache from '../cache/cache.js';
+import { EPSILON } from '../constants/index.js';
 // import type { VolumeViewport } from '../RenderingEngine'
-import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
-import getSpacingInNormalDirection from './getSpacingInNormalDirection';
-import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
+import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types/index.js';
+import getSpacingInNormalDirection from './getSpacingInNormalDirection.js';
+import { getVolumeLoaderSchemes } from '../loaders/volumeLoader.js';
 
 // One EPSILON part larger multiplier
 const EPSILON_PART = 1 + EPSILON;

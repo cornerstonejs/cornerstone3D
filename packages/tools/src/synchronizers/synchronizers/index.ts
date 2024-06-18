@@ -1,7 +1,7 @@
-import createCameraPositionSynchronizer from './createCameraPositionSynchronizer';
-import createVOISynchronizer from './createVOISynchronizer';
-import createZoomPanSynchronizer from './createZoomPanSynchronizer';
-import createStackImageSynchronizer from './createStackImageSynchronizer';
+import createCameraPositionSynchronizer from './createCameraPositionSynchronizer.js';
+import createVOISynchronizer from './createVOISynchronizer.js';
+import createZoomPanSynchronizer from './createZoomPanSynchronizer.js';
+import createStackImageSynchronizer from './createStackImageSynchronizer.js';
 
 export {
   createCameraPositionSynchronizer,

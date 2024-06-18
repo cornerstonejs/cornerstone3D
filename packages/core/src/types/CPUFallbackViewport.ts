@@ -1,6 +1,6 @@
-import CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackLUT from './CPUFallbackLUT';
+import CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea.js';
+import CPUFallbackColormap from './CPUFallbackColormap.js';
+import CPUFallbackLUT from './CPUFallbackLUT.js';
 
 type CPUFallbackViewport = {
   scale?: number;

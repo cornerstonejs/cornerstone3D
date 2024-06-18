@@ -1,5 +1,5 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
+import Point2 from './Point2.js';
+import Point3 from './Point3.js';
 
 export interface ImagePlaneModule {
   columnCosines?: Point3;

@@ -1,9 +1,9 @@
-import createVolumeActor from './createVolumeActor';
-import createVolumeMapper from './createVolumeMapper';
-import getOrCreateCanvas from './getOrCreateCanvas';
-import setVolumesForViewports from './setVolumesForViewports';
-import addVolumesToViewports from './addVolumesToViewports';
-import volumeNewImageEventDispatcher from './volumeNewImageEventDispatcher';
+import createVolumeActor from './createVolumeActor.js';
+import createVolumeMapper from './createVolumeMapper.js';
+import getOrCreateCanvas from './getOrCreateCanvas.js';
+import setVolumesForViewports from './setVolumesForViewports.js';
+import addVolumesToViewports from './addVolumesToViewports.js';
+import volumeNewImageEventDispatcher from './volumeNewImageEventDispatcher.js';
 
 export {
   createVolumeActor,

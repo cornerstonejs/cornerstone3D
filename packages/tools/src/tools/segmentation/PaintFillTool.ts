@@ -5,19 +5,19 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import { BaseTool } from '../base/index.js';
+import { PublicToolProps, ToolProps, EventTypes } from '../../types/index.js';
 
-import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents.js';
 import {
   segmentLocking,
   activeSegmentation,
   segmentIndex as segmentIndexController,
-} from '../../stateManagement/segmentation';
-import floodFill from '../../utilities/segmentation/floodFill';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { FloodFillResult, FloodFillGetter } from '../../types';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+} from '../../stateManagement/segmentation/index.js';
+import floodFill from '../../utilities/segmentation/floodFill.js';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { FloodFillResult, FloodFillGetter } from '../../types/index.js';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes.js';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 

@@ -1,4 +1,4 @@
-import * as cornerstone3D from '../src/index';
+import * as cornerstone3D from '../src/index.js';
 
 const { imageLoader, cache } = cornerstone3D;
 

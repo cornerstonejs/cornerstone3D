@@ -1,6 +1,6 @@
-import { getRenderingEngine } from '../RenderingEngine';
-import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
-import { IStackViewport, IVolumeViewport } from '../types';
+import { getRenderingEngine } from '../RenderingEngine/index.js';
+import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine.js';
+import { IStackViewport, IVolumeViewport } from '../types/index.js';
 
 type Viewport = IStackViewport | IVolumeViewport;
 

@@ -1,16 +1,16 @@
-import { addTool, removeTool } from './addTool';
-import addEnabledElement from './addEnabledElement';
-import removeEnabledElement from './removeEnabledElement';
-import cancelActiveManipulations from './cancelActiveManipulations';
+import { addTool, removeTool } from './addTool.js';
+import addEnabledElement from './addEnabledElement.js';
+import removeEnabledElement from './removeEnabledElement.js';
+import cancelActiveManipulations from './cancelActiveManipulations.js';
 //
 
-import Synchronizer from './SynchronizerManager/Synchronizer';
+import Synchronizer from './SynchronizerManager/Synchronizer.js';
 
-import svgNodeCache from './svgNodeCache';
-import state from './state';
+import svgNodeCache from './svgNodeCache.js';
+import state from './state.js';
 
-import * as ToolGroupManager from './ToolGroupManager';
-import * as SynchronizerManager from './SynchronizerManager';
+import * as ToolGroupManager from './ToolGroupManager/index.js';
+import * as SynchronizerManager from './SynchronizerManager/index.js';
 
 export {
   // Store

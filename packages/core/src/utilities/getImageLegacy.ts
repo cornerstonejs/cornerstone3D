@@ -1,5 +1,5 @@
-import { StackViewport, Types } from '..';
-import getEnabledElement from '../getEnabledElement';
+import { StackViewport, Types } from '../index.js';
+import getEnabledElement from '../getEnabledElement.js';
 
 /**
  * Gets the IImage rendered by the given element. This is provided as a

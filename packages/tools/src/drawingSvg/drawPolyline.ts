@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import _getHash from './_getHash';
-import setNewAttributesIfValid from './setNewAttributesIfValid';
-import setAttributesIfNecessary from './setAttributesIfNecessary';
-import { SVGDrawingHelper } from '../types';
+import _getHash from './_getHash.js';
+import setNewAttributesIfValid from './setNewAttributesIfValid.js';
+import setAttributesIfNecessary from './setAttributesIfNecessary.js';
+import { SVGDrawingHelper } from '../types/index.js';
 
 /**
  * Draws an SVG polyline with the given points.

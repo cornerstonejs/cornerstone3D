@@ -1,12 +1,12 @@
 import {
   getFirstIntersectionWithPolyline,
   getClosestIntersectionWithPolyline,
-} from './getIntersectionWithPolyline';
-import getSubPixelSpacingAndXYDirections from './getSubPixelSpacingAndXYDirections';
-import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity';
-import addCanvasPointsToArray from './addCanvasPointsToArray';
-import pointCanProjectOnLine from './pointCanProjectOnLine';
-import calculateAreaOfPoints from './calculateAreaOfPoints';
+} from './getIntersectionWithPolyline.js';
+import getSubPixelSpacingAndXYDirections from './getSubPixelSpacingAndXYDirections.js';
+import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity.js';
+import addCanvasPointsToArray from './addCanvasPointsToArray.js';
+import pointCanProjectOnLine from './pointCanProjectOnLine.js';
+import calculateAreaOfPoints from './calculateAreaOfPoints.js';
 
 export {
   getFirstIntersectionWithPolyline,

@@ -1,3 +1,3 @@
-import getBoundsIJKFromRectangleAnnotations from './getBoundsIJKFromRectangleAnnotations';
+import getBoundsIJKFromRectangleAnnotations from './getBoundsIJKFromRectangleAnnotations.js';
 
 export { getBoundsIJKFromRectangleAnnotations };

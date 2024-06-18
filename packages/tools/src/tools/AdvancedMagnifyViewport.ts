@@ -9,18 +9,18 @@ import {
   SegmentationRepresentations,
   ToolModes,
   Events as cstEvents,
-} from '../enums';
-import { ToolGroupManager, state } from '../store';
-import { debounce } from '../utilities';
-import { ToolModeChangedEventType } from '../types/EventTypes';
-import { segmentation } from '..';
-import { EventTypes, IToolGroup } from '../types';
+} from '../enums/index.js';
+import { ToolGroupManager, state } from '../store/index.js';
+import { debounce } from '../utilities/index.js';
+import { ToolModeChangedEventType } from '../types/EventTypes.js';
+import { segmentation } from '../index.js';
+import { EventTypes, IToolGroup } from '../types/index.js';
 import {
   AnnotationTool,
   AdvancedMagnifyTool,
   SegmentationDisplayTool,
-} from './';
-import { distanceToPoint } from '../utilities/math/point';
+} from './/index.js';
+import { distanceToPoint } from '../utilities/math/point/index.js';
 
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;

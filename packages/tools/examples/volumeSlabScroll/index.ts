@@ -10,9 +10,9 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-} from '../../../../utils/demo/helpers';
+} from '../../../../utils/demo/helpers/index.js';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
+import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar.js';
 
 // This is for debugging purposes
 console.warn(

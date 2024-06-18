@@ -1,11 +1,11 @@
-import { ToolModes, AnnotationStyleStates } from '../enums';
-import MouseCursor from './MouseCursor';
-import ImageMouseCursor from './ImageMouseCursor';
-import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor';
-import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
+import { ToolModes, AnnotationStyleStates } from '../enums/index.js';
+import MouseCursor from './MouseCursor.js';
+import ImageMouseCursor from './ImageMouseCursor.js';
+import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor.js';
+import { getStyleProperty } from '../stateManagement/annotation/config/helpers.js';
 
-import type { StyleSpecifier } from '../types/AnnotationStyle';
-import type { SVGCursorDescriptor } from '../types';
+import type { StyleSpecifier } from '../types/AnnotationStyle.js';
+import type { SVGCursorDescriptor } from '../types/index.js';
 
 const PROPERTY = 'color';
 const STATE = AnnotationStyleStates.Highlighted;

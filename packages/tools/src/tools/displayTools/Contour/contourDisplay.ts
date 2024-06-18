@@ -5,18 +5,18 @@ import {
   StackViewport,
 } from '@cornerstonejs/core';
 
-import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
+import Representations from '../../../enums/SegmentationRepresentations.js';
+import * as SegmentationConfig from '../../../stateManagement/segmentation/config/segmentationConfig.js';
+import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState.js';
+import { getToolGroup } from '../../../store/ToolGroupManager/index.js';
 import {
   RepresentationPublicInput,
   SegmentationRepresentationConfig,
   ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
-import { addOrUpdateContourSets } from './addOrUpdateContourSets';
-import removeContourFromElement from './removeContourFromElement';
-import { deleteConfigCache } from './contourConfigCache';
+} from '../../../types/SegmentationStateTypes.js';
+import { addOrUpdateContourSets } from './addOrUpdateContourSets.js';
+import removeContourFromElement from './removeContourFromElement.js';
+import { deleteConfigCache } from './contourConfigCache.js';
 
 /**
  * It adds a new segmentation representation to the segmentation state

@@ -1,4 +1,4 @@
-import { MouseBindings, ToolModes } from '../../enums';
+import { MouseBindings, ToolModes } from '../../enums/index.js';
 import cloneDeep from 'lodash.clonedeep';
 import get from 'lodash.get';
 import {
@@ -11,12 +11,12 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { Events } from '../../enums';
+import { Events } from '../../enums/index.js';
 import {
   ToolActivatedEventDetail,
   ToolModeChangedEventDetail,
-} from '../../types/EventTypes';
-import { ToolGroupManager, state } from '../index';
+} from '../../types/EventTypes.js';
+import { ToolGroupManager, state } from '../index.js';
 import {
   IToolBinding,
   IToolClassReference,
@@ -24,10 +24,10 @@ import {
   SetToolBindingsType,
   ToolOptionsType,
   ToolConfiguration,
-} from '../../types';
+} from '../../types/index.js';
 
-import { MouseCursor, SVGMouseCursor } from '../../cursors';
-import { initElementCursor } from '../../cursors/elementCursor';
+import { MouseCursor, SVGMouseCursor } from '../../cursors/index.js';
+import { initElementCursor } from '../../cursors/elementCursor.js';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 

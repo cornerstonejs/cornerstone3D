@@ -1,34 +1,34 @@
 import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
+import { BaseTool } from '../base/index.js';
 import {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
-} from '../../types';
-import { fillInsideRectangle } from './strategies/fillRectangle';
-import { eraseInsideRectangle } from './strategies/eraseRectangle';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+} from '../../types/index.js';
+import { fillInsideRectangle } from './strategies/fillRectangle.js';
+import { eraseInsideRectangle } from './strategies/eraseRectangle.js';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters/index.js';
 
-import { Events } from '../../enums';
-import { drawRect as drawRectSvg } from '../../drawingSvg';
+import { Events } from '../../enums/index.js';
+import { drawRect as drawRectSvg } from '../../drawingSvg/index.js';
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../cursors/elementCursor.js';
 
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds.js';
 import {
   config as segmentationConfig,
   segmentLocking,
   segmentIndex as segmentIndexController,
   activeSegmentation,
-} from '../../stateManagement/segmentation';
+} from '../../stateManagement/segmentation/index.js';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState.js';
+import { LabelmapSegmentationData } from '../../types/LabelmapTypes.js';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the

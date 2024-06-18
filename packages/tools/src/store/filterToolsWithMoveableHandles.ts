@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   ToolAnnotationsPair,
   ToolsWithMoveableHandles,
-} from '../types/InternalToolTypes';
+} from '../types/InternalToolTypes.js';
 
 /**
  * Filters an array of tools, returning only tools with moveable handles at the mouse location that are not locked

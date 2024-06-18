@@ -1,8 +1,8 @@
-import { state } from './setDefaultViewport';
+import { state } from './setDefaultViewport.js';
 import {
   CPUFallbackViewportDisplayedArea,
   CPUFallbackViewport,
-} from '../../../../types';
+} from '../../../../types/index.js';
 
 // eslint-disable-next-line valid-jsdoc
 /**
