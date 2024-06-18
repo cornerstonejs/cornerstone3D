@@ -1,6 +1,6 @@
 import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
+import * as vtkMatrixBuilderModule from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
 
 import { AnnotationTool } from './base';
 
@@ -51,6 +51,8 @@ import {
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { CONSTANTS } from '@cornerstonejs/core';
+
+const vtkMatrixBuilder = vtkMatrixBuilderModule.vtkMatrixBuilder;
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 

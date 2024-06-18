@@ -1,5 +1,5 @@
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction.js';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+import * as vtkPiecewiseFunctionModule from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction.js';
+import * as vtkColorTransferFunctionModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
 
 import {
   cache,
@@ -26,6 +26,13 @@ import addLabelmapToElement from './addLabelmapToElement';
 
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 
+type vtkColorTransferFunctionInstance = ReturnType<
+  typeof vtkColorTransferFunctionModule.vtkColorTransferFunction.newInstance
+>;
+type vtkPiecewiseFunctionInstance = ReturnType<
+  typeof vtkPiecewiseFunctionModule.vtkPiecewiseFunction.newInstance
+>;
+
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
@@ -50,8 +57,8 @@ async function addSegmentationRepresentation(
   const segmentsHidden = new Set() as Set<number>;
   const colorLUTIndex = 0;
   const active = true;
-  const cfun = vtkColorTransferFunction.newInstance();
-  const ofun = vtkPiecewiseFunction.newInstance();
+  const cfun = vtkColorTransferFunctionModule.newInstance();
+  const ofun = vtkPiecewiseFunctionModule.newInstance();
 
   ofun.addPoint(0, 0);
 
@@ -245,8 +252,8 @@ async function render(
 function _setLabelmapColorAndOpacity(
   viewportId: string,
   actorEntry: Types.ActorEntry,
-  cfun: vtkColorTransferFunction,
-  ofun: vtkPiecewiseFunction,
+  cfun: vtkColorTransferFunctionInstance,
+  ofun: vtkPiecewiseFunctionInstance,
   colorLUTIndex: number,
   toolGroupLabelmapConfig: LabelmapConfig,
   segmentationRepresentation: ToolGroupSpecificRepresentation,

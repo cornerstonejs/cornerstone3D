@@ -1,4 +1,4 @@
-import vtkOrientationMarkerWidget from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget.js';
+import * as vtkOrientationMarkerWidgetModule from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWidget.js';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor.js';
 import vtkAxesActor from '@kitware/vtk.js/Rendering/Core/AxesActor.js';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
@@ -9,6 +9,9 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
 import { BaseTool } from './base';
 import { getRenderingEngines } from '@cornerstonejs/core';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
+
+const vtkOrientationMarkerWidget =
+  vtkOrientationMarkerWidgetModule.vtkOrientationMarkerWidget;
 
 const OverlayMarkerType = {
   ANNOTATED_CUBE: 1,

@@ -1,5 +1,5 @@
 import { cache, Types } from '@cornerstonejs/core';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import * as vtkActorModule from '@kitware/vtk.js/Rendering/Core/Actor.js';
 
 import {
   SegmentationRepresentationConfig,
@@ -7,6 +7,8 @@ import {
 } from '../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
 import { getSegmentSpecificConfig } from './utils';
+
+type vtkActor = vtkActorModule.vtkActor;
 
 export function updateContourSets(
   viewport: Types.IVolumeViewport,

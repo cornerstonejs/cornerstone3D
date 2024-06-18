@@ -1,4 +1,6 @@
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
+import * as vtkPolyDataModule from '@kitware/vtk.js/Common/DataModel/PolyData.js';
+
+type vtkPolyData = vtkPolyDataModule.vtkPolyData;
 
 /**
  * Gets a point from an array of numbers given its index
