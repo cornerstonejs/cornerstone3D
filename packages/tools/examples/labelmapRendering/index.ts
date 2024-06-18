@@ -12,7 +12,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -90,7 +90,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationId,
     cornerstone,
   });
@@ -103,14 +103,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -185,7 +179,7 @@ async function run() {
   );
 
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  await segmentation.addSegmentationRepresentations(viewportIds, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

@@ -13,7 +13,7 @@ import {
   setTitleAndDescription,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -127,7 +127,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume1.volumeId,
     cornerstone,
   });

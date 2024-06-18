@@ -3,25 +3,24 @@ import type { Types } from '@cornerstonejs/core';
 import {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
-  ToolGroupSpecificRepresentation,
   RepresentationPublicInputOptions,
+  SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
-import * as SegmentationConfig from './config/segmentationConfig';
 import {
-  addSegmentationRepresentation as addSegmentationRepresentationToState,
+  addSegmentationRepresentationToViewport,
   getNextColorLUTIndex,
   addColorLUT,
 } from './segmentationState';
-import { getRepresentationSpecificConfig } from './helpers/getRepresentationSpecificConfig';
+import { getRepresentationRenderingConfig } from './helpers/getRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
-import { getToolGroup } from '../../store/ToolGroupManager';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { SegmentationRepresentations } from '../../enums';
+import triggerSegmentationRenderForViewports from '../../utilities/segmentation/triggerSegmentationRenderForViewports';
 
 async function addSegmentationRepresentation(
-  toolGroupId: string,
+  viewportId: string,
   representationInput: RepresentationPublicInput,
-  toolGroupSpecificConfig?: SegmentationRepresentationConfig
+  segmentationRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
   const { segmentationId, options = {} as RepresentationPublicInputOptions } =
     representationInput;
@@ -36,52 +35,44 @@ async function addSegmentationRepresentation(
 
   const colorLUTIndexToUse = getColorLUTIndex(options);
 
-  const toolGroupSpecificRepresentation: ToolGroupSpecificRepresentation = {
+  const representation: SegmentationRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
     type: representationInput.type,
     segmentsHidden,
     colorLUTIndex: colorLUTIndexToUse,
-    active: true,
-    segmentationRepresentationSpecificConfig: {},
-    segmentSpecificConfig: {},
-    config: getRepresentationSpecificConfig(representationInput),
+    rendering: getRepresentationRenderingConfig(representationInput),
     polySeg: options.polySeg,
+    config: {
+      default: {},
+      overrides: {},
+    },
   };
 
   // Update the toolGroup specific configuration
-  if (toolGroupSpecificConfig) {
+  if (segmentationRepresentationConfig) {
     // Since setting configuration on toolGroup will trigger a segmentationRepresentation
     // update event, we don't want to trigger the event twice, so we suppress
     // the first one
-    const currentToolGroupConfig =
-      SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-
-    const mergedConfig = utilities.deepMerge(
-      currentToolGroupConfig,
-      toolGroupSpecificConfig
-    );
-
-    SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations:
-        mergedConfig.renderInactiveSegmentations || true,
-      representations: {
-        ...mergedConfig.representations,
-      },
-    });
+    // const currentToolGroupConfig =
+    //   SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
+    // const mergedConfig = utilities.deepMerge(
+    //   currentToolGroupConfig,
+    //   toolGroupSpecificConfig
+    // // );
+    // SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
+    //   renderInactiveSegmentations:
+    //     mergedConfig.renderInactiveSegmentations || true,
+    //   representations: {
+    //     ...mergedConfig.representations,
+    //   },
+    // });
   }
 
-  addSegmentationRepresentationToState(
-    toolGroupId,
-    toolGroupSpecificRepresentation
-  );
+  addSegmentationRepresentationToState(viewportId, representation);
 
   if (representationInput.type === SegmentationRepresentations.Contour) {
-    getToolGroup(toolGroupId)
-      .getViewportsInfo()
-      .forEach(({ viewportId }) => {
-        triggerAnnotationRenderForViewportIds([viewportId]);
-      });
+    triggerAnnotationRenderForViewportIds([viewportId]);
   }
 
   return segmentationRepresentationUID;

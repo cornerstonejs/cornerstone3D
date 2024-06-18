@@ -10,7 +10,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import {
   fillStackSegmentationWithMockData,
-  fillVolumeSegmentationWithMockData,
+  fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
 
@@ -255,7 +255,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     }
   );
 
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: volumeSegLabelmapId,
     cornerstone,
   });

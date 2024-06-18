@@ -1,6 +1,5 @@
 import { state } from '../index';
 import { removeSegmentationsFromToolGroup } from '../../stateManagement/segmentation';
-import { segmentationRenderingEngine } from '../../utilities/segmentation/triggerSegmentationRender';
 // ToolGroups function entirely by their "state" being queried and leveraged
 // removing a ToolGroup from state is equivalent to killing it
 
@@ -16,9 +15,6 @@ function destroyToolGroup(toolGroupId: string): void {
   );
 
   if (toolGroupIndex > -1) {
-    segmentationRenderingEngine.removeToolGroup(toolGroupId);
-    // Todo: this should not happen here)
-    removeSegmentationsFromToolGroup(toolGroupId);
     state.toolGroups.splice(toolGroupIndex, 1);
   }
 }

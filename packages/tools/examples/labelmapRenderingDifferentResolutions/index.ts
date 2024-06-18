@@ -11,7 +11,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -143,11 +143,11 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: highResSegmentationVolume.volumeId,
     cornerstone,
   });
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: lowResSegmentationVolume.volumeId,
     cornerstone,
   });

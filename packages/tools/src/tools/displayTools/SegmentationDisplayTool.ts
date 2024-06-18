@@ -11,10 +11,7 @@ import { getToolGroup } from '../../store/ToolGroupManager';
 import { PublicToolProps, ToolProps } from '../../types';
 import { BaseTool } from '../base';
 
-import {
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentation,
-} from '../../types/SegmentationStateTypes';
+import { SegmentationRepresentationConfig } from '../../types/SegmentationStateTypes';
 import { surfaceDisplay } from './Surface';
 import { contourDisplay } from './Contour';
 import { labelmapDisplay } from './Labelmap';
@@ -57,7 +54,6 @@ class SegmentationDisplayTool extends BaseTool {
   }
 
   onSetToolEnabled(): void {
-    const toolGroupId = this.toolGroupId;
     const toolGroupSegmentationRepresentations =
       getSegmentationRepresentations(toolGroupId);
 
