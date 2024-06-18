@@ -1,7 +1,7 @@
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera.js';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
+import * as vtkMatrixBuilderModule from '@kitware/vtk.js/Common/Core/MatrixBuilder.js';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math.js';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane.js';
+import * as vtkPlaneModule from '@kitware/vtk.js/Common/DataModel/Plane.js';
 
 import { vec2, vec3 } from 'gl-matrix';
 import _cloneDeep from 'lodash.clonedeep';
@@ -34,6 +34,10 @@ import type { ViewportInput, IViewport } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
+
+type vtkPlane = vtkPlaneModule.vtkPlane;
+
+const vtkMatrixBuilder = vtkMatrixBuilderModule.vtkMatrixBuilder;
 
 /**
  * An object representing a single viewport, which is a camera
@@ -1189,7 +1193,10 @@ class Viewport implements IViewport {
         : mapper.getClippingPlanes();
 
       if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
-        vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
+        vtkPlanes = [
+          vtkPlaneModule.newInstance(),
+          vtkPlaneModule.newInstance(),
+        ];
       }
 
       let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;

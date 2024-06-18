@@ -1,16 +1,20 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData.js';
-import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData.js';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
+import * as vtkImageDataModule from '@kitware/vtk.js/Common/DataModel/ImageData.js';
+import * as vtkColorMapsModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 import _cloneDeep from 'lodash.clonedeep';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera.js';
 import { vec2, vec3, mat4 } from 'gl-matrix';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper.js';
-import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice.js';
+import * as vtkImageSliceModule from '@kitware/vtk.js/Rendering/Core/ImageSlice.js';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
 import * as metaData from '../metaData';
 import Viewport from './Viewport';
 import eventTarget from '../eventTarget';
+
+type vtkImageSlice = vtkImageSliceModule.vtkImageSlice;
+type vtkImageData = vtkImageDataModule.vtkImageData;
+
+const vtkColorMaps = vtkColorMapsModule.vtkColorMaps;
 
 import {
   triggerEvent,
@@ -149,7 +153,7 @@ class StackViewport extends Viewport implements IStackViewport {
   private interpolationType: InterpolationType;
 
   // Helpers
-  private _imageData: vtkImageDataType;
+  private _imageData: vtkImageData;
   private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private _publishCalibratedEvent = false;
@@ -529,7 +533,7 @@ class StackViewport extends Viewport implements IStackViewport {
     const mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
 
-    const actor = vtkImageSlice.newInstance();
+    const actor = vtkImageSliceModule.newInstance();
 
     actor.setMapper(mapper);
 
@@ -1594,7 +1598,7 @@ class StackViewport extends Viewport implements IStackViewport {
       values: values,
     });
 
-    this._imageData = vtkImageData.newInstance();
+    this._imageData = vtkImageDataModule.newInstance();
 
     this._imageData.setDimensions(dimensions);
     this._imageData.setSpacing(spacing);
@@ -1677,7 +1681,7 @@ class StackViewport extends Viewport implements IStackViewport {
    */
   private _checkVTKImageDataMatchesCornerstoneImage(
     image: IImage,
-    imageData: vtkImageDataType
+    imageData: vtkImageData
   ): boolean {
     if (!imageData) {
       return false;

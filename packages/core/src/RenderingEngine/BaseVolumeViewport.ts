@@ -1,7 +1,14 @@
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
+import * as vtkVolumeModule from '@kitware/vtk.js/Rendering/Core/Volume.js';
+import * as vtkColorTransferFunctionModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+import * as vtkColorMapsModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps.js';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction.js';
+
+type vtkColorTransferFunctionInstance = ReturnType<
+  typeof vtkColorTransferFunctionModule.newInstance
+>;
+type vtkVolume = vtkVolumeModule.vtkVolume;
+
+const vtkColorMaps = vtkColorMapsModule.vtkColorMaps;
 
 import cache from '../cache';
 import {
@@ -251,7 +258,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const mapper = volumeActor.getMapper();
     mapper.setSampleDistance(1.0);
 
-    const cfun = vtkColorTransferFunction.newInstance();
+    const cfun = vtkColorTransferFunctionModule.newInstance();
     let colormapObj = colormapUtils.getColormap(colormap.name);
 
     const { name } = colormap;
@@ -356,7 +363,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   private _getOrCreateColorTransferFunction(
     volumeId: string
-  ): vtkColorTransferFunction {
+  ): vtkColorTransferFunctionInstance {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {
@@ -373,7 +380,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return rgbTransferFunction;
     }
 
-    const newRGBTransferFunction = vtkColorTransferFunction.newInstance();
+    const newRGBTransferFunction = vtkColorTransferFunctionModule.newInstance();
     volumeActor.getProperty().setRGBTransferFunction(0, newRGBTransferFunction);
 
     return newRGBTransferFunction;

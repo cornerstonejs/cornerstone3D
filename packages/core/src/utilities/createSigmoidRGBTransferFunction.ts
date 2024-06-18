@@ -1,7 +1,11 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+import * as vtkColorTransferFunctionModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray.js';
 import { VOIRange } from '../types';
 import { windowLevel as windowLevelUtil } from '.';
+
+type vtkColorTransferFunctionInstance = ReturnType<
+  typeof vtkColorTransferFunctionModule.vtkColorTransferFunction.newInstance
+>;
 
 /**
  * A utility that can be used to generate an Sigmoid RgbTransferFunction.
@@ -24,7 +28,7 @@ import { windowLevel as windowLevelUtil } from '.';
 export default function createSigmoidRGBTransferFunction(
   voiRange: VOIRange,
   approximationNodes = 1024 // humans can precieve no more than 900 shades of gray doi: 10.1007/s10278-006-1052-3
-): vtkColorTransferFunction {
+): vtkColorTransferFunctionInstance {
   const { windowWidth, windowCenter } = windowLevelUtil.toWindowLevel(
     voiRange.lower,
     voiRange.upper
@@ -55,7 +59,7 @@ export default function createSigmoidRGBTransferFunction(
     return res.concat(x, y, y, y, 0.5, 0.0);
   }, []);
 
-  const cfun = vtkColorTransferFunction.newInstance();
+  const cfun = vtkColorTransferFunctionModule.newInstance();
   cfun.buildFunctionFromArray(
     vtkDataArray.newInstance({ values: table, numberOfComponents: 6 })
   );

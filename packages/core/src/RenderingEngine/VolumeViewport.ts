@@ -1,5 +1,5 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane.js';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
+import * as vtkVolumeModule from '@kitware/vtk.js/Rendering/Core/Volume.js';
 
 import { vec3 } from 'gl-matrix';
 
@@ -25,6 +25,8 @@ import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { ImageActor } from '../types/IActor';
+
+type vtkVolume = vtkVolumeModule.vtkVolume;
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render

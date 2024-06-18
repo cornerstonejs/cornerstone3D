@@ -1,10 +1,10 @@
-import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor.js';
-import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice.js';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume.js';
+import * as vtkActorModule from '@kitware/vtk.js/Rendering/Core/Actor.js';
+import * as vtkImageSliceModule from '@kitware/vtk.js/Rendering/Core/ImageSlice.js';
+import * as vtkVolumeModule from '@kitware/vtk.js/Rendering/Core/Volume.js';
 
-export type Actor = vtkActor;
-export type VolumeActor = vtkVolume;
-export type ImageActor = vtkImageSlice;
+export type Actor = vtkActorModule.vtkActor;
+export type VolumeActor = vtkVolumeModule.vtkVolume;
+export type ImageActor = vtkImageSliceModule.vtkImageSlice;
 
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and

@@ -1,7 +1,11 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+import * as vtkColorTransferFunctionModule from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction.js';
+
+type vtkColorTransferFunctionInstance = ReturnType<
+  typeof vtkColorTransferFunctionModule.vtkColorTransferFunction.newInstance
+>;
 
 export default function getVoiFromSigmoidRGBTransferFunction(
-  cfun: vtkColorTransferFunction
+  cfun: vtkColorTransferFunctionInstance
 ): [number, number] {
   let cfunRange = [];
   // @ts-ignore: vtk d ts problem

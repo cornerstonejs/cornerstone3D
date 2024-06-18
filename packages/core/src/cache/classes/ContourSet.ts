@@ -1,4 +1,4 @@
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData.js';
+import * as vtkPolyDataModule from '@kitware/vtk.js/Common/DataModel/PolyData.js';
 import { Point3, IContourSet, IContour, ContourData } from '../../types';
 import Contour from './Contour';
 
@@ -9,6 +9,8 @@ type ContourSetProps = {
   segmentIndex: number;
   color?: Point3;
 };
+
+type vtkPolyData = vtkPolyDataModule.vtkPolyData;
 
 /**
  * This class represents a set of contours in 3d space.
