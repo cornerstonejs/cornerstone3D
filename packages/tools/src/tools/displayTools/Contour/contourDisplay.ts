@@ -8,8 +8,8 @@ import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { getToolGroup } from '../../../store/ToolGroupManager';
 import {
+  ContourRepresentation,
   SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentation,
 } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './contourHandler/contourConfigCache';
@@ -64,10 +64,9 @@ function removeSegmentationRepresentation(
  */
 async function render(
   viewport: StackViewport | Types.IVolumeViewport,
-  representationConfig: ToolGroupSpecificRepresentation,
-  toolGroupConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ): Promise<void> {
-  const { segmentationId } = representationConfig;
+  const { segmentationId } = contourRepresentation;
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   if (!segmentation) {
@@ -79,7 +78,7 @@ async function render(
   if (
     !contourData &&
     polySeg.canComputeRequestedRepresentation(
-      representationConfig.segmentationRepresentationUID
+      contourRepresentation.segmentationRepresentationUID
     ) &&
     !polySegConversionInProgress
   ) {
@@ -89,7 +88,7 @@ async function render(
       segmentationId,
       {
         segmentationRepresentationUID:
-          representationConfig.segmentationRepresentationUID,
+          contourRepresentation.segmentationRepresentationUID,
         viewport,
       }
     );
@@ -104,8 +103,7 @@ async function render(
       viewport,
       contourData.geometryIds,
       contourData.annotationUIDsMap,
-      representationConfig,
-      toolGroupConfig
+      contourRepresentation
     );
   }
 }

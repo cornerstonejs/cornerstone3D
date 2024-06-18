@@ -26,6 +26,7 @@ import { contourDisplay } from './Contour';
 import { labelmapDisplay } from './Labelmap';
 import { addTool, state } from '../../store';
 import PlanarFreehandContourSegmentationTool from '../annotation/PlanarFreehandContourSegmentationTool';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 const renderers = {
   [Representations.Labelmap]: labelmapDisplay,
@@ -175,7 +176,7 @@ class SegmentationRenderingEngine {
         if (representation.type === SegmentationRepresentations.Contour) {
           // if the representation is contour we need to make sure
           // that the planarFreeHandTool is added
-          this._addPlanarFreeHandToolIfAbsent();
+          this._addPlanarFreeHandToolIfAbsent(viewport);
         }
 
         const display = renderers[representation.type];
@@ -221,10 +222,17 @@ class SegmentationRenderingEngine {
     });
   }
 
-  _addPlanarFreeHandToolIfAbsent() {
+  _addPlanarFreeHandToolIfAbsent(viewport) {
     // if it is contour we should check if the cornerstoneTools have the planarFreeHandTool added
     if (!(planarContourToolName in state.tools)) {
       addTool(PlanarFreehandContourSegmentationTool);
+    }
+    const toolGroup = getToolGroupForViewport(viewport.id);
+
+    // check if toolGroup has this tool
+    if (!toolGroup.hasTool(planarContourToolName)) {
+      toolGroup.addTool(planarContourToolName);
+      toolGroup.setToolPassive(planarContourToolName);
     }
   }
 }

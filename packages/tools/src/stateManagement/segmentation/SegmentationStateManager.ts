@@ -212,7 +212,7 @@ export default class SegmentationStateManager {
       return;
     }
 
-    return segmentationRepresentation.config.default;
+    return segmentationRepresentation.config.base;
   }
 
   /**
@@ -232,7 +232,7 @@ export default class SegmentationStateManager {
       return;
     }
 
-    segmentationRepresentation.config.default = config;
+    segmentationRepresentation.config.base = config;
   }
 
   /**

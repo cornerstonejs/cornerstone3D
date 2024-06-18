@@ -17,9 +17,7 @@ const onSegmentationDataModified = function (
     onLabelmapSegmentationDataModified(evt);
   }
 
-  toolGroupIds.forEach((toolGroupId) => {
-    triggerSegmentationRender(toolGroupId);
-  });
+  triggerSegmentationRender(segmentationId);
 };
 
 export default onSegmentationDataModified;

@@ -180,12 +180,15 @@ async function run() {
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
 
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
-    },
-  ]);
+  await segmentation.addSegmentationRepresentations(
+    [viewportId1],
+    [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]
+  );
 
   // Render the image
   renderingEngine.render();

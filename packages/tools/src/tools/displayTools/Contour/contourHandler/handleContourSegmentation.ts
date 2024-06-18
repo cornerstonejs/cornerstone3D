@@ -5,43 +5,39 @@ import { addAnnotation } from '../../../../stateManagement';
 import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
-import {
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificContourRepresentation,
-} from '../../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
 import { getSegmentSpecificConfig } from './utils';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
+import { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
+import { getGlobalConfig } from '../../../../stateManagement/segmentation/segmentationState';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
   geometryIds: string[],
   annotationUIDsMap: Map<number, Set<string>>,
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  contourRepresentationConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ) {
   const addOrUpdateFn = annotationUIDsMap.size
     ? updateContourSets
     : addContourSetsToElement;
-  addOrUpdateFn(
-    viewport,
-    geometryIds,
-    contourRepresentation,
-    contourRepresentationConfig
-  );
+  addOrUpdateFn(viewport, geometryIds, contourRepresentation);
 }
 
 function updateContourSets(
   viewport: Types.IVolumeViewport | StackViewport,
   geometryIds: string[],
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  contourRepresentationConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, segmentsHidden } =
+  const { segmentationRepresentationUID, segmentsHidden, config } =
     contourRepresentation;
-  const newContourConfig = contourRepresentationConfig.representations.CONTOUR;
+
+  const baseConfig = config.base.CONTOUR;
+  const globalContourConfig = getGlobalConfig().representations.CONTOUR;
+
+  const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
+
   const cachedConfig = getConfigCache(segmentationRepresentationUID);
 
   const newOutlineWithActive = newContourConfig.outlineWidthActive;
@@ -115,12 +111,13 @@ function updateContourSets(
 function addContourSetsToElement(
   viewport: StackViewport | Types.IVolumeViewport,
   geometryIds: string[],
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  contourRepresentationConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ) {
   const { segmentationRepresentationUID, segmentationId, segmentsHidden } =
     contourRepresentation;
+
   const segmentSpecificMap = new Map();
+
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
 
@@ -189,8 +186,11 @@ function addContourSetsToElement(
     }
   });
 
-  const outlineWidthActive =
-    contourRepresentationConfig.representations.CONTOUR.outlineWidthActive;
+  const baseConfig = contourRepresentation.config.base.CONTOUR;
+  const globalContourConfig = getGlobalConfig().representations.CONTOUR;
+
+  const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
+  const outlineWidthActive = newContourConfig.outlineWidthActive;
 
   setConfigCache(
     segmentationRepresentationUID,
