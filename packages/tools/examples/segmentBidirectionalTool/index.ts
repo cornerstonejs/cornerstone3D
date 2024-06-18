@@ -308,7 +308,6 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -322,7 +321,6 @@ async function run() {
     });
 
     // Segmentation Tools
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
     toolGroup.addToolInstance(
       brushInstanceNames.CircularBrush,
       BrushTool.toolName,
@@ -358,7 +356,6 @@ async function run() {
         activeStrategy: brushStrategies.ThresholdBrush,
       }
     );
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
     toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
       bindings: [{ mouseButton: MouseBindings.Primary }],

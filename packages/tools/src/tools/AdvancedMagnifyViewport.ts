@@ -273,9 +273,7 @@ class AdvancedMagnifyViewport {
           toolInstance instanceof AnnotationTool &&
           !(toolInstance instanceof AdvancedMagnifyTool);
 
-        return (
-          isAnnotationTool || toolName === SegmentationDisplayTool.toolName
-        );
+        return isAnnotationTool;
       }
     );
 

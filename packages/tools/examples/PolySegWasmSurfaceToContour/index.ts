@@ -129,7 +129,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId);
@@ -137,14 +136,6 @@ async function run() {
 
   addManipulationBindings(toolGroup1, { is3DViewport: true });
   addManipulationBindings(toolGroup2);
-
-  // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

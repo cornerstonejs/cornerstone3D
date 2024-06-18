@@ -314,7 +314,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -322,7 +321,6 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
 
@@ -355,8 +353,6 @@ async function run() {
       },
     }
   );
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(splineToolsNames[0], {
     bindings: contourSegmentationToolBindings,

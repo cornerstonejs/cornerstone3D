@@ -218,7 +218,6 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -231,7 +230,6 @@ async function run() {
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
     toolGroup.addToolInstance('CircularBrush', BrushTool.toolName, {
       activeStrategy: 'FILL_INSIDE_CIRCLE',
     });
@@ -255,7 +253,6 @@ async function run() {
       ],
     });
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
     utilities.segmentation.setBrushSizeForToolGroup(
       toolGroup.id,

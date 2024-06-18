@@ -79,15 +79,12 @@ describe('Segmentation Tools --', () => {
   describe('Sphere Scissor', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       csTools3d.addTool(SphereScissorsTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
       this.segToolGroup.addTool(SphereScissorsTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.segToolGroup.setToolActive(SphereScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       });

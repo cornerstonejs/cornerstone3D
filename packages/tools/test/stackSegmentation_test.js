@@ -59,19 +59,16 @@
 //   describe('Rendering', function () {
 //     beforeEach(function () {
 //       csTools3d.init();
-//       csTools3d.addTool(SegmentationDisplayTool);
 //       csTools3d.addTool(ZoomTool);
 //       csTools3d.addTool(BrushTool);
 //       cache.purgeCache();
 //       this.DOMElements = [];
 
 //       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-//       this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
 //       this.segToolGroup.addTool(ZoomTool.toolName);
 //       this.segToolGroup.addToolInstance('CircularBrush', BrushTool.toolName, {
 //         activeStrategy: 'FILL_INSIDE_CIRCLE',
 //       });
-//       this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 //       this.segToolGroup.setToolActive('CircularBrush', {
 //         bindings: [{ mouseButton: 1 }],
 //       });

@@ -265,7 +265,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleROIThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -277,9 +276,7 @@ async function run() {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleROIThresholdTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(RectangleROIThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],

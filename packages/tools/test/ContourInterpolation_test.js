@@ -208,7 +208,6 @@ describe('Contours Interpolation: ', () => {
       console.warn('beforeEach.1 ContourInterpolation');
       csTools3d.init();
       csTools3d.addTool(PlanarFreehandContourSegmentationTool);
-      csTools3d.addTool(SegmentationDisplayTool);
       cache.purgeCache();
       this.DOMElements = [];
 
@@ -232,7 +231,6 @@ describe('Contours Interpolation: ', () => {
         bindings: [{ mouseButton: 1 }],
         calculateStats: true,
       });
-      this.stackToolGroup.addTool(csTools3d.SegmentationDisplayTool.toolName);
 
       this.renderingEngine = new RenderingEngine(renderingEngineId);
       imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);

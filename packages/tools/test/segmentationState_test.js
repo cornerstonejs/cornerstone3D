@@ -69,13 +69,10 @@ describe('Segmentation State -- ', () => {
   describe('State', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.renderingEngine = new RenderingEngine(renderingEngineId);
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
       metaData.addProvider(fakeMetaDataProvider, 10000);

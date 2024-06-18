@@ -178,7 +178,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -189,19 +188,12 @@ async function run() {
   addManipulationBindings(toolGroup2, { is3DViewport: true });
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
   toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
     activeStrategy: 'FILL_INSIDE_SPHERE',
   });
   toolGroup1.addToolInstance('EraserBrush', BrushTool.toolName, {
     activeStrategy: 'ERASE_INSIDE_SPHERE',
   });
-
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive('SphereBrush', {
     bindings: [

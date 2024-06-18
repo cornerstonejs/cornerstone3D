@@ -359,7 +359,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -370,7 +369,6 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName, {
     cachedStats: true,
   });
@@ -406,8 +404,6 @@ async function run() {
       },
     ],
   });
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.

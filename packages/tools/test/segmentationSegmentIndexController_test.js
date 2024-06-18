@@ -80,15 +80,12 @@ describe('Segmentation Index Controller --', () => {
   describe('Index/Lock Controller', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       csTools3d.addTool(RectangleScissorsTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
       this.segToolGroup.addTool(RectangleScissorsTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       });

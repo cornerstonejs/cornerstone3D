@@ -174,19 +174,12 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   const highResToolGroupId = 'HIGH_RESOLUTION_TOOLGROUP_ID';
   const lowResToolGroupId = 'LOW_RESOLUTION_TOOLGROUP_ID';
   const highResToolGroup = ToolGroupManager.createToolGroup(highResToolGroupId);
   const lowResToolGroup = ToolGroupManager.createToolGroup(lowResToolGroupId);
-
-  highResToolGroup.addTool(SegmentationDisplayTool.toolName);
-  lowResToolGroup.addTool(SegmentationDisplayTool.toolName);
-
-  highResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  lowResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

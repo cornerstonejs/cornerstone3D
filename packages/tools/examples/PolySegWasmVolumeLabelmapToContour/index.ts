@@ -142,7 +142,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
@@ -155,18 +154,12 @@ async function run() {
   addManipulationBindings(toolGroup2);
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
   toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
     activeStrategy: 'FILL_INSIDE_SPHERE',
   });
 
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
   toolGroup2.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup2.addTool(SplineContourSegmentationTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive('SphereBrush', {
     bindings: [
