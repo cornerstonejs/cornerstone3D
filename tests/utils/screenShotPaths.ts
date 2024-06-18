@@ -54,6 +54,18 @@ const screenShotPaths = {
   surfaceRendering: {
     viewport: 'viewport.png',
   },
+  labelmapSegmentationTools: {
+    circularBrush: 'circularBrush.png',
+    circularEraser: 'circularEraser.png',
+    sphereBrush: 'sphereBrush.png',
+    sphereEraser: 'sphereEraser.png',
+    thresholdCircle: 'thresholdCircle.png',
+    rectangleScissor: 'rectangleScissor.png',
+    circleScissor: 'circleScissor.png',
+    sphereScissor: 'sphereScissor.png',
+    scissorEraser: 'scissorEraser.png',
+    paintFill: 'paintFill.png',
+  },
 };
 
 export { screenShotPaths };
