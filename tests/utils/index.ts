@@ -1,13 +1,5 @@
-import { visitExample } from './visitExample';
-import { checkForScreenshot } from './checkForScreenshot';
-import { screenShotPaths } from './screenShotPaths';
-import { simulateDrag } from './simulateDrag';
-import { simulateClicksOnElement } from './simulateClicksOnElement';
-
-export {
-  visitExample,
-  checkForScreenshot,
-  screenShotPaths,
-  simulateDrag,
-  simulateClicksOnElement,
-};
+export { visitExample } from './visitExample';
+export { checkForScreenshot } from './checkForScreenshot';
+export { screenShotPaths } from './screenShotPaths';
+export { simulateDrag } from './simulateDrag';
+export { simulateClicksOnElement } from './simulateClicksOnElement';

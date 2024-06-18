@@ -8,7 +8,7 @@ import { Locator } from 'playwright';
  * @param delayBetweenClicks - The delay between clicks
  * @returns Promise<void>
  */
-export async function simulateClicksOnElement({
+export const simulateClicksOnElement = async ({
   locator,
   points,
   doubleClick = false,
@@ -18,7 +18,7 @@ export async function simulateClicksOnElement({
   points: { x: number; y: number }[];
   doubleClick?: boolean;
   delayBetweenClicks?: number;
-}) {
+}) => {
   for (const { x, y } of points) {
     await locator.click({
       position: { x, y },
@@ -26,4 +26,4 @@ export async function simulateClicksOnElement({
     });
     await new Promise((resolve) => setTimeout(resolve, delayBetweenClicks));
   }
-}
+};

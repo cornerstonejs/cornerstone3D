@@ -8,7 +8,7 @@ import { expect } from '@playwright/test';
  * @param delay - The delay between attempts
  * @returns  True if the screenshot matches, otherwise throws an error
  */
-const checkForScreenshot = async (
+export const checkForScreenshot = async (
   page,
   locator,
   screenshotPath,
@@ -30,5 +30,3 @@ const checkForScreenshot = async (
     }
   }
 };
-
-export { checkForScreenshot };
