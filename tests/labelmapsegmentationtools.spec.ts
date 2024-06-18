@@ -4,7 +4,7 @@ import {
   checkForScreenshot,
   screenShotPaths,
   simulateClicksOnElement,
-} from './utils/index';
+} from './utils/index.js';
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'labelmapSegmentationTools', 5000);
