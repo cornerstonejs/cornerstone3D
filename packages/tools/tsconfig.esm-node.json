@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.esm-node.json",
+  "compilerOptions": {
+    "outDir": "./dist/esm-node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "include": ["src"]
+}
