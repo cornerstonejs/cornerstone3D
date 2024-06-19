@@ -1991,6 +1991,9 @@ function drawHandle(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, h
 // @public (undocumented)
 function drawHandles(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, handleGroupUID: string, handlePoints: Array<Types_2.Point2>, options?: {}): void;
 
+// @public (undocumented)
+function drawHeight(svgDrawingHelper: SVGDrawingHelper, annotationUID: string, heightUID: string, start: Types_2.Point2, end: Types_2.Point2, options?: {}): void;
+
 declare namespace drawing {
     export {
         draw,
@@ -2000,6 +2003,7 @@ declare namespace drawing {
         drawHandles,
         drawHandle,
         drawLine,
+        drawHeight,
         drawPolyline,
         drawPath,
         drawLinkedTextBox,
@@ -2825,6 +2829,68 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 type GroupSpecificAnnotations = {
     [toolName: string]: Annotations;
 };
+
+// @public (undocumented)
+export class HeightTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LengthAnnotation;
+    // (undocumented)
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    // (undocumented)
+    _calculateHeight(iniy: any, finy: any): number;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => any;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: any;
+        viewportIdsToRender: string[];
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    endfirstLine: Types_2.Point2;
+    // (undocumented)
+    endsecondLine: Types_2.Point2;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation, handle: ToolHandle): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: LengthAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    midX: number;
+    // (undocumented)
+    mouseDragCallback: any;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: any;
+}
 
 // @public (undocumented)
 function hideElementCursor(element: HTMLDivElement): void;
