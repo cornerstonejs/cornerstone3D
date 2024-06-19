@@ -12,7 +12,11 @@ import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 // This is closer to what Webpack 5 wants but it doesn't seem to work now
 // const wasm = new URL('./blah.wasm', import.meta.url)
 // @ts-ignore
-import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
+// import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
+const openjpegWasm = new URL(
+  '@cornerstonejs/codec-openjpeg/decodewasm',
+  import.meta.url
+);
 
 import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
 
