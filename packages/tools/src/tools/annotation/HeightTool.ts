@@ -770,11 +770,35 @@ class HeightTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateHeight(iniy, finy) {
-    //Difference between final y and initial y = height
-    const dy = finy - iniy;
-    //Convert to positive:
-    return Math.abs(dy);
+  _calculateHeight(pos1, pos2) {
+    const dx = pos2[0] - pos1[0];
+    const dy = pos2[1] - pos1[1];
+    const dz = pos2[2] - pos1[2];
+    //SAGITAL X alway 0
+    //CORONAL Y alway 0
+    //AXIAL Z alway 0
+
+    //SAGITAL:
+    if (dx == 0) {
+      //SAGITAL when it reaches 0 takes the measurement of Y, to correct it we return 0.
+      if (dy != 0) {
+        //SAGITAL use Z:
+        return Math.abs(dz);
+      } else {
+        return 0;
+      }
+    }
+    //SAGITAL AND CORONAL use Z:
+    //CORONAL:
+    else if (dy == 0) {
+      //CORONAL use Z:
+      return Math.abs(dz);
+    }
+    //AXIAL
+    else if (dz == 0) {
+      //AXIAL use Y:
+      return Math.abs(dy);
+    }
   }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
@@ -807,7 +831,7 @@ class HeightTool extends AnnotationTool {
       const handles = [index1, index2];
       const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
 
-      const height = this._calculateHeight(worldPos1[1], worldPos2[1]) / scale;
+      const height = this._calculateHeight(worldPos1, worldPos2) / scale;
 
       this._isInsideVolume(index1, index2, dimensions)
         ? (this.isHandleOutsideImage = false)
