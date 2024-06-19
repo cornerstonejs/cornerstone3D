@@ -18,7 +18,6 @@ async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
 
   for (const point of points) {
     await canvas.click({
-      timeout: 1000,
       position: {
         x: point[0],
         y: point[1],

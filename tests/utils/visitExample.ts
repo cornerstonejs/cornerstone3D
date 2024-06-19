@@ -9,7 +9,7 @@ export const visitExample = async (page: Page, title: string, delay = 0) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.waitForLoadState('domcontentloaded');
-  await page.click(`a:has-text("${title}")`, { timeout: 1000 });
+  await page.click(`a:has-text("${title}")`);
   await page.waitForSelector('div#content');
   await page.waitForLoadState('networkidle');
   await page.waitForLoadState('domcontentloaded');

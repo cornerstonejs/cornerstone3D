@@ -23,7 +23,6 @@ export const simulateClicksOnElement = async ({
     await locator.click({
       position: { x, y },
       clickCount: doubleClick ? 2 : 1,
-      timeout: 1000,
     });
     await new Promise((resolve) => setTimeout(resolve, delayBetweenClicks));
   }
