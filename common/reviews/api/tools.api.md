@@ -2842,7 +2842,7 @@ export class HeightTool extends AnnotationTool {
     // (undocumented)
     _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
-    _calculateHeight(iniy: any, finy: any): number;
+    _calculateHeight(pos1: any, pos2: any): number;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
