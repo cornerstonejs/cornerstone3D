@@ -1,25 +1,23 @@
 /* eslint-disable complexity */
-import { ByteArray } from 'dicom-parser';
-import bilinear from './scaling/bilinear';
-import replicate from './scaling/replicate';
+import bilinear from './shared/scaling/bilinear';
+import replicate from './shared/scaling/replicate';
 import { expose } from 'comlink';
 
-import decodeLittleEndian from './decoders/decodeLittleEndian';
-import decodeBigEndian from './decoders/decodeBigEndian';
-import decodeRLE from './decoders/decodeRLE';
-import decodeJPEGBaseline8Bit from './decoders/decodeJPEGBaseline8Bit';
-// import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit';
-import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit-js';
-import decodeJPEGLossless from './decoders/decodeJPEGLossless';
-import decodeJPEGLS from './decoders/decodeJPEGLS';
-import decodeJPEG2000 from './decoders/decodeJPEG2000';
-import decodeHTJ2K from './decoders/decodeHTJ2K';
+import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
+import decodeBigEndian from './shared/decoders/decodeBigEndian';
+import decodeRLE from './shared/decoders/decodeRLE';
+import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
+// import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit';
+import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
+import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
+import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
+import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
+import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
-import applyModalityLUT from './scaling/scaleArray';
-import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
-import getMinMax from './getMinMax';
-import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
-import isColorImage from './isColorImage';
+import applyModalityLUT from './shared/scaling/scaleArray';
+import getMinMax from './shared/getMinMax';
+import getPixelDataTypeFromMinMax from './shared/getPixelDataTypeFromMinMax';
+import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
   bilinear,

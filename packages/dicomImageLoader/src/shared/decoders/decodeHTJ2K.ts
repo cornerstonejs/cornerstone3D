@@ -2,7 +2,11 @@ import { ByteArray } from 'dicom-parser';
 // @ts-ignore
 import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs';
 // @ts-ignore
-import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
+// import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
+const openjphWasm = new URL(
+  '@cornerstonejs/codec-openjph/wasm',
+  import.meta.url
+);
 
 import { LoaderDecodeOptions } from '../../types';
 

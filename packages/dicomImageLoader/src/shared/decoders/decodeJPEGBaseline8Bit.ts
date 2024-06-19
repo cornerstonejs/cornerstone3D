@@ -7,8 +7,11 @@ import { ByteArray } from 'dicom-parser';
 import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
 
 // @ts-ignore
-import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm';
-
+// import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm';
+const libjpegTurboWasm = new URL(
+  '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
+  import.meta.url
+);
 import { ImageFrame } from '../../types';
 
 const local: {
