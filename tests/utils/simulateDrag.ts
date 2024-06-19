@@ -4,7 +4,7 @@
  * @param locator - The locator of the element to perform the drag on
  */
 
-export async function simulateDrag(page, locator) {
+export const simulateDrag = async (page, locator) => {
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Element is not visible');
@@ -24,4 +24,4 @@ export async function simulateDrag(page, locator) {
   await page.mouse.down();
   await page.mouse.move(newX, newY);
   await page.mouse.up();
-}
+};

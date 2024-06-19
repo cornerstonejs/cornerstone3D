@@ -33,8 +33,8 @@ let currentLeftClickTool = leftClickTools[0];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Stack Manipulation',
-  'Manipulation tools for a stack viewport'
+  'Ultrasounds colors',
+  'Showcases how the colors of ultrasound images are displayed and rendered correctly'
 );
 
 const content = document.getElementById('content');
