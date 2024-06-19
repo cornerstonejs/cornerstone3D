@@ -108,105 +108,103 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Spline Contour Segmentation Tools', async () => {
-  test.describe('when CatmullRom Spline ROI is selected', async () => {
-    test('it should draw a CatmullRom Spline ROI', async ({ page }) => {
-      const canvas = await page.locator('canvas');
+  test('should draw a CatmullRom Spline ROI when CatmullRom Spline ROI is selected', async ({
+    page,
+  }) => {
+    const canvas = await page.locator('canvas');
 
-      await drawCatmullROMSplineOnViewportLeft({
-        page,
-        canvas,
-        segmentIndex: undefined,
-      });
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.splineContourSegmentationTools.catmullRomSplineROI
-      );
-    });
-  });
-
-  test.describe('when Linear Spline ROI is selected', async () => {
-    test('it should draw a Linear Spline ROI', async ({ page }) => {
-      const canvas = await page.locator('canvas');
-
-      await drawLinearSplineOnViewportCenter({
-        page,
-        canvas,
-        segmentIndex: undefined,
-      });
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.splineContourSegmentationTools.linearSplineROI
-      );
-    });
-  });
-
-  test.describe('when BSpline ROI is selected', async () => {
-    test('it should draw a BSpline ROI', async ({ page }) => {
-      const canvas = await page.locator('canvas');
-
-      await drawBSplineOnViewportRight({
-        page,
-        canvas,
-        segmentIndex: undefined,
-      });
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.splineContourSegmentationTools.bsplineROI
-      );
-    });
-  });
-
-  test.describe('when splines are added to different segments', async () => {
-    test('they must have different colors', async ({ page }) => {
-      const canvas = await page.locator('canvas');
-
-      await drawCatmullROMSplineOnViewportLeft({
-        page,
-        canvas,
-        segmentIndex: 1,
-      });
-      await drawLinearSplineOnViewportCenter({ page, canvas, segmentIndex: 2 });
-      await drawBSplineOnViewportRight({ page, canvas, segmentIndex: 3 });
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
-      );
-    });
-  });
-
-  test.describe('when splines are drawn with different styles', async () => {
-    test('the style must be applied to the splines appropriately', async ({
+    await drawCatmullROMSplineOnViewportLeft({
       page,
-    }) => {
-      const canvas = await page.locator('canvas');
-      const splineStyle = {
-        outlineWidthActive: 1.7,
-        outlineOpacity: 0.5,
-        fillAlpha: 0,
-        outlineDashActive: 3,
-      };
-
-      await updateSplineStyleInputs({ page, splineStyle });
-      await drawCatmullROMSplineOnViewportLeft({
-        page,
-        canvas,
-        segmentIndex: 1,
-      });
-      await drawLinearSplineOnViewportCenter({ page, canvas, segmentIndex: 2 });
-      await drawBSplineOnViewportRight({
-        page,
-        canvas,
-        segmentIndex: 3,
-      });
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
-      );
+      canvas,
+      segmentIndex: undefined,
     });
+    await checkForScreenshot(
+      page,
+      canvas,
+      screenShotPaths.splineContourSegmentationTools.catmullRomSplineROI
+    );
+  });
+
+  test('should draw a Linear Spline ROI when Linear Spline ROI is selected', async ({
+    page,
+  }) => {
+    const canvas = await page.locator('canvas');
+
+    await drawLinearSplineOnViewportCenter({
+      page,
+      canvas,
+      segmentIndex: undefined,
+    });
+    await checkForScreenshot(
+      page,
+      canvas,
+      screenShotPaths.splineContourSegmentationTools.linearSplineROI
+    );
+  });
+
+  test('should draw a BSpline ROI when BSpline ROI is selected when BSpline ROI is selected', async ({
+    page,
+  }) => {
+    const canvas = await page.locator('canvas');
+
+    await drawBSplineOnViewportRight({
+      page,
+      canvas,
+      segmentIndex: undefined,
+    });
+    await checkForScreenshot(
+      page,
+      canvas,
+      screenShotPaths.splineContourSegmentationTools.bsplineROI
+    );
+  });
+
+  test('should have different colors when splines are added to different segments', async ({
+    page,
+  }) => {
+    const canvas = await page.locator('canvas');
+
+    await drawCatmullROMSplineOnViewportLeft({
+      page,
+      canvas,
+      segmentIndex: 1,
+    });
+    await drawLinearSplineOnViewportCenter({ page, canvas, segmentIndex: 2 });
+    await drawBSplineOnViewportRight({ page, canvas, segmentIndex: 3 });
+    await checkForScreenshot(
+      page,
+      canvas,
+      screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
+    );
+  });
+
+  test('should apply the styles to the splines appropriately when splines are drawn with different styles', async ({
+    page,
+  }) => {
+    const canvas = await page.locator('canvas');
+    const splineStyle = {
+      outlineWidthActive: 1.7,
+      outlineOpacity: 0.5,
+      fillAlpha: 0,
+      outlineDashActive: 3,
+    };
+
+    await updateSplineStyleInputs({ page, splineStyle });
+    await drawCatmullROMSplineOnViewportLeft({
+      page,
+      canvas,
+      segmentIndex: 1,
+    });
+    await drawLinearSplineOnViewportCenter({ page, canvas, segmentIndex: 2 });
+    await drawBSplineOnViewportRight({
+      page,
+      canvas,
+      segmentIndex: 3,
+    });
+    await checkForScreenshot(
+      page,
+      canvas,
+      screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
+    );
   });
 });
