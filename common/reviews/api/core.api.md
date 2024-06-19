@@ -62,7 +62,7 @@ type ActorSliceRange = {
 };
 
 // @public (undocumented)
-export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>, immediateRender?: boolean, suppressEvents?: boolean): Promise<void>;
+export function addImageSlicesToViewports(renderingEngine: IRenderingEngine, stackInputs: Array<IStackInput>, viewportIds: Array<string>): Promise<void>;
 
 // @public (undocumented)
 function addProvider(provider: (type: string, ...query: string[]) => any, priority?: number): void;
@@ -112,7 +112,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     addVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
-    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors): void;
+    protected applyViewOrientation(orientation: OrientationAxis | OrientationVectors, resetCamera?: boolean): void;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
     // (undocumented)
@@ -148,7 +148,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     protected getVOIModifiedEventDetail(volumeId: string): VoiModifiedEventDetail;
     // (undocumented)
-    protected getVolumeId(specifier: ViewReferenceSpecifier): string;
+    protected getVolumeId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
@@ -164,9 +164,13 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     abstract resetProperties(volumeId?: string): void;
     // (undocumented)
+    abstract resetSlabThickness(): void;
+    // (undocumented)
     resetToDefaultProperties(volumeId: string): void;
     // (undocumented)
     protected resetVolumeViewportClippingRange(): void;
+    // (undocumented)
+    scroll(delta?: number): void;
     // (undocumented)
     abstract setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -174,13 +178,15 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     protected setInterpolationType(interpolationType: InterpolationType, volumeId?: string): void;
     // (undocumented)
-    setOrientation(orientation: OrientationAxis, immediate?: boolean): void;
+    setOrientation(_orientation: OrientationAxis | OrientationVectors, _immediate?: boolean): void;
     // (undocumented)
     setProperties({ voiRange, VOILUTFunction, invert, colormap, preset, interpolationType, slabThickness, rotation, }?: VolumeViewportProperties, volumeId?: string, suppressEvents?: boolean): void;
     // (undocumented)
     protected setRotation: (rotation: number) => void;
     // (undocumented)
     abstract setSlabThickness(slabThickness: number, filterActorUIDs?: Array<string>): void;
+    // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     setVolumes(volumeInputArray: Array<IVolumeInput>, immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
@@ -224,7 +230,7 @@ declare namespace cacheUtils {
 }
 
 // @public (undocumented)
-function calculateViewportsSpatialRegistration(viewport1: IStackViewport | IVolumeViewport, viewport2: IStackViewport | IVolumeViewport): void;
+function calculateViewportsSpatialRegistration(viewport1: StackViewport | IVolumeViewport, viewport2: StackViewport | IVolumeViewport): void;
 
 // @public (undocumented)
 enum CalibrationTypes {
@@ -255,6 +261,17 @@ type CameraModifiedEventDetail = {
     viewportId: string;
     renderingEngineId: string;
     rotation?: number;
+};
+
+// @public (undocumented)
+type CameraResetEvent = CustomEvent_2<CameraResetEventDetail>;
+
+// @public (undocumented)
+type CameraResetEventDetail = {
+    element: HTMLDivElement;
+    viewportId: string;
+    renderingEngineId: string;
+    camera: ICamera;
 };
 
 // @public (undocumented)
@@ -359,7 +376,7 @@ enum ContourType {
 
 // @public (undocumented)
 function convertStackToVolumeViewport({ viewport, options, }: {
-    viewport: IStackViewport;
+    viewport: StackViewport;
     options: {
         volumeId: string;
         viewportId?: string;
@@ -712,6 +729,13 @@ interface CustomEvent_2<T = any> extends Event {
 }
 
 // @public (undocumented)
+type DataSetOptions = {
+    groupId?: string;
+    viewSelector?: ViewPresentationSelector;
+    viewReference?: ViewReferenceSpecifier;
+};
+
+// @public (undocumented)
 function decimate(list: Array<unknown>, interleave: number, offset?: number): number[];
 
 // @public (undocumented)
@@ -928,7 +952,9 @@ declare namespace EventTypes {
         StackViewportNewStackEvent,
         StackViewportNewStackEventDetail,
         StackViewportScrollEvent,
-        StackViewportScrollEventDetail
+        StackViewportScrollEventDetail,
+        CameraResetEvent,
+        CameraResetEventDetail
     }
 }
 
@@ -972,7 +998,7 @@ function getBufferConfiguration(targetBufferType: PixelDataTypedArrayString, len
 function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
 
 // @public (undocumented)
-function getClosestStackImageIndexForPoint(point: Point3, viewport: IStackViewport): number | null;
+function getClosestStackImageIndexForPoint(point: Point3, viewport: StackViewport): number | null;
 
 // @public (undocumented)
 function getColormap(name: any): any;
@@ -1069,7 +1095,7 @@ function getTransferFunctionNodes(transferFunction: any): any[];
 function getUnknownVolumeLoaderSchema(): string;
 
 // @public (undocumented)
-function getViewportImageCornersInWorld(viewport: IStackViewport | IVolumeViewport): Point3[];
+function getViewportImageCornersInWorld(viewport: StackViewport | IVolumeViewport): Point3[];
 
 // @public (undocumented)
 function getViewportImageIds(viewport: IViewport): string[];
@@ -1320,7 +1346,7 @@ interface IEnabledElement {
     // (undocumented)
     renderingEngineId: string;
     // (undocumented)
-    viewport: IStackViewport | IVolumeViewport;
+    viewport: StackViewport | IVolumeViewport;
     // (undocumented)
     viewportId: string;
 }
@@ -1986,9 +2012,7 @@ interface IRenderingEngine {
     // (undocumented)
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
-    getStackViewports(): Array<IStackViewport>;
-    // (undocumented)
-    getVideoViewports(): Array<IVideoViewport>;
+    getStackViewports(): Array<StackViewport>;
     // (undocumented)
     getViewport(id: string): IViewport;
     // (undocumented)
@@ -2034,6 +2058,12 @@ export function isCornerstoneInitialized(): boolean;
 function isEqual<ValueType>(v1: ValueType, v2: ValueType, tolerance?: number): boolean;
 
 // @public (undocumented)
+const isEqualAbs: <ValueType>(v1: ValueType, v2: ValueType, tolerance?: any) => boolean;
+
+// @public (undocumented)
+const isEqualNegative: <ValueType>(v1: ValueType, v2: ValueType, tolerance?: any) => boolean;
+
+// @public (undocumented)
 function isImageActor(actorEntry: Types.ActorEntry): boolean;
 
 // @public (undocumented)
@@ -2052,79 +2082,6 @@ interface IStackInput {
     imageId: string;
     // (undocumented)
     visibility?: boolean;
-}
-
-// @public (undocumented)
-interface IStackViewport extends IViewport {
-    // (undocumented)
-    addImages(stackInputs: Array<IStackInput>, immediateRender: boolean, suppressEvents: boolean): any;
-    // (undocumented)
-    calibrateSpacing(imageId: string): void;
-    // (undocumented)
-    canvasToWorld: (canvasPos: Point2) => Point3;
-    // (undocumented)
-    clearDefaultProperties(imageId?: string): void;
-    // (undocumented)
-    customRenderViewportToCanvas: () => {
-        canvas: HTMLCanvasElement;
-        element: HTMLDivElement;
-        viewportId: string;
-        renderingEngineId: string;
-    };
-    // (undocumented)
-    getCamera(): ICamera;
-    // (undocumented)
-    getCornerstoneImage: () => IImage;
-    // (undocumented)
-    getCurrentImageId: () => string;
-    // (undocumented)
-    getCurrentImageIdIndex: () => number;
-    // (undocumented)
-    getDefaultProperties: (imageId?: string) => StackViewportProperties;
-    // (undocumented)
-    getFrameOfReferenceUID: () => string;
-    // (undocumented)
-    getImageData(): IImageData | CPUIImageData;
-    // (undocumented)
-    getImageDataMetadata(image: IImage): any;
-    // (undocumented)
-    getImageIds: () => string[];
-    // (undocumented)
-    getProperties: () => StackViewportProperties;
-    // (undocumented)
-    getRenderer(): any;
-    // (undocumented)
-    hasImageId: (imageId: string) => boolean;
-    // (undocumented)
-    hasImageURI: (imageURI: string) => boolean;
-    // (undocumented)
-    modality: string;
-    // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
-    // (undocumented)
-    resetProperties(): void;
-    // (undocumented)
-    resetToDefaultProperties(): void;
-    // (undocumented)
-    resize: () => void;
-    // (undocumented)
-    scaling: Scaling;
-    // (undocumented)
-    setCamera(cameraInterface: ICamera): void;
-    // (undocumented)
-    setDefaultProperties(ViewportProperties: StackViewportProperties, imageId?: string): void;
-    // (undocumented)
-    setImageIdIndex(imageIdIndex: number): Promise<string>;
-    // (undocumented)
-    setProperties({ voiRange, invert, interpolationType, rotation, colormap, }: StackViewportProperties, suppressEvents?: boolean): void;
-    // (undocumented)
-    setStack(imageIds: Array<string>, currentImageIdIndex?: number): Promise<string>;
-    // (undocumented)
-    stackActorReInitialized: boolean;
-    // (undocumented)
-    unsetColormap(): void;
-    // (undocumented)
-    worldToCanvas: (worldPos: Point3) => Point2;
 }
 
 // @public (undocumented)
@@ -2272,6 +2229,10 @@ interface IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
+    getTargetId?: () => string;
+    // (undocumented)
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -2302,9 +2263,13 @@ interface IViewport {
     // (undocumented)
     reset(immediate: boolean): void;
     // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, storeAsInitialCamera?: boolean): boolean;
+    // (undocumented)
     setActors(actors: Array<ActorEntry>): void;
     // (undocumented)
     setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+    // (undocumented)
+    setDataIds(dataIds: string[], options?: DataSetOptions): void;
     // (undocumented)
     setDisplayArea(displayArea: DisplayArea, callResetCamera?: boolean, suppressEvents?: boolean): any;
     // (undocumented)
@@ -2314,7 +2279,9 @@ interface IViewport {
     // (undocumented)
     setRendered(): void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): any;
+    setViewPresentation(viewPres: ViewPresentation): any;
+    // (undocumented)
+    setViewReference(viewRef: ViewReference): any;
     // (undocumented)
     setZoom(zoom: number, storeAsInitialCamera?: boolean): any;
     // (undocumented)
@@ -2411,9 +2378,11 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: Array<string>, immediate?: boolean): void;
     // (undocumented)
@@ -2433,6 +2402,28 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
+interface IWSIViewport extends IViewport {
+    // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
+    getProperties: () => WSIViewportProperties;
+    // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    // (undocumented)
+    resetProperties(): void;
+    // (undocumented)
+    resize: () => void;
+    // (undocumented)
+    setFrameNumber(frameNo: number): any;
+    // (undocumented)
+    setProperties(props: WSIViewportProperties, suppressEvents?: boolean): void;
+    // (undocumented)
+    setWSI: (imageIds: string[], client: any) => Promise<unknown>;
+}
+
+// @public (undocumented)
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3;
 
 // @public (undocumented)
@@ -2445,7 +2436,7 @@ function loadAndCacheImages(imageIds: Array<string>, options?: ImageLoaderOption
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
-function loadImageToCanvas(options: LoadImageOptions): Promise<string>;
+function loadImageToCanvas(options: LoadImageOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
 function loadVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<IImageVolume>;
@@ -2526,7 +2517,9 @@ enum MetadataModules {
     // (undocumented)
     ULTRASOUND_ENHANCED_REGION = "ultrasoundEnhancedRegionModule",
     // (undocumented)
-    VOI_LUT = "voiLutModule"
+    VOI_LUT = "voiLutModule",
+    // (undocumented)
+    WEB_CLIENT = "webClient"
 }
 
 // @public (undocumented)
@@ -2785,6 +2778,7 @@ type RangeRetrieveOptions = BaseRetrieveOptions & {
 type ReferenceCompatibleOptions = {
     withNavigation?: boolean;
     asVolume?: boolean;
+    withOrientation?: boolean;
     imageURI?: string;
 };
 
@@ -2833,9 +2827,7 @@ export class RenderingEngine implements IRenderingEngine {
     // (undocumented)
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
-    getStackViewports(): Array<IStackViewport>;
-    // (undocumented)
-    getVideoViewports(): Array<IVideoViewport>;
+    getStackViewports(): Array<StackViewport>;
     // (undocumented)
     getViewport(viewportId: string): IViewport;
     // (undocumented)
@@ -2865,10 +2857,12 @@ export class RenderingEngine implements IRenderingEngine {
 }
 
 // @public (undocumented)
-function renderToCanvasCPU(canvas: HTMLCanvasElement, image: IImage, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<string>;
+function renderToCanvasCPU(canvas: HTMLCanvasElement, imageOrVolume: IImage | IVolume, modality?: string, _renderingEngineId?: string, _viewportOptions?: ViewportInputOptions): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
-function renderToCanvasGPU(canvas: HTMLCanvasElement, image: IImage, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions): Promise<string>;
+function renderToCanvasGPU(canvas: HTMLCanvasElement, imageOrVolume: IImage | IVolume, modality?: any, renderingEngineId?: string, viewportOptions?: ViewportInputOptions & {
+    viewReference?: ViewReference;
+}): Promise<CanvasLoadPosition>;
 
 // @public (undocumented)
 enum RequestType {
@@ -2916,6 +2910,45 @@ type RGB = [number, number, number];
 
 // @public (undocumented)
 function rgbToHex(r: any, g: any, b: any): string;
+
+// @public (undocumented)
+class RLEVoxelMap<T> {
+    constructor(width: number, height: number, depth?: number);
+    // (undocumented)
+    clear(): void;
+    // (undocumented)
+    defaultValue: T;
+    // (undocumented)
+    protected depth: number;
+    // (undocumented)
+    protected findIndex(row: RLERun<T>[], i: number): number;
+    // (undocumented)
+    get: (index: number) => T;
+    // (undocumented)
+    getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;
+    // (undocumented)
+    protected getRLE(i: number, j: number, k?: number): RLERun<T>;
+    // (undocumented)
+    getRun: (j: number, k: number) => RLERun<T>[];
+    // (undocumented)
+    protected height: number;
+    // (undocumented)
+    protected jMultiple: number;
+    // (undocumented)
+    keys(): number[];
+    // (undocumented)
+    protected kMultiple: number;
+    // (undocumented)
+    protected numComps: number;
+    // (undocumented)
+    pixelDataConstructor: Uint8ArrayConstructor;
+    // (undocumented)
+    protected rows: Map<number, RLERun<T>[]>;
+    // (undocumented)
+    set: (index: number, value: T) => void;
+    // (undocumented)
+    protected width: number;
+}
 
 // @public (undocumented)
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
@@ -3043,14 +3076,14 @@ type StackNewImageEventDetail = {
 };
 
 // @public (undocumented)
-export class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
+export class StackViewport extends Viewport implements StackViewport, IImagesLoader {
     constructor(props: ViewportInput);
     // (undocumented)
     addActor: (actorEntry: ActorEntry) => void;
     // (undocumented)
     addActors: (actors: Array<ActorEntry>) => void;
     // (undocumented)
-    addImages(stackInputs: Array<IStackInput>): Promise<void>;
+    addImages(stackInputs: Array<IStackInput>): void;
     // (undocumented)
     calibrateSpacing(imageId: string): void;
     // (undocumented)
@@ -3093,13 +3126,15 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     getDefaultProperties: (imageId?: string) => StackViewportProperties;
     // (undocumented)
-    getFrameOfReferenceUID: () => string | undefined;
+    getFrameOfReferenceUID: (sliceIndex?: number) => string;
     // (undocumented)
     getImageData: () => IImageData | CPUIImageData;
     // (undocumented)
     getImageDataMetadata(image: IImage): ImageDataMetaData;
     // (undocumented)
     getImageIds: () => Array<string>;
+    // (undocumented)
+    getImagePlaneReferenceData(sliceIndex?: number): ViewReference;
     // (undocumented)
     getLoaderImageOptions(imageId: string): {
         targetBuffer: {
@@ -3181,7 +3216,7 @@ export class StackViewport extends Viewport implements IStackViewport, IImagesLo
     // (undocumented)
     setUseCPURendering(value: boolean): void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     stackActorReInitialized: boolean;
     // (undocumented)
@@ -3321,8 +3356,9 @@ declare namespace Types {
         IImagesLoader,
         Cornerstone3DConfig,
         ICamera,
-        IStackViewport,
+        StackViewport as IStackViewport,
         IVideoViewport,
+        IWSIViewport,
         IVolumeViewport,
         IEnabledElement,
         ICache,
@@ -3349,6 +3385,7 @@ declare namespace Types {
         IStreamingVolumeProperties,
         IViewport,
         ViewReference,
+        DataSetOptions as ImageSetOptions,
         ViewPresentation,
         ViewPresentationSelector,
         ReferenceCompatibleOptions,
@@ -3381,6 +3418,7 @@ declare namespace Types {
         Plane,
         ViewportInputOptions,
         VideoViewportProperties,
+        WSIViewportProperties,
         VOIRange,
         VOI,
         DisplayArea,
@@ -3423,6 +3461,7 @@ declare namespace Types {
         ImageLoadListener,
         InternalVideoCamera,
         VideoViewportInput,
+        WSIViewportInput,
         BoundsIJK,
         BoundsLPS,
         Color,
@@ -3455,6 +3494,8 @@ declare namespace utilities {
         getMinMax,
         getRuntimeId,
         isEqual,
+        isEqualAbs,
+        isEqualNegative,
         isOpposite,
         createFloat32SharedArray,
         createUint8SharedArray,
@@ -3509,9 +3550,10 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
+        generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,
-        generateVolumePropsFromImageIds,
+        RLEVoxelMap,
         convertStackToVolumeViewport,
         convertVolumeToStackViewport,
         cacheUtils,
@@ -3620,6 +3662,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     protected getScalarData(): CanvasScalarData;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3655,6 +3699,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     setCamera(camera: ICamera): void;
     // (undocumented)
     protected setColorTransform(): void;
+    // (undocumented)
+    setDataIds(imageIds: string[], options?: DataSetOptions): void;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)
@@ -3795,6 +3841,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3849,6 +3897,8 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setCameraNoEvent(camera: ICamera): void;
     // (undocumented)
+    setDataIds(_imageIds: string[], _options?: DataSetOptions): void;
+    // (undocumented)
     setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
     // (undocumented)
     protected setDisplayAreaFit(displayArea: DisplayArea): void;
@@ -3871,7 +3921,9 @@ export class Viewport implements IViewport {
     // (undocumented)
     protected setRotation: (_rotation: number) => void;
     // (undocumented)
-    setView(viewRef?: ViewReference, viewPres?: ViewPresentation): void;
+    setViewPresentation(viewPres: ViewPresentation): void;
+    // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     setZoom(value: number, storeAsInitialCamera?: boolean): void;
     // (undocumented)
@@ -3976,7 +4028,9 @@ enum ViewportType {
     // (undocumented)
     VIDEO = "video",
     // (undocumented)
-    VOLUME_3D = "volume3d"
+    VOLUME_3D = "volume3d",
+    // (undocumented)
+    WholeSlide = "wholeSlide"
 }
 
 // @public (undocumented)
@@ -4005,6 +4059,7 @@ type ViewReference = {
     referencedImageId?: string;
     cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
+    viewUp?: Point3;
     sliceIndex?: number | [number, number];
     volumeId?: string;
     bounds?: BoundsLPS;
@@ -4191,9 +4246,13 @@ export class VolumeViewport extends BaseVolumeViewport {
         }>;
     }>;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean): boolean;
+    getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+    // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
@@ -4217,6 +4276,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
+    // (undocumented)
+    resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
     // (undocumented)
@@ -4320,6 +4381,132 @@ declare namespace windowLevel {
 
 // @public (undocumented)
 function worldToImageCoords(imageId: string, worldCoords: Point3): Point2 | undefined;
+
+// @public (undocumented)
+export class WSIViewport extends Viewport implements IWSIViewport {
+    constructor(props: WSIViewportInput);
+    // (undocumented)
+    protected canvasToIndex: (canvasPos: Point2) => Point2;
+    // (undocumented)
+    canvasToWorld: (canvasPos: Point2) => Point3;
+    // (undocumented)
+    customRenderViewportToCanvas: () => void;
+    // (undocumented)
+    getCamera(): ICamera;
+    // (undocumented)
+    getCurrentImageId(): string;
+    // (undocumented)
+    getCurrentImageIdIndex(): number;
+    // (undocumented)
+    getFrameNumber(): number;
+    // (undocumented)
+    getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getImageData(): {
+        dimensions: any;
+        spacing: any;
+        numComps: number;
+        origin: any;
+        direction: any;
+        metadata: {
+            Modality: any;
+        };
+        getScalarData: () => any;
+        imageData: {
+            getDirection: () => any;
+            getDimensions: () => any;
+            getRange: () => number[];
+            getScalarData: () => any;
+            getSpacing: () => any;
+            worldToIndex: (point: Point3) => number[];
+            indexToWorld: (point: Point3) => Point3;
+        };
+        hasPixelSpacing: boolean;
+        calibration: IImageCalibration;
+        preScale: {
+            scaled: boolean;
+        };
+    };
+    // (undocumented)
+    getNumberOfSlices: () => number;
+    // (undocumented)
+    getProperties: () => WSIViewportProperties;
+    // (undocumented)
+    getReferenceId(): string;
+    // (undocumented)
+    getRotation: () => number;
+    // (undocumented)
+    protected getScalarData(): any;
+    // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
+    protected getTransform(): Transform;
+    // (undocumented)
+    getView(): any;
+    // (undocumented)
+    getZoom(): any;
+    // (undocumented)
+    hasImageURI(imageURI: string): boolean;
+    // (undocumented)
+    protected imageIds: string[];
+    // (undocumented)
+    protected indexToCanvas: (indexPos: Point2) => Point2;
+    // (undocumented)
+    protected map: any;
+    // (undocumented)
+    protected metadata: any;
+    // (undocumented)
+    protected metadataDicomweb: any;
+    // (undocumented)
+    modality: any;
+    // (undocumented)
+    postrender: () => void;
+    // (undocumented)
+    readonly renderingEngineId: string;
+    // (undocumented)
+    resetCamera: () => boolean;
+    // (undocumented)
+    resetProperties(): void;
+    // (undocumented)
+    resize: () => void;
+    // (undocumented)
+    scroll(delta: number): void;
+    // (undocumented)
+    setCamera(camera: ICamera): void;
+    // (undocumented)
+    setDataIds(imageIds: string[]): void;
+    // (undocumented)
+    setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    setProperties(props: WSIViewportProperties): void;
+    // (undocumented)
+    setWSI(imageIds: string[], client: any): Promise<void>;
+    // (undocumented)
+    setZoom(zoom: number): void;
+    // (undocumented)
+    readonly uid: any;
+    // (undocumented)
+    static get useCustomRenderingPipeline(): boolean;
+    // (undocumented)
+    worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public (undocumented)
+type WSIViewportInput = {
+    id: string;
+    renderingEngineId: string;
+    type: ViewportType;
+    element: HTMLDivElement;
+    sx: number;
+    sy: number;
+    sWidth: number;
+    sHeight: number;
+    defaultOptions: any;
+    canvas: HTMLCanvasElement;
+};
+
+// @public (undocumented)
+type WSIViewportProperties = ViewportProperties;
 
 // (No @packageDocumentation comment for this package)
 

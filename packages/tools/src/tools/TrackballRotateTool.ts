@@ -1,6 +1,5 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { Events } from '../enums';
-
 import {
   eventTarget,
   getEnabledElement,
@@ -12,9 +11,6 @@ import { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
 
-/**
- * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.
- */
 class TrackballRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
@@ -22,6 +18,7 @@ class TrackballRotateTool extends BaseTool {
   cleanUp: () => void;
   _resizeObservers = new Map();
   _viewportAddedListener: (evt: any) => void;
+  _hasResolutionChanged = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -33,7 +30,6 @@ class TrackballRotateTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
-
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
@@ -43,31 +39,33 @@ class TrackballRotateTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-
     const actorEntry = viewport.getDefaultActor();
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
     const originalSampleDistance = mapper.getSampleDistance();
 
-    mapper.setSampleDistance(originalSampleDistance * 2);
+    if (!this._hasResolutionChanged) {
+      mapper.setSampleDistance(originalSampleDistance * 2);
+      this._hasResolutionChanged = true;
 
-    if (this.cleanUp !== null) {
-      // Clean up previous event listener
-      document.removeEventListener('mouseup', this.cleanUp);
+      if (this.cleanUp !== null) {
+        // Clean up previous event listener
+        document.removeEventListener('mouseup', this.cleanUp);
+      }
+
+      this.cleanUp = () => {
+        mapper.setSampleDistance(originalSampleDistance);
+        viewport.render();
+        this._hasResolutionChanged = false;
+      };
+
+      document.addEventListener('mouseup', this.cleanUp, { once: true });
     }
-
-    this.cleanUp = () => {
-      mapper.setSampleDistance(originalSampleDistance);
-      viewport.render();
-    };
-
-    document.addEventListener('mouseup', this.cleanUp, { once: true });
     return true;
   };
 
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-
     return viewports;
   };
 
@@ -168,8 +166,6 @@ class TrackballRotateTool extends BaseTool {
     });
   };
 
-  // pseudocode inspired from
-  // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;
     const currentPointsCanvas = currentPoints.canvas;

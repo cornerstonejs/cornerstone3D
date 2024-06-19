@@ -2,6 +2,7 @@ import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import WindowLevelTool from './WindowLevelTool';
+import WindowLevelRegionTool from './WindowLevelRegionTool';
 import StackScrollTool from './StackScrollTool';
 import PlanarRotateTool from './PlanarRotateTool';
 import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
@@ -66,6 +67,7 @@ export {
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
+  WindowLevelRegionTool,
   StackScrollTool,
   PlanarRotateTool,
   StackScrollMouseWheelTool,

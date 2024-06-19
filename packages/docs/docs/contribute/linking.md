@@ -14,6 +14,9 @@ to do so, you need to link a local development version of 'cornerstone-wado-imag
 to the `cornerstone3D` package, and put your `debugger` in the `cornerstone-wado-image-loader`
 source code.
 
+Also, sometimes you may want to link the external packages to include libraries into
+your build that are not direct dependencies but are dynamically loaded. See the externals/README.md
+file for details.
 
 ## Yarn Link
 
@@ -41,15 +44,14 @@ comes with various webpack configurations, you can use/run the
 force the reflected changes to be built again which is faster than `yarn build`.
 and it also watches for changes to the source code and rebuilds the package.
 
-
-
 ## Tips
+
 1. `yarn link` is actually a symlink between packages. If your linking is not working,
-check out the `node_modules` in the `Cornerstone3D` directory to see if the symlink
-has been created (the updated source code - not the dist - is available in the `node_modules`).
+   check out the `node_modules` in the `Cornerstone3D` directory to see if the symlink
+   has been created (the updated source code - not the dist - is available in the `node_modules`).
 
 2. If your `debugger` is not hitting, you might want to change the `mode` setting
-in the webpack to be `development` instead of `production`. This ensures, minification
-is not applied to the source code.
+   in the webpack to be `development` instead of `production`. This ensures, minification
+   is not applied to the source code.
 
 3. Use a more verbose source map for debugging. You can read more [here](https://webpack.js.org/configuration/devtool/)

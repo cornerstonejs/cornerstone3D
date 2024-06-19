@@ -30,7 +30,7 @@ export default function presentationViewSyncCallback(
 
   const presentationView = sViewport.getViewPresentation(options);
 
-  tViewport.setView(null, presentationView);
+  tViewport.setViewPresentation(presentationView);
 
   tViewport.render();
 }

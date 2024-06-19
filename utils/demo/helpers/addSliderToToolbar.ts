@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities as csUtilities } from '@cornerstonejs/core';
 
 import createElement, { configElement } from './createElement';
 import addLabelToToolbar from './addLabelToToolbar';
@@ -16,7 +16,7 @@ interface configSlider extends configElement {
 }
 
 export default function addSliderToToolbar(config: configSlider): void {
-  config = utilities.deepMerge(config, config.merge);
+  config = csUtilities.deepMerge(config, config.merge);
 
   config.container =
     config.container ?? document.getElementById('demo-toolbar');

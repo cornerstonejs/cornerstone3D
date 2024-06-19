@@ -11,11 +11,9 @@ import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesC
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
-import type IVideoViewport from '../types/IVideoViewport';
 import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import type { IViewport } from '../types/IViewport';
-import VideoViewport from './VideoViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -390,24 +388,6 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
-   * Filters all the available viewports and return the stack viewports
-   * @returns stack viewports registered on the rendering Engine
-   */
-  public getVideoViewports(): Array<IVideoViewport> {
-    this._throwIfDestroyed();
-
-    const viewports = this.getViewports();
-
-    const isVideoViewport = (
-      viewport: IViewport
-    ): viewport is VideoViewport => {
-      return viewport instanceof VideoViewport;
-    };
-
-    return viewports.filter(isVideoViewport) as Array<IVideoViewport>;
-  }
-
-  /**
    * Return all the viewports that are volume viewports
    * @returns An array of VolumeViewport objects.
    */
@@ -626,7 +606,18 @@ class RenderingEngine implements IRenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      vp.resetCamera();
+      const resetPan = true;
+      const resetZoom = true;
+      const resetToCenter = true;
+      const resetRotation = false;
+      const supressEvents = true;
+      vp.resetCamera(
+        resetPan,
+        resetZoom,
+        resetToCenter,
+        resetRotation,
+        supressEvents
+      );
 
       const displayArea = vp.getDisplayArea();
 

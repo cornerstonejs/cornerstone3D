@@ -10,6 +10,7 @@ import drawPolyline from './drawPolyline';
 import drawPath from './drawPath';
 import drawLinkedTextBox from './drawLinkedTextBox';
 import drawRect from './drawRect';
+import drawRectByCoordinates from './drawRectByCoordinates';
 import drawTextBox from './drawTextBox';
 import drawArrow from './drawArrow';
 import drawRedactionRect from './drawRedactionRect';
@@ -29,6 +30,7 @@ export {
   drawPath,
   drawLinkedTextBox,
   drawRect,
+  drawRectByCoordinates,
   drawTextBox,
   drawArrow,
   drawRedactionRect,

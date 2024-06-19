@@ -59,6 +59,11 @@ export default function pointInShapeCallback(
       .getData();
   }
 
+  if (!scalarData) {
+    console.warn('No scalar data found for imageData', imageData);
+    return;
+  }
+
   const dimensions = imageData.getDimensions();
 
   if (!boundsIJK) {

@@ -4,6 +4,7 @@ import {
   StackViewport,
   cache,
   VideoViewport,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -130,13 +131,9 @@ abstract class AnnotationDisplayTool extends BaseTool {
   ): string {
     const targetId = this.getTargetId(viewport);
 
-    let referencedImageId;
+    let referencedImageId = targetId.split(/^[a-zA-Z]+:/)[1];
 
-    if (viewport instanceof StackViewport) {
-      referencedImageId = targetId.split('imageId:')[1];
-    } else if (viewport instanceof VideoViewport) {
-      referencedImageId = targetId.split('videoId:')[1];
-    } else {
+    if (viewport instanceof BaseVolumeViewport) {
       const volumeId = utilities.getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
 

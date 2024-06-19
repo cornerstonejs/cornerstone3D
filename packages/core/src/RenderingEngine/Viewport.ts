@@ -39,6 +39,7 @@ import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
+  DataSetOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -695,7 +696,7 @@ class Viewport implements IViewport {
       this.setDisplayAreaScale(displayArea);
     } else {
       this.setInterpolationType(
-        this.getProperties().interpolationType || InterpolationType.LINEAR
+        this.getProperties()?.interpolationType || InterpolationType.LINEAR
       );
       this.setDisplayAreaFit(displayArea);
     }
@@ -1097,6 +1098,15 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
+  public getSliceIndex(): number {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Gets a referenced image url of some sort - could be a real image id, or
+   * could be a URL with parameters. Regardless it refers to the currently displaying
+   * image as a string value.
+   */
   public getReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return null;
   }
@@ -1140,6 +1150,10 @@ class Viewport implements IViewport {
    * the zoom level is 1.  Computed as a function of the camera.
    */
   public getZoom(compareCamera = this.initialCamera): number {
+    if (!compareCamera) {
+      return 1;
+    }
+
     const activeCamera = this.getVtkActiveCamera();
     const { parallelScale: initialParallelScale } = compareCamera;
     return initialParallelScale / activeCamera.getParallelScale();
@@ -1592,12 +1606,17 @@ class Viewport implements IViewport {
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { focalPoint: cameraFocalPoint, viewPlaneNormal } = this.getCamera();
+    const {
+      focalPoint: cameraFocalPoint,
+      viewPlaneNormal,
+      viewUp,
+    } = this.getCamera();
     const target: ViewReference = {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
       cameraFocalPoint,
       viewPlaneNormal,
-      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex(),
+      viewUp,
+      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getSliceIndex(),
     };
     return target;
   }
@@ -1630,8 +1649,8 @@ class Viewport implements IViewport {
         viewPlaneNormal
       )
     ) {
-      // Could navigate as a volume to the reference
-      return options?.asVolume === true;
+      // Could navigate as a volume to the reference with an orientation change
+      return options?.withOrientation === true;
     }
     return true;
   }
@@ -1689,27 +1708,30 @@ class Viewport implements IViewport {
   }
 
   /**
-   * Sets the given view.  This can apply both the view reference and view presentation
-   * without getting multiple event notifications on shared values like camera updates or
-   * flickers as multiple changes are applied.
-   *
-   * @param viewRef - the basic positioning in terms of what image id/slice index/orientation to display
-   *        * The viewRef must be applicable to the current stack or volume, otherwise an exception will be thrown
-   * @param viewPres - the presentation information to apply to the current image (as chosen above)
+   * Navigates to the image specified by the viewRef.
    */
-  public setView(viewRef?: ViewReference, viewPres?: ViewPresentation) {
-    if (viewPres) {
-      const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
-      if (displayArea !== this.getDisplayArea()) {
-        this.setDisplayArea(displayArea);
-      }
-      this.setZoom(zoom);
-      if (pan) {
-        this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
-      }
-      if (rotation >= 0) {
-        this.setRotation(rotation);
-      }
+  public setViewReference(viewRef: ViewReference) {
+    // No-op
+  }
+
+  /**
+   * Applies the display area, zoom, pan and rotation from the view presentation.
+   * No-op is viewPres isn't defined.
+   */
+  public setViewPresentation(viewPres: ViewPresentation) {
+    if (!viewPres) {
+      return;
+    }
+    const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
+    if (displayArea !== this.getDisplayArea()) {
+      this.setDisplayArea(displayArea);
+    }
+    this.setZoom(zoom);
+    if (pan) {
+      this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
+    }
+    if (rotation >= 0) {
+      this.setRotation(rotation);
     }
   }
 
@@ -1847,6 +1869,13 @@ class Viewport implements IViewport {
     // volume is visible and we don't get clipping artifacts.
     const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
     return radius;
+  }
+
+  /**
+   * This is a wrapper for setStack/setVideo/etc
+   */
+  public setDataIds(_imageIds: string[], _options?: DataSetOptions) {
+    throw new Error('Unsupported operatoin setDataIds');
   }
 }
 

@@ -12,6 +12,9 @@ import triggerEvent from '../utilities/triggerEvent';
 import cloneDeep from 'lodash.clonedeep';
 
 import {
+  createUint16SharedArray,
+  createUint8SharedArray,
+  createFloat32SharedArray,
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   uuidv4,
@@ -28,7 +31,7 @@ import {
   IVolumeLoadObject,
   PixelDataTypedArrayString,
 } from '../types';
-import { getConfiguration } from '../init';
+import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 import {
   performCacheOptimizationForVolume,
   setupCacheOptimizationEventListener,
@@ -640,9 +643,25 @@ function generateVolumeScalarData(
   }
 
   let volumeScalarData;
-  if (targetBuffer?.sharedArrayBuffer) {
-    const buffer = new SharedArrayBuffer(numBytes);
-    volumeScalarData = new TypedArrayConstructor(buffer);
+  if (targetBuffer?.sharedArrayBuffer ?? getShouldUseSharedArrayBuffer()) {
+    switch (targetBuffer.type) {
+      case 'Float32Array':
+        volumeScalarData = createFloat32SharedArray(scalarLength);
+        break;
+      case 'Uint8Array':
+        volumeScalarData = createUint8SharedArray(scalarLength);
+        break;
+      case 'Uint16Array':
+        volumeScalarData = createUint16SharedArray(scalarLength);
+        break;
+      case 'Int16Array':
+        volumeScalarData = createUint16SharedArray(scalarLength);
+        break;
+      default:
+        throw new Error(
+          'generateVolumeScalarData: SharedArrayBuffer is not supported for the specified target buffer type'
+        );
+    }
   } else {
     volumeScalarData = new TypedArrayConstructor(scalarLength);
   }

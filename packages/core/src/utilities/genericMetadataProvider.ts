@@ -17,8 +17,9 @@ const metadataProvider = {
       state[imageId] = {};
     }
 
-    // Create a deep copy of payload.metadata
-    state[imageId][type] = JSON.parse(JSON.stringify(payload.metadata));
+    // Use the raw metadata, or create a deep copy of payload.metadata
+    state[imageId][type] =
+      payload.rawMetadata ?? structuredClone(payload.metadata);
   },
 
   /**

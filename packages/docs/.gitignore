@@ -6,8 +6,6 @@
 /static/_redirects
 /static/.nojekyll
 
-
-
 # Production
 /build
 

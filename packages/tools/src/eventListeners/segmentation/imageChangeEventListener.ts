@@ -212,33 +212,29 @@ function _imageChangeEventListener(evt) {
       // I tried calling modified on everything, but seems like we should remove
       // and add the actor again below
       viewport.removeActors([actor.uid]);
-      viewport.addImages(
-        [
-          {
-            imageId: derivedImageId,
-            actorUID: actor.uid,
-            callback: ({ imageActor }) => {
-              const scalarArray = vtkDataArray.newInstance({
-                name: 'Pixels',
-                numberOfComponents: 1,
-                values: [...derivedImage.getPixelData()],
-              });
+      viewport.addImages([
+        {
+          imageId: derivedImageId,
+          actorUID: actor.uid,
+          callback: ({ imageActor }) => {
+            const scalarArray = vtkDataArray.newInstance({
+              name: 'Pixels',
+              numberOfComponents: 1,
+              values: [...derivedImage.getPixelData()],
+            });
 
-              const imageData = vtkImageData.newInstance();
+            const imageData = vtkImageData.newInstance();
 
-              imageData.setDimensions(dimensions[0], dimensions[1], 1);
-              imageData.setSpacing(spacing);
-              imageData.setDirection(direction);
-              imageData.setOrigin(originToUse);
-              imageData.getPointData().setScalars(scalarArray);
+            imageData.setDimensions(dimensions[0], dimensions[1], 1);
+            imageData.setSpacing(spacing);
+            imageData.setDirection(direction);
+            imageData.setOrigin(originToUse);
+            imageData.getPointData().setScalars(scalarArray);
 
-              imageActor.getMapper().setInputData(imageData);
-            },
+            imageActor.getMapper().setInputData(imageData);
           },
-        ],
-        true,
-        false
-      );
+        },
+      ]);
 
       triggerSegmentationRender(toolGroup.id);
       return;

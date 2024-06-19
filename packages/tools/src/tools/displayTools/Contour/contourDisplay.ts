@@ -1,4 +1,8 @@
-import { getEnabledElementByIds, Types } from '@cornerstonejs/core';
+import {
+  getEnabledElementByIds,
+  StackViewport,
+  Types,
+} from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -59,7 +63,7 @@ function removeSegmentationRepresentation(
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: Types.IVolumeViewport,
+  viewport: StackViewport | Types.IVolumeViewport,
   representationConfig: ToolGroupSpecificRepresentation,
   toolGroupConfig: SegmentationRepresentationConfig
 ): Promise<void> {

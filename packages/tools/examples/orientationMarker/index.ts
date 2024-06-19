@@ -92,8 +92,8 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'OverlayGrid',
-  'Here we demonstrate overlay grid tool working. The reference lines for all the images in axial series is displayed in the sagittal and coronal series.'
+  'Orientation Marker',
+  'Here we demonstrate Orientation marker tool working .'
 );
 
 const size = '500px';
