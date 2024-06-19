@@ -10,7 +10,12 @@ export default defineConfig({
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
   outputDir: './tests/test-results',
-  reporter: [['html', { outputFolder: './tests/playwright-report' }]],
+  reporter: [
+    [
+      process.env.CI ? 'blob' : 'html',
+      { outputFolder: './tests/playwright-report' },
+    ],
+  ],
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
