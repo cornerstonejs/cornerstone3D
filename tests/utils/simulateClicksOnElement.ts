@@ -24,6 +24,6 @@ export const simulateClicksOnElement = async ({
       position: { x, y },
       clickCount: doubleClick ? 2 : 1,
     });
-    await new Promise((resolve) => setTimeout(resolve, delayBetweenClicks));
+    // await new Promise((resolve) => setTimeout(resolve, delayBetweenClicks));
   }
 };
