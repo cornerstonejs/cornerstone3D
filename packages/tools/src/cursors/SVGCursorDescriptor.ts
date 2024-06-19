@@ -190,7 +190,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Height: extend(BASE, {
-    iconContent: <path d="m 6 22 l 8.5 0 v -16 h 8" stroke-width="3" fill="none" stroke="{{color}}" />,
+    iconContent: `<path d="m 6 22 l 8.5 0 v -16 h 8" stroke-width="3" fill="none" stroke="{{color}}" />`,
     viewBox: {
       x: 24,
       y: 24,
