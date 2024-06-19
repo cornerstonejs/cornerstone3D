@@ -7,7 +7,7 @@ import {
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'labelmapSegmentationTools', 5000);
+  await visitExample(page, 'labelmapSegmentationTools', 10000);
 });
 
 test.describe('Basic manual labelmap Segmentation tools', async () => {
