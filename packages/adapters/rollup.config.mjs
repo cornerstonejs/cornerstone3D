@@ -32,14 +32,13 @@ export default [
                 browser: true
             }),
             typescript({
-                declaration: true,
-                declarationDir: "dist/esm",
                 rootDir: "src",
+                outDir: "dist/esm",
                 allowJs: true,
                 checkJs: false,
                 strict: false,
-                declarationMap: false,
-                emitDeclarationOnly: true,
+                declaration: true,
+                emitDeclarationOnly: false,
                 lib: ["ES2022", "dom"],
                 target: "ES2022",
                 module: "esnext",
@@ -88,7 +87,8 @@ export default [
             }),
             typescript({
                 sourceMap: false,
-                declaration: false
+                declaration: false,
+                outDir: "dist/esm"
             }),
             babel({
                 exclude: "node_modules/**",
