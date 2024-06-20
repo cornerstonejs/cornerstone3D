@@ -157,9 +157,6 @@ async function fetchDicom() {
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM
     imageIds = await createImageIdsAndCacheMetaData(dev.getConfig.fetchDicom);
 
-    //
-    imageIds = imageIds.slice(0, 1);
-
     // TODO
     if (
         dev.getConfig.fetchDicom.StudyInstanceUID ===
@@ -167,6 +164,9 @@ async function fetchDicom() {
     ) {
         imageIds = imageIds.slice(50, 51);
     }
+
+    //
+    imageIds = imageIds.slice(0, 1);
 
     await loadDicom(imageIds);
 }
@@ -292,7 +292,7 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
         }
     });
 
-    //
+    // TODO
     setTimeout(function () {
         //
         csToolsSegmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
@@ -377,7 +377,8 @@ function exportSegmentation() {
                     }
                 );
 
-                //
+                // TODO
+                // https://github.com/cornerstonejs/cornerstone3D/issues/1059#issuecomment-2181016046
                 const generatedSegmentation =
                     Cornerstone3D.Segmentation.generateSegmentation(
                         [cacheImage, cacheImage],
