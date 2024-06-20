@@ -11,6 +11,7 @@ import {
     addBrushSizeSlider,
     addButtonToToolbar,
     addDropdownToToolbar,
+    addLabelToToolbar,
     addManipulationBindings,
     addUploadToToolbar,
     createImageIdsAndCacheMetaData,
@@ -31,6 +32,7 @@ const {
     Enums: csEnums,
     RenderingEngine,
     cache,
+    eventTarget,
     imageLoader,
     metaData,
     setVolumesForViewports,
@@ -43,7 +45,8 @@ const {
     Enums: csToolsEnums,
     SegmentationDisplayTool,
     ToolGroupManager,
-    segmentation: csToolsSegmentation
+    segmentation: csToolsSegmentation,
+    utilities: csToolsUtilities
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 
@@ -58,8 +61,8 @@ let renderingEngine;
 const renderingEngineId = "MY_RENDERING_ENGINE_ID";
 let toolGroup;
 const toolGroupId = "MY_TOOL_GROUP_ID";
-const viewportIds = ["CT_ACQUISITION", "CT_AXIAL", "CT_SAGITTAL", "CT_CORONAL"];
-let imageIds = [];
+const viewportIds = ["CT_AXIAL", "CT_SAGITTAL", "CT_CORONAL"];
+let imageIds: string[] = [];
 const volumeLoaderScheme = "cornerstoneStreamingImageVolume";
 let volumeId;
 
@@ -90,6 +93,10 @@ const group4 = document.createElement("div");
 group4.style.marginBottom = "10px";
 demoToolbar.appendChild(group4);
 
+const group5 = document.createElement("div");
+group5.style.marginBottom = "10px";
+demoToolbar.appendChild(group5);
+
 const content = document.getElementById("content");
 
 const viewportGrid = document.createElement("div");
@@ -108,27 +115,22 @@ element2.style.height = size;
 const element3 = document.createElement("div");
 element3.style.width = size;
 element3.style.height = size;
-const element4 = document.createElement("div");
-element4.style.width = size;
-element4.style.height = size;
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = e => e.preventDefault();
 element2.oncontextmenu = e => e.preventDefault();
 element3.oncontextmenu = e => e.preventDefault();
-element4.oncontextmenu = e => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
-viewportGrid.appendChild(element4);
 
 content.appendChild(viewportGrid);
 
 createInfoSection(content)
     .addInstruction("Viewports:")
     .openNestedSection()
-    .addInstruction("Acquisition | Axial | Sagittal | Coronal")
+    .addInstruction("Axial | Sagittal | Coronal")
     .closeNestedSection();
 
 createInfoSection(content)
@@ -173,9 +175,7 @@ async function readDicom(files: FileList) {
 
     imageIds = [];
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
+    for (const file of files) {
         const imageId = wadouri.fileManager.add(file);
 
         await imageLoader.loadAndCacheImage(imageId);
@@ -198,17 +198,16 @@ async function loadDicom(imageIds: string[]) {
     });
 
     // Generate segmentation id
-    const newSegmentationId = "MY_SEGMENTATION_ID:" + csUtilities.uuidv4();
+    const newSegmentationId = "MY_SEG_ID:" + csUtilities.uuidv4();
     // Add some segmentations based on the source data volume
     await addSegmentationsToState(newSegmentationId);
-    //
+    // Update the dropdown
     updateSegmentationDropdown();
 
     //
     toolGroup.addViewport(viewportIds[0], renderingEngineId);
     toolGroup.addViewport(viewportIds[1], renderingEngineId);
     toolGroup.addViewport(viewportIds[2], renderingEngineId);
-    toolGroup.addViewport(viewportIds[3], renderingEngineId);
 
     // Set the volume to load
     volume.load();
@@ -244,9 +243,7 @@ async function importSegmentation(files: FileList) {
         return;
     }
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
+    for (const file of files) {
         await readSegmentation(file);
     }
 }
@@ -273,8 +270,8 @@ async function readSegmentation(file: File) {
 }
 
 async function loadSegmentation(arrayBuffer: ArrayBuffer) {
-    //
-    const newSegmentationId = "LOAD_SEGMENTATION_ID:" + csUtilities.uuidv4();
+    // Generate segmentation id
+    const newSegmentationId = "LOAD_SEG_ID:" + csUtilities.uuidv4();
 
     //
     const generateToolState =
@@ -326,7 +323,7 @@ async function exportSegmentation() {
 
     // Generate fake metadata as an example
     labelmapData.metadata = [];
-    labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
+    labelmapData.segmentsOnLabelmap.forEach((segmentIndex: number) => {
         const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
             toolGroupId,
             activeSegmentationRepresentation.segmentationRepresentationUID,
@@ -337,6 +334,7 @@ async function exportSegmentation() {
         labelmapData.metadata[segmentIndex] = segmentMetadata;
     });
 
+    //
     const generatedSegmentation =
         Cornerstone3D.Segmentation.generateSegmentation(
             csImages,
@@ -345,6 +343,19 @@ async function exportSegmentation() {
         );
 
     downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
+}
+
+async function addActiveSegmentation() {
+    if (!volumeId) {
+        return;
+    }
+
+    // Generate segmentation id
+    const newSegmentationId = "NEW_SEG_ID:" + csUtilities.uuidv4();
+    // Add some segmentations based on the source data stack
+    await addSegmentationsToState(newSegmentationId);
+    // Update the dropdown
+    updateSegmentationDropdown(newSegmentationId);
 }
 
 function removeActiveSegmentation() {
@@ -375,6 +386,116 @@ function removeActiveSegmentation() {
     updateSegmentationDropdown();
 }
 
+function plusActiveSegment() {
+    if (!volumeId) {
+        return;
+    }
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    //
+    if (!activeSegmentation) {
+        return;
+    }
+
+    if (activeSegmentation.activeSegmentIndex + 1 <= 255) {
+        csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
+            activeSegmentation.segmentationId,
+            activeSegmentation.activeSegmentIndex + 1
+        );
+
+        // Update the dropdown
+        updateSegmentDropdown();
+    }
+}
+
+function minusActiveSegment() {
+    if (!volumeId) {
+        return;
+    }
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    //
+    if (!activeSegmentation) {
+        return;
+    }
+
+    if (activeSegmentation.activeSegmentIndex - 1 >= 1) {
+        csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
+            activeSegmentation.segmentationId,
+            activeSegmentation.activeSegmentIndex - 1
+        );
+
+        // Update the dropdown
+        updateSegmentDropdown();
+    }
+}
+
+function removeActiveSegment() {
+    if (!volumeId) {
+        return;
+    }
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    //
+    if (!activeSegmentation) {
+        return;
+    }
+
+    // Get volume
+    const volume = cache.getVolume(activeSegmentation.segmentationId);
+
+    // Get scalar data
+    const scalarData = volume.getScalarData();
+
+    //
+    const frameLength = volume.dimensions[0] * volume.dimensions[1];
+    const numFrames = volume.dimensions[2];
+
+    //
+    let index = 0;
+
+    //
+    const modifiedFrames = new Set<number>();
+
+    //
+    for (let f = 0; f < numFrames; f++) {
+        //
+        for (let p = 0; p < frameLength; p++) {
+            if (scalarData[index] === activeSegmentation.activeSegmentIndex) {
+                scalarData[index] = 0;
+
+                modifiedFrames.add(f);
+            }
+
+            index++;
+        }
+    }
+
+    //
+    const modifiedFramesArray = Array.from(modifiedFrames);
+
+    // Event trigger (SEGMENTATION_DATA_MODIFIED)
+    csToolsSegmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+        activeSegmentation.segmentationId,
+        modifiedFramesArray
+    );
+
+    // Update the dropdown
+    updateSegmentDropdown();
+}
+
 // ============================= //
 
 addDropdownToToolbar({
@@ -399,16 +520,6 @@ addButtonToToolbar({
     container: group1
 });
 
-addUploadToToolbar({
-    id: "IMPORT_DICOM",
-    title: "Import DICOM",
-    style: {
-        marginRight: "5px"
-    },
-    onChange: readDicom,
-    container: group2
-});
-
 addButtonToToolbar({
     id: "LOAD_SEGMENTATION",
     title: "Load SEG",
@@ -417,6 +528,16 @@ addButtonToToolbar({
     },
     onClick: fetchSegmentation,
     container: group1
+});
+
+addUploadToToolbar({
+    id: "IMPORT_DICOM",
+    title: "Import DICOM",
+    style: {
+        marginRight: "5px"
+    },
+    onChange: readDicom,
+    container: group2
 });
 
 addUploadToToolbar({
@@ -445,7 +566,12 @@ addDropdownToToolbar({
     options: { map: labelmapTools.toolMap, defaultIndex: 0 },
     onSelectedValueChange: nameAsStringOrNumber => {
         const tool = String(nameAsStringOrNumber);
+
         const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+        if (!toolGroup) {
+            return;
+        }
 
         // Set the currently active tool disabled
         const toolName = toolGroup.getActivePrimaryMouseButtonTool();
@@ -496,10 +622,91 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
+    id: "ADD_ACTIVE_SEGMENTATION",
+    style: {
+        marginRight: "10px"
+    },
+    title: "Add Active Segmentation",
+    onClick: addActiveSegmentation,
+    container: group4
+});
+
+addButtonToToolbar({
     id: "REMOVE_ACTIVE_SEGMENTATION",
     title: "Remove Active Segmentation",
     onClick: removeActiveSegmentation,
     container: group4
+});
+
+addLabelToToolbar({
+    id: "CURRENT_ACTIVE_SEGMENT_LABEL",
+    title: "Current Active Segment: 1",
+    style: {
+        marginRight: "10px"
+    },
+    container: group5
+});
+
+addButtonToToolbar({
+    id: "PLUS_ACTIVE_SEGMENT",
+    attr: {
+        title: "Plus Active Segment"
+    },
+    style: {
+        marginRight: "10px"
+    },
+    title: "+",
+    onClick: plusActiveSegment,
+    container: group5
+});
+
+addButtonToToolbar({
+    id: "MINUS_ACTIVE_SEGMENT",
+    attr: {
+        title: "Minus Active Segment"
+    },
+    style: {
+        marginRight: "10px"
+    },
+    title: "-",
+    onClick: minusActiveSegment,
+    container: group5
+});
+
+addDropdownToToolbar({
+    id: "ACTIVE_SEGMENT_DROPDOWN",
+    style: {
+        width: "200px",
+        marginRight: "10px"
+    },
+    options: { values: [], defaultValue: "" },
+    placeholder: "No active segment...",
+    onSelectedValueChange: nameAsStringOrNumber => {
+        const segmentIndex = Number(nameAsStringOrNumber);
+
+        // Get active segmentation
+        const activeSegmentation =
+            csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+                toolGroupId
+            );
+
+        csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
+            activeSegmentation.segmentationId,
+            segmentIndex
+        );
+
+        // Update the dropdown
+        updateSegmentDropdown();
+    },
+    labelText: "Set Active Segment: ",
+    container: group5
+});
+
+addButtonToToolbar({
+    id: "REMOVE_ACTIVE_SEGMENT",
+    title: "Remove Active Segment",
+    onClick: removeActiveSegment,
+    container: group5
 });
 
 // ============================= //
@@ -599,16 +806,115 @@ function updateSegmentationDropdown(activeSegmentationId?) {
 
     const segmentationIds = getSegmentationIds();
 
-    segmentationIds.forEach(segmentationId => {
-        const option = document.createElement("option");
-        option.value = segmentationId;
-        option.innerText = segmentationId;
-        dropdown.appendChild(option);
-    });
+    //
+    if (segmentationIds.length) {
+        segmentationIds.forEach((segmentationId: string) => {
+            const option = document.createElement("option");
+            option.value = segmentationId;
+            option.innerText = segmentationId;
+            dropdown.appendChild(option);
+        });
 
-    if (activeSegmentationId) {
-        dropdown.value = activeSegmentationId;
+        if (activeSegmentationId) {
+            dropdown.value = activeSegmentationId;
+        }
     }
+    //
+    else {
+        const option = document.createElement("option");
+        option.setAttribute("disabled", "");
+        option.setAttribute("hidden", "");
+        option.setAttribute("selected", "");
+        option.innerText = "No active segmentation...";
+        dropdown.appendChild(option);
+    }
+
+    //
+    updateSegmentDropdown();
+}
+
+function updateSegmentDropdown() {
+    const dropdown = document.getElementById(
+        "ACTIVE_SEGMENT_DROPDOWN"
+    ) as HTMLSelectElement;
+
+    dropdown.innerHTML = "";
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+
+    //
+    if (!activeSegmentation) {
+        const option = document.createElement("option");
+        option.setAttribute("disabled", "");
+        option.setAttribute("hidden", "");
+        option.setAttribute("selected", "");
+        option.innerText = "No active segment...";
+        dropdown.appendChild(option);
+
+        return;
+    }
+
+    //
+    const activeSegmentIndex = activeSegmentation.activeSegmentIndex;
+
+    const segmentIndices =
+        csToolsUtilities.segmentation.getUniqueSegmentIndices(
+            activeSegmentation.segmentationId
+        );
+
+    //
+    const optionDraw = function () {
+        const option = document.createElement("option");
+        option.setAttribute("disabled", "");
+        option.setAttribute("hidden", "");
+        option.setAttribute("selected", "");
+        option.innerText = "Draw or set segment index";
+        dropdown.appendChild(option);
+    };
+
+    //
+    if (segmentIndices.length) {
+        if (!segmentIndices.includes(activeSegmentIndex)) {
+            optionDraw();
+        }
+
+        segmentIndices.forEach((segmentIndex: number) => {
+            const option = document.createElement("option");
+            option.value = segmentIndex.toString();
+            option.innerText = segmentIndex.toString();
+            dropdown.appendChild(option);
+        });
+
+        if (segmentIndices.includes(activeSegmentIndex)) {
+            dropdown.value = activeSegmentIndex.toString();
+        }
+    }
+    //
+    else {
+        optionDraw();
+    }
+
+    //
+    updateSegmentLabel();
+}
+
+function updateSegmentLabel() {
+    const label = document.getElementById(
+        "CURRENT_ACTIVE_SEGMENT_LABEL"
+    ) as HTMLSelectElement;
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+
+    label.innerHTML =
+        "Current Active Segment: " + activeSegmentation.activeSegmentIndex;
 }
 
 function handleFileSelect(evt) {
@@ -661,7 +967,7 @@ async function run() {
             type: ViewportType.ORTHOGRAPHIC,
             element: element1,
             defaultOptions: {
-                orientation: csEnums.OrientationAxis.ACQUISITION,
+                orientation: csEnums.OrientationAxis.AXIAL,
                 background: [0.2, 0, 0.2]
             }
         },
@@ -670,7 +976,7 @@ async function run() {
             type: ViewportType.ORTHOGRAPHIC,
             element: element2,
             defaultOptions: {
-                orientation: csEnums.OrientationAxis.AXIAL,
+                orientation: csEnums.OrientationAxis.SAGITTAL,
                 background: [0.2, 0, 0.2]
             }
         },
@@ -678,15 +984,6 @@ async function run() {
             viewportId: viewportIds[2],
             type: ViewportType.ORTHOGRAPHIC,
             element: element3,
-            defaultOptions: {
-                orientation: csEnums.OrientationAxis.SAGITTAL,
-                background: [0.2, 0, 0.2]
-            }
-        },
-        {
-            viewportId: viewportIds[3],
-            type: ViewportType.ORTHOGRAPHIC,
-            element: element4,
             defaultOptions: {
                 orientation: csEnums.OrientationAxis.CORONAL,
                 background: [0.2, 0, 0.2]
@@ -696,6 +993,14 @@ async function run() {
 
     //
     renderingEngine.setViewports(viewportInputArray);
+
+    //
+    eventTarget.addEventListener(
+        csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED,
+        function () {
+            updateSegmentDropdown();
+        }
+    );
 }
 
 run();
