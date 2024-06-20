@@ -20,7 +20,7 @@
     ".": {
       "import": "./dist/esm/index.js",
       "require": "./dist/umd/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/esm/index.d.ts"
     }
   },
   "scripts": {

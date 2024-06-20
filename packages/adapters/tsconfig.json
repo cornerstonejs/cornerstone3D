@@ -1,15 +1,19 @@
 {
     "compilerOptions": {
+        "allowJs": true,
+        "checkJs": false,
+        "strict": false,
+        "declarationMap": true,
+        "emitDeclarationOnly": true,
+        "lib": ["ES2022", "dom"],
+        "target": "ES2022",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "sourceMap": false,
+        "rootDir": "src",
         "declaration": true,
-        "declarationDir": "./dist/types",
-        "emitDeclarationOnly": true
+        "declarationDir": "dist/esm"
     },
-    "exclude": [
-        "node_modules",
-        "dist",
-        "examples",
-        "old-examples"
-    ]
-
-
+    "include": ["src"],
+    "exclude": ["node_modules", "dist", "examples", "old-examples"]
 }
