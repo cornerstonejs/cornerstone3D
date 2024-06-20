@@ -19,7 +19,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { IStackViewport } from 'core/dist/types/types';
+import { IStackViewport } from 'core/dist/esm/types';
 
 // This is for debugging purposes
 console.warn(

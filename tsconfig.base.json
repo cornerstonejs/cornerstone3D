@@ -33,7 +33,7 @@
     "module": "esnext", // esnext | commonjs
     "moduleResolution": "node",
     "outDir": "dist",
-    "sourceMap": true,
+    "sourceMap": false,
 
   },
   "exclude": [
