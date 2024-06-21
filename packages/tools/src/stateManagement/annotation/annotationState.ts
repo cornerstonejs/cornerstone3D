@@ -1,16 +1,12 @@
-import {
-  triggerEvent,
-  eventTarget,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
-import { Events } from '../../enums';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import { Annotations, Annotation } from '../../types/AnnotationTypes';
-import { AnnotationRemovedEventDetail } from '../../types/EventTypes';
 import { AnnotationGroupSelector } from '../../types';
+
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
+  triggerAnnotationRemoved,
 } from './helpers/state';
 
 // our default annotation manager
@@ -224,15 +220,7 @@ function removeAnnotation(annotationUID: string): void {
 
   manager.removeAnnotation(annotationUID);
 
-  // trigger annotation removed
-  const eventType = Events.ANNOTATION_REMOVED;
-
-  const eventDetail: AnnotationRemovedEventDetail = {
-    annotation,
-    annotationManagerUID: manager.uid,
-  };
-
-  triggerEvent(eventTarget, eventType, eventDetail);
+  triggerAnnotationRemoved({ annotation, annotationManagerUID: manager.uid });
 }
 
 /**
@@ -251,7 +239,36 @@ function getAnnotation(annotationUID: string): Annotation {
  */
 function removeAllAnnotations(): void {
   const manager = getAnnotationManager();
-  manager.removeAllAnnotations();
+  const removedAnnotations = manager.removeAllAnnotations();
+
+  for (const annotation of removedAnnotations) {
+    triggerAnnotationRemoved({
+      annotation,
+      annotationManagerUID: manager.uid,
+    });
+  }
+}
+
+/**
+ * Removes all annotations associated with the specified group (FrameOfReferenceUID) and tool, or
+ * all annotations for the group (FrameOfReferenceUID) if the tool name is not provided.
+ * @param toolName - Optional. The name of the tool to remove annotations for.
+ * @param annotationGroupSelector - The group (FrameOfReferenceUID) to remove annotations for.
+ */
+function removeAnnotations(
+  toolName: string,
+  annotationGroupSelector: AnnotationGroupSelector
+): void {
+  const manager = getAnnotationManager();
+  const groupKey = manager.getGroupKey(annotationGroupSelector);
+  const removedAnnotations = manager.removeAnnotations(groupKey, toolName);
+
+  for (const annotation of removedAnnotations) {
+    triggerAnnotationRemoved({
+      annotation,
+      annotationManagerUID: manager.uid,
+    });
+  }
 }
 
 /**
@@ -281,6 +298,7 @@ export {
   addAnnotation,
   getAnnotation,
   removeAnnotation,
+  removeAnnotations,
   removeAllAnnotations,
   // annotation manager
   setAnnotationManager,

@@ -30,6 +30,7 @@ export default function updateContourPolyline(
   },
   transforms: {
     canvasToWorld: (point: Types.Point2) => Types.Point3;
+    worldToCanvas: (point: Types.Point3) => Types.Point2;
   },
   options?: {
     decimate?: {
@@ -38,7 +39,7 @@ export default function updateContourPolyline(
     };
   }
 ) {
-  const { canvasToWorld } = transforms;
+  const { canvasToWorld, worldToCanvas } = transforms;
   const { data } = annotation;
   const { targetWindingDirection } = polylineData;
   let { points: polyline } = polylineData;
@@ -54,7 +55,8 @@ export default function updateContourPolyline(
   let { closed } = polylineData;
   const numPoints = polyline.length;
   const polylineWorldPoints = new Array(numPoints);
-  const currentWindingDirection = math.polyline.getWindingDirection(polyline);
+  const currentPolylineWindingDirection =
+    math.polyline.getWindingDirection(polyline);
   const parentAnnotation = getParentAnnotation(annotation) as ContourAnnotation;
 
   if (closed === undefined) {
@@ -79,9 +81,22 @@ export default function updateContourPolyline(
     : targetWindingDirection;
 
   if (windingDirection === undefined) {
-    windingDirection = currentWindingDirection;
-  } else if (windingDirection !== currentWindingDirection) {
+    windingDirection = currentPolylineWindingDirection;
+  }
+
+  if (windingDirection !== currentPolylineWindingDirection) {
     polyline.reverse();
+  }
+
+  const handlePoints = data.handles.points.map((p) => worldToCanvas(p));
+
+  if (handlePoints.length > 2) {
+    const currentHandlesWindingDirection =
+      math.polyline.getWindingDirection(handlePoints);
+
+    if (currentHandlesWindingDirection !== windingDirection) {
+      data.handles.points.reverse();
+    }
   }
 
   for (let i = 0; i < numPoints; i++) {
