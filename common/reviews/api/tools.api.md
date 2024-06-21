@@ -1035,15 +1035,26 @@ interface CircleROIStartEndThresholdAnnotation extends Annotation {
     // (undocumented)
     data: {
         label: string;
-        startSlice: number;
-        endSlice: number;
+        startCoordinate: number;
+        endCoordinate: number;
         cachedStats?: {
             pointsInVolume: Types_2.Point3[];
             projectionPoints: Types_2.Point3[][];
+            statistics?: ROICachedStats | any[];
         };
         handles: {
             points: [Types_2.Point3, Types_2.Point3];
             activeHandleIndex: number | null;
+            textBox?: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
         };
     };
     // (undocumented)
@@ -1081,13 +1092,18 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
         };
         data: {
             label: string;
-            startSlice: number;
-            endSlice: number;
+            startCoordinate: number;
+            endCoordinate: number;
             handles: {
                 textBox: {
                     hasMoved: boolean;
-                    worldPosition: any;
-                    worldBoundingBox: any;
+                    worldPosition: Types_2.Point3;
+                    worldBoundingBox: {
+                        topLeft: Types_2.Point3;
+                        topRight: Types_2.Point3;
+                        bottomLeft: Types_2.Point3;
+                        bottomRight: Types_2.Point3;
+                    };
                 };
                 points: [Types_2.Point3, Types_2.Point3];
                 activeHandleIndex: any;
@@ -1095,6 +1111,7 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
             cachedStats: {
                 pointsInVolume: any[];
                 projectionPoints: any[];
+                statistics: any[];
             };
             labelmapUID: any;
         };
@@ -1102,7 +1119,7 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
     // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
     // (undocumented)
-    _computePointsInsideVolume(annotation: any, imageVolume: any, enabledElement: any): void;
+    _computePointsInsideVolume(annotation: any, imageVolume: any, targetId: any, enabledElement: any): void;
     // (undocumented)
     _computeProjectionPoints(annotation: CircleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
@@ -1116,11 +1133,13 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    _getCoordinateForViewplaneNormal(pos: vec3 | number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
-    _getImageIdIndex(imageVolume: Types_2.IImageVolume, pos: vec3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    _getEndCoordinate(worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
-    _getStartSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    _getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal: Types_2.Point3): number;
+    // (undocumented)
+    _getStartCoordinate(worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -1875,6 +1894,7 @@ const _default: {
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
     isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
+    filterAnnotationsWithinSamePlane: typeof filterAnnotationsWithinSamePlane;
 };
 
 // @public (undocumented)
@@ -2400,6 +2420,9 @@ function extractWindowLevelRegionToolData(viewport: any): {
 
 // @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
+
+// @public (undocumented)
+function filterAnnotationsWithinSamePlane(annotations: Annotations, camera: Types_2.ICamera): Annotations;
 
 // @public (undocumented)
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
@@ -3921,7 +3944,8 @@ declare namespace planar {
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
         getPointInLineOfSightWithCriteria,
-        isPlaneIntersectingAABB
+        isPlaneIntersectingAABB,
+        filterAnnotationsWithinSamePlane
     }
 }
 
@@ -4232,16 +4256,27 @@ interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     // (undocumented)
     data: {
         label: string;
-        startSlice: number;
-        endSlice: number;
+        startCoordinate: number;
+        endCoordinate: number;
         cachedStats: {
             pointsInVolume: Types_2.Point3[];
             projectionPoints: Types_2.Point3[][];
             projectionPointsImageIds: string[];
+            statistics?: ROICachedStats | any[];
         };
         handles: {
             points: Types_2.Point3[];
             activeHandleIndex: number | null;
+            textBox: {
+                hasMoved: boolean;
+                worldPosition: Types_2.Point3;
+                worldBoundingBox: {
+                    topLeft: Types_2.Point3;
+                    topRight: Types_2.Point3;
+                    bottomLeft: Types_2.Point3;
+                    bottomRight: Types_2.Point3;
+                };
+            };
         };
     };
     // (undocumented)
@@ -4279,18 +4314,24 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
         };
         data: {
             label: string;
-            startSlice: number;
-            endSlice: number;
+            startCoordinate: number;
+            endCoordinate: number;
             cachedStats: {
                 pointsInVolume: any[];
                 projectionPoints: any[];
                 projectionPointsImageIds: any[];
+                statistics: any[];
             };
             handles: {
                 textBox: {
                     hasMoved: boolean;
-                    worldPosition: any;
-                    worldBoundingBox: any;
+                    worldPosition: Types_2.Point3;
+                    worldBoundingBox: {
+                        topLeft: Types_2.Point3;
+                        topRight: Types_2.Point3;
+                        bottomLeft: Types_2.Point3;
+                        bottomRight: Types_2.Point3;
+                    };
                 };
                 points: Types_2.Point3[];
                 activeHandleIndex: any;
@@ -4301,7 +4342,7 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // (undocumented)
     _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
     // (undocumented)
-    _computePointsInsideVolume(annotation: any, imageVolume: any, enabledElement: any): void;
+    _computePointsInsideVolume(annotation: any, targetId: any, imageVolume: any, enabledElement: any): void;
     // (undocumented)
     _computeProjectionPoints(annotation: RectangleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
@@ -4315,7 +4356,13 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    _getEndSliceIndex(imageVolume: Types_2.IImageVolume, worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    _getCoordinateForViewplaneNormal(pos: vec3 | number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    _getEndCoordinate(worldPos: Types_2.Point3, spacingInNormal: number, viewPlaneNormal: Types_2.Point3): number | undefined;
+    // (undocumented)
+    _getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal: Types_2.Point3): number;
+    // (undocumented)
+    _getStartCoordinate(worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3): number | undefined;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
