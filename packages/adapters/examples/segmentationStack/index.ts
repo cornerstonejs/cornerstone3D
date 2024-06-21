@@ -1,4 +1,4 @@
-/* import { api } from "dicomweb-client"; */
+import { api } from "dicomweb-client";
 
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
@@ -11,6 +11,7 @@ import {
     addBrushSizeSlider,
     addButtonToToolbar,
     addDropdownToToolbar,
+    addLabelToToolbar,
     addManipulationBindings,
     addUploadToToolbar,
     createImageIdsAndCacheMetaData,
@@ -19,6 +20,8 @@ import {
     labelmapTools,
     setTitleAndDescription
 } from "../../../../utils/demo/helpers";
+
+import dcmjs from "dcmjs";
 
 // This is for debugging purposes
 console.warn(
@@ -29,7 +32,9 @@ const {
     Enums: csEnums,
     RenderingEngine,
     cache,
+    eventTarget,
     imageLoader,
+    metaData,
     utilities: csUtilities
 } = cornerstone;
 const { ViewportType } = csEnums;
@@ -45,7 +50,8 @@ const { MouseBindings } = csToolsEnums;
 
 const { wadouri } = cornerstoneDicomImageLoader;
 
-const { helpers } = cornerstoneAdapters;
+const { adaptersSEG, helpers } = cornerstoneAdapters;
+const { Cornerstone3D } = adaptersSEG;
 const { downloadDICOMData } = helpers;
 
 //
@@ -54,16 +60,14 @@ const renderingEngineId = "MY_RENDERING_ENGINE_ID";
 let toolGroup;
 const toolGroupId = "MY_TOOL_GROUP_ID";
 const viewportIds = ["CT_STACK"];
-let imageIds = [];
+let imageIds: string[] = [];
 
 // ======== Set up page ======== //
 
-setTitleAndDescription("DICOM SEG STACK [Construction is underway]", "");
-
-/* setTitleAndDescription(
+setTitleAndDescription(
     "DICOM SEG STACK",
     "Here we demonstrate how to import or export a DICOM SEG from a Cornerstone3D stack."
-); */
+);
 
 // TODO
 const descriptionContainer = document.getElementById(
@@ -76,23 +80,8 @@ descriptionContainer.prepend(warn);
 const textA = document.createElement("p");
 textA.style.color = "red";
 textA.innerHTML =
-    "Notice: The import and export from to stack viewport in DICOM SEG format is not done yet. I did as said ";
+    "<b>Warning:</b><br>Load or import into dicom or segmentation, just one frame. Several frames are not yet completed.<br>When exporting segmentation, also just one frame.";
 warn.appendChild(textA);
-
-const link = document.createElement("a");
-link.href =
-    "https://github.com/cornerstonejs/cornerstone3D/issues/1059#issuecomment-1954647390";
-link.innerHTML = "#1059";
-link.target = "_blank";
-textA.appendChild(link);
-
-const textB = document.createElement("p");
-textB.style.color = "red";
-textB.innerHTML =
-    "When importing dicom or demo dicom only one image view and not several." +
-    "<br>" +
-    "When importing seg or exporting seg, it is not dicom seg format, just dicom arraybuffer.";
-warn.appendChild(textB);
 // END TODO
 
 const size = "500px";
@@ -114,6 +103,10 @@ demoToolbar.appendChild(group3);
 const group4 = document.createElement("div");
 group4.style.marginBottom = "10px";
 demoToolbar.appendChild(group4);
+
+const group5 = document.createElement("div");
+group5.style.marginBottom = "10px";
+demoToolbar.appendChild(group5);
 
 const content = document.getElementById("content");
 
@@ -162,19 +155,18 @@ async function fetchDicom() {
     restart();
 
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-    const imageIdsArray = await createImageIdsAndCacheMetaData(
-        dev.getConfig.fetchDicom
-    );
-
-    imageIds = imageIdsArray.slice(0, 1);
+    imageIds = await createImageIdsAndCacheMetaData(dev.getConfig.fetchDicom);
 
     // TODO
     if (
         dev.getConfig.fetchDicom.StudyInstanceUID ===
         "1.3.12.2.1107.5.2.32.35162.30000015050317233592200000046"
     ) {
-        imageIds = imageIdsArray.slice(50, 51);
+        imageIds = imageIds.slice(50, 51);
     }
+
+    //
+    imageIds = imageIds.slice(0, 1);
 
     await loadDicom(imageIds);
 }
@@ -182,11 +174,12 @@ async function fetchDicom() {
 async function readDicom(files: FileList) {
     restart();
 
+    // TODO
+    const arr = [files[0]];
+
     imageIds = [];
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
+    for (const file of arr) {
         const imageId = wadouri.fileManager.add(file);
 
         await imageLoader.loadAndCacheImage(imageId);
@@ -217,7 +210,7 @@ async function loadDicom(imageIds: string[]) {
     renderingEngine.renderViewports(viewportIds);
 }
 
-/* async function fetchSegmentation() {
+async function fetchSegmentation() {
     if (!imageIds.length) {
         return;
     }
@@ -235,46 +228,67 @@ async function loadDicom(imageIds: string[]) {
 
     //
     await loadSegmentation(arrayBuffer);
-} */
+}
 
 async function importSegmentation(files: FileList) {
     if (!imageIds.length) {
         return;
     }
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
+    for (const file of files) {
         await readSegmentation(file);
     }
 }
 
 async function readSegmentation(file: File) {
-    const arrayBuffer = await loadFileRequest(file);
+    const imageId = wadouri.fileManager.add(file);
+
+    const image = await imageLoader.loadAndCacheImage(imageId);
+
+    if (!image) {
+        return;
+    }
+
+    const instance = metaData.get("instance", imageId);
+
+    if (instance.Modality !== "SEG") {
+        console.error("This is not segmentation: " + file.name);
+        return;
+    }
+
+    const arrayBuffer = image.data.byteArray.buffer;
+
     loadSegmentation(arrayBuffer);
 }
 
 async function loadSegmentation(arrayBuffer: ArrayBuffer) {
     // Generate segmentation id
     const newSegmentationId = "LOAD_SEG_ID:" + csUtilities.uuidv4();
+
     // Add some segmentations based on the source data stack
     const derivedImages = await addSegmentationsToState(newSegmentationId);
     // Update the dropdown
     updateSegmentationDropdown(newSegmentationId);
 
     //
-    const localImage = imageLoader.createAndCacheLocalImage(
-        {
-            scalarData: new Uint8Array(arrayBuffer)
-        },
-        derivedImages.imageIds[0],
-        true
-    );
+    const generateToolState =
+        await Cornerstone3D.Segmentation.generateToolState(
+            imageIds,
+            arrayBuffer,
+            metaData
+        );
 
     //
-    cache._imageCache.forEach(cache => {
-        if (cache.imageId == derivedImages.imageIds[0]) {
-            cache.image = localImage;
+    derivedImages.imageIds.forEach(imageId => {
+        const cachedImage = cache.getImage(imageId);
+
+        if (cachedImage) {
+            const pixelData = cachedImage.getPixelData();
+
+            //
+            pixelData.set(
+                new Uint8Array(generateToolState.labelmapBufferArray[0])
+            );
         }
     });
 
@@ -311,35 +325,91 @@ function exportSegmentation() {
     }
 
     //
-    const labelmap =
-        activeSegmentation.representationData[
-            csToolsEnums.SegmentationRepresentations.Labelmap
-        ];
+    const labelmap = activeSegmentation.representationData[
+        csToolsEnums.SegmentationRepresentations.Labelmap
+    ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
     if (labelmap.imageIdReferenceMap) {
         //
-        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
-            /* //
+        labelmap.imageIdReferenceMap.forEach(
+            async (derivedImagesId: string, imageId: string) => {
+                //
                 await imageLoader.loadAndCacheImage(imageId);
                 //
-                const cacheImage = cache.getImage(imageId); */
+                const cacheImage = cache.getImage(imageId);
 
-            //
-            const cacheSegmentationImage = cache.getImage(derivedImagesId);
+                //
+                const cacheSegmentationImage = cache.getImage(derivedImagesId);
 
-            const pixelData = cacheSegmentationImage.getPixelData();
+                // TODO
+                // generateLabelMaps2DFrom3D required "scalarData" and "dimensions"
+                cacheSegmentationImage.scalarData =
+                    cacheSegmentationImage.getPixelData();
+                cacheSegmentationImage.dimensions = [
+                    cacheSegmentationImage.columns,
+                    cacheSegmentationImage.rows,
+                    1
+                ];
 
-            downloadDICOMData(pixelData.buffer, "my_seg_arraybuffer");
-        });
+                //
+                const labelmapData =
+                    Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
+                        cacheSegmentationImage
+                    );
+
+                // Generate fake metadata as an example
+                labelmapData.metadata = [];
+                labelmapData.segmentsOnLabelmap.forEach(
+                    (segmentIndex: number) => {
+                        const color =
+                            csToolsSegmentation.config.color.getColorForSegmentIndex(
+                                toolGroupId,
+                                activeSegmentationRepresentation.segmentationRepresentationUID,
+                                segmentIndex
+                            );
+
+                        const segmentMetadata = generateMockMetadata(
+                            segmentIndex,
+                            color
+                        );
+                        labelmapData.metadata[segmentIndex] = segmentMetadata;
+                    }
+                );
+
+                // TODO
+                // https://github.com/cornerstonejs/cornerstone3D/issues/1059#issuecomment-2181016046
+                const generatedSegmentation =
+                    Cornerstone3D.Segmentation.generateSegmentation(
+                        [cacheImage, cacheImage],
+                        labelmapData,
+                        metaData
+                    );
+
+                downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
+            }
+        );
     }
+}
+
+async function addActiveSegmentation() {
+    if (!imageIds.length) {
+        return;
+    }
+
+    // Generate segmentation id
+    const newSegmentationId = "NEW_SEG_ID:" + csUtilities.uuidv4();
+    // Add some segmentations based on the source data stack
+    await addSegmentationsToState(newSegmentationId);
+    // Update the dropdown
+    updateSegmentationDropdown(newSegmentationId);
 }
 
 function removeActiveSegmentation() {
     //
     const segmentationIds = getSegmentationIds();
     //
-    if (segmentationIds.length <= 1) {
+    if (!segmentationIds.length) {
         return;
     }
 
@@ -369,10 +439,9 @@ function removeActiveSegmentation() {
     );
 
     //
-    const labelmap =
-        activeSegmentation.representationData[
-            csToolsEnums.SegmentationRepresentations.Labelmap
-        ];
+    const labelmap = activeSegmentation.representationData[
+        csToolsEnums.SegmentationRepresentations.Labelmap
+    ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
     if (labelmap.imageIdReferenceMap) {
@@ -385,6 +454,130 @@ function removeActiveSegmentation() {
 
     // Update the dropdown
     updateSegmentationDropdown();
+}
+
+function plusActiveSegment() {
+    if (!imageIds.length) {
+        return;
+    }
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    //
+    if (!activeSegmentation) {
+        return;
+    }
+
+    if (activeSegmentation.activeSegmentIndex + 1 <= 255) {
+        csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
+            activeSegmentation.segmentationId,
+            activeSegmentation.activeSegmentIndex + 1
+        );
+
+        // Update the dropdown
+        updateSegmentDropdown();
+    }
+}
+
+function minusActiveSegment() {
+    if (!imageIds.length) {
+        return;
+    }
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    //
+    if (!activeSegmentation) {
+        return;
+    }
+
+    if (activeSegmentation.activeSegmentIndex - 1 >= 1) {
+        csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
+            activeSegmentation.segmentationId,
+            activeSegmentation.activeSegmentIndex - 1
+        );
+
+        // Update the dropdown
+        updateSegmentDropdown();
+    }
+}
+
+function removeActiveSegment() {
+    if (!imageIds.length) {
+        return;
+    }
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    //
+    if (!activeSegmentation) {
+        return;
+    }
+
+    //
+    const labelmap = activeSegmentation.representationData[
+        csToolsEnums.SegmentationRepresentations.Labelmap
+    ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
+
+    //
+    const modifiedFrames = new Set<number>();
+
+    //
+    if (labelmap.imageIdReferenceMap) {
+        //
+        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
+            // Get image
+            const image = cache.getImage(derivedImagesId);
+
+            // Get pixel data
+            const pixelData = image.getPixelData();
+
+            //
+            const frameLength = image.columns * image.rows;
+            const numFrames = 1;
+
+            //
+            let index = 0;
+
+            //
+            for (let f = 0; f < numFrames; f++) {
+                //
+                for (let p = 0; p < frameLength; p++) {
+                    if (
+                        pixelData[index] ===
+                        activeSegmentation.activeSegmentIndex
+                    ) {
+                        pixelData[index] = 0;
+
+                        modifiedFrames.add(f);
+                    }
+
+                    index++;
+                }
+            }
+        });
+    }
+
+    //
+    const modifiedFramesArray = Array.from(modifiedFrames);
+
+    // Event trigger (SEGMENTATION_DATA_MODIFIED)
+    csToolsSegmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+        activeSegmentation.segmentationId,
+        modifiedFramesArray
+    );
+
+    // Update the dropdown
+    updateSegmentDropdown();
 }
 
 // ============================= //
@@ -418,7 +611,7 @@ addButtonToToolbar({
     container: group1
 });
 
-/* addButtonToToolbar({
+addButtonToToolbar({
     id: "LOAD_SEGMENTATION",
     title: "Load SEG",
     style: {
@@ -426,7 +619,7 @@ addButtonToToolbar({
     },
     onClick: fetchSegmentation,
     container: group1
-}); */
+});
 
 addUploadToToolbar({
     id: "IMPORT_DICOM",
@@ -466,7 +659,12 @@ addDropdownToToolbar({
     options: { map: labelmapTools.toolMap },
     onSelectedValueChange: nameAsStringOrNumber => {
         const tool = String(nameAsStringOrNumber);
+
         const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+        if (!toolGroup) {
+            return;
+        }
 
         // Set the currently active tool disabled
         const toolName = toolGroup.getActivePrimaryMouseButtonTool();
@@ -517,10 +715,91 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
+    id: "ADD_ACTIVE_SEGMENTATION",
+    style: {
+        marginRight: "10px"
+    },
+    title: "Add Active Segmentation",
+    onClick: addActiveSegmentation,
+    container: group4
+});
+
+addButtonToToolbar({
     id: "REMOVE_ACTIVE_SEGMENTATION",
     title: "Remove Active Segmentation",
     onClick: removeActiveSegmentation,
     container: group4
+});
+
+addLabelToToolbar({
+    id: "CURRENT_ACTIVE_SEGMENT_LABEL",
+    title: "Current Active Segment: 1",
+    style: {
+        marginRight: "10px"
+    },
+    container: group5
+});
+
+addButtonToToolbar({
+    id: "PLUS_ACTIVE_SEGMENT",
+    attr: {
+        title: "Plus Active Segment"
+    },
+    style: {
+        marginRight: "10px"
+    },
+    title: "+",
+    onClick: plusActiveSegment,
+    container: group5
+});
+
+addButtonToToolbar({
+    id: "MINUS_ACTIVE_SEGMENT",
+    attr: {
+        title: "Minus Active Segment"
+    },
+    style: {
+        marginRight: "10px"
+    },
+    title: "-",
+    onClick: minusActiveSegment,
+    container: group5
+});
+
+addDropdownToToolbar({
+    id: "ACTIVE_SEGMENT_DROPDOWN",
+    style: {
+        width: "200px",
+        marginRight: "10px"
+    },
+    options: { values: [], defaultValue: "" },
+    placeholder: "No active segment...",
+    onSelectedValueChange: nameAsStringOrNumber => {
+        const segmentIndex = Number(nameAsStringOrNumber);
+
+        // Get active segmentation
+        const activeSegmentation =
+            csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+                toolGroupId
+            );
+
+        csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
+            activeSegmentation.segmentationId,
+            segmentIndex
+        );
+
+        // Update the dropdown
+        updateSegmentDropdown();
+    },
+    labelText: "Set Active Segment: ",
+    container: group5
+});
+
+addButtonToToolbar({
+    id: "REMOVE_ACTIVE_SEGMENT",
+    title: "Remove Active Segment",
+    onClick: removeActiveSegment,
+    container: group5
 });
 
 // ============================= //
@@ -550,7 +829,9 @@ function restart() {
         );
 
         //
-        const labelmap = segmentation.representationData.LABELMAP;
+        const labelmap = segmentation.representationData[
+            csToolsEnums.SegmentationRepresentations.Labelmap
+        ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
         //
         if (labelmap.imageIdReferenceMap) {
@@ -562,7 +843,7 @@ function restart() {
     });
 }
 
-function getSegmentationIds() {
+function getSegmentationIds(): string[] {
     return csToolsSegmentation.state
         .getSegmentations()
         .map(x => x.segmentationId);
@@ -571,7 +852,7 @@ function getSegmentationIds() {
 async function addSegmentationsToState(segmentationId: string) {
     //
     const derivedImages =
-        await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+        imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
 
     //
     const imageIdReferenceMap =
@@ -605,41 +886,149 @@ async function addSegmentationsToState(segmentationId: string) {
     return derivedImages;
 }
 
-function updateSegmentationDropdown(activeSegmentationId?) {
+function generateMockMetadata(segmentIndex, color) {
+    const RecommendedDisplayCIELabValue = dcmjs.data.Colors.rgb2DICOMLAB(
+        color.slice(0, 3).map(value => value / 255)
+    ).map(value => Math.round(value));
+
+    return {
+        SegmentedPropertyCategoryCodeSequence: {
+            CodeValue: "T-D0050",
+            CodingSchemeDesignator: "SRT",
+            CodeMeaning: "Tissue"
+        },
+        SegmentNumber: segmentIndex.toString(),
+        SegmentLabel: "Tissue " + segmentIndex.toString(),
+        SegmentAlgorithmType: "SEMIAUTOMATIC",
+        SegmentAlgorithmName: "Slicer Prototype",
+        RecommendedDisplayCIELabValue,
+        SegmentedPropertyTypeCodeSequence: {
+            CodeValue: "T-D0050",
+            CodingSchemeDesignator: "SRT",
+            CodeMeaning: "Tissue"
+        }
+    };
+}
+
+function updateSegmentationDropdown(activeSegmentationId?: string) {
     const dropdown = document.getElementById(
         "ACTIVE_SEGMENTATION_DROPDOWN"
     ) as HTMLSelectElement;
 
     dropdown.innerHTML = "";
 
+    // Get segmentationIds
     const segmentationIds = getSegmentationIds();
 
-    segmentationIds.forEach(segmentationId => {
-        const option = document.createElement("option");
-        option.value = segmentationId;
-        option.innerText = segmentationId;
-        dropdown.appendChild(option);
-    });
+    //
+    if (segmentationIds.length) {
+        segmentationIds.forEach((segmentationId: string) => {
+            const option = document.createElement("option");
+            option.value = segmentationId;
+            option.innerText = segmentationId;
+            dropdown.appendChild(option);
+        });
 
-    if (activeSegmentationId) {
-        dropdown.value = activeSegmentationId;
+        if (activeSegmentationId) {
+            dropdown.value = activeSegmentationId;
+        }
     }
+    //
+    else {
+        const option = document.createElement("option");
+        option.setAttribute("disabled", "");
+        option.setAttribute("hidden", "");
+        option.setAttribute("selected", "");
+        option.innerText = "No active segmentation...";
+        dropdown.appendChild(option);
+    }
+
+    //
+    updateSegmentDropdown();
 }
 
-function loadFileRequest(file: File) {
-    return new Promise<ArrayBuffer>((resolve, reject) => {
-        const fileReader = new FileReader();
+function updateSegmentDropdown() {
+    const dropdown = document.getElementById(
+        "ACTIVE_SEGMENT_DROPDOWN"
+    ) as HTMLSelectElement;
 
-        fileReader.onload = evt => {
-            const arrayBuffer = evt.target.result as ArrayBuffer;
+    dropdown.innerHTML = "";
 
-            resolve(arrayBuffer);
-        };
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
 
-        fileReader.onerror = reject;
+    //
+    if (!activeSegmentation) {
+        const option = document.createElement("option");
+        option.setAttribute("disabled", "");
+        option.setAttribute("hidden", "");
+        option.setAttribute("selected", "");
+        option.innerText = "No active segment...";
+        dropdown.appendChild(option);
 
-        fileReader.readAsArrayBuffer(file);
-    });
+        return;
+    }
+
+    //
+    const activeSegmentIndex = activeSegmentation.activeSegmentIndex;
+
+    const segmentIndices =
+        csToolsUtilities.segmentation.getUniqueSegmentIndices(
+            activeSegmentation.segmentationId
+        );
+
+    //
+    const optionDraw = function () {
+        const option = document.createElement("option");
+        option.setAttribute("disabled", "");
+        option.setAttribute("hidden", "");
+        option.setAttribute("selected", "");
+        option.innerText = "Draw or set segment index";
+        dropdown.appendChild(option);
+    };
+
+    //
+    if (segmentIndices.length) {
+        if (!segmentIndices.includes(activeSegmentIndex)) {
+            optionDraw();
+        }
+
+        segmentIndices.forEach((segmentIndex: number) => {
+            const option = document.createElement("option");
+            option.value = segmentIndex.toString();
+            option.innerText = segmentIndex.toString();
+            dropdown.appendChild(option);
+        });
+
+        if (segmentIndices.includes(activeSegmentIndex)) {
+            dropdown.value = activeSegmentIndex.toString();
+        }
+    }
+    //
+    else {
+        optionDraw();
+    }
+
+    //
+    updateSegmentLabel();
+}
+
+function updateSegmentLabel() {
+    const label = document.getElementById(
+        "CURRENT_ACTIVE_SEGMENT_LABEL"
+    ) as HTMLSelectElement;
+
+    // Get active segmentation
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+
+    label.innerHTML =
+        "Current Active Segment: " + activeSegmentation.activeSegmentIndex;
 }
 
 function handleFileSelect(evt) {
@@ -649,8 +1038,8 @@ function handleFileSelect(evt) {
     //
     const files = evt.dataTransfer.files;
 
-    // TODO
-    readDicom([files[0]]);
+    //
+    readDicom(files);
 }
 
 function handleDragOver(evt) {
@@ -699,6 +1088,14 @@ async function run() {
 
     //
     renderingEngine.setViewports(viewportInputArray);
+
+    //
+    eventTarget.addEventListener(
+        csToolsEnums.Events.SEGMENTATION_DATA_MODIFIED,
+        function () {
+            updateSegmentDropdown();
+        }
+    );
 }
 
 run();
