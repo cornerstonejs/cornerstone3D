@@ -99,7 +99,7 @@
     "docdash": "^1.2.0",
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsx-a11y": "6.7.1",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-tsdoc": "^0.2.17",
@@ -172,6 +172,5 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "resolutions": {},
-  "dependencies": {}
+  "resolutions": {}
 }
