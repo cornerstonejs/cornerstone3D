@@ -35,6 +35,7 @@ import {
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -106,6 +107,7 @@ export {
   MIPJumpToClickTool,
   // Annotation Tools
   LengthTool,
+  HeightTool,
   CrosshairsTool,
   ReferenceLinesTool,
   OverlayGridTool,

@@ -12,6 +12,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import {
   LengthTool,
+  HeightTool,
   BidirectionalTool,
   ToolGroupManager,
   Enums as csToolsEnums,

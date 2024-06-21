@@ -14,6 +14,7 @@ console.warn(
 const {
   WindowLevelTool,
   LengthTool,
+  HeightTool,
   RectangleROITool,
   BidirectionalTool,
   ZoomTool,
@@ -73,6 +74,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(StackScrollTool);
@@ -86,6 +88,7 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
@@ -155,6 +158,18 @@ async function run() {
     ],
   });
   toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+    ],
+  });
+  toolGroup.setToolActive(HeightTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Shift + Left Click

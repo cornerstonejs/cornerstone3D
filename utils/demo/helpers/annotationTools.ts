@@ -3,6 +3,7 @@ import type { ToolBinding } from './addManipulationBindings';
 
 const {
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -20,6 +21,7 @@ const {
 const annotationTools = new Map<string, ToolBinding>();
 
 annotationTools.set(LengthTool.toolName, {});
+annotationTools.set(HeightTool.toolName, { tool: HeightTool });
 annotationTools.set(ProbeTool.toolName, { tool: ProbeTool });
 annotationTools.set(RectangleROITool.toolName, { tool: RectangleROITool });
 annotationTools.set(EllipticalROITool.toolName, { tool: EllipticalROITool });

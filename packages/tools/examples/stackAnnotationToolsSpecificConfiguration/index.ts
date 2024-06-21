@@ -22,6 +22,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -93,6 +94,7 @@ const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 const toolsNames = [
   LengthTool.toolName,
+  HeightTool.toolName,
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
@@ -231,6 +233,10 @@ addButtonToToolbar({
       getTextLines: getTextLinesLength,
     });
 
+    toolgroup.setToolConfiguration(HeightTool.toolName, {
+      getTextLines: getTextLinesLength,
+    });
+
     toolgroup.setToolConfiguration(ProbeTool.toolName, {
       getTextLines: getTextLinesProbe,
     });
@@ -278,6 +284,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -294,6 +301,7 @@ async function run() {
 
   // Add the tools to the tool group (we can add specified tools configuration if wanted)
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
@@ -317,6 +325,7 @@ async function run() {
   });
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
+  toolGroup.setToolPassive(HeightTool.toolName);
   toolGroup.setToolPassive(ProbeTool.toolName);
   toolGroup.setToolPassive(RectangleROITool.toolName);
   toolGroup.setToolPassive(EllipticalROITool.toolName);
