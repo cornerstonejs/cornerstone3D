@@ -6,21 +6,18 @@ import {
 } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
-import filterAnnotationsWithinSamePlan from './filterAnnotationsWithinPlan';
 import type { Annotations } from '../../types';
 
 /**
  * Given the viewport and the annotations, it filters the annotations array and only
  * return those annotation that should be displayed on the viewport
  * @param annotations - Annotations
- * @param onSamePlan - Check if the annotation is on the same plan and not only on the same slice
  * @returns A filtered version of the annotations.
  */
 export default function filterAnnotationsForDisplay(
   viewport: Types.IViewport,
   annotations: Annotations,
-  filterOptions: Types.ReferenceCompatibleOptions = {},
-  onSamePlan?: boolean
+  filterOptions: Types.ReferenceCompatibleOptions = {}
 ): Annotations {
   if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();
@@ -28,20 +25,12 @@ export default function filterAnnotationsForDisplay(
     const { spacingInNormalDirection } =
       csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera);
 
-    if (!onSamePlan) {
-      // Get data with same normal and within the same slice
-      return filterAnnotationsWithinSlice(
-        annotations,
-        camera,
-        spacingInNormalDirection
-      );
-    } else {
-      return filterAnnotationsWithinSamePlan(
-        annotations,
-        camera,
-        spacingInNormalDirection
-      );
-    }
+    // Get data with same normal and within the same slice
+    return filterAnnotationsWithinSlice(
+      annotations,
+      camera,
+      spacingInNormalDirection
+    );
   }
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport

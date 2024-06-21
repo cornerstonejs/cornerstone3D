@@ -2,14 +2,9 @@ import {
   getEnabledElement,
   cache,
   StackViewport,
-  triggerEvent,
-  CONSTANTS,
-  eventTarget,
-  metaData,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import { Types, utilities as coreUtils } from '@cornerstonejs/core';
-import { Events } from '../../enums';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
@@ -53,6 +48,7 @@ import { pointInShapeCallback, roundNumber } from '../../utilities/';
 import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -506,17 +502,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;
-    const { element } = viewport;
     let annotations = getAnnotations(this.getToolName(), viewport.element);
 
     if (!annotations?.length) {
       return renderStatus;
     }
 
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
+    annotations = filterAnnotationsWithinSamePlane(
       annotations,
-      true
+      viewport.getCamera()
     );
 
     const styleSpecifier: StyleSpecifier = {

@@ -301,7 +301,7 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations, onSamePlan?: boolean): Annotations | undefined;
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3): string;
     // (undocumented)
@@ -1894,6 +1894,7 @@ const _default: {
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
     isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
+    filterAnnotationsWithinSamePlane: typeof filterAnnotationsWithinSamePlane;
 };
 
 // @public (undocumented)
@@ -2414,7 +2415,10 @@ function extractWindowLevelRegionToolData(viewport: any): {
 };
 
 // @public (undocumented)
-function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions, onSamePlan?: boolean): Annotations;
+function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
+
+// @public (undocumented)
+function filterAnnotationsWithinSamePlane(annotations: Annotations, camera: Types_2.ICamera): Annotations;
 
 // @public (undocumented)
 function filterAnnotationsWithinSlice(annotations: Annotations, camera: Types_2.ICamera, spacingInNormalDirection: number): Annotations;
@@ -3874,7 +3878,8 @@ declare namespace planar {
         getWorldWidthAndHeightFromCorners,
         filterAnnotationsForDisplay,
         getPointInLineOfSightWithCriteria,
-        isPlaneIntersectingAABB
+        isPlaneIntersectingAABB,
+        filterAnnotationsWithinSamePlane
     }
 }
 

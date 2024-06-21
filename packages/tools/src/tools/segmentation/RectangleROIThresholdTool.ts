@@ -197,6 +197,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
       styleSpecifier.annotationUID = annotationUID;
 
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);

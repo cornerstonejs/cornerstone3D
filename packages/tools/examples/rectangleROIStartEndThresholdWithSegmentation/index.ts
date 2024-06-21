@@ -5,7 +5,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,11 +12,9 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import perfusionColorMap from '../rectangleROIThreshold/preset';
 
 // This is for debugging purposes
 console.warn(
@@ -180,7 +177,7 @@ addButtonToToolbar({
     }
 
     annotations.map((annotation, i) => {
-      console.debug(annotation);
+      // @ts-ignore
       const pointsInVolume = annotation.data.cachedStats.pointsInVolume;
       for (let i = 0; i < pointsInVolume.length; i++) {
         for (let j = 0; j < pointsInVolume[i].length; j++) {
@@ -189,7 +186,6 @@ addButtonToToolbar({
           }
         }
       }
-      console.debug(labelmapVolume);
     });
 
     cornerstoneTools.segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(

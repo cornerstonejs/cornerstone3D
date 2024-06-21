@@ -8,7 +8,6 @@ import {
 } from '@cornerstonejs/core';
 
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
 import {
   addAnnotation,
   removeAnnotation,
@@ -58,6 +57,7 @@ import { pointInShapeCallback, roundNumber } from '../../utilities';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 import cloneDeep from 'lodash.clonedeep';
+import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -303,17 +303,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ): boolean => {
     let renderStatus = false;
     const { viewport } = enabledElement;
-    const { element } = viewport;
     let annotations = getAnnotations(this.getToolName(), viewport.element);
 
     if (!annotations?.length) {
       return renderStatus;
     }
 
-    annotations = this.filterInteractableAnnotationsForElement(
-      element,
+    annotations = filterAnnotationsWithinSamePlane(
       annotations,
-      true
+      viewport.getCamera()
     );
 
     const styleSpecifier: StyleSpecifier = {
@@ -429,10 +427,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           }
         );
       }
+
       let lineWidthToUse = lineWidth;
+      let lineDashToUse = lineDash;
 
       if (isMiddleSlice) {
-        lineWidthToUse = 3;
+        lineWidthToUse = lineWidth;
+        lineDashToUse = []; // Use solid line for real line
+      } else {
+        lineDashToUse = [5, 5]; // Use dashed line for projected lines
       }
 
       const circleUID = '0';
@@ -444,7 +447,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         radius,
         {
           color,
-          lineDash,
+          lineDash: lineDashToUse,
           lineWidth: lineWidthToUse,
         }
       );

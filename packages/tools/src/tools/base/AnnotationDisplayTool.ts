@@ -1,9 +1,7 @@
 import {
   utilities,
   getEnabledElement,
-  StackViewport,
   cache,
-  VideoViewport,
   BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -55,13 +53,12 @@ abstract class AnnotationDisplayTool extends BaseTool {
    * imageId as the enabledElement.
    * @param element - The HTML element
    * @param annotations - The annotations to filter (array of annotation)
-   * @param onSamePlan - True if you want the all the annotations on the same plan of the viewport
+   * @param options - options to filter the annotations
    * @returns The filtered annotations
    */
   filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
-    annotations: Annotations,
-    onSamePlan?: boolean
+    annotations: Annotations
   ): Annotations | undefined {
     if (!annotations || !annotations.length) {
       return;
@@ -70,7 +67,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    return filterAnnotationsForDisplay(viewport, annotations, null, onSamePlan);
+    return filterAnnotationsForDisplay(viewport, annotations);
   }
 
   /**

@@ -17,10 +17,9 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  * @param spacingInNormalDirection - The spacing in the normal direction
  * @returns The filtered `Annotations`.
  */
-export default function filterAnnotationsWithinSamePlan(
+export function filterAnnotationsWithinSamePlane(
   annotations: Annotations,
-  camera: Types.ICamera,
-  spacingInNormalDirection: number
+  camera: Types.ICamera
 ): Annotations {
   const { viewPlaneNormal } = camera;
 
