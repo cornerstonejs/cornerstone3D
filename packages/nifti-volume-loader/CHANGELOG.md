@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.79.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.78.3...v1.79.0) (2024-06-21)
+
+### Features
+
+- **tools:** New Tool - Height Tool ([#1283](https://github.com/cornerstonejs/cornerstone3D/issues/1283)) ([f8dd996](https://github.com/cornerstonejs/cornerstone3D/commit/f8dd996f2370e457f599a00841d18f9c1633c870))
+
 ## [1.78.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.78.2...v1.78.3) (2024-06-21)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
