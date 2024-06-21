@@ -1,7 +1,9 @@
 import {
   utilities,
   getEnabledElement,
+  StackViewport,
   cache,
+  VideoViewport,
   BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -53,7 +55,6 @@ abstract class AnnotationDisplayTool extends BaseTool {
    * imageId as the enabledElement.
    * @param element - The HTML element
    * @param annotations - The annotations to filter (array of annotation)
-   * @param options - options to filter the annotations
    * @returns The filtered annotations
    */
   filterInteractableAnnotationsForElement(
