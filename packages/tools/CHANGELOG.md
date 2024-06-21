@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.80.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.79.0...v1.80.0) (2024-06-21)
+
+### Features
+
+- **ROIThresholdsTools:** Made the Rectangle and Circle ROIStartEndThresholds works on other planes ([#1128](https://github.com/cornerstonejs/cornerstone3D/issues/1128)) ([7e5e892](https://github.com/cornerstonejs/cornerstone3D/commit/7e5e892fc277b58f169151b6896eecc5390347d9))
+
 # [1.79.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.78.3...v1.79.0) (2024-06-21)
 
 ### Features
