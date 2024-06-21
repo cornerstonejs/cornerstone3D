@@ -28,6 +28,9 @@
   "exports": {
     ".": {
       "import": "./dist/esm/src/imageLoader/index.js"
+    },
+    "./dynamic-umd": {
+      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
     }
   },
   "scripts": {
