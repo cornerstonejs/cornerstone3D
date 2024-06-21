@@ -30,6 +30,7 @@ export default async function createImageIdsAndCacheMetaData({
   SOPInstanceUID = null,
   wadoRsRoot,
   client = null,
+  convertMultiframe = true,
 }) {
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
@@ -78,7 +79,9 @@ export default async function createImageIdsAndCacheMetaData({
 
   // if the image ids represent multiframe information, creates a new list with one image id per frame
   // if not multiframe data available, just returns the same list given
-  imageIds = convertMultiframeImageIds(imageIds);
+  if (convertMultiframe) {
+    imageIds = convertMultiframeImageIds(imageIds);
+  }
 
   imageIds.forEach((imageId) => {
     let instanceMetaData =

@@ -23,7 +23,7 @@ export default function createElement(config: configElement): HTMLElement {
 
   if (config.attr) {
     for (const key in config.attr) {
-      element[key] = config.attr[key];
+      element.setAttribute(key, config.attr[key]);
     }
   }
 

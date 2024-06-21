@@ -39,6 +39,7 @@ import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
+  DataSetOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
@@ -1868,6 +1869,13 @@ class Viewport implements IViewport {
     // volume is visible and we don't get clipping artifacts.
     const radius = Math.sqrt(w1 + w2 + w3 || 1) * 0.5;
     return radius;
+  }
+
+  /**
+   * This is a wrapper for setStack/setVideo/etc
+   */
+  public setDataIds(_imageIds: string[], _options?: DataSetOptions) {
+    throw new Error('Unsupported operatoin setDataIds');
   }
 }
 

@@ -18,6 +18,7 @@ import type {
   ViewReferenceSpecifier,
   ViewReference,
   ReferenceCompatibleOptions,
+  ImageSetOptions,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -81,7 +82,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   private fps = 30;
 
   /** The number of frames in the video */
-  private numberOfFrames = 0;
+  private numberOfFrames: number;
 
   private videoCamera: InternalVideoCamera = {
     panWorld: [0, 0],
@@ -215,23 +216,43 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   /**
+   * This is a wrapper for setVideo to allow generic behaviour
+   *
+   * @param _groupId - the id for the overall set of image ids.  Unused for video viewport.
+   * @param imageIds - a singleton list containing the imageId of a video.
+   */
+  public setDataIds(imageIds: string[], options?: ImageSetOptions) {
+    this.setVideo(
+      imageIds[0],
+      (options?.viewReference?.sliceIndex as number) || 1
+    );
+  }
+
+  /**
    * Sets the video image id to show and hte frame number.
    * Requirements are to have the imageUrlModule in the metadata
    * with the rendered endpoint being the raw video in video/mp4 format.
    */
   public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
     this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
-    const { rendered } = metaData.get(MetadataModules.IMAGE_URL, imageId);
+    const imageUrlModule = metaData.get(MetadataModules.IMAGE_URL, imageId);
+    if (!imageUrlModule?.rendered) {
+      throw new Error(
+        `Video Image ID ${imageId} does not have a rendered video view`
+      );
+    }
+    const { rendered } = imageUrlModule;
     const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
     this.modality = generalSeries?.Modality;
     this.metadata = this.getImageDataMetadata(imageId);
+    let { cineRate, numberOfFrames } = metaData.get(
+      MetadataModules.CINE,
+      imageId
+    );
+    this.numberOfFrames = numberOfFrames;
 
     return this.setVideoURL(rendered).then(() => {
-      let { cineRate, numberOfFrames } = metaData.get(
-        MetadataModules.CINE,
-        imageId
-      );
-      if (!numberOfFrames) {
+      if (!numberOfFrames || numberOfFrames === 1) {
         numberOfFrames = Math.round(
           this.videoElement.duration * (cineRate || 30)
         );
@@ -578,7 +599,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
    * @param imageURI - containing frame number or range.
    * @returns
    */
-  public hasImageURI(imageURI: string) {
+  public hasImageURI(imageURI: string): boolean {
     // TODO - move annotationFrameRange into core so it can be used here.
     const framesMatch = imageURI.match(VideoViewport.frameRangeExtractor);
     const testURI = framesMatch
@@ -826,9 +847,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
   };
 
   public getNumberOfSlices = (): number => {
-    return Math.round(
+    const computedSlices = Math.round(
       (this.videoElement.duration * this.fps) / this.scrollSpeed
     );
+    return isNaN(computedSlices) ? this.numberOfFrames : computedSlices;
   };
 
   public getFrameOfReferenceUID = (): string => {
@@ -1062,7 +1084,13 @@ class VideoViewport extends Viewport implements IVideoViewport {
       transformationMatrix[5]
     );
 
-    ctx.drawImage(this.videoElement, 0, 0, this.videoWidth, this.videoHeight);
+    ctx.drawImage(
+      this.videoElement,
+      0,
+      0,
+      this.videoWidth || 1024,
+      this.videoHeight || 1024
+    );
 
     for (const actor of this.getActors()) {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);

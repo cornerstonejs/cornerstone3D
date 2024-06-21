@@ -45,6 +45,27 @@ const screenShotPaths = {
     slice6: 'slice6.png',
     slice7: 'slice7.png',
   },
+  splineContourSegmentationTools: {
+    catmullRomSplineROI: 'catmullRomSplineROI.png',
+    linearSplineROI: 'linearSplineROI.png',
+    bsplineROI: 'bsplineROI.png',
+    splinesOnSegmentTwo: 'splinesOnSegmentTwo.png',
+  },
+  surfaceRendering: {
+    viewport: 'viewport.png',
+  },
+  labelmapSegmentationTools: {
+    circularBrush: 'circularBrush.png',
+    circularEraser: 'circularEraser.png',
+    sphereBrush: 'sphereBrush.png',
+    sphereEraser: 'sphereEraser.png',
+    thresholdCircle: 'thresholdCircle.png',
+    rectangleScissor: 'rectangleScissor.png',
+    circleScissor: 'circleScissor.png',
+    sphereScissor: 'sphereScissor.png',
+    scissorEraser: 'scissorEraser.png',
+    paintFill: 'paintFill.png',
+  },
 };
 
 export { screenShotPaths };

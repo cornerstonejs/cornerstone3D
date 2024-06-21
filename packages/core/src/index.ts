@@ -13,6 +13,7 @@ import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
+import WSIViewport from './RenderingEngine/WSIViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import {
@@ -104,6 +105,7 @@ export {
   Viewport,
   StackViewport,
   VideoViewport,
+  WSIViewport,
   RenderingEngine,
   ImageVolume,
   Surface,

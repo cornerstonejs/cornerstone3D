@@ -257,7 +257,7 @@ abstract class BaseTool implements IBaseTool {
     if (viewport instanceof BaseVolumeViewport) {
       return `volumeId:${this.getTargetVolumeId(viewport)}`;
     }
-    throw new Error('getTargetId: viewport must have a getTargetId method');
+    throw new Error('getTargetId: viewport must have a getReferenceId method');
   }
 }
 

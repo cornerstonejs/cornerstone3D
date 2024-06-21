@@ -27,6 +27,11 @@ enum MetadataModules {
   SOP_COMMON = 'sopCommonModule',
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
   VOI_LUT = 'voiLutModule',
+  /**
+   * Some modules need direct access to a web client.  This allows getting
+   * it as metadata in order to get it generically.
+   */
+  WEB_CLIENT = 'webClient',
 }
 
 export default MetadataModules;
