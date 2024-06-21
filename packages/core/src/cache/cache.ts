@@ -896,8 +896,6 @@ class Cache implements ICache {
   public decrementVolumeCacheSize = (decrement: number) => {
     this._volumeCacheSize -= decrement;
   };
-
-  /
 }
 
 /**
