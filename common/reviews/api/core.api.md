@@ -4398,6 +4398,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
+    static getDicomMicroscopyViewer: () => Promise<any>;
+    // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -4427,6 +4429,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
             scaled: boolean;
         };
     };
+    // (undocumented)
+    static getImportPath(): string;
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
@@ -4474,9 +4478,11 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)
-    setDataIds(imageIds: string[]): void;
+    setDataIds(imageIds: string[]): Promise<void>;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
+    // (undocumented)
+    static setGetDicomMicroscopyViewer(getFunction: any): void;
     // (undocumented)
     setProperties(props: WSIViewportProperties): void;
     // (undocumented)

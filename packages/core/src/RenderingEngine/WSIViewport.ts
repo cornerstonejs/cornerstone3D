@@ -209,8 +209,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   public getImageData() {
     const { metadata } = this;
+    if (!metadata) {
+      return;
+    }
 
-    const spacing = metadata.spacing;
+    const { spacing } = metadata;
 
     return {
       dimensions: metadata.dimensions,
@@ -344,8 +347,27 @@ class WSIViewport extends Viewport implements IWSIViewport {
   /**
    * Need to return this as a function to prevent webpack from munging it.
    */
-  private getImportPath() {
+  public static getImportPath() {
     return '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
+  }
+
+  /**
+   * Encapsulate the dicom microscopy fetch so that it can be replaced when
+   * WebPack munges the function in in included module (OHIF typically)
+   */
+  public static getDicomMicroscopyViewer = async () => {
+    // Import the straight module so that webpack doesn't touch it.
+    await import(/* webpackIgnore: true */ this.getImportPath());
+    const DicomMicroscopyViewer = (window as any).dicomMicroscopyViewer;
+    return DicomMicroscopyViewer;
+  };
+
+  /**
+   * Replace the microscopy loader with a custom one.  Note that this is
+   * delayed, so the function isn't called until it is ready to be used.
+   */
+  public static setGetDicomMicroscopyViewer(getFunction) {
+    WSIViewport.getDicomMicroscopyViewer = getFunction;
   }
 
   /**
@@ -434,16 +456,15 @@ class WSIViewport extends Viewport implements IWSIViewport {
       );
     }
 
-    this.setWSI(imageIds, webClient);
+    // Returns the Promise from the child element.
+    return this.setWSI(imageIds, webClient);
   }
 
   public async setWSI(imageIds: string[], client) {
     this.microscopyElement.style.background = 'red';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
-    // Import the straight module so that webpack doesn't touch it.
-    await import(/* webpackIgnore: true */ this.getImportPath());
-    const DicomMicroscopyViewer = (window as any).dicomMicroscopyViewer;
+    const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
     this.frameOfReferenceUID = null;
 
     const metadataDicomweb = this.imageIds.map((imageId) => {
@@ -479,6 +500,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
       const imageFlavor = image.ImageType[2];
       if (imageFlavor === 'VOLUME' || imageFlavor === 'THUMBNAIL') {
         volumeImages.push(image);
+      } else {
+        console.log('Unknown image type', image.ImageType);
       }
     });
     this.metadataDicomweb = volumeImages;
