@@ -23,6 +23,8 @@ const EVENT_POSTRENDER = 'postrender';
  * looking into an internal scene, and an associated target output `canvas`.
  */
 class WSIViewport extends Viewport implements IWSIViewport {
+  private static DicomMicroscopyViewer;
+
   public modality;
   // Viewport Data
   protected imageIds: string[];
@@ -345,30 +347,27 @@ class WSIViewport extends Viewport implements IWSIViewport {
   };
 
   /**
-   * Need to return this as a function to prevent webpack from munging it.
-   */
-  public static getImportPath() {
-    return '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js';
-  }
-
-  /**
-   * Encapsulate the dicom microscopy fetch so that it can be replaced when
-   * WebPack munges the function in in included module (OHIF typically)
+   * Encapsulate the dicom microscopy fetch so that it can be replaced
+   * with the browser import function.  Webpack munges this and then throws
+   * exceptions trying to get this working, so this has to be provided externally
+   * as a globalThis.browserImportFunction taking the package name, and a set
+   * of options defining how to get the value out of the package.
    */
   public static getDicomMicroscopyViewer = async () => {
-    // Import the straight module so that webpack doesn't touch it.
-    await import(/* webpackIgnore: true */ this.getImportPath());
-    const DicomMicroscopyViewer = (window as any).dicomMicroscopyViewer;
-    return DicomMicroscopyViewer;
+    if (this.DicomMicroscopyViewer) {
+      return this.DicomMicroscopyViewer;
+    }
+    const { browserImportFunction } = window as any;
+    const options = {
+      globalName: 'dicomMicroscopyViewer',
+      importPath: '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
+    };
+    this.DicomMicroscopyViewer = browserImportFunction(
+      'dicom-microscopy-viewer',
+      options
+    );
+    return this.DicomMicroscopyViewer;
   };
-
-  /**
-   * Replace the microscopy loader with a custom one.  Note that this is
-   * delayed, so the function isn't called until it is ready to be used.
-   */
-  public static setGetDicomMicroscopyViewer(getFunction) {
-    WSIViewport.getDicomMicroscopyViewer = getFunction;
-  }
 
   /**
    * The FOR for whole slide imaging is the frame of reference in the DICOM
