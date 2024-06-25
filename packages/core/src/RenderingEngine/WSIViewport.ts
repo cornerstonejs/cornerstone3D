@@ -14,7 +14,11 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
-import { triggerEvent } from '../utilities';
+import {
+  triggerEvent,
+  browserImport,
+  setDefaultBrowserImportOptions,
+} from '../utilities';
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -24,6 +28,14 @@ const EVENT_POSTRENDER = 'postrender';
  */
 class WSIViewport extends Viewport implements IWSIViewport {
   private static DicomMicroscopyViewer;
+  /**
+   *  The options used to import the dicom microscopy viewer.
+   * This is public to allow over-riding the default import
+   */
+  public static DicomMicroscopyViewerImportOptions = {
+    globalName: 'dicomMicroscopyViewer',
+    importPath: '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
+  };
 
   public modality;
   // Viewport Data
@@ -357,15 +369,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
     if (this.DicomMicroscopyViewer) {
       return this.DicomMicroscopyViewer;
     }
-    const { browserImportFunction } = window as any;
-    const options = {
-      globalName: 'dicomMicroscopyViewer',
-      importPath: '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
-    };
-    this.DicomMicroscopyViewer = browserImportFunction(
+    setDefaultBrowserImportOptions(
       'dicom-microscopy-viewer',
-      options
+      this.DicomMicroscopyViewerImportOptions
     );
+    this.DicomMicroscopyViewer = await browserImport('dicom-microscopy-viewer');
     return this.DicomMicroscopyViewer;
   };
 

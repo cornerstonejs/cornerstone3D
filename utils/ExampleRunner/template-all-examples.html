@@ -7,31 +7,11 @@
       content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
     />
   </head>
-  <script>
-    const browserImportsMap = new Map();
-
-window.browserImportFunction = async (moduleId, options) => {
-  if (browserImportsMap.has(moduleId)) {
-    return browserImportsMap.get(moduleId);
-  }
-  const { globalName, importPath, importName } = options;
-  if (!importPath) {
-    throw new Error(`Can't find import path for ${moduleId}`);
-  }
-  const imported = await import(/* webpackIgnore: true */ importPath);
-  const module =
-    (globalName && window[globalName]) ||
-    (importName && imported[importName]) ||
-    imported;
-  if (!module) {
-    console.warn('Found imported', imported);
-    throw new Error(`Unable to import ${moduleId}`);
-  }
-  browserImportsMap.set(moduleId, module);
-  return module;
-};
-
-  </script>
+    <script>
+function browserImportFunction(moduleId) {
+  return import(moduleId);
+}
+    </script>
   <body>
     <!-- TODO -> Style the title and description components so they are the same in every demo-->
     <div id="demo-title-container">

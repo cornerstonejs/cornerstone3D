@@ -32,6 +32,7 @@ import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
+import { browserImport, setDefaultBrowserImportOptions } from './browserImport';
 import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
 import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
 import getSliceRange from './getSliceRange';
@@ -137,6 +138,8 @@ export {
   spatialRegistrationMetadataProvider,
   getViewportImageCornersInWorld,
   hasNaNValues,
+  browserImport,
+  setDefaultBrowserImportOptions,
   applyPreset,
   deepMerge,
   PointsManager,
