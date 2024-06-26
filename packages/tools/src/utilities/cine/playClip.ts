@@ -153,7 +153,14 @@ function playClip(
     const delta = newStepIndex - currentStepIndex;
 
     if (delta) {
-      playClipContext.scroll(delta);
+      try {
+        playClipContext.scroll(delta);
+      } catch (e) {
+        console.warn('Play clip not scrolling', e);
+        _stopClipWithData(playClipData);
+        triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
+        return;
+      }
     }
   };
 
@@ -162,7 +169,9 @@ function playClip(
   }
 
   if (playClipContext.play) {
-    playClipContext.play();
+    playClipData.framesPerSecond = playClipContext.play(
+      playClipOptions.framesPerSecond
+    );
 
     // If playClipTimeouts array is available, not empty and its elements are NOT uniform ...
     // ... (at least one timeout is different from the others), use alternate setTimeout implementation
@@ -320,10 +329,6 @@ function _getPlayClipTimeouts(vector: number[], speed: number) {
  * @param playClipData - The data from playClip that needs to be stopped.
  */
 function _stopClipWithData(playClipData) {
-  if (playClipData.play) {
-    playClipData.play(false);
-    return;
-  }
   const id = playClipData.intervalId;
 
   if (typeof id !== 'undefined') {
@@ -409,12 +414,14 @@ function _createVideoViewportCinePlayContext(
       this.waitForRenderedCount = 0;
       scroll(viewport, { delta, debounceLoading: debounced });
     },
-    play(playing): void {
-      if (playing === false) {
-        viewport.pause();
-      } else {
-        viewport.play();
+    play(fps?: number): number {
+      if (fps) {
+        // This is a bit of a kludge to correspond to playback rates
+        // for other viewports
+        viewport.setPlaybackRate(fps / 24);
       }
+      viewport.play();
+      return viewport.getFrameRate();
     },
   };
 }
