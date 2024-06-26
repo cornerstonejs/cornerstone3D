@@ -4393,11 +4393,6 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     customRenderViewportToCanvas: () => void;
     // (undocumented)
-    static DicomMicroscopyViewerImportOptions: {
-        globalName: string;
-        importPath: string;
-    };
-    // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
     getCurrentImageId(): string;

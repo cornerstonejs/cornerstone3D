@@ -30,16 +30,6 @@ const EVENT_POSTRENDER = 'postrender';
  * implementation of this will depend on your platform.
  */
 class WSIViewport extends Viewport implements IWSIViewport {
-  private static DicomMicroscopyViewer;
-  /**
-   *  The options used to import the dicom microscopy viewer.
-   * This is public to allow over-riding the default import
-   */
-  public static DicomMicroscopyViewerImportOptions = {
-    globalName: 'dicomMicroscopyViewer',
-    importPath: '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
-  };
-
   public modality;
   // Viewport Data
   protected imageIds: string[];
