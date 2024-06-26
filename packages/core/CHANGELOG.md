@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.80.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.2...v1.80.3) (2024-06-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [1.80.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.1...v1.80.2) (2024-06-26)
+
+### Bug Fixes
+
+- **uuidv4:** Fix http environment crypto.randomUUID is undefined ([#1349](https://github.com/cornerstonejs/cornerstone3D/issues/1349)) ([eece791](https://github.com/cornerstonejs/cornerstone3D/commit/eece7911c3292cb3d0a31f29e03c7bd12393dceb))
+
+## [1.80.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.0...v1.80.1) (2024-06-26)
+
+### Bug Fixes
+
+- **video:** Video play clip wasn't working ([#1353](https://github.com/cornerstonejs/cornerstone3D/issues/1353)) ([35dc6c2](https://github.com/cornerstonejs/cornerstone3D/commit/35dc6c2f262644ed657d5db318a70a089045b3d3))
+
 # [1.80.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.79.0...v1.80.0) (2024-06-21)
 
 **Note:** Version bump only for package @cornerstonejs/core

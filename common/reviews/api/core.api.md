@@ -3610,6 +3610,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getFrameRange(): [number, number];
     // (undocumented)
+    getFrameRate(): number;
+    // (undocumented)
     getImageData(): {
         dimensions: any;
         spacing: any;
@@ -3681,7 +3683,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     modality: any;
     // (undocumented)
-    pause(): Promise<void>;
+    pause(): void;
     // (undocumented)
     play(): Promise<void>;
     // (undocumented)

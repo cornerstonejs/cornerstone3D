@@ -1,4 +1,10 @@
-import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  StackViewport,
+  Enums,
+  VideoViewport,
+  WSIViewport,
+} from '@cornerstonejs/core';
 import { getToolState } from './state';
 
 export const requestType = Enums.RequestType.Prefetch;
@@ -54,10 +60,6 @@ export function getStackData(element) {
   if (!(viewport instanceof StackViewport)) {
     // we shouldn't throw error here, since the viewport might have
     // changed from stack to volume during prefetch
-    console.warn(
-      'stackPrefetch: element must be a StackViewport, VolumeViewport stackPrefetch not yet implemented'
-    );
-
     return null;
   }
 
