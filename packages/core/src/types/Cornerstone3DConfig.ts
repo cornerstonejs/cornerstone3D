@@ -73,7 +73,7 @@ type Cornerstone3DConfig = {
    * It allows replacing broken packing system imports with external importers
    * that perform lazy imports.
    */
-  peerImport: (moduleId: string) => any;
+  peerImport?: (moduleId: string) => any;
 };
 
 export default Cornerstone3DConfig;

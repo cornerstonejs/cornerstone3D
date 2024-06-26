@@ -17,12 +17,15 @@ export default async function initDemo() {
  * It in fact just uses the default import from the browser, so it should work
  * on any standards compliant ecmascript environment.
  */
-export function peerImport(moduleId) {
+export async function peerImport(moduleId) {
   if (moduleId === 'dicom-microscopy-viewer') {
     return importGlobal(
       '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
       'dicomMicroscopyViewer'
     );
+  }
+  if (moduleId === '@icr/polyseg-wasm') {
+    return import('@icr/polyseg-wasm');
   }
 }
 

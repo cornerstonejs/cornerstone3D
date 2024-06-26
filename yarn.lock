@@ -2917,7 +2917,7 @@
   resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
   integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
 
-"@icr/polyseg-wasm@0.4.0":
+"@icr/polyseg-wasm@^0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@icr/polyseg-wasm/-/polyseg-wasm-0.4.0.tgz#755e23d07c3d8d8fca1113278c803c1ef0185da0"
   integrity sha512-3sZmiwG8I0NaqPle0L7+V/ZexiR7IjIUFkUsaOoFI9rNuBGyyMMmxAxnCmqcDFtBDk9h+JEYJf6e3NnqlHi/HQ==

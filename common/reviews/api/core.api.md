@@ -409,7 +409,7 @@ type Cornerstone3DConfig = {
         strictZSpacingForVolumeViewport: boolean;
     };
     enableCacheOptimization: boolean;
-    peerImport: (moduleId: string) => any;
+    peerImport?: (moduleId: string) => any;
 };
 
 // @public (undocumented)
@@ -2572,6 +2572,9 @@ type OrientationVectors = {
     viewPlaneNormal: Point3;
     viewUp: Point3;
 };
+
+// @public (undocumented)
+export function peerImport(moduleId: string): any;
 
 // @public (undocumented)
 function performCacheOptimizationForVolume(volume: any): void;
