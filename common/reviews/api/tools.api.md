@@ -988,6 +988,7 @@ type CinePlayContext = {
     get frameTimeVectorEnabled(): boolean;
     waitForRenderedCount?: number;
     scroll(delta: number): void;
+    play?(playing?: boolean): void;
 };
 
 declare namespace CINETypes {

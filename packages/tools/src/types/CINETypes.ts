@@ -33,6 +33,9 @@ type CinePlayContext = {
   // the next image.
   waitForRenderedCount?: number;
   scroll(delta: number): void;
+  // An alternate implementation for video viewports or others that have
+  // native play functionality
+  play?(playing?: boolean): void;
 };
 
 export type { PlayClipOptions, ToolData, CinePlayContext };

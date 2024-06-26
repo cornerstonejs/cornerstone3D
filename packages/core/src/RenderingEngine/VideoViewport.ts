@@ -1110,6 +1110,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       element: this.element,
       viewportId: this.id,
       viewport: this,
+      imageIndex: this.getSliceIndex(),
+      numberOfSlices: this.numberOfFrames,
       renderingEngineId: this.renderingEngineId,
       time: this.videoElement.currentTime,
       duration: this.videoElement.duration,
