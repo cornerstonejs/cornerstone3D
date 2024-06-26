@@ -8,6 +8,25 @@ export default async function initDemo() {
   initProviders();
   initCornerstoneDICOMImageLoader();
   initVolumeLoader();
-  await csRenderInit();
+  await csRenderInit({ peerImport });
   await csToolsInit();
+}
+
+/**
+ * This is one example of how to import peer modules that works with webpack
+ * It in fact just uses the default import from the browser, so it should work
+ * on any standards compliant ecmascript environment.
+ */
+export function peerImport(moduleId) {
+  if (moduleId === 'dicom-microscopy-viewer') {
+    return importGlobal(
+      '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
+      'dicomMicroscopyViewer'
+    );
+  }
+}
+
+async function importGlobal(path, globalName) {
+  await import(/* webpackIgnore: true */ path);
+  return window[globalName];
 }

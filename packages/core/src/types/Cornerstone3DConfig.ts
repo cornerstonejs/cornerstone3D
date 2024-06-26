@@ -68,6 +68,12 @@ type Cornerstone3DConfig = {
    * buffers.
    */
   enableCacheOptimization: boolean;
+  /**
+   * This function returns an imported module for the given module id.
+   * It allows replacing broken packing system imports with external importers
+   * that perform lazy imports.
+   */
+  peerImport: (moduleId: string) => any;
 };
 
 export default Cornerstone3DConfig;

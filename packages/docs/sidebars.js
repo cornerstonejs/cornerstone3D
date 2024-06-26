@@ -204,7 +204,6 @@ module.exports = {
         'contribute/playwright-tests',
         'contribute/karma-tests',
         'contribute/linking',
-        'contribute/external-modules',
       ],
     },
     'migrationGuides',

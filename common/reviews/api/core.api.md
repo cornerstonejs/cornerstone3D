@@ -220,9 +220,6 @@ type BoundsIJK = [Point2, Point2, Point2];
 type BoundsLPS = [Point3, Point3, Point3];
 
 // @public (undocumented)
-function browserImport(moduleId: string, options?: BrowserImportOptions): Promise<any>;
-
-// @public (undocumented)
 export const cache: Cache_2;
 
 declare namespace cacheUtils {
@@ -412,6 +409,7 @@ type Cornerstone3DConfig = {
         strictZSpacingForVolumeViewport: boolean;
     };
     enableCacheOptimization: boolean;
+    peerImport: (moduleId: string) => any;
 };
 
 // @public (undocumented)
@@ -2981,9 +2979,6 @@ type ScalingParameters = {
 export function setConfiguration(c: Cornerstone3DConfig): void;
 
 // @public (undocumented)
-function setDefaultBrowserImportOptions(moduleId: string, options: BrowserImportOptions): void;
-
-// @public (undocumented)
 export function setPreferSizeOverAccuracy(status: boolean): void;
 
 // @public (undocumented)
@@ -3539,8 +3534,6 @@ declare namespace utilities {
         spatialRegistrationMetadataProvider,
         getViewportImageCornersInWorld,
         hasNaNValues,
-        browserImport,
-        setDefaultBrowserImportOptions,
         applyPreset,
         deepMerge,
         PointsManager,

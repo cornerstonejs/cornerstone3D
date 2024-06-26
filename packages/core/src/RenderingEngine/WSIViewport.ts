@@ -14,17 +14,20 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
-import {
-  triggerEvent,
-  browserImport,
-  setDefaultBrowserImportOptions,
-} from '../utilities';
+import { triggerEvent } from '../utilities';
+import { peerImport } from '../init';
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
 /**
- * An object representing a single stack viewport, which is a camera
- * looking into an internal scene, and an associated target output `canvas`.
+ * A viewport which shows a microscopy view using the dicom-microscopy-viewer
+ * library.  This viewport accepts standard CS3D annotations, and responds
+ * similar to how the other types of viewports do for things like zoom/pan.
+ *
+ * This viewport required the `dicom-microscopy-viewer` import to be available
+ * from the peerImport function in the CS3D init configuration.  See the
+ * example `initDemo.js` for one possible implementation, but the actual
+ * implementation of this will depend on your platform.
  */
 class WSIViewport extends Viewport implements IWSIViewport {
   private static DicomMicroscopyViewer;
@@ -366,15 +369,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
    * of options defining how to get the value out of the package.
    */
   public static getDicomMicroscopyViewer = async () => {
-    if (this.DicomMicroscopyViewer) {
-      return this.DicomMicroscopyViewer;
-    }
-    setDefaultBrowserImportOptions(
-      'dicom-microscopy-viewer',
-      this.DicomMicroscopyViewerImportOptions
-    );
-    this.DicomMicroscopyViewer = await browserImport('dicom-microscopy-viewer');
-    return this.DicomMicroscopyViewer;
+    return peerImport('dicom-microscopy-viewer');
   };
 
   /**
