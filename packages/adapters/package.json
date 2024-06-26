@@ -42,7 +42,7 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "@cornerstonejs/tools": "^1.80.1",
+        "@cornerstonejs/tools": "^1.80.2",
         "buffer": "^6.0.3",
         "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
@@ -50,7 +50,7 @@
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "^1.80.1",
-        "@cornerstonejs/streaming-image-volume-loader": "^1.80.1"
+        "@cornerstonejs/core": "^1.80.2",
+        "@cornerstonejs/streaming-image-volume-loader": "^1.80.2"
     }
 }
