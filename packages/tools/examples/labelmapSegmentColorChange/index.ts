@@ -215,7 +215,7 @@ async function run() {
   );
 
   // // Add the segmentation representations to toolgroup1
-  [segRep1] = await segmentation.addSegmentationRepresentations(toolGroupId1, [
+  [segRep1] = await segmentation.addRepresentations(toolGroupId1, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -229,7 +229,7 @@ async function run() {
     },
   ]);
 
-  [segRep2] = await segmentation.addSegmentationRepresentations(toolGroupId2, [
+  [segRep2] = await segmentation.addRepresentations(toolGroupId2, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

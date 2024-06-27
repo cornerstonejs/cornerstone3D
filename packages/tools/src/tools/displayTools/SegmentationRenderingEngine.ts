@@ -1,12 +1,10 @@
 import {
   triggerEvent,
   eventTarget,
-  getRenderingEngine,
   Enums,
   Types,
   getRenderingEngines,
   getEnabledElementByViewportId,
-  utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
   SegmentationRepresentations,
@@ -15,12 +13,8 @@ import {
 
 import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
-import { config as segmentationConfig } from '../../stateManagement/segmentation';
-import { getSegmentationRepresentationsForViewport } from '../../stateManagement/segmentation/segmentationState';
-import {
-  SegmentationRepresentation,
-  SegmentationRepresentationConfig,
-} from '../../types/SegmentationStateTypes';
+import { getViewportSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
+import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import { surfaceDisplay } from './Surface';
 import { contourDisplay } from './Contour';
 import { labelmapDisplay } from './Labelmap';
@@ -82,7 +76,7 @@ class SegmentationRenderingEngine {
     for (const viewport of viewports) {
       const viewportId = viewport.id;
       const segmentationRepresentations =
-        getSegmentationRepresentationsForViewport(viewportId);
+        getViewportSegmentationRepresentations(viewportId);
 
       if (segmentationId) {
         const hasSegmentationRepresentation = segmentationRepresentations.some(
@@ -159,7 +153,7 @@ class SegmentationRenderingEngine {
 
   _triggerRender(viewportId?: string) {
     const segmentationRepresentations =
-      getSegmentationRepresentationsForViewport(viewportId);
+      getViewportSegmentationRepresentations(viewportId);
 
     if (!segmentationRepresentations?.length) {
       return;

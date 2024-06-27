@@ -295,14 +295,14 @@ async function run() {
   });
 
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  await segmentation.addRepresentations(toolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,
     },
   ]);
 
-  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+  await segmentation.addRepresentations(toolGroupId3d, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,

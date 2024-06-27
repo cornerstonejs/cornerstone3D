@@ -389,5 +389,4 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
-window.segs = defaultSegmentationStateManager;
 export { defaultSegmentationStateManager };

@@ -226,15 +226,12 @@ async function addNewSegmentation() {
 
   for (let i = 0; i < toolGroupIds.length; i++) {
     const toolGroupId = toolGroupIds[i];
-    const [uid] = await segmentation.addSegmentationRepresentations(
-      toolGroupId,
-      [
-        {
-          segmentationId: newSegmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Contour,
-        },
-      ]
-    );
+    const [uid] = await segmentation.addRepresentations(toolGroupId, [
+      {
+        segmentationId: newSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
 
     segmentationRepresentationUIDs[toolGroupId].push(uid);
   }
@@ -253,10 +250,7 @@ function updateActiveSegmentationState() {
   toolGroupIds.forEach((toolGroupId) => {
     const uid = segmentationRepresentationUIDs[toolGroupId][index];
 
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
+    segmentation.activeSegmentation.setActiveRepresentation(toolGroupId, uid);
   });
 
   segmentation.segmentIndex.setActiveSegmentIndex(

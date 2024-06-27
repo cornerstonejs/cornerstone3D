@@ -3,7 +3,6 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 
 import {
   cache,
-  getEnabledElementByIds,
   getEnabledElementByViewportId,
   StackViewport,
   Types,
@@ -12,16 +11,12 @@ import {
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
 } from '../../../types/LabelmapTypes';
-import {
-  LabelmapRepresentation,
-  SegmentationRepresentationConfig,
-} from '../../../types/SegmentationStateTypes';
+import { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 
 import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';

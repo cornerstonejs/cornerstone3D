@@ -73,7 +73,7 @@ class PaintFillTool extends BaseTool {
     const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
+      activeSegmentation.getActiveRepresentation(toolGroupId);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'

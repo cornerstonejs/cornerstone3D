@@ -253,7 +253,7 @@ async function run() {
     },
   ]);
   // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
+  const [uid] = await segmentation.addRepresentations(toolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

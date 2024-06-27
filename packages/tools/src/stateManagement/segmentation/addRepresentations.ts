@@ -3,7 +3,7 @@ import {
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes';
 
-import { addSegmentationRepresentation } from './addSegmentationRepresentation';
+import { addRepresentation } from './addRepresentation';
 
 /**
  * Set the specified segmentation representations on the viewports of the specified
@@ -12,14 +12,14 @@ import { addSegmentationRepresentation } from './addSegmentationRepresentation';
  * @param representationInputArray - An array of segmentation representations to add to the toolGroup
  * @param segmentationRepresentationConfig - Configuration for the segmentation representations
  */
-async function addSegmentationRepresentations(
-  viewportIds: string[],
+async function addRepresentations(
+  viewportId: string,
   representationInputArray: RepresentationPublicInput[],
   segmentationRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string[]> {
   const promises = representationInputArray.map((representationInput) => {
-    return addSegmentationRepresentation(
-      viewportIds,
+    return addRepresentation(
+      viewportId,
       representationInput,
       segmentationRepresentationConfig
     );
@@ -30,4 +30,4 @@ async function addSegmentationRepresentations(
   return segmentationRepresentationUIDs;
 }
 
-export default addSegmentationRepresentations;
+export default addRepresentations;

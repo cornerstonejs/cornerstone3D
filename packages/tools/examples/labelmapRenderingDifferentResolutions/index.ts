@@ -152,13 +152,13 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   });
 
   // Add segmentation representations to the toolgroups
-  segmentation.addSegmentationRepresentations(highResToolGroupId, [
+  segmentation.addRepresentations(highResToolGroupId, [
     {
       segmentationId: highResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  segmentation.addSegmentationRepresentations(lowResToolGroupId, [
+  segmentation.addRepresentations(lowResToolGroupId, [
     {
       segmentationId: lowResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

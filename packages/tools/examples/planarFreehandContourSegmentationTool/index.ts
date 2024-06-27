@@ -499,19 +499,21 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  const segmentationRepresentationUIDs = await segmentation.addRepresentations(
+    toolGroupId,
+    [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    ]);
+    ]
+  );
 
   // Store the segmentation representation that was just created
   segmentationRepresentationUID = segmentationRepresentationUIDs[0];
 
   // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+  segmentation.activeSegmentation.setActiveRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   );

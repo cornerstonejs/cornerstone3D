@@ -6,15 +6,15 @@ import {
   RepresentationPublicInputOptions,
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
-import { getNextColorLUTIndex, addColorLUT } from './segmentationState';
+import * as SegmentationState from './segmentationState';
 import { getRepresentationRenderingConfig } from './helpers/getRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
-async function addSegmentationRepresentation(
-  viewportIds: string[],
+async function addRepresentation(
+  viewportId: string,
   representationInput: RepresentationPublicInput,
   segmentationRepresentationConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
@@ -40,8 +40,8 @@ async function addSegmentationRepresentation(
     rendering: getRepresentationRenderingConfig(representationInput),
     polySeg: options.polySeg,
     config: {
-      base: {},
-      overrides: {},
+      allSegments: {},
+      perSegment: {},
     },
   };
 
@@ -65,12 +65,10 @@ async function addSegmentationRepresentation(
     // });
   }
 
-  viewportIds.forEach((viewportId) => {
-    addSegmentationRepresentationToViewport(viewportId, representation);
-    if (representationInput.type === SegmentationRepresentations.Contour) {
-      triggerAnnotationRenderForViewportIds([viewportId]);
-    }
-  });
+  SegmentationState.addRepresentationToViewport(viewportId, representation);
+  if (representationInput.type === SegmentationRepresentations.Contour) {
+    triggerAnnotationRenderForViewportIds([viewportId]);
+  }
 
   triggerSegmentationModified(segmentationId);
 
@@ -84,14 +82,14 @@ function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
   if (typeof colorLUTOrIndexInput === 'number') {
     colorLUTIndexToUse = colorLUTOrIndexInput;
   } else {
-    const nextIndex = getNextColorLUTIndex();
+    const nextIndex = SegmentationState.getNextColorLUTIndex();
     const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
       ? colorLUTOrIndexInput
       : CORNERSTONE_COLOR_LUT;
-    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+    SegmentationState.addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
     colorLUTIndexToUse = nextIndex;
   }
   return colorLUTIndexToUse;
 }
 
-export { addSegmentationRepresentation };
+export { addRepresentation };

@@ -22,7 +22,7 @@
 
 // const { Events } = csToolsEnums;
 
-// const { addSegmentationRepresentations } = segmentation;
+// const { addRepresentations } = segmentation;
 
 // const { fakeMetaDataProvider, compareImages } = testUtils;
 
@@ -148,7 +148,7 @@
 //                 cornerstone: cornerstone3D,
 //               });
 
-//               addSegmentationRepresentations(this.segToolGroup.id, [
+//               addRepresentations(this.segToolGroup.id, [
 //                 {
 //                   segmentationId,
 //                   type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -237,13 +237,13 @@
 //                     cornerstone: cornerstone3D,
 //                   });
 
-//                   addSegmentationRepresentations(this.segToolGroup.id, [
+//                   addRepresentations(this.segToolGroup.id, [
 //                     {
 //                       segmentationId,
 //                       type: csToolsEnums.SegmentationRepresentations.Labelmap,
 //                     },
 //                   ]);
-//                   addSegmentationRepresentations(this.segToolGroup.id, [
+//                   addRepresentations(this.segToolGroup.id, [
 //                     {
 //                       segmentationId: 'seg2',
 //                       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -389,7 +389,7 @@
 //                 cornerstone: cornerstone3D,
 //               });
 
-//               addSegmentationRepresentations(this.segToolGroup.id, [
+//               addRepresentations(this.segToolGroup.id, [
 //                 {
 //                   segmentationId,
 //                   type: csToolsEnums.SegmentationRepresentations.Labelmap,

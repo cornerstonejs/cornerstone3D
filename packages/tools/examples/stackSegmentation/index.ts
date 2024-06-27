@@ -213,22 +213,16 @@ addButtonToToolbar({
     ]);
 
     // Add the segmentation representation to the toolgroup
-    const [uid] = await segmentation.addSegmentationRepresentations(
-      toolGroupId,
-      [
-        {
-          segmentationId: newSegmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]
-    );
+    const [uid] = await segmentation.addRepresentations(toolGroupId, [
+      {
+        segmentationId: newSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
 
     segmentationRepresentationUIDs.push(uid);
 
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
+    segmentation.activeSegmentation.setActiveRepresentation(toolGroupId, uid);
 
     // update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, newSegmentationId);
@@ -243,10 +237,7 @@ addDropdownToToolbar({
     const name = String(nameAsStringOrNumber);
     const index = segmentationIds.indexOf(name);
     const uid = segmentationRepresentationUIDs[index];
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
+    segmentation.activeSegmentation.setActiveRepresentation(toolGroupId, uid);
 
     // Update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, name);
@@ -428,7 +419,7 @@ async function run() {
     },
   ]);
   // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(
+  const [uid] = await segmentation.addRepresentations(
     [viewportId],
     [
       {

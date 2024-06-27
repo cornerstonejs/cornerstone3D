@@ -6,10 +6,8 @@ import * as SegmentationState from './segmentationState';
  * @param viewportId - The id of the viewport to get the active segmentation for.
  * @returns The active segmentation representation for the tool group.
  */
-function getActiveSegmentationRepresentation(
-  viewportId
-): SegmentationRepresentation {
-  return SegmentationState.getActiveSegmentationRepresentation(viewportId);
+function getActiveRepresentation(viewportId): SegmentationRepresentation {
+  return SegmentationState.getActiveRepresentation(viewportId);
 }
 
 /**
@@ -20,12 +18,12 @@ function getActiveSegmentationRepresentation(
  * @param suppressEvent - Whether to suppress the event triggered by the change - default false.
  * @returns
  */
-function setActiveSegmentationRepresentation(
+function setActiveRepresentation(
   viewportId,
   segmentationRepresentationUID,
   suppressEvent = false
 ): void {
-  SegmentationState.setActiveSegmentationRepresentation(
+  SegmentationState.setActiveRepresentation(
     viewportId,
     segmentationRepresentationUID,
     suppressEvent
@@ -34,7 +32,7 @@ function setActiveSegmentationRepresentation(
 
 export {
   // get
-  getActiveSegmentationRepresentation,
+  getActiveRepresentation,
   // set
-  setActiveSegmentationRepresentation,
+  setActiveRepresentation,
 };

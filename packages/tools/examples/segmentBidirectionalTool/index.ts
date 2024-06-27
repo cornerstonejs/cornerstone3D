@@ -232,7 +232,7 @@ async function addSegmentationsToState() {
 
   // Add the segmentation representation to the toolgroup
   segmentationRepresentationUIDs.push(
-    ...(await segmentation.addSegmentationRepresentations(toolGroupIds[0], [
+    ...(await segmentation.addRepresentations(toolGroupIds[0], [
       {
         segmentationId: segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,

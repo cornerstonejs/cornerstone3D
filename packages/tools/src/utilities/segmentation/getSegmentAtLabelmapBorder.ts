@@ -2,7 +2,7 @@ import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   getSegmentation,
-  getSegmentationRepresentationsBySegmentationId,
+  getRepresentationsBySegmentationId,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
@@ -74,8 +74,9 @@ export function getSegmentAtLabelmapBorder(
   // find the first segmentationRepresentationUID for the segmentationId, since
   // that is what we use as actorUID in the viewport
 
-  const segmentationRepresentations =
-    getSegmentationRepresentationsBySegmentationId(segmentation.segmentationId);
+  const segmentationRepresentations = getRepresentationsBySegmentationId(
+    segmentation.segmentationId
+  );
 
   const { segmentationRepresentationUID } = segmentationRepresentations[0];
   const segmentationActor = viewport.getActor(segmentationRepresentationUID);

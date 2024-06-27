@@ -99,7 +99,7 @@ addButtonToToolbar({
   title: 'Convert labelmap to contour',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addRepresentations(toolGroupId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
@@ -252,7 +252,7 @@ async function run() {
   ]);
 
   // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  await segmentation.addRepresentations(toolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

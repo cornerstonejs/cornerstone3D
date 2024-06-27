@@ -24,7 +24,7 @@ function setSegmentationVisibility(
     return;
   }
 
-  SegmentationState.setSegmentationRepresentationVisibility(
+  SegmentationState.setRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID,
     visibility
@@ -46,7 +46,7 @@ function getSegmentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string
 ): boolean | undefined {
-  return SegmentationState.getSegmentationRepresentationVisibility(
+  return SegmentationState.getRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID
   );

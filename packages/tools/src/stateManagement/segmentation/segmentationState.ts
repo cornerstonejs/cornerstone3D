@@ -101,7 +101,7 @@ function getSegmentationRepresentation(
  * @param segmentationId - The ID of the segmentation.
  * @returns An array of found segmentation representations.
  */
-function getSegmentationRepresentationsBySegmentationId(
+function getRepresentationsBySegmentationId(
   segmentationId: string
 ): SegmentationRepresentation[] {
   const allRepresentations = getSegmentationRepresentations();
@@ -187,7 +187,7 @@ function setPerSegmentConfig(
   }
 }
 
-function getViewportsWithSegmentation(segmentationId: string): string[] {
+function getViewportIdsWithSegmentationId(segmentationId: string): string[] {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   const state = segmentationStateManager.getState();
   const viewports = state.viewports;
@@ -201,7 +201,12 @@ function getViewportsWithSegmentation(segmentationId: string): string[] {
   });
 }
 
-function getSegmentationRepresentationsForViewport(
+/**
+ * Retrieves the segmentation representations for a given viewport.
+ * @param viewportId - The ID of the viewport.
+ * @returns An array of SegmentationRepresentation objects or an empty array if the viewport is not found.
+ */
+function getViewportSegmentationRepresentations(
   viewportId: string
 ): SegmentationRepresentation[] | [] {
   const segmentationStateManager = getDefaultSegmentationStateManager();
@@ -219,7 +224,7 @@ function getSegmentationRepresentationsForViewport(
   return segRepUIDs.map((segRepUID) => state.representations[segRepUID]);
 }
 
-function addSegmentationRepresentationToViewport(
+function addRepresentationToViewport(
   viewportId: string,
   segmentationRepresentation: SegmentationRepresentation,
   suppressEvents?: boolean
@@ -345,7 +350,7 @@ function addColorLUT(colorLUT: Types.ColorLUT, index: number): void {
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @returns The visibility of the segmentation representation in the viewport.
  */
-function getSegmentationRepresentationVisibility(
+function getRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string
 ): boolean {
@@ -362,7 +367,7 @@ function getSegmentationRepresentationVisibility(
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @param visible - The visibility to set for the segmentation representation in the viewport.
  */
-function setSegmentationRepresentationVisibility(
+function setRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string,
   visible: boolean
@@ -381,7 +386,7 @@ function setSegmentationRepresentationVisibility(
  * @param viewportId - The ID of the viewport.
  * @returns The active segmentation representation, or undefined if not found.
  */
-function getActiveSegmentationRepresentation(
+function getActiveRepresentation(
   viewportId: string
 ): SegmentationRepresentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
@@ -395,7 +400,7 @@ function getActiveSegmentationRepresentation(
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @returns
  */
-function setActiveSegmentationRepresentation(
+function setActiveRepresentation(
   viewportId: string,
   segmentationRepresentationUID: string,
   suppressEvents?: boolean
@@ -430,19 +435,19 @@ export {
   getPerSegmentConfig,
   setPerSegmentConfig,
   // viewport
-  getSegmentationRepresentationsForViewport,
-  addSegmentationRepresentationToViewport,
+  getViewportSegmentationRepresentations,
+  addRepresentationToViewport,
   // color
   addColorLUT,
   getColorLUT,
   getNextColorLUTIndex,
   removeColorLUT,
   // visibility
-  getSegmentationRepresentationsBySegmentationId,
-  getSegmentationRepresentationVisibility,
-  setSegmentationRepresentationVisibility,
-  getViewportsWithSegmentation,
+  getRepresentationsBySegmentationId,
+  getRepresentationVisibility,
+  setRepresentationVisibility,
+  getViewportIdsWithSegmentationId,
   // active
-  getActiveSegmentationRepresentation,
-  setActiveSegmentationRepresentation,
+  getActiveRepresentation,
+  setActiveRepresentation,
 };

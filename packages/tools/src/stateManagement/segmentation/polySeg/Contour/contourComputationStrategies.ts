@@ -1,10 +1,7 @@
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import {
-  getSegmentation,
-  setSegmentationRepresentationConfig,
-} from '../../segmentationState';
+import { getSegmentation, setAllSegmentsConfig } from '../../segmentationState';
 import { PolySegConversionOptions } from '../../../../types';
 import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies';
 import {
@@ -76,20 +73,11 @@ export async function computeContourData(
     segmentationId
   );
 
-  // make the segmentation configuration fillAlpha 0 since
-  // we don't have proper hole support right now
-  // Todo: add hole support
-  const toolGroupId = getToolGroupForViewport(viewport.id)?.id;
-
-  setSegmentationRepresentationConfig(
-    toolGroupId,
-    segmentationRepresentationUID,
-    {
-      CONTOUR: {
-        fillAlpha: 0,
-      },
-    }
-  );
+  setAllSegmentsConfig(segmentationRepresentationUID, {
+    CONTOUR: {
+      fillAlpha: 0,
+    },
+  });
 
   return {
     annotationUIDsMap,

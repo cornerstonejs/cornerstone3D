@@ -2,7 +2,7 @@ import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { invalidateBrushCursor } from '../../utilities/segmentation/';
 import {
   getSegmentation,
-  getViewportsWithSegmentation,
+  getViewportIdsWithSegmentationId,
 } from './segmentationState';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
@@ -36,7 +36,7 @@ function setActiveSegmentIndex(
   // get all toolGroups that has the segmentationId as active
   // segment and call invalidateBrushCursor on them
 
-  const viewportIds = getViewportsWithSegmentation(segmentationId);
+  const viewportIds = getViewportIdsWithSegmentationId(segmentationId);
 
   viewportIds.forEach((viewportId) => {
     const toolGroup = getToolGroupForViewport(viewportId);

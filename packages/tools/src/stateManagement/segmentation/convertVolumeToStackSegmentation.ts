@@ -5,7 +5,7 @@ import {
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
+import addRepresentations from './addRepresentations';
 import {
   triggerSegmentationRender,
   createImageIdReferenceMap,
@@ -66,7 +66,7 @@ export async function convertVolumeToStackSegmentation({
 }: {
   segmentationId: string;
   options?: {
-    toolGroupId: string;
+    viewportId: string;
     newSegmentationId?: string;
     removeOriginal?: boolean;
   };
@@ -81,7 +81,7 @@ export async function convertVolumeToStackSegmentation({
 
   await updateStackSegmentationState({
     segmentationId,
-    toolGroupId: options.toolGroupId,
+    viewportId: options.viewportId,
     imageIdReferenceMap,
     options,
   });
@@ -93,7 +93,7 @@ export async function convertVolumeToStackSegmentation({
  * @param params - The parameters for the conversion.
  * @param params.segmentationId - The segmentationId to convert.
  * @param [params.options] - The conversion options.
- * @param params.options.toolGroupId - The new toolGroupId that the new segmentation will belong to.
+ * @param params.options.viewportId - The viewportId to use for the segmentation.
  * @param [params.options.newSegmentationId] -  The new segmentationId to use for the segmentation. If not provided, a new ID will be generated.
  * @param [params.options.removeOriginal] - Whether or not to remove the original segmentation. Defaults to true.
  *
@@ -101,12 +101,12 @@ export async function convertVolumeToStackSegmentation({
  */
 export async function updateStackSegmentationState({
   segmentationId,
-  toolGroupId,
+  viewportId,
   imageIdReferenceMap,
   options,
 }: {
   segmentationId: string;
-  toolGroupId: string;
+  viewportId: string;
   imageIdReferenceMap: Map<any, any>;
   options?: {
     removeOriginal?: boolean;
@@ -132,14 +132,14 @@ export async function updateStackSegmentationState({
     };
   }
 
-  await addSegmentationRepresentations(toolGroupId, [
+  await addRepresentations(viewportId, [
     {
       segmentationId,
       type: SegmentationRepresentations.Labelmap,
     },
   ]);
 
-  triggerSegmentationRender(toolGroupId);
+  triggerSegmentationRender();
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
     triggerSegmentationDataModified(segmentationId)
   );

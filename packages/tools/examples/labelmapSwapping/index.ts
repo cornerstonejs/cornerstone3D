@@ -66,14 +66,14 @@ addButtonToToolbar({
   title: 'Swap Segmentation',
   onClick: async () => {
     // Remove the currently displayed segmentation representation
-    segmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    segmentation.removeRepresentationsFromViewport(toolGroupId, [
       activeSegmentationRepresentationUID,
     ]);
 
     if (segmentationDisplayed === segmentationId1) {
       // Add segmentation 2
       const [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
+        await segmentation.addRepresentations(toolGroupId, [
           {
             segmentationId: segmentationId2,
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -85,7 +85,7 @@ addButtonToToolbar({
     } else {
       // Add segmentation 1
       const [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
+        await segmentation.addRepresentations(toolGroupId, [
           {
             segmentationId: segmentationId1,
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -207,13 +207,15 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the first segmentation representation to the toolgroup
-  const [segmentationRepresentationUID] =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  const [segmentationRepresentationUID] = await segmentation.addRepresentations(
+    toolGroupId,
+    [
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
-    ]);
+    ]
+  );
 
   activeSegmentationRepresentationUID = segmentationRepresentationUID;
 

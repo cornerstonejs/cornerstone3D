@@ -204,24 +204,18 @@ async function run() {
   });
 
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegContourToolGroupId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
-  await segmentation.addSegmentationRepresentations(
-    volumeSegContourToolGroupId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  await segmentation.addRepresentations(stackSegContourToolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
+  await segmentation.addRepresentations(volumeSegContourToolGroupId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   segmentation.config.setToolGroupSpecificConfig(stackSegContourToolGroupId, {
     renderInactiveRepresentations: true,

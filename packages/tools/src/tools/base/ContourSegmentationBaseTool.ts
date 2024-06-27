@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { Types, getEnabledElement, utilities } from '@cornerstonejs/core';
 import type {
   Annotation,
   EventTypes,
@@ -25,7 +25,12 @@ import {
   removeContourSegmentationAnnotation,
 } from '../../utilities/contourSegmentation';
 import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
-import { getSegmentationRepresentationsBySegmentationId } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getActiveRepresentation,
+  getRepresentationsBySegmentationId,
+  getViewportIdsWithSegmentationId,
+} from '../../stateManagement/segmentation/segmentationState';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 /**
  * A base contour segmentation class responsible for rendering, registering
@@ -54,13 +59,23 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   }
 
   protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    const enabledElement = getEnabledElement(element);
+
+    if (!enabledElement) {
+      return;
+    }
+    const { viewport } = enabledElement;
+
     const contourAnnotation = super.createAnnotation(evt);
 
     if (!this.isContourSegmentationTool()) {
       return contourAnnotation;
     }
 
-    const activeSeg = activeSegmentation.getActiveSegmentation();
+    const activeSeg = activeSegmentation.getActiveRepresentation(viewport.id);
 
     if (!activeSeg) {
       throw new Error(
@@ -130,6 +145,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
    * by a child class to return `false` when that class should work only as an ROI.
    */
   protected getAnnotationStyle(context: {
+    viewport: Types.IViewport;
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
   }) {
@@ -161,7 +177,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       // and trigger the event for them to be able to render the segmentation
       // annotation as well
 
-      const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
+      const viewportIds = getViewportIdsWithSegmentationId(segmentationId);
+
+      const toolGroupIds = viewportIds.map((viewportId) => {
+        const toolGroup = getToolGroupForViewport(viewportId);
+        return toolGroup.id;
+      });
 
       triggerAnnotationRenderForToolGroupIds(toolGroupIds);
     }
@@ -174,15 +195,15 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
    * and segment segmentation configurations.
    */
   private _getContourSegmentationStyle(context: {
+    viewport?: Types.IViewport;
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
   }): Record<string, any> {
-    const { toolGroupId } = this;
     const annotation = context.annotation as ContourSegmentationAnnotation;
     const { segmentationId, segmentIndex } = annotation.data.segmentation;
     const segmentation = segmentationState.getSegmentation(segmentationId);
     const segmentationRepresentations =
-      getSegmentationRepresentationsBySegmentationId(segmentationId);
+      getRepresentationsBySegmentationId(segmentationId);
 
     if (!segmentationRepresentations?.length) {
       // return defaults if no segmentation representation is found
@@ -212,21 +233,21 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       segmentIndex
     );
 
+    const viewportId = context.viewport.id;
+
     const segmentationVisible =
       segmentationConfig.visibility.getSegmentationVisibility(
-        toolGroupId,
+        viewportId,
         segmentationRepresentationUID
       );
 
     const globalConfig = segmentationConfig.getGlobalConfig();
 
-    const segmentationRepresentationConfig =
-      segmentationConfig.getSegmentationRepresentationConfig(
-        toolGroupId,
-        segmentationRepresentationUID
-      );
+    const getAllSegmentsConfig = segmentationConfig.getAllSegmentsConfig(
+      segmentationRepresentationUID
+    );
 
-    const segmentConfig = segmentationConfig.getSegmentSpecificConfig(
+    const segmentConfig = segmentationConfig.getSegmentIndexConfig(
       segmentationRepresentationUID,
       segmentIndex
     );
@@ -236,12 +257,17 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       segmentIndex
     );
 
+    const activeSegRep = getActiveRepresentation(viewportId);
+
+    const isActive =
+      activeSegRep.segmentationRepresentationUID ===
+      segmentationRepresentationUID;
+
     // Merge the configurations from different levels based on its precedence
     const mergedConfig = Object.assign(
       {},
       globalConfig?.representations?.CONTOUR ?? {},
-      toolGroupConfig?.representations?.CONTOUR ?? {},
-      segmentationRepresentationConfig?.CONTOUR ?? {},
+      getAllSegmentsConfig?.CONTOUR ?? {},
       segmentConfig?.CONTOUR ?? {}
     );
 
@@ -255,7 +281,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       lineDash = mergedConfig.outlineDashAutoGenerated ?? lineDash;
       lineOpacity = mergedConfig.outlineOpacity ?? lineOpacity;
       fillOpacity = mergedConfig.fillAlphaAutoGenerated ?? fillOpacity;
-    } else if (active) {
+    } else if (isActive) {
       lineWidth = mergedConfig.outlineWidthActive ?? lineWidth;
       lineDash = mergedConfig.outlineDashActive ?? lineDash;
       lineOpacity = mergedConfig.outlineOpacity ?? lineOpacity;

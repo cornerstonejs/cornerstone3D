@@ -5,7 +5,7 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
+import addRepresentations from './addRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
@@ -45,7 +45,7 @@ async function computeVolumeSegmentationFromStack({
  * @param params - The parameters for the conversion.
  * @param params.segmentationId - The segmentationId to convert.
  * @param [params.options] - The conversion options.
- * @param params.options.toolGroupId - The new toolGroupId to use for the segmentation.
+ * @param params.options.viewportId - The new viewportId to use for the segmentation.
  * @param [params.options.volumeId] - the new volumeId to use for the segmentation. If not provided, a new ID will be generated.
  * @param [params.options.newSegmentationId] - the new segmentationId to use for the segmentation. If not provided, a new ID will be generated.
  * @param [params.options.removeOriginal] - Whether or not to remove the original segmentation. Defaults to true.
@@ -58,7 +58,7 @@ async function convertStackToVolumeSegmentation({
 }: {
   segmentationId: string;
   options?: {
-    toolGroupId: string;
+    viewportId: string;
     volumeId?: string;
     removeOriginal?: boolean;
   };
@@ -75,7 +75,7 @@ async function convertStackToVolumeSegmentation({
 
   await updateSegmentationState({
     segmentationId,
-    toolGroupId: options.toolGroupId,
+    viewportId: options.viewportId,
     options,
     volumeId,
   });
@@ -84,12 +84,12 @@ async function convertStackToVolumeSegmentation({
 // This function is responsible for updating the segmentation state
 async function updateSegmentationState({
   segmentationId,
-  toolGroupId,
+  viewportId,
   volumeId,
   options,
 }: {
   segmentationId: string;
-  toolGroupId: string;
+  viewportId: string;
   volumeId: string;
   options?: {
     removeOriginal?: boolean;
@@ -117,14 +117,14 @@ async function updateSegmentationState({
     };
   }
 
-  await addSegmentationRepresentations(toolGroupId, [
+  await addRepresentations(viewportId, [
     {
       segmentationId,
       type: SegmentationRepresentations.Labelmap,
     },
   ]);
 
-  triggerSegmentationRender(toolGroupId);
+  triggerSegmentationRender(viewportId);
   // Note: It is crucial to trigger the data modified event. This ensures that the
   // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>

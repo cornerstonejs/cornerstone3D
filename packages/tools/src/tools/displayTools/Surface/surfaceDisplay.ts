@@ -1,6 +1,5 @@
 import {
   cache,
-  getEnabledElementByIds,
   getEnabledElementByViewportId,
   Types,
   VolumeViewport3D,
@@ -8,7 +7,6 @@ import {
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
-import { getToolGroup } from '../../../store/ToolGroupManager';
 import { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';

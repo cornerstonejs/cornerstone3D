@@ -245,13 +245,15 @@ describe('Contours Interpolation: ', () => {
           },
         },
       ]);
-      [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
+      [segmentationRepresentationUID] = await segmentation.addRepresentations(
+        toolGroupId,
+        [
           {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Contour,
           },
-        ]);
+        ]
+      );
       dataSegmentation.segmentationRepresentationUID =
         segmentationRepresentationUID;
       console.warn('beforeEach.2 ContourInterpolation');

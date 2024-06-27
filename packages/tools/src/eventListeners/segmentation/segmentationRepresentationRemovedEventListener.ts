@@ -8,9 +8,9 @@ import { SegmentationRepresentationRemovedEventType } from '../../types/EventTyp
 const segmentationRepresentationRemovedEventListener = function (
   evt: SegmentationRepresentationRemovedEventType
 ): void {
-  const { toolGroupId, segmentationRepresentationUID } = evt.detail;
+  const { segmentationRepresentationUID } = evt.detail;
 
-  triggerSegmentationRender(toolGroupId);
+  triggerSegmentationRender();
 };
 
 export default segmentationRepresentationRemovedEventListener;

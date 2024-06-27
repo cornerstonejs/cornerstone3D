@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
+const { addRepresentations, addSegmentations } = segmentation;
 
 const {
   fakeVolumeLoader,
@@ -240,7 +240,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(this.segToolGroup.id, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -323,7 +323,7 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0]);
 
           const segmentationRepresentation =
-            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            segmentation.activeSegmentation.getActiveRepresentation(
               toolGroupId
             );
 
@@ -346,9 +346,7 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-          );
+          segmentation.activeSegmentation.getActiveRepresentation(toolGroupId);
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -408,7 +406,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(this.segToolGroup.id, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -491,7 +489,7 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0]);
 
           const segmentationRepresentation =
-            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            segmentation.activeSegmentation.getActiveRepresentation(
               toolGroupId
             );
 
@@ -520,9 +518,7 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-          );
+          segmentation.activeSegmentation.getActiveRepresentation(toolGroupId);
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -595,7 +591,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(this.segToolGroup.id, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

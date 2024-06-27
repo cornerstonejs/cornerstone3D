@@ -388,6 +388,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * angle, arrow annotate, etc. when rendered on a canvas or svg layer
    */
   protected getAnnotationStyle(context: {
+    viewport?: Types.IViewport;
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
   }) {

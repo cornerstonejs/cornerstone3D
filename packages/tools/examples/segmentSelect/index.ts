@@ -274,7 +274,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   ]);
 
   // Add the segmentation representation to the toolgroup
-  segmentation.addSegmentationRepresentations(volumeSegLabelmapToolGroupId, [
+  segmentation.addRepresentations(volumeSegLabelmapToolGroupId, [
     {
       segmentationId: volumeSegLabelmapId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -291,15 +291,12 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   ]);
 
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    volumeSegContourToolGroupId,
-    [
-      {
-        segmentationId: volumeSegContourId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  await segmentation.addRepresentations(volumeSegContourToolGroupId, [
+    {
+      segmentationId: volumeSegContourId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
@@ -352,15 +349,12 @@ async function _handleStackViewports(stackImageIds: string[]) {
   ]);
 
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegLabelmapToolGroupId,
-    [
-      {
-        segmentationId: stackSegLabelmapId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]
-  );
+  await segmentation.addRepresentations(stackSegLabelmapToolGroupId, [
+    {
+      segmentationId: stackSegLabelmapId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   segmentation.addSegmentations([
     {
@@ -372,15 +366,12 @@ async function _handleStackViewports(stackImageIds: string[]) {
   ]);
 
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegContourToolGroupId,
-    [
-      {
-        segmentationId: stackSegContourId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  await segmentation.addRepresentations(stackSegContourToolGroupId, [
+    {
+      segmentationId: stackSegContourId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   addMockContourSegmentation({
     segmentationId: stackSegContourId,
