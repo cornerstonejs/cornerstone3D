@@ -4,6 +4,7 @@ import {
   Enums,
   Types,
 } from '@cornerstonejs/core';
+import { state } from '../index';
 
 import { ISynchronizerEventHandler } from '../../types';
 
@@ -154,6 +155,10 @@ class Synchronizer {
   }
 
   public destroy(): void {
+    const index = state.synchronizers.findIndex((sync) => sync.id === this.id);
+
+    if (index > -1) state.synchronizers.splice(index, 1);
+    
     this._sourceViewports.forEach((s) => this.removeSource(s));
     this._targetViewports.forEach((t) => this.removeTarget(t));
   }
