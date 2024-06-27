@@ -20,6 +20,7 @@ import {
   getInstanceModule,
   instanceModuleNames,
 } from '../../getInstanceModule';
+import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = external.cornerstone.Enums;
@@ -282,6 +283,20 @@ function metaDataProvider(type, imageId) {
       ),
       actualFrameDuration: dataSet.intString(dataSet.string('x00181242')),
     };
+  }
+
+  if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
+    return getUSEnhancedRegions(dataSet);
+  }
+
+  if (type === MetadataModules.CALIBRATION) {
+    const modality = dataSet.string('x00080060');
+    if (modality === 'US') {
+      const enhancedRegion = getUSEnhancedRegions(dataSet);
+      return {
+        sequenceOfUltrasoundRegions: enhancedRegion,
+      };
+    }
   }
 
   // Note: this is not a DICOM module, but rather an aggregation on all others
