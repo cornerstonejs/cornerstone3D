@@ -122,7 +122,6 @@ addButtonToToolbar({
         labelmapObj.metadata = [];
         labelmapObj.segmentsOnLabelmap.forEach(segmentIndex => {
             const color = segmentation.config.color.getColorForSegmentIndex(
-                toolGroupId,
                 segUID,
                 segmentIndex
             );
@@ -297,13 +296,15 @@ async function run() {
     );
 
     // // Add the segmentation representation to the toolgroup
-    segmentationRepresentationUID =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
+    segmentationRepresentationUID = await segmentation.addRepresentations(
+        toolGroupId,
+        [
             {
                 segmentationId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap
             }
-        ]);
+        ]
+    );
 
     // Render the image
     renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

@@ -125,7 +125,6 @@ addButtonToToolbar({
   title: 'Set Random Orientation',
   onClick: () => {
     const viewport = renderingEngine.getViewport(viewportId1);
-    const { viewUp, viewPlaneNormal } = viewport.getCamera();
 
     viewport.setOrientation({
       viewUp: [
@@ -294,15 +293,7 @@ async function run() {
     viewport3d.render();
   });
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
-    },
-  ]);
-
-  await segmentation.addRepresentations(toolGroupId3d, [
+  await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,

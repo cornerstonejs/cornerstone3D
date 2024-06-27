@@ -177,7 +177,21 @@ async function run() {
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
 
-  await segmentation.addRepresentations(viewportIds, [
+  await segmentation.addRepresentations(viewportIds[0], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+
+  await segmentation.addRepresentations(viewportIds[1], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+
+  await segmentation.addRepresentations(viewportIds[2], [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

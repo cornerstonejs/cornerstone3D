@@ -310,7 +310,7 @@ async function exportSegmentation() {
 
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
             toolGroupId
         );
 
@@ -327,7 +327,6 @@ async function exportSegmentation() {
     labelmapData.metadata = [];
     labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
         const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
-            toolGroupId,
             activeSegmentationRepresentation.segmentationRepresentationUID,
             segmentIndex
         );
@@ -356,12 +355,12 @@ function removeActiveSegmentation() {
 
     // Get active segmentation representation
     const { segmentationId, segmentationRepresentationUID } =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
             toolGroupId
         );
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId, [
         segmentationRepresentationUID
     ]);
 
@@ -478,11 +477,11 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationIdRepresentations(
+            csToolsSegmentation.state.getRepresentationsBySegmentationId(
                 segmentationId
             );
 
-        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.setActiveRepresentation(
             toolGroupId,
             segmentationRepresentations[0].segmentationRepresentationUID
         );
@@ -513,7 +512,7 @@ function restart() {
     cache.removeVolumeLoadObject(volumeId);
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId);
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId);
 
     //
     const segmentationIds = getSegmentationIds();
@@ -554,7 +553,7 @@ async function addSegmentationsToState(segmentationId: string) {
     ]);
 
     // Add the segmentation representation to the toolgroup
-    await csToolsSegmentation.addSegmentationRepresentations(toolGroupId, [
+    await csToolsSegmentation.addRepresentations(toolGroupId, [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap

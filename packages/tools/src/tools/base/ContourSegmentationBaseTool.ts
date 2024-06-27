@@ -145,7 +145,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
    * by a child class to return `false` when that class should work only as an ROI.
    */
   protected getAnnotationStyle(context: {
-    viewport: Types.IViewport;
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
   }) {
@@ -233,7 +232,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       segmentIndex
     );
 
-    const viewportId = context.viewport.id;
+    const viewportId = context.styleSpecifier.viewportId;
 
     const segmentationVisible =
       segmentationConfig.visibility.getSegmentationVisibility(

@@ -78,7 +78,6 @@ abstract class ContourBaseTool extends AnnotationTool {
       styleSpecifier.annotationUID = annotation.annotationUID;
 
       const annotationStyle = this.getAnnotationStyle({
-        viewport,
         annotation,
         styleSpecifier,
       });

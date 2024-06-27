@@ -202,6 +202,17 @@ export default class SegmentationStateManager {
       this.state.viewports[viewportId][segRepUID].active = false;
     });
 
+    if (!this.state.viewports[viewportId]) {
+      this.state.viewports[viewportId] = {};
+    }
+
+    if (!this.state.viewports[viewportId][segmentationRepresentationUID]) {
+      this.state.viewports[viewportId][segmentationRepresentationUID] = {
+        active: false,
+        visible: true,
+      };
+    }
+
     this.state.viewports[viewportId][segmentationRepresentationUID].active =
       true;
   }

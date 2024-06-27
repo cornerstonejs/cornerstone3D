@@ -238,7 +238,9 @@ function _setLabelmapColorAndOpacity(
     segmentationRepresentation;
 
   // todo fix this
-  const isActiveLabelmap = true;
+  const activeSegRep = SegmentationState.getActiveRepresentation(viewportId);
+
+  const isActiveLabelmap = activeSegRep === segmentationRepresentation;
 
   const { cfun, ofun } = rendering as LabelmapRenderingConfig;
 
@@ -248,6 +250,11 @@ function _setLabelmapColorAndOpacity(
     SegmentationState.getGlobalConfig().representations[
       Representations.Labelmap
     ];
+
+  const globalConfig = SegmentationState.getGlobalConfig();
+
+  const renderInactiveRepresentations =
+    globalConfig.renderInactiveRepresentations;
 
   // merge the base config with the global config
   const configToUse = {
@@ -271,7 +278,7 @@ function _setLabelmapColorAndOpacity(
     renderOutline,
     outlineOpacity,
     activeSegmentOutlineWidthDelta,
-  } = _getLabelmapConfig(labelmapConfig, false);
+  } = _getLabelmapConfig(labelmapConfig, isActiveLabelmap);
 
   // Todo: the below loop probably can be optimized so that we don't hit it
   // unless a config has changed. Right now we get into the following loop
@@ -362,9 +369,6 @@ function _setLabelmapColorAndOpacity(
   }
 
   actor.getProperty().setLabelOutlineThickness(outlineWidths);
-
-  // todo: fix this
-  const renderInactiveRepresentations = true;
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
