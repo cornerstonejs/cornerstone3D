@@ -10,7 +10,7 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import cloneDeep from 'lodash.clonedeep';
-
+import VoxelManager from '../utilities/VoxelManager';
 import {
   createUint16SharedArray,
   createUint8SharedArray,
@@ -47,6 +47,10 @@ interface DerivedVolumeOptions {
     type: PixelDataTypedArrayString;
     sharedArrayBuffer?: boolean;
   };
+  /**
+   * Use a voxel representation of the specified type.
+   */
+  voxelRepresentation?: 'rleVoxelManager' | 'volumeVoxelManager';
 }
 interface LocalVolumeOptions {
   metadata: Metadata;
@@ -295,7 +299,8 @@ export async function createAndCacheDerivedVolume(
   }
 
   let { volumeId } = options;
-  const { targetBuffer } = options;
+  const { targetBuffer, voxelRepresentation } = options;
+  const type = targetBuffer.type as string;
 
   if (volumeId === undefined) {
     volumeId = uuidv4();
@@ -315,6 +320,8 @@ export async function createAndCacheDerivedVolume(
     name: 'Pixels',
     numberOfComponents: 1,
     values: volumeScalarData,
+    size: numBytes,
+    dataType: !type || type === 'singlePlane' ? 'Uint8Array' : type,
   });
 
   const derivedImageData = vtkImageData.newInstance();
@@ -325,6 +332,19 @@ export async function createAndCacheDerivedVolume(
   derivedImageData.setOrigin(origin);
   derivedImageData.getPointData().setScalars(scalarArray);
 
+  const internalScalarData = derivedImageData
+    .getPointData()
+    .getScalars()
+    .getData() as PixelDataTypedArray;
+
+  const voxelManager =
+    (voxelRepresentation === 'rleVoxelManager' &&
+      VoxelManager.createRLEVoxelManager<number>(dimensions)) ||
+    (VoxelManager.createVolumeVoxelManager(
+      dimensions,
+      internalScalarData,
+      1
+    ) as VoxelManager<number>);
   const derivedVolume = new ImageVolume({
     volumeId,
     metadata: cloneDeep(metadata),
@@ -333,7 +353,8 @@ export async function createAndCacheDerivedVolume(
     origin,
     direction,
     imageData: derivedImageData,
-    scalarData: volumeScalarData,
+    scalarData: internalScalarData,
+    voxelManager,
     sizeInBytes: numBytes,
     imageIds: [],
     referencedVolumeId,
@@ -582,6 +603,7 @@ export async function createAndCacheDerivedSegmentationVolume(
     ...options,
     targetBuffer: {
       type: 'Uint8Array',
+      ...options?.targetBuffer,
     },
   });
 }
@@ -628,6 +650,9 @@ function generateVolumeScalarData(
 ) {
   const { useNorm16Texture } = getConfiguration().rendering;
 
+  if ((targetBuffer?.type as string) === 'singlePlane') {
+    return { volumeScalarData: null, numBytes: scalarLength };
+  }
   const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
     targetBuffer?.type,
     scalarLength,

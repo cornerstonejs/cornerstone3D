@@ -33,7 +33,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       return;
     }
 
-    const scalars = image.getPointData() && image.getPointData().getScalars();
+    const scalars = image.getPointData()?.getScalars();
     if (!scalars) {
       return;
     }

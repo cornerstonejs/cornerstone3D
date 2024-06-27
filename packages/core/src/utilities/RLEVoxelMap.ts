@@ -1,3 +1,4 @@
+import type Point3 from '../types/Point3';
 import { PixelDataTypedArray } from '../types';
 
 /**
@@ -52,7 +53,7 @@ export default class RLEVoxelMap<T> {
    * default value for unset values.
    * Set to 0 by default, but any maps where 0 not in T should update this value.
    */
-  public defaultValue: T = 0 as unknown as T;
+  public defaultValue: T;
 
   /**
    * The constructor for creating pixel data.
@@ -79,8 +80,19 @@ export default class RLEVoxelMap<T> {
     const i = index % this.jMultiple;
     const j = (index - i) / this.jMultiple;
     const rle = this.getRLE(i, j);
-    return rle?.value || this.defaultValue;
+    return rle?.value ?? this.defaultValue;
   };
+
+  public toIJK(index: number): Point3 {
+    const i = index % this.jMultiple;
+    const j = ((index - i) / this.jMultiple) % this.height;
+    const k = Math.floor(index / this.kMultiple);
+    return [i, j, k];
+  }
+
+  public toIndex([i, j, k]: Point3) {
+    return i + k * this.kMultiple + j * this.jMultiple;
+  }
 
   /**
    * Gets a list of RLERun values which specify the data on the row j
@@ -98,6 +110,61 @@ export default class RLEVoxelMap<T> {
   }
 
   /**
+   *  Indicate if the map has the given value
+   */
+  public has(index: number): boolean {
+    const i = index % this.jMultiple;
+    const j = (index - i) / this.jMultiple;
+    const rle = this.getRLE(i, j);
+    return rle?.value !== undefined;
+  }
+
+  /**
+   * Delete any value at the given index;
+   */
+  public delete(index: number) {
+    const i = index % this.width;
+    const j = (index - i) / this.width;
+    const row = this.rows.get(j);
+    if (!row) {
+      return;
+    }
+    const rleIndex = this.findIndex(row, i);
+    const rle = row[rleIndex];
+    if (!rle || rle.start > i) {
+      // Value not in RLE, so no need to delete
+      return;
+    }
+    if (rle.end === i + 1) {
+      // Value at end, so decrease the length.
+      // This also handles hte case of the value at the beginning and deleting
+      // the final value in the RLE
+      rle.end--;
+      if (rle.start >= rle.end) {
+        // Last value in the RLE
+        row.splice(rleIndex, 1);
+        if (!row.length) {
+          this.rows.delete(j);
+        }
+      }
+      return;
+    }
+    if (rle.start === i) {
+      // Not the only value, otherwise this is checked by the previous code
+      rle.start++;
+      return;
+    }
+    // Need to split the rle since the value occurs in the middle.
+    const newRle = {
+      value: rle.value,
+      start: i + 1,
+      end: rle.end,
+    };
+    rle.end = i;
+    row.splice(rleIndex + 1, 0, newRle);
+  }
+
+  /**
    * Finds the index in the row that i is contained in, OR that i would be
    * before.   That is, the rle value for the returned index in that row
    * has `i ε [start,end)` if a direct RLE is found, or `i ε [end_-1,start)` if
@@ -112,6 +179,28 @@ export default class RLEVoxelMap<T> {
       }
     }
     return row.length;
+  }
+
+  /**
+   * For each RLE element, call the given callback
+   */
+  public forEach(callback, options?: { rowModified?: boolean }) {
+    const rowModified = options?.rowModified;
+    for (const [baseIndex, row] of this.rows) {
+      const rowToUse = rowModified ? [...row] : row;
+      for (const rle of rowToUse) {
+        callback(baseIndex * this.width, rle, row);
+      }
+    }
+  }
+
+  /**
+   * For each row, call the callback with the base index and the row data
+   */
+  public forEachRow(callback) {
+    for (const [baseIndex, row] of this.rows) {
+      callback(baseIndex * this.width, row);
+    }
   }
 
   /**
@@ -296,6 +385,37 @@ export default class RLEVoxelMap<T> {
       }
     }
     return pixelData;
+  }
+
+  /**
+   * Fills an RLE from a given getter result, skipping undefined values only.
+   */
+  public fillFrom(getter, boundsIJK) {
+    for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        let rle;
+        let row;
+        for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
+          const value = getter(i, j, k);
+          if (value === undefined) {
+            rle = undefined;
+            continue;
+          }
+          if (!row) {
+            row = [];
+            this.rows.set(j + k * this.height, row);
+          }
+          if (rle && rle.value !== value) {
+            rle = undefined;
+          }
+          if (!rle) {
+            rle = { start: i, end: i, value };
+            row.push(rle);
+          }
+          rle.end++;
+        }
+      }
+    }
   }
 }
 
