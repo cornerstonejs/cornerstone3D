@@ -66,6 +66,23 @@ const screenShotPaths = {
     scissorEraser: 'scissorEraser.png',
     paintFill: 'paintFill.png',
   },
+  labelmapSwapping: {
+    defaultSegmentation: 'defaultSegmentation.png',
+    swappedSegmentation: 'swappedSegmentation.png',
+  },
+  labelmapSegmentSpecificConfiguration: {
+    defaultSegmentation: 'defaultSegmentation.png',
+    segment1Alpha0: 'segment1Alpha0.png',
+    segment1Alpha50: 'segment1Alpha50.png',
+    segment2Alpha0: 'segment2Alpha0.png',
+    segment2Alpha50: 'segment2Alpha50.png',
+    segmentsAlpha25: 'segmentsAlpha25.png',
+  },
+  stackSegmentation: {
+    defaultSegmentation: 'defaultSegmentation.png',
+    circularBrushSegment1: 'circularBrushSegment1.png',
+    paintFill: 'paintFill.png',
+  },
 };
 
 export { screenShotPaths };
