@@ -659,7 +659,7 @@ class Cache implements ICache {
 
     const cachedVolume = this._volumeCache.get(volumeId);
 
-    if (cachedVolume === undefined) {
+    if (!cachedVolume) {
       return;
     }
 
@@ -676,7 +676,7 @@ class Cache implements ICache {
 
     const cachedGeometry = this._geometryCache.get(geometryId);
 
-    if (cachedGeometry === undefined) {
+    if (!cachedGeometry) {
       return;
     }
 
@@ -699,7 +699,7 @@ class Cache implements ICache {
 
     const cachedImage = this._imageCache.get(imageId);
 
-    if (cachedImage === undefined) {
+    if (!cachedImage) {
       return;
     }
 
@@ -722,7 +722,7 @@ class Cache implements ICache {
 
     const cachedVolume = this._volumeCache.get(volumeId);
 
-    if (cachedVolume === undefined) {
+    if (!cachedVolume) {
       return;
     }
 
@@ -772,7 +772,7 @@ class Cache implements ICache {
     }
     const cachedImage = this._imageCache.get(imageId);
 
-    if (cachedImage === undefined) {
+    if (!cachedImage) {
       throw new Error(
         'removeImageLoadObject: imageId was not present in imageCache'
       );
@@ -804,7 +804,7 @@ class Cache implements ICache {
     }
     const cachedVolume = this._volumeCache.get(volumeId);
 
-    if (cachedVolume === undefined) {
+    if (!cachedVolume) {
       throw new Error(
         'removeVolumeLoadObject: volumeId was not present in volumeCache'
       );
