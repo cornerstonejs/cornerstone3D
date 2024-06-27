@@ -7,23 +7,19 @@ import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmap
 import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
 import type {
   RepresentationConfig,
+  SegmentRepresentationConfig,
   Segmentation,
   SegmentationRepresentation,
   SegmentationRepresentationConfig,
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
 
-// Initialize the default configuration
-const defaultLabelmapConfig = getDefaultLabelmapConfig();
-const defaultContourConfig = getDefaultContourConfig();
-const defaultSurfaceConfig = getDefaultSurfaceConfig();
-
 const newGlobalConfig: SegmentationRepresentationConfig = {
-  renderInactiveSegmentations: true,
+  renderInactiveRepresentations: true,
   representations: {
-    [SegmentationRepresentations.Labelmap]: defaultLabelmapConfig,
-    [SegmentationRepresentations.Contour]: defaultContourConfig,
-    [SegmentationRepresentations.Surface]: defaultSurfaceConfig,
+    [SegmentationRepresentations.Labelmap]: getDefaultLabelmapConfig(),
+    [SegmentationRepresentations.Contour]: getDefaultContourConfig(),
+    [SegmentationRepresentations.Surface]: getDefaultSurfaceConfig(),
   },
 };
 
@@ -125,7 +121,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @returns The segmentation representation object.
    */
-  getSegmentationRepresentation(
+  getRepresentation(
     segmentationRepresentationUID: string
   ): SegmentationRepresentation | undefined {
     return this.state.representations[segmentationRepresentationUID];
@@ -135,7 +131,7 @@ export default class SegmentationStateManager {
    * Adds a segmentation representation to the representations object.
    * @param segmentationRepresentation - The segmentation representation object to add.
    */
-  addSegmentationRepresentation(
+  addRepresentation(
     segmentationRepresentation: SegmentationRepresentation
   ): void {
     const { segmentationRepresentationUID } = segmentationRepresentation;
@@ -143,7 +139,12 @@ export default class SegmentationStateManager {
       segmentationRepresentation;
   }
 
-  addSegmentationRepresentationToViewport(
+  /**
+   * Adds a segmentation representation to the specified viewport.
+   * @param viewportId - The ID of the viewport.
+   * @param segmentationRepresentationUID - The UID of the segmentation representation.
+   */
+  addRepresentationToViewport(
     viewportId: string,
     segmentationRepresentationUID: string
   ): void {
@@ -151,12 +152,16 @@ export default class SegmentationStateManager {
       this.state.viewports[viewportId] = {};
     }
 
-    this.state.viewports[viewportId][segmentationRepresentationUID] = {
-      visible: true,
-    };
+    // make all the other representations inactive first
+    this.setActiveRepresentation(viewportId, segmentationRepresentationUID);
   }
 
-  getViewportSegmentationRepresentations(
+  /**
+   * Retrieves an array of segmentation representations for a given viewport.
+   * @param viewportId - The ID of the viewport.
+   * @returns An array of SegmentationRepresentation objects.
+   */
+  getRepresentationsForViewport(
     viewportId: string
   ): SegmentationRepresentation[] {
     const viewport = this.state.viewports[viewportId];
@@ -166,7 +171,7 @@ export default class SegmentationStateManager {
     }
 
     return Object.keys(viewport).map((segRepUID) => {
-      return this.getSegmentationRepresentation(segRepUID);
+      return this.getRepresentation(segRepUID);
     });
   }
 
@@ -174,10 +179,49 @@ export default class SegmentationStateManager {
    * Removes a segmentation representation from the representations object.
    * @param segmentationRepresentationUID - The UID of the segmentation representation to remove.
    */
-  removeSegmentationRepresentation(
+  removeRepresentation(segmentationRepresentationUID: string): void {
+    delete this.state.representations[segmentationRepresentationUID];
+
+    // remove it from every viewports as well
+    Object.keys(this.state.viewports).forEach((viewportId) => {
+      delete this.state.viewports[viewportId][segmentationRepresentationUID];
+    });
+  }
+
+  /**
+   * Set the active segmentation representation for the give viewport
+   * @param viewportId - The Id of the tool group that owns the
+   * segmentation data.
+   * @param segmentationRepresentationUID - string
+   */
+  setActiveRepresentation(
+    viewportId: string,
     segmentationRepresentationUID: string
   ): void {
-    delete this.state.representations[segmentationRepresentationUID];
+    Object.keys(this.state.viewports[viewportId]).forEach((segRepUID) => {
+      this.state.viewports[viewportId][segRepUID].active = false;
+    });
+
+    this.state.viewports[viewportId][segmentationRepresentationUID].active =
+      true;
+  }
+
+  getActiveRepresentation(
+    viewportId: string
+  ): SegmentationRepresentation | undefined {
+    if (!this.state.viewports?.[viewportId]) {
+      return;
+    }
+
+    const activeSegRep = Object.entries(this.state.viewports[viewportId]).find(
+      ([, value]) => value.active
+    );
+
+    if (!activeSegRep) {
+      return;
+    }
+
+    return this.getRepresentation(activeSegRep[0]);
   }
 
   /**
@@ -196,91 +240,97 @@ export default class SegmentationStateManager {
     this.state.globalConfig = config;
   }
 
+  _getRepresentationConfig(segmentationRepresentationUID: string): {
+    allSegments?: RepresentationConfig;
+    perSegment?: SegmentRepresentationConfig;
+  } {
+    const segmentationRepresentation = this.getRepresentation(
+      segmentationRepresentationUID
+    );
+
+    if (!segmentationRepresentation) {
+      return;
+    }
+
+    return segmentationRepresentation.config;
+  }
+
   /**
    * Returns the default representation config for the given segmentation representation UID.
+   * that is used for all segments.
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @returns The default representation config object.
    */
-  getRepresentationConfig(
+  getAllSegmentsConfig(
     segmentationRepresentationUID: string
   ): RepresentationConfig {
-    const segmentationRepresentation = this.getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
+    const config = this._getRepresentationConfig(segmentationRepresentationUID);
 
-    if (!segmentationRepresentation) {
+    if (!config) {
       return;
     }
 
-    return segmentationRepresentation.config.base;
+    return config.allSegments;
   }
 
   /**
-   * Sets the default representation config for the given segmentation representation UID.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
-   * @param config - The default representation config object to set.
+   * Retrieves the configuration for per-segment settings of a segmentation representation.
+   *
+   * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+   * @returns The configuration for per-segment settings, or undefined if the segmentation representation is not found.
    */
-  setRepresentationConfig(
+  getPerSegmentConfig(
+    segmentationRepresentationUID: string
+  ): SegmentRepresentationConfig {
+    const config = this._getRepresentationConfig(segmentationRepresentationUID);
+
+    if (!config) {
+      return;
+    }
+
+    return config.perSegment;
+  }
+
+  /**
+   * Sets the configuration for all segments of a segmentation representation.
+   *
+   * @param segmentationRepresentationUID - The UID of the segmentation representation.
+   * @param config - The configuration to be set for all segments.
+   */
+  setAllSegmentsConfig(
     segmentationRepresentationUID: string,
     config: RepresentationConfig
   ): void {
-    const segmentationRepresentation = this.getSegmentationRepresentation(
+    const _config = this._getRepresentationConfig(
       segmentationRepresentationUID
     );
 
-    if (!segmentationRepresentation) {
+    if (!_config) {
       return;
     }
 
-    segmentationRepresentation.config.base = config;
+    _config.allSegments = config;
   }
 
   /**
-   * Returns the segment-specific representation config for the given segmentation representation UID and segment index.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
-   * @param segmentIndex - The index of the segment.
-   * @returns The segment-specific representation config object.
+   * Sets the configuration for per-segment settings of a segmentation representation.
+   *
+   * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+   * @param config - The configuration for per-segment settings.
    */
-  getSegmentSpecificConfig(
+  setPerSegmentConfig(
     segmentationRepresentationUID: string,
-    segmentIndex: number
-  ): RepresentationConfig {
-    const segmentationRepresentation = this.getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
-
-    if (!segmentationRepresentation) {
-      return;
-    }
-
-    const { overrides } = segmentationRepresentation.config;
-    return overrides && overrides[segmentIndex];
-  }
-
-  /**
-   * Sets the segment-specific representation config for the given segmentation representation UID and segment index.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
-   * @param segmentIndex - The index of the segment.
-   * @param config - The segment-specific representation config object to set.
-   */
-  setSegmentSpecificConfig(
-    segmentationRepresentationUID: string,
-    segmentIndex: number,
-    config: RepresentationConfig
+    config: SegmentRepresentationConfig
   ): void {
-    const segmentationRepresentation = this.getSegmentationRepresentation(
+    const _config = this._getRepresentationConfig(
       segmentationRepresentationUID
     );
 
-    if (!segmentationRepresentation) {
+    if (!_config) {
       return;
     }
 
-    if (!segmentationRepresentation.config.overrides) {
-      segmentationRepresentation.config.overrides = {};
-    }
-
-    segmentationRepresentation.config.overrides[segmentIndex] = config;
+    _config.perSegment = config;
   }
 
   /**
@@ -289,7 +339,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @returns The visibility of the segmentation representation in the viewport.
    */
-  getViewportVisibility(
+  getRepresentationVisibility(
     viewportId: string,
     segmentationRepresentationUID: string
   ): boolean {
@@ -303,7 +353,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @param visible - The visibility to set for the segmentation representation in the viewport.
    */
-  setViewportVisibility(
+  setRepresentationVisibility(
     viewportId: string,
     segmentationRepresentationUID: string,
     visible: boolean
@@ -312,9 +362,8 @@ export default class SegmentationStateManager {
       this.state.viewports[viewportId] = {};
     }
 
-    this.state.viewports[viewportId][segmentationRepresentationUID] = {
-      visible,
-    };
+    this.state.viewports[viewportId][segmentationRepresentationUID].active =
+      visible;
   }
 
   /**

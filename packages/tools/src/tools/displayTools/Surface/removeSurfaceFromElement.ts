@@ -17,6 +17,7 @@ function removeContourFromElement(
   removeFromCache = false // Todo
 ): void {
   const enabledElement = getEnabledElement(element);
+
   const { viewport } = enabledElement;
 
   const actorEntries = (viewport as Types.IVolumeViewport).getActors();

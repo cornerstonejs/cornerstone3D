@@ -224,7 +224,7 @@ async function run() {
   );
 
   segmentation.config.setToolGroupSpecificConfig(stackSegContourToolGroupId, {
-    renderInactiveSegmentations: true,
+    renderInactiveRepresentations: true,
     representations: {
       CONTOUR: {
         outlineWidthActive: 5,

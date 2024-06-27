@@ -1,7 +1,5 @@
-import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import {
-  getSegmentationRepresentationByUID,
+  getSegmentationRepresentation,
   getSegmentation,
 } from '../../../stateManagement/segmentation/segmentationState';
 
@@ -18,12 +16,11 @@ import { removeAnnotation } from '../../../stateManagement';
  * @internal
  */
 function removeContourFromElement(
+  element: HTMLDivElement,
   segmentationRepresentationUID: string,
-  toolGroupId: string,
   removeFromCache = false // Todo
 ): void {
-  const segmentationRepresentation = getSegmentationRepresentationByUID(
-    toolGroupId,
+  const segmentationRepresentation = getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 

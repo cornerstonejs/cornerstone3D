@@ -2,7 +2,8 @@ import { Enums, Types } from '@cornerstonejs/core';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import { ToolGroupSpecificContourRepresentation } from '../../../../types';
+import { SegmentationRepresentation } from '../../../../types/SegmentationStateTypes';
+import { getSegmentationRepresentation } from '../../../../stateManagement/segmentation/segmentationState';
 
 /**
  * If the segment specific config exists for the given segment id, it returns
@@ -16,18 +17,18 @@ import { ToolGroupSpecificContourRepresentation } from '../../../../types';
  * @returns the segment specific config for the given segment id.
  *
  */
-export function getSegmentSpecificConfig(
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
+export function getSegmentationRepresentationSegmentsConfig(
+  contourRepresentation: SegmentationRepresentation,
   segmentId: string,
-  index: number
+  segmentIndex: number
 ) {
   let segmentSpecificConfig =
-    contourRepresentation.segmentSpecificConfig?.[segmentId];
+    contourRepresentation.config?.perSegment?.[segmentId];
 
   if (!segmentSpecificConfig) {
     // try the index
     segmentSpecificConfig =
-      contourRepresentation.segmentSpecificConfig?.[index];
+      contourRepresentation.config?.perSegment?.[segmentIndex];
   }
 
   if (!segmentSpecificConfig) {

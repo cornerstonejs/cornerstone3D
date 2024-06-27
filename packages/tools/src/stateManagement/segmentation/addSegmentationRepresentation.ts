@@ -6,11 +6,7 @@ import {
   RepresentationPublicInputOptions,
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
-import {
-  addSegmentationRepresentationToViewport,
-  getNextColorLUTIndex,
-  addColorLUT,
-} from './segmentationState';
+import { getNextColorLUTIndex, addColorLUT } from './segmentationState';
 import { getRepresentationRenderingConfig } from './helpers/getRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
@@ -61,8 +57,8 @@ async function addSegmentationRepresentation(
     //   toolGroupSpecificConfig
     // // );
     // SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-    //   renderInactiveSegmentations:
-    //     mergedConfig.renderInactiveSegmentations || true,
+    //   renderInactiveRepresentations:
+    //     mergedConfig.renderInactiveRepresentations || true,
     //   representations: {
     //     ...mergedConfig.representations,
     //   },

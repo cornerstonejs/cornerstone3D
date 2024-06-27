@@ -6,7 +6,7 @@ import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getSegmentSpecificConfig } from './utils';
+import { getSegmentationRepresentationSegmentsConfig } from './utils';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
@@ -33,7 +33,7 @@ function updateContourSets(
   const { segmentationRepresentationUID, segmentsHidden, config } =
     contourRepresentation;
 
-  const baseConfig = config.base.CONTOUR;
+  const baseConfig = config?.allSegments?.CONTOUR;
   const globalContourConfig = getGlobalConfig().representations.CONTOUR;
 
   const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
@@ -75,7 +75,7 @@ function updateContourSets(
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const segmentSpecificConfig = getSegmentSpecificConfig(
+      const segmentSpecificConfig = getSegmentationRepresentationSegmentsConfig(
         contourRepresentation,
         geometryId,
         segmentIndex
@@ -132,7 +132,7 @@ function addContourSetsToElement(
 
     validateGeometry(geometry);
 
-    const segmentSpecificConfig = getSegmentSpecificConfig(
+    const segmentSpecificConfig = getSegmentationRepresentationSegmentsConfig(
       contourRepresentation,
       geometryId,
       segmentIndex
@@ -186,7 +186,7 @@ function addContourSetsToElement(
     }
   });
 
-  const baseConfig = contourRepresentation.config.base.CONTOUR;
+  const baseConfig = contourRepresentation.config?.allSegments.CONTOUR;
   const globalContourConfig = getGlobalConfig().representations.CONTOUR;
 
   const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);

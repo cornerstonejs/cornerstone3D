@@ -50,7 +50,7 @@ export async function updateSurfaceData(segmentationId) {
       return toolGroupIds.map((toolGroupId) => {
         const segmentationRepresentations = getSegmentationRepresentations(
           toolGroupId
-        ) as ToolGroupSpecificRepresentations;
+        ) as SegmentationRepresentations;
 
         return segmentationRepresentations.map((segmentationRepresentation) => {
           if (

@@ -4,7 +4,7 @@ import { contourDisplay } from '../../tools/displayTools/Contour';
 
 import {
   getSegmentationRepresentations,
-  getSegmentationRepresentationByUID,
+  getSegmentationRepresentation,
 } from './segmentationState';
 
 /**
@@ -59,12 +59,10 @@ function removeSegmentationsFromToolGroup(
 }
 
 function _removeSegmentation(
-  toolGroupId: string,
   segmentationRepresentationUID: string,
   immediate?: boolean
 ): void {
-  const segmentationRepresentation = getSegmentationRepresentationByUID(
-    toolGroupId,
+  const segmentationRepresentation = getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 
@@ -72,13 +70,11 @@ function _removeSegmentation(
 
   if (type === SegmentationRepresentations.Labelmap) {
     labelmapDisplay.removeSegmentationRepresentation(
-      toolGroupId,
       segmentationRepresentationUID,
       immediate
     );
   } else if (type === SegmentationRepresentations.Contour) {
     contourDisplay.removeSegmentationRepresentation(
-      toolGroupId,
       segmentationRepresentationUID,
       immediate
     );

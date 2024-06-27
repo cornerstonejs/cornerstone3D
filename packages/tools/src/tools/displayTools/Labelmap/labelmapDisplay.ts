@@ -4,6 +4,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import {
   cache,
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   StackViewport,
   Types,
   VolumeViewport,
@@ -51,29 +52,29 @@ let polySegConversionInProgress = false;
  * @param renderImmediate - If true, there will be a render call after the labelmap is removed
  */
 function removeSegmentationRepresentation(
-  toolGroupId: string,
+  viewportId: string,
   segmentationRepresentationUID: string,
   renderImmediate = false
 ): void {
-  _removeLabelmapFromToolGroupViewports(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+
+  if (!enabledElement) {
+    return;
+  }
+
+  const { viewport } = enabledElement;
+
+  removeLabelmapFromElement(viewport.element, segmentationRepresentationUID);
+
   SegmentationState.removeSegmentationRepresentation(
-    toolGroupId,
     segmentationRepresentationUID
   );
 
-  if (renderImmediate) {
-    const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      enabledElement.viewport.render();
-    });
+  if (!renderImmediate) {
+    return;
   }
+
+  viewport.render();
 }
 
 /**
@@ -238,17 +239,15 @@ function _setLabelmapColorAndOpacity(
   actorEntry: Types.ActorEntry,
   segmentationRepresentation: LabelmapRepresentation
 ): void {
-  const { rendering, config, colorLUTIndex, segmentsHidden, segmentationId } =
+  const { rendering, config, colorLUTIndex, segmentsHidden } =
     segmentationRepresentation;
-
-  const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   // todo fix this
   const isActiveLabelmap = true;
 
   const { cfun, ofun } = rendering as LabelmapRenderingConfig;
 
-  const { base, overrides } = config;
+  const { allSegments, perSegment } = config;
 
   const globalLabelmapConfig =
     SegmentationState.getGlobalConfig().representations[
@@ -258,7 +257,7 @@ function _setLabelmapColorAndOpacity(
   // merge the base config with the global config
   const configToUse = {
     ...globalLabelmapConfig,
-    ...base[Representations.Labelmap],
+    ...allSegments[Representations.Labelmap],
   };
 
   const labelmapConfig = configToUse;
@@ -287,7 +286,7 @@ function _setLabelmapColorAndOpacity(
     const segmentColor = colorLUT[segmentIndex];
 
     const segmentSpecificLabelmapConfig =
-      overrides[segmentIndex]?.[Representations.Labelmap];
+      perSegment?.[segmentIndex]?.[Representations.Labelmap];
 
     const { fillAlpha, outlineWidth, renderFill, renderOutline } =
       _getLabelmapConfig(
@@ -370,12 +369,12 @@ function _setLabelmapColorAndOpacity(
   actor.getProperty().setLabelOutlineThickness(outlineWidths);
 
   // todo: fix this
-  const renderInactiveSegmentations = true;
+  const renderInactiveRepresentations = true;
 
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
-  const visible = isActiveLabelmap || renderInactiveSegmentations;
+  const visible = isActiveLabelmap || renderInactiveRepresentations;
   actor.setVisibility(visible);
 }
 
@@ -496,31 +495,6 @@ function _needsTransferFunctionUpdate(
     forceOpacityUpdate,
     forceColorUpdate,
   };
-}
-
-function _removeLabelmapFromToolGroupViewports(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): void {
-  const toolGroup = getToolGroup(toolGroupId);
-
-  if (toolGroup === undefined) {
-    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`);
-  }
-
-  const { viewportsInfo } = toolGroup;
-
-  for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo;
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-    removeLabelmapFromElement(
-      enabledElement.viewport.element,
-      segmentationRepresentationUID
-    );
-  }
 }
 
 async function _addLabelmapToViewport(

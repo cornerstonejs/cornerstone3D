@@ -1,6 +1,6 @@
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 import { SegmentationRepresentationModifiedEventType } from '../../types/EventTypes';
-import { getSegmentationRepresentationByUID } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentation } from '../../stateManagement/segmentation/segmentationState';
 
 /** A function that listens to the `segmentationStateModified` event and triggers
  * the `triggerSegmentationRender` function. This function is called when the
@@ -10,8 +10,8 @@ const segmentationRepresentationModifiedListener = function (
   evt: SegmentationRepresentationModifiedEventType
 ): void {
   const { segmentationRepresentationUID } = evt.detail;
-  const segmentationRepresentation = getSegmentationRepresentationByUID
-    ? getSegmentationRepresentationByUID(segmentationRepresentationUID)
+  const segmentationRepresentation = getSegmentationRepresentation
+    ? getSegmentationRepresentation(segmentationRepresentationUID)
     : null;
 
   if (!segmentationRepresentation) {

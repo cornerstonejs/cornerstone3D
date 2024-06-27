@@ -84,7 +84,7 @@ addToggleButtonToToolbar({
 
     if (config.representations === undefined) {
       config = {
-        renderInactiveSegmentations: true,
+        renderInactiveRepresentations: true,
         representations: {
           LABELMAP: {
             renderOutline: toggle,

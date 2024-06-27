@@ -15,7 +15,7 @@ import {
   SurfaceRenderingConfig,
 } from './SurfaceTypes';
 
-export type SegmentSpecificRepresentationConfig = {
+export type SegmentRepresentationConfig = {
   [key: number | string]: RepresentationConfig;
 };
 
@@ -30,7 +30,7 @@ export type RepresentationConfig = {
 
 export type SegmentationRepresentationConfig = {
   /** Whether to render Inactive segmentations  */
-  renderInactiveSegmentations: boolean;
+  renderInactiveRepresentations: boolean;
   /** Representations configuration */
   representations: RepresentationConfig;
 };
@@ -47,7 +47,7 @@ export type SegmentationRepresentationData = {
 export type Segmentation = {
   /** segmentation id  */
   segmentationId: string;
-  /** segmentation main representation type */
+  /** base segmentation representation type - e.g., labelmap, contour, etc */
   type: Enums.SegmentationRepresentations;
   /** segmentation label */
   label: string;
@@ -65,6 +65,7 @@ export type Segmentation = {
    * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
    */
   cachedStats: { [key: string]: number };
+  /** segment labels */
   segmentLabels: { [key: string]: string };
   /**
    * Representations of the segmentation. Each segmentation "can" be viewed
@@ -94,7 +95,7 @@ export type BaseSegmentationRepresentation = {
    */
   type: Enums.SegmentationRepresentations;
   /**
-   * Hidden segment indices in the segmentation
+   * Hidden segment indices in the representation
    */
   segmentsHidden: Set<number>;
   /**
@@ -109,26 +110,36 @@ export type BaseSegmentationRepresentation = {
     enabled: boolean;
     options?: any;
   };
-
+  /** rendering config for display of this representation */
   config: {
-    base?: RepresentationConfig;
-    overrides?: SegmentSpecificRepresentationConfig;
+    /** default configuration for the representation - applied to all segments*/
+    allSegments?: RepresentationConfig;
+    /**
+     * segment specific configuration for the representation, might be different
+     * for each segment. Use cases: to highligh a specific segment with a brighter
+     * color
+     */
+    perSegment?: SegmentRepresentationConfig;
   };
 };
 
 /**
- * ToolGroup Specific Segmentation Data for segmentations. As one segmentation
- * can be represented in various ways (currently only labelmap is supported)
- * we store ToolGroup specific segmentation data in this object
+ * Labelmap representation of the segmentation
  */
 export type LabelmapRepresentation = BaseSegmentationRepresentation & {
   rendering: LabelmapRenderingConfig;
 };
 
+/**
+ * contour representation of the segmentation
+ */
 export type ContourRepresentation = BaseSegmentationRepresentation & {
   rendering: ContourRenderingConfig;
 };
 
+/**
+ * Surface representation of the segmentation
+ */
 export type SurfaceRepresentation = BaseSegmentationRepresentation & {
   rendering: SurfaceRenderingConfig;
 };
@@ -145,7 +156,7 @@ export type SegmentationRepresentation =
  {
      colorLUT: [],
      globalConfig: {
-       renderInactiveSegmentations: false,
+       renderInactiveRepresentations: false,
        representations: {
          LABELMAP: {
            renderFill: true,
@@ -153,40 +164,41 @@ export type SegmentationRepresentation =
          },
        },
      },
-     segmentations: {
-      'segmentation1': {
-        type: 'Labelmap',
-        activeSegmentIndex: 0,
-        segmentsLocked: new Set(),
-        label: 'segmentation1',
-        cachedStats: {},
-        representationData: {
-          LABELMAP: {
-            volumeId: 'segmentation1',
-          },
-          CONTOUR: {
-            geometryIds: ['contourSet1', 'contourSet2'],
-          },
-        },
-      },
-      'segmentation2': {
-        type: 'Labelmap',
-        activeSegmentIndex: 1,
-        segmentsLocked: new Set(),
-        label: 'segmentation2',
-        cachedStats: {},
-        representationData: {
-          CONTOUR: {
-            points: Float32Array,
-          },
-        },
-      },
-    },
+     segmentations: [
+       {
+         segmentationId: 'segmentation1',
+         type: 'Labelmap',
+         activeSegmentIndex: 0,
+         segmentsLocked: new Set(),
+         label: 'segmentation1',
+         cachedStats: {},
+         representationData: {
+           LABELMAP: {
+             volumeId: 'segmentation1',
+           },
+           CONTOUR: {
+             geometryIds: ['contourSet1', 'contourSet2'],
+           },
+         },
+       },
+       {
+         segmentationId: 'segmentation2',
+         type: 'Labelmap',
+         activeSegmentIndex: 1,
+         segmentsLocked: new Set(),
+         label: 'segmentation2',
+         cachedStats: {},
+         representationData: {
+           CONTOUR: {
+             points: Float32Array,
+           },
+         },
+       },
+     ],
      representations: {
       'segRepUID1': {
         segmentationId: 'segmentation1',
         type: 'Labelmap',
-        active: true,
         colorLUTIndex: 0,
         segmentsHidden: new Set(),
         rendering: {
@@ -194,7 +206,7 @@ export type SegmentationRepresentation =
           ofun,
         },
         config: {
-          default: {
+          base: {
             LABELMAP: {
               renderFill: true,
             },
@@ -213,17 +225,21 @@ export type SegmentationRepresentation =
       'viewport1': {
         'segRepUID': {
           visible: true,
+          active: true,
         },
         'segRepUID2': {
           visible: false,
+          active: false,
         },
       },
       'viewport2': {
         'segRepUID': {
           visible: true,
+          active: false,
         },
         'segRepUID2': {
-          visible: false,
+          visible: true,
+          active: true,
         },
       },
     }
@@ -249,6 +265,7 @@ export type SegmentationState = {
     [viewportId: string]: {
       [segRepresentationUID: string]: {
         visible: boolean;
+        active: boolean;
       };
     };
   };

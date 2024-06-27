@@ -126,7 +126,6 @@ class RectangleScissorsTool extends BaseTool {
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
     const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
       segmentationRepresentationUID,
       segmentIndex
     );

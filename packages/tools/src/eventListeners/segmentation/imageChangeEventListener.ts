@@ -15,6 +15,7 @@ import * as SegmentationState from '../../stateManagement/segmentation/segmentat
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
+import triggerSegmentationRenderForViewports from '../../utilities/segmentation/triggerSegmentationRenderForViewports';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -45,7 +46,7 @@ const disable = function (element: HTMLDivElement): void {
   );
 };
 
-const perToolGroupManualTriggers = new Map();
+const perViewportManualTriggers = new Map();
 
 /**
  *  When the image is rendered, check what tools can be rendered for this element.
@@ -65,26 +66,23 @@ function _imageChangeEventListener(evt) {
     renderingEngineId
   ) as { viewport: Types.IStackViewport };
 
-  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
+  const segmentationRepresentations =
+    SegmentationState.getSegmentationRepresentationsForViewport(viewportId);
 
-  if (!toolGroup) {
+  if (!segmentationRepresentations?.length) {
     return;
   }
 
-  let toolGroupSegmentationRepresentations =
-    SegmentationState.getSegmentationRepresentations(toolGroup.id) || [];
+  const labelmapRepresentations = segmentationRepresentations.filter(
+    (representation) => representation.type === Representations.Labelmap
+  );
 
-  toolGroupSegmentationRepresentations =
-    toolGroupSegmentationRepresentations.filter(
-      (representation) => representation.type === Representations.Labelmap
-    );
-
-  if (!toolGroupSegmentationRepresentations?.length) {
+  if (!labelmapRepresentations.length) {
     return;
   }
 
-  const segmentationRepresentations = {};
-  toolGroupSegmentationRepresentations.forEach((representation) => {
+  // const segmentationRepresentations = {};
+  labelmapRepresentations.forEach((representation) => {
     const segmentation = SegmentationState.getSegmentation(
       representation.segmentationId
     );
@@ -126,9 +124,9 @@ function _imageChangeEventListener(evt) {
     // the data is still coming in. In such situations, we should trigger the render
     // to ensure that the segmentation actors are created, even if the data arrives late.
 
-    if (!perToolGroupManualTriggers.has(toolGroup.id)) {
-      perToolGroupManualTriggers.set(toolGroup.id, true);
-      triggerSegmentationRender(toolGroup.id);
+    if (!perViewportManualTriggers.has(viewportId)) {
+      perViewportManualTriggers.set(viewportId, true);
+      triggerSegmentationRenderForViewports([viewportId]);
     }
 
     // we should return here, since there is no segmentation actor to update
@@ -236,7 +234,7 @@ function _imageChangeEventListener(evt) {
         },
       ]);
 
-      triggerSegmentationRender(toolGroup.id);
+      triggerSegmentationRender();
       return;
     }
 

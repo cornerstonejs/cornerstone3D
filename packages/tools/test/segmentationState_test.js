@@ -217,7 +217,7 @@ describe('Segmentation State -- ', () => {
       eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
         const globalConfig = segmentation.config.getGlobalConfig();
 
-        expect(globalConfig.renderInactiveSegmentations).toBe(true);
+        expect(globalConfig.renderInactiveRepresentations).toBe(true);
         expect(globalConfig.representations).toBeDefined();
         expect(globalConfig.representations[LABELMAP]).toBeDefined();
 

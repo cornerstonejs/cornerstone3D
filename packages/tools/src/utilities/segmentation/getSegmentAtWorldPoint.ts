@@ -1,7 +1,10 @@
 import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getSegmentation,
+  getSegmentationRepresentationsBySegmentationId,
+} from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
@@ -96,9 +99,8 @@ export function getSegmentAtWorldForLabelmap(
   // find the first segmentationRepresentationUID for the segmentationId, since
   // that is what we use as actorUID in the viewport
 
-  const segmentationRepresentations = getSegmentationIdRepresentations(
-    segmentation.segmentationId
-  );
+  const segmentationRepresentations =
+    getSegmentationRepresentationsBySegmentationId(segmentation.segmentationId);
 
   const { segmentationRepresentationUID } = segmentationRepresentations[0];
 

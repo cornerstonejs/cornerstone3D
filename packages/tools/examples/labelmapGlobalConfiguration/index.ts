@@ -72,7 +72,7 @@ addToggleButtonToToolbar({
   onClick: (toggle) => {
     const config = segmentation.config.getGlobalConfig();
 
-    config.renderInactiveSegmentations = toggle;
+    config.renderInactiveRepresentations = toggle;
     segmentation.config.setGlobalConfig(config);
 
     const renderingEngine = getRenderingEngine(renderingEngineId);

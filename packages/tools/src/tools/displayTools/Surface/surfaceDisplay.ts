@@ -1,6 +1,7 @@
 import {
   cache,
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   Types,
   VolumeViewport3D,
 } from '@cornerstonejs/core';
@@ -8,7 +9,7 @@ import {
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
 import { getToolGroup } from '../../../store/ToolGroupManager';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
+import { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
@@ -25,40 +26,38 @@ import { polySeg } from '../../../stateManagement/segmentation';
  * immediately after the segmentation representation is removed.
  */
 function removeSegmentationRepresentation(
-  toolGroupId: string,
+  viewportId: string,
   segmentationRepresentationUID: string,
   renderImmediate = false
 ): void {
-  _removeSurfaceFromToolGroupViewports(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+  if (!enabledElement) {
+    return;
+  }
+
+  const { viewport } = enabledElement;
+
+  removeSurfaceFromElement(viewport.element, segmentationRepresentationUID);
   SegmentationState.removeSegmentationRepresentation(
-    toolGroupId,
     segmentationRepresentationUID
   );
 
-  if (renderImmediate) {
-    const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      enabledElement.viewport.render();
-    });
+  if (!renderImmediate) {
+    return;
   }
+
+  viewport.render();
 }
 
 /**
  * It renders the Surface  for the given segmentation
  * @param viewport - The viewport object
- * @param representation - ToolGroupSpecificRepresentation
+ * @param representation - SegmentationRepresentation
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: Types.IVolumeViewport,
-  representation: ToolGroupSpecificRepresentation
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
+  representation: SegmentationRepresentation
 ): Promise<void> {
   const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
     representation;
@@ -132,31 +131,6 @@ async function render(
   });
 
   viewport.render();
-}
-
-function _removeSurfaceFromToolGroupViewports(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): void {
-  const toolGroup = getToolGroup(toolGroupId);
-
-  if (toolGroup === undefined) {
-    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`);
-  }
-
-  const { viewportsInfo } = toolGroup;
-
-  for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo;
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-    removeSurfaceFromElement(
-      enabledElement.viewport.element,
-      segmentationRepresentationUID
-    );
-  }
 }
 
 export default {

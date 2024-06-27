@@ -16,7 +16,7 @@ function setSegmentationVisibility(
   segmentationRepresentationUID: string,
   visibility: boolean
 ): void {
-  const representation = SegmentationState.getSegmentationRepresentationByUID(
+  const representation = SegmentationState.getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 
@@ -68,10 +68,9 @@ function setSegmentsVisibility(
   segmentIndices: number[],
   visibility: boolean
 ): void {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      segmentationRepresentationUID
-    );
+  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 
   if (!segRepresentation) {
     return;
@@ -97,10 +96,9 @@ function setSegmentVisibility(
   segmentIndex: number,
   visibility: boolean
 ): void {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      segmentationRepresentationUID
-    );
+  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 
   if (!segRepresentation) {
     return;
@@ -122,10 +120,9 @@ function getSegmentVisibility(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): boolean {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      segmentationRepresentationUID
-    );
+  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 
   if (!segRepresentation) {
     return false;

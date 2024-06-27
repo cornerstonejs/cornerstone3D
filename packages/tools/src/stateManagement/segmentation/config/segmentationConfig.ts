@@ -4,13 +4,14 @@ import * as SegmentationState from '../../../stateManagement/segmentation/segmen
 import {
   RepresentationConfig,
   SegmentationRepresentationConfig,
-  SegmentSpecificRepresentationConfig,
+  SegmentRepresentationConfig,
 } from '../../../types/SegmentationStateTypes';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 
 /**
  * It returns the global segmentation config.
  * @returns The global segmentation config containing the representations
- * config for each representation type and renderInactiveSegmentations flag.
+ * config for each representation type and renderInactiveRepresentations flag.
  */
 function getGlobalConfig(): SegmentationRepresentationConfig {
   return SegmentationState.getGlobalConfig();
@@ -65,37 +66,79 @@ function setGlobalRepresentationConfig(
 }
 
 /**
- * Give the segmentation representation UID, return the corresponding config
- * which is shared by all segments in the segmentation representation.
+ * Retrieves the configuration for all segments of a given segmentation representation.
  *
- * @param segmentationRepresentationUID - The uid of the segmentation representation
- * @returns - The configuration for the representation.
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @returns The representation configuration for all segments.
  */
-function getSegmentationRepresentationConfig(
+function getAllSegmentsConfig(
   segmentationRepresentationUID: string
 ): RepresentationConfig {
-  return SegmentationState.getSegmentationRepresentationConfig(
-    segmentationRepresentationUID
-  );
+  return SegmentationState.getAllSegmentsConfig(segmentationRepresentationUID);
 }
 
 /**
- * Set the segmentation representation specific configuration for the
- * segmentation representation. This will apply to all segments in the
- * segmentation representation.
+ * Sets the configuration for all segments of a given segmentation representation.
  *
- * @param segmentationRepresentationUID - The uid of the segmentation representation
- * @param config - The configuration for the representation. This is an object
- * only containing the representation type as key and the config as value.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param config - The configuration to be set for all segments.
  */
-function setSegmentationRepresentationConfig(
+function setAllSegmentsConfig(
   segmentationRepresentationUID: string,
   config: RepresentationConfig
 ): void {
-  SegmentationState.setSegmentationRepresentationConfig(
-    segmentationRepresentationUID,
-    config
+  SegmentationState.setAllSegmentsConfig(segmentationRepresentationUID, config);
+}
+
+/**
+ * Sets the configuration that is specific to each segment in the segmentation representation.
+ * Note this is setting configuration for each segmetn in bulk
+ *
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @param config - The configuration to be set for the segmentation representation.
+ */
+function setPerSegmentConfig(
+  segmentationRepresentationUID: string,
+  config: SegmentRepresentationConfig
+): void {
+  SegmentationState.setPerSegmentConfig(segmentationRepresentationUID, config);
+}
+
+/**
+ * Retrieves the segment representation configuration for a given segmentation representation UID.
+ *
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns The segment representation configuration.
+ */
+function getPerSegmentConfig(
+  segmentationRepresentationUID: string
+): SegmentRepresentationConfig {
+  return SegmentationState.getPerSegmentConfig(segmentationRepresentationUID);
+}
+
+/**
+ * Sets the configuration for a specific segment index in a segmentation representation.
+ *
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param segmentIndex - The index of the segment.
+ * @param config - The configuration to set for the segment.
+ * @param suppressEvent - Optional. If true, the segmentation representation modified event will not be triggered. Default is false.
+ */
+function setSegmentIndexConfig(
+  segmentationRepresentationUID: string,
+  segmentIndex: number,
+  config: RepresentationConfig,
+  suppressEvent = false
+): void {
+  const perSegment = SegmentationState.getPerSegmentConfig(
+    segmentationRepresentationUID
   );
+
+  perSegment[segmentIndex] = config;
+
+  if (!suppressEvent) {
+    triggerSegmentationRepresentationModified(segmentationRepresentationUID);
+  }
 }
 
 /**
@@ -105,33 +148,15 @@ function setSegmentationRepresentationConfig(
  * @param segmentIndex - The index of the segment
  * @returns - The configuration for the segment index in the segmentation representation
  */
-function getSegmentSpecificConfig(
+function getSegmentIndexConfig(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): RepresentationConfig {
-  return SegmentationState.getSegmentSpecificConfig(
-    segmentationRepresentationUID,
-    segmentIndex
+  const perSegment = SegmentationState.getPerSegmentConfig(
+    segmentationRepresentationUID
   );
-}
 
-/**
- * Set the segment specific configuration for the segmentation representation.
- * This configuration, if specified, has higher priority than the segmentation representation specific config.
- * The order of priority is: segment specific config > segmentation representation specific config > global config
- *
- * @param segmentationRepresentationUID - The uid of the segmentation representation
- * @param segmentIndex - The index of the segment
- * @param config - The configuration for the representation. This is an object
- */
-function setSegmentSpecificConfig(
-  segmentationRepresentationUID: string,
-  config: SegmentSpecificRepresentationConfig
-): void {
-  SegmentationState.setSegmentSpecificConfig(
-    segmentationRepresentationUID,
-    config
-  );
+  return perSegment?.[segmentIndex];
 }
 
 export {
@@ -141,9 +166,11 @@ export {
   getGlobalRepresentationConfig,
   setGlobalRepresentationConfig,
   // segmentation representation config
-  getSegmentationRepresentationConfig,
-  setSegmentationRepresentationConfig,
-  // segment specific config
-  getSegmentSpecificConfig,
-  setSegmentSpecificConfig,
+  getAllSegmentsConfig,
+  setAllSegmentsConfig,
+  setPerSegmentConfig,
+  getPerSegmentConfig,
+  // segment index get/set
+  setSegmentIndexConfig,
+  getSegmentIndexConfig,
 };

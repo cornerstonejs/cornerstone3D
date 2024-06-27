@@ -65,7 +65,7 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment1FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentSpecificConfig(
+    segmentation.config.setSegmentationRepresentationSegmentsConfig(
       toolGroupId,
       segmentationRepresentationUID,
       {
@@ -86,7 +86,7 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment2FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentSpecificConfig(
+    segmentation.config.setSegmentationRepresentationSegmentsConfig(
       toolGroupId,
       segmentationRepresentationUID,
       {

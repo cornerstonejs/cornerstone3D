@@ -428,12 +428,15 @@ async function run() {
     },
   ]);
   // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId: segmentationIds[0],
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  const [uid] = await segmentation.addSegmentationRepresentations(
+    [viewportId],
+    [
+      {
+        segmentationId: segmentationIds[0],
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]
+  );
 
   segmentationRepresentationUIDs.push(uid);
 }

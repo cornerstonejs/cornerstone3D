@@ -249,7 +249,6 @@ function createSegmentConfiguration(segmentIndex, otherSegments?) {
     ? { has: (segmentIndex) => otherSegments.indexOf(segmentIndex) !== -1 }
     : undefined;
   const colorConfig = segmentation.config.color.getColorForSegmentIndex(
-    toolGroupIds[0],
     segmentationRepresentationUIDs[0],
     segmentIndex
   );

@@ -126,7 +126,7 @@ addSliderToToolbar({
   defaultValue: 4,
   onSelectedValueChange: (value) => {
     segmentation.config.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations: true,
+      renderInactiveRepresentations: true,
       representations: {
         CONTOUR: {
           outlineWidthActive: Number(value),

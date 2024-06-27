@@ -404,7 +404,7 @@ describe('Segmentation Render -- ', () => {
             );
 
           expect(toolGroupConfig).toBeDefined();
-          expect(toolGroupConfig.renderInactiveSegmentations).toBe(true);
+          expect(toolGroupConfig.renderInactiveRepresentations).toBe(true);
           expect(toolGroupConfig.representations[LABELMAP]).toEqual(
             customToolGroupSegConfig.representations[LABELMAP]
           );

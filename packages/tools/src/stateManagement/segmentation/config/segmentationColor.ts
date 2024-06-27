@@ -37,10 +37,9 @@ function setColorLUT(
   segmentationRepresentationUID: string,
   colorLUTIndex: number
 ): void {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      segmentationRepresentationUID
-    );
+  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 
   if (!segRepresentation) {
     throw new Error(
@@ -73,7 +72,7 @@ function getColorForSegmentIndex(
   segmentIndex: number
 ): Types.Color {
   const segmentationRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
+    SegmentationState.getSegmentationRepresentation(
       segmentationRepresentationUID
     );
 

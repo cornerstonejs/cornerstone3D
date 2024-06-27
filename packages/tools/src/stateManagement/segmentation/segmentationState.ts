@@ -4,7 +4,7 @@ import type {
   Segmentation,
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
-  SegmentSpecificRepresentationConfig,
+  SegmentRepresentationConfig,
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
@@ -75,24 +75,10 @@ function addSegmentation(
  * Get all segmentation representations in the state
  * @returns An array of segmentation representation objects.
  */
-function getAllSegmentationRepresentations(): SegmentationRepresentation[] {
+function getSegmentationRepresentations(): SegmentationRepresentation[] {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   const state = segmentationStateManager.getState();
   return Object.values(state.representations);
-}
-
-/**
- * Finds all segmentation representations with the given segmentationId.
- * @param segmentationId - The ID of the segmentation.
- * @returns An array of found segmentation representations.
- */
-function getSegmentationRepresentations(
-  segmentationId: string
-): SegmentationRepresentation[] {
-  const allRepresentations = getAllSegmentationRepresentations();
-  return allRepresentations.filter(
-    (representation) => representation.segmentationId === segmentationId
-  );
 }
 
 /**
@@ -101,45 +87,59 @@ function getSegmentationRepresentations(
  * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
  * @returns The found segmentation representation, or undefined if not found.
  */
-function getSegmentationRepresentationByUID(
+function getSegmentationRepresentation(
   segmentationRepresentationUID: string
 ): SegmentationRepresentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getSegmentationRepresentation(
+  return segmentationStateManager.getRepresentation(
     segmentationRepresentationUID
   );
 }
 
 /**
- * Get the segmentation representations config for a given representation
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @returns A RepresentationConfig object.
+ * Finds all segmentation representations with the given segmentationId.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns An array of found segmentation representations.
  */
-function getSegmentationRepresentationConfig(
+function getSegmentationRepresentationsBySegmentationId(
+  segmentationId: string
+): SegmentationRepresentation[] {
+  const allRepresentations = getSegmentationRepresentations();
+  return allRepresentations.filter(
+    (representation) => representation.segmentationId === segmentationId
+  );
+}
+
+/**
+ * Retrieves the configuration for all segments associated with the given segmentation representation UID.
+ *
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns The configuration for all segments.
+ */
+function getAllSegmentsConfig(
   segmentationRepresentationUID: string
 ): RepresentationConfig {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getRepresentationConfig(
+
+  return segmentationStateManager.getAllSegmentsConfig(
     segmentationRepresentationUID
   );
 }
 
 /**
- * Set the segmentation representation config for the provided representation.
- * It fires SEGMENTATION_REPRESENTATION_MODIFIED event if not suppressed.
+ * Sets the configuration for all segments in a segmentation representation.
  *
- * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @param config - The new configuration for the representation.
- * @param suppressEvents - If true, the event will not be triggered.
+ * @param config - The configuration to be set for all segments.
+ * @param suppressEvents - Optional. If true, events will not be triggered. Defaults to false.
  */
-function setSegmentationRepresentationConfig(
+function setAllSegmentsConfig(
   segmentationRepresentationUID: string,
   config: RepresentationConfig,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.setRepresentationConfig(
+  segmentationStateManager.setAllSegmentsConfig(
     segmentationRepresentationUID,
     config
   );
@@ -149,27 +149,36 @@ function setSegmentationRepresentationConfig(
   }
 }
 
-function getSegmentSpecificConfig(
-  segmentationRepresentationUID: string,
-  segmentIndex: number
-): RepresentationConfig {
+/**
+ * Retrieves the per-segment configuration for a given segmentation representation.
+ *
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @returns The per-segment configuration for the specified segmentation representation.
+ */
+function getPerSegmentConfig(
+  segmentationRepresentationUID: string
+): SegmentRepresentationConfig {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getSegmentSpecificConfig(
-    segmentationRepresentationUID,
-    segmentIndex
+  return segmentationStateManager.getPerSegmentConfig(
+    segmentationRepresentationUID
   );
 }
 
-function setSegmentSpecificConfig(
+/**
+ * Sets the per-segment configuration for a given segmentation representation.
+ *
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @param config - The per-segment configuration to set.
+ * @param suppressEvents - Optional. If true, events will not be triggered. Defaults to false.
+ */
+function setPerSegmentConfig(
   segmentationRepresentationUID: string,
-  segmentIndex: number,
-  config: SegmentSpecificRepresentationConfig,
-  suppressEvents = false
+  config: SegmentRepresentationConfig,
+  suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.setSegmentSpecificConfig(
+  segmentationStateManager.setPerSegmentConfig(
     segmentationRepresentationUID,
-    segmentIndex,
     config
   );
 
@@ -178,31 +187,58 @@ function setSegmentSpecificConfig(
   }
 }
 
-function getViewportSegmentationRepresentations(
+function getViewportsWithSegmentation(segmentationId: string): string[] {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  const state = segmentationStateManager.getState();
+  const viewports = state.viewports;
+
+  return Object.keys(viewports).filter((viewportId) => {
+    const viewport = viewports[viewportId];
+    return Object.keys(viewport).some(
+      (segRepUID) =>
+        state.representations[segRepUID].segmentationId === segmentationId
+    );
+  });
+}
+
+function getSegmentationRepresentationsForViewport(
   viewportId: string
-): SegmentationRepresentation[] {
+): SegmentationRepresentation[] | [] {
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
-  return segmentationStateManager.getViewportSegmentationRepresentations(
-    viewportId
-  );
+  const state = segmentationStateManager.getState();
+
+  const viewport = state.viewports?.[viewportId];
+
+  if (!viewport) {
+    return [];
+  }
+
+  const segRepUIDs = Object.keys(viewport);
+
+  return segRepUIDs.map((segRepUID) => state.representations[segRepUID]);
 }
 
 function addSegmentationRepresentationToViewport(
   viewportId: string,
-  segmentationRepresentation: SegmentationRepresentation
+  segmentationRepresentation: SegmentationRepresentation,
+  suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
   // check if the segmentation representation is already in the state
-  segmentationStateManager.addSegmentationRepresentation(
-    segmentationRepresentation
-  );
+  segmentationStateManager.addRepresentation(segmentationRepresentation);
 
-  segmentationStateManager.addSegmentationRepresentationToViewport(
+  segmentationStateManager.addRepresentationToViewport(
     viewportId,
     segmentationRepresentation.segmentationRepresentationUID
   );
+
+  if (!suppressEvents) {
+    triggerSegmentationRepresentationModified(
+      segmentationRepresentation.segmentationRepresentationUID
+    );
+  }
 }
 
 /**
@@ -256,14 +292,15 @@ function removeSegmentation(segmentationId: string): void {
  * @param segmentationRepresentationUID - The uid of the segmentation representation to remove.
  */
 function removeSegmentationRepresentation(
-  segmentationRepresentationUID: string
+  segmentationRepresentationUID: string,
+  suppressEvents?: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.removeSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
+  segmentationStateManager.removeRepresentation(segmentationRepresentationUID);
 
-  triggerSegmentationRepresentationRemoved(segmentationRepresentationUID);
+  if (!suppressEvents) {
+    triggerSegmentationRepresentationRemoved(segmentationRepresentationUID);
+  }
 }
 
 /**
@@ -313,7 +350,7 @@ function getSegmentationRepresentationVisibility(
   segmentationRepresentationUID: string
 ): boolean {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getViewportVisibility(
+  return segmentationStateManager.getRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID
   );
@@ -331,11 +368,47 @@ function setSegmentationRepresentationVisibility(
   visible: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.setViewportVisibility(
+  segmentationStateManager.setRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID,
     visible
   );
+}
+
+/**
+ * Retrieves the active segmentation representation for a given viewport.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @returns The active segmentation representation, or undefined if not found.
+ */
+function getActiveSegmentationRepresentation(
+  viewportId: string
+): SegmentationRepresentation | undefined {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  return segmentationStateManager.getActiveRepresentation(viewportId);
+}
+
+/**
+ * Sets the segmentation representation as active for the specified viewport.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns
+ */
+function setActiveSegmentationRepresentation(
+  viewportId: string,
+  segmentationRepresentationUID: string,
+  suppressEvents?: boolean
+): void {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  segmentationStateManager.setActiveRepresentation(
+    viewportId,
+    segmentationRepresentationUID
+  );
+
+  if (!suppressEvents) {
+    triggerSegmentationRepresentationModified(segmentationRepresentationUID);
+  }
 }
 
 export {
@@ -346,19 +419,18 @@ export {
   addSegmentation,
   removeSegmentation,
   // Segmentation Representation
-  getAllSegmentationRepresentations,
   getSegmentationRepresentations,
-  getSegmentationRepresentationByUID,
+  getSegmentationRepresentation,
   removeSegmentationRepresentation,
   // config
   getGlobalConfig,
   setGlobalConfig,
-  getSegmentationRepresentationConfig,
-  setSegmentationRepresentationConfig,
-  getSegmentSpecificConfig,
-  setSegmentSpecificConfig,
+  getAllSegmentsConfig,
+  setAllSegmentsConfig,
+  getPerSegmentConfig,
+  setPerSegmentConfig,
   // viewport
-  getViewportSegmentationRepresentations,
+  getSegmentationRepresentationsForViewport,
   addSegmentationRepresentationToViewport,
   // color
   addColorLUT,
@@ -366,6 +438,11 @@ export {
   getNextColorLUTIndex,
   removeColorLUT,
   // visibility
+  getSegmentationRepresentationsBySegmentationId,
   getSegmentationRepresentationVisibility,
   setSegmentationRepresentationVisibility,
+  getViewportsWithSegmentation,
+  // active
+  getActiveSegmentationRepresentation,
+  setActiveSegmentationRepresentation,
 };
