@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.81.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.4...v1.81.0) (2024-06-27)
+
+### Features
+
+- **ultrasound:** add ULTRASOUND_ENHANCED_REGION and CALIBRATION to wadouri metadata pr… ([#1358](https://github.com/cornerstonejs/cornerstone3D/issues/1358)) ([17a4e12](https://github.com/cornerstonejs/cornerstone3D/commit/17a4e12128c8e67a46c02c80cd47b07f6e563829))
+
 ## [1.80.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.3...v1.80.4) (2024-06-27)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
