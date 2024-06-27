@@ -444,10 +444,11 @@ class Cache implements ICache {
    * @param imageId - Image ID
    * @returns IImageLoadObject
    */
-  public getImageLoadObject(imageId: string): IImageLoadObject {
+  public getImageLoadObject(imageId: string): IImageLoadObject | undefined {
     if (imageId === undefined) {
       throw new Error('getImageLoadObject: imageId must not be undefined');
     }
+
     const cachedImage = this._imageCache.get(imageId);
 
     if (cachedImage === undefined) {
@@ -484,10 +485,12 @@ class Cache implements ICache {
    * @param imageId - ImageId
    * @returns - Volume object
    */
-  public getVolumeContainingImageId(imageId: string): {
-    volume: IImageVolume;
-    imageIdIndex: number;
-  } {
+  public getVolumeContainingImageId(imageId: string):
+    | {
+        volume: IImageVolume;
+        imageIdIndex: number;
+      }
+    | undefined {
     const volumeIds = Array.from(this._volumeCache.keys());
     const imageIdToUse = imageIdToURI(imageId);
 
@@ -647,10 +650,13 @@ class Cache implements ICache {
    * @param volumeId - Volume ID
    * @returns IVolumeLoadObject
    */
-  public getVolumeLoadObject = (volumeId: string): IVolumeLoadObject => {
+  public getVolumeLoadObject = (
+    volumeId: string
+  ): IVolumeLoadObject | undefined => {
     if (volumeId === undefined) {
       throw new Error('getVolumeLoadObject: volumeId must not be undefined');
     }
+
     const cachedVolume = this._volumeCache.get(volumeId);
 
     if (cachedVolume === undefined) {
@@ -663,7 +669,7 @@ class Cache implements ICache {
     return cachedVolume.volumeLoadObject;
   };
 
-  public getGeometry = (geometryId: string): IGeometry => {
+  public getGeometry = (geometryId: string): IGeometry | undefined => {
     if (geometryId == null) {
       throw new Error('getGeometry: geometryId must not be undefined');
     }
@@ -686,10 +692,11 @@ class Cache implements ICache {
    * @param imageId - image ID
    * @returns Image
    */
-  public getImage = (imageId: string): IImage => {
+  public getImage = (imageId: string): IImage | undefined => {
     if (imageId === undefined) {
       throw new Error('getImage: imageId must not be undefined');
     }
+
     const cachedImage = this._imageCache.get(imageId);
 
     if (cachedImage === undefined) {
@@ -708,10 +715,11 @@ class Cache implements ICache {
    * @param volumeId - Volume ID
    * @returns Volume
    */
-  public getVolume = (volumeId: string): IImageVolume => {
+  public getVolume = (volumeId: string): IImageVolume | undefined => {
     if (volumeId === undefined) {
       throw new Error('getVolume: volumeId must not be undefined');
     }
+
     const cachedVolume = this._volumeCache.get(volumeId);
 
     if (cachedVolume === undefined) {
