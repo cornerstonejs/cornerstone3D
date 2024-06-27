@@ -121,7 +121,13 @@ class Cache implements ICache {
    *
    */
   private _decacheImage = (imageId: string) => {
-    const { imageLoadObject } = this._imageCache.get(imageId);
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (!cachedImage) {
+      return;
+    }
+
+    const { imageLoadObject } = cachedImage;
 
     // Cancel any in-progress loading
     if (imageLoadObject.cancelFn) {
@@ -143,7 +149,16 @@ class Cache implements ICache {
    */
   private _decacheVolume = (volumeId: string) => {
     const cachedVolume = this._volumeCache.get(volumeId);
+
+    if (!cachedVolume) {
+      return;
+    }
+
     const { volumeLoadObject, volume } = cachedVolume;
+
+    if (!volume) {
+      return;
+    }
 
     if (volume.cancelLoading) {
       volume.cancelLoading();
@@ -478,6 +493,11 @@ class Cache implements ICache {
 
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId);
+
+      if (!cachedVolume) {
+        return;
+      }
+
       const { volume } = cachedVolume;
 
       if (!volume?.imageIds?.length) {
