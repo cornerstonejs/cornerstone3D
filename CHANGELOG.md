@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.81.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.0...v1.81.1) (2024-06-28)
+
+### Bug Fixes
+
+- Nifti volume id extraction from targetId ([#1368](https://github.com/cornerstonejs/cornerstone3D/issues/1368)) ([9f9a9a0](https://github.com/cornerstonejs/cornerstone3D/commit/9f9a9a020cfbb9d7d4e185471bb4665b31f809dd))
+
 # [1.81.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.4...v1.81.0) (2024-06-27)
 
 ### Features
