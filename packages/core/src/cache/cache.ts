@@ -451,7 +451,7 @@ class Cache implements ICache {
 
     const cachedImage = this._imageCache.get(imageId);
 
-    if (cachedImage === undefined) {
+    if (!cachedImage) {
       return;
     }
 
@@ -770,6 +770,7 @@ class Cache implements ICache {
     if (imageId === undefined) {
       throw new Error('removeImageLoadObject: imageId must not be undefined');
     }
+
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
@@ -802,6 +803,7 @@ class Cache implements ICache {
     if (volumeId === undefined) {
       throw new Error('removeVolumeLoadObject: volumeId must not be undefined');
     }
+
     const cachedVolume = this._volumeCache.get(volumeId);
 
     if (!cachedVolume) {
