@@ -7,6 +7,7 @@ import type {
 import type {
   ContourAnnotationData,
   ContourAnnotation,
+  ContourWindingDirection,
 } from './ContourAnnotation';
 import type {
   ContourSegmentationAnnotationData,
@@ -43,15 +44,20 @@ import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
   RepresentationConfig,
+  RepresentationPublicInput,
+  RepresentationPublicInputOptions,
+  SegmentSpecificRepresentationConfig,
+  Segmentation,
+  SegmentationPublicInput,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
-  Segmentation,
-  ToolGroupSpecificRepresentationState,
+  SegmentationState,
   ToolGroupSpecificContourRepresentation,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
-  SegmentationState,
-  RepresentationPublicInput,
+  ToolGroupSpecificRepresentationState,
+  ToolGroupSpecificRepresentations,
+  ToolGroupSpecificSurfaceRepresentation,
 } from './SegmentationStateTypes';
 import { ISculptToolShape } from './ISculptToolShape';
 import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
@@ -69,12 +75,14 @@ import type { Statistics, NamedStatistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import {
   LabelmapToolOperationData,
+  LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from './LabelmapToolOperationData';
 import type {
-  InterpolationViewportData,
+  AcceptInterpolationSelector,
   ImageInterpolationData,
+  InterpolationViewportData,
 } from './InterpolationTypes';
 
 // Splines
@@ -94,15 +102,17 @@ export type {
   // AnnotationState
   Annotation,
   Annotations,
-  ContourAnnotationData,
   ContourAnnotation,
+  ContourAnnotationData,
+  ContourWindingDirection,
   ContourSegmentationAnnotationData,
   ContourSegmentationAnnotation,
   BidirectionalData,
   CanvasCoordinates,
   IAnnotationManager,
-  InterpolationViewportData,
+  AcceptInterpolationSelector,
   ImageInterpolationData,
+  InterpolationViewportData,
   GroupSpecificAnnotations,
   AnnotationState,
   AnnotationStyle,
@@ -135,16 +145,21 @@ export type {
   AnnotationHandle,
   TextBoxHandle,
   // Segmentation
-  Segmentation,
-  SegmentationState,
-  SegmentationRepresentationData,
-  SegmentationRepresentationConfig,
   RepresentationConfig,
-  ToolGroupSpecificRepresentationState,
+  RepresentationPublicInput,
+  RepresentationPublicInputOptions,
+  SegmentSpecificRepresentationConfig,
+  Segmentation,
+  SegmentationPublicInput,
+  SegmentationRepresentationConfig,
+  SegmentationRepresentationData,
+  SegmentationState,
   ToolGroupSpecificContourRepresentation,
   ToolGroupSpecificLabelmapRepresentation,
   ToolGroupSpecificRepresentation,
-  RepresentationPublicInput,
+  ToolGroupSpecificRepresentationState,
+  ToolGroupSpecificRepresentations,
+  ToolGroupSpecificSurfaceRepresentation,
   LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,
@@ -168,6 +183,7 @@ export type {
 
   // Labelmap data
   LabelmapToolOperationData,
+  LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
   // Splines
