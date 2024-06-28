@@ -162,6 +162,8 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
     // (undocumented)
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean, resetOrientation?: boolean): boolean;
+    // (undocumented)
     abstract resetProperties(volumeId?: string): void;
     // (undocumented)
     abstract resetSlabThickness(): void;
@@ -3720,6 +3722,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     setVideoURL(videoURL: string): Promise<unknown>;
     // (undocumented)
+    setViewReference(viewRef: ViewReference): void;
+    // (undocumented)
     setVOI(voiRange: VOIRange): void;
     // (undocumented)
     setWindowLevel(windowWidth?: number, windowCenter?: number): void;
@@ -4250,7 +4254,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean): boolean;
+    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean, resetOrientation?: boolean): boolean;
     // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)

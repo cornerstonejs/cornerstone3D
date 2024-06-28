@@ -438,6 +438,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    * Sets the playback frame range.  The video will play over the given set
    * of frames (assuming it is playing).
+   *
    * @param frameRange - the minimum to maximum (inclusive) frames to play over
    * @returns
    */
@@ -773,6 +774,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const range = match[2].split('-').map((it) => Number(it));
     const frame = currentIndex + 1;
     return range[0] <= frame && frame <= (range[1] ?? range[0]);
+  }
+
+  /**
+   * Navigates the video to the specific view reference
+   */
+  public setViewReference(viewRef: ViewReference): void {
+    if (typeof viewRef.sliceIndex === 'number') {
+      this.setFrameNumber(viewRef.sliceIndex + 1);
+    } else if (Array.isArray(viewRef.sliceIndex)) {
+      this.setFrameRange(viewRef.sliceIndex);
+    }
   }
 
   /**
