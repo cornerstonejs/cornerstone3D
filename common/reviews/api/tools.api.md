@@ -658,6 +658,8 @@ export abstract class BaseTool implements IBaseTool {
     // (undocumented)
     protected getTargetIdImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): Types_2.IImageData | Types_2.CPUIImageData | Types_2.IImageVolume;
     // (undocumented)
+    protected getTargetVolumeId(viewport: Types_2.IViewport): string | undefined;
+    // (undocumented)
     getToolName(): string;
     // (undocumented)
     mode: ToolModes;

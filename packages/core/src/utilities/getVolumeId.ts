@@ -11,6 +11,6 @@ export const getVolumeId = (targetId: string) => {
     ? targetId.substring(prefix.length)
     : targetId;
 
-  const index = str.indexOf('?');
-  return index === -1 ? str : str.substring(0, index);
+  const index = str.indexOf('sliceIndex=');
+  return index === -1 ? str : str.substring(0, index - 1);
 };
