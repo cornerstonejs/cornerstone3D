@@ -23,6 +23,7 @@ import {
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
   thresholdInsideCircle,
+  thresholdInsideArea,
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
@@ -109,6 +110,7 @@ class BrushTool extends BaseTool {
           ERASE_INSIDE_CIRCLE: eraseInsideCircle,
           FILL_INSIDE_SPHERE: fillInsideSphere,
           ERASE_INSIDE_SPHERE: eraseInsideSphere,
+          THRESHOLD_INSIDE_AREA: thresholdInsideArea,
           THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
           THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
         },
@@ -133,6 +135,7 @@ class BrushTool extends BaseTool {
           dragMoveDistance: 4,
           // The time to consider a mouse click a drag when moved less than dragMoveDistance
           dragTimeMs: 500,
+          isManualPreviewEnabled: false,
         },
         actions: {
           [StrategyCallbacks.AcceptPreview]: {
@@ -158,7 +161,7 @@ class BrushTool extends BaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  onSetToolPassive = (evt) => {
+  onSetToolPassive = () => {
     this.disableCursor();
   };
 
@@ -166,7 +169,7 @@ class BrushTool extends BaseTool {
     this.disableCursor();
   };
 
-  onSetToolDisabled = (evt) => {
+  onSetToolDisabled = () => {
     this.disableCursor();
   };
 
@@ -285,6 +288,10 @@ class BrushTool extends BaseTool {
   preMouseDownCallback = (
     evt: EventTypes.MouseDownActivateEventType
   ): boolean => {
+    if (this.configuration.preview.isHoverPreviewDisabled) {
+      return;
+    }
+
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -337,6 +344,10 @@ class BrushTool extends BaseTool {
    * The preview also needs to be cancelled on changing tools.
    */
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this.configuration.preview.isHoverPreviewDisabled) {
+      return;
+    }
+
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
       if (!this.configuration.preview.enabled) {
@@ -375,10 +386,158 @@ class BrushTool extends BaseTool {
     }
   };
 
+  /**
+   * Sets the manual preview mode for the BrushTool.
+   * This method updates the `isManualPreviewEnabled` property of the
+   * configuration's preview object. When `isManualPreviewEnabled` is `true`,
+   * the preview mode is manually controlled.
+   *
+   * @param isManualPreviewEnabled - A boolean value to enable or disable manual
+   * preview mode.
+   */
+  setManualPreviewMode = (isManualPreviewEnabled: boolean) => {
+    this.configuration.preview.isManualPreviewEnabled = isManualPreviewEnabled;
+  };
+
+  /**
+   * Retrieves the current state of the manual preview mode for the BrushTool.
+   * This method returns the `isManualPreviewEnabled` property of the configuration's
+   * preview object. When `isManualPreviewEnabled` is `true`, the preview mode
+   * is manually controlled.
+   *
+   * @returns {boolean} - The current state of the manual preview mode.
+   */
+  getManualPreviewMode = () => {
+    return this.configuration.preview.isManualPreviewEnabled;
+  };
+
+  /**
+   * Enables the preview at the center of the IJK coordinate system.
+   * This method sets the `isCenterIJKDisabled` property of the configuration's
+   * preview object to `false`. When `isCenterIJKDisabled` is `false`, the preview
+   * will rely on the center of the IJK coordinate system.
+   */
+  enableCenterIJKPreview = () => {
+    this.configuration.preview.isCenterIJKDisabled = false;
+  };
+
+  /**
+   * Disables the preview at the center of the IJK coordinate system.
+   * This method sets the `isCenterIJKDisabled` property of the configuration's
+   * preview object to `true`. When `isCenterIJKDisabled` is `true`, the preview
+   * will not rely on center of the IJK coordinate system.
+   */
+  disableCenterIJKPreview = () => {
+    this.configuration.preview.isCenterIJKDisabled = true;
+  };
+
+  /**
+   * Enables the hover preview for the BrushTool.
+   * This method sets the `isHoverPreviewDisabled` property of the configuration's
+   * preview object to `false`. When `isHoverPreviewDisabled` is `false`, the hover
+   * preview feature is enabled (default behaviour).
+   */
+  enableHoverPreview = () => {
+    this.configuration.preview.isHoverPreviewDisabled = false;
+  };
+
+  /**
+   * Disables the hover preview for the BrushTool.
+   * This method sets the `isHoverPreviewDisabled` property of the configuration's
+   * preview object to `true`. When `isHoverPreviewDisabled` is `true`, the hover
+   * preview feature is disabled.
+   */
+  disableHoverPreview = () => {
+    this.configuration.preview.isHoverPreviewDisabled = true;
+  };
+
+  /**
+   * Manually triggers a preview operation for the BrushTool.
+   * This method is used to manually control the preview mode of the BrushTool.
+   * It cancels any ongoing preview operation, enables the preview mode if it's
+   * not enabled, and initiates a new preview operation at the center of the viewport.
+   *
+   * @param element - The HTMLDivElement of the viewport where the preview
+   * operation is to be performed.
+   */
+  manualPreview = (element: HTMLDivElement) => {
+    // If a preview operation is in progress, cancel it
+    if (this._previewData.timer) {
+      window.clearTimeout(this._previewData.timer);
+      this._previewData.timer = null;
+    }
+
+    if (!this.configuration.preview.enabled) {
+      this.configuration.preview.enabled = true;
+    }
+
+    if (this._previewData.preview && this._previewData.element) {
+      try {
+        this.rejectPreview(this._previewData.element);
+      } catch (error) {
+        this._previewData = null;
+        console.error('Error in reject preview', error);
+      }
+
+      // Reset _previewData object
+      this._previewData = {
+        preview: null,
+        element: null,
+        timerStart: Date.now(),
+        timer: null,
+        startPoint: [NaN, NaN],
+        isDrag: false,
+      };
+    }
+
+    this._previewData.element = element;
+    const enabledElement = getEnabledElement(this._previewData.element);
+
+    // We need this to don't brake the mouse based preview
+    this._previewData.isDrag = false;
+    this._previewData.timerStart = Date.now();
+
+    const canvasCenter = [
+      enabledElement.viewport.canvas.clientWidth / 2,
+      enabledElement.viewport.canvas.clientHeight / 2,
+    ];
+
+    this._hoverData = this.createHoverData(
+      this._previewData.element,
+      canvasCenter
+    );
+
+    const operationData = this.getOperationData(this._previewData.element);
+
+    this._previewData.preview = this.applyActiveStrategyCallback(
+      enabledElement,
+      operationData,
+      StrategyCallbacks.Preview
+    );
+
+    this._calculateCursor(this._previewData.element, canvasCenter);
+
+    if (!this._hoverData) {
+      return;
+    }
+
+    this._previewData.timer = null;
+
+    const timer = window.setTimeout(this.previewCallback, 100);
+
+    Object.assign(this._previewData, {
+      timerStart: Date.now(),
+      timer,
+      startPoint: canvasCenter,
+      element: this._previewData.element,
+    });
+  };
+
   previewCallback = () => {
     if (this._previewData.preview) {
       return;
     }
+
     this._previewData.timer = null;
     this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
@@ -551,6 +710,7 @@ class BrushTool extends BaseTool {
         this.configuration.strategySpecificConfiguration,
       // Provide the preview information so that data can be used directly
       preview: this._previewData?.preview,
+      isCenterIJKDisabled: this.configuration.preview.isCenterIJKDisabled,
     };
     return operationData;
   }
@@ -807,16 +967,19 @@ class BrushTool extends BaseTool {
     }
 
     const circleUID = '0';
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      circleUID,
-      center as Types.Point2,
-      radius,
-      {
-        color,
-      }
-    );
+
+    if (!this.configuration.preview.isManualPreviewEnabled) {
+      drawCircleSvg(
+        svgDrawingHelper,
+        annotationUID,
+        circleUID,
+        center as Types.Point2,
+        radius,
+        {
+          color,
+        }
+      );
+    }
 
     const activeStrategy = this.configuration.activeStrategy;
     const { dynamicRadiusInCanvas } = this.configuration

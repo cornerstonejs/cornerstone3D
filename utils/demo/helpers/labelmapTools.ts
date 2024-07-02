@@ -44,8 +44,20 @@ const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 const toolMap = new Map();
 
-toolMap.set('ThresholdCircle', {
+toolMap.set('ThresholdArea', {
   tool: BrushTool,
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_INSIDE_AREA',
+    strategySpecificConfiguration: {
+      ...configuration.strategySpecificConfiguration,
+      THRESHOLD: { ...thresholdArgs },
+    },
+  },
+});
+
+toolMap.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,

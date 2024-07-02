@@ -17,6 +17,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Additional data for performing the strategy
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;
+  isCenterIJKDisabled?: boolean;
   centerWorld: Types.Point3;
   viewport: Types.IViewport;
   imageVoxelManager:
@@ -25,10 +26,9 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   segmentationVoxelManager: csUtils.VoxelManager<number>;
   segmentationImageData: vtkImageData;
   previewVoxelManager: csUtils.VoxelManager<number>;
-  // The index to use for the preview segment.  Currently always undefined or 255
+  // The index to use for the preview segment. Currently, always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
-
   brushStrategy: BrushStrategy;
   configuration?: Record<string, any>;
 };

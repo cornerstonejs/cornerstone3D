@@ -839,6 +839,16 @@ export class BrushTool extends BaseTool {
         referencedVolumeId?: undefined;
     };
     // (undocumented)
+    disableCenterIJKPreview: () => void;
+    // (undocumented)
+    disableHoverPreview: () => void;
+    // (undocumented)
+    enableCenterIJKPreview: () => void;
+    // (undocumented)
+    enableHoverPreview: () => void;
+    // (undocumented)
+    getManualPreviewMode: () => any;
+    // (undocumented)
     protected getOperationData(element?: any): {
         points: any;
         segmentIndex: number;
@@ -850,6 +860,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        isCenterIJKDisabled: any;
         segmentsLocked: number[];
         imageIdReferenceMap?: Map<string, string>;
         volumeId?: string;
@@ -865,6 +876,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        isCenterIJKDisabled: any;
         volumeId: string;
         referencedVolumeId: any;
         segmentsLocked: number[] | [];
@@ -873,13 +885,15 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
+    manualPreview: (element: HTMLDivElement) => void;
+    // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    onSetToolDisabled: (evt: any) => void;
+    onSetToolDisabled: () => void;
     // (undocumented)
     onSetToolEnabled: () => void;
     // (undocumented)
-    onSetToolPassive: (evt: any) => void;
+    onSetToolPassive: () => void;
     // (undocumented)
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
@@ -888,6 +902,8 @@ export class BrushTool extends BaseTool {
     rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    setManualPreviewMode: (isManualPreviewEnabled: boolean) => void;
     // (undocumented)
     static toolName: any;
     // (undocumented)
