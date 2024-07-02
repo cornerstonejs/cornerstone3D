@@ -610,13 +610,13 @@ class RenderingEngine implements IRenderingEngine {
       const resetZoom = true;
       const resetToCenter = true;
       const resetRotation = false;
-      const supressEvents = true;
+      const suppressEvents = true;
       vp.resetCamera(
         resetPan,
         resetZoom,
         resetToCenter,
         resetRotation,
-        supressEvents
+        suppressEvents
       );
 
       const displayArea = vp.getDisplayArea();
