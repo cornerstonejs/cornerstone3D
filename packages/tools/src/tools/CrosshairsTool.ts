@@ -298,7 +298,8 @@ class CrosshairsTool extends AnnotationTool {
 
   resetCrosshairs = () => {
     const viewportsInfo = this._getViewportsInfo();
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+    for (const viewportInfo of viewportsInfo) {
+      const { viewportId, renderingEngineId } = viewportInfo;
       const enabledElement = getEnabledElementByIds(
         viewportId,
         renderingEngineId
@@ -308,13 +309,13 @@ class CrosshairsTool extends AnnotationTool {
       const resetZoom = true;
       const resetToCenter = true;
       const resetRotation = true;
-      const supressEvents = true;
+      const suppressEvents = true;
       viewport.resetCamera(
         resetPan,
         resetZoom,
         resetToCenter,
         resetRotation,
-        supressEvents
+        suppressEvents
       );
       (viewport as Types.IVolumeViewport).resetSlabThickness();
       const { element } = viewport;
@@ -327,7 +328,7 @@ class CrosshairsTool extends AnnotationTool {
         removeAnnotation(annotations[0].annotationUID);
       }
       viewport.render();
-    });
+    }
 
     this.computeToolCenter(viewportsInfo);
   };
@@ -1433,7 +1434,6 @@ class CrosshairsTool extends AnnotationTool {
     data.handles.rotationPoints = newRtpoints;
     data.handles.slabThicknessPoints = newStpoints;
 
-    debugger;
     if (this.configuration.viewportIndicators) {
       const { viewportIndicatorsConfig } = this.configuration;
 
