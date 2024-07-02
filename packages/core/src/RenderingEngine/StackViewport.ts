@@ -159,6 +159,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   private voiUpdatedWithSetProperties = false;
   private VOILUTFunction: VOILUTFunctionType;
   //
+  private outOfRange = false;
   private invert = false;
   // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
   private initialInvert = false;
@@ -1402,7 +1403,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     let voiRangeToUse = voiRange;
 
-    if (typeof voiRangeToUse === 'undefined') {
+    if (typeof voiRangeToUse === 'undefined' || this.outOfRange) {
+      this.outOfRange = false;
       const imageData = imageActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
       const maxVoiRange = { lower: range[0], upper: range[1] };
@@ -1832,7 +1834,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     // Update the pixel data in the vtkImageData object with the pixelData
     // from the loaded Cornerstone image
-    updateVTKImageDataWithCornerstoneImage(this._imageData, image);
+    this.outOfRange = updateVTKImageDataWithCornerstoneImage(
+      this._imageData,
+      image
+    );
   }
 
   /**

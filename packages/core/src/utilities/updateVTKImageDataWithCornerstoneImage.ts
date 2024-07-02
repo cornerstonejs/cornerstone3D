@@ -1,10 +1,12 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { IImage, PixelDataTypedArray } from '../types';
+import { normalizePixels } from '../RenderingEngine/helpers/normalizePixels';
 
 function updateVTKImageDataWithCornerstoneImage(
   sourceImageData: vtkImageData,
   image: IImage
 ) {
+  let outOfRange = false;
   const pixelData = image.getPixelData();
   if (!sourceImageData.getPointData) {
     // This happens for a CanvasActor, that doesn't have the getPointData
@@ -31,12 +33,22 @@ function updateVTKImageDataWithCornerstoneImage(
     image.getPixelData = () => newPixelData;
     scalarData.set(newPixelData);
   } else {
-    scalarData.set(pixelData);
+    const maxPixelValue = image.maxPixelValue;
+    const minPixelValue = image.minPixelValue;
+
+    if (maxPixelValue < 0 && minPixelValue < 0) {
+      outOfRange = true;
+      const newPixelData = normalizePixels(sourceImageData, image);
+      sourceImageData.getPointData().setScalars(newPixelData);
+    } else {
+      scalarData.set(pixelData);
+    }
   }
 
   // Trigger modified on the VTK Object so the texture is updated
   // TODO: evaluate directly changing things with texSubImage3D later
   sourceImageData.modified();
+  return outOfRange;
 }
 
 export { updateVTKImageDataWithCornerstoneImage };
