@@ -120,7 +120,7 @@ function addContourSetsToElement(
   geometryIds: string[],
   contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, segmentationId, segmentsHidden } =
+  const { segmentationRepresentationUID, segmentationId } =
     contourRepresentation;
 
   const segmentSpecificMap = new Map();
@@ -197,6 +197,11 @@ function addContourSetsToElement(
 
   const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
   const outlineWidthActive = newContourConfig.outlineWidthActive;
+
+  const segmentsHidden = getSegmentsHidden(
+    viewport.id,
+    segmentationRepresentationUID
+  );
 
   setConfigCache(
     segmentationRepresentationUID,
