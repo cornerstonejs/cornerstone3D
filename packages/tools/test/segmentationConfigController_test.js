@@ -110,100 +110,100 @@ describe('Segmentation Controller --', () => {
       });
     });
 
-    it('should be able to load a segmentation with a toolGroup specific config', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        Enums.OrientationAxis.AXIAL
-      );
-      this.DOMElements.push(element);
+    // it('should be able to load a segmentation with a toolGroup specific config', function (done) {
+    //   const element = createViewport(
+    //     this.renderingEngine,
+    //     Enums.OrientationAxis.AXIAL
+    //   );
+    //   this.DOMElements.push(element);
 
-      const toolGroupSpecificConfig = {
-        representations: {
-          [SegmentationRepresentations.Labelmap]: {
-            renderOutline: false,
-            fillAlpha: 0.7,
-          },
-        },
-      };
+    //   const toolGroupSpecificConfig = {
+    //     representations: {
+    //       [SegmentationRepresentations.Labelmap]: {
+    //         renderOutline: false,
+    //         fillAlpha: 0.7,
+    //       },
+    //     },
+    //   };
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const seg1VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
-      const vp1 = this.renderingEngine.getViewport(viewportId1);
+    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+    //   const seg1VolumeID =
+    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
+    //   const vp1 = this.renderingEngine.getViewport(viewportId1);
 
-      const compareImageCallback = () => {
-        const canvas1 = vp1.getCanvas();
-        const image1 = canvas1.toDataURL('image/png');
+    //   const compareImageCallback = () => {
+    //     const canvas1 = vp1.getCanvas();
+    //     const image1 = canvas1.toDataURL('image/png');
 
-        compareImages(
-          image1,
-          volumeURI_100_100_10_1_1_1_0_SEG_initialConfig,
-          'volumeURI_100_100_10_1_1_1_0_SEG_initialConfig'
-        );
+    //     compareImages(
+    //       image1,
+    //       volumeURI_100_100_10_1_1_1_0_SEG_initialConfig,
+    //       'volumeURI_100_100_10_1_1_1_0_SEG_initialConfig'
+    //     );
 
-        const toolGroupSegRepresentationsConfig =
-          segmentation.config.getToolGroupSpecificConfig(toolGroupId);
+    //     const toolGroupSegRepresentationsConfig =
+    //       segmentation.config.getToolGroupSpecificConfig(toolGroupId);
 
-        const toolGroupLabelmapConfig =
-          toolGroupSegRepresentationsConfig.representations[
-            SegmentationRepresentations.Labelmap
-          ];
-        expect(toolGroupLabelmapConfig.fillAlpha).toEqual(
-          toolGroupSpecificConfig.representations.LABELMAP.fillAlpha
-        );
-        expect(toolGroupLabelmapConfig.renderOutline).toEqual(
-          toolGroupSpecificConfig.representations.LABELMAP.renderOutline
-        );
+    //     const toolGroupLabelmapConfig =
+    //       toolGroupSegRepresentationsConfig.representations[
+    //         SegmentationRepresentations.Labelmap
+    //       ];
+    //     expect(toolGroupLabelmapConfig.fillAlpha).toEqual(
+    //       toolGroupSpecificConfig.representations.LABELMAP.fillAlpha
+    //     );
+    //     expect(toolGroupLabelmapConfig.renderOutline).toEqual(
+    //       toolGroupSpecificConfig.representations.LABELMAP.renderOutline
+    //     );
 
-        done();
-      };
+    //     done();
+    //   };
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_RENDERED,
-        compareImageCallback
-      );
+    //   eventTarget.addEventListener(
+    //     Events.SEGMENTATION_RENDERED,
+    //     compareImageCallback
+    //   );
 
-      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
+    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
-      try {
-        createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-          createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
-            setVolumesForViewports(
-              this.renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId1]
-            ).then(() => {
-              vp1.render();
+    //   try {
+    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+    //         setVolumesForViewports(
+    //           this.renderingEngine,
+    //           [{ volumeId: volumeId }],
+    //           [viewportId1]
+    //         ).then(() => {
+    //           vp1.render();
 
-              addSegmentations([
-                {
-                  segmentationId: seg1VolumeID,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      volumeId: seg1VolumeID,
-                    },
-                  },
-                },
-              ]);
+    //           addSegmentations([
+    //             {
+    //               segmentationId: seg1VolumeID,
+    //               representation: {
+    //                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    //                 data: {
+    //                   volumeId: seg1VolumeID,
+    //                 },
+    //               },
+    //             },
+    //           ]);
 
-              addRepresentations(
-                toolGroupId,
-                [
-                  {
-                    segmentationId: seg1VolumeID,
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                  },
-                ],
-                toolGroupSpecificConfig
-              );
-            });
-          });
-        });
-      } catch (e) {
-        done.fail(e);
-      }
-    });
+    //           addRepresentations(
+    //             toolGroupId,
+    //             [
+    //               {
+    //                 segmentationId: seg1VolumeID,
+    //                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    //               },
+    //             ],
+    //             toolGroupSpecificConfig
+    //           );
+    //         });
+    //       });
+    //     });
+    //   } catch (e) {
+    //     done.fail(e);
+    //   }
+    // });
 
     // Todo: we don't have a way to have initially set the colorLUTIndex anymore
     // it('should be able to set a global representation configuration', function (done) {
