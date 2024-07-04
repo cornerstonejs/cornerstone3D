@@ -49,9 +49,16 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const stackViewportId = 'CT_STACK';
+const volumeCoronalViewportId = 'CT_CORONAL';
+const volumeSagittalViewportId = 'CT_SAGITTAL';
+
+const viewportIds = [
+  stackViewportId,
+  volumeCoronalViewportId,
+  volumeSagittalViewportId,
+];
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 let activeSegmentIndex = 0;
@@ -116,8 +123,18 @@ addToggleButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState();
 
     segmentation.config.visibility.setRepresentationVisibility(
-      viewportId,
-      segmentationRepresentationUID,
+      viewportIds[0],
+      segmentationRepresentationUIDs[0],
+      !toggle
+    );
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportIds[1],
+      segmentationRepresentationUIDs[1],
+      !toggle
+    );
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportIds[2],
+      segmentationRepresentationUIDs[2],
       !toggle
     );
 
@@ -132,8 +149,20 @@ addButtonToToolbar({
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     segmentation.config.visibility.setSegmentIndexVisibility(
-      viewportId,
-      segmentationRepresentationUID,
+      viewportIds[0],
+      segmentationRepresentationUIDs[0],
+      activeSegmentIndex,
+      visible
+    );
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportIds[1],
+      segmentationRepresentationUIDs[1],
+      activeSegmentIndex,
+      visible
+    );
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportIds[2],
+      segmentationRepresentationUIDs[2],
       activeSegmentIndex,
       visible
     );
@@ -190,6 +219,7 @@ addSliderToToolbar({
 // =============================================================================
 
 const toolGroupId = 'DEFAULT_TOOL_GROUP_ID';
+let segmentationRepresentationUIDs;
 
 function initializeGlobalConfig() {
   const globalSegmentationConfig = segmentation.config.getGlobalConfig();
@@ -204,7 +234,7 @@ function initializeGlobalConfig() {
 
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
   const contourConfig = segmentationConfig.CONTOUR;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
@@ -246,12 +276,11 @@ function getSegmentsVisibilityState() {
   return segmentsVisibility;
 }
 
-function getSegmentationConfig(
-  toolGroupId: string
-): cstTypes.RepresentationConfig {
+function getSegmentationConfig(): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
-    {};
+    segmentation.config.getAllSegmentsConfig(
+      segmentationRepresentationUIDs[0]
+    ) ?? {};
 
   // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
@@ -263,12 +292,12 @@ function getSegmentationConfig(
 }
 
 function updateSegmentationConfig(config) {
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
   segmentation.config.setAllSegmentsConfig(
-    segmentationRepresentationUID,
+    segmentationRepresentationUIDs[0],
     segmentationConfig
   );
 }
@@ -381,7 +410,6 @@ async function run() {
   volume.load();
 
   // Create a volume viewport (Coronal)
-  const volumeCoronalViewportId = 'CT_CORONAL';
   const volumeCoronalViewportInput = {
     viewportId: volumeCoronalViewportId,
     type: ViewportType.ORTHOGRAPHIC,
@@ -411,7 +439,6 @@ async function run() {
   volumeCoronalViewport.render();
 
   // Create a volume viewport (Coronal)
-  const volumeSagittalViewportId = 'CT_SAGITTAL';
   const volumeSagittalViewportInput = {
     viewportId: volumeSagittalViewportId,
     type: ViewportType.ORTHOGRAPHIC,
@@ -451,23 +478,19 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the viewportId
-  const segmentationRepresentationUIDs = await segmentation.addRepresentations(
-    viewportId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
+  const segmentationRepresentationUIDPromises = viewportIds.map(
+    (viewportId) => {
+      return segmentation.addRepresentations(viewportId, [
+        {
+          segmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Contour,
+        },
+      ]);
+    }
   );
 
-  // Store the segmentation representation that was just created
-  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
+  segmentationRepresentationUIDs = await Promise.all(
+    segmentationRepresentationUIDPromises
   );
 
   updateActiveSegmentIndex(1);

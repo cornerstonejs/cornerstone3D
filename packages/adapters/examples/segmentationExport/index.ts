@@ -297,7 +297,7 @@ async function run() {
 
     // // Add the segmentation representation to the viewport
     segmentationRepresentationUID = await segmentation.addRepresentations(
-        toolGroupId,
+        viewportId1,
         [
             {
                 segmentationId,
@@ -305,6 +305,18 @@ async function run() {
             }
         ]
     );
+    await segmentation.addRepresentations(viewportId2, [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+    await segmentation.addRepresentations(viewportId3, [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
 
     // Render the image
     renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

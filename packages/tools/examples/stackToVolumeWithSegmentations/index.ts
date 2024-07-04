@@ -86,7 +86,7 @@ addButtonToToolbar({
 
     let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      segmentation.state.removeRepresentations(volumeToolGroupId);
+      segmentation.state.removeRepresentation(volumeToolGroupId);
 
       newViewport = await csUtils.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,

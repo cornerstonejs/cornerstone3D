@@ -21,6 +21,7 @@ import {
 } from "../../../../utils/demo/helpers";
 
 import dcmjs from "dcmjs";
+import { viewport } from "../../../tools/dist/types/utilities";
 
 // This is for debugging purposes
 console.warn(
@@ -311,7 +312,7 @@ async function exportSegmentation() {
     // Get active segmentation representation
     const activeSegmentationRepresentation =
         csToolsSegmentation.activeSegmentation.getActiveRepresentation(
-            toolGroupId
+            viewportIds[0]
         );
 
     const cacheSegmentationVolume = cache.getVolume(

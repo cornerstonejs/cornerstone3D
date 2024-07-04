@@ -88,7 +88,7 @@ addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addRepresentations(toolGroupId2, [
+    await segmentation.addRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,

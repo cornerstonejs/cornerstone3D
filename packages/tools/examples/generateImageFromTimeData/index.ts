@@ -288,9 +288,12 @@ async function run() {
     imageIds,
   });
 
-  computedVolume = await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: computedVolumeId,
-  });
+  computedVolume = await volumeLoader.createAndCacheDerivedSegmentationVolume(
+    volumeId,
+    {
+      volumeId: computedVolumeId,
+    }
+  );
 
   // Set the volume to load
   volume.load();

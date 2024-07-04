@@ -267,7 +267,7 @@ async function run() {
 
   // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs = await segmentation.addRepresentations(
-    toolGroupId,
+    viewportIds[0],
     [
       {
         segmentationId,

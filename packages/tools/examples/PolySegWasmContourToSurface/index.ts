@@ -91,7 +91,7 @@ const segmentIndexes = [1, 2, 3, 4, 5];
 addButtonToToolbar({
   title: 'Convert contour segmentation to closed surface segmentation',
   onClick: async () => {
-    await segmentation.addRepresentations(toolGroupId2, [
+    await segmentation.addRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,
@@ -253,7 +253,7 @@ async function run() {
   ]);
 
   // // Add the segmentation representation to the viewport
-  await segmentation.addRepresentations(toolGroupId1, [
+  await segmentation.addRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

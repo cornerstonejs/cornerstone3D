@@ -267,7 +267,7 @@ async function initializeViewport(
     );
 
     // Add the segmentation representations to toolgroup1
-    await segmentation.addRepresentations(toolGroup.id, [
+    await segmentation.addRepresentations(viewport.id, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,

@@ -123,10 +123,8 @@ function getSegmentationConfig(
   toolGroupId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getRepresentationConfig(
-      toolGroupId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
+    {};
 
   // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
@@ -142,8 +140,7 @@ function updateSegmentationConfig(config) {
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationConfig(
-    toolGroupId,
+  segmentation.config.setAllSegmentsConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -301,7 +298,7 @@ async function run() {
 
   // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs = await segmentation.addRepresentations(
-    toolGroupId,
+    viewportId,
     [
       {
         segmentationId,
