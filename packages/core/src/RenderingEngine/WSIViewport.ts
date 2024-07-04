@@ -9,6 +9,7 @@ import {
   WSIViewportInput,
   VOIRange,
 } from '../types';
+import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
@@ -83,7 +84,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // use absolute positioning internally.
     this.element.style.position = 'relative';
     this.microscopyElement = document.createElement('div');
-    this.microscopyElement.id = crypto.randomUUID();
+    this.microscopyElement.id = uuidv4();
     this.microscopyElement.innerText = 'Initial';
     this.microscopyElement.style.background = 'grey';
     this.microscopyElement.style.width = '100%';
