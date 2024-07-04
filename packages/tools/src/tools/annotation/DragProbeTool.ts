@@ -159,7 +159,7 @@ class DragProbeTool extends ProbeTool {
       styleSpecifier,
     });
 
-    const modalityUnitOptions = {
+    const pixelUnitsOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),
 
       isSuvScaled: this.isSuvScaled(
@@ -226,7 +226,7 @@ class DragProbeTool extends ProbeTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, modalityUnit } = cachedVolumeStats;
+  const { index, value, pixelValueUnits } = cachedVolumeStats;
 
   if (value === undefined) {
     return;
@@ -236,7 +236,7 @@ function defaultGetTextLines(data, targetId): string[] {
 
   textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
+  textLines.push(`${value.toFixed(2)} ${pixelValueUnits}`);
 
   return textLines;
 }

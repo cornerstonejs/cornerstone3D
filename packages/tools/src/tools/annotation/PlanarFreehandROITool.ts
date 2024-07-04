@@ -40,7 +40,7 @@ import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/plana
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
@@ -681,7 +681,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const { data } = annotation;
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        data.cachedStats[targetId].areaUnits == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -689,7 +689,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnit: null,
+          areaUnits: null,
         };
 
         this._calculateCachedStats(
@@ -898,7 +898,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         boundsIJK
       );
 
-      const modalityUnitOptions = {
+      const pixelUnitsOptions = {
         isPreScaled: isViewportPreScaled(viewport, targetId),
         isSuvScaled: this.isSuvScaled(
           viewport,
@@ -907,10 +907,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         ),
       };
 
-      const modalityUnit = getModalityUnit(
+      const pixelValueUnits = getPixelValueUnits(
         metadata.Modality,
         annotation.metadata.referencedImageId,
-        modalityUnitOptions
+        pixelUnitsOptions
       );
 
       const stats = this.configuration.statsCalculator.getStatistics();
@@ -924,8 +924,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         stdDev: stats.stdDev?.value,
         statsArray: stats.array,
         pointsInShape: pointsInShape,
-        areaUnit: areaUnits,
-        modalityUnit,
+        areaUnits,
+        pixelValueUnits,
       };
     }
 
@@ -1011,8 +1011,8 @@ function defaultGetTextLines(data, targetId): string[] {
     perimeter,
     max,
     isEmptyArea,
-    areaUnit,
-    modalityUnit,
+    areaUnits,
+    pixelValueUnits,
   } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
@@ -1020,24 +1020,24 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
   }
 
   if (perimeter) {
-    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${modalityUnit}`);
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${pixelValueUnits}`);
   }
 
   return textLines;

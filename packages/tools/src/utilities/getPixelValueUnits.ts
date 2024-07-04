@@ -1,14 +1,14 @@
 import { metaData } from '@cornerstonejs/core';
 
-type ModalityUnitOptions = {
+type pixelUnitsOptions = {
   isPreScaled: boolean;
   isSuvScaled: boolean;
 };
 
-function getModalityUnit(
+function getPixelValueUnits(
   modality: string,
   imageId: string,
-  options: ModalityUnitOptions
+  options: pixelUnitsOptions
 ): string {
   if (modality === 'CT') {
     return 'HU';
@@ -19,7 +19,7 @@ function getModalityUnit(
   }
 }
 
-function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
+function _handlePTModality(imageId: string, options: pixelUnitsOptions) {
   if (!options.isPreScaled) {
     return 'raw';
   }
@@ -38,4 +38,4 @@ function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
   }
 }
 
-export { getModalityUnit, ModalityUnitOptions };
+export { getPixelValueUnits, pixelUnitsOptions };
