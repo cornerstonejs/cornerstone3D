@@ -45,7 +45,7 @@ const toolGroupId = 'toolGroupId-segmentationSphereScissor_test';
 
 const viewportId1 = 'AXIAL';
 const viewportId2 = 'SAGITTAL';
-const viewportUID3 = 'CORONAL';
+const viewportId3 = 'CORONAL';
 
 function createViewport(
   renderingEngine,
@@ -126,7 +126,7 @@ describe('Segmentation Tools --', () => {
       const element3 = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.CORONAL,
-        viewportUID3
+        viewportId3
       );
       this.DOMElements.push(element);
       this.DOMElements.push(element2);
@@ -135,7 +135,7 @@ describe('Segmentation Tools --', () => {
       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);
-      const vp3 = this.renderingEngine.getViewport(viewportUID3);
+      const vp3 = this.renderingEngine.getViewport(viewportId3);
 
       const drawSphere = () => {
         eventTarget.addEventListener(
@@ -271,7 +271,7 @@ describe('Segmentation Tools --', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
-            [viewportId1, viewportId2, viewportUID3]
+            [viewportId1, viewportId2, viewportId3]
           ).then(() => {
             vp1.render();
             vp2.render();
@@ -295,7 +295,19 @@ describe('Segmentation Tools --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                ]);
+                addRepresentations(viewportId2, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                ]);
+                addRepresentations(viewportId3, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

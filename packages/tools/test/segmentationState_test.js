@@ -97,7 +97,7 @@ describe('Segmentation State -- ', () => {
       });
     });
 
-    it('should successfully create a global and toolGroup state when segmentation is added', function (done) {
+    it('should successfully create a state when segmentation is added', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.AXIAL
@@ -126,32 +126,18 @@ describe('Segmentation State -- ', () => {
 
           const state = stateManager.getState();
 
-          expect(evt.detail.toolGroupId).toBe(toolGroupId);
           expect(state).toBeDefined();
-          expect(state.toolGroups).toBeDefined();
-
-          const toolGroupSegmentationState =
-            state.toolGroups[this.segToolGroup.id];
-
-          expect(toolGroupSegmentationState).toBeDefined();
-          expect(
-            toolGroupSegmentationState.segmentationRepresentations.length
-          ).toBe(1);
+          expect(state.representations).toBeDefined();
 
           const toolGroupSegRepresentations =
-            segmentation.state.getRepresentations(this.segToolGroup.id);
-
-          expect(
-            toolGroupSegmentationState.segmentationRepresentations
-          ).toEqual(toolGroupSegRepresentations);
+            segmentation.state.getRepresentationsForViewport(viewportId);
 
           const segRepresentation = toolGroupSegRepresentations[0];
 
-          expect(segRepresentation.active).toBe(true);
           expect(segRepresentation.segmentationRepresentationUID).toBeDefined();
           expect(segRepresentation.segmentationId).toBe(segVolumeId);
           expect(segRepresentation.type).toBe(LABELMAP);
-          expect(segRepresentation.config).toBeDefined();
+          expect(segRepresentation.rendering).toBeDefined();
         }
       );
 
@@ -188,7 +174,7 @@ describe('Segmentation State -- ', () => {
               },
             ]);
 
-            addRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -265,7 +251,7 @@ describe('Segmentation State -- ', () => {
               },
             ]);
 
-            addRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,

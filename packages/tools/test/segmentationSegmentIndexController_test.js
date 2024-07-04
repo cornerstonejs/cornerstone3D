@@ -240,7 +240,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -324,7 +324,7 @@ describe('Segmentation Index Controller --', () => {
 
           const segmentationRepresentation =
             segmentation.activeSegmentation.getActiveRepresentation(
-              toolGroupId
+              viewportId1
             );
 
           segmentation.segmentIndex.setActiveSegmentIndex(
@@ -406,7 +406,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -490,7 +490,7 @@ describe('Segmentation Index Controller --', () => {
 
           const segmentationRepresentation =
             segmentation.activeSegmentation.getActiveRepresentation(
-              toolGroupId
+              viewportId1
             );
 
           segmentation.segmentIndex.setActiveSegmentIndex(
@@ -591,7 +591,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

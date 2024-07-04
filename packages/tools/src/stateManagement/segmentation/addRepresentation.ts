@@ -16,7 +16,7 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents';
 async function addRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput,
-  segmentationRepresentationConfig?: SegmentationRepresentationConfig
+  initialConfig?: SegmentationRepresentationConfig
 ): Promise<string> {
   const { segmentationId, options = {} as RepresentationPublicInputOptions } =
     representationInput;
@@ -40,27 +40,28 @@ async function addRepresentation(
     },
   };
 
+  SegmentationState.addRepresentationToViewport(viewportId, representation);
+
   // Update the toolGroup specific configuration
-  if (segmentationRepresentationConfig) {
-    // Since setting configuration on toolGroup will trigger a segmentationRepresentation
-    // update event, we don't want to trigger the event twice, so we suppress
-    // the first one
-    // const currentToolGroupConfig =
-    //   SegmentationConfig.getToolGroupSpecificConfig(toolGroupId);
-    // const mergedConfig = utilities.deepMerge(
-    //   currentToolGroupConfig,
-    //   toolGroupSpecificConfig
-    // // );
-    // SegmentationConfig.setToolGroupSpecificConfig(toolGroupId, {
-    //   renderInactiveRepresentations:
-    //     mergedConfig.renderInactiveRepresentations || true,
-    //   representations: {
-    //     ...mergedConfig.representations,
-    //   },
-    // });
+  if (initialConfig) {
+    // const globalConfig = SegmentationState.getGlobalConfig();
+    // if (
+    //   initialConfig.renderInactiveRepresentations !==
+    //   globalConfig.renderInactiveRepresentations
+    // ) {
+    //   SegmentationState.setGlobalConfig({
+    //     ...globalConfig,
+    //     renderInactiveRepresentations:
+    //       initialConfig.renderInactiveRepresentations,
+    //   });
+    // }
+
+    SegmentationState.setAllSegmentsConfig(
+      segmentationRepresentationUID,
+      initialConfig.representations
+    );
   }
 
-  SegmentationState.addRepresentationToViewport(viewportId, representation);
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);
   }

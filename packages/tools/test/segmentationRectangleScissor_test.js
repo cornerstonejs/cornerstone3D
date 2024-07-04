@@ -14,7 +14,6 @@ const {
   imageLoader,
   setVolumesForViewports,
   eventTarget,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
@@ -162,7 +161,7 @@ describe('Segmentation Tools --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -304,7 +303,7 @@ describe('Segmentation Tools --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -490,7 +489,13 @@ describe('Segmentation Tools --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
+                  {
+                    segmentationId: segmentationId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                ]);
+                addRepresentations(viewportId2, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

@@ -172,7 +172,7 @@ describe('Segmentation Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: seg1VolumeID,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

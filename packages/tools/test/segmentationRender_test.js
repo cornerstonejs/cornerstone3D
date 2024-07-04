@@ -42,7 +42,7 @@ const toolGroupId = 'toolGroupId-segmentationRender_test';
 
 const viewportId1 = 'AXIAL';
 const viewportId2 = 'SAGITTAL';
-const viewportUID3 = 'CORONAL';
+const viewportId3 = 'CORONAL';
 
 const LABELMAP = SegmentationRepresentations.Labelmap;
 
@@ -122,7 +122,6 @@ describe('Segmentation Render -- ', () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
         compareImages(
           image,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -156,7 +155,7 @@ describe('Segmentation Render -- ', () => {
               },
             ]);
 
-            addRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId1, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -183,7 +182,7 @@ describe('Segmentation Render -- ', () => {
       const el3 = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.CORONAL,
-        viewportUID3
+        viewportId3
       );
 
       this.DOMElements.push(el1);
@@ -194,7 +193,7 @@ describe('Segmentation Render -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);
-      const vp3 = this.renderingEngine.getViewport(viewportUID3);
+      const vp3 = this.renderingEngine.getViewport(viewportId3);
 
       let renderedViewportCounts = 0;
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -211,7 +210,6 @@ describe('Segmentation Render -- ', () => {
         const image2 = canvas2.toDataURL('image/png');
         const image3 = canvas3.toDataURL('image/png');
 
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -243,7 +241,7 @@ describe('Segmentation Render -- ', () => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
-            [viewportId1, viewportId2, viewportUID3]
+            [viewportId1, viewportId2, viewportId3]
           );
           this.renderingEngine.render();
           createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
@@ -259,7 +257,19 @@ describe('Segmentation Render -- ', () => {
               },
             ]);
 
-            addRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId1, [
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
+            ]);
+            addRepresentations(viewportId2, [
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
+            ]);
+            addRepresentations(viewportId3, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -291,7 +301,6 @@ describe('Segmentation Render -- ', () => {
         const canvas1 = vp1.getCanvas();
         const image1 = canvas1.toDataURL('image/png');
 
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_2SEGs_AX,
@@ -336,7 +345,7 @@ describe('Segmentation Render -- ', () => {
                   },
                 ]);
 
-                addRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segVolumeId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -379,7 +388,6 @@ describe('Segmentation Render -- ', () => {
     //   eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
     //     const canvas1 = vp1.getCanvas();
     //     const image1 = canvas1.toDataURL('image/png');
-    //     expect(evt.detail.toolGroupId).toBe(toolGroupId);
 
     //     compareImages(
     //       image1,
@@ -398,7 +406,7 @@ describe('Segmentation Render -- ', () => {
     //       expect(toolGroupState).toBeDefined();
 
     //       const toolGroupConfig =
-    //         segmentation.config.getToolGroupSpecificConfig(
+    //         segmentation.config.getAllSegmentsConfig(
     //           this.segToolGroup.id
     //         );
 

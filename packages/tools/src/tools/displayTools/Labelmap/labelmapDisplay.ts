@@ -116,12 +116,7 @@ async function render(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
   representation: LabelmapRepresentation
 ): Promise<void> {
-  const {
-    colorLUTIndex,
-    segmentationId,
-    segmentationRepresentationUID,
-    rendering,
-  } = representation;
+  const { segmentationId, segmentationRepresentationUID } = representation;
 
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
