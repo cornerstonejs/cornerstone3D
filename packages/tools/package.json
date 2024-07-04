@@ -1,14 +1,13 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "2.0.0-beta.13",
+  "version": "2.0.0-beta.17",
   "description": "Cornerstone3D Tools",
-  "main": "src/index.ts",
-  "types": "dist/types/index.d.ts",
+  "main": "dist/umd/index.js",
+  "types": "dist/esm/index.d.ts",
   "module": "dist/esm/index.js",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
-    "dist/",
-    "src/"
+    "dist/"
   ],
   "directories": {
     "test": "test"
@@ -17,7 +16,7 @@
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/esm/index.d.ts"
     }
   },
   "scripts": {
@@ -35,7 +34,7 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^2.0.0-beta.13",
+    "@cornerstonejs/core": "^2.0.0-beta.17",
     "@icr/polyseg-wasm": "0.4.0",
     "@types/offscreencanvas": "2019.7.3",
     "comlink": "^4.4.1",

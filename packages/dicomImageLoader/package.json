@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "2.0.0-beta.13",
+  "version": "2.0.0-beta.17",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "main": "dist/esm/src/imageLoader/index.js",
   "module": "dist/esm/src/imageLoader/index.js",
-  "types": "dist/types/src/imageLoader/index.d.ts",
+  "types": "dist/esm/src/imageLoader/index.d.ts",
   "files": [
     "dist/"
   ],
@@ -27,8 +27,10 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/esm/src/imageLoader/index.js",
-      "types": "./dist/types/src/imageLoader/index.d.ts"
+      "import": "./dist/esm/src/imageLoader/index.js"
+    },
+    "./dynamic-umd": {
+      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
     }
   },
   "scripts": {
