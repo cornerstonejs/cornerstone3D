@@ -89,7 +89,7 @@ function performStackLabelmapUpdate({
 }) {
   viewportIds.forEach((viewportId) => {
     const viewportSegReps =
-      SegmentationState.getViewportSegmentationRepresentations(viewportId);
+      SegmentationState.getRepresentationsForViewport(viewportId);
 
     viewportSegReps.forEach((representation) => {
       if (representation.segmentationId !== segmentationId) {

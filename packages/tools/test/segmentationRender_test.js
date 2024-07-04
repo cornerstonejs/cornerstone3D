@@ -391,10 +391,9 @@ describe('Segmentation Render -- ', () => {
       eventTarget.addEventListener(
         Events.SEGMENTATION_REPRESENTATION_MODIFIED,
         (evt) => {
-          const toolGroupState =
-            segmentation.state.getSegmentationRepresentations(
-              this.segToolGroup.id
-            );
+          const toolGroupState = segmentation.state.getRepresentations(
+            this.segToolGroup.id
+          );
 
           expect(toolGroupState).toBeDefined();
 

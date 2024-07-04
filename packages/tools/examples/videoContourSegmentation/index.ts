@@ -123,12 +123,12 @@ function getSegmentationConfig(
   toolGroupdId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationConfig(
+    segmentation.config.getRepresentationConfig(
       toolGroupdId,
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because getSegmentationRepresentationConfig
+  // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -175,7 +175,7 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setSegmentationVisibility(
+    segmentation.config.visibility.setRepresentationVisibility(
       toolGroupId,
       segmentationRepresentationUID,
       !toggle
@@ -192,7 +192,7 @@ addButtonToToolbar({
     const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    segmentation.config.visibility.setSegmentVisibility(
+    segmentation.config.visibility.setSegmentIndexVisibility(
       toolGroupId,
       segmentationRepresentationUID,
       activeSegmentIndex,

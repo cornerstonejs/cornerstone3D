@@ -10,8 +10,8 @@ import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import {
   getHoveredContourSegmentationAnnotation,
-  getSegmentAtLabelmapBorder,
-  getSegmentAtWorldPoint,
+  getSegmentIndexAtLabelmapBorder,
+  getSegmentIndexAtWorldPoint,
 } from '../../utilities/segmentation';
 import { state } from '../../store';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
@@ -128,13 +128,17 @@ class SegmentSelectTool extends BaseTool {
     let hoveredSegmentIndex;
 
     if (this.configuration.mode === SegmentSelectTool.SelectMode.Inside) {
-      hoveredSegmentIndex = getSegmentAtWorldPoint(segmentationId, worldPoint, {
-        viewport,
-      });
+      hoveredSegmentIndex = getSegmentIndexAtWorldPoint(
+        segmentationId,
+        worldPoint,
+        {
+          viewport,
+        }
+      );
     } else {
       switch (type) {
         case SegmentationRepresentations.Labelmap:
-          hoveredSegmentIndex = getSegmentAtLabelmapBorder(
+          hoveredSegmentIndex = getSegmentIndexAtLabelmapBorder(
             segmentationId,
             worldPoint,
             {

@@ -25,17 +25,12 @@ async function addRepresentation(
     representationInput.options?.segmentationRepresentationUID ||
     utilities.uuidv4();
 
-  // Todo: make segmentsHidden also an option that can get passed by
-  // the user
-  const segmentsHidden = new Set() as Set<number>;
-
   const colorLUTIndexToUse = getColorLUTIndex(options);
 
   const representation: SegmentationRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
     type: representationInput.type,
-    segmentsHidden,
     colorLUTIndex: colorLUTIndexToUse,
     rendering: getRepresentationRenderingConfig(representationInput),
     polySeg: options.polySeg,

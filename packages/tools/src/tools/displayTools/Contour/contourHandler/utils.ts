@@ -2,41 +2,6 @@ import { Enums, Types } from '@cornerstonejs/core';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import { SegmentationRepresentation } from '../../../../types/SegmentationStateTypes';
-import { getSegmentationRepresentation } from '../../../../stateManagement/segmentation/segmentationState';
-
-/**
- * If the segment specific config exists for the given segment id, it returns
- * the segment specific config. Otherwise, it looks for the segment specific
- * config for the given index. If it doesn't exist, it returns null.
- *
- * @param contourRepresentation -  The representation object that is passed
- * to the tool.
- * @param segmentId -  The id of the segment.
- * @param index -  The index of the segment in the list of segments.
- * @returns the segment specific config for the given segment id.
- *
- */
-export function getSegmentationRepresentationSegmentsConfig(
-  contourRepresentation: SegmentationRepresentation,
-  segmentId: string,
-  segmentIndex: number
-) {
-  let segmentSpecificConfig =
-    contourRepresentation.config?.perSegment?.[segmentId];
-
-  if (!segmentSpecificConfig) {
-    // try the index
-    segmentSpecificConfig =
-      contourRepresentation.config?.perSegment?.[segmentIndex];
-  }
-
-  if (!segmentSpecificConfig) {
-    return null;
-  }
-
-  return segmentSpecificConfig.CONTOUR;
-}
 
 /**
  * takes a geometry object as an argument

@@ -11,12 +11,12 @@ import { triggerSegmentationRepresentationModified } from '../triggerSegmentatio
  * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
  * @param visibility - boolean
  */
-function setSegmentationVisibility(
+function setRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string,
   visibility: boolean
 ): void {
-  const representation = SegmentationState.getSegmentationRepresentation(
+  const representation = SegmentationState.getRepresentation(
     segmentationRepresentationUID
   );
 
@@ -42,7 +42,7 @@ function setSegmentationVisibility(
  * @returns A boolean value that indicates whether the segmentation representation is visible or
  * not on the viewport
  */
-function getSegmentationVisibility(
+function getRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string
 ): boolean | undefined {
@@ -53,88 +53,106 @@ function getSegmentationVisibility(
 }
 
 /**
- * Set the visibility of the given segment indices to the given visibility. This
- * is a helper to set the visibility of multiple segments at once and reduces
- * the number of events fired.
- *
- * @param segmentationRepresentationUID -  The UID of the segmentation
- * representation.
- * @param segmentIndices -  The indices of the segments to be hidden/shown.
- * @param visibility -  The visibility to set the segments to.
- *
+ * Sets the visibility of segments for a specific viewport and segmentation representation.
+ * @param viewport - The identifier of the viewport.
+ * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
+ * @param segmentIndices - An array of segment indices.
+ * @param visibility - The visibility state to set for the segments.
  */
 function setSegmentsVisibility(
+  viewport: string,
   segmentationRepresentationUID: string,
   segmentIndices: number[],
   visibility: boolean
 ): void {
-  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+  const hiddenSegments = getSegmentsHidden(
+    viewport,
     segmentationRepresentationUID
   );
 
-  if (!segRepresentation) {
-    return;
-  }
-
   segmentIndices.forEach((segmentIndex) => {
     visibility
-      ? segRepresentation.segmentsHidden.delete(segmentIndex)
-      : segRepresentation.segmentsHidden.add(segmentIndex);
+      ? hiddenSegments.delete(segmentIndex)
+      : hiddenSegments.add(segmentIndex);
   });
 
   triggerSegmentationRepresentationModified(segmentationRepresentationUID);
 }
 
 /**
- * @param segmentationRepresentationUID - The id of the segmentation representation that contains the segment
- * @param segmentIndex - Index of the segment that will be updated
- * @param visibility - True to show the segment or false to hide it
- * @returns True if the segment is visible or false otherwise
+ * Sets the visibility of a segment for a specific viewport and segmentation representation.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param segmentIndex - The index of the segment.
+ * @param visibility - The visibility status of the segment.
  */
-function setSegmentVisibility(
+function setSegmentIndexVisibility(
+  viewportId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number,
   visibility: boolean
 ): void {
-  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+  const hiddenSegments = getSegmentsHidden(
+    viewportId,
     segmentationRepresentationUID
   );
 
-  if (!segRepresentation) {
-    return;
-  }
-
   visibility
-    ? segRepresentation.segmentsHidden.delete(segmentIndex)
-    : segRepresentation.segmentsHidden.add(segmentIndex);
+    ? hiddenSegments.delete(segmentIndex)
+    : hiddenSegments.add(segmentIndex);
 
   triggerSegmentationRepresentationModified(segmentationRepresentationUID);
 }
 
 /**
- * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
- * @param segmentIndex - Index of the segment
- * @returns True if the segment is visible or false otherwise
+ * Determines the visibility of a segment in a specific viewport and segmentation representation.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param segmentIndex - The index of the segment.
+ * @returns A boolean indicating whether the segment is visible or not.
  */
-function getSegmentVisibility(
+function getSegmentIndexVisibility(
+  viewportId: string,
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): boolean {
-  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+  const hiddenSegments = getSegmentsHidden(
+    viewportId,
     segmentationRepresentationUID
   );
 
-  if (!segRepresentation) {
-    return false;
+  return !hiddenSegments.has(segmentIndex);
+}
+
+/**
+ * Retrieves the set of hidden segments for a specific viewport and segmentation representation.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @returns A set of numbers representing the hidden segments.
+ */
+function getSegmentsHidden(
+  viewportId: string,
+  segmentationRepresentationUID: string
+): Set<number> {
+  const viewportRenderingState =
+    SegmentationState.getRepresentationsRenderingStateForViewport(viewportId);
+
+  if (!viewportRenderingState) {
+    return new Set();
   }
 
-  return !segRepresentation.segmentsHidden.has(segmentIndex);
+  return (
+    viewportRenderingState[segmentationRepresentationUID]?.segmentsHidden ??
+    new Set()
+  );
 }
 
 export {
-  setSegmentationVisibility,
-  getSegmentationVisibility,
-  setSegmentVisibility,
+  setRepresentationVisibility,
+  getRepresentationVisibility,
   setSegmentsVisibility,
-  getSegmentVisibility,
+  setSegmentIndexVisibility,
+  getSegmentIndexVisibility,
+  getSegmentsHidden,
 };

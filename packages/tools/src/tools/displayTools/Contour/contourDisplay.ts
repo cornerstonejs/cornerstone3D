@@ -25,7 +25,7 @@ let polySegConversionInProgress = false;
  * @param renderImmediate - If true, the viewport will be rendered
  * immediately after the segmentation representation is removed.
  */
-function removeSegmentationRepresentation(
+function removeRepresentation(
   viewportId: string,
   segmentationRepresentationUID: string,
   renderImmediate = false
@@ -37,9 +37,7 @@ function removeSegmentationRepresentation(
 
   const { viewport } = enabledElement;
 
-  SegmentationState.removeSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
+  SegmentationState.removeRepresentation(segmentationRepresentationUID);
 
   deleteConfigCache(segmentationRepresentationUID);
 
@@ -104,5 +102,5 @@ async function render(
 
 export default {
   render,
-  removeSegmentationRepresentation,
+  removeRepresentation,
 };

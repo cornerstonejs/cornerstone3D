@@ -139,9 +139,7 @@ describe('Segmentation State -- ', () => {
           ).toBe(1);
 
           const toolGroupSegRepresentations =
-            segmentation.state.getSegmentationRepresentations(
-              this.segToolGroup.id
-            );
+            segmentation.state.getRepresentations(this.segToolGroup.id);
 
           expect(
             toolGroupSegmentationState.segmentationRepresentations

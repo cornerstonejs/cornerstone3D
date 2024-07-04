@@ -95,10 +95,6 @@ export type BaseSegmentationRepresentation = {
    */
   type: Enums.SegmentationRepresentations;
   /**
-   * Hidden segment indices in the representation
-   */
-  segmentsHidden: Set<number>;
-  /**
    * The index of the colorLUT from the state that this segmentationData is
    * using to render
    */
@@ -200,18 +196,17 @@ export type SegmentationRepresentation =
         segmentationId: 'segmentation1',
         type: 'Labelmap',
         colorLUTIndex: 0,
-        segmentsHidden: new Set(),
         rendering: {
           cfun,
           ofun,
         },
         config: {
-          base: {
+          allSegments: {
             LABELMAP: {
               renderFill: true,
             },
           },
-          segmentSpecific: {
+          perSegment: {
             '0': {
               LABELMAP: {
                 renderFill: false,
@@ -225,21 +220,25 @@ export type SegmentationRepresentation =
       'viewport1': {
         'segRepUID': {
           visible: true,
+          segmentsHidden: Set<number>;
           active: true,
         },
         'segRepUID2': {
           visible: false,
           active: false,
+          segmentsHidden: Set<number>;
         },
       },
       'viewport2': {
         'segRepUID': {
           visible: true,
           active: false,
+          segmentsHidden: Set<number>;
         },
         'segRepUID2': {
           visible: true,
           active: true,
+          segmentsHidden: Set<number>;
         },
       },
     }
@@ -266,6 +265,7 @@ export type SegmentationState = {
       [segRepresentationUID: string]: {
         visible: boolean;
         active: boolean;
+        segmentsHidden: Set<number>;
       };
     };
   };

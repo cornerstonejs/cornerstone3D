@@ -23,7 +23,7 @@ import { polySeg } from '../../../stateManagement/segmentation';
  * @param renderImmediate - If true, the viewport will be rendered
  * immediately after the segmentation representation is removed.
  */
-function removeSegmentationRepresentation(
+function removeRepresentation(
   viewportId: string,
   segmentationRepresentationUID: string,
   renderImmediate = false
@@ -36,9 +36,7 @@ function removeSegmentationRepresentation(
   const { viewport } = enabledElement;
 
   removeSurfaceFromElement(viewport.element, segmentationRepresentationUID);
-  SegmentationState.removeSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
+  SegmentationState.removeRepresentation(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
@@ -133,7 +131,7 @@ async function render(
 
 export default {
   render,
-  removeSegmentationRepresentation,
+  removeRepresentation,
 };
 
-export { render, removeSegmentationRepresentation };
+export { render, removeRepresentation };

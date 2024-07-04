@@ -68,21 +68,17 @@ const instructions = document.createElement('p');
 content.append(instructions);
 
 let planarSegmentationRepresentationUID;
-
+let viewportId;
 // ============================= //
 
 addToggleButtonToToolbar({
   title: 'Hide All Segments',
   onClick: (toggle) => {
-    [
-      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-    ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setSegmentationVisibility(
-        toolGroupId,
-        representationUID,
-        !toggle
-      );
-    });
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportId,
+      planarSegmentationRepresentationUID,
+      !toggle
+    );
   },
 });
 
@@ -90,16 +86,12 @@ addToggleButtonToToolbar({
   title: 'Hide Red Segment',
   onClick: (toggle) => {
     const segmentIndex = 1;
-    [
-      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-    ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setSegmentVisibility(
-        toolGroupId,
-        representationUID,
-        segmentIndex,
-        !toggle
-      );
-    });
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
+      planarSegmentationRepresentationUID,
+      segmentIndex,
+      !toggle
+    );
   },
 });
 
@@ -107,16 +99,12 @@ addToggleButtonToToolbar({
   title: 'Hide Green Segment',
   onClick: (toggle) => {
     const segmentIndex = 2;
-    [
-      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-    ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setSegmentVisibility(
-        toolGroupId,
-        representationUID,
-        segmentIndex,
-        !toggle
-      );
-    });
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
+      planarSegmentationRepresentationUID,
+      segmentIndex,
+      !toggle
+    );
   },
 });
 
@@ -125,14 +113,14 @@ addSliderToToolbar({
   range: [0.1, 10],
   defaultValue: 4,
   onSelectedValueChange: (value) => {
-    segmentation.config.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveRepresentations: true,
-      representations: {
+    segmentation.config.setAllSegmentsConfig(
+      planarSegmentationRepresentationUID,
+      {
         CONTOUR: {
           outlineWidthActive: Number(value),
         },
-      },
-    });
+      }
+    );
   },
 });
 
@@ -229,11 +217,11 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
+  viewportId = 'CT_AXIAL';
 
   const viewportInputArray = [
     {
-      viewportId: viewportId1,
+      viewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -245,17 +233,17 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
+  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the segmentation representation to the toolgroup
   const segRepresentations1 = await segmentation.addRepresentations(
-    toolGroupId,
+    viewportId,
     [
       {
         segmentationId: `${segmentationId}`,

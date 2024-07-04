@@ -281,12 +281,12 @@ function getCurrentSegmentationConfig(
     segmentationRepresentationUIDs[toolGroupdId][segmentationIndex];
 
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationConfig(
+    segmentation.config.getRepresentationConfig(
       toolGroupdId,
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because getSegmentationRepresentationConfig
+  // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -402,7 +402,7 @@ addToggleButtonToToolbar({
       const segmentationRepresentationUID =
         segmentationRepresentationUIDs[toolGroupId][segmentationIndex];
 
-      segmentation.config.visibility.setSegmentationVisibility(
+      segmentation.config.visibility.setRepresentationVisibility(
         toolGroupId,
         segmentationRepresentationUID,
         !toggle
@@ -424,7 +424,7 @@ addButtonToToolbar({
       const representationUID =
         segmentationRepresentationUIDs[toolGroupId][segmentationIndex];
 
-      segmentation.config.visibility.setSegmentVisibility(
+      segmentation.config.visibility.setSegmentIndexVisibility(
         toolGroupId,
         representationUID,
         activeSegmentIndex,

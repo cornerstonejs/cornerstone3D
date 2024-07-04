@@ -21,8 +21,8 @@ import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
 import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
-import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
-import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
+import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
+import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 import { getBrushToolInstances } from './utilities';
 
@@ -46,8 +46,8 @@ export {
   segmentContourAction,
   invalidateBrushCursor,
   getUniqueSegmentIndices,
-  getSegmentAtWorldPoint,
-  getSegmentAtLabelmapBorder,
+  getSegmentIndexAtWorldPoint,
+  getSegmentIndexAtLabelmapBorder,
   getHoveredContourSegmentationAnnotation,
   getBrushToolInstances,
 };

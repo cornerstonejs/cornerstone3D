@@ -75,7 +75,7 @@ function addSegmentation(
  * Get all segmentation representations in the state
  * @returns An array of segmentation representation objects.
  */
-function getSegmentationRepresentations(): SegmentationRepresentation[] {
+function getRepresentations(): SegmentationRepresentation[] {
   const segmentationStateManager = getDefaultSegmentationStateManager();
   const state = segmentationStateManager.getState();
   return Object.values(state.representations);
@@ -87,7 +87,7 @@ function getSegmentationRepresentations(): SegmentationRepresentation[] {
  * @param segmentationRepresentationUID - The UID of the segmentation representation to find.
  * @returns The found segmentation representation, or undefined if not found.
  */
-function getSegmentationRepresentation(
+function getRepresentation(
   segmentationRepresentationUID: string
 ): SegmentationRepresentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
@@ -104,7 +104,7 @@ function getSegmentationRepresentation(
 function getRepresentationsBySegmentationId(
   segmentationId: string
 ): SegmentationRepresentation[] {
-  const allRepresentations = getSegmentationRepresentations();
+  const allRepresentations = getRepresentations();
   return allRepresentations.filter(
     (representation) => representation.segmentationId === segmentationId
   );
@@ -206,24 +206,47 @@ function getViewportIdsWithSegmentationId(segmentationId: string): string[] {
  * @param viewportId - The ID of the viewport.
  * @returns An array of SegmentationRepresentation objects or an empty array if the viewport is not found.
  */
-function getViewportSegmentationRepresentations(
+function getRepresentationsForViewport(
   viewportId: string
 ): SegmentationRepresentation[] | [] {
-  const segmentationStateManager = getDefaultSegmentationStateManager();
+  const viewportRenderingState =
+    getRepresentationsRenderingStateForViewport(viewportId);
 
-  const state = segmentationStateManager.getState();
-
-  const viewport = state.viewports?.[viewportId];
-
-  if (!viewport) {
+  if (!viewportRenderingState) {
     return [];
   }
 
-  const segRepUIDs = Object.keys(viewport);
+  const segRepUIDs = Object.keys(viewportRenderingState);
 
-  return segRepUIDs.map((segRepUID) => state.representations[segRepUID]);
+  return segRepUIDs
+    .map((segRepUID) => getRepresentation(segRepUID))
+    .filter(Boolean);
 }
 
+/**
+ * Retrieves the rendering state of representations for a specific viewport.
+ * @param viewportId - The ID of the viewport.
+ * @returns An object containing the rendering state of representations for the specified viewport.
+ */
+function getRepresentationsRenderingStateForViewport(viewportId: string): {
+  [segRepUID: string]: {
+    visible: boolean;
+    segmentsHidden: Set<number>;
+    active: boolean;
+  };
+} {
+  const segmentationStateManager = getDefaultSegmentationStateManager();
+  const state = segmentationStateManager.getState();
+  return state.viewports?.[viewportId] || {};
+}
+
+/**
+ * Adds a segmentation representation to a specific viewport.
+ *
+ * @param viewportId - The ID of the viewport to add the representation to.
+ * @param segmentationRepresentation - The segmentation representation to add.
+ * @param suppressEvents - (Optional) A flag indicating whether to suppress triggering events. Defaults to false.
+ */
 function addRepresentationToViewport(
   viewportId: string,
   segmentationRepresentation: SegmentationRepresentation,
@@ -296,7 +319,7 @@ function removeSegmentation(segmentationId: string): void {
  *
  * @param segmentationRepresentationUID - The uid of the segmentation representation to remove.
  */
-function removeSegmentationRepresentation(
+function removeRepresentation(
   segmentationRepresentationUID: string,
   suppressEvents?: boolean
 ): void {
@@ -424,9 +447,9 @@ export {
   addSegmentation,
   removeSegmentation,
   // Segmentation Representation
-  getSegmentationRepresentations,
-  getSegmentationRepresentation,
-  removeSegmentationRepresentation,
+  getRepresentations,
+  getRepresentation,
+  removeRepresentation,
   // config
   getGlobalConfig,
   setGlobalConfig,
@@ -435,8 +458,9 @@ export {
   getPerSegmentConfig,
   setPerSegmentConfig,
   // viewport
-  getViewportSegmentationRepresentations,
+  getRepresentationsForViewport,
   addRepresentationToViewport,
+  getRepresentationsRenderingStateForViewport,
   // color
   addColorLUT,
   getColorLUT,

@@ -25,7 +25,7 @@ type Options = {
  * @param options.searchRadius - The search radius to use.
  * @returns The segment index at the labelmap border, or undefined if not found.
  */
-export function getSegmentAtLabelmapBorder(
+export function getSegmentIndexAtLabelmapBorder(
   segmentationId: string,
   worldPoint: Types.Point3,
   { viewport, searchRadius }: Options

@@ -235,7 +235,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const viewportId = context.styleSpecifier.viewportId;
 
     const segmentationVisible =
-      segmentationConfig.visibility.getSegmentationVisibility(
+      segmentationConfig.visibility.getRepresentationVisibility(
         viewportId,
         segmentationRepresentationUID
       );
@@ -251,10 +251,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       segmentIndex
     );
 
-    const segmentVisible = segmentationConfig.visibility.getSegmentVisibility(
-      segmentationRepresentationUID,
-      segmentIndex
-    );
+    const segmentVisible =
+      segmentationConfig.visibility.getSegmentIndexVisibility(
+        viewportId,
+        segmentationRepresentationUID,
+        segmentIndex
+      );
 
     const activeSegRep = getActiveRepresentation(viewportId);
 

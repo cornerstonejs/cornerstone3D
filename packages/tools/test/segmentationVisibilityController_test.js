@@ -280,7 +280,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getSegmentationRepresentations(toolGroupId)
+    //       csTools3d.segmentation.state.getRepresentations(toolGroupId)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].active).toBe(true)
@@ -321,7 +321,7 @@ describe('Segmentation Controller --', () => {
     //                   toolGroupId
     //                 )
 
-    //               segmentation.config.visibility.setSegmentationVisibility(
+    //               segmentation.config.visibility.setRepresentationVisibility(
     //                 toolGroupId,
     //                 segmentationData.segmentationRepresentationUID,
     //                 false

@@ -6,12 +6,16 @@ import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getSegmentationRepresentationSegmentsConfig } from './utils';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
 import { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
-import { getGlobalConfig } from '../../../../stateManagement/segmentation/segmentationState';
+import {
+  getGlobalConfig,
+  getPerSegmentConfig,
+} from '../../../../stateManagement/segmentation/segmentationState';
+import { getSegmentsHidden } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
+import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -30,8 +34,7 @@ function updateContourSets(
   geometryIds: string[],
   contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, segmentsHidden, config } =
-    contourRepresentation;
+  const { segmentationRepresentationUID, config } = contourRepresentation;
 
   const baseConfig = config?.allSegments?.CONTOUR;
   const globalContourConfig = getGlobalConfig().representations.CONTOUR;
@@ -54,6 +57,11 @@ function updateContourSets(
   const segmentsToSetToInvisible = [];
   const segmentsToSetToVisible = [];
 
+  const segmentsHidden = getSegmentsHidden(
+    viewport.id,
+    segmentationRepresentationUID
+  );
+
   for (const segmentIndex of segmentsHidden) {
     if (!cachedConfig.segmentsHidden.has(segmentIndex)) {
       segmentsToSetToInvisible.push(segmentIndex);
@@ -75,9 +83,8 @@ function updateContourSets(
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const segmentSpecificConfig = getSegmentationRepresentationSegmentsConfig(
-        contourRepresentation,
-        geometryId,
+      const segmentSpecificConfig = getSegmentIndexConfig(
+        segmentationRepresentationUID,
         segmentIndex
       );
       acc.segmentSpecificConfigs[segmentIndex] = segmentSpecificConfig ?? {};
@@ -132,9 +139,8 @@ function addContourSetsToElement(
 
     validateGeometry(geometry);
 
-    const segmentSpecificConfig = getSegmentationRepresentationSegmentsConfig(
-      contourRepresentation,
-      geometryId,
+    const segmentSpecificConfig = getSegmentIndexConfig(
+      segmentationRepresentationUID,
       segmentIndex
     );
 

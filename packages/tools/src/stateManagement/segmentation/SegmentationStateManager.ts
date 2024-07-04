@@ -151,7 +151,6 @@ export default class SegmentationStateManager {
     if (!this.state.viewports[viewportId]) {
       this.state.viewports[viewportId] = {};
     }
-
     // make all the other representations inactive first
     this.setActiveRepresentation(viewportId, segmentationRepresentationUID);
   }
@@ -210,6 +209,7 @@ export default class SegmentationStateManager {
       this.state.viewports[viewportId][segmentationRepresentationUID] = {
         active: false,
         visible: true,
+        segmentsHidden: new Set(),
       };
     }
 
@@ -373,7 +373,7 @@ export default class SegmentationStateManager {
       this.state.viewports[viewportId] = {};
     }
 
-    this.state.viewports[viewportId][segmentationRepresentationUID].active =
+    this.state.viewports[viewportId][segmentationRepresentationUID].visible =
       visible;
   }
 
@@ -400,4 +400,5 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.seg = defaultSegmentationStateManager;
 export { defaultSegmentationStateManager };

@@ -1,5 +1,5 @@
 import {
-  getSegmentationRepresentation,
+  getRepresentation,
   getSegmentation,
 } from '../../../stateManagement/segmentation/segmentationState';
 
@@ -20,7 +20,7 @@ function removeContourFromElement(
   segmentationRepresentationUID: string,
   removeFromCache = false // Todo
 ): void {
-  const segmentationRepresentation = getSegmentationRepresentation(
+  const segmentationRepresentation = getRepresentation(
     segmentationRepresentationUID
   );
 

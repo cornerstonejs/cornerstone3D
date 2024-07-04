@@ -22,6 +22,7 @@ import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import { polySeg } from '../../../stateManagement/segmentation';
+import { getSegmentsHidden } from '../../../stateManagement/segmentation/config/segmentationVisibility';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -46,7 +47,7 @@ let polySegConversionInProgress = false;
  * @param segmentationRepresentationUID - The uid of the segmentation representation
  * @param renderImmediate - If true, there will be a render call after the labelmap is removed
  */
-function removeSegmentationRepresentation(
+function removeRepresentation(
   viewportId: string,
   segmentationRepresentationUID: string,
   renderImmediate = false
@@ -61,9 +62,7 @@ function removeSegmentationRepresentation(
 
   removeLabelmapFromElement(viewport.element, segmentationRepresentationUID);
 
-  SegmentationState.removeSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
+  SegmentationState.removeRepresentation(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
@@ -234,8 +233,7 @@ function _setLabelmapColorAndOpacity(
   actorEntry: Types.ActorEntry,
   segmentationRepresentation: LabelmapRepresentation
 ): void {
-  const { rendering, config, colorLUTIndex, segmentsHidden } =
-    segmentationRepresentation;
+  const { rendering, config, colorLUTIndex } = segmentationRepresentation;
 
   // todo fix this
   const activeSegRep = SegmentationState.getActiveRepresentation(viewportId);
@@ -280,6 +278,11 @@ function _setLabelmapColorAndOpacity(
     activeSegmentOutlineWidthDelta,
   } = _getLabelmapConfig(labelmapConfig, isActiveLabelmap);
 
+  const segmentsHidden = getSegmentsHidden(
+    viewportId,
+    segmentationRepresentation.segmentationRepresentationUID
+  );
+
   // Todo: the below loop probably can be optimized so that we don't hit it
   // unless a config has changed. Right now we get into the following loop
   // even for brush drawing which does not makes sense
@@ -304,7 +307,6 @@ function _setLabelmapColorAndOpacity(
         renderOutline,
         segmentColor,
         outlineWidth,
-        segmentsHidden,
       });
 
     if (forceColorUpdate) {
@@ -429,14 +431,12 @@ function _needsTransferFunctionUpdate(
     renderOutline,
     segmentColor,
     outlineWidth,
-    segmentsHidden,
   }: {
     fillAlpha: number;
     renderFill: boolean;
     renderOutline: boolean;
     outlineWidth: number;
     segmentColor: number[];
-    segmentsHidden: Set<number>;
   }
 ) {
   const cacheUID = `${viewportId}-${actorUID}-${segmentIndex}`;
@@ -449,7 +449,6 @@ function _needsTransferFunctionUpdate(
       renderOutline,
       outlineWidth,
       segmentColor: segmentColor.slice(), // Create a copy
-      segmentsHidden: new Set(segmentsHidden), // Create a copy
     });
 
     return {
@@ -464,7 +463,6 @@ function _needsTransferFunctionUpdate(
     renderOutline: oldRenderOutline,
     outlineWidth: oldOutlineWidth,
     segmentColor: oldSegmentColor,
-    segmentsHidden: oldSegmentsHidden,
   } = oldConfig;
 
   const forceColorUpdate =
@@ -478,17 +476,14 @@ function _needsTransferFunctionUpdate(
     oldRenderFill !== renderFill ||
     oldRenderOutline !== renderOutline ||
     oldOutlineWidth !== outlineWidth ||
-    oldSegmentsHidden.has(segmentIndex) !== segmentsHidden.has(segmentIndex);
-
-  // update the cache
-  labelMapConfigCache.set(cacheUID, {
-    fillAlpha,
-    renderFill,
-    renderOutline,
-    outlineWidth,
-    segmentColor: segmentColor.slice(), // Create a copy
-    segmentsHidden: new Set(segmentsHidden), // Create a copy
-  });
+    // update the cache
+    labelMapConfigCache.set(cacheUID, {
+      fillAlpha,
+      renderFill,
+      renderOutline,
+      outlineWidth,
+      segmentColor: segmentColor.slice(), // Create a copy
+    });
 
   return {
     forceOpacityUpdate,
@@ -511,11 +506,7 @@ async function _addLabelmapToViewport(
 export default {
   getRepresentationRenderingConfig,
   render,
-  removeSegmentationRepresentation,
+  removeRepresentation,
 };
 
-export {
-  getRepresentationRenderingConfig,
-  render,
-  removeSegmentationRepresentation,
-};
+export { getRepresentationRenderingConfig, render, removeRepresentation };
