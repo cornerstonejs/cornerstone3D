@@ -727,16 +727,16 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
 
-    // If cachedStats does not exist, or the areaUnit is missing (as part of
+    // If cachedStats does not exist, or the areaUnits is missing (as part of
     // import/hydration etc.), force to recalculate the stats from the points
     if (
       !data.cachedStats[targetId] ||
-      data.cachedStats[targetId].areaUnit == null
+      data.cachedStats[targetId].areaUnits == null
     ) {
       data.cachedStats[targetId] = {
         Modality: null,
         area: null,
-        areaUnit: null,
+        areaUnits: null,
       };
 
       this._calculateCachedStats(annotation, element);
@@ -1204,7 +1204,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        areaUnit: areaUnits,
+        areaUnits,
       };
     }
 
@@ -1220,13 +1220,13 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, isEmptyArea, areaUnit } = cachedVolumeStats;
+  const { area, isEmptyArea, areaUnits } = cachedVolumeStats;
   const textLines: string[] = [];
 
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${roundNumber(area)} ${areaUnits}`;
 
     textLines.push(areaLine);
   }

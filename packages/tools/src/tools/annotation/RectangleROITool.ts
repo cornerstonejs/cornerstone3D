@@ -48,7 +48,7 @@ import {
 } from '../../types';
 import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInShapeCallback } from '../../utilities/';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
@@ -640,7 +640,7 @@ class RectangleROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        data.cachedStats[targetId].areaUnits == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -648,7 +648,7 @@ class RectangleROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnit: null,
+          areaUnits: null,
         };
 
         this._calculateCachedStats(
@@ -921,7 +921,7 @@ class RectangleROITool extends AnnotationTool {
 
         const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
 
-        const modalityUnitOptions = {
+        const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
 
           isSuvScaled: this.isSuvScaled(
@@ -931,10 +931,10 @@ class RectangleROITool extends AnnotationTool {
           ),
         };
 
-        const modalityUnit = getModalityUnit(
+        const pixelValueUnits = getPixelValueUnits(
           metadata.Modality,
           annotation.metadata.referencedImageId,
-          modalityUnitOptions
+          pixelUnitsOptions
         );
 
         const pointsInShape = pointInShapeCallback(
@@ -954,8 +954,8 @@ class RectangleROITool extends AnnotationTool {
           max: stats.max?.value,
           statsArray: stats.array,
           pointsInShape: pointsInShape,
-          areaUnit: areaUnits,
-          modalityUnit,
+          areaUnits,
+          pixelValueUnits,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -990,7 +990,8 @@ class RectangleROITool extends AnnotationTool {
  */
 function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnits, pixelValueUnits } =
+    cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -998,10 +999,10 @@ function defaultGetTextLines(data, targetId: string): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  textLines.push(`Area: ${roundNumber(area)} ${areaUnits}`);
+  textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
+  textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
+  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
 
   return textLines;
 }

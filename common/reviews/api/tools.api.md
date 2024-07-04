@@ -5144,7 +5144,7 @@ type SplineROIAnnotation = ContourAnnotation & {
             [targetId: string]: {
                 Modality: string;
                 area: number;
-                areaUnit: string;
+                areaUnits: string;
             };
         };
     };

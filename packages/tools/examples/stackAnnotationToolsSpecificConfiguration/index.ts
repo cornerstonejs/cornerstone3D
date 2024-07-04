@@ -144,7 +144,7 @@ function getTextLinesLength(data, targetId): string[] {
 
 function getTextLinesRectangle(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, areaUnits, pixelValueUnits } = cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -152,15 +152,15 @@ function getTextLinesRectangle(data, targetId): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${Math.round(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${Math.round(mean)} ${modalityUnit}`);
+  textLines.push(`Area: ${Math.round(area)} ${areaUnits}`);
+  textLines.push(`Mean: ${Math.round(mean)} ${pixelValueUnits}`);
   textLines.push(`(your custom text or statistic)`);
   return textLines;
 }
 
 function getTextLinesProbe(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, modalityUnit } = cachedVolumeStats;
+  const { index, value } = cachedVolumeStats;
 
   if (value === undefined) {
     return;

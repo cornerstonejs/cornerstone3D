@@ -795,7 +795,10 @@ class LengthTool extends AnnotationTool {
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const handles = [index1, index2];
-      const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
+      const { scale, lengthUnits } = getCalibratedLengthUnitsAndScale(
+        image,
+        handles
+      );
 
       const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
@@ -810,7 +813,7 @@ class LengthTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
-        unit: units,
+        lengthUnits,
       };
     }
 

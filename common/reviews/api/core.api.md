@@ -4,7 +4,10 @@
 
 ```ts
 
+import { default as default_2 } from 'packages/core/src/types/ActorSliceRange';
+import { default as default_3 } from 'packages/core/src/types/ICamera';
 import type { GetGPUTier } from 'detect-gpu';
+import { IImageCalibration as IImageCalibration_2 } from 'packages/core/src/types/IImageCalibration';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
@@ -1128,9 +1131,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
     numScrollSteps: number;
     currentStepIndex: number;
     sliceRangeInfo: {
-        sliceRange: ActorSliceRange;
+        sliceRange: default_2;
         spacingInNormalDirection: number;
-        camera: ICamera;
+        camera: default_3;
     };
 };
 
@@ -3567,7 +3570,7 @@ export class VideoViewport extends Viewport implements VideoViewport {
             indexToWorld: (point: Point2, destPoint?: Point3) => Point3;
         };
         hasPixelSpacing: boolean;
-        calibration: IImageCalibration;
+        calibration: IImageCalibration_2;
         preScale: {
             scaled: boolean;
         };

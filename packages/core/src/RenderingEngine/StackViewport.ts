@@ -237,10 +237,16 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.useNativeDataType = this._shouldUseNativeDataType();
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
-    for (const [funcName, functions] of Object.entries(
-      this.renderingPipelineFunctions
-    )) {
-      this[funcName] = this.useCPURendering ? functions.cpu : functions.gpu;
+    for (const key in this.renderingPipelineFunctions) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          this.renderingPipelineFunctions,
+          key
+        )
+      ) {
+        const functions = this.renderingPipelineFunctions[key];
+        this[key] = this.useCPURendering ? functions.cpu : functions.gpu;
+      }
     }
 
     this.useCPURendering
