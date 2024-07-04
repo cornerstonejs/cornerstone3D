@@ -9,12 +9,20 @@ export function triggerAnnotationRenderForViewportIds(
   }
 
   viewportIdsToRender.forEach((viewportId) => {
-    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+    if (!enabledElement) {
+      console.warn(`Viewport not available for ${viewportId}`);
+      return;
+    }
+
+    const { viewport } = enabledElement;
+
     if (!viewport) {
       console.warn(`Viewport not available for ${viewportId}`);
       return;
     }
-    const { element } = viewport;
+
+    const element = viewport.element;
     triggerAnnotationRender(element);
   });
 }

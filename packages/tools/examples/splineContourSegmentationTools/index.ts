@@ -34,7 +34,7 @@ const { KeyboardBindings } = cornerstoneTools.Enums;
 
 const {
   SplineContourSegmentationTool,
-  SegmentationDisplayTool,
+
   PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -90,7 +90,7 @@ createInfoSection(content, { ordered: true })
 
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
   const contourConfig = segmentationConfig.CONTOUR;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
@@ -132,16 +132,12 @@ function getSegmentsVisibilityState() {
   return segmentsVisibility;
 }
 
-function getSegmentationConfig(
-  toolGroupdId: string
-): cstTypes.RepresentationConfig {
+function getSegmentationConfig(): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
-      toolGroupdId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
+    {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -151,12 +147,11 @@ function getSegmentationConfig(
 }
 
 function updateSegmentationConfig(config) {
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  segmentation.config.setAllSegmentsConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -223,8 +218,8 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setSegmentationVisibility(
-      toolGroupId,
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportId,
       segmentationRepresentationUID,
       !toggle
     );
@@ -239,8 +234,8 @@ addButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState();
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    segmentation.config.visibility.setSegmentVisibility(
-      toolGroupId,
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -314,7 +309,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -322,7 +316,6 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SplineContourSegmentationTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
 
@@ -355,8 +348,6 @@ async function run() {
       },
     }
   );
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(splineToolsNames[0], {
     bindings: contourSegmentationToolBindings,
@@ -421,21 +412,23 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Create a segmentation representation associated to the viewportId
+  const segmentationRepresentationUIDs = await segmentation.addRepresentations(
+    viewportId,
+    [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    ]);
+    ]
+  );
 
   // Store the segmentation representation that was just created
   segmentationRepresentationUID = segmentationRepresentationUIDs[0];
 
   // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
+  segmentation.activeSegmentation.setActiveRepresentation(
+    viewportId,
     segmentationRepresentationUID
   );
 

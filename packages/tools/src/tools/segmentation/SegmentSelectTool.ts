@@ -2,24 +2,20 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import {
-  PublicToolProps,
-  ToolProps,
-  EventTypes,
-  ToolGroupSpecificRepresentation,
-} from '../../types';
+import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
+import { getActiveRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
 import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import {
   getHoveredContourSegmentationAnnotation,
-  getSegmentAtLabelmapBorder,
-  getSegmentAtWorldPoint,
+  getSegmentIndexAtLabelmapBorder,
+  getSegmentIndexAtWorldPoint,
 } from '../../utilities/segmentation';
 import { state } from '../../store';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -92,9 +88,7 @@ class SegmentSelectTool extends BaseTool {
 
     const { viewport } = enabledElement;
 
-    const activeSegmentationReps = getActiveSegmentationRepresentation(
-      this.toolGroupId
-    );
+    const activeSegmentationReps = getActiveRepresentation(viewport.id);
 
     if (!activeSegmentationReps) {
       return;
@@ -119,7 +113,7 @@ class SegmentSelectTool extends BaseTool {
   }
 
   _setActiveSegmentForType(
-    activeSegmentationReps: ToolGroupSpecificRepresentation,
+    activeSegmentationReps: SegmentationRepresentation,
     worldPoint: Types.Point3,
     viewport: Types.IStackViewport | Types.IVolumeViewport
   ): void {
@@ -134,13 +128,17 @@ class SegmentSelectTool extends BaseTool {
     let hoveredSegmentIndex;
 
     if (this.configuration.mode === SegmentSelectTool.SelectMode.Inside) {
-      hoveredSegmentIndex = getSegmentAtWorldPoint(segmentationId, worldPoint, {
-        viewport,
-      });
+      hoveredSegmentIndex = getSegmentIndexAtWorldPoint(
+        segmentationId,
+        worldPoint,
+        {
+          viewport,
+        }
+      );
     } else {
       switch (type) {
         case SegmentationRepresentations.Labelmap:
-          hoveredSegmentIndex = getSegmentAtLabelmapBorder(
+          hoveredSegmentIndex = getSegmentIndexAtLabelmapBorder(
             segmentationId,
             worldPoint,
             {

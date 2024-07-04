@@ -27,7 +27,6 @@ const {
   SplineROITool,
   LivewireContourSegmentationTool,
   LivewireContourTool,
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -268,8 +267,6 @@ function addBindings(toolGroupId) {
   addManipulationBindings(toolGroup);
 
   // Add the tools to the tool group
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   for (const [toolName, config] of interpolationTools.entries()) {
     if (config.baseTool) {
@@ -311,8 +308,6 @@ async function run() {
   cornerstoneTools.addTool(SplineROITool);
   cornerstoneTools.addTool(LivewireContourSegmentationTool);
   cornerstoneTools.addTool(LivewireContourTool);
-
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -421,9 +416,9 @@ async function run() {
         },
       },
     ]);
-    // Create a segmentation representation associated to the toolGroupId
-    // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupIds[index++], [
+    // Create a segmentation representation associated to the viewportId
+    // Add the segmentation representation to the viewport
+    await segmentation.addRepresentations(viewportIds[index++], [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,

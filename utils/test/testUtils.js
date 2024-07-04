@@ -3,7 +3,7 @@ import { fakeImageLoader, fakeMetaDataProvider } from './testUtilsImageLoader';
 import { fakeVolumeLoader } from './testUtilsVolumeLoader';
 import { createNormalizedMouseEvent } from './testUtilsMouseEvents';
 import { fillStackSegmentationWithMockData } from './fillStackSegmentationWithMockData';
-import { fillVolumeSegmentationWithMockData } from './fillVolumeSegmentationWithMockData';
+import { fillVolumeLabelmapWithMockData } from './fillVolumeLabelmapWithMockData';
 import { addMockContourSegmentation } from './addMockContourSegmentation';
 
 /**
@@ -81,6 +81,6 @@ export {
   // utils
   colors,
   fillStackSegmentationWithMockData,
-  fillVolumeSegmentationWithMockData,
+  fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 };

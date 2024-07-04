@@ -27,7 +27,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -197,8 +196,6 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -275,8 +272,20 @@ async function run() {
 
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId3, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

@@ -239,16 +239,12 @@ type SegmentationDataModifiedEventDetail = {
 type SegmentationRenderedEventDetail = {
   /** unique id of the viewport */
   viewportId: string;
-  /** unique id of the toolGroup segmentation belongs to */
-  toolGroupId: string;
 };
 
 /**
  * EventDetail for when a Segmentation Representation for a toolGroup is modified
  */
 type SegmentationRepresentationModifiedEventDetail = {
-  /** unique id of the toolGroup */
-  toolGroupId: string;
   /** segmentation representationUID */
   segmentationRepresentationUID: string;
 };
@@ -265,8 +261,6 @@ type SegmentationRemovedEventDetail = {
  * EventDetail for when a Segmentation Representation is removed
  */
 type SegmentationRepresentationRemovedEventDetail = {
-  /** unique id of the toolGroup */
-  toolGroupId: string;
   /** segmentation representationUID */
   segmentationRepresentationUID: string;
 };

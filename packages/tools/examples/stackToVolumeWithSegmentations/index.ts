@@ -23,7 +23,7 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  SegmentationDisplayTool,
+
   ToolGroupManager,
   BrushTool,
   StackScrollMouseWheelTool,
@@ -86,7 +86,7 @@ addButtonToToolbar({
 
     let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      segmentation.state.removeSegmentationRepresentations(volumeToolGroupId);
+      segmentation.state.removeRepresentation(volumeToolGroupId);
 
       newViewport = await csUtils.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,
@@ -121,7 +121,7 @@ addButtonToToolbar({
         });
       }
     } else {
-      segmentation.state.removeSegmentationRepresentations(stackToolGroupId);
+      segmentation.state.removeRepresentations(stackToolGroupId);
 
       newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
@@ -218,7 +218,6 @@ async function run() {
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -231,7 +230,6 @@ async function run() {
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
     toolGroup.addToolInstance('CircularBrush', BrushTool.toolName, {
       activeStrategy: 'FILL_INSIDE_CIRCLE',
     });
@@ -255,7 +253,6 @@ async function run() {
       ],
     });
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
     utilities.segmentation.setBrushSizeForToolGroup(
       toolGroup.id,
@@ -350,8 +347,8 @@ async function _startFromVolume(
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(volumeToolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -422,8 +419,8 @@ async function _startFromStack(
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(stackToolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(stackToolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

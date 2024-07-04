@@ -285,8 +285,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ): PlanarFreehandROIAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     const annotation = this.createAnnotation(
       evt

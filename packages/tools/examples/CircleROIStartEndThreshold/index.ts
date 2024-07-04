@@ -24,10 +24,8 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
-  segmentation,
   CircleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
@@ -184,7 +182,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -196,11 +193,9 @@ async function run() {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
   });
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],

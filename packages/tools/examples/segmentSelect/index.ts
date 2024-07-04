@@ -10,7 +10,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import {
   fillStackSegmentationWithMockData,
-  fillVolumeSegmentationWithMockData,
+  fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
 
@@ -21,7 +21,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   Enums: csToolsEnums,
   SegmentSelectTool,
   segmentation,
@@ -99,7 +99,6 @@ const viewportId4 = 'viewport4';
 
 // ============================= //
 
-cornerstoneTools.addTool(SegmentationDisplayTool);
 cornerstoneTools.addTool(SegmentSelectTool);
 cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -116,10 +115,8 @@ function setupTools(toolGroupId, isContour = false) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SegmentSelectTool.toolName);
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(SegmentSelectTool.toolName);
 
   if (isContour) {
@@ -255,7 +252,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     }
   );
 
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: volumeSegLabelmapId,
     cornerstone,
   });
@@ -276,8 +273,8 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  segmentation.addSegmentationRepresentations(volumeSegLabelmapToolGroupId, [
+  // Add the segmentation representation to the viewport
+  segmentation.addRepresentations(viewportId2, [
     {
       segmentationId: volumeSegLabelmapId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -293,16 +290,13 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    volumeSegContourToolGroupId,
-    [
-      {
-        segmentationId: volumeSegContourId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId4, [
+    {
+      segmentationId: volumeSegContourId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
@@ -354,16 +348,13 @@ async function _handleStackViewports(stackImageIds: string[]) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegLabelmapToolGroupId,
-    [
-      {
-        segmentationId: stackSegLabelmapId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId: stackSegLabelmapId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   segmentation.addSegmentations([
     {
@@ -374,16 +365,13 @@ async function _handleStackViewports(stackImageIds: string[]) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegContourToolGroupId,
-    [
-      {
-        segmentationId: stackSegContourId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId3, [
+    {
+      segmentationId: stackSegContourId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   addMockContourSegmentation({
     segmentationId: stackSegContourId,

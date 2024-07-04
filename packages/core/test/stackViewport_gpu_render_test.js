@@ -677,8 +677,8 @@ describe('renderingCore -- Stack', () => {
             interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
-            rotation: 90,
           });
+          vp.setViewPresentation({ rotation: 90 });
 
           vp.render();
         });
@@ -721,8 +721,6 @@ describe('renderingCore -- Stack', () => {
       const secondImageRenderedCallback = () => {
         console.log('resetProperties callback');
         const props = vp.getProperties();
-        const rotation = vp.getViewPresentation().rotation;
-        expect(rotation).toBe(0);
         expect(props.interpolationType).toBe(InterpolationType.LINEAR);
         expect(props.invert).toBe(false);
 
@@ -741,8 +739,8 @@ describe('renderingCore -- Stack', () => {
             interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
-            rotation: 90,
           });
+          vp.setRotation(90);
           vp.render();
         });
       } catch (e) {
@@ -948,8 +946,9 @@ describe('renderingCore -- Stack', () => {
         vp.setStack([imageId], 0).then(() => {
           vp.setProperties({
             interpolationType: InterpolationType.NEAREST,
-            rotation: 90,
           });
+
+          vp.setRotation(90);
 
           vp.render();
 

@@ -18,7 +18,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   StackScrollMouseWheelTool,
   ZoomTool,
   StackScrollTool,
@@ -212,23 +212,17 @@ addButtonToToolbar({
       },
     ]);
 
-    // Add the segmentation representation to the toolgroup
-    const [uid] = await segmentation.addSegmentationRepresentations(
-      toolGroupId,
-      [
-        {
-          segmentationId: newSegmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]
-    );
+    // Add the segmentation representation to the viewport
+    const [uid] = await segmentation.addRepresentations(viewportId, [
+      {
+        segmentationId: newSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
 
     segmentationRepresentationUIDs.push(uid);
 
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
+    segmentation.activeSegmentation.setActiveRepresentation(viewportId, uid);
 
     // update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, newSegmentationId);
@@ -243,10 +237,7 @@ addDropdownToToolbar({
     const name = String(nameAsStringOrNumber);
     const index = segmentationIds.indexOf(name);
     const uid = segmentationRepresentationUIDs[index];
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      toolGroupId,
-      uid
-    );
+    segmentation.activeSegmentation.setActiveRepresentation(viewportId, uid);
 
     // Update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, name);
@@ -261,7 +252,6 @@ function setupTools(toolGroupId) {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
   cornerstoneTools.addTool(PaintFillTool);
@@ -278,7 +268,6 @@ function setupTools(toolGroupId) {
   toolGroup.addTool(StackScrollTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
@@ -317,8 +306,6 @@ function setupTools(toolGroupId) {
       },
     }
   );
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -431,8 +418,8 @@ async function run() {
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Add the segmentation representation to the viewport
+  const [uid] = await segmentation.addRepresentations(viewportId, [
     {
       segmentationId: segmentationIds[0],
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

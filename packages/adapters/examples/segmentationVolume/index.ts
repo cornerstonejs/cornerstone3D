@@ -21,6 +21,7 @@ import {
 } from "../../../../utils/demo/helpers";
 
 import dcmjs from "dcmjs";
+import { viewport } from "../../../tools/dist/types/utilities";
 
 // This is for debugging purposes
 console.warn(
@@ -41,7 +42,6 @@ const { ViewportType } = csEnums;
 
 const {
     Enums: csToolsEnums,
-    SegmentationDisplayTool,
     ToolGroupManager,
     segmentation: csToolsSegmentation
 } = cornerstoneTools;
@@ -311,8 +311,8 @@ async function exportSegmentation() {
 
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
+        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
+            viewportIds[0]
         );
 
     const cacheSegmentationVolume = cache.getVolume(
@@ -327,8 +327,7 @@ async function exportSegmentation() {
     // Generate fake metadata as an example
     labelmapData.metadata = [];
     labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
-        const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
-            toolGroupId,
+        const color = csToolsSegmentation.config.color.getSegmentIndexColor(
             activeSegmentationRepresentation.segmentationRepresentationUID,
             segmentIndex
         );
@@ -357,12 +356,12 @@ function removeActiveSegmentation() {
 
     // Get active segmentation representation
     const { segmentationId, segmentationRepresentationUID } =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
             toolGroupId
         );
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId, [
         segmentationRepresentationUID
     ]);
 
@@ -479,11 +478,11 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationIdRepresentations(
+            csToolsSegmentation.state.getRepresentationsBySegmentationId(
                 segmentationId
             );
 
-        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.setActiveRepresentation(
             toolGroupId,
             segmentationRepresentations[0].segmentationRepresentationUID
         );
@@ -514,7 +513,7 @@ function restart() {
     cache.removeVolumeLoadObject(volumeId);
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId);
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId);
 
     //
     const segmentationIds = getSegmentationIds();
@@ -554,8 +553,8 @@ async function addSegmentationsToState(segmentationId: string) {
         }
     ]);
 
-    // Add the segmentation representation to the toolgroup
-    await csToolsSegmentation.addSegmentationRepresentations(toolGroupId, [
+    // Add the segmentation representation to the viewport
+    await csToolsSegmentation.addRepresentations(viewportIds[0], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap
@@ -648,8 +647,6 @@ async function run() {
     toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
     //
-    cornerstoneTools.addTool(SegmentationDisplayTool);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
 
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);

@@ -10,7 +10,7 @@
         "module": "esnext",
         "moduleResolution": "node",
         "sourceMap": false,
-        "rootDir": "src",
+        "rootDir": "src"
     },
     "include": ["src"],
     "exclude": ["node_modules", "dist", "examples", "old-examples"]

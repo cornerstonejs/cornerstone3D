@@ -88,6 +88,7 @@ class BrushTool extends BaseTool {
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
+    viewport: Types.IViewport;
   };
 
   private _previewData?: PreviewData = {
@@ -179,18 +180,16 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const toolGroupId = this.toolGroupId;
-
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
+    const activeRepresentation = activeSegmentation.getActiveRepresentation(
+      viewport.id
+    );
+    if (!activeRepresentation) {
       throw new Error(
         'No active segmentation detected, create a segmentation representation before using the brush tool'
       );
     }
 
-    const { segmentationId, type, segmentationRepresentationUID } =
-      activeSegmentationRepresentation;
+    const { segmentationId, type } = activeRepresentation;
 
     if (type === SegmentationRepresentations.Contour) {
       throw new Error('Not implemented yet');
@@ -242,7 +241,6 @@ class BrushTool extends BaseTool {
         referencedVolumeId:
           this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
         segmentsLocked,
-        segmentationRepresentationUID,
       };
     } else {
       const { imageIdReferenceMap } =
@@ -277,7 +275,6 @@ class BrushTool extends BaseTool {
       return {
         imageIdReferenceMap,
         segmentsLocked,
-        segmentationRepresentationUID,
       };
     }
   }
@@ -397,7 +394,7 @@ class BrushTool extends BaseTool {
       segmentationId,
       segmentationRepresentationUID,
       segmentColor,
-    } = this.getActiveSegmentationData() || {};
+    } = this.getActiveSegmentationData(viewport) || {};
 
     // Center of circle in canvas Coordinates
     const brushCursor = {
@@ -416,6 +413,7 @@ class BrushTool extends BaseTool {
       brushCursor,
       centerCanvas,
       segmentIndex,
+      viewport,
       segmentationId,
       segmentationRepresentationUID,
       segmentColor,
@@ -423,25 +421,24 @@ class BrushTool extends BaseTool {
     };
   }
 
-  private getActiveSegmentationData() {
-    const toolGroupId = this.toolGroupId;
+  private getActiveSegmentationData(viewport) {
+    const viewportId = viewport.id;
+    const activeRepresentation =
+      activeSegmentation.getActiveRepresentation(viewportId);
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
+    if (!activeRepresentation) {
       console.warn(
         'No active segmentation detected, create one before using the brush tool'
       );
       return;
     }
 
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
+    const { segmentationId, segmentationRepresentationUID } =
+      activeRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
+    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
       segmentationRepresentationUID,
       segmentIndex
     );
@@ -731,12 +728,13 @@ class BrushTool extends BaseTool {
       return;
     }
     const { data } = this._hoverData.brushCursor;
+    const { viewport } = this._hoverData;
 
     data.invalidated = true;
 
     // Todo: figure out if other brush metadata (other than segment color) should get updated
     // during the brush cursor invalidation
-    const { segmentColor } = this.getActiveSegmentationData() || {};
+    const { segmentColor } = this.getActiveSegmentationData(viewport) || {};
     this._hoverData.brushCursor.metadata.segmentColor = segmentColor;
   }
 

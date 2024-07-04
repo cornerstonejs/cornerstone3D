@@ -5,7 +5,7 @@
  * @param options.cornerstone - The cornerstone core object.
  * @param options.centerOffset - The offset of the center of the ellipsoid from the center of the volume.
  */
-export function fillVolumeSegmentationWithMockData({
+export function fillVolumeLabelmapWithMockData({
   volumeId: segVolumeId,
   cornerstone,
   centerOffset = [0, 0, 0],

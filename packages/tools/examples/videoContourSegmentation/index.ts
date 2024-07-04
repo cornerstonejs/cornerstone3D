@@ -34,7 +34,6 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -121,15 +120,13 @@ function getSegmentsVisibilityState() {
 }
 
 function getSegmentationConfig(
-  toolGroupdId: string
+  toolGroupId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
-      toolGroupdId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
+    {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -143,8 +140,7 @@ function updateSegmentationConfig(config) {
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  segmentation.config.setAllSegmentsConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -176,8 +172,8 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setSegmentationVisibility(
-      toolGroupId,
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportId,
       segmentationRepresentationUID,
       !toggle
     );
@@ -193,8 +189,8 @@ addButtonToToolbar({
     const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    segmentation.config.visibility.setSegmentVisibility(
-      toolGroupId,
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -248,9 +244,6 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
@@ -303,14 +296,16 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Create a segmentation representation associated to the viewportId
+  const segmentationRepresentationUIDs = await segmentation.addRepresentations(
+    viewportId,
+    [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    ]);
+    ]
+  );
 
   // Store the segmentation representation that was just created
   [segmentationRepresentationUID] = segmentationRepresentationUIDs;

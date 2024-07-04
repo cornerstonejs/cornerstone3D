@@ -11,7 +11,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -20,7 +20,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -53,28 +52,22 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
-const element2 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
 
 viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Both viewports contain the same source data, yet they display different segmentations.
-  The segmentation on the left viewport is the same resolution as the source data,
-  yet the segmentation on the right viewport is downSampled by a factor of ${DOWN_SAMPLE_RATE}
+  Here we show how to render two different segmentations at different resolutions to the source data.
 `;
 
 content.append(instructions);
 // ============================= //
 
-async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
+async function addSegmentations(viewportId1) {
   // Create a segmentation of the same resolution as the source data
   const highResSegmentationVolume =
     await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
@@ -143,23 +136,24 @@ async function addSegmentations(highResToolGroupId, lowResToolGroupId) {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: highResSegmentationVolume.volumeId,
     cornerstone,
   });
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: lowResSegmentationVolume.volumeId,
     cornerstone,
+    centerOffset: [10, 10, 0],
   });
 
-  // Add segmentation representations to the toolgroups
-  segmentation.addSegmentationRepresentations(highResToolGroupId, [
+  // Add segmentation representations to the viewports
+  segmentation.addRepresentations(viewportId1, [
     {
       segmentationId: highResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  segmentation.addSegmentationRepresentations(lowResToolGroupId, [
+  segmentation.addRepresentations(viewportId1, [
     {
       segmentationId: lowResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -175,19 +169,10 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
-  const highResToolGroupId = 'HIGH_RESOLUTION_TOOLGROUP_ID';
-  const lowResToolGroupId = 'LOW_RESOLUTION_TOOLGROUP_ID';
-  const highResToolGroup = ToolGroupManager.createToolGroup(highResToolGroupId);
-  const lowResToolGroup = ToolGroupManager.createToolGroup(lowResToolGroupId);
-
-  highResToolGroup.addTool(SegmentationDisplayTool.toolName);
-  lowResToolGroup.addTool(SegmentationDisplayTool.toolName);
-
-  highResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  lowResToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  const toolGroupId = 'HIGH_RESOLUTION_TOOLGROUP_ID';
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -206,7 +191,6 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  addSegmentations(highResToolGroupId, lowResToolGroupId);
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -214,7 +198,6 @@ async function run() {
 
   // Create the viewports
   const viewportId1 = 'CT_AXIAL_STACK_1';
-  const viewportId2 = 'CT_AXIAL_STACK_2';
 
   const viewportInputArray = [
     {
@@ -226,34 +209,22 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
-      },
-    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  highResToolGroup.addViewport(viewportId1, renderingEngineId);
-  lowResToolGroup.addViewport(viewportId2, renderingEngineId);
+  addSegmentations(viewportId1);
+
+  toolGroup.addViewport(viewportId1, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2]
-  );
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2]);
+  renderingEngine.render();
 }
 
 run();

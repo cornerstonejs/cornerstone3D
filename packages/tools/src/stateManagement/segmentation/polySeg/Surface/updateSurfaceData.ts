@@ -2,14 +2,15 @@ import { Types, cache } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import {
   getSegmentation,
-  getSegmentationRepresentations,
-  getToolGroupIdsWithSegmentation,
+  getRepresentations,
+  getRepresentationsForViewport,
+  getViewportIdsWithSegmentationId,
 } from '../../segmentationState';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
-import { ToolGroupSpecificRepresentations } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
+import { viewport } from '../../../../utilities';
 
 export async function updateSurfaceData(segmentationId) {
   const surfacesObj = await computeSurfaceFromLabelmapSegmentation(
@@ -47,12 +48,11 @@ export async function updateSurfaceData(segmentationId) {
     if (!geometry) {
       // means it is a new segment getting added while we were
       // listening to the segmentation data modified event
-      const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
+      const viewportIds = getViewportIdsWithSegmentationId(segmentationId);
 
-      return toolGroupIds.map((toolGroupId) => {
-        const segmentationRepresentations = getSegmentationRepresentations(
-          toolGroupId
-        ) as ToolGroupSpecificRepresentations;
+      return viewportIds.map((viewportId) => {
+        const segmentationRepresentations =
+          getRepresentationsForViewport(viewportId);
 
         return segmentationRepresentations.map((segmentationRepresentation) => {
           if (

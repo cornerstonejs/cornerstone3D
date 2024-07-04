@@ -25,7 +25,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -266,7 +265,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleROIThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -278,9 +276,7 @@ async function run() {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleROIThresholdTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(RectangleROIThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -410,14 +406,26 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // // Add the segmentation representation to the toolgroup
+  // // Add the segmentation representation to the viewport
   const segmentationRepresentationByUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+    await segmentation.addRepresentations(viewportId1, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]);
+  await segmentation.addRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId3, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   segmentationRepresentationByUID = segmentationRepresentationByUIDs[0];
 

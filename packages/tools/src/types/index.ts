@@ -46,10 +46,6 @@ import type {
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
   Segmentation,
-  ToolGroupSpecificRepresentationState,
-  ToolGroupSpecificContourRepresentation,
-  ToolGroupSpecificLabelmapRepresentation,
-  ToolGroupSpecificRepresentation,
   SegmentationState,
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
@@ -140,10 +136,6 @@ export type {
   SegmentationRepresentationData,
   SegmentationRepresentationConfig,
   RepresentationConfig,
-  ToolGroupSpecificRepresentationState,
-  ToolGroupSpecificContourRepresentation,
-  ToolGroupSpecificLabelmapRepresentation,
-  ToolGroupSpecificRepresentation,
   RepresentationPublicInput,
   LabelmapTypes,
   // Cursors

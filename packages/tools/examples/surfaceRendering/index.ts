@@ -26,7 +26,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -126,7 +125,6 @@ addButtonToToolbar({
   title: 'Set Random Orientation',
   onClick: () => {
     const viewport = renderingEngine.getViewport(viewportId1);
-    const { viewUp, viewPlaneNormal } = viewport.getCamera();
 
     viewport.setOrientation({
       viewUp: [
@@ -173,7 +171,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -183,19 +180,14 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
-  toolGroup3d.addTool(SegmentationDisplayTool.toolName);
   toolGroup3d.addTool(ZoomTool.toolName);
   toolGroup3d.addTool(TrackballRotateTool.toolName, {
     configuration: { volumeId },
   });
-
-  toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -301,15 +293,7 @@ async function run() {
     viewport3d.render();
   });
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
-    },
-  ]);
-
-  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+  await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,

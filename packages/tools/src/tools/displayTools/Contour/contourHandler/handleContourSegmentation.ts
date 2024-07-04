@@ -5,43 +5,42 @@ import { addAnnotation } from '../../../../stateManagement';
 import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
-import {
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificContourRepresentation,
-} from '../../../../types';
 import { getConfigCache, setConfigCache } from './contourConfigCache';
-import { getSegmentSpecificConfig } from './utils';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
+import { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
+import {
+  getGlobalConfig,
+  getPerSegmentConfig,
+} from '../../../../stateManagement/segmentation/segmentationState';
+import { getSegmentsHidden } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
+import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
   geometryIds: string[],
   annotationUIDsMap: Map<number, Set<string>>,
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  contourRepresentationConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ) {
   const addOrUpdateFn = annotationUIDsMap.size
     ? updateContourSets
     : addContourSetsToElement;
-  addOrUpdateFn(
-    viewport,
-    geometryIds,
-    contourRepresentation,
-    contourRepresentationConfig
-  );
+  addOrUpdateFn(viewport, geometryIds, contourRepresentation);
 }
 
 function updateContourSets(
   viewport: Types.IVolumeViewport | StackViewport,
   geometryIds: string[],
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  contourRepresentationConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, segmentsHidden } =
-    contourRepresentation;
-  const newContourConfig = contourRepresentationConfig.representations.CONTOUR;
+  const { segmentationRepresentationUID, config } = contourRepresentation;
+
+  const baseConfig = config?.allSegments?.CONTOUR;
+  const globalContourConfig = getGlobalConfig().representations.CONTOUR;
+
+  const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
+
   const cachedConfig = getConfigCache(segmentationRepresentationUID);
 
   const newOutlineWithActive = newContourConfig.outlineWidthActive;
@@ -57,6 +56,11 @@ function updateContourSets(
 
   const segmentsToSetToInvisible = [];
   const segmentsToSetToVisible = [];
+
+  const segmentsHidden = getSegmentsHidden(
+    viewport.id,
+    segmentationRepresentationUID
+  );
 
   for (const segmentIndex of segmentsHidden) {
     if (!cachedConfig.segmentsHidden.has(segmentIndex)) {
@@ -79,9 +83,8 @@ function updateContourSets(
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const segmentSpecificConfig = getSegmentSpecificConfig(
-        contourRepresentation,
-        geometryId,
+      const segmentSpecificConfig = getSegmentIndexConfig(
+        segmentationRepresentationUID,
         segmentIndex
       );
       acc.segmentSpecificConfigs[segmentIndex] = segmentSpecificConfig ?? {};
@@ -115,12 +118,13 @@ function updateContourSets(
 function addContourSetsToElement(
   viewport: StackViewport | Types.IVolumeViewport,
   geometryIds: string[],
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  contourRepresentationConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, segmentationId, segmentsHidden } =
+  const { segmentationRepresentationUID, segmentationId } =
     contourRepresentation;
+
   const segmentSpecificMap = new Map();
+
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
 
@@ -135,9 +139,8 @@ function addContourSetsToElement(
 
     validateGeometry(geometry);
 
-    const segmentSpecificConfig = getSegmentSpecificConfig(
-      contourRepresentation,
-      geometryId,
+    const segmentSpecificConfig = getSegmentIndexConfig(
+      segmentationRepresentationUID,
       segmentIndex
     );
 
@@ -189,8 +192,16 @@ function addContourSetsToElement(
     }
   });
 
-  const outlineWidthActive =
-    contourRepresentationConfig.representations.CONTOUR.outlineWidthActive;
+  const baseConfig = contourRepresentation.config?.allSegments.CONTOUR;
+  const globalContourConfig = getGlobalConfig().representations.CONTOUR;
+
+  const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
+  const outlineWidthActive = newContourConfig.outlineWidthActive;
+
+  const segmentsHidden = getSegmentsHidden(
+    viewport.id,
+    segmentationRepresentationUID
+  );
 
   setConfigCache(
     segmentationRepresentationUID,

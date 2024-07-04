@@ -2,7 +2,7 @@ import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   getSegmentation,
-  getSegmentationIdRepresentations,
+  getRepresentationsBySegmentationId,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
@@ -25,7 +25,7 @@ type Options = {
  * @param options.searchRadius - The search radius to use.
  * @returns The segment index at the labelmap border, or undefined if not found.
  */
-export function getSegmentAtLabelmapBorder(
+export function getSegmentIndexAtLabelmapBorder(
   segmentationId: string,
   worldPoint: Types.Point3,
   { viewport, searchRadius }: Options
@@ -74,7 +74,7 @@ export function getSegmentAtLabelmapBorder(
   // find the first segmentationRepresentationUID for the segmentationId, since
   // that is what we use as actorUID in the viewport
 
-  const segmentationRepresentations = getSegmentationIdRepresentations(
+  const segmentationRepresentations = getRepresentationsBySegmentationId(
     segmentation.segmentationId
   );
 

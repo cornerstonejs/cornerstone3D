@@ -36,7 +36,6 @@ const { ViewportType } = csEnums;
 
 const {
     Enums: csToolsEnums,
-    SegmentationDisplayTool,
     ToolGroupManager,
     segmentation: csToolsSegmentation,
     utilities: csToolsUtilities
@@ -297,16 +296,9 @@ function exportSegmentation() {
 
     // Get active segmentation
     const activeSegmentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
-            toolGroupId
-        );
-    // Get active segmentation representation
-    const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-        );
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation();
 
-    if (!activeSegmentation || !activeSegmentationRepresentation) {
+    if (!activeSegmentation) {
         return;
     }
 
@@ -350,7 +342,7 @@ function removeActiveSegmentation() {
         );
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
             toolGroupId
         );
 
@@ -359,7 +351,7 @@ function removeActiveSegmentation() {
     }
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId, [
         activeSegmentationRepresentation.segmentationRepresentationUID
     ]);
 
@@ -500,11 +492,11 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationIdRepresentations(
+            csToolsSegmentation.state.getRepresentationsBySegmentationId(
                 segmentationId
             );
 
-        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.setActiveRepresentation(
             toolGroupId,
             segmentationRepresentations[0].segmentationRepresentationUID
         );
@@ -539,7 +531,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId);
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();
@@ -593,8 +585,8 @@ async function addSegmentationsToState(segmentationId: string) {
         }
     ]);
 
-    // Add the segmentation representation to the toolgroup
-    await csToolsSegmentation.addSegmentationRepresentations(toolGroupId, [
+    // Add the segmentation representation to the viewport
+    await csToolsSegmentation.addRepresentations(viewportIds[0], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap
@@ -679,8 +671,6 @@ async function run() {
     toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
     //
-    cornerstoneTools.addTool(SegmentationDisplayTool);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
 
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);

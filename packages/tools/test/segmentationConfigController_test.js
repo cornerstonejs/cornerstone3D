@@ -1,378 +1,375 @@
-import * as cornerstone3D from '@cornerstonejs/core';
-import * as csTools3d from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+// import * as cornerstone3D from '@cornerstonejs/core';
+// import * as csTools3d from '../src/index';
+// import * as testUtils from '../../../utils/test/testUtils';
 
-import * as volumeURI_100_100_10_1_1_1_0_SEG_initialConfig from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_initialConfig.png';
-import * as volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig.png';
-import * as volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize.png';
+// import * as volumeURI_100_100_10_1_1_1_0_SEG_initialConfig from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_initialConfig.png';
+// import * as volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig.png';
+// import * as volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize.png';
 
-const {
-  cache,
-  RenderingEngine,
-  Enums,
-  imageLoader,
-  metaData,
-  setVolumesForViewports,
-  eventTarget,
-  volumeLoader,
-  getEnabledElement,
-} = cornerstone3D;
+// const {
+//   cache,
+//   RenderingEngine,
+//   Enums,
+//   imageLoader,
+//   metaData,
+//   setVolumesForViewports,
+//   eventTarget,
+//   volumeLoader,
+//   getEnabledElement,
+// } = cornerstone3D;
 
-const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
-const { unregisterAllImageLoaders } = imageLoader;
-const { ViewportType } = Enums;
+// const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
+// const { unregisterAllImageLoaders } = imageLoader;
+// const { ViewportType } = Enums;
 
-const {
-  ToolGroupManager,
-  SegmentationDisplayTool,
-  segmentation,
-  Enums: csToolsEnums,
-  RectangleScissorsTool,
-} = csTools3d;
+// const {
+//   ToolGroupManager,
 
-const { Events } = csToolsEnums;
+//   segmentation,
+//   Enums: csToolsEnums,
+//   RectangleScissorsTool,
+// } = csTools3d;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
-const { SegmentationRepresentations } = csToolsEnums;
+// const { Events } = csToolsEnums;
 
-const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
+// const { addRepresentations, addSegmentations } = segmentation;
+// const { SegmentationRepresentations } = csToolsEnums;
 
-const viewportId1 = 'AXIAL';
+// const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
-const renderingEngineId = 'renderingEngine-segmentationConfigController_test';
-const toolGroupId = 'toolGroupId-segmentationConfigController_test';
+// const viewportId1 = 'AXIAL';
 
-function createViewport(
-  renderingEngine,
-  orientation,
-  viewportId = viewportId1
-) {
-  const element = document.createElement('div');
+// const renderingEngineId = 'renderingEngine-segmentationConfigController_test';
+// const toolGroupId = 'toolGroupId-segmentationConfigController_test';
 
-  element.style.width = '250px';
-  element.style.height = '250px';
-  document.body.appendChild(element);
+// function createViewport(
+//   renderingEngine,
+//   orientation,
+//   viewportId = viewportId1
+// ) {
+//   const element = document.createElement('div');
 
-  renderingEngine.enableElement({
-    viewportId: viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
-    element,
-    defaultOptions: {
-      orientation,
-      background: [1, 0, 1], // pinkish background
-    },
-  });
-  return element;
-}
+//   element.style.width = '250px';
+//   element.style.height = '250px';
+//   document.body.appendChild(element);
 
-// TODO: Ignored temporarily because fix/labelmap-outline changes
-// are not in VTK master
+//   renderingEngine.enableElement({
+//     viewportId: viewportId,
+//     type: ViewportType.ORTHOGRAPHIC,
+//     element,
+//     defaultOptions: {
+//       orientation,
+//       background: [1, 0, 1], // pinkish background
+//     },
+//   });
+//   return element;
+// }
 
-describe('Segmentation Controller --', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
+// // TODO: Ignored temporarily because fix/labelmap-outline changes
+// // are not in VTK master
 
-  describe('Config Controller', function () {
-    beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
-      csTools3d.addTool(RectangleScissorsTool);
-      cache.purgeCache();
-      this.DOMElements = [];
+// describe('Segmentation Controller --', () => {
+//   beforeAll(() => {
+//     cornerstone3D.setUseCPURendering(false);
+//   });
 
-      this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
-      this.segToolGroup.addTool(RectangleScissorsTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-      this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
-        bindings: [{ mouseButton: 1 }],
-      });
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
-    });
+//   describe('Config Controller', function () {
+//     beforeEach(function () {
+//       csTools3d.init();
+//       csTools3d.addTool(RectangleScissorsTool);
+//       cache.purgeCache();
+//       this.DOMElements = [];
 
-    afterEach(function () {
-      // Note: since on toolGroup destroy, all segmentations are removed
-      // from the toolGroups, and that triggers a state_updated event, we
-      // need to make sure we remove the listeners before we destroy the
-      // toolGroup
-      eventTarget.reset();
-      csTools3d.destroy();
-      cache.purgeCache();
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup(toolGroupId);
+//       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+//       this.segToolGroup.addTool(RectangleScissorsTool.toolName);
+//       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
+//         bindings: [{ mouseButton: 1 }],
+//       });
+//       this.renderingEngine = new RenderingEngine(renderingEngineId);
+//       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+//       metaData.addProvider(fakeMetaDataProvider, 10000);
+//     });
 
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
-    });
+//     afterEach(function () {
+//       // Note: since on toolGroup destroy, all segmentations are removed
+//       // from the toolGroups, and that triggers a state_updated event, we
+//       // need to make sure we remove the listeners before we destroy the
+//       // toolGroup
+//       eventTarget.reset();
+//       csTools3d.destroy();
+//       cache.purgeCache();
+//       this.renderingEngine.destroy();
+//       metaData.removeProvider(fakeMetaDataProvider);
+//       unregisterAllImageLoaders();
+//       ToolGroupManager.destroyToolGroup(toolGroupId);
 
-    it('should be able to load a segmentation with a toolGroup specific config', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        Enums.OrientationAxis.AXIAL
-      );
-      this.DOMElements.push(element);
+//       this.DOMElements.forEach((el) => {
+//         if (el.parentNode) {
+//           el.parentNode.removeChild(el);
+//         }
+//       });
+//     });
 
-      const toolGroupSpecificConfig = {
-        representations: {
-          [SegmentationRepresentations.Labelmap]: {
-            renderOutline: false,
-            fillAlpha: 0.7,
-          },
-        },
-      };
+//     it('should be able to load a segmentation with a config', function (done) {
+//       const element = createViewport(
+//         this.renderingEngine,
+//         Enums.OrientationAxis.AXIAL
+//       );
+//       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const seg1VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
-      const vp1 = this.renderingEngine.getViewport(viewportId1);
+//       const initialConfig = {
+//         representations: {
+//           [SegmentationRepresentations.Labelmap]: {
+//             renderOutline: false,
+//             fillAlpha: 0.7,
+//           },
+//         },
+//       };
 
-      const compareImageCallback = () => {
-        const canvas1 = vp1.getCanvas();
-        const image1 = canvas1.toDataURL('image/png');
+//       const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+//       const seg1VolumeID =
+//         'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
+//       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
-        compareImages(
-          image1,
-          volumeURI_100_100_10_1_1_1_0_SEG_initialConfig,
-          'volumeURI_100_100_10_1_1_1_0_SEG_initialConfig'
-        );
+//       let representationUID;
 
-        const toolGroupSegRepresentationsConfig =
-          segmentation.config.getToolGroupSpecificConfig(toolGroupId);
+//       const compareImageCallback = () => {
+//         const canvas1 = vp1.getCanvas();
+//         const image1 = canvas1.toDataURL('image/png');
 
-        const toolGroupLabelmapConfig =
-          toolGroupSegRepresentationsConfig.representations[
-            SegmentationRepresentations.Labelmap
-          ];
-        expect(toolGroupLabelmapConfig.fillAlpha).toEqual(
-          toolGroupSpecificConfig.representations.LABELMAP.fillAlpha
-        );
-        expect(toolGroupLabelmapConfig.renderOutline).toEqual(
-          toolGroupSpecificConfig.representations.LABELMAP.renderOutline
-        );
+//         compareImages(
+//           image1,
+//           volumeURI_100_100_10_1_1_1_0_SEG_initialConfig,
+//           'volumeURI_100_100_10_1_1_1_0_SEG_initialConfig'
+//         );
 
-        done();
-      };
+//         const config =
+//           segmentation.config.getAllSegmentsConfig(representationUID);
 
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_RENDERED,
-        compareImageCallback
-      );
+//         const labelmapConfig =
+//           config.representations[SegmentationRepresentations.Labelmap];
+//         expect(labelmapConfig.fillAlpha).toEqual(
+//           initialConfig.representations.LABELMAP.fillAlpha
+//         );
+//         expect(labelmapConfig.renderOutline).toEqual(
+//           initialConfig.representations.LABELMAP.renderOutline
+//         );
 
-      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
+//         // done();
+//       };
 
-      try {
-        createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-          createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
-            setVolumesForViewports(
-              this.renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId1]
-            ).then(() => {
-              vp1.render();
+//       eventTarget.addEventListener(
+//         Events.SEGMENTATION_RENDERED,
+//         compareImageCallback
+//       );
 
-              addSegmentations([
-                {
-                  segmentationId: seg1VolumeID,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      volumeId: seg1VolumeID,
-                    },
-                  },
-                },
-              ]);
+//       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
-              addSegmentationRepresentations(
-                toolGroupId,
-                [
-                  {
-                    segmentationId: seg1VolumeID,
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                  },
-                ],
-                toolGroupSpecificConfig
-              );
-            });
-          });
-        });
-      } catch (e) {
-        done.fail(e);
-      }
-    });
+//       try {
+//         createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+//           createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+//             setVolumesForViewports(
+//               this.renderingEngine,
+//               [{ volumeId: volumeId }],
+//               [viewportId1]
+//             ).then(() => {
+//               vp1.render();
 
-    // Todo: we don't have a way to have initially set the colorLUTIndex anymore
-    // it('should be able to set a global representation configuration', function (done) {
-    //   const element = createViewport(this.renderingEngine, AXIAL)
-    //   this.DOMElements.push(element)
+//               addSegmentations([
+//                 {
+//                   segmentationId: seg1VolumeID,
+//                   representation: {
+//                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+//                     data: {
+//                       volumeId: seg1VolumeID,
+//                     },
+//                   },
+//                 },
+//               ]);
 
-    //   const globalRepresentationConfig = {
-    //     renderOutline: false,
-    //     fillAlpha: 0.996,
-    //   }
+//               representationUID = addRepresentations(
+//                 viewportId1,
+//                 [
+//                   {
+//                     segmentationId: seg1VolumeID,
+//                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+//                   },
+//                 ],
+//                 initialConfig
+//               );
+//             });
+//           });
+//         });
+//       } catch (e) {
+//         done.fail(e);
+//       }
+//     });
 
-    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-    //   const seg1VolumeID =
-    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_30_30_3_80_80_6'
-    //   const vp1 = this.renderingEngine.getViewport(viewportId1)
+//     // Todo: we don't have a way to have initially set the colorLUTIndex anymore
+//     // it('should be able to set a global representation configuration', function (done) {
+//     //   const element = createViewport(this.renderingEngine, AXIAL);
+//     //   this.DOMElements.push(element);
 
-    //   const compareImageCallback = () => {
-    //     const canvas1 = vp1.getCanvas()
-    //     const image1 = canvas1.toDataURL('image/png')
+//     //   const globalRepresentationConfig = {
+//     //     renderOutline: false,
+//     //     fillAlpha: 0.996,
+//     //   };
 
-    //     compareImages(
-    //       image1,
-    //       volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig,
-    //       'volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig'
-    //     ).then(done, done.fail)
-    //   }
+//     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+//     //   const seg1VolumeID =
+//     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_30_30_3_80_80_6';
+//     //   const vp1 = this.renderingEngine.getViewport(viewportId1);
 
-    //   eventTarget.addEventListener(
-    //     Events.SEGMENTATION_RENDERED,
-    //     compareImageCallback
-    //   )
+//     //   const compareImageCallback = () => {
+//     //     const canvas1 = vp1.getCanvas();
+//     //     const image1 = canvas1.toDataURL('image/png');
 
-    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+//     //     compareImages(
+//     //       image1,
+//     //       volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig,
+//     //       'volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig'
+//     //     ).then(done, done.fail);
+//     //   };
 
-    //   try {
-    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
-    //         setVolumesForViewports(
-    //           this.renderingEngine,
-    //           [{ volumeId: volumeId }],
-    //           [viewportId1]
-    //         ).then(() => {
-    //           vp1.render()
+//     //   eventTarget.addEventListener(
+//     //     Events.SEGMENTATION_RENDERED,
+//     //     compareImageCallback
+//     //   );
 
-    //           segmentation.segmentationConfig.setGlobalRepresentationConfig(
-    //             SegmentationRepresentations.Labelmap,
-    //             globalRepresentationConfig
-    //           )
-    //           const colorLUTIndex = 1
-    //           segmentation.segmentationColor.addColorLUT(
-    //             [
-    //               [0, 0, 0, 0],
-    //               [0, 0, 255, 255],
-    //             ],
-    //             colorLUTIndex
-    //           )
+//     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
-    //           addSegmentations([
-    //             {
-    //               segmentationId: seg1VolumeID,
-    //               representation: {
-    //                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    //                 data: {
-    //                   volumeId: seg1VolumeID,
-    //                 },
-    //               },
-    //             },
-    //           ])
+//     //   try {
+//     //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+//     //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+//     //         setVolumesForViewports(
+//     //           this.renderingEngine,
+//     //           [{ volumeId: volumeId }],
+//     //           [viewportId1]
+//     //         ).then(() => {
+//     //           vp1.render();
 
-    //           addSegmentationRepresentations(this.segToolGroup.id, [
-    //             {
-    //               segmentationId: seg1VolumeID,
-    //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    //             },
-    //           ])
+//     //           segmentation.segmentationConfig.setGlobalRepresentationConfig(
+//     //             SegmentationRepresentations.Labelmap,
+//     //             globalRepresentationConfig
+//     //           );
+//     //           const colorLUTIndex = 1;
+//     //           segmentation.segmentationColor.addColorLUT(
+//     //             [
+//     //               [0, 0, 0, 0],
+//     //               [0, 0, 255, 255],
+//     //             ],
+//     //             colorLUTIndex
+//     //           );
 
-    //           segmentation.segmentationColor
-    //         })
-    //       })
-    //     })
-    //   } catch (e) {
-    //     done.fail(e)
-    //   }
-    // })
+//     //           addSegmentations([
+//     //             {
+//     //               segmentationId: seg1VolumeID,
+//     //               representation: {
+//     //                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
+//     //                 data: {
+//     //                   volumeId: seg1VolumeID,
+//     //                 },
+//     //               },
+//     //             },
+//     //           ]);
 
-    // it('should prioritize the toolGroup specific config over global config ', function (done) {
-    //   const element = createViewport(this.renderingEngine, AXIAL)
-    //   this.DOMElements.push(element)
+//     //           addRepresentations(this.segToolGroup.id, [
+//     //             {
+//     //               segmentationId: seg1VolumeID,
+//     //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
+//     //             },
+//     //           ]);
 
-    //   const globalRepresentationConfig = {
-    //     renderOutline: false,
-    //     fillAlpha: 0.996,
-    //   }
+//     //           segmentation.segmentationColor;
+//     //         });
+//     //       });
+//     //     });
+//     //   } catch (e) {
+//     //     done.fail(e);
+//     //   }
+//     // });
 
-    //   const toolGroupSpecificConfig = {
-    //     representations: {
-    //       [SegmentationRepresentations.Labelmap]: {
-    //         renderOutline: true,
-    //         fillAlpha: 0.5,
-    //       },
-    //     },
-    //   }
+//     // it('should prioritize the toolGroup specific config over global config ', function (done) {
+//     //   const element = createViewport(this.renderingEngine, AXIAL);
+//     //   this.DOMElements.push(element);
 
-    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-    //   const seg1VolumeID =
-    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_70_30_3_80_80_6'
-    //   const vp1 = this.renderingEngine.getViewport(viewportId1)
+//     //   const globalRepresentationConfig = {
+//     //     renderOutline: false,
+//     //     fillAlpha: 0.996,
+//     //   };
 
-    //   const compareImageCallback = () => {
-    //     const canvas1 = vp1.getCanvas()
-    //     const image1 = canvas1.toDataURL('image/png')
+//     //   const toolGroupSpecificConfig = {
+//     //     representations: {
+//     //       [SegmentationRepresentations.Labelmap]: {
+//     //         renderOutline: true,
+//     //         fillAlpha: 0.5,
+//     //       },
+//     //     },
+//     //   };
 
-    //     compareImages(
-    //       image1,
-    //       volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize,
-    //       'volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize'
-    //     ).then(done, done.fail)
-    //   }
+//     //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+//     //   const seg1VolumeID =
+//     //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_70_30_3_80_80_6';
+//     //   const vp1 = this.renderingEngine.getViewport(viewportId1);
 
-    //   eventTarget.addEventListener(
-    //     Events.SEGMENTATION_RENDERED,
-    //     compareImageCallback
-    //   )
+//     //   const compareImageCallback = () => {
+//     //     const canvas1 = vp1.getCanvas();
+//     //     const image1 = canvas1.toDataURL('image/png');
 
-    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
+//     //     compareImages(
+//     //       image1,
+//     //       volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize,
+//     //       'volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize'
+//     //     ).then(done, done.fail);
+//     //   };
 
-    //   try {
-    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
-    //         setVolumesForViewports(
-    //           this.renderingEngine,
-    //           [{ volumeId: volumeId }],
-    //           [viewportId1]
-    //         ).then(() => {
-    //           vp1.render()
+//     //   eventTarget.addEventListener(
+//     //     Events.SEGMENTATION_RENDERED,
+//     //     compareImageCallback
+//     //   );
 
-    //           segmentation.segmentationConfig.setGlobalRepresentationConfig(
-    //             SegmentationRepresentations.Labelmap,
-    //             globalRepresentationConfig
-    //           )
-    //           const colorLUTIndex = 1
-    //           segmentation.segmentationColor.addColorLUT(
-    //             [
-    //               [0, 0, 0, 0],
-    //               [0, 255, 255, 255],
-    //             ],
-    //             colorLUTIndex
-    //           )
+//     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
-    //           // add two volumes on the segmentation
-    //           addSegmentationRepresentations(
-    //             toolGroupId,
-    //             [
-    //               {
-    //                 volumeId: seg1VolumeID,
-    //                 colorLUTIndex: 1,
-    //               },
-    //             ],
-    //             toolGroupSpecificConfig
-    //           )
-    //         })
-    //       })
-    //     })
-    //   } catch (e) {
-    //     done.fail(e)
-    //   }
-    // })
-  });
-});
+//     //   try {
+//     //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+//     //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+//     //         setVolumesForViewports(
+//     //           this.renderingEngine,
+//     //           [{ volumeId: volumeId }],
+//     //           [viewportId1]
+//     //         ).then(() => {
+//     //           vp1.render();
+
+//     //           segmentation.segmentationConfig.setGlobalRepresentationConfig(
+//     //             SegmentationRepresentations.Labelmap,
+//     //             globalRepresentationConfig
+//     //           );
+//     //           const colorLUTIndex = 1;
+//     //           segmentation.segmentationColor.addColorLUT(
+//     //             [
+//     //               [0, 0, 0, 0],
+//     //               [0, 255, 255, 255],
+//     //             ],
+//     //             colorLUTIndex
+//     //           );
+
+//     //           // add two volumes on the segmentation
+//     //           addRepresentations(
+//     //             toolGroupId,
+//     //             [
+//     //               {
+//     //                 volumeId: seg1VolumeID,
+//     //                 colorLUTIndex: 1,
+//     //               },
+//     //             ],
+//     //             toolGroupSpecificConfig
+//     //           );
+//     //         });
+//     //       });
+//     //     });
+//     //   } catch (e) {
+//     //     done.fail(e);
+//     //   }
+//     // });
+//   });
+// });

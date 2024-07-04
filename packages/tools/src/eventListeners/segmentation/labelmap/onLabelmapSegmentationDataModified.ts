@@ -1,8 +1,8 @@
 import {
   cache,
-  getEnabledElementByIds,
   utilities as csUtils,
   VolumeViewport,
+  getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -11,7 +11,6 @@ import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getToolGroup } from '../../../store/ToolGroupManager';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -24,9 +23,6 @@ const onLabelmapSegmentationDataModified = function (
   const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId);
 
-  const toolGroupIds =
-    SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
-
   const labelmapRepresentationData = representationData[type];
 
   if ('volumeId' in labelmapRepresentationData) {
@@ -38,10 +34,13 @@ const onLabelmapSegmentationDataModified = function (
     });
   }
 
+  const viewportIds =
+    SegmentationState.getViewportIdsWithSegmentationId(segmentationId);
+
   if ('imageIdReferenceMap' in labelmapRepresentationData) {
     // get the stack from cache, we need the imageData to be updated to GPU
     performStackLabelmapUpdate({
-      toolGroupIds,
+      viewportIds,
       segmentationId,
       representationData,
       type,
@@ -83,61 +82,59 @@ function performVolumeLabelmapUpdate({
 }
 
 function performStackLabelmapUpdate({
-  toolGroupIds,
+  viewportIds,
   segmentationId,
   representationData,
   type,
 }) {
-  toolGroupIds.forEach((toolGroupId) => {
-    const toolGroupSegmentationRepresentations =
-      SegmentationState.getSegmentationRepresentations(toolGroupId);
+  viewportIds.forEach((viewportId) => {
+    const viewportSegReps =
+      SegmentationState.getRepresentationsForViewport(viewportId);
 
-    const toolGroup = getToolGroup(toolGroupId);
-    const viewportsInfo = toolGroup.getViewportsInfo();
-
-    toolGroupSegmentationRepresentations.forEach((representation) => {
+    viewportSegReps.forEach((representation) => {
       if (representation.segmentationId !== segmentationId) {
         return;
       }
 
-      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-        const viewport = getEnabledElementByIds(
-          viewportId,
-          renderingEngineId
-        ).viewport;
+      const enabledElement = getEnabledElementByViewportId(viewportId);
 
-        if (viewport instanceof VolumeViewport) {
-          return;
-        }
+      if (!enabledElement) {
+        return;
+      }
 
-        const actorEntry = viewport.getActor(
-          representation.segmentationRepresentationUID
-        );
+      const { viewport } = enabledElement;
 
-        if (!actorEntry) {
-          return;
-        }
+      if (viewport instanceof VolumeViewport) {
+        return;
+      }
 
-        const currentImageId = viewport.getCurrentImageId();
+      const actorEntry = viewport.getActor(
+        representation.segmentationRepresentationUID
+      );
 
-        const segImageData = actorEntry.actor.getMapper().getInputData();
+      if (!actorEntry) {
+        return;
+      }
 
-        const { imageIdReferenceMap } = representationData[
-          type
-        ] as LabelmapSegmentationDataStack;
+      const currentImageId = viewport.getCurrentImageId();
 
-        const currentSegmentationImageId =
-          imageIdReferenceMap.get(currentImageId);
+      const segImageData = actorEntry.actor.getMapper().getInputData();
 
-        const segmentationImage = cache.getImage(currentSegmentationImageId);
-        segImageData.modified();
+      const { imageIdReferenceMap } = representationData[
+        type
+      ] as LabelmapSegmentationDataStack;
 
-        // update the cache with the new image data
-        csUtils.updateVTKImageDataWithCornerstoneImage(
-          segImageData,
-          segmentationImage
-        );
-      });
+      const currentSegmentationImageId =
+        imageIdReferenceMap.get(currentImageId);
+
+      const segmentationImage = cache.getImage(currentSegmentationImageId);
+      segImageData.modified();
+
+      // update the cache with the new image data
+      csUtils.updateVTKImageDataWithCornerstoneImage(
+        segImageData,
+        segmentationImage
+      );
     });
   });
 }
