@@ -204,7 +204,7 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
+  // // Add the segmentation representation to the viewport
   await segmentation.addRepresentations(toolGroupId1, [
     {
       segmentationId,

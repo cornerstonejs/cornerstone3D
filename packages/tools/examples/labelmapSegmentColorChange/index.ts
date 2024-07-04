@@ -70,8 +70,8 @@ instructions.innerText = `
   In this example we demonstrate how to change a color for each
   segmentation representation in two different viewports. Notice that
   here we are depicting the same segmentation in two different viewports
-  on two different toolgroups. This is to demonstrate that the color
-  change is specific to the toolgroup and viewport.
+  on two different viewports. This is to demonstrate that the color
+  change is specific to the viewport and viewport.
 `;
 
 let segRep1;
@@ -89,24 +89,14 @@ const getRandomRGBA = () => [
 addButtonToToolbar({
   title: 'change segment 1 color left viewport',
   onClick: () => {
-    segmentation.config.color.setColorForSegmentIndex(
-      toolGroupId1,
-      segRep1,
-      1,
-      [...(getRandomRGBA() as cornerstoneTools.Types.Color)]
-    );
+    segmentation.config.color.setSegmentIndexColor(segRep1, 1, getRandomRGBA());
   },
 });
 
 addButtonToToolbar({
   title: 'change segment 2 color right viewport',
   onClick: () => {
-    segmentation.config.color.setColorForSegmentIndex(
-      toolGroupId2,
-      segRep2,
-      2,
-      [...(getRandomRGBA() as cornerstoneTools.Types.Color)]
-    );
+    segmentation.config.color.setSegmentIndexColor(segRep2, 2, getRandomRGBA());
   },
 });
 
@@ -215,7 +205,7 @@ async function run() {
   );
 
   // // Add the segmentation representations to toolgroup1
-  [segRep1] = await segmentation.addRepresentations(toolGroupId1, [
+  [segRep1] = await segmentation.addRepresentations(viewportId1, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -229,7 +219,7 @@ async function run() {
     },
   ]);
 
-  [segRep2] = await segmentation.addRepresentations(toolGroupId2, [
+  [segRep2] = await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

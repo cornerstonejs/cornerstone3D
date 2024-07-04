@@ -1,5 +1,5 @@
 import { Enums, Types, geometryLoader } from '@cornerstonejs/core';
-import { getColorForSegmentIndex } from '../../config/segmentationColor';
+import { getSegmentIndexColor } from '../../config/segmentationColor';
 import { getRepresentation, getSegmentation } from '../../segmentationState';
 import { RawSurfacesData } from './surfaceComputationStrategies';
 import { PolySegConversionOptions } from '../../../../types';
@@ -38,7 +38,7 @@ export async function createAndCacheSurfacesFromRaw(
 
     // Get the color either from the segmentation representation or randomly generated
     const color = segmentationRepresentation;
-    getColorForSegmentIndex(
+    getSegmentIndexColor(
       segmentationRepresentation.segmentationRepresentationUID,
       segmentIndex
     ).slice(0, 3);

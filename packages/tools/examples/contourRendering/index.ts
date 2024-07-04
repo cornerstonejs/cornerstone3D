@@ -179,7 +179,7 @@ async function run() {
   // Set volumes on the viewports
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
 
-  // // Add the segmentation representation to the toolgroup
+  // // Add the segmentation representation to the viewport
   await segmentation.addRepresentations(viewportId1, [
     {
       segmentationId,

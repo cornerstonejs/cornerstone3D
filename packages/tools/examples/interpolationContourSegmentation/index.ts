@@ -416,9 +416,9 @@ async function run() {
         },
       },
     ]);
-    // Create a segmentation representation associated to the toolGroupId
-    // Add the segmentation representation to the toolgroup
-    await segmentation.addRepresentations(toolGroupIds[index++], [
+    // Create a segmentation representation associated to the viewportId
+    // Add the segmentation representation to the viewport
+    await segmentation.addRepresentations(viewportIds[index++], [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,

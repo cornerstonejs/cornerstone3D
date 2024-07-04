@@ -273,8 +273,8 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  segmentation.addRepresentations(volumeSegLabelmapToolGroupId, [
+  // Add the segmentation representation to the viewport
+  segmentation.addRepresentations(viewportId2, [
     {
       segmentationId: volumeSegLabelmapId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -290,8 +290,8 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addRepresentations(volumeSegContourToolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId4, [
     {
       segmentationId: volumeSegContourId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
@@ -348,8 +348,8 @@ async function _handleStackViewports(stackImageIds: string[]) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addRepresentations(stackSegLabelmapToolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
     {
       segmentationId: stackSegLabelmapId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -365,8 +365,8 @@ async function _handleStackViewports(stackImageIds: string[]) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addRepresentations(stackSegContourToolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId3, [
     {
       segmentationId: stackSegContourId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

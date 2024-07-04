@@ -74,7 +74,7 @@ Object.assign(viewportsContainer.style, {
 });
 
 content.appendChild(viewportsContainer);
-
+let viewportId;
 const createViewportElement = (id: string) => {
   const element = document.createElement('div');
 
@@ -116,7 +116,7 @@ addToggleButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState();
 
     segmentation.config.visibility.setRepresentationVisibility(
-      toolGroupId,
+      viewportId,
       segmentationRepresentationUID,
       !toggle
     );
@@ -132,7 +132,7 @@ addButtonToToolbar({
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     segmentation.config.visibility.setSegmentIndexVisibility(
-      toolGroupId,
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -247,13 +247,11 @@ function getSegmentsVisibilityState() {
 }
 
 function getSegmentationConfig(
-  toolGroupdId: string
+  toolGroupId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getRepresentationConfig(
-      toolGroupdId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
+    {};
 
   // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
@@ -269,8 +267,7 @@ function updateSegmentationConfig(config) {
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationConfig(
-    toolGroupId,
+  segmentation.config.setAllSegmentsConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -453,9 +450,9 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
+  // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs = await segmentation.addRepresentations(
-    toolGroupId,
+    viewportId,
     [
       {
         segmentationId,

@@ -120,11 +120,11 @@ function getSegmentsVisibilityState() {
 }
 
 function getSegmentationConfig(
-  toolGroupdId: string
+  toolGroupId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
     segmentation.config.getRepresentationConfig(
-      toolGroupdId,
+      toolGroupId,
       segmentationRepresentationUID
     ) ?? {};
 
@@ -176,7 +176,7 @@ addToggleButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState();
 
     segmentation.config.visibility.setRepresentationVisibility(
-      toolGroupId,
+      viewportId,
       segmentationRepresentationUID,
       !toggle
     );
@@ -193,7 +193,7 @@ addButtonToToolbar({
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     segmentation.config.visibility.setSegmentIndexVisibility(
-      toolGroupId,
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -299,7 +299,7 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
+  // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs = await segmentation.addRepresentations(
     toolGroupId,
     [

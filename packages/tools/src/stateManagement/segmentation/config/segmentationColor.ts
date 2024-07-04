@@ -67,7 +67,7 @@ function setColorLUT(
  * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.
  */
-function getColorForSegmentIndex(
+function getSegmentIndexColor(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): Types.Color {
@@ -95,13 +95,13 @@ function getColorForSegmentIndex(
   return colorValue;
 }
 
-function setColorForSegmentIndex(
+function setSegmentIndexColor(
   segmentationRepresentationUID: string,
   segmentIndex: number,
   color: Types.Color
 ): void {
   // Get the reference to the color in the colorLUT.
-  const colorReference = getColorForSegmentIndex(
+  const colorReference = getSegmentIndexColor(
     segmentationRepresentationUID,
     segmentIndex
   );
@@ -114,9 +114,4 @@ function setColorForSegmentIndex(
   triggerSegmentationRepresentationModified(segmentationRepresentationUID);
 }
 
-export {
-  getColorForSegmentIndex,
-  addColorLUT,
-  setColorLUT,
-  setColorForSegmentIndex,
-};
+export { getSegmentIndexColor, addColorLUT, setColorLUT, setSegmentIndexColor };

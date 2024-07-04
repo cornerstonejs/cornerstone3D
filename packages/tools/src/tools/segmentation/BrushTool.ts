@@ -438,7 +438,7 @@ class BrushTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
+    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
       segmentationRepresentationUID,
       segmentIndex
     );

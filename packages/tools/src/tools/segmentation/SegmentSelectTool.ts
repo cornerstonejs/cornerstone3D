@@ -88,7 +88,7 @@ class SegmentSelectTool extends BaseTool {
 
     const { viewport } = enabledElement;
 
-    const activeSegmentationReps = getActiveRepresentation(this.toolGroupId);
+    const activeSegmentationReps = getActiveRepresentation(viewport.id);
 
     if (!activeSegmentationReps) {
       return;

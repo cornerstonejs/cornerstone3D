@@ -347,7 +347,7 @@ async function _startFromVolume(
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the viewport
   await segmentation.addRepresentations(volumeToolGroupId, [
     {
       segmentationId,
@@ -419,7 +419,7 @@ async function _startFromStack(
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the viewport
   await segmentation.addRepresentations(stackToolGroupId, [
     {
       segmentationId,

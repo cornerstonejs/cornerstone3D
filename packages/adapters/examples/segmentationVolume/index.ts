@@ -326,7 +326,7 @@ async function exportSegmentation() {
     // Generate fake metadata as an example
     labelmapData.metadata = [];
     labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
-        const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
+        const color = csToolsSegmentation.config.color.getSegmentIndexColor(
             activeSegmentationRepresentation.segmentationRepresentationUID,
             segmentIndex
         );
@@ -552,8 +552,8 @@ async function addSegmentationsToState(segmentationId: string) {
         }
     ]);
 
-    // Add the segmentation representation to the toolgroup
-    await csToolsSegmentation.addRepresentations(toolGroupId, [
+    // Add the segmentation representation to the viewport
+    await csToolsSegmentation.addRepresentations(viewportIds[0], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap

@@ -56,10 +56,15 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const stackToolGroupId = 'STACK_TOOLGROUP_ID';
 const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
 const toolGroupIds = [stackToolGroupId, volumeToolGroupId];
-
+const numViewports = 3;
+const viewportIds = [
+  'CT_STACK_AXIAL',
+  'CT_VOLUME_CORONAL',
+  'CT_VOLUME_SAGITTAL',
+];
 let segmentationSequenceId = 1;
 const segmentationIds = [];
-const segmentationRepresentationUIDs = toolGroupIds.reduce((acc, cur) => {
+const segmentationRepresentationUIDs = viewportIds.reduce((acc, cur) => {
   acc[cur] = [];
   return acc;
 }, {});
@@ -85,12 +90,6 @@ const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const numViewports = 3;
-const viewportIds = [
-  'CT_STACK_AXIAL',
-  'CT_VOLUME_CORONAL',
-  'CT_VOLUME_SAGITTAL',
-];
 const elements = new Array(numViewports);
 
 for (let i = 0; i < numViewports; i++) {
@@ -158,7 +157,7 @@ function updateSegmentationDropdownOptions(activeSegmentationId) {
 
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getCurrentSegmentationConfig(stackToolGroupId);
+  const segmentationConfig = getCurrentSegmentationConfig(viewportIds[0]);
   const contourConfig = segmentationConfig.CONTOUR;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
@@ -222,18 +221,18 @@ async function addNewSegmentation() {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the viewport
 
-  for (let i = 0; i < toolGroupIds.length; i++) {
-    const toolGroupId = toolGroupIds[i];
-    const [uid] = await segmentation.addRepresentations(toolGroupId, [
+  for (let i = 0; i < viewportIds.length; i++) {
+    const viewportId = viewportIds[i];
+    const [uid] = await segmentation.addRepresentations(viewportId, [
       {
         segmentationId: newSegmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
     ]);
 
-    segmentationRepresentationUIDs[toolGroupId].push(uid);
+    segmentationRepresentationUIDs[viewportId].push(uid);
   }
 
   // Update global state
@@ -247,10 +246,10 @@ async function addNewSegmentation() {
 function updateActiveSegmentationState() {
   const index = segmentationIds.indexOf(activeSegmentationId);
 
-  toolGroupIds.forEach((toolGroupId) => {
-    const uid = segmentationRepresentationUIDs[toolGroupId][index];
+  viewportIds.forEach((viewportId) => {
+    const uid = segmentationRepresentationUIDs[viewportId][index];
 
-    segmentation.activeSegmentation.setActiveRepresentation(toolGroupId, uid);
+    segmentation.activeSegmentation.setActiveRepresentation(viewportId, uid);
   });
 
   segmentation.segmentIndex.setActiveSegmentIndex(
@@ -273,18 +272,16 @@ function getSegmentsVisibilityState(activeSegmentationId: string) {
 }
 
 function getCurrentSegmentationConfig(
-  toolGroupdId: string
+  viewportId: string
 ): cstTypes.RepresentationConfig {
   const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
 
   const segmentationRepresentationUID =
-    segmentationRepresentationUIDs[toolGroupdId][segmentationIndex];
+    segmentationRepresentationUIDs[viewportId][segmentationIndex];
 
   const segmentationConfig =
-    segmentation.config.getRepresentationConfig(
-      toolGroupdId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
+    {};
 
   // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
@@ -298,16 +295,15 @@ function getCurrentSegmentationConfig(
 function updateCurrentSegmentationConfig(config) {
   const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
 
-  toolGroupIds.forEach((toolGroupId) => {
+  viewportIds.forEach((viewportId) => {
     const segmentationRepresentationUID =
-      segmentationRepresentationUIDs[toolGroupId][segmentationIndex];
+      segmentationRepresentationUIDs[viewportId][segmentationIndex];
 
-    const segmentationConfig = getCurrentSegmentationConfig(toolGroupId);
+    const segmentationConfig = getCurrentSegmentationConfig(viewportId);
 
     Object.assign(segmentationConfig.CONTOUR, config);
 
-    segmentation.config.setSegmentationRepresentationConfig(
-      toolGroupId,
+    segmentation.config.setAllSegmentsConfig(
       segmentationRepresentationUID,
       segmentationConfig
     );
@@ -398,12 +394,12 @@ addToggleButtonToToolbar({
     const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
     const segmentsVisibility = getSegmentsVisibilityState(activeSegmentationId);
 
-    toolGroupIds.forEach((toolGroupId) => {
+    viewportIds.forEach((viewportId) => {
       const segmentationRepresentationUID =
-        segmentationRepresentationUIDs[toolGroupId][segmentationIndex];
+        segmentationRepresentationUIDs[viewportId][segmentationIndex];
 
       segmentation.config.visibility.setRepresentationVisibility(
-        toolGroupId,
+        viewportId,
         segmentationRepresentationUID,
         !toggle
       );
@@ -420,12 +416,12 @@ addButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState(activeSegmentationId);
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    toolGroupIds.forEach((toolGroupId) => {
+    viewportIds.forEach((viewportId) => {
       const representationUID =
-        segmentationRepresentationUIDs[toolGroupId][segmentationIndex];
+        segmentationRepresentationUIDs[viewportId][segmentationIndex];
 
       segmentation.config.visibility.setSegmentIndexVisibility(
-        toolGroupId,
+        viewportId,
         representationUID,
         activeSegmentIndex,
         visible

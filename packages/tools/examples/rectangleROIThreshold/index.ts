@@ -406,14 +406,26 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // // Add the segmentation representation to the toolgroup
+  // // Add the segmentation representation to the viewport
   const segmentationRepresentationByUIDs =
-    await segmentation.addRepresentations(toolGroupId, [
+    await segmentation.addRepresentations(viewportId1, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]);
+  await segmentation.addRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId3, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   segmentationRepresentationByUID = segmentationRepresentationByUIDs[0];
 

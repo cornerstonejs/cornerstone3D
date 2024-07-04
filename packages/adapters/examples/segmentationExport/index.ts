@@ -121,7 +121,7 @@ addButtonToToolbar({
         // Generate fake metadata as an example
         labelmapObj.metadata = [];
         labelmapObj.segmentsOnLabelmap.forEach(segmentIndex => {
-            const color = segmentation.config.color.getColorForSegmentIndex(
+            const color = segmentation.config.color.getSegmentIndexColor(
                 segUID,
                 segmentIndex
             );
@@ -295,7 +295,7 @@ async function run() {
         [viewportId1, viewportId2, viewportId3]
     );
 
-    // // Add the segmentation representation to the toolgroup
+    // // Add the segmentation representation to the viewport
     segmentationRepresentationUID = await segmentation.addRepresentations(
         toolGroupId,
         [

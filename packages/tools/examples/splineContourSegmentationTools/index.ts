@@ -90,7 +90,7 @@ createInfoSection(content, { ordered: true })
 
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
   const contourConfig = segmentationConfig.CONTOUR;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
@@ -132,14 +132,10 @@ function getSegmentsVisibilityState() {
   return segmentsVisibility;
 }
 
-function getSegmentationConfig(
-  toolGroupdId: string
-): cstTypes.RepresentationConfig {
+function getSegmentationConfig(): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getRepresentationConfig(
-      toolGroupdId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
+    {};
 
   // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
@@ -151,12 +147,11 @@ function getSegmentationConfig(
 }
 
 function updateSegmentationConfig(config) {
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationConfig(
-    toolGroupId,
+  segmentation.config.setAllSegmentsConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -224,7 +219,7 @@ addToggleButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState();
 
     segmentation.config.visibility.setRepresentationVisibility(
-      toolGroupId,
+      viewportId,
       segmentationRepresentationUID,
       !toggle
     );
@@ -240,7 +235,7 @@ addButtonToToolbar({
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     segmentation.config.visibility.setSegmentIndexVisibility(
-      toolGroupId,
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -417,9 +412,9 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
+  // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs = await segmentation.addRepresentations(
-    toolGroupId,
+    viewportId,
     [
       {
         segmentationId,
@@ -433,7 +428,7 @@ async function run() {
 
   // Make the segmentation created as the active one
   segmentation.activeSegmentation.setActiveRepresentation(
-    toolGroupId,
+    viewportId,
     segmentationRepresentationUID
   );
 
