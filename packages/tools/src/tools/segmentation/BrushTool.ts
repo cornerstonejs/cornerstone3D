@@ -88,6 +88,7 @@ class BrushTool extends BaseTool {
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
+    viewport: Types.IViewport;
   };
 
   private _previewData?: PreviewData = {
@@ -726,7 +727,8 @@ class BrushTool extends BaseTool {
     if (this._hoverData === undefined) {
       return;
     }
-    const { data, viewport } = this._hoverData.brushCursor;
+    const { data } = this._hoverData.brushCursor;
+    const { viewport } = this._hoverData;
 
     data.invalidated = true;
 

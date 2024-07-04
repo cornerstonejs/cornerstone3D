@@ -103,16 +103,15 @@ class RectangleScissorsTool extends BaseTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-    const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveRepresentation(toolGroupId);
+      activeSegmentation.getActiveRepresentation(viewport.id);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'

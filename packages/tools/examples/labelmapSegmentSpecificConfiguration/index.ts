@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
@@ -65,17 +64,13 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment1FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentationRepresentationSegmentsConfig(
-      toolGroupId,
-      segmentationRepresentationUID,
-      {
-        1: {
-          LABELMAP: {
-            fillAlpha: segment1FillAlpha,
-          },
+    segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
+      1: {
+        LABELMAP: {
+          fillAlpha: segment1FillAlpha,
         },
-      }
-    );
+      },
+    });
   },
 });
 
@@ -86,17 +81,13 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment2FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentationRepresentationSegmentsConfig(
-      toolGroupId,
-      segmentationRepresentationUID,
-      {
-        2: {
-          LABELMAP: {
-            fillAlpha: segment2FillAlpha,
-          },
+    segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
+      2: {
+        LABELMAP: {
+          fillAlpha: segment2FillAlpha,
         },
-      }
-    );
+      },
+    });
   },
 });
 
@@ -189,7 +180,7 @@ async function run() {
 
   // // Add the segmentation representations to the toolgroup
   [segmentationRepresentationUID] = await segmentation.addRepresentations(
-    toolGroupId,
+    viewportId,
     [
       {
         segmentationId: segmentationId1,

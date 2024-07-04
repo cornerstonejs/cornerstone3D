@@ -346,7 +346,7 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveRepresentation(toolGroupId);
+          segmentation.activeSegmentation.getActiveRepresentation(viewportId1);
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -518,7 +518,7 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveRepresentation(toolGroupId);
+          segmentation.activeSegmentation.getActiveRepresentation(viewportId1);
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
