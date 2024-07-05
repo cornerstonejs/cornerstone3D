@@ -267,18 +267,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const targetId = this.getTargetId(enabledElement.viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
-
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
-
     triggerAnnotationRenderForViewportIds(
       enabledElement.renderingEngine,
       viewportIdsToRender
@@ -353,12 +341,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           startCoord,
           viewplaneNormal
         );
+        data.startCoordinate = startCoord;
       }
       if (Array.isArray(endCoordinate)) {
         endCoord = this._getCoordinateForViewplaneNormal(
           endCoord,
           viewplaneNormal
         );
+        data.endCoordinate = endCoord;
       }
 
       const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
@@ -377,12 +367,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ) {
         continue;
       }
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-
-      if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement);
-      }
-
       const middleCoord = coreUtils.roundToPrecision(
         (startCoord + endCoord) / 2
       );
@@ -393,6 +377,17 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       if (roundedCoord === middleCoord) {
         isMiddleSlice = true;
       }
+
+      data.handles.points[0][
+        this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
+      ] = middleCoord;
+
+      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
+
+      if (annotation.invalidated) {
+        this._throttledCalculateCachedStats(annotation, enabledElement);
+      }
+
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
@@ -767,6 +762,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
+
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(
+        annotation,
+        imageVolume,
+        targetId,
+        enabledElement
+      );
+    }
 
     annotation.invalidated = false;
 

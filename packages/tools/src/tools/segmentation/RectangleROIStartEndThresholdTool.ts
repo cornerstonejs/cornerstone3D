@@ -259,18 +259,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const targetId = this.getTargetId(enabledElement.viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
-
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
-
     triggerAnnotationRenderForViewportIds(
       enabledElement.renderingEngine,
       viewportIdsToRender
@@ -320,7 +308,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     // distance between start and end slice in the world coordinate
     const distance = vec3.distance(startWorld, endWorld);
-
     // for each point inside points, navigate in the direction of the viewPlaneNormal
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
     const newProjectionPoints = [];
@@ -334,7 +321,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         })
       );
     }
-
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
@@ -481,6 +467,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
 
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(
+        annotation,
+        targetId,
+        imageVolume,
+        enabledElement
+      );
+    }
+
     annotation.invalidated = false;
 
     // Dispatching annotation modified
@@ -547,6 +542,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           startCoord,
           viewplaneNormal
         );
+        data.startCoordinate = startCoord;
+        data.handles.points[0][
+          this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
+        ] = startCoord;
       }
 
       if (Array.isArray(endCoordinate)) {
@@ -554,6 +553,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           endCoord,
           viewplaneNormal
         );
+        data.endCoordinate = endCoord;
       }
 
       const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
