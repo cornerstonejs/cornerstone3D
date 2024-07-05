@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "1.81.6",
+  "version": "1.82.0",
   "description": "",
   "main": "src/index.ts",
   "types": "dist/types/index.d.ts",

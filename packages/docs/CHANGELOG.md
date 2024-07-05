@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.82.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.6...v1.82.0) (2024-07-05)
+
+### Features
+
+- Use a global import function to perform lazy loading ([#1344](https://github.com/cornerstonejs/cornerstone3D/issues/1344)) ([4653c8b](https://github.com/cornerstonejs/cornerstone3D/commit/4653c8b13c8faefd0551e7da0eebd01fa30da4f1))
+
 ## [1.81.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.5...v1.81.6) (2024-07-05)
 
 **Note:** Version bump only for package docs
