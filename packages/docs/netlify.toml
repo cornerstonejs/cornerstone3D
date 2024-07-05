@@ -29,10 +29,16 @@
 # COMMENT: For sharedArrayBuffer, see https://developer.chrome.com/blog/enabling-shared-array-buffer/
 [[headers]]
   # Define which paths this specific [[headers]] block will cover.
-  for = "/*"
-    [headers.values]
-    Cross-Origin-Embedder-Policy = "require-corp"
-    Cross-Origin-Opener-Policy =  "same-origin"
+  for = "*.js"
+  [headers.values]
+      Cross-Origin-Embedder-Policy = "require-corp"
+      Cross-Origin-Opener-Policy =  "same-origin"
+
+[[headers]]
+  for = "*.html"
+  [headers.values]
+      Cross-Origin-Embedder-Policy = "require-corp"
+      Cross-Origin-Opener-Policy =  "same-origin"
 
 # Attempt to speed up docusaurus builds by persisting the webpack cache
 # across deploys. This is done in the main docusaurus repo: https://github.com/facebook/docusaurus/blob/cc0bceab9c1678303f6237f5526753edc1b12fc3/website/netlify.toml#L22

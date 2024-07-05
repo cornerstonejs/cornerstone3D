@@ -16,8 +16,17 @@ const SUPPORTED_PROBE_VARIANT = [
 ];
 
 const UNIT_MAPPING = {
+  0: 'px',
+  1: 'percent',
+  2: 'dB',
   3: 'cm',
   4: 'seconds',
+  5: 'hertz',
+  6: 'dB/seconds',
+  7: 'cm/sec',
+  8: 'cm\xb2',
+  9: 'cm\xb2/s',
+  0xc: 'degrees',
 };
 
 const EPS = 1e-3;
@@ -109,10 +118,10 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
 
     if (isSamePhysicalDelta) {
       // 1 to 1 aspect ratio, we use just one of them
-      scale = 1 / (physicalDeltaX * 10);
+      scale = 1 / physicalDeltaX;
       calibrationType = 'US Region';
-      units = 'mm';
-      areaUnits = 'mm' + SQUARE;
+      units = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
+      areaUnits = units + SQUARE;
     } else {
       // here we are showing at the aspect ratio of the physical delta
       // if they are not the same, then we should show px, but the correct solution

@@ -4025,6 +4025,27 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
+    // (undocumented)
+    protected updateClosedCachedStats({ viewport, points, imageData, metadata, cachedStats, targetId, modalityUnit, canvasCoordinates, calibratedScale, }: {
+        viewport: any;
+        points: any;
+        imageData: any;
+        metadata: any;
+        cachedStats: any;
+        targetId: any;
+        modalityUnit: any;
+        canvasCoordinates: any;
+        calibratedScale: any;
+    }): void;
+    // (undocumented)
+    protected updateOpenCachedStats({ targetId, metadata, canvasCoordinates, cachedStats, modalityUnit, calibratedScale, }: {
+        targetId: any;
+        metadata: any;
+        canvasCoordinates: any;
+        cachedStats: any;
+        modalityUnit: any;
+        calibratedScale: any;
+    }): void;
 }
 
 declare namespace planarFreehandROITool {
