@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.81.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.4...v1.81.5) (2024-07-05)
+
+### Bug Fixes
+
+- **Cache:** Fix typescript cache ([#1362](https://github.com/cornerstonejs/cornerstone3D/issues/1362)) ([a255310](https://github.com/cornerstonejs/cornerstone3D/commit/a255310233527132cf5d04770d6a17a3abb097cf))
+
 ## [1.81.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.3...v1.81.4) (2024-07-05)
 
 ### Bug Fixes
