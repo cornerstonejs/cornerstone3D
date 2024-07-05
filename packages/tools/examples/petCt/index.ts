@@ -439,8 +439,14 @@ function setUpSynchronizers() {
   coronalCameraPositionSynchronizer = createCameraPositionSynchronizer(
     coronalCameraSynchronizerId
   );
-  ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId);
-  ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
+  ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId, {
+    syncInvertState: false,
+    syncColormap: false,
+  });
+  ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId, {
+    syncInvertState: false,
+    syncColormap: false,
+  });
   // Add viewports to camera synchronizers
   [
     viewportIds.CT.AXIAL,

@@ -447,8 +447,14 @@ function setUpSynchronizers() {
   const coronalCameraPositionSynchronizer = createCameraPositionSynchronizer(
     coronalCameraSynchronizerId
   );
-  const ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId);
-  const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId);
+  const ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId, {
+    syncInvertState: false,
+    syncColormap: false,
+  });
+  const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId, {
+    syncInvertState: false,
+    syncColormap: false,
+  });
 
   // Add viewports to camera synchronizers
   [

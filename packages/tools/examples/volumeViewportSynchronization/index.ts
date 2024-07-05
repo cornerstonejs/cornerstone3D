@@ -198,7 +198,10 @@ async function run() {
 
   // Create synchronizers
   createCameraPositionSynchronizer(cameraSynchronizerId);
-  createVOISynchronizer(voiSynchronizerId);
+  createVOISynchronizer(voiSynchronizerId, {
+    syncInvertState: false,
+    syncColormap: false,
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
