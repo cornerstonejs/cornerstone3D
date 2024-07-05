@@ -366,9 +366,7 @@ function setUpToolGroups() {
   // volume to use for the WindowLevelTool for the fusion viewports
   ctToolGroup.addTool(WindowLevelTool.toolName);
   ptToolGroup.addTool(WindowLevelTool.toolName);
-  fusionToolGroup.addTool(WindowLevelTool.toolName, {
-    volumeId: ptVolumeId,
-  });
+  fusionToolGroup.addTool(WindowLevelTool.toolName);
 
   [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
     toolGroup.setToolActive(WindowLevelTool.toolName, {
@@ -437,6 +435,7 @@ function setUpSynchronizers() {
   const coronalCameraSynchronizerId = 'CORONAL_CAMERA_SYNCHRONIZER_ID';
   const ctVoiSynchronizerId = 'CT_VOI_SYNCHRONIZER_ID';
   const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID';
+  const fusionVoiSynchronizerId = 'FUSION_VOI_SYNCHRONIZER_ID';
 
   const axialCameraPositionSynchronizer = createCameraPositionSynchronizer(
     axialCameraSynchronizerId
@@ -452,6 +451,10 @@ function setUpSynchronizers() {
     syncColormap: false,
   });
   const ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId, {
+    syncInvertState: false,
+    syncColormap: false,
+  });
+  const fusionVoiSynchronizer = createVOISynchronizer(fusionVoiSynchronizerId, {
     syncInvertState: false,
     syncColormap: false,
   });
@@ -500,27 +503,30 @@ function setUpSynchronizers() {
     });
   });
   [
-    viewportIds.FUSION.AXIAL,
-    viewportIds.FUSION.SAGITTAL,
-    viewportIds.FUSION.CORONAL,
+    viewportIds.PT.AXIAL,
+    viewportIds.PT.SAGITTAL,
+    viewportIds.PT.CORONAL,
+    viewportIds.PETMIP.CORONAL,
   ].forEach((viewportId) => {
-    // In this example, the fusion viewports are only targets for CT VOI
-    // synchronization, not sources
-    ctVoiSynchronizer.addTarget({
+    ptVoiSynchronizer.add({
       renderingEngineId,
       viewportId,
     });
   });
   [
-    viewportIds.PT.AXIAL,
-    viewportIds.PT.SAGITTAL,
-    viewportIds.PT.CORONAL,
     viewportIds.FUSION.AXIAL,
     viewportIds.FUSION.SAGITTAL,
     viewportIds.FUSION.CORONAL,
-    viewportIds.PETMIP.CORONAL,
   ].forEach((viewportId) => {
-    ptVoiSynchronizer.add({
+    fusionVoiSynchronizer.add({
+      renderingEngineId,
+      viewportId,
+    });
+    ctVoiSynchronizer.addTarget({
+      renderingEngineId,
+      viewportId,
+    });
+    ptVoiSynchronizer.addTarget({
       renderingEngineId,
       viewportId,
     });
