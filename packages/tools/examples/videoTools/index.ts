@@ -25,6 +25,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   KeyImageTool,
   ProbeTool,
   RectangleROITool,

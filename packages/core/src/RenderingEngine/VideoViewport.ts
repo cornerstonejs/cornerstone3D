@@ -335,9 +335,9 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public async play() {
     try {
       if (!this.isPlaying) {
+        this.isPlaying = true;
         // Play returns a promise that is true when playing completes.
         await this.videoElement.play();
-        this.isPlaying = true;
         this.renderWhilstPlaying();
       }
     } catch (e) {
@@ -346,10 +346,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
   }
 
-  public async pause() {
+  public pause() {
     try {
-      await this.videoElement.pause();
       this.isPlaying = false;
+      this.videoElement.pause();
     } catch (e) {
       // No-op - sometimes this happens on startup
     }
@@ -438,6 +438,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    * Sets the playback frame range.  The video will play over the given set
    * of frames (assuming it is playing).
+   *
    * @param frameRange - the minimum to maximum (inclusive) frames to play over
    * @returns
    */
@@ -776,6 +777,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   /**
+   * Navigates the video to the specific view reference
+   */
+  public setViewReference(viewRef: ViewReference): void {
+    if (typeof viewRef.sliceIndex === 'number') {
+      this.setFrameNumber(viewRef.sliceIndex + 1);
+    } else if (Array.isArray(viewRef.sliceIndex)) {
+      this.setFrameRange(viewRef.sliceIndex);
+    }
+  }
+
+  /**
    * Gets a view target that species what type of view is required to show
    * the current view, or the one specified in the forTarget modifiers.
    */
@@ -808,7 +820,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   public getSliceIndex() {
-    return this.getCurrentImageIdIndex();
+    return this.getCurrentImageIdIndex() / this.scrollSpeed;
   }
 
   public getCamera(): ICamera {
@@ -852,6 +864,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
     );
     return isNaN(computedSlices) ? this.numberOfFrames : computedSlices;
   };
+
+  public getFrameRate() {
+    return this.fps;
+  }
 
   public getFrameOfReferenceUID = (): string => {
     // The video itself is the frame of reference.
@@ -1110,6 +1126,8 @@ class VideoViewport extends Viewport implements IVideoViewport {
       element: this.element,
       viewportId: this.id,
       viewport: this,
+      imageIndex: this.getCurrentImageIdIndex(),
+      numberOfSlices: this.numberOfFrames,
       renderingEngineId: this.renderingEngineId,
       time: this.videoElement.currentTime,
       duration: this.videoElement.duration,

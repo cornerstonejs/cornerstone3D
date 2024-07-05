@@ -54,11 +54,11 @@ function _getImageSliceData(
         ? viewport.getTargetImageIdIndex()
         : viewport.getCurrentImageIdIndex(),
     };
-  } else if (viewport instanceof VolumeViewport) {
-    return csUtils.getImageSliceDataForVolumeViewport(viewport);
-  } else {
-    throw new Error('Unsupported viewport type');
   }
+  return {
+    numberOfSlices: viewport.getNumberOfSlices(),
+    imageIndex: viewport.getSliceIndex(),
+  };
 }
 
 function _getImageIndexToJump(

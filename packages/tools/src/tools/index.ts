@@ -23,6 +23,7 @@ import SculptorTool from './SculptorTool';
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LengthTool from './annotation/LengthTool';
+import HeightTool from './annotation/HeightTool';
 import ProbeTool from './annotation/ProbeTool';
 import DragProbeTool from './annotation/DragProbeTool';
 import RectangleROITool from './annotation/RectangleROITool';
@@ -81,6 +82,7 @@ export {
   SegmentationIntersectionTool,
   BidirectionalTool,
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,

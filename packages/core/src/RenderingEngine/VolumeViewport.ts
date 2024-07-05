@@ -88,7 +88,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
   /** Gets the number of slices the volume is broken up into in the camera direction */
   public getNumberOfSlices = (): number => {
-    const { numberOfSlices } = getImageSliceDataForVolumeViewport(this);
+    const { numberOfSlices } = getImageSliceDataForVolumeViewport(this) || {};
     return numberOfSlices;
   };
 
@@ -247,10 +247,11 @@ class VolumeViewport extends BaseVolumeViewport {
     resetZoom = true,
     resetToCenter = true,
     resetRotation = false,
-    supressEvents = false
+    supressEvents = false,
+    resetOrientation = true
   ): boolean {
     const { orientation } = this.viewportProperties;
-    if (orientation) {
+    if (orientation && resetOrientation) {
       this.applyViewOrientation(orientation, false);
     }
     super.resetCamera(resetPan, resetZoom, resetToCenter);
@@ -422,7 +423,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns The image index.
    */
   public getSliceIndex = (): number => {
-    const { imageIndex } = getImageSliceDataForVolumeViewport(this);
+    const { imageIndex } = getImageSliceDataForVolumeViewport(this) || {};
     return imageIndex;
   };
 

@@ -34,8 +34,7 @@ class StackScrollMouseWheelTool extends BaseTool {
     const { viewport } = getEnabledElement(element);
     const delta = direction * (invert ? -1 : 1);
 
-    const targetId = this.getTargetId(viewport);
-    const volumeId = utilities.getVolumeId(targetId);
+    const volumeId = this.getTargetVolumeId(viewport);
 
     scroll(viewport, {
       delta,

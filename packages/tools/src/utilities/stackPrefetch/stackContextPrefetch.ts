@@ -64,7 +64,10 @@ const resetPrefetchDelay = 5;
 const enable = (element): void => {
   const stack = getStackData(element);
 
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+  if (!stack) {
+    return;
+  }
+  if (!stack.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
@@ -90,6 +93,9 @@ const enable = (element): void => {
 
 function prefetch(element) {
   const stack = getStackData(element);
+  if (!stack) {
+    return;
+  }
   if (!stack?.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
@@ -273,7 +279,11 @@ const signum = (x) => (x < 0 ? -1 : 1);
 
 const updateToolState = (element, usage?: number) => {
   const stack = getStackData(element);
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+  if (!stack) {
+    // Other viewport type - no message
+    return;
+  }
+  if (!stack.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }

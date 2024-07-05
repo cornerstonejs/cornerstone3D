@@ -328,6 +328,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const radius = getCanvasCircleRadius(canvasCoordinates);
       const { centerPointRadius } = this.configuration;
       const canvasCorners = getCanvasCircleCorners(canvasCoordinates);
+      const canvasCorners = getCanvasCircleCorners(canvasCoordinates);
       // range of slices to render based on the start and end slice, like
       // np.arange
 

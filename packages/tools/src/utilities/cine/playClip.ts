@@ -3,6 +3,7 @@ import {
   utilities as csUtils,
   getEnabledElement,
   StackViewport,
+  VideoViewport,
   VolumeViewport,
   cache,
   BaseVolumeViewport,
@@ -152,7 +153,14 @@ function playClip(
     const delta = newStepIndex - currentStepIndex;
 
     if (delta) {
-      playClipContext.scroll(delta);
+      try {
+        playClipContext.scroll(delta);
+      } catch (e) {
+        console.warn('Play clip not scrolling', e);
+        _stopClipWithData(playClipData);
+        triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
+        return;
+      }
     }
   };
 
@@ -160,9 +168,14 @@ function playClip(
     dynamicVolumesPlayingMap.set(volume.volumeId, element);
   }
 
-  // If playClipTimeouts array is available, not empty and its elements are NOT uniform ...
-  // ... (at least one timeout is different from the others), use alternate setTimeout implementation
-  if (
+  if (playClipContext.play) {
+    playClipData.framesPerSecond = playClipContext.play(
+      playClipOptions.framesPerSecond
+    );
+
+    // If playClipTimeouts array is available, not empty and its elements are NOT uniform ...
+    // ... (at least one timeout is different from the others), use alternate setTimeout implementation
+  } else if (
     playClipTimeouts &&
     playClipTimeouts.length > 0 &&
     playClipIsTimeVarying
@@ -213,6 +226,7 @@ function _stopClip(
   const enabledElement = getEnabledElement(element);
 
   let toolState;
+  const viewport = enabledElement?.viewport;
   if (!enabledElement) {
     if (viewportId) {
       toolState = getToolStateByViewportId(viewportId);
@@ -228,10 +242,9 @@ function _stopClip(
     _stopClipWithData(toolState);
   }
 
-  if (
-    stopDynamicCine &&
-    enabledElement?.viewport instanceof BaseVolumeViewport
-  ) {
+  if (viewport instanceof VideoViewport) {
+    viewport.pause();
+  } else if (stopDynamicCine && viewport instanceof BaseVolumeViewport) {
     _stopDynamicVolumeCine(element);
   }
 }
@@ -374,6 +387,45 @@ function _createStackViewportCinePlayContext(
   };
 }
 
+function _createVideoViewportCinePlayContext(
+  viewport: VideoViewport,
+  waitForRendered: number
+): CINETypes.CinePlayContext {
+  return {
+    get numScrollSteps(): number {
+      return viewport.getNumberOfSlices();
+    },
+    get currentStepIndex(): number {
+      return viewport.getSliceIndex();
+    },
+    get frameTimeVectorEnabled(): boolean {
+      // It is always in acquired orientation
+      return true;
+    },
+    waitForRenderedCount: 0,
+    scroll(delta: number): void {
+      if (
+        this.waitForRenderedCount <= waitForRendered &&
+        viewport.viewportStatus !== ViewportStatus.RENDERED
+      ) {
+        this.waitForRenderedCount++;
+        return;
+      }
+      this.waitForRenderedCount = 0;
+      scroll(viewport, { delta, debounceLoading: debounced });
+    },
+    play(fps?: number): number {
+      if (fps) {
+        // This is a bit of a kludge to correspond to playback rates
+        // for other viewports
+        viewport.setPlaybackRate(fps / 24);
+      }
+      viewport.play();
+      return viewport.getFrameRate();
+    },
+  };
+}
+
 function _createVolumeViewportCinePlayContext(
   viewport: VolumeViewport,
   volume: Types.IImageVolume
@@ -473,6 +525,13 @@ function _createCinePlayContext(
     }
 
     return _createVolumeViewportCinePlayContext(viewport, volume);
+  }
+
+  if (viewport instanceof VideoViewport) {
+    return _createVideoViewportCinePlayContext(
+      viewport,
+      playClipOptions.waitForRendered ?? 30
+    );
   }
 
   throw new Error('Unknown viewport type');

@@ -32,6 +32,7 @@ images in the viewports. These include:
 to create and edit annotations for use cases such as:
 
 - Measuring distance between two points (Length Tool)
+- Measuring height between two points (Height Tool)
 - Measuring width and length for a structure (Bidirectional Tool)
 - Measuring area and statistics for a rectangular area (RectangleRoi Tool)
 - Measuring volume and statistics for a ellipsoid (EllipseRoi Tool)

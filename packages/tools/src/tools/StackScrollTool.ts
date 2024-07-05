@@ -35,14 +35,12 @@ class StackScrollTool extends BaseTool {
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail;
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
-
-    const targetId = this.getTargetId(viewport);
     const { debounceIfNotLoaded, invert, loop } = this.configuration;
-
     const deltaPointY = deltaPoints.canvas[1];
+
     let volumeId;
     if (viewport instanceof VolumeViewport) {
-      volumeId = targetId.split(/volumeId:|\?/)[1];
+      volumeId = this.getTargetVolumeId(viewport);
     }
 
     const pixelsPerImage = this._getPixelPerImage(viewport);
