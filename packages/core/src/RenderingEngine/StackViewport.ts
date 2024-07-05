@@ -2965,17 +2965,17 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (!viewRef) {
       return;
     }
-    const { referencedImageId, sliceIndex, volumeId } = viewRef;
+    const { referencedImageId, sliceIndex } = viewRef;
     if (
       typeof sliceIndex === 'number' &&
       referencedImageId &&
       referencedImageId === this.imageIds[sliceIndex]
     ) {
-      this.setImageIdIndex(sliceIndex);
+      this.scroll(sliceIndex - this.targetImageIdIndex);
     } else {
       const foundIndex = this.imageIds.indexOf(referencedImageId);
       if (foundIndex !== -1) {
-        this.setImageIdIndex(foundIndex);
+        this.scroll(foundIndex - this.targetImageIdIndex);
       } else {
         throw new Error('Unsupported - referenced image id not found');
       }

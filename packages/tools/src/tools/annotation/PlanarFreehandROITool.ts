@@ -737,169 +737,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      // Using an arbitrary start point (canvasPoint), calculate the
-      // mm spacing for the canvas in the X and Y directions.
-      const canvasPoint = canvasCoordinates[0];
-      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
-      const deltaXPoint = viewport.canvasToWorld([
-        canvasPoint[0] + 1,
-        canvasPoint[1],
-      ]);
-      const deltaYPoint = viewport.canvasToWorld([
-        canvasPoint[0],
-        canvasPoint[1] + 1,
-      ]);
-
-      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
-      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
-
-      const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
-      worldPosIndex[0] = Math.floor(worldPosIndex[0]);
-      worldPosIndex[1] = Math.floor(worldPosIndex[1]);
-      worldPosIndex[2] = Math.floor(worldPosIndex[2]);
-
-      let iMin = worldPosIndex[0];
-      let iMax = worldPosIndex[0];
-
-      let jMin = worldPosIndex[1];
-      let jMax = worldPosIndex[1];
-
-      let kMin = worldPosIndex[2];
-      let kMax = worldPosIndex[2];
-
-      for (let j = 1; j < points.length; j++) {
-        const worldPosIndex = csUtils.transformWorldToIndex(
-          imageData,
-          points[j]
-        );
-        worldPosIndex[0] = Math.floor(worldPosIndex[0]);
-        worldPosIndex[1] = Math.floor(worldPosIndex[1]);
-        worldPosIndex[2] = Math.floor(worldPosIndex[2]);
-        iMin = Math.min(iMin, worldPosIndex[0]);
-        iMax = Math.max(iMax, worldPosIndex[0]);
-
-        jMin = Math.min(jMin, worldPosIndex[1]);
-        jMax = Math.max(jMax, worldPosIndex[1]);
-
-        kMin = Math.min(kMin, worldPosIndex[2]);
-        kMax = Math.max(kMax, worldPosIndex[2]);
-      }
-
-      const worldPosIndex2 = csUtils.transformWorldToIndex(
-        imageData,
-        points[1]
-      );
-      worldPosIndex2[0] = Math.floor(worldPosIndex2[0]);
-      worldPosIndex2[1] = Math.floor(worldPosIndex2[1]);
-      worldPosIndex2[2] = Math.floor(worldPosIndex2[2]);
-
-      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
-        image,
-        () => {
-          const polyline = data.contour.polyline;
-          const numPoints = polyline.length;
-          const projectedPolyline = new Array(numPoints);
-
-          for (let i = 0; i < numPoints; i++) {
-            projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
-          }
-
-          const {
-            maxX: canvasMaxX,
-            maxY: canvasMaxY,
-            minX: canvasMinX,
-            minY: canvasMinY,
-          } = math.polyline.getAABB(projectedPolyline);
-
-          const topLeftBBWorld = viewport.canvasToWorld([
-            canvasMinX,
-            canvasMinY,
-          ]);
-
-          const topLeftBBIndex = csUtils.transformWorldToIndex(
-            imageData,
-            topLeftBBWorld
-          );
-
-          const bottomRightBBWorld = viewport.canvasToWorld([
-            canvasMaxX,
-            canvasMaxY,
-          ]);
-
-          const bottomRightBBIndex = csUtils.transformWorldToIndex(
-            imageData,
-            bottomRightBBWorld
-          );
-
-          return [topLeftBBIndex, bottomRightBBIndex];
-        }
-      );
-      let area = polyline.getArea(canvasCoordinates) / scale / scale;
-      // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
-
-      // Expand bounding box
-      const iDelta = 0.01 * (iMax - iMin);
-      const jDelta = 0.01 * (jMax - jMin);
-      const kDelta = 0.01 * (kMax - kMin);
-
-      iMin = Math.floor(iMin - iDelta);
-      iMax = Math.ceil(iMax + iDelta);
-      jMin = Math.floor(jMin - jDelta);
-      jMax = Math.ceil(jMax + jDelta);
-      kMin = Math.floor(kMin - kDelta);
-      kMax = Math.ceil(kMax + kDelta);
-
-      const boundsIJK = [
-        [iMin, iMax],
-        [jMin, jMax],
-        [kMin, kMax],
-      ] as [Types.Point2, Types.Point2, Types.Point2];
-
-      const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
-      const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
-
-      let curRow = 0;
-      let intersections = [];
-      let intersectionCounter = 0;
-      const pointsInShape = pointInShapeCallback(
-        imageData,
-        (pointLPS, pointIJK) => {
-          let result = true;
-          const point = viewport.worldToCanvas(pointLPS);
-          if (point[1] != curRow) {
-            intersectionCounter = 0;
-            curRow = point[1];
-            intersections = getLineSegmentIntersectionsCoordinates(
-              canvasCoordinates,
-              point,
-              [canvasPosEnd[0], point[1]]
-            );
-            intersections.sort(
-              (function (index) {
-                return function (a, b) {
-                  return a[index] === b[index]
-                    ? 0
-                    : a[index] < b[index]
-                    ? -1
-                    : 1;
-                };
-              })(0)
-            );
-          }
-          if (intersections.length && point[0] > intersections[0][0]) {
-            intersections.shift();
-            intersectionCounter++;
-          }
-          if (intersectionCounter % 2 === 0) {
-            result = false;
-          }
-          return result;
-        },
-        this.configuration.statsCalculator.statsCallback,
-        boundsIJK
-      );
-
       const modalityUnitOptions = {
         isPreScaled: isViewportPreScaled(viewport, targetId),
         isSuvScaled: this.isSuvScaled(
@@ -914,21 +751,64 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         annotation.metadata.referencedImageId,
         modalityUnitOptions
       );
+      const calibratedScale = getCalibratedLengthUnitsAndScale(image, () => {
+        const polyline = data.contour.polyline;
+        const numPoints = polyline.length;
+        const projectedPolyline = new Array(numPoints);
 
-      const stats = this.configuration.statsCalculator.getStatistics();
+        for (let i = 0; i < numPoints; i++) {
+          projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
+        }
 
-      cachedStats[targetId] = {
-        Modality: metadata.Modality,
-        area,
-        perimeter: calculatePerimeter(canvasCoordinates, closed),
-        mean: stats.mean?.value,
-        max: stats.max?.value,
-        stdDev: stats.stdDev?.value,
-        statsArray: stats.array,
-        pointsInShape: pointsInShape,
-        areaUnit: areaUnits,
-        modalityUnit,
-      };
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(projectedPolyline);
+
+        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
+
+        const topLeftBBIndex = csUtils.transformWorldToIndex(
+          imageData,
+          topLeftBBWorld
+        );
+
+        const bottomRightBBWorld = viewport.canvasToWorld([
+          canvasMaxX,
+          canvasMaxY,
+        ]);
+
+        const bottomRightBBIndex = csUtils.transformWorldToIndex(
+          imageData,
+          bottomRightBBWorld
+        );
+
+        return [topLeftBBIndex, bottomRightBBIndex];
+      });
+
+      if (closed) {
+        this.updateClosedCachedStats({
+          targetId,
+          viewport,
+          canvasCoordinates,
+          points,
+          imageData,
+          metadata,
+          cachedStats,
+          modalityUnit,
+          calibratedScale,
+        });
+      } else {
+        this.updateOpenCachedStats({
+          metadata,
+          canvasCoordinates,
+          targetId,
+          cachedStats,
+          modalityUnit,
+          calibratedScale,
+        });
+      }
     }
 
     triggerAnnotationModified(
@@ -941,6 +821,170 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     return cachedStats;
   };
+
+  protected updateClosedCachedStats({
+    viewport,
+    points,
+    imageData,
+    metadata,
+    cachedStats,
+    targetId,
+    modalityUnit,
+    canvasCoordinates,
+    calibratedScale,
+  }) {
+    const { scale, areaUnits, units } = calibratedScale;
+
+    // Using an arbitrary start point (canvasPoint), calculate the
+    // mm spacing for the canvas in the X and Y directions.
+    const canvasPoint = canvasCoordinates[0];
+    const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+    const deltaXPoint = viewport.canvasToWorld([
+      canvasPoint[0] + 1,
+      canvasPoint[1],
+    ]);
+    const deltaYPoint = viewport.canvasToWorld([
+      canvasPoint[0],
+      canvasPoint[1] + 1,
+    ]);
+
+    const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+    const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
+    const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
+    worldPosIndex[0] = Math.floor(worldPosIndex[0]);
+    worldPosIndex[1] = Math.floor(worldPosIndex[1]);
+    worldPosIndex[2] = Math.floor(worldPosIndex[2]);
+
+    let iMin = worldPosIndex[0];
+    let iMax = worldPosIndex[0];
+
+    let jMin = worldPosIndex[1];
+    let jMax = worldPosIndex[1];
+
+    let kMin = worldPosIndex[2];
+    let kMax = worldPosIndex[2];
+
+    for (let j = 1; j < points.length; j++) {
+      const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[j]);
+      worldPosIndex[0] = Math.floor(worldPosIndex[0]);
+      worldPosIndex[1] = Math.floor(worldPosIndex[1]);
+      worldPosIndex[2] = Math.floor(worldPosIndex[2]);
+      iMin = Math.min(iMin, worldPosIndex[0]);
+      iMax = Math.max(iMax, worldPosIndex[0]);
+
+      jMin = Math.min(jMin, worldPosIndex[1]);
+      jMax = Math.max(jMax, worldPosIndex[1]);
+
+      kMin = Math.min(kMin, worldPosIndex[2]);
+      kMax = Math.max(kMax, worldPosIndex[2]);
+    }
+
+    const worldPosIndex2 = csUtils.transformWorldToIndex(imageData, points[1]);
+    worldPosIndex2[0] = Math.floor(worldPosIndex2[0]);
+    worldPosIndex2[1] = Math.floor(worldPosIndex2[1]);
+    worldPosIndex2[2] = Math.floor(worldPosIndex2[2]);
+
+    let area = polyline.getArea(canvasCoordinates) / scale / scale;
+    // Convert from canvas_pixels ^2 to mm^2
+    area *= deltaInX * deltaInY;
+
+    // Expand bounding box
+    const iDelta = 0.01 * (iMax - iMin);
+    const jDelta = 0.01 * (jMax - jMin);
+    const kDelta = 0.01 * (kMax - kMin);
+
+    iMin = Math.floor(iMin - iDelta);
+    iMax = Math.ceil(iMax + iDelta);
+    jMin = Math.floor(jMin - jDelta);
+    jMax = Math.ceil(jMax + jDelta);
+    kMin = Math.floor(kMin - kDelta);
+    kMax = Math.ceil(kMax + kDelta);
+
+    const boundsIJK = [
+      [iMin, iMax],
+      [jMin, jMax],
+      [kMin, kMax],
+    ] as [Types.Point2, Types.Point2, Types.Point2];
+
+    const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
+    const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
+
+    let curRow = 0;
+    let intersections = [];
+    let intersectionCounter = 0;
+    const pointsInShape = pointInShapeCallback(
+      imageData,
+      (pointLPS, _pointIJK) => {
+        let result = true;
+        const point = viewport.worldToCanvas(pointLPS);
+        if (point[1] != curRow) {
+          intersectionCounter = 0;
+          curRow = point[1];
+          intersections = getLineSegmentIntersectionsCoordinates(
+            canvasCoordinates,
+            point,
+            [canvasPosEnd[0], point[1]]
+          );
+          intersections.sort(
+            (function (index) {
+              return function (a, b) {
+                return a[index] === b[index] ? 0 : a[index] < b[index] ? -1 : 1;
+              };
+            })(0)
+          );
+        }
+        if (intersections.length && point[0] > intersections[0][0]) {
+          intersections.shift();
+          intersectionCounter++;
+        }
+        if (intersectionCounter % 2 === 0) {
+          result = false;
+        }
+        return result;
+      },
+      this.configuration.statsCalculator.statsCallback,
+      boundsIJK
+    );
+    const stats = this.configuration.statsCalculator.getStatistics();
+
+    cachedStats[targetId] = {
+      Modality: metadata.Modality,
+      area,
+      perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
+      mean: stats.mean?.value,
+      max: stats.max?.value,
+      stdDev: stats.stdDev?.value,
+      statsArray: stats.array,
+      pointsInShape: pointsInShape,
+      /**
+       * areaUnits are sizing, eg mm^2 typically
+       * modality units are pixel value units, eg HU or other
+       * unit is linear measurement unit, eg mm
+       */
+      areaUnit: areaUnits,
+      modalityUnit,
+      unit: units,
+    };
+  }
+
+  protected updateOpenCachedStats({
+    targetId,
+    metadata,
+    canvasCoordinates,
+    cachedStats,
+    modalityUnit,
+    calibratedScale,
+  }) {
+    const { scale, units } = calibratedScale;
+
+    cachedStats[targetId] = {
+      Modality: metadata.Modality,
+      length: calculatePerimeter(canvasCoordinates, false) / scale,
+      modalityUnit,
+      unit: units,
+    };
+  }
 
   private _renderStats = (
     annotation,
@@ -1010,11 +1054,13 @@ function defaultGetTextLines(data, targetId): string[] {
     area,
     mean,
     stdDev,
+    length,
     perimeter,
     max,
     isEmptyArea,
     areaUnit,
     modalityUnit,
+    unit,
   } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
@@ -1039,7 +1085,12 @@ function defaultGetTextLines(data, targetId): string[] {
   }
 
   if (perimeter) {
-    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${modalityUnit}`);
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${unit}`);
+  }
+
+  if (length) {
+    // No need to show length prefix as there is just the single value
+    textLines.push(`${roundNumber(length)} ${unit}`);
   }
 
   return textLines;
