@@ -411,6 +411,7 @@ type Cornerstone3DConfig = {
         strictZSpacingForVolumeViewport: boolean;
     };
     enableCacheOptimization: boolean;
+    peerImport?: (moduleId: string) => any;
 };
 
 // @public (undocumented)
@@ -2575,6 +2576,9 @@ type OrientationVectors = {
 };
 
 // @public (undocumented)
+export function peerImport(moduleId: string): any;
+
+// @public (undocumented)
 function performCacheOptimizationForVolume(volume: any): void;
 
 // @public (undocumented)
@@ -4404,6 +4408,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
+    static getDicomMicroscopyViewer: () => Promise<any>;
+    // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -4480,7 +4486,7 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)
-    setDataIds(imageIds: string[]): void;
+    setDataIds(imageIds: string[]): Promise<void>;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)
