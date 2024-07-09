@@ -7,6 +7,9 @@ import {
 } from "dcmjs";
 import ndarray from "ndarray";
 import cloneDeep from "lodash.clonedeep";
+import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
+import checkOrientation from "../helpers/checkOrientation";
+import compareArrays from "../helpers/compareArrays";
 
 import { Events } from "../enums";
 
@@ -14,15 +17,13 @@ const {
     rotateDirectionCosinesInPlane,
     flipImageOrientationPatient: flipIOP,
     flipMatrix2D,
-    rotateMatrix902D,
-    nearlyEqual
+    rotateMatrix902D
 } = utilities.orientation;
 
 const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
-
 const { encode, decode } = utilities.compression;
 
 /**
@@ -219,34 +220,7 @@ function _getLabelmapsFromReferencedFrameIndicies(
  * @returns {Object}              The Seg derived dataSet.
  */
 function _createSegFromImages(images, isMultiframe, options) {
-    const datasets = [];
-
-    if (isMultiframe) {
-        const image = images[0];
-        const arrayBuffer = image.data.byteArray.buffer;
-
-        const dicomData = DicomMessage.readFile(arrayBuffer);
-        const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-
-        dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-        dataset.SpecificCharacterSet = "ISO_IR 192";
-        datasets.push(dataset);
-    } else {
-        for (let i = 0; i < images.length; i++) {
-            const image = images[i];
-            const arrayBuffer = image.data.byteArray.buffer;
-            const dicomData = DicomMessage.readFile(arrayBuffer);
-            const dataset = DicomMetaDictionary.naturalizeDataset(
-                dicomData.dict
-            );
-
-            dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-            dataset.SpecificCharacterSet = "ISO_IR 192";
-            datasets.push(dataset);
-        }
-    }
-
-    const multiframe = Normalizer.normalizeToDataset(datasets);
+    const multiframe = getDatasetsFromImages(images, isMultiframe);
 
     return new SegmentationDerivation([multiframe], options);
 }
@@ -1293,74 +1267,6 @@ function insertPixelDataPlanar(
     });
 }
 
-function checkOrientation(
-    multiframe,
-    validOrientations,
-    sourceDataDimensions,
-    tolerance
-) {
-    const { SharedFunctionalGroupsSequence, PerFrameFunctionalGroupsSequence } =
-        multiframe;
-
-    const sharedImageOrientationPatient =
-        SharedFunctionalGroupsSequence.PlaneOrientationSequence
-            ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-                  .ImageOrientationPatient
-            : undefined;
-
-    // Check if in plane.
-    const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[0];
-
-    const iop =
-        sharedImageOrientationPatient ||
-        PerFrameFunctionalGroups.PlaneOrientationSequence
-            .ImageOrientationPatient;
-
-    const inPlane = validOrientations.some(operation =>
-        compareArrays(iop, operation, tolerance)
-    );
-
-    if (inPlane) {
-        return "Planar";
-    }
-
-    if (
-        checkIfPerpendicular(iop, validOrientations[0], tolerance) &&
-        sourceDataDimensions.includes(multiframe.Rows) &&
-        sourceDataDimensions.includes(multiframe.Columns)
-    ) {
-        // Perpendicular and fits on same grid.
-        return "Perpendicular";
-    }
-
-    return "Oblique";
-}
-
-/**
- * checkIfPerpendicular - Returns true if iop1 and iop2 are perpendicular
- * within a tolerance.
- *
- * @param  {Number[6]} iop1 An ImageOrientationPatient array.
- * @param  {Number[6]} iop2 An ImageOrientationPatient array.
- * @param  {Number} tolerance.
- * @return {Boolean} True if iop1 and iop2 are equal.
- */
-function checkIfPerpendicular(iop1, iop2, tolerance) {
-    const absDotColumnCosines = Math.abs(
-        iop1[0] * iop2[0] + iop1[1] * iop2[1] + iop1[2] * iop2[2]
-    );
-    const absDotRowCosines = Math.abs(
-        iop1[3] * iop2[3] + iop1[4] * iop2[4] + iop1[5] * iop2[5]
-    );
-
-    return (
-        (absDotColumnCosines < tolerance ||
-            Math.abs(absDotColumnCosines - 1) < tolerance) &&
-        (absDotRowCosines < tolerance ||
-            Math.abs(absDotRowCosines - 1) < tolerance)
-    );
-}
-
 /**
  * unpackPixelData - Unpacks bit packed pixelData if the Segmentation is BINARY.
  *
@@ -1627,29 +1533,6 @@ function alignPixelDataWithSourceData(
             rotateMatrix902D(rotateMatrix902D(pixelData2D))
         );
     }
-}
-
-/**
- * compareArrays - Returns true if array1 and array2 are equal
- * within a tolerance.
- *
- * @param  {Number[]} array1 - An array.
- * @param  {Number[]} array2 - An array.
- * @param {Number} tolerance.
- * @return {Boolean} True if array1 and array2 are equal.
- */
-function compareArrays(array1, array2, tolerance) {
-    if (array1.length != array2.length) {
-        return false;
-    }
-
-    for (let i = 0; i < array1.length; ++i) {
-        if (!nearlyEqual(array1[i], array2[i], tolerance)) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 function getSegmentMetadata(multiframe, seriesInstanceUid) {
