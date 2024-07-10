@@ -28,10 +28,14 @@ enum MetadataModules {
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
   VOI_LUT = 'voiLutModule',
   /**
-   * Some modules need direct access to a web client.  This allows getting
-   * it as metadata in order to get it generically.
+   * Some modules need direct access to a data services (WADO) web client.
+   * This allows getting images and metadata as raw results for display.
+   * This is DICOMweb WADO, not base WADO, and should support:
+   *    * Series level metadata retrieve
+   *    * Bulkdata retrieve
+   *    * Image retrieve
    */
-  WEB_CLIENT = 'webClient',
+  WADO_WEB_CLIENT = 'wadoWebClient',
 }
 
 export default MetadataModules;
