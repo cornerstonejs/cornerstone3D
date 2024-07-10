@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.82.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.1...v1.82.2) (2024-07-10)
+
+### Bug Fixes
+
+- **EventTarget:** dispatchEvent return is boolean ([#1363](https://github.com/cornerstonejs/cornerstone3D/issues/1363)) ([08a66e5](https://github.com/cornerstonejs/cornerstone3D/commit/08a66e5deb180738078710ce2b205740feabf583))
+
 ## [1.82.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.0...v1.82.1) (2024-07-10)
 
 ### Bug Fixes
