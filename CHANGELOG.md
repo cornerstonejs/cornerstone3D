@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.82.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.3...v1.82.4) (2024-07-10)
+
+### Bug Fixes
+
+- Navigation issues and naming issues for video/wsi ([#1386](https://github.com/cornerstonejs/cornerstone3D/issues/1386)) ([db9d5ca](https://github.com/cornerstonejs/cornerstone3D/commit/db9d5cabf22c0211a6a894119b5e0138a9221d04))
+
 ## [1.82.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.2...v1.82.3) (2024-07-10)
 
 **Note:** Version bump only for package root

@@ -2,7 +2,7 @@
   "name": "@externals/dicom-microscopy-viewer",
   "description": "External reference to dicom-microscopy-viewer",
   "private": true,
-  "version": "1.82.3",
+  "version": "1.82.4",
   "license": "MIT",
   "engines": {
     "node": ">=18",
