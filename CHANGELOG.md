@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.82.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.0...v1.82.1) (2024-07-10)
+
+### Bug Fixes
+
+- **WindowLevelTool:** scalarData volume3d ([#1383](https://github.com/cornerstonejs/cornerstone3D/issues/1383)) ([2c61604](https://github.com/cornerstonejs/cornerstone3D/commit/2c61604e5d909d9e8c007441aebd6ccdbe835268))
+
 # [1.82.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.6...v1.82.0) (2024-07-05)
 
 ### Features
