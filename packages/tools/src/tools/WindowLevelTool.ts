@@ -211,7 +211,7 @@ class WindowLevelTool extends BaseTool {
     if (imageData.getScalarData) {
       scalarData = imageData.getScalarData();
     } else {
-      scalarData = imageData.getPointData().getScalars();
+      scalarData = imageData.getPointData().getScalars().getData();
     }
 
     if (dimensions[2] !== 1) {
