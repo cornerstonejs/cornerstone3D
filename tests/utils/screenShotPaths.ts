@@ -81,7 +81,12 @@ const screenShotPaths = {
   stackSegmentation: {
     defaultSegmentation: 'defaultSegmentation.png',
     circularBrushSegment1: 'circularBrushSegment1.png',
-    paintFill: 'paintFill.png',
+    circularEraserSegmentation1: 'circularEraserSegmentation1.png',
+    circularEraserSegmentation2: 'circularEraserSegmentation2.png',
+    rectangleScissorSegmentation1: 'rectangleScissorSegmentation1.png',
+    rectangleScissorSegmentation2: 'rectangleScissorSegmentation2.png',
+    paintFillSeg1OuterCircle: 'paintFillSeg1OuterCircle.png',
+    paintFillSegmentation2: 'paintFillSegmentation2.png',
   },
 };
 
