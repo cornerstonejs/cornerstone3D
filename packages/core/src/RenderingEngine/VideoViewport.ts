@@ -224,7 +224,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   public setDataIds(imageIds: string[], options?: ImageSetOptions) {
     this.setVideo(
       imageIds[0],
-      (options?.viewReference?.sliceIndex as number) || 1
+      ((options?.viewReference?.sliceIndex as number) || 0) + 1
     );
   }
 

@@ -23,8 +23,11 @@ class ZoomTool extends BaseTool {
       configuration: {
         // whether zoom to the center of the image OR zoom to the mouse position
         zoomToCenter: false,
-        minZoomScale: 0.1,
-        maxZoomScale: 30,
+        // Use large ranges to allow for microscopy viewing.
+        // TODO: Change the definitions of these to be relative to 1:1 pixel and
+        // relative to scale to fit sizing
+        minZoomScale: 0.001,
+        maxZoomScale: 3000,
         pinchToZoom: true,
         pan: true,
         invert: false,

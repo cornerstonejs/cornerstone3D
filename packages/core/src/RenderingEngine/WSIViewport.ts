@@ -442,7 +442,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
    * This is a wrapper for setWSI to allow generic behaviour
    */
   public setDataIds(imageIds: string[]) {
-    const webClient = metaData.get(MetadataModules.WEB_CLIENT, imageIds[0]);
+    const webClient = metaData.get(
+      MetadataModules.WADO_WEB_CLIENT,
+      imageIds[0]
+    );
     if (!webClient) {
       throw new Error(
         `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
@@ -454,7 +457,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
   }
 
   public async setWSI(imageIds: string[], client) {
-    this.microscopyElement.style.background = 'red';
+    this.microscopyElement.style.background = 'black';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
     const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();

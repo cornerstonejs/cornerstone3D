@@ -2522,7 +2522,7 @@ enum MetadataModules {
     // (undocumented)
     VOI_LUT = "voiLutModule",
     // (undocumented)
-    WEB_CLIENT = "webClient"
+    WADO_WEB_CLIENT = "wadoWebClient"
 }
 
 // @public (undocumented)
@@ -2533,7 +2533,14 @@ const metadataProvider: {
 
 // @public (undocumented)
 const metadataProvider_2: {
-    add: (imageId: string, payload: any) => void;
+    add: (imageId: string, payload: {
+        metadata: any;
+        type: string;
+    }) => void;
+    addRaw: (imageId: string, payload: {
+        metadata: any;
+        type: string;
+    }) => void;
     get: (type: string, imageId: string) => any;
     clear: () => void;
 };

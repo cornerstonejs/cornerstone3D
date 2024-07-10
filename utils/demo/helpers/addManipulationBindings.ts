@@ -86,8 +86,8 @@ export default function addManipulationBindings(
   toolGroup.addTool(PanTool.toolName);
   // Allow significant zooming to occur
   toolGroup.addTool(ZoomTool.toolName, {
-    minZoomScale: 0.01,
-    maxZoomScale: 400,
+    minZoomScale: 0.001,
+    maxZoomScale: 4000,
   });
   if (is3DViewport) {
     toolGroup.addTool(TrackballRotateTool.toolName);
