@@ -12,8 +12,6 @@ import {
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
-import triggerSegmentationRenderForViewports from '../../utilities/segmentation/triggerSegmentationRenderForViewports';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -27,6 +25,8 @@ const enable = function (element: HTMLDivElement): void {
     _imageChangeEventListener as EventListener
   );
   // this listener handles the segmentation modifications
+  // we only listen to the image_rendered once and then remove it
+  // the main event to listen here is the stack_new_image
   element.addEventListener(
     Enums.Events.IMAGE_RENDERED,
     _imageChangeEventListener as EventListener
@@ -81,6 +81,15 @@ function _imageChangeEventListener(evt) {
 
   const actors = viewport.getActors();
 
+  // Update the maps
+  labelmapRepresentations.forEach((representation) => {
+    const { segmentationId } = representation;
+    const labelmapImageId = SegmentationState.updateSegmentationImageReferences(
+      viewportId,
+      segmentationId
+    );
+  });
+
   // const segmentationFound = actors.find((actor) => {
   //   if (!representationList.includes(actor.uid)) {
   //     return false;
@@ -105,6 +114,11 @@ function _imageChangeEventListener(evt) {
   //   return;
   // }
 
+  // we need to check for the current viewport state with the current representations
+  // is there any extra actor that needs to be removed
+  // or any actor that needs to be added (which it is added later down), but remove
+  // it here if it is not needed
+
   const allLabelmapActors = actors.filter((actor) =>
     labelmapRepresentations.some(
       (representation) =>
@@ -112,60 +126,51 @@ function _imageChangeEventListener(evt) {
     )
   );
 
-  // Update the maps
-  labelmapRepresentations.forEach((representation) => {
-    const { segmentationId } = representation;
-    SegmentationState.updateSegmentationImageReferences(
-      viewportId,
-      segmentationId
-    );
+  allLabelmapActors.forEach((actor) => {
+    // if cannot find a representation for this actor means it has stuck around
+    // form previous renderings and should be removed
+    const validActor = labelmapRepresentations.find((representation) => {
+      const derivedImageId = SegmentationState.getLabelmapImageIdsForViewport(
+        viewportId,
+        representation.segmentationId
+      );
+
+      return derivedImageId === actor.referencedId;
+    });
+
+    if (!validActor) {
+      viewport.removeActors([actor.uid]);
+    }
   });
 
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
     const currentImageId = viewport.getCurrentImageId();
+    const derivedImageId = SegmentationState.getLabelmapImageIdsForViewport(
+      viewportId,
+      segmentationId
+    );
 
-    allLabelmapActors.forEach((actor) => {
-      // re-use the old labelmap actor for the new image labelmap for speed and memory
-      const segmentationActor = actor.actor;
+    if (!derivedImageId) {
+      return;
+    }
+    const derivedImage = cache.getImage(derivedImageId);
 
-      const derivedImageId = SegmentationState.getLabelmapImageIdsForViewport(
-        viewportId,
-        segmentationId
+    if (!derivedImage) {
+      console.warn(
+        'No derived image found in the cache for segmentation representation',
+        representation
       );
+      return;
+    }
 
-      const segmentationImageData = segmentationActor
-        .getMapper()
-        .getInputData();
+    // re-use the old labelmap actor for the new image labelmap for speed and memory
+    const segmentationActorInput = actors.find(
+      (actor) => actor.referencedId === derivedImageId
+    );
 
-      if (!derivedImageId) {
-        // this means that this slice doesn't have a segmentation for this representation
-        // this can be a case where the segmentation was added to certain slices only
-        // so we can keep the actor but empty out the imageData
-        if (segmentationImageData.setDerivedImage) {
-          // If the image data has a set derived image, then it should be called
-          // to update any vtk or actor data associated with it.  In this case, null
-          // is used to clear the data.  THis allows intercepting/alternative
-          // to vtk calls.  Eventually the vtk version should also use this.
-          segmentationImageData.setDerivedImage(null);
-          return;
-        }
-        // This is the vtk version of the clearing out the image data, and fails
-        // to work for non scalar image data.
-        const scalarArray = vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          values: new Uint8Array(segmentationImageData.getNumberOfPoints()),
-        });
-
-        const imageData = vtkImageData.newInstance();
-        imageData.getPointData().setScalars(scalarArray);
-        segmentationActor.getMapper().setInputData(imageData);
-        return;
-      }
-
-      const derivedImage = cache.getImage(derivedImageId);
-
+    if (!segmentationActorInput) {
+      // i guess we need to create here
       const { dimensions, spacing, direction } =
         viewport.getImageDataMetadata(derivedImage);
 
@@ -174,6 +179,7 @@ function _imageChangeEventListener(evt) {
         ({
           imageId: currentImageId,
         } as Types.IImage);
+
       const { origin: currentOrigin } =
         viewport.getImageDataMetadata(currentImage);
 
@@ -190,70 +196,65 @@ function _imageChangeEventListener(evt) {
       // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
       const originToUse = currentOrigin;
 
-      segmentationImageData.setOrigin(originToUse);
-      segmentationImageData.modified();
+      const scalarArray = vtkDataArray.newInstance({
+        name: 'Pixels',
+        numberOfComponents: 1,
+        values: [...derivedImage.getPixelData()],
+      });
 
-      if (
-        segmentationImageData.getDimensions()[0] !== dimensions[0] ||
-        segmentationImageData.getDimensions()[1] !== dimensions[1]
-      ) {
-        // IMPORTANT: Not sure why we can't just update the dimensions
-        // and the orientation of the image data and then call modified
-        // I tried calling modified on everything, but seems like we should remove
-        // and add the actor again below
-        viewport.removeActors([actor.uid]);
-        viewport.addImages([
-          {
-            imageId: derivedImageId,
-            actorUID: actor.uid,
-            callback: ({ imageActor }) => {
-              const scalarArray = vtkDataArray.newInstance({
-                name: 'Pixels',
-                numberOfComponents: 1,
-                values: [...derivedImage.getPixelData()],
-              });
+      const imageData = vtkImageData.newInstance();
 
-              const imageData = vtkImageData.newInstance();
+      imageData.setDimensions(dimensions[0], dimensions[1], 1);
+      imageData.setSpacing(spacing);
+      imageData.setDirection(direction);
+      imageData.setOrigin(originToUse);
+      imageData.getPointData().setScalars(scalarArray);
+      imageData.modified();
 
-              imageData.setDimensions(dimensions[0], dimensions[1], 1);
-              imageData.setSpacing(spacing);
-              imageData.setDirection(direction);
-              imageData.setOrigin(originToUse);
-              imageData.getPointData().setScalars(scalarArray);
-
-              imageActor.getMapper().setInputData(imageData);
-            },
+      viewport.addImages([
+        {
+          imageId: derivedImageId,
+          actorUID: representation.segmentationRepresentationUID,
+          callback: ({ imageActor }) => {
+            imageActor.getMapper().setInputData(imageData);
           },
-        ]);
+        },
+      ]);
 
-        triggerSegmentationRender();
-        return;
-      }
+      triggerSegmentationRender();
+      return;
+    } else {
+      // if actor found
+      // update the image data
+
+      const segmentationImageData = segmentationActorInput.actor
+        .getMapper()
+        .getInputData();
 
       if (segmentationImageData.setDerivedImage) {
         // Update the derived image data, whether vtk or other as appropriate
         // to the actor(s) displaying the data.
         segmentationImageData.setDerivedImage(derivedImage);
       } else {
-        // TODO - use setDerivedImage for this functionality
         utilities.updateVTKImageDataWithCornerstoneImage(
           segmentationImageData,
           derivedImage
         );
       }
-      viewport.render();
+    }
 
-      // This is put here to make sure that the segmentation is rendered
-      // for the initial image as well after that we don't need it since
-      // stack new image is called when changing slices
-      if (evt.type === Enums.Events.IMAGE_RENDERED) {
-        // unsubscribe after the initial render
-        viewport.element.removeEventListener(
-          Enums.Events.IMAGE_RENDERED,
-          _imageChangeEventListener as EventListener
-        );
-      }
-    });
+    viewport.render();
+
+    // This is put here to make sure that the segmentation is rendered
+    // for the initial image as well after that we don't need it since
+    // stack new image is called when changing slices
+    if (evt.type === Enums.Events.IMAGE_RENDERED) {
+      // unsubscribe after the initial render
+      viewport.element.removeEventListener(
+        Enums.Events.IMAGE_RENDERED,
+        _imageChangeEventListener as EventListener
+      );
+    }
   });
 }
 

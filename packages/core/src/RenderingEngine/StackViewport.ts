@@ -2208,7 +2208,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public addImages(stackInputs: Array<IStackInput>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
-      const image = cache.getImage(stackInput.imageId);
+      const { imageId } = stackInput;
+      const image = cache.getImage(imageId);
 
       const { origin, dimensions, direction, spacing, numComps } =
         this.getImageDataMetadata(image);
@@ -2224,7 +2225,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
-        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        actors.push({
+          uid: stackInput.actorUID,
+          actor: imageActor,
+          referencedId: imageId,
+        });
         if (stackInput.callback) {
           stackInput.callback({ imageActor, imageId: stackInput.imageId });
         }

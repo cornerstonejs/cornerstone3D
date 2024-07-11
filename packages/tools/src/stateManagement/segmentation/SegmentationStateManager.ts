@@ -226,7 +226,7 @@ export default class SegmentationStateManager {
         // Stack Labelmap on Stack Viewport
         this.updateSegmentationImageReferences(
           viewportId,
-          segmentationRepresentationUID
+          segmentation.segmentationId
         );
       }
     } else {
@@ -241,8 +241,9 @@ export default class SegmentationStateManager {
    * Updates the segmentation image references for a given viewport and segmentation representation.
    * @param viewportId - The ID of the viewport.
    * @param segmentationId - The Id of the segmentation representation.
+   * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
    */
-  updateSegmentationImageReferences(viewportId, segmentationId) {
+  updateSegmentationImageReferences(viewportId, segmentationId): string {
     const segmentation = this.getSegmentation(segmentationId);
     if (!segmentation) {
       return;
@@ -275,6 +276,10 @@ export default class SegmentationStateManager {
           .set(currentImageId, labelmapImageId);
       }
     }
+
+    return this._stackLabelmapImageIdReferenceMap
+      .get(segmentationId)
+      .get(currentImageId);
   }
 
   /**
