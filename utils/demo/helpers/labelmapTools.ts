@@ -13,13 +13,13 @@ const previewColors = {
   1: [0, 255, 255, 255],
 };
 const preview = {
-  enabled: true,
+  enabled: false,
   previewColors,
 };
 const configuration = {
   preview,
   strategySpecificConfiguration: {
-    useCenterSegmentIndex: true,
+    useCenterSegmentIndex: false,
   },
 };
 const thresholdOptions = new Map();
@@ -43,6 +43,14 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 const toolMap = new Map();
+
+toolMap.set('SphereBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_SPHERE',
+  },
+});
 
 toolMap.set('ThresholdCircle', {
   tool: BrushTool,
@@ -73,13 +81,6 @@ toolMap.set('CircularEraser', {
   },
 });
 
-toolMap.set('SphereBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_SPHERE',
-  },
-});
 toolMap.set('SphereEraser', {
   baseTool: BrushTool.toolName,
   configuration: {

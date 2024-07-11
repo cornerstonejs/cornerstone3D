@@ -348,8 +348,8 @@
         "name": "Rectangle ROI Threshold Segmentation",
         "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
       },
-      "stackSegmentation": {
-        "name": "Segmentation Labelmap creation/edit for stack viewports",
+      "stackLabelmapSegmentation": {
+        "name": "Stack Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
       },
       "splineROITools": {
@@ -387,6 +387,10 @@
       "livewireContourSegmentation": {
         "name": "Livewire Segmentation Tool",
         "description": "Demonstrates how to create contour segmentations using livewireContour tool"
+      },
+      "sculptorTool": {
+        "name": "sculptorTool Tool",
+        "description": "Demonstrates how to have similar brush tool effects on the contour"
       }
     },
     "tools-advanced": {
