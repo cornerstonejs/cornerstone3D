@@ -141,13 +141,13 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
-    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
-    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+    // (undocumented)
+    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     protected getVOIModifiedEventDetail(volumeId: string): VoiModifiedEventDetail;
     // (undocumented)
@@ -2186,8 +2186,6 @@ interface IViewport {
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
-    getViewReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
-    // (undocumented)
     getRenderer(): void;
     // (undocumented)
     getRenderingEngine(): any;
@@ -2200,6 +2198,8 @@ interface IViewport {
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
+    getViewReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     getWidget: (id: string) => any;
     // (undocumented)
     getWidgets: () => any;
@@ -2210,7 +2210,7 @@ interface IViewport {
     // (undocumented)
     isDisabled: boolean;
     // (undocumented)
-    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean | unknown;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -2728,6 +2728,7 @@ type ReferenceCompatibleOptions = {
     asVolume?: boolean;
     withOrientation?: boolean;
     imageURI?: string;
+    asOverlay?: boolean;
 };
 
 // @public (undocumented)
@@ -3105,8 +3106,6 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
-    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
-    // (undocumented)
     getRenderer: () => any;
     // (undocumented)
     getRotation: () => number;
@@ -3117,13 +3116,15 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
+    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
+    // (undocumented)
     hasImageId: (imageId: string) => boolean;
     // (undocumented)
     hasImageURI: (imageURI: string) => boolean;
     // (undocumented)
     protected imagesLoader: IImagesLoader;
     // (undocumented)
-    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean | unknown;
     // (undocumented)
     loadImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
@@ -3598,8 +3599,6 @@ export class VideoViewport extends Viewport implements VideoViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
-    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
-    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     protected getScalarData(): CanvasScalarData;
@@ -3609,6 +3608,8 @@ export class VideoViewport extends Viewport implements VideoViewport {
     protected getTransform(): Transform;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+    // (undocumented)
+    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     hasImageURI(imageURI: string): boolean;
     // (undocumented)
@@ -3775,8 +3776,6 @@ export class Viewport implements IViewport {
     // (undocumented)
     getProperties: () => ViewportProperties;
     // (undocumented)
-    getViewReferenceId(_specifier?: ViewReferenceSpecifier): string;
-    // (undocumented)
     getRenderer(): any;
     // (undocumented)
     getRenderingEngine(): IRenderingEngine;
@@ -3788,6 +3787,8 @@ export class Viewport implements IViewport {
     getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
+    // (undocumented)
+    getViewReferenceId(_specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera;
     // (undocumented)
@@ -3809,7 +3810,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
-    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean | unknown;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -3992,7 +3993,7 @@ type ViewPresentationSelector = {
 
 // @public (undocumented)
 type ViewReference = {
-    FrameOfReferenceUID: string;
+    FrameOfReferenceUID?: string;
     referencedImageId?: string;
     cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
