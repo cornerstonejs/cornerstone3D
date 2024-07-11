@@ -79,34 +79,6 @@ function _imageChangeEventListener(evt) {
     return;
   }
 
-  // const segmentationRepresentations = {};
-  // labelmapRepresentations.forEach((representation) => {
-  //   const segmentation = SegmentationState.getSegmentation(
-  //     representation.segmentationId
-  //   );
-
-  //   if (!segmentation || !segmentation.representationData?.LABELMAP) {
-  //     return;
-  //   }
-
-  //   const labelmapData = segmentation.representationData.LABELMAP;
-
-  //   if (isVolumeSegmentation(labelmapData, viewport)) {
-  //     return;
-  //   }
-
-  //   const imageIdReferenceMap =
-  //     SegmentationState.getLabelmapImageIdsForViewport(
-  //       viewportId,
-  //       representation.segmentationRepresentationUID
-  //     );
-
-  //   segmentationRepresentations[representation.segmentationRepresentationUID] =
-  //     {
-  //       imageIdReferenceMap,
-  //     };
-  // });
-
   const actors = viewport.getActors();
 
   // const segmentationFound = actors.find((actor) => {
