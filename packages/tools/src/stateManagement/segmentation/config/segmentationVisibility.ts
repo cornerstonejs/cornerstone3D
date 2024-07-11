@@ -20,8 +20,6 @@ function setRepresentationVisibility(
     segmentationRepresentationUID
   );
 
-  debugger;
-
   if (!representation) {
     return;
   }
@@ -98,8 +96,6 @@ function setSegmentIndexVisibility(
     viewportId,
     segmentationRepresentationUID
   );
-
-  debugger;
 
   visibility
     ? hiddenSegments.delete(segmentIndex)

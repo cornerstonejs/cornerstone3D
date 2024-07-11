@@ -51,6 +51,7 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import { getLabelmapImageIdsForViewport } from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -76,8 +77,8 @@ class BrushTool extends BaseTool {
   private _editData: {
     segmentsLocked: number[]; //
     segmentationRepresentationUID?: string;
-    imageIdReferenceMap?: Map<string, string>;
-    volumeId?: string;
+    imageId?: string; // stack labelmap
+    volumeId?: string; // volume labelmap
     referencedVolumeId?: string;
   } | null;
   private _hoverData?: {
@@ -243,12 +244,12 @@ class BrushTool extends BaseTool {
         segmentsLocked,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
+      const segmentationImageId = getLabelmapImageIdsForViewport(
+        viewport.id,
+        segmentationId
+      );
 
-      const currentImageId = viewport.getCurrentImageId();
-
-      if (!imageIdReferenceMap.get(currentImageId)) {
+      if (!segmentationImageId) {
         // if there is no stack segmentation slice for the current image
         // we should not allow the user to perform any operation
         return;
@@ -273,7 +274,7 @@ class BrushTool extends BaseTool {
       }
 
       return {
-        imageIdReferenceMap,
+        imageId: segmentationImageId,
         segmentsLocked,
       };
     }

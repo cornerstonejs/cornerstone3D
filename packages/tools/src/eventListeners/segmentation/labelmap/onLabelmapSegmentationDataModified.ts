@@ -37,7 +37,7 @@ const onLabelmapSegmentationDataModified = function (
   const viewportIds =
     SegmentationState.getViewportIdsWithSegmentationId(segmentationId);
 
-  if ('imageIdReferenceMap' in labelmapRepresentationData) {
+  if ('imageIds' in labelmapRepresentationData) {
     // get the stack from cache, we need the imageData to be updated to GPU
     performStackLabelmapUpdate({
       viewportIds,
@@ -116,16 +116,13 @@ function performStackLabelmapUpdate({
         return;
       }
 
-      const currentImageId = viewport.getCurrentImageId();
-
       const segImageData = actorEntry.actor.getMapper().getInputData();
 
-      const { imageIdReferenceMap } = representationData[
-        type
-      ] as LabelmapSegmentationDataStack;
-
       const currentSegmentationImageId =
-        imageIdReferenceMap.get(currentImageId);
+        SegmentationState.getLabelmapImageIdsForViewport(
+          viewportId,
+          representation.segmentationId
+        );
 
       const segmentationImage = cache.getImage(currentSegmentationImageId);
       segImageData.modified();

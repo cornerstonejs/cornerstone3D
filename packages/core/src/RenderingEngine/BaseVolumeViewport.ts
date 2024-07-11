@@ -1729,7 +1729,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * view reference in that the values are all incorporated into a string to
    * allow using it as a parameter key.
    */
-  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+  public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     let { volumeId, sliceIndex: sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();

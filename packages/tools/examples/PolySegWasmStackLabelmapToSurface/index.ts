@@ -222,11 +222,7 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap:
-            cornerstoneTools.utilities.segmentation.createImageIdReferenceMap(
-              imageIds,
-              segmentationImageIds
-            ),
+          imageIds: segmentationImageIds,
         },
       },
     },

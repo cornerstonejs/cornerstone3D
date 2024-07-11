@@ -4,6 +4,7 @@ import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
   getRepresentationsBySegmentationId,
+  getLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
@@ -93,11 +94,11 @@ export function getSegmentIndexAtWorldForLabelmap(
   }
 
   // stack segmentation case
-  const { imageIdReferenceMap } = labelmapData as LabelmapSegmentationDataStack;
+  const segmentationImageId = getLabelmapImageIdsForViewport(
+    viewport.id,
+    segmentation.segmentationId
+  );
 
-  const currentImageId = (viewport as Types.IStackViewport).getCurrentImageId();
-
-  const segmentationImageId = imageIdReferenceMap.get(currentImageId);
   const image = cache.getImage(segmentationImageId);
 
   if (!image) {

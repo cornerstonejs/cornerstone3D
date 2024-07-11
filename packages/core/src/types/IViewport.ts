@@ -61,6 +61,7 @@ export type ReferenceCompatibleOptions = {
    * if the orientation was changed.
    */
   withOrientation?: boolean;
+  // Todo: im not sure what is this
   /**
    * Use this imageURI for testing - may or may not be the current one.
    * Should be a straight contains URI for the set of imageIds in any of
@@ -69,6 +70,11 @@ export type ReferenceCompatibleOptions = {
    * not need to be provided.
    */
   imageURI?: string;
+
+  /**
+   * To see if the reference could be overladed (labelmap, fusion) on the viewport, set this to true.
+   */
+  asOverlay?: boolean;
 };
 
 /**
@@ -81,7 +87,7 @@ export type ViewReference = {
   /**
    * The FrameOfReferenceUID
    */
-  FrameOfReferenceUID: string;
+  FrameOfReferenceUID?: string;
   /**
    * An optional property used to specify the particular image that this view includes.
    * For volumes, that will specify which image is closest to the requested
@@ -347,7 +353,7 @@ interface IViewport {
    * could be a URL with parameters. Regardless it refers to the currently displaying
    * image as a string value.
    */
-  getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
+  getViewReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
   /**
    * Gets a view target specifying WHAT a view is displaying,
    * allowing for checking if a given image is displayed or could be displayed
@@ -368,7 +374,7 @@ interface IViewport {
   isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
-  ): boolean;
+  ): boolean | unknown;
   /**
    * Gets a view presentation information specifying HOW a viewport displays
    * something, but not what is being displayed.

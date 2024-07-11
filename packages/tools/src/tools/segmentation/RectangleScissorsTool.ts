@@ -31,7 +31,10 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getLabelmapImageIdsForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
@@ -46,10 +49,11 @@ class RectangleScissorsTool extends BaseTool {
   static toolName;
   _throttledCalculateCachedStats: any;
   editData: {
-    //
-    imageIdReferenceMap: Map<string, string>;
+    // volume labelmap
     volumeId: string;
     referencedVolumeId: string;
+    // stack labelmap
+    imageId: string;
     //
     annotation: any;
     segmentationId: string;
@@ -189,12 +193,8 @@ class RectangleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
       this.editData = {
         ...this.editData,
-        imageIdReferenceMap,
       };
     }
 

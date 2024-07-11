@@ -693,7 +693,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   /**
    *  Gets a target id that can be used to specify how to show this
    */
-  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+  public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
@@ -769,7 +769,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     }
     return {
       ...super.getViewReference(viewRefSpecifier),
-      referencedImageId: this.getReferenceId(viewRefSpecifier),
+      referencedImageId: this.getViewReferenceId(viewRefSpecifier),
       sliceIndex: sliceIndex,
     };
   }

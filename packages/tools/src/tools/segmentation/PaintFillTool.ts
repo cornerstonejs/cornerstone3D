@@ -15,7 +15,10 @@ import {
   segmentIndex as segmentIndexController,
 } from '../../stateManagement/segmentation';
 import floodFill from '../../utilities/segmentation/floodFill';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getLabelmapImageIdsForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
 import {
   LabelmapSegmentationDataStack,
@@ -79,7 +82,8 @@ class PaintFillTool extends BaseTool {
       );
     }
 
-    const { segmentationId, type } = activeSegmentationRepresentation;
+    const { segmentationId, type, segmentationRepresentationUID } =
+      activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked: number[] =
@@ -105,12 +109,10 @@ class PaintFillTool extends BaseTool {
 
       index = transformWorldToIndex(segmentation.imageData, worldPos);
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
-      const currentImageId = enabledElement.viewport.getCurrentImageId();
-      const currentSegmentationImageId =
-        imageIdReferenceMap.get(currentImageId);
+      const currentSegmentationImageId = getLabelmapImageIdsForViewport(
+        viewport.id,
+        segmentationId
+      );
 
       if (!currentSegmentationImageId) {
         throw new Error(

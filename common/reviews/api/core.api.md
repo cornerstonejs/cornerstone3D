@@ -141,7 +141,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
-    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -2186,7 +2186,7 @@ interface IViewport {
     // (undocumented)
     getPan(): Point2;
     // (undocumented)
-    getReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
+    getViewReferenceId(viewRefSpecifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRenderer(): void;
     // (undocumented)
@@ -3105,7 +3105,7 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getProperties: () => StackViewportProperties;
     // (undocumented)
-    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRenderer: () => any;
     // (undocumented)
@@ -3598,7 +3598,7 @@ export class VideoViewport extends Viewport implements VideoViewport {
     // (undocumented)
     getProperties: () => VideoViewportProperties;
     // (undocumented)
-    getReferenceId(specifier?: ViewReferenceSpecifier): string;
+    getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
@@ -3775,7 +3775,7 @@ export class Viewport implements IViewport {
     // (undocumented)
     getProperties: () => ViewportProperties;
     // (undocumented)
-    getReferenceId(_specifier?: ViewReferenceSpecifier): string;
+    getViewReferenceId(_specifier?: ViewReferenceSpecifier): string;
     // (undocumented)
     getRenderer(): any;
     // (undocumented)

@@ -6,10 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
 import addRepresentations from './addRepresentations';
-import {
-  triggerSegmentationRender,
-  createImageIdReferenceMap,
-} from '../../utilities/segmentation';
+import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
 import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
@@ -52,7 +49,7 @@ export async function computeStackSegmentationFromVolume({
   segmentationVolume.decache(!volumeUsedInOtherViewports && isAllImagesCached);
 
   const imageIdReferenceMap =
-    _getImageIdReferenceMapForStackSegmentation(segmentationVolume);
+    _getLabelmapImageIdsForViewportForStackSegmentation(segmentationVolume);
 
   // check if the imageIds have been cache, if not we should actually copy
 
@@ -145,7 +142,7 @@ export async function updateStackSegmentationState({
   );
 }
 
-function _getImageIdReferenceMapForStackSegmentation(
+function _getLabelmapImageIdsForViewportForStackSegmentation(
   segmentationVolume: Types.IImageVolume
 ) {
   // There might be or might not be segmentationImageIds, if it is a volume

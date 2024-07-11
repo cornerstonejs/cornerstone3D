@@ -206,7 +206,7 @@ addButtonToToolbar({
         representation: {
           type: csToolsEnums.SegmentationRepresentations.Labelmap,
           data: {
-            imageIdReferenceMap: new Map([[currentImageId, newSegImageId]]),
+            imageIds: [newSegImageId],
           },
         },
       },
@@ -410,10 +410,7 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            imageIdsArray,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },

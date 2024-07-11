@@ -3,6 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   getSegmentation,
   getRepresentationsBySegmentationId,
+  getLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
@@ -60,11 +61,13 @@ export function getSegmentIndexAtLabelmapBorder(
   }
 
   // stack segmentation case
-  const { imageIdReferenceMap } = labelmapData as LabelmapSegmentationDataStack;
+  const segmentationImageId = getLabelmapImageIdsForViewport(
+    viewport.id,
+    segmentationId
+  );
 
   const currentImageId = (viewport as Types.IStackViewport).getCurrentImageId();
 
-  const segmentationImageId = imageIdReferenceMap.get(currentImageId);
   const image = cache.getImage(segmentationImageId);
 
   if (!image) {
