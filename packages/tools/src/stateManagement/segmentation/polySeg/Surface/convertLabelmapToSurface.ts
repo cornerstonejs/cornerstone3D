@@ -41,10 +41,11 @@ export async function convertLabelmapToSurface(
     volumeId = (labelmapRepresentationData as LabelmapSegmentationDataVolume)
       .volumeId;
   } else {
-    const { imageIdReferenceMap } =
+    const { imageIds } =
       labelmapRepresentationData as LabelmapSegmentationDataStack;
+
     ({ volumeId } = await computeVolumeSegmentationFromStack({
-      imageIdReferenceMap,
+      imageIds,
     }));
   }
 

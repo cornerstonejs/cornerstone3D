@@ -12,18 +12,18 @@ import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 async function computeVolumeSegmentationFromStack({
-  imageIdReferenceMap,
+  imageIds,
   options,
 }: {
-  imageIdReferenceMap: Map<string, string>;
+  imageIds: string[];
   options?: {
     volumeId?: string;
   };
 }): Promise<{ volumeId: string }> {
-  const segmentationImageIds = Array.from(imageIdReferenceMap.values());
+  const segmentationImageIds = imageIds;
 
   const additionalDetails = {
-    imageIdReferenceMap,
+    imageIds,
   };
 
   const volumeId = options?.volumeId ?? csUtils.uuidv4();
@@ -69,7 +69,7 @@ async function convertStackToVolumeSegmentation({
     .LABELMAP as LabelmapSegmentationDataStack;
 
   const { volumeId } = await computeVolumeSegmentationFromStack({
-    imageIdReferenceMap: data.imageIdReferenceMap,
+    imageIds: data.imageIds,
     options,
   });
 
@@ -101,9 +101,9 @@ async function updateSegmentationState({
     const data = segmentation.representationData
       .LABELMAP as LabelmapSegmentationDataStack;
 
-    const imageIdReferenceMap = data.imageIdReferenceMap;
+    const { imageIds } = data;
 
-    Array.from(imageIdReferenceMap.values()).forEach((imageId) => {
+    imageIds.forEach((imageId) => {
       cache.removeImageLoadObject(imageId);
     });
 
