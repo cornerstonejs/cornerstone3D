@@ -2895,14 +2895,14 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       return false;
     }
 
+    /**
+     * For overlay, we don't care about the imageId. We just want to
+     * know if the viewport can show the overlay image. We return true
+     * if the viewport has the same orientation as the overlay image.
+     * We may need to consider if they are in the same bounds, but
+     * that's a consideration for later.
+     */
     if (options.asOverlay && referencedImageId) {
-      /**
-       * For overlay, we don't care about the imageId. We just want to
-       * know if the viewport can show the overlay image. We return true
-       * if the viewport has the same orientation as the overlay image.
-       * We may need to consider if they are in the same bounds, but
-       * that's a consideration for later.
-       */
       const matchImagesForOverlay = (targetImageId) => {
         const referenceImagePlaneModule = metaData.get(
           MetadataModules.IMAGE_PLANE,
@@ -2926,7 +2926,30 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           );
 
           if (closeEnough) {
-            return targetImageId;
+            // New check for orthogonality
+            const referencePosition =
+              referenceImagePlaneModule.imagePositionPatient;
+            const currentPosition =
+              currentImagePlaneModule.imagePositionPatient;
+
+            if (referencePosition && currentPosition) {
+              const vector = vec3.create();
+              vec3.subtract(vector, currentPosition, referencePosition);
+
+              const viewPlaneNormal = vec3.create();
+              vec3.cross(
+                viewPlaneNormal,
+                currentOrientation.slice(0, 3),
+                currentOrientation.slice(3, 6)
+              );
+
+              const dotProduct = vec3.dot(vector, viewPlaneNormal);
+              const isOrthogonal = Math.abs(dotProduct) < EPSILON;
+
+              if (isOrthogonal) {
+                return targetImageId;
+              }
+            }
           }
         } else {
           // if we don't have orientation information, we can't determine based
