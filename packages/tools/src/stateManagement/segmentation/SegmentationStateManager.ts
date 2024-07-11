@@ -240,15 +240,13 @@ export default class SegmentationStateManager {
   /**
    * Updates the segmentation image references for a given viewport and segmentation representation.
    * @param viewportId - The ID of the viewport.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
+   * @param segmentationId - The Id of the segmentation representation.
    */
-  updateSegmentationImageReferences(viewportId, segmentationRepresentationUID) {
-    const representation = this.getRepresentation(
-      segmentationRepresentationUID
-    );
-
-    const segmentationId = representation.segmentationId;
+  updateSegmentationImageReferences(viewportId, segmentationId) {
     const segmentation = this.getSegmentation(segmentationId);
+    if (!segmentation) {
+      return;
+    }
 
     if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
       this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());

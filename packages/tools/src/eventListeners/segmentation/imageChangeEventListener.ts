@@ -140,6 +140,15 @@ function _imageChangeEventListener(evt) {
     )
   );
 
+  // Update the maps
+  labelmapRepresentations.forEach((representation) => {
+    const { segmentationId } = representation;
+    SegmentationState.updateSegmentationImageReferences(
+      viewportId,
+      segmentationId
+    );
+  });
+
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
     const currentImageId = viewport.getCurrentImageId();
