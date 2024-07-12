@@ -355,7 +355,7 @@ export async function createAndCacheDerivedVolume(
 
   await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
-  // performCacheOptimizationForVolume(derivedVolume);
+  performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }

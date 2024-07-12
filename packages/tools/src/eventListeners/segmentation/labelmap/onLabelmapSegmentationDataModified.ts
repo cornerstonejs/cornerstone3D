@@ -20,15 +20,26 @@ const onLabelmapSegmentationDataModified = function (
 ): void {
   const { segmentationId, modifiedSlicesToUse } = evt.detail;
 
+  let modifiedSlices = modifiedSlicesToUse;
+
   const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId);
 
   const labelmapRepresentationData = representationData[type];
 
+  if (
+    'stack' in labelmapRepresentationData &&
+    'volumeId' in labelmapRepresentationData
+  ) {
+    // we need to take away the modifiedSlicesToUse from the stack
+    // and update the volume for all the slices
+    modifiedSlices = [];
+  }
+
   if ('volumeId' in labelmapRepresentationData) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
     performVolumeLabelmapUpdate({
-      modifiedSlicesToUse,
+      modifiedSlicesToUse: modifiedSlices,
       representationData,
       type,
     });
@@ -66,7 +77,7 @@ function performVolumeLabelmapUpdate({
 
   // Update the texture for the volume in the GPU
   let slicesToUpdate;
-  if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
+  if (modifiedSlicesToUse?.length > 0) {
     slicesToUpdate = modifiedSlicesToUse;
   } else {
     const numSlices = imageData.getDimensions()[2];

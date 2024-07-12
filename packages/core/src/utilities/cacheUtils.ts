@@ -62,12 +62,6 @@ export function performCacheOptimizationForVolume(volume) {
 
   const scalarData = volume.getScalarData();
 
-  // if imageCacheOffsetMap is present means we have a volume derived from a stack
-  // and we can use that information to optimize simpler
-  // volume.imageCacheOffsetMap.size > 0
-  //   ? _processImageCacheOffsetMap(volume, scalarData)
-  //   : _processVolumeImages(volume, scalarData);
-
   volume.imageIds.forEach((imageId, imageIdIndex) => {
     let image = cache.getImage(imageId);
     if (image) {
@@ -76,9 +70,10 @@ export function performCacheOptimizationForVolume(volume) {
         return;
       }
 
-      console.warn(
-        'Todo: handle this scenario where the image is in the image cache but the volume is added after somehow'
-      );
+      // Handle the case where the image is in the cache but doesn't have a buffer view
+      const offset = _calculateOffset(volume, imageId, imageIdIndex);
+      _updateImageWithScalarDataView(image, scalarData, offset);
+      cache.decrementImageCacheSize(image.sizeInBytes);
       return;
     }
 
@@ -143,4 +138,14 @@ function _updateImageWithScalarDataView(image, scalarData, offset) {
     buffer: scalarData.buffer,
     offset,
   };
+}
+
+function _calculateOffset(volume, imageId, imageIdIndex) {
+  if (volume.imageCacheOffsetMap.has(imageId)) {
+    return volume.imageCacheOffsetMap.get(imageId).offset;
+  }
+
+  const image = volume.getCornerstoneImage(imageId, imageIdIndex);
+  const index = volume.getImageIdIndex(imageId);
+  return index * image.getPixelData().byteLength;
 }

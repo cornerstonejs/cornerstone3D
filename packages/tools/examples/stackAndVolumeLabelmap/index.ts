@@ -231,12 +231,12 @@ async function run() {
   ]);
 
   // adding the same segmentation to the stack viewport
-  // await segmentation.addRepresentations(viewportId2, [
-  //   {
-  //     segmentationId,
-  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //   },
-  // ]);
+  await segmentation.addRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 }
 
 run();

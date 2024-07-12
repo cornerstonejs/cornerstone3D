@@ -16,6 +16,7 @@ import type {
   Segmentation,
   SegmentationRepresentation,
   SegmentationRepresentationConfig,
+  SegmentationRepresentationData,
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
 import {
@@ -121,6 +122,16 @@ export default class SegmentationStateManager {
       );
     }
 
+    if (
+      segmentation.representationData.LABELMAP &&
+      'volumeId' in segmentation.representationData.LABELMAP &&
+      !('imageIds' in segmentation.representationData.LABELMAP)
+    ) {
+      const imageIds = this.getLabelmapImageIds(
+        segmentation.representationData
+      );
+      segmentation.representationData.LABELMAP.imageIds = imageIds;
+    }
     this.state.segmentations.push(segmentation);
   }
 
@@ -259,26 +270,7 @@ export default class SegmentationStateManager {
 
     const { representationData } = segmentation;
 
-    const labelmapData = representationData.LABELMAP;
-    let labelmapImageIds;
-
-    if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
-      labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
-        .imageIds;
-    } else if (
-      !labelmapImageIds &&
-      (labelmapData as LabelmapSegmentationDataVolume).volumeId
-    ) {
-      // means we are dealing with a volume labelmap that is requested
-      // to be rendered on a stack viewport, since we have moved to creating
-      // associated imageIds and views for volume we can simply use the
-      // volume.imageIds for this
-      const volumeId = (labelmapData as LabelmapSegmentationDataVolume)
-        .volumeId;
-
-      const volume = cache.getVolume(volumeId) as Types.IImageVolume;
-      labelmapImageIds = volume.imageIds;
-    }
+    const labelmapImageIds = this.getLabelmapImageIds(representationData);
     const enabledElement = getEnabledElementByViewportId(viewportId);
 
     const stackViewport = enabledElement.viewport as Types.IStackViewport;
@@ -300,6 +292,32 @@ export default class SegmentationStateManager {
     return this._stackLabelmapImageIdReferenceMap
       .get(segmentationId)
       .get(currentImageId);
+  }
+
+  private getLabelmapImageIds(
+    representationData: SegmentationRepresentationData
+  ) {
+    const labelmapData = representationData.LABELMAP;
+    let labelmapImageIds;
+
+    if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
+      labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
+        .imageIds;
+    } else if (
+      !labelmapImageIds &&
+      (labelmapData as LabelmapSegmentationDataVolume).volumeId
+    ) {
+      // means we are dealing with a volume labelmap that is requested
+      // to be rendered on a stack viewport, since we have moved to creating
+      // associated imageIds and views for volume we can simply use the
+      // volume.imageIds for this
+      const volumeId = (labelmapData as LabelmapSegmentationDataVolume)
+        .volumeId;
+
+      const volume = cache.getVolume(volumeId) as Types.IImageVolume;
+      labelmapImageIds = volume.imageIds;
+    }
+    return labelmapImageIds;
   }
 
   /**
@@ -589,4 +607,5 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.state = defaultSegmentationStateManager;
 export { defaultSegmentationStateManager };

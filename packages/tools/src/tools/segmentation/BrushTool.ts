@@ -302,9 +302,10 @@ class BrushTool extends BaseTool {
 
     triggerAnnotationRenderForViewportUIDs(hoverData.viewportIdsToRender);
 
+    const operationData = this.getOperationData(element);
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.OnInteractionStart
     );
 
