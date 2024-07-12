@@ -334,53 +334,60 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const focalPoint = viewport.getCamera().focalPoint;
       const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
 
-      let startCoord: number | vec3 = startCoordinate;
-      let endCoord: number | vec3 = endCoordinate;
+      let tempStartCoordinate: number | vec3 = startCoordinate;
+      let tempEndCoordinate: number | vec3 = endCoordinate;
       if (Array.isArray(startCoordinate)) {
-        startCoord = this._getCoordinateForViewplaneNormal(
-          startCoord,
+        tempStartCoordinate = this._getCoordinateForViewplaneNormal(
+          tempStartCoordinate,
           viewplaneNormal
         );
-        data.startCoordinate = startCoord;
+        data.startCoordinate = tempStartCoordinate;
       }
       if (Array.isArray(endCoordinate)) {
-        endCoord = this._getCoordinateForViewplaneNormal(
-          endCoord,
+        tempEndCoordinate = this._getCoordinateForViewplaneNormal(
+          tempEndCoordinate,
           viewplaneNormal
         );
-        data.endCoordinate = endCoord;
+        data.endCoordinate = tempEndCoordinate;
       }
 
-      const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
-      const roundedEndCoord = coreUtils.roundToPrecision(endCoord);
+      const roundedStartCoordinate = coreUtils.roundToPrecision(
+        data.startCoordinate
+      );
+      const roundedEndCoordinate = coreUtils.roundToPrecision(
+        data.endCoordinate
+      );
 
-      const coord = this._getCoordinateForViewplaneNormal(
+      const cameraCoordinate = this._getCoordinateForViewplaneNormal(
         focalPoint,
         viewplaneNormal
       );
-      const roundedCoord = coreUtils.roundToPrecision(coord);
+      const roundedCameraCoordinate =
+        coreUtils.roundToPrecision(cameraCoordinate);
 
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
-        roundedCoord < Math.min(roundedStartCoord, roundedEndCoord) ||
-        roundedCoord > Math.max(roundedStartCoord, roundedEndCoord)
+        roundedCameraCoordinate <
+          Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
+        roundedCameraCoordinate >
+          Math.max(roundedStartCoordinate, roundedEndCoordinate)
       ) {
         continue;
       }
-      const middleCoord = coreUtils.roundToPrecision(
-        (startCoord + endCoord) / 2
+      const middleCoordinate = coreUtils.roundToPrecision(
+        (data.startCoordinate + data.endCoordinate) / 2
       );
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
 
       let isMiddleSlice = false;
-      if (roundedCoord === middleCoord) {
+      if (roundedCameraCoordinate === middleCoordinate) {
         isMiddleSlice = true;
       }
 
       data.handles.points[0][
         this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
-      ] = middleCoord;
+      ] = middleCoordinate;
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
 
