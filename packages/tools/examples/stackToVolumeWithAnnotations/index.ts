@@ -5,6 +5,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
+  addManipulationBindings,
   createImageIdsAndCacheMetaData,
   createInfoSection,
   initDemo,
@@ -27,10 +28,8 @@ const { ViewportType } = csEnums;
 const {
   Enums: csToolsEnums,
   LengthTool,
-  PanTool,
   StackScrollMouseWheelTool,
   ToolGroupManager,
-  ZoomTool,
   utilities: csToolsUtilities,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -153,24 +152,12 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  // Add the tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
+  addManipulationBindings(toolGroup);
 
-  // Set the initial state of the tools, here we set one tool active on left click.
-  // This means left click will draw that tool.
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
@@ -178,20 +165,7 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
-  });
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-    ],
-  });
+
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
@@ -212,6 +186,7 @@ async function run() {
   const viewportInput = {
     viewportId: viewportIds[0],
     type: ViewportType.STACK,
+
     element: element1,
     defaultOptions: {
       background: <Types.Point3>[0.4, 0, 0.4],
@@ -232,6 +207,22 @@ async function run() {
   viewport.setStack(imageIds, 80);
 
   csToolsUtilities.stackContextPrefetch.enable(viewport.element);
+
+  // const volumeId = 'volumeId';
+  // const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
+  //   volumeId,
+  //   {
+  //     imageIds,
+  //   }
+  // );
+
+  // volume.load();
+
+  // viewport.setVolumes([
+  //   {
+  //     volumeId,
+  //   },
+  // ]);
 
   renderingEngine.render();
 }

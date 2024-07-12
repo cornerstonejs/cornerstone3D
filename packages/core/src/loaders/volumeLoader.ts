@@ -344,6 +344,8 @@ export async function createAndCacheDerivedVolume(
 
   await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
+  performCacheOptimizationForVolume(derivedVolume);
+
   return derivedVolume;
 }
 
@@ -449,6 +451,8 @@ export function createLocalVolume(
     promise: Promise.resolve(derivedVolume),
   };
   cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+
+  performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }

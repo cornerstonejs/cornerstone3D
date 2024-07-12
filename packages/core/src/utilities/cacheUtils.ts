@@ -28,7 +28,6 @@ export function setupCacheOptimizationEventListener(volumeId) {
       }
 
       const volume = cache.getVolume(volumeId);
-
       performCacheOptimizationForVolume(volume);
     }
   );
@@ -41,12 +40,22 @@ export function setupCacheOptimizationEventListener(volumeId) {
  * @param options.volumeId - The ID of the volume.
  */
 export function performCacheOptimizationForVolume(volume) {
+  // If the volume is not an ImageVolume (i.e., not image-based),
+  // we cannot perform cache optimization. Volumes like NIFTI are
+  // not image-based and cannot be optimized this way. However,
+  // other volumes like streaming image volumes or derived volumes
+  // from any image-based volume can be optimized. This is because
+  // they have an imageId, allowing us to allocate images with views.
+  // As a result, when they convert to a stack in the future,
+  // they already have the views of the volume's scalar data.
   if (!(volume instanceof ImageVolume)) {
     return;
   }
 
   const scalarData = volume.getScalarData();
 
+  // if imageCacheOffsetMap is present means we have a volume derived from a stack
+  // and we can use that information to optimize simpler
   volume.imageCacheOffsetMap.size > 0
     ? _processImageCacheOffsetMap(volume, scalarData)
     : _processVolumeImages(volume, scalarData);
@@ -85,13 +94,24 @@ function _processImageCacheOffsetMap(volume, scalarData) {
 function _processVolumeImages(volume, scalarData) {
   let compatibleScalarData = scalarData;
 
-  const sampleImageIdWithImage = volume.imageIds.find((imageId) => {
+  if (!volume.imageIds?.length) {
+    return;
+  }
+
+  let sampleImageIdWithImage = volume.imageIds.find((imageId) => {
     const image = cache.getImage(imageId);
     return image;
   });
 
   if (!sampleImageIdWithImage) {
-    return;
+    // No image in the cache; we need to create images from scalar data.
+    // This allows us to use these images natively when converting to stack,
+    // avoiding recreation later.
+    // This approach is particularly useful for labelmaps, ensuring data
+    // remains synced between the volume and the stack.
+    volume.decache();
+
+    sampleImageIdWithImage = volume.imageIds[0];
   }
 
   const sampleImage = cache.getImage(sampleImageIdWithImage);

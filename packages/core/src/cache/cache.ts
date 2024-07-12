@@ -318,6 +318,55 @@ class Cache implements ICache {
   }
 
   /**
+   * Common logic for putting an image into the cache
+   *
+   * @param imageId - ImageId for the image
+   * @param image - The loaded image
+   * @param cachedImage - The CachedImage object
+   */
+  private _putImageCommon(
+    imageId: string,
+    image: IImage,
+    cachedImage: ICachedImage
+  ): void {
+    if (!this._imageCache.get(imageId)) {
+      console.warn(
+        'The image was purged from the cache before it completed loading.'
+      );
+      return;
+    }
+
+    if (image.sizeInBytes === undefined || Number.isNaN(image.sizeInBytes)) {
+      throw new Error(
+        '_putImageCommon: image.sizeInBytes must not be undefined'
+      );
+    }
+    if (image.sizeInBytes.toFixed === undefined) {
+      throw new Error('_putImageCommon: image.sizeInBytes is not a number');
+    }
+
+    // check if there is enough space in unallocated + image Cache
+    if (!this.isCacheable(image.sizeInBytes)) {
+      throw new Error(Events.CACHE_SIZE_EXCEEDED);
+    }
+
+    // if there is, decache if necessary
+    this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
+
+    cachedImage.loaded = true;
+    cachedImage.image = image;
+    cachedImage.sizeInBytes = image.sizeInBytes;
+    this.incrementImageCacheSize(cachedImage.sizeInBytes);
+    const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
+      image: cachedImage,
+    };
+
+    triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
+
+    cachedImage.sharedCacheKey = image.sharedCacheKey;
+  }
+
+  /**
    * Puts a new image load object into the cache
    *
    * First, it creates a CachedImage object and put it inside the imageCache for
@@ -364,7 +413,7 @@ class Cache implements ICache {
     const cachedImage: ICachedImage = {
       loaded: false,
       imageId,
-      sharedCacheKey: undefined, // The sharedCacheKey for this imageId.  undefined by default
+      sharedCacheKey: undefined,
       imageLoadObject,
       timeStamp: Date.now(),
       sizeInBytes: 0,
@@ -374,53 +423,48 @@ class Cache implements ICache {
 
     return imageLoadObject.promise
       .then((image: IImage) => {
-        if (!this._imageCache.get(imageId)) {
-          // If the image has been purged before being loaded, we stop here.
-          console.warn(
-            'The image was purged from the cache before it completed loading.'
-          );
-          return;
-        }
-
-        if (
-          image.sizeInBytes === undefined ||
-          Number.isNaN(image.sizeInBytes)
-        ) {
-          throw new Error(
-            'putImageLoadObject: image.sizeInBytes must not be undefined'
-          );
-        }
-        if (image.sizeInBytes.toFixed === undefined) {
-          throw new Error(
-            'putImageLoadObject: image.sizeInBytes is not a number'
-          );
-        }
-
-        // check if there is enough space in unallocated + image Cache
-        if (!this.isCacheable(image.sizeInBytes)) {
-          throw new Error(Events.CACHE_SIZE_EXCEEDED);
-        }
-
-        // if there is, decache if necessary
-        this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
-
-        cachedImage.loaded = true;
-        cachedImage.image = image;
-        cachedImage.sizeInBytes = image.sizeInBytes;
-        this.incrementImageCacheSize(cachedImage.sizeInBytes);
-        const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
-          image: cachedImage,
-        };
-
-        triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
-
-        cachedImage.sharedCacheKey = image.sharedCacheKey;
+        this._putImageCommon(imageId, image, cachedImage);
       })
       .catch((error) => {
-        // console.warn(error)
         this._imageCache.delete(imageId);
         throw error;
       });
+  }
+
+  /**
+   * Puts a new image directly into the cache (synchronous version)
+   *
+   * @param imageId - ImageId for the image
+   * @param image - The loaded image
+   */
+  public putImageSync(imageId: string, image: IImage): void {
+    if (imageId === undefined) {
+      throw new Error('putImageSync: imageId must not be undefined');
+    }
+
+    if (this._imageCache.has(imageId)) {
+      throw new Error('putImageSync: imageId already in cache');
+    }
+
+    const cachedImage: ICachedImage = {
+      loaded: false,
+      imageId,
+      sharedCacheKey: undefined,
+      imageLoadObject: {
+        promise: Promise.resolve(image),
+      },
+      timeStamp: Date.now(),
+      sizeInBytes: 0,
+    };
+
+    this._imageCache.set(imageId, cachedImage);
+
+    try {
+      this._putImageCommon(imageId, image, cachedImage);
+    } catch (error) {
+      this._imageCache.delete(imageId);
+      throw error;
+    }
   }
 
   /**

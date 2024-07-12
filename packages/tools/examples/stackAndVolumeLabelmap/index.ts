@@ -223,7 +223,15 @@ async function run() {
   ]);
 
   // Add the segmentation representation to the viewport
-  const [uid] = await segmentation.addRepresentations(viewportId1, [
+  await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+
+  // adding the same segmentation to the stack viewport
+  await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
