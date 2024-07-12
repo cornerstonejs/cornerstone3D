@@ -324,6 +324,15 @@ export async function createAndCacheDerivedVolume(
   derivedImageData.setOrigin(origin);
   derivedImageData.getPointData().setScalars(scalarArray);
 
+  const referencedImageIds = referencedVolume.imageIds ?? [];
+
+  let derivedVolumeImageIds = [];
+  if (referencedImageIds.length) {
+    derivedVolumeImageIds = referencedImageIds.map((imageId) => {
+      return `derived:${imageId}`;
+    });
+  }
+
   const derivedVolume = new ImageVolume({
     volumeId,
     metadata: structuredClone(metadata),
@@ -334,8 +343,10 @@ export async function createAndCacheDerivedVolume(
     imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
-    imageIds: [],
     referencedVolumeId,
+    // imageIds: [],
+    imageIds: derivedVolumeImageIds,
+    referencedImageIds: referencedVolume.imageIds ?? [],
   });
 
   const volumeLoadObject = {
@@ -344,7 +355,7 @@ export async function createAndCacheDerivedVolume(
 
   await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
-  performCacheOptimizationForVolume(derivedVolume);
+  // performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }

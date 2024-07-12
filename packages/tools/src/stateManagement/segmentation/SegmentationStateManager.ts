@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   BaseVolumeViewport,
+  cache,
   utilities as csUtils,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
@@ -17,7 +18,10 @@ import type {
   SegmentationRepresentationConfig,
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
-import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
+import {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveRepresentations: true,
@@ -255,10 +259,26 @@ export default class SegmentationStateManager {
 
     const { representationData } = segmentation;
 
-    const labelmapImageIds = (
-      representationData.LABELMAP as LabelmapSegmentationDataStack
-    ).imageIds;
+    const labelmapData = representationData.LABELMAP;
+    let labelmapImageIds;
 
+    if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
+      labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
+        .imageIds;
+    } else if (
+      !labelmapImageIds &&
+      (labelmapData as LabelmapSegmentationDataVolume).volumeId
+    ) {
+      // means we are dealing with a volume labelmap that is requested
+      // to be rendered on a stack viewport, since we have moved to creating
+      // associated imageIds and views for volume we can simply use the
+      // volume.imageIds for this
+      const volumeId = (labelmapData as LabelmapSegmentationDataVolume)
+        .volumeId;
+
+      const volume = cache.getVolume(volumeId) as Types.IImageVolume;
+      labelmapImageIds = volume.imageIds;
+    }
     const enabledElement = getEnabledElementByViewportId(viewportId);
 
     const stackViewport = enabledElement.viewport as Types.IStackViewport;

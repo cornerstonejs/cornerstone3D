@@ -452,7 +452,38 @@ export class ImageVolume implements IImageVolume {
       ? modalityLutModule.rescaleIntercept
       : 0;
 
-    return {
+    const imageOrientationPatient = [
+      this.direction[0],
+      this.direction[1],
+      this.direction[2],
+      this.direction[3],
+      this.direction[4],
+      this.direction[5],
+    ];
+
+    const precision = 6;
+    const imagePositionPatient = [
+      parseFloat(
+        (
+          this.origin[0] +
+          imageIdIndex * this.direction[6] * this.spacing[0]
+        ).toFixed(precision)
+      ),
+      parseFloat(
+        (
+          this.origin[1] +
+          imageIdIndex * this.direction[7] * this.spacing[1]
+        ).toFixed(precision)
+      ),
+      parseFloat(
+        (
+          this.origin[2] +
+          imageIdIndex * this.direction[8] * this.spacing[2]
+        ).toFixed(precision)
+      ),
+    ];
+
+    const image = {
       imageId,
       intercept,
       windowCenter,
@@ -479,6 +510,63 @@ export class ImageVolume implements IImageVolume {
       invert,
       photometricInterpretation,
     };
+
+    const pixelData = image.getPixelData();
+    const bitsAllocated = pixelData.BYTES_PER_ELEMENT * 8;
+
+    const imagePixelModule = {
+      // bitsStored: number;
+      // samplesPerPixel: number;
+      // highBit: number;
+      // pixelRepresentation: string;
+      // modality: string;
+      bitsAllocated,
+      photometricInterpretation: image.photometricInterpretation,
+      windowWidth: image.windowWidth,
+      windowCenter: image.windowCenter,
+      voiLUTFunction: image.voiLUTFunction,
+    };
+
+    const imagePlaneModule = {
+      rowCosines: [this.direction[0], this.direction[1], this.direction[2]],
+      columnCosines: [this.direction[3], this.direction[4], this.direction[5]],
+      pixelSpacing: [this.spacing[0], this.spacing[1]],
+      // sliceLocation?: number;
+      // sliceThickness?: number;
+      // frameOfReferenceUID: string;
+      imageOrientationPatient: imageOrientationPatient,
+      imagePositionPatient: imagePositionPatient,
+      columnPixelSpacing: image.columnPixelSpacing,
+      rowPixelSpacing: image.rowPixelSpacing,
+      columns: image.columns,
+      rows: image.rows,
+    };
+
+    const generalSeriesModule = {
+      // modality: image.modality,
+      // seriesInstanceUID: string;
+      // seriesNumber: number;
+      // studyInstanceUID: string;
+      // seriesDate: DicomDateObject;
+      // seriesTime: DicomTimeObject;
+    };
+
+    const metadata = {
+      imagePixelModule,
+      imagePlaneModule,
+      generalSeriesModule,
+    };
+
+    ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
+      (type) => {
+        genericMetadataProvider.add(imageId, {
+          type,
+          metadata: metadata[type],
+        });
+      }
+    );
+
+    return image;
   }
 
   /**
@@ -487,24 +575,6 @@ export class ImageVolume implements IImageVolume {
    */
   protected imageIdIndexToFrameIndex(imageIdIndex: number): number {
     return imageIdIndex % this.numFrames;
-  }
-
-  /**
-   * Converts the requested imageId inside the volume to a cornerstoneImage
-   * object. It uses the typedArray set method to copy the pixelData from the
-   * correct offset in the scalarData to a new array for the image
-   * Duplicate of getCornerstoneImageLoadObject for legacy reasons
-   *
-   * @param imageId - the imageId of the image to be converted
-   * @param imageIdIndex - the index of the imageId in the imageIds array
-   * @returns imageLoadObject containing the promise that resolves
-   * to the cornerstone image
-   */
-  public convertToCornerstoneImage(
-    imageId: string,
-    imageIdIndex: number
-  ): IImageLoadObject {
-    return this.getCornerstoneImageLoadObject(imageId, imageIdIndex);
   }
 
   /**
@@ -603,96 +673,6 @@ export class ImageVolume implements IImageVolume {
       if (bytesRemaining <= bytesPerImage) {
         break;
       }
-
-      const imageOrientationPatient = [
-        this.direction[0],
-        this.direction[1],
-        this.direction[2],
-        this.direction[3],
-        this.direction[4],
-        this.direction[5],
-      ];
-
-      const precision = 6;
-      const imagePositionPatient = [
-        parseFloat(
-          (
-            this.origin[0] +
-            imageIdIndex * this.direction[6] * this.spacing[0]
-          ).toFixed(precision)
-        ),
-        parseFloat(
-          (
-            this.origin[1] +
-            imageIdIndex * this.direction[7] * this.spacing[1]
-          ).toFixed(precision)
-        ),
-        parseFloat(
-          (
-            this.origin[2] +
-            imageIdIndex * this.direction[8] * this.spacing[2]
-          ).toFixed(precision)
-        ),
-      ];
-
-      const pixelData = image.getPixelData();
-      const bitsAllocated = pixelData.BYTES_PER_ELEMENT * 8;
-
-      const imagePixelModule = {
-        // bitsStored: number;
-        // samplesPerPixel: number;
-        // highBit: number;
-        // pixelRepresentation: string;
-        // modality: string;
-        bitsAllocated,
-        photometricInterpretation: image.photometricInterpretation,
-        windowWidth: image.windowWidth,
-        windowCenter: image.windowCenter,
-        voiLUTFunction: image.voiLUTFunction,
-      };
-
-      const imagePlaneModule = {
-        rowCosines: [this.direction[0], this.direction[1], this.direction[2]],
-        columnCosines: [
-          this.direction[3],
-          this.direction[4],
-          this.direction[5],
-        ],
-        pixelSpacing: [this.spacing[0], this.spacing[1]],
-        // sliceLocation?: number;
-        // sliceThickness?: number;
-        // frameOfReferenceUID: string;
-        imageOrientationPatient: imageOrientationPatient,
-        imagePositionPatient: imagePositionPatient,
-        columnPixelSpacing: image.columnPixelSpacing,
-        rowPixelSpacing: image.rowPixelSpacing,
-        columns: image.columns,
-        rows: image.rows,
-      };
-
-      const generalSeriesModule = {
-        // modality: image.modality,
-        // seriesInstanceUID: string;
-        // seriesNumber: number;
-        // studyInstanceUID: string;
-        // seriesDate: DicomDateObject;
-        // seriesTime: DicomTimeObject;
-      };
-
-      const metadata = {
-        imagePixelModule,
-        imagePlaneModule,
-        generalSeriesModule,
-      };
-
-      ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
-        (type) => {
-          genericMetadataProvider.add(imageId, {
-            type,
-            metadata: metadata[type],
-          });
-        }
-      );
     }
 
     return this.imageIds;
