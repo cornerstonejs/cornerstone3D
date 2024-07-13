@@ -15,7 +15,7 @@ export default function compareArrays(
     array2: number[],
     tolerance: number
 ): boolean {
-    if (array1.length != array2.length) {
+    if (array1.length !== array2.length) {
         return false;
     }
 

@@ -1,50 +1,9 @@
-import { log, data as dcmjsData, normalizers, derivations } from "dcmjs";
-import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
+import { log, data as dcmjsData, normalizers } from "dcmjs";
 import checkOrientation from "../helpers/checkOrientation";
 import compareArrays from "../helpers/compareArrays";
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
-const { DerivedPixels } = derivations;
-
-// Push this change to DCMJS and use the class exported by the library
-class ParametricMap extends DerivedPixels {
-    constructor(datasets, options = {}) {
-        super(datasets, options);
-    }
-
-    // this assumes a normalized multiframe input and will create a multiframe derived image
-    derive() {
-        super.derive();
-
-        this.assignToDataset({
-            SOPClassUID:
-                DicomMetaDictionary.sopClassUIDsByName.ParametricMapStorage ??
-                "1.2.840.10008.5.1.4.1.1.30"
-        });
-    }
-}
-
-function generateParametricMap(images, pixelData, userOptions = {}) {
-    const isMultiframe = images[0].imageId.includes("?frame");
-    const parametricMap = createParametricMapFromImages(
-        images,
-        isMultiframe,
-        userOptions
-    );
-
-    parametricMap.PixelData = pixelData;
-
-    return parametricMap;
-}
-
-function createParametricMapFromImages(images, isMultiframe, options) {
-    const multiframe = getDatasetsFromImages(images, isMultiframe, {
-        SpecificCharacterSet: "ISO_IR 192"
-    });
-
-    return new ParametricMap([multiframe], options);
-}
 
 async function generateToolState(
     imageIds,
@@ -408,7 +367,6 @@ function getImageIdOfReferencedFrame(
 }
 
 const ParametricMapObj = {
-    generateParametricMap,
     generateToolState
 };
 
