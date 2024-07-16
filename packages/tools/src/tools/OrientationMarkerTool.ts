@@ -54,8 +54,8 @@ class OrientationMarkerTool extends BaseTool {
         overlayConfiguration: {
           [OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE]: {
             faceProperties: {
-              xPlus: { text: 'R', faceColor: '#ffff00', faceRotation: 90 },
-              xMinus: { text: 'L', faceColor: '#ffff00', faceRotation: 270 },
+              xPlus: { text: 'L', faceColor: '#ffff00', faceRotation: 90 },
+              xMinus: { text: 'R', faceColor: '#ffff00', faceRotation: 270 },
               yPlus: {
                 text: 'P',
                 faceColor: '#00ffff',
