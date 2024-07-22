@@ -1,9 +1,7 @@
-export default async function locatorToPageCoord(
-  page,
-  locator,
-  point: number[]
-) {
-  const bbox = await locator.boundingBox();
+import locatorToPageCoords from './locatorToPageCoords';
 
-  return [bbox.x + point[0], bbox.y + point[1]];
+export default async function locatorToPageCoord(locator, point: number[]) {
+  const pagePoints = await locatorToPageCoords(locator, [point]);
+
+  return pagePoints[0];
 }
