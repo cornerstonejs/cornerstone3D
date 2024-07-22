@@ -125,6 +125,8 @@ interface IImage {
   calibration?: IImageCalibration;
   imageFrame?: any;
 
+  FrameOfReferenceUID?: string;
+
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 
   bufferView?: {

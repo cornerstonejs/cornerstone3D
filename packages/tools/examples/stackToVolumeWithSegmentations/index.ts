@@ -361,13 +361,6 @@ async function _startFromStack(
   imageIds: string[],
   renderingEngine: RenderingEngine
 ) {
-  stackToolGroup.setToolActive('CircularBrush', {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
   const { imageIds: segmentationImageIds } =
     await cornerstone.imageLoader.createAndCacheDerivedImages(imageIds);
 
@@ -410,10 +403,7 @@ async function _startFromStack(
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: utilities.segmentation.createImageIdReferenceMap(
-            imageIds,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },
@@ -427,4 +417,12 @@ async function _startFromStack(
     },
   ]);
   utilities.segmentation.triggerSegmentationRender(stackToolGroupId);
+
+  stackToolGroup.setToolActive('CircularBrush', {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
 }

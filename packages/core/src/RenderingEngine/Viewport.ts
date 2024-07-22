@@ -1112,7 +1112,7 @@ class Viewport implements IViewport {
    * could be a URL with parameters. Regardless it refers to the currently displaying
    * image as a string value.
    */
-  public getReferenceId(_specifier?: ViewReferenceSpecifier): string {
+  public getViewReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return null;
   }
 
@@ -1644,7 +1644,7 @@ class Viewport implements IViewport {
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
-  ): boolean {
+  ): boolean | unknown {
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()

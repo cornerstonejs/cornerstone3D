@@ -135,7 +135,7 @@ describe('Stack Segmentation Rendering -- ', () => {
                   representation: {
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     data: {
-                      imageIdReferenceMap: new Map([[imageId1, newSegImageId]]),
+                      imageIds: newSegImageId,
                     },
                   },
                 },

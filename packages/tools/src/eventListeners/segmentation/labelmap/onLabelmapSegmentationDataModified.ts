@@ -20,15 +20,26 @@ const onLabelmapSegmentationDataModified = function (
 ): void {
   const { segmentationId, modifiedSlicesToUse } = evt.detail;
 
+  let modifiedSlices = modifiedSlicesToUse;
+
   const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId);
 
   const labelmapRepresentationData = representationData[type];
 
+  if (
+    'stack' in labelmapRepresentationData &&
+    'volumeId' in labelmapRepresentationData
+  ) {
+    // we need to take away the modifiedSlicesToUse from the stack
+    // and update the volume for all the slices
+    modifiedSlices = [];
+  }
+
   if ('volumeId' in labelmapRepresentationData) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
     performVolumeLabelmapUpdate({
-      modifiedSlicesToUse,
+      modifiedSlicesToUse: modifiedSlices,
       representationData,
       type,
     });
@@ -37,7 +48,7 @@ const onLabelmapSegmentationDataModified = function (
   const viewportIds =
     SegmentationState.getViewportIdsWithSegmentationId(segmentationId);
 
-  if ('imageIdReferenceMap' in labelmapRepresentationData) {
+  if ('imageIds' in labelmapRepresentationData) {
     // get the stack from cache, we need the imageData to be updated to GPU
     performStackLabelmapUpdate({
       viewportIds,
@@ -66,7 +77,7 @@ function performVolumeLabelmapUpdate({
 
   // Update the texture for the volume in the GPU
   let slicesToUpdate;
-  if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
+  if (modifiedSlicesToUse?.length > 0) {
     slicesToUpdate = modifiedSlicesToUse;
   } else {
     const numSlices = imageData.getDimensions()[2];
@@ -116,16 +127,13 @@ function performStackLabelmapUpdate({
         return;
       }
 
-      const currentImageId = viewport.getCurrentImageId();
-
       const segImageData = actorEntry.actor.getMapper().getInputData();
 
-      const { imageIdReferenceMap } = representationData[
-        type
-      ] as LabelmapSegmentationDataStack;
-
       const currentSegmentationImageId =
-        imageIdReferenceMap.get(currentImageId);
+        SegmentationState.getLabelmapImageIdsForViewport(
+          viewportId,
+          representation.segmentationId
+        );
 
       const segmentationImage = cache.getImage(currentSegmentationImageId);
       segImageData.modified();

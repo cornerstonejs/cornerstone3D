@@ -774,6 +774,23 @@ export default class ToolGroup implements IToolGroup {
   }
 
   /**
+   * Set Primary tool active
+   * Get the current active primary tool name and disable that
+   * And set the new tool active
+   */
+  public setActivePrimaryTool(toolName: string): void {
+    const activeToolName = this.getCurrentActivePrimaryToolName();
+    this.setToolDisabled(activeToolName);
+    this.setToolActive(toolName, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  }
+
+  public getCurrentActivePrimaryToolName(): string {
+    return this.currentActivePrimaryToolName;
+  }
+
+  /**
    *
    * @param newToolGroupId - Id of the new (clone) tool group
    * @param fnToolFilter - Function to filter which tools from this tool group

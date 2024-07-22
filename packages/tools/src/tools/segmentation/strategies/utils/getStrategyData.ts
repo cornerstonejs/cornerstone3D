@@ -2,6 +2,7 @@ import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from './stackVolumeCheck';
 import { LabelmapToolOperationDataStack } from '../../../../types';
+import { getLabelmapImageIdsForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 
 const { VoxelManager } = utilities;
 
@@ -34,10 +35,14 @@ function getStrategyData({ operationData, viewport }) {
     segmentationScalarData = segmentationVolume.getScalarData();
     segmentationDimensions = segmentationVolume.dimensions;
   } else {
-    const { imageIdReferenceMap, segmentationRepresentationUID } =
+    const { segmentationRepresentationUID, segmentationId } =
       operationData as LabelmapToolOperationDataStack;
 
-    if (!imageIdReferenceMap) {
+    const labelmapImageId = getLabelmapImageIdsForViewport(
+      viewport.id,
+      segmentationId
+    );
+    if (!labelmapImageId) {
       return;
     }
 
@@ -55,7 +60,7 @@ function getStrategyData({ operationData, viewport }) {
     }
     segmentationImageData = actor.actor.getMapper().getInputData();
     segmentationVoxelManager = segmentationImageData.voxelManager;
-    const currentSegmentationImageId = imageIdReferenceMap.get(currentImageId);
+    const currentSegmentationImageId = operationData.imageId;
 
     const segmentationImage = cache.getImage(currentSegmentationImageId);
     if (!segmentationImage) {

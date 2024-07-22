@@ -339,10 +339,7 @@ async function _handleStackViewports(stackImageIds: string[]) {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            imageIdsArray,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },

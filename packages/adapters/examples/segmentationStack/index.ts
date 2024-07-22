@@ -309,9 +309,9 @@ function exportSegmentation() {
         ];
 
     //
-    if (labelmap.imageIdReferenceMap) {
+    if (labelmap.imageIds) {
         //
-        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
+        labelmap.imageIds.forEach((derivedImagesId: string) => {
             /* //
                 await imageLoader.loadAndCacheImage(imageId);
                 //
@@ -367,9 +367,9 @@ function removeActiveSegmentation() {
         ];
 
     //
-    if (labelmap.imageIdReferenceMap) {
+    if (labelmap.imageIds) {
         //
-        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
+        labelmap.imageIds.forEach((derivedImagesId: string) => {
             //
             cache.removeImageLoadObject(derivedImagesId);
         });
@@ -545,9 +545,9 @@ function restart() {
         const labelmap = segmentation.representationData.LABELMAP;
 
         //
-        if (labelmap.imageIdReferenceMap) {
+        if (labelmap.imageIds) {
             //
-            labelmap.imageIdReferenceMap.forEach(derivedImagesId => {
+            labelmap.imageIds.forEach(derivedImagesId => {
                 cache.removeImageLoadObject(derivedImagesId);
             });
         }
@@ -565,13 +565,6 @@ async function addSegmentationsToState(segmentationId: string) {
     const derivedImages =
         await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
 
-    //
-    const imageIdReferenceMap =
-        csToolsUtilities.segmentation.createImageIdReferenceMap(
-            imageIds,
-            derivedImages.imageIds
-        );
-
     // Add the segmentations to state
     csToolsSegmentation.addSegmentations([
         {
@@ -579,7 +572,7 @@ async function addSegmentationsToState(segmentationId: string) {
             representation: {
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
                 data: {
-                    imageIdReferenceMap: imageIdReferenceMap
+                    imageIds: derivedImages.imageIds
                 }
             }
         }

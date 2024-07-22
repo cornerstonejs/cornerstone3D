@@ -23,6 +23,7 @@ import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import { polySeg } from '../../../stateManagement/segmentation';
 import { getSegmentsHidden } from '../../../stateManagement/segmentation/config/segmentationVisibility';
+import SegmentationStateManager from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -195,12 +196,14 @@ async function render(
     }
 
     // stack segmentation
-    const imageId = viewport.getCurrentImageId();
-    const { imageIdReferenceMap } = labelmapData;
+    const labelmapImageId = SegmentationState.getLabelmapImageIdsForViewport(
+      viewport.id,
+      segmentationId
+    );
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
-    if (!imageIdReferenceMap.has(imageId)) {
+    if (!labelmapImageId) {
       return;
     }
 

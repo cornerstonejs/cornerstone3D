@@ -1231,7 +1231,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const colorTransferFunction =
       this._getOrCreateColorTransferFunction(selectedVolumeId);
 
-    if (!this.initialTransferFunctionNodes) {
+    if (!this.initialTransferFunctionNodes && colorTransferFunction) {
       this.initialTransferFunctionNodes = getTransferFunctionNodes(
         colorTransferFunction
       );
@@ -1418,6 +1418,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: volume?.metadata?.Modality,
+        FrameOfReferenceUID: volume?.metadata?.FrameOfReferenceUID,
       },
       scaling: volume?.scaling,
       hasPixelSpacing: true,
@@ -1729,7 +1730,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * view reference in that the values are all incorporated into a string to
    * allow using it as a parameter key.
    */
-  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+  public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     let { volumeId, sliceIndex: sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();

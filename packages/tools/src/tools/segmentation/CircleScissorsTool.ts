@@ -28,7 +28,6 @@ import {
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
@@ -45,10 +44,11 @@ class CircleScissorsTool extends BaseTool {
   editData: {
     annotation: any;
     segmentIndex: number;
-    //
+    // volume labelmap
     volumeId: string;
     referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
+    // stack labelmap
+    imageId: string;
     //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -190,12 +190,8 @@ class CircleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
       this.editData = {
         ...this.editData,
-        imageIdReferenceMap,
       };
     }
 

@@ -33,7 +33,6 @@ import type {
   StackViewportProperties,
   VOIRange,
   ViewReference,
-  ViewPresentation,
   VolumeActor,
 } from '../types';
 import {
@@ -459,7 +458,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
-      metadata: { Modality: this.modality },
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
       calibration: { ...this.csImage.calibration, ...this.calibration },
@@ -479,7 +481,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       spacing,
       origin: metadata.origin,
       direction: metadata.direction,
-      metadata: { Modality: this.modality },
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      },
       scaling: this.scaling,
       imageData: {
         getDirection: () => metadata.direction,
@@ -2209,7 +2214,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public addImages(stackInputs: Array<IStackInput>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
-      const image = cache.getImage(stackInput.imageId);
+      const { imageId } = stackInput;
+      const image = cache.getImage(imageId);
 
       const { origin, dimensions, direction, spacing, numComps } =
         this.getImageDataMetadata(image);
@@ -2225,7 +2231,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
-        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        actors.push({
+          uid: stackInput.actorUID,
+          actor: imageActor,
+          referencedId: imageId,
+        });
         if (stackInput.callback) {
           stackInput.callback({ imageActor, imageId: stackInput.imageId });
         }
@@ -2875,12 +2885,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public isReferenceViewable(
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
-  ): boolean {
+  ): boolean | unknown {
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
 
-    let { imageURI } = options;
     const { referencedImageId, sliceIndex } = viewRef;
 
     if (viewRef.volumeId && !referencedImageId) {
@@ -2888,17 +2897,102 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     let testIndex = this.getCurrentImageIdIndex();
+    const currentImageId = this.imageIds[testIndex];
+
     if (options.withNavigation && typeof sliceIndex === 'number') {
       testIndex = sliceIndex;
     }
-    const imageId = this.imageIds[testIndex];
-    if (!imageId) {
+    if (!currentImageId) {
       return false;
     }
+
+    /**
+     * For overlay, we don't care about the imageId. We just want to
+     * know if the viewport can show the overlay image. We return true
+     * if the viewport has the same orientation as the overlay image.
+     * We may need to consider if they are in the same bounds, but
+     * that's a consideration for later.
+     */
+    if (options.asOverlay && referencedImageId) {
+      const matchImagesForOverlay = (targetImageId) => {
+        const referenceImagePlaneModule = metaData.get(
+          MetadataModules.IMAGE_PLANE,
+          referencedImageId
+        );
+
+        const currentImagePlaneModule = metaData.get(
+          MetadataModules.IMAGE_PLANE,
+          targetImageId
+        );
+
+        const referenceOrientation =
+          referenceImagePlaneModule.imageOrientationPatient;
+        const currentOrientation =
+          currentImagePlaneModule.imageOrientationPatient;
+
+        if (referenceOrientation && currentOrientation) {
+          const closeEnough = isEqual(
+            referenceImagePlaneModule.imageOrientationPatient,
+            currentImagePlaneModule.imageOrientationPatient
+          );
+
+          if (closeEnough) {
+            // New check for orthogonality
+            const referencePosition =
+              referenceImagePlaneModule.imagePositionPatient;
+            const currentPosition =
+              currentImagePlaneModule.imagePositionPatient;
+
+            if (referencePosition && currentPosition) {
+              const vector = vec3.create();
+              vec3.subtract(vector, currentPosition, referencePosition);
+
+              const viewPlaneNormal = vec3.create();
+              vec3.cross(
+                viewPlaneNormal,
+                currentOrientation.slice(0, 3),
+                currentOrientation.slice(3, 6)
+              );
+
+              const dotProduct = vec3.dot(vector, viewPlaneNormal);
+              const isOrthogonal = Math.abs(dotProduct) < EPSILON;
+
+              if (isOrthogonal) {
+                return targetImageId;
+              }
+            }
+          }
+        } else {
+          // if we don't have orientation information, we can't determine based
+          // orientation, we rely on number of columns and rows
+          const referenceRows = referenceImagePlaneModule.rows;
+          const referenceColumns = referenceImagePlaneModule.columns;
+
+          const currentRows = currentImagePlaneModule.rows;
+          const currentColumns = currentImagePlaneModule.columns;
+
+          if (
+            referenceRows === currentRows &&
+            referenceColumns === currentColumns
+          ) {
+            return targetImageId;
+          }
+        }
+      };
+
+      const matchedImageId = matchImagesForOverlay(currentImageId);
+
+      if (matchedImageId) {
+        return matchedImageId;
+      }
+    }
+
+    let { imageURI } = options;
+
     if (!imageURI) {
       // Remove the dataLoader scheme since that can change
-      const colonIndex = imageId.indexOf(':');
-      imageURI = imageId.substring(colonIndex + 1);
+      const colonIndex = currentImageId.indexOf(':');
+      imageURI = currentImageId.substring(colonIndex + 1);
     }
     return referencedImageId?.endsWith(imageURI);
   }
@@ -2907,7 +3001,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Gets a standard target to show this image instance.
    * Returns undefined if the requested slice index is not available.
    *
-   * <b>Warning<b>If using sliceIndex for requeseting a specific reference, the slice index MUST come
+   * <b>Warning<b>If using sliceIndex for requesting a specific reference, the slice index MUST come
    * from the stack of image ids.  Using slice index from a volume or from a different
    * stack of images ids, EVEN if they contain the same set of images will result in
    * random images being chosen.
@@ -2964,7 +3058,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Returns the imageId string for the specified view, using the
    * `imageId:<imageId>` URN format.
    */
-  public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+  public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
     if (Array.isArray(sliceIndex)) {
       throw new Error('Use of slice ranges for stacks not supported');

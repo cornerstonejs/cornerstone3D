@@ -40,12 +40,13 @@ const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VIEWPORT';
+const viewportId2 = 'SECOND_VIEWPORT';
 const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation in StackViewport',
-  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image.'
+  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image. We show that even with different stack ordering, we are capable of mathcing the correct labelmap and render them on the second viewport'
 );
 
 const size = '500px';
@@ -206,7 +207,7 @@ addButtonToToolbar({
         representation: {
           type: csToolsEnums.SegmentationRepresentations.Labelmap,
           data: {
-            imageIdReferenceMap: new Map([[currentImageId, newSegImageId]]),
+            imageIds: [newSegImageId],
           },
         },
       },
@@ -384,17 +385,26 @@ async function run() {
       type: ViewportType.STACK,
       element: element1,
     },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.STACK,
+      element: element2,
+    },
   ];
   renderingEngine.setViewports(viewportInputArray);
-  toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId);
+  toolGroup.addViewport(viewportId2);
   viewport = renderingEngine.getViewport(viewportId);
+  const viewport2 = renderingEngine.getViewport(viewportId2);
 
-  const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
+  const imageIdsArray = [imageIds[0], imageIds[100], mgImageIds[0]];
+  const imageIdsArray2 = [imageIds[100]];
 
   const { imageIds: segmentationImageIds } =
     await imageLoader.createAndCacheDerivedSegmentationImages(imageIdsArray);
 
   await viewport.setStack(imageIdsArray, 0);
+  await viewport2.setStack(imageIdsArray2, 0);
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray.slice(0, 2),
@@ -410,16 +420,20 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            imageIdsArray,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },
   ]);
+
   // Add the segmentation representation to the viewport
   const [uid] = await segmentation.addRepresentations(viewportId, [
+    {
+      segmentationId: segmentationIds[0],
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  const [uid2] = await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId: segmentationIds[0],
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

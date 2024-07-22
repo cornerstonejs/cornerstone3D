@@ -6,10 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
 import addRepresentations from './addRepresentations';
-import {
-  triggerSegmentationRender,
-  createImageIdReferenceMap,
-} from '../../utilities/segmentation';
+import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
 import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
@@ -19,7 +16,7 @@ export async function computeStackSegmentationFromVolume({
   volumeId,
 }: {
   volumeId: string;
-}): Promise<{ imageIdReferenceMap: Map<string, string> }> {
+}): Promise<{ imageIds: string[] }> {
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
   // we need to decache the segmentation Volume so that we use it
@@ -51,12 +48,12 @@ export async function computeStackSegmentationFromVolume({
 
   segmentationVolume.decache(!volumeUsedInOtherViewports && isAllImagesCached);
 
-  const imageIdReferenceMap =
-    _getImageIdReferenceMapForStackSegmentation(segmentationVolume);
+  const imageIds =
+    _getLabelmapImageIdsForViewportForStackSegmentation(segmentationVolume);
 
   // check if the imageIds have been cache, if not we should actually copy
 
-  return { imageIdReferenceMap };
+  return { imageIds };
 }
 
 // Updated original function to call the new separate functions
@@ -75,14 +72,14 @@ export async function convertVolumeToStackSegmentation({
 
   const data = segmentation.representationData
     .LABELMAP as LabelmapSegmentationDataVolume;
-  const { imageIdReferenceMap } = await computeStackSegmentationFromVolume({
+  const { imageIds } = await computeStackSegmentationFromVolume({
     volumeId: data.volumeId,
   });
 
   await updateStackSegmentationState({
     segmentationId,
     viewportId: options.viewportId,
-    imageIdReferenceMap,
+    imageIds,
     options,
   });
 }
@@ -102,12 +99,12 @@ export async function convertVolumeToStackSegmentation({
 export async function updateStackSegmentationState({
   segmentationId,
   viewportId,
-  imageIdReferenceMap,
+  imageIds,
   options,
 }: {
   segmentationId: string;
   viewportId: string;
-  imageIdReferenceMap: Map<any, any>;
+  imageIds: string[];
   options?: {
     removeOriginal?: boolean;
   };
@@ -123,12 +120,12 @@ export async function updateStackSegmentationState({
     }
 
     segmentation.representationData.LABELMAP = {
-      imageIdReferenceMap,
+      imageIds,
     };
   } else {
     segmentation.representationData.LABELMAP = {
       ...segmentation.representationData.LABELMAP,
-      imageIdReferenceMap,
+      imageIds,
     };
   }
 
@@ -145,7 +142,7 @@ export async function updateStackSegmentationState({
   );
 }
 
-function _getImageIdReferenceMapForStackSegmentation(
+function _getLabelmapImageIdsForViewportForStackSegmentation(
   segmentationVolume: Types.IImageVolume
 ) {
   // There might be or might not be segmentationImageIds, if it is a volume
@@ -153,23 +150,19 @@ function _getImageIdReferenceMapForStackSegmentation(
   // otherwise, if it is empty volume segmentation derived from
   // a volume that is not a stack, there will be no segmentationImageIds
 
-  if (segmentationVolume.additionalDetails?.imageIdReferenceMap) {
+  if (segmentationVolume.additionalDetails?.imageIds) {
     // this means the segmentation volume is derived from a stack segmentation
-    // and we can use the imageIdReferenceMap from the additionalDetails
-    return segmentationVolume.additionalDetails.imageIdReferenceMap;
+    // and we can use the imageIds from the additionalDetails
+    return segmentationVolume.additionalDetails.imageIds;
   } else if (
     segmentationVolume.referencedImageIds?.length &&
     !segmentationVolume.referencedImageIds[0].startsWith('derived')
   ) {
     // this means the segmentation volume is derived from a stack segmentation
     // and we can use the referencedImageIds from the segmentationVolume
-    const referencedImageIds = segmentationVolume.referencedImageIds;
     const segmentationImageIds = segmentationVolume.imageIds;
 
-    return createImageIdReferenceMap(
-      referencedImageIds,
-      [...segmentationImageIds].reverse()
-    );
+    return [...segmentationImageIds].reverse();
   } else {
     // check if the segmentation volume is derived from another volume and
     // whether if that volume has imageIds
@@ -191,7 +184,7 @@ function _getImageIdReferenceMapForStackSegmentation(
     if (referencedVolume.imageIds?.[0].startsWith('derived')) {
       throw new Error(
         `Cannot convert volume segmentation that is derived from another segmentation
-         to stack segmentation yet, include the additionalDetails.imageIdReferenceMap
+         to stack segmentation yet, include the additionalDetails.imageIds
          in the volume segmentation in case you need it for the conversion`
       );
     }
@@ -209,9 +202,6 @@ function _getImageIdReferenceMapForStackSegmentation(
         segmentationVolume.convertToImageSlicesAndCache();
     }
 
-    return createImageIdReferenceMap(
-      referencedImageIds,
-      [...segmentationImageIdsToUse].reverse()
-    );
+    return [...segmentationImageIdsToUse].reverse();
   }
 }

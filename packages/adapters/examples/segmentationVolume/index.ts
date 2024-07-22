@@ -21,7 +21,6 @@ import {
 } from "../../../../utils/demo/helpers";
 
 import dcmjs from "dcmjs";
-import { viewport } from "../../../tools/dist/types/utilities";
 
 // This is for debugging purposes
 console.warn(

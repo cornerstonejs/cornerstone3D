@@ -26,7 +26,10 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getLabelmapImageIdsForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
@@ -48,10 +51,11 @@ class SphereScissorsTool extends BaseTool {
     segmentIndex: number;
     segmentsLocked: number[];
     segmentationRepresentationUID: string;
-    //
+    // volume labelmap
     volumeId: string;
     referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
+    // stack labelmap
+    imageId: string;
     //
     toolGroupId: string;
     segmentColor: [number, number, number, number];
@@ -187,12 +191,8 @@ class SphereScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
       this.editData = {
         ...this.editData,
-        imageIdReferenceMap,
       };
     }
 

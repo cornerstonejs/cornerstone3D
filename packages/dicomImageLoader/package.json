@@ -35,7 +35,7 @@
   },
   "scripts": {
     "build:loader": "yarn run build:all && yarn run copy-dts",
-    "build:esm": "tsc --project ./tsconfig.esm.json --noEmit false",
+    "build:esm": "tsc --project ./tsconfig.esm.json",
     "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
