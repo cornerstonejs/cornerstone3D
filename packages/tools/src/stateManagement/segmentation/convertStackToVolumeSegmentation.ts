@@ -117,12 +117,12 @@ async function updateSegmentationState({
     };
   }
 
-  await addRepresentations(viewportId, [
-    {
-      segmentationId,
-      type: SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // await addRepresentations(viewportId, [
+  //   {
+  //     segmentationId,
+  //     type: SegmentationRepresentations.Labelmap,
+  //   },
+  // ]);
 
   triggerSegmentationRender(viewportId);
   // Note: It is crucial to trigger the data modified event. This ensures that the
