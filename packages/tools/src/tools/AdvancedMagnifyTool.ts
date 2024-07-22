@@ -186,7 +186,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     );
 
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -267,10 +267,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
     this._activateModify(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -304,10 +301,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -325,13 +319,10 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     this.editData = null;
     this.isDrawing = false;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -341,10 +332,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
   _dragDrawCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
-    const { element, deltaPoints } = eventDetail;
+    const { deltaPoints } = eventDetail;
     const canvasDelta = deltaPoints?.canvas ?? [0, 0, 0];
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     const { annotation, viewportIdsToRender } = this.editData;
     const { points } = annotation.data.handles;
@@ -357,7 +346,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     annotation.invalidated = true;
     this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -385,10 +374,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
       annotation.invalidated = true;
     }
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
@@ -442,10 +428,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     annotation.highlighted = false;
     data.handles.activeHandleIndex = null;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);

@@ -175,11 +175,11 @@ function setViewportColormap(viewportId, volumeId, colormapName) {
   viewport.render();
 }
 
-async function createAndCacheVolume(volumeId, imageIds) {
+async function createAndCacheEmptyVolume(volumeId, imageIds) {
   let volume = cache.getVolume(volumeId) as any;
 
   if (!volume) {
-    volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
       imageIds,
     });
 
@@ -196,7 +196,7 @@ async function initializeVolumeViewport(
   const volumes = [];
   const ctImageIds = await getCTImageIds();
 
-  await createAndCacheVolume(ctVolumeId, ctImageIds);
+  await createAndCacheEmptyVolume(ctVolumeId, ctImageIds);
 
   volumes.push({
     volumeId: ctVolumeId,
@@ -207,7 +207,7 @@ async function initializeVolumeViewport(
   if (fusion) {
     const ptImageIds = await getPTImageIds();
 
-    await createAndCacheVolume(ptVolumeId, ptImageIds);
+    await createAndCacheEmptyVolume(ptVolumeId, ptImageIds);
 
     volumes.push({
       volumeId: ptVolumeId,

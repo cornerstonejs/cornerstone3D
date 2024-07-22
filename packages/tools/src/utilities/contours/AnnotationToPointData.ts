@@ -5,7 +5,7 @@ function validateAnnotation(annotation) {
     throw new Error('Tool data is empty');
   }
 
-  if (!annotation.metadata || annotation.metadata.referenceImageId) {
+  if (!annotation.metadata || annotation.metadata.referencedImageId) {
     throw new Error('Tool data is not associated with any imageId');
   }
 }

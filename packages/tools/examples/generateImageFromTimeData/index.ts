@@ -18,7 +18,6 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 const {
-  SegmentationDisplayTool,
   utilities: csToolsUtilities,
   Enums: csToolsEnums,
   PanTool,
@@ -195,18 +194,15 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
   // Define tool groups to add the segmentation display tool to
   const toolGroup =
     cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -288,13 +284,16 @@ async function run() {
   viewport2 = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId2);
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 
-  computedVolume = await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: computedVolumeId,
-  });
+  computedVolume = await volumeLoader.createAndCacheDerivedSegmentationVolume(
+    volumeId,
+    {
+      volumeId: computedVolumeId,
+    }
+  );
 
   // Set the volume to load
   volume.load();

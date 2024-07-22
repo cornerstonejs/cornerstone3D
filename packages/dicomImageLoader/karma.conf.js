@@ -112,15 +112,15 @@ module.exports = function (config) {
       'packages/tools/test/**/*_test.js': ['webpack'],
       'packages/dicomImageLoader/test/**/*_test.js': ['webpack'],
     },
-    coverageIstanbulReporter: {
-      reports: ['html', 'text-summary', 'lcovonly'],
-      dir: path.join(__dirname, 'coverage'),
-      fixWebpackSourcePaths: true,
-      'report-config': {
-        html: { outdir: 'html' },
-        linkMapper: '/',
-      },
-    },
+    // coverageIstanbulReporter: {
+    //   reports: ['html', 'text-summary', 'lcovonly'],
+    //   dir: path.join(__dirname, 'coverage'),
+    //   fixWebpackSourcePaths: true,
+    //   'report-config': {
+    //     html: { outdir: 'html' },
+    //     linkMapper: '/',
+    //   },
+    // },
     /*webpackMiddleware: {
       noInfo: true
     },*/
@@ -165,14 +165,6 @@ module.exports = function (config) {
             type: 'asset/resource',
           },
           {
-            test: /\.worker\.(mjs|js|ts)$/,
-            use: [
-              {
-                loader: 'worker-loader',
-              },
-            ],
-          },
-          {
             test: path.join(
               path.resolve(__dirname, 'packages/dicomImageLoader'),
               'codecs',
@@ -187,21 +179,7 @@ module.exports = function (config) {
           /**
            * End webpack rules for packages/dicomImageLoader
            */
-          {
-            test: /\.ts$/,
-            exclude: [
-              path.resolve(__dirname, 'test'),
-              /**
-               * Exclude dicomImageLoader due to a parsing error that I
-               * suspect is related to wasm modules
-               */ path.resolve(__dirname, 'packages/dicomImageLoader'),
-            ],
-            enforce: 'post',
-            use: {
-              loader: 'istanbul-instrumenter-loader',
-              options: { esModules: true },
-            },
-          },
+          // q
         ],
       },
       resolve: {

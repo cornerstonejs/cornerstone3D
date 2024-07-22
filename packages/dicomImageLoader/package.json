@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "1.82.5",
+  "version": "2.0.0-beta.19",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -12,8 +12,9 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
-  "module": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "main": "dist/esm/src/imageLoader/index.js",
+  "module": "dist/esm/src/imageLoader/index.js",
+  "types": "dist/esm/src/imageLoader/index.d.ts",
   "files": [
     "dist/"
   ],
@@ -24,16 +25,27 @@
   "publishConfig": {
     "access": "public"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/src/imageLoader/index.js"
+    },
+    "./dynamic-umd": {
+      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
+    }
+  },
   "scripts": {
+    "build:loader": "yarn run build:all && yarn run copy-dts",
+    "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
-    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle",
+    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle && yarn run build:esm",
     "copy-dts": "echo 'not implemented yet'",
-    "build": "yarn run build:all && yarn run copy-dts",
+    "clean": "shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "api-check": "echo 'not implemented yet'",
     "build:update-api": "echo 'not implemented yet'",
     "cm": "npx git-cz",
-    "clean": "npm run clean:dist && npm run clean:coverage",
     "clean:dist": "shx rm -rf dist",
     "clean:docs": "shx rm -rf documentation",
     "clean:coverage": "shx rm -rf coverage",
@@ -59,14 +71,14 @@
     "webpack:dynamic-import:watch": "webpack --progress --watch --config .webpack/webpack-dynamic-import",
     "webpack:dynamic-import:debug": "webpack --progress --watch --config .webpack/webpack-dynamic-import-debug",
     "webpack:watch": "webpack --progress --watch  --config .webpack",
-    "prepublishOnly": "yarn run build"
+    "prepublishOnly": "yarn run build:loader"
   },
   "dependencies": {
     "@cornerstonejs/codec-charls": "^1.2.3",
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.5",
-    "@cornerstonejs/core": "^1.82.5",
+    "comlink": "^4.4.1",
     "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"

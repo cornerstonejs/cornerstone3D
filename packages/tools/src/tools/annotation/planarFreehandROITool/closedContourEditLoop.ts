@@ -210,7 +210,7 @@ function mouseDragClosedContourEditCallback(
     this.finishEditAndStartNewEdit(evt);
   }
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -252,7 +252,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     snapIndex: undefined,
   };
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -482,7 +482,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
   this.editData = undefined;
   this.commonData = undefined;
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
   this.deactivateClosedContourEdit(element);
 }

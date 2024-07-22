@@ -17,7 +17,6 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
   Enums: csToolsEnums,
   SegmentSelectTool,
   segmentation,
@@ -83,9 +82,10 @@ const volumeSegContourToolGroupId = 'TOOL_GROUP_VOLUME_CONTOUR';
 const viewportId1 = 'viewport1';
 const viewportId2 = 'viewport2';
 
+let segRepUID1, segRepUID2;
+
 // ============================= //
 
-cornerstoneTools.addTool(SegmentationDisplayTool);
 cornerstoneTools.addTool(SegmentSelectTool);
 cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -101,10 +101,8 @@ function setupTools(toolGroupId, isContour = false) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SegmentSelectTool.toolName);
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(SegmentSelectTool.toolName);
 
   if (isContour) {
@@ -163,9 +161,12 @@ async function run() {
 
   // _handleStackViewports(volumeImageIds);
   // _handleVolumeViewports(volumeImageIds, renderingEngine);
-  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: volumeImageIds,
-  });
+  const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
+    volumeId,
+    {
+      imageIds: volumeImageIds,
+    }
+  );
 
   // Set the volume to load
   volume.load();
@@ -204,33 +205,24 @@ async function run() {
     ],
   });
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegContourToolGroupId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
-  await segmentation.addSegmentationRepresentations(
-    volumeSegContourToolGroupId,
-    [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  segRepUID1 = await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
+  segRepUID2 = await segmentation.addRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
-  segmentation.config.setToolGroupSpecificConfig(stackSegContourToolGroupId, {
-    renderInactiveSegmentations: true,
-    representations: {
-      CONTOUR: {
-        outlineWidthActive: 5,
-        outlineDashActive: '10, 10',
-      },
+  segmentation.config.setAllSegmentsConfig(segRepUID1, {
+    CONTOUR: {
+      outlineWidthActive: 5,
+      outlineDashActive: '10, 10',
     },
   });
 

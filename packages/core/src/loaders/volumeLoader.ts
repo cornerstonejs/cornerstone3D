@@ -9,7 +9,6 @@ import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
-import cloneDeep from 'lodash.clonedeep';
 
 import {
   createUint16SharedArray,
@@ -242,13 +241,13 @@ export function loadVolume(
  *
  * @returns Volume Loader Object
  */
-export async function createAndCacheVolume(
+export async function createAndCacheEmptyVolume(
   volumeId: string,
   options?: VolumeLoaderOptions
 ): Promise<Record<string, any>> {
   if (volumeId === undefined) {
     throw new Error(
-      'createAndCacheVolume: parameter volumeId must not be undefined'
+      'createAndCacheEmptyVolume: parameter volumeId must not be undefined'
     );
   }
 
@@ -325,9 +324,18 @@ export async function createAndCacheDerivedVolume(
   derivedImageData.setOrigin(origin);
   derivedImageData.getPointData().setScalars(scalarArray);
 
+  const referencedImageIds = referencedVolume.imageIds ?? [];
+
+  let derivedVolumeImageIds = [];
+  if (referencedImageIds.length) {
+    derivedVolumeImageIds = referencedImageIds.map((imageId) => {
+      return `derived:${imageId}`;
+    });
+  }
+
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: cloneDeep(metadata),
+    metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -335,8 +343,10 @@ export async function createAndCacheDerivedVolume(
     imageData: derivedImageData,
     scalarData: volumeScalarData,
     sizeInBytes: numBytes,
-    imageIds: [],
     referencedVolumeId,
+    // imageIds: [],
+    imageIds: derivedVolumeImageIds,
+    referencedImageIds: referencedVolume.imageIds ?? [],
   });
 
   const volumeLoadObject = {
@@ -344,6 +354,8 @@ export async function createAndCacheDerivedVolume(
   };
 
   await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+
+  performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }
@@ -429,7 +441,7 @@ export function createLocalVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
-    metadata: cloneDeep(metadata),
+    metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -450,6 +462,8 @@ export function createLocalVolume(
     promise: Promise.resolve(derivedVolume),
   };
   cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+
+  performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }

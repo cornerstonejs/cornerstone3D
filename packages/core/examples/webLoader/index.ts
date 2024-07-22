@@ -158,7 +158,7 @@ async function run() {
 
   const volumeId = 'COLOR_VOLUME';
 
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

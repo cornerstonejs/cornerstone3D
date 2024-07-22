@@ -25,7 +25,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -122,7 +121,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -130,7 +128,6 @@ async function run() {
 
   const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
-  toolGroup3d.addTool(SegmentationDisplayTool.toolName);
   toolGroup3d.addTool(ZoomTool.toolName);
   toolGroup3d.addTool(TrackballRotateTool.toolName, {
     configuration: { volumeId },
@@ -164,7 +161,7 @@ async function run() {
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

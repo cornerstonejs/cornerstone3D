@@ -206,7 +206,18 @@ module.exports = {
         'contribute/linking',
       ],
     },
-    'migrationGuides',
+    {
+      type: 'category',
+      label: 'Migration Guides',
+      link: {
+        type: 'generated-index',
+        title: 'Migration Guides',
+        description:
+          'Guides to help you migrate to the latest version of cornerstone3D',
+      },
+      collapsed: true,
+      items: ['migration-guides/legacy-to-3d', 'migration-guides/1.x-to-2.x'],
+    },
     'faq',
     'help',
     {

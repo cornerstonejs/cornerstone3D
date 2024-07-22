@@ -27,7 +27,6 @@ console.warn(
 const { Cornerstone3D } = adaptersSEG;
 
 const {
-    SegmentationDisplayTool,
     StackScrollMouseWheelTool,
     ToolGroupManager,
     Enums: csToolsEnums,
@@ -122,8 +121,7 @@ addButtonToToolbar({
         // Generate fake metadata as an example
         labelmapObj.metadata = [];
         labelmapObj.segmentsOnLabelmap.forEach(segmentIndex => {
-            const color = segmentation.config.color.getColorForSegmentIndex(
-                toolGroupId,
+            const color = segmentation.config.color.getSegmentIndexColor(
                 segUID,
                 segmentIndex
             );
@@ -222,15 +220,12 @@ async function run() {
     await initDemo();
 
     // Add tools to Cornerstone3D
-    cornerstoneTools.addTool(SegmentationDisplayTool);
     cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
     // Define tool groups to add the segmentation display tool to
     const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
     toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
     toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM
@@ -243,7 +238,7 @@ async function run() {
     });
 
     // Define a volume in memory
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
         imageIds
     });
 
@@ -300,14 +295,28 @@ async function run() {
         [viewportId1, viewportId2, viewportId3]
     );
 
-    // // Add the segmentation representation to the toolgroup
-    segmentationRepresentationUID =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
+    // // Add the segmentation representation to the viewport
+    segmentationRepresentationUID = await segmentation.addRepresentations(
+        viewportId1,
+        [
             {
                 segmentationId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap
             }
-        ]);
+        ]
+    );
+    await segmentation.addRepresentations(viewportId2, [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+    await segmentation.addRepresentations(viewportId3, [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
 
     // Render the image
     renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

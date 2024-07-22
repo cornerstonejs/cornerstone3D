@@ -16,6 +16,4 @@ export type ViewportProperties = {
   colormap?: ColormapPublic;
   /** interpolation type */
   interpolationType?: InterpolationType;
-  /**Rotation of the camera */
-  rotation?: number;
 };

@@ -13,7 +13,7 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -36,7 +36,6 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   AdvancedMagnifyTool,
-  SegmentationDisplayTool,
   segmentation,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -197,7 +196,7 @@ async function addSegmentationsToState(volumeId: string) {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume.volumeId,
     cornerstone,
   });
@@ -211,7 +210,7 @@ async function initializeVolumeViewport(
   let volume = cache.getVolume(volumeId) as any;
 
   if (!volume) {
-    volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
       imageIds,
     });
 
@@ -270,7 +269,7 @@ async function initializeViewport(
     );
 
     // Add the segmentation representations to toolgroup1
-    await segmentation.addSegmentationRepresentations(toolGroup.id, [
+    await segmentation.addRepresentations(viewport.id, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -306,11 +305,6 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(AdvancedMagnifyTool.toolName);
-
-  if (segmentationEnabled) {
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  }
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -372,9 +366,6 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);

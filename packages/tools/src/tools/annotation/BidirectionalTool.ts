@@ -208,7 +208,7 @@ class BidirectionalTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   }
@@ -319,7 +319,7 @@ class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     hideElementCursor(element);
 
@@ -374,7 +374,7 @@ class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -475,7 +475,7 @@ class BidirectionalTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -563,7 +563,7 @@ class BidirectionalTool extends AnnotationTool {
     data.handles.points[3] = viewport.canvasToWorld([endX, endY]);
 
     annotation.invalidated = true;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData.hasMoved = true;
   };
@@ -611,7 +611,7 @@ class BidirectionalTool extends AnnotationTool {
       annotation.invalidated = true;
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   /**
@@ -890,12 +890,7 @@ class BidirectionalTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -1277,22 +1272,18 @@ class BidirectionalTool extends AnnotationTool {
       const handles1 = [index1, index2];
       const handles2 = [index3, index4];
 
-      const { scale: scale1, units: units1 } = getCalibratedLengthUnitsAndScale(
-        image,
-        handles1
-      );
+      const { scale: scale1, lengthUnits: units1 } =
+        getCalibratedLengthUnitsAndScale(image, handles1);
 
-      const { scale: scale2, units: units2 } = getCalibratedLengthUnitsAndScale(
-        image,
-        handles2
-      );
+      const { scale: scale2, lengthUnits: units2 } =
+        getCalibratedLengthUnitsAndScale(image, handles2);
 
       const dist1 = this._calculateLength(worldPos1, worldPos2) / scale1;
       const dist2 = this._calculateLength(worldPos3, worldPos4) / scale2;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 
-      const lengthUnit = dist1 > dist2 ? units1 : units2;
+      const lengthUnits = dist1 > dist2 ? units1 : units2;
       const widthUnit = dist1 > dist2 ? units2 : units1;
 
       this._isInsideVolume(index1, index2, index3, index4, dimensions)
@@ -1302,8 +1293,7 @@ class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
-        unit: units1,
-        lengthUnit,
+        lengthUnits,
         widthUnit,
       };
     }
@@ -1335,7 +1325,7 @@ class BidirectionalTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const { cachedStats, label } = data;
-  const { length, width, unit, lengthUnit, widthUnit } = cachedStats[targetId];
+  const { length, width, unit, lengthUnits, widthUnit } = cachedStats[targetId];
 
   const textLines = [];
   if (label) {
@@ -1348,7 +1338,7 @@ function defaultGetTextLines(data, targetId): string[] {
   // spaceBetweenSlices & pixelSpacing &
   // magnitude in each direction? Otherwise, this is "px"?
   textLines.push(
-    `L: ${roundNumber(length)} ${lengthUnit || unit}`,
+    `L: ${roundNumber(length)} ${lengthUnits || unit}`,
     `W: ${roundNumber(width)} ${widthUnit || unit}`
   );
 

@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
@@ -13,7 +12,7 @@ import {
   setTitleAndDescription,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -22,7 +21,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -66,17 +64,13 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment1FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentSpecificConfig(
-      toolGroupId,
-      segmentationRepresentationUID,
-      {
-        1: {
-          LABELMAP: {
-            fillAlpha: segment1FillAlpha,
-          },
+    segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
+      1: {
+        LABELMAP: {
+          fillAlpha: segment1FillAlpha,
         },
-      }
-    );
+      },
+    });
   },
 });
 
@@ -87,17 +81,13 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment2FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentSpecificConfig(
-      toolGroupId,
-      segmentationRepresentationUID,
-      {
-        2: {
-          LABELMAP: {
-            fillAlpha: segment2FillAlpha,
-          },
+    segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
+      2: {
+        LABELMAP: {
+          fillAlpha: segment2FillAlpha,
         },
-      }
-    );
+      },
+    });
   },
 });
 
@@ -127,7 +117,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume1.volumeId,
     cornerstone,
   });
@@ -141,13 +131,9 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -161,7 +147,7 @@ async function run() {
   const smallVolumeImageIds = [imageIds[0], imageIds[1]];
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds: smallVolumeImageIds,
   });
 
@@ -192,14 +178,16 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // // Add the segmentation representations to the toolgroup
-  [segmentationRepresentationUID] =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representations to the viewport
+  [segmentationRepresentationUID] = await segmentation.addRepresentations(
+    viewportId,
+    [
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
-    ]);
+    ]
+  );
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);

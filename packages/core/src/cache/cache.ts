@@ -14,7 +14,7 @@ import {
 import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
-import { ImageVolume } from './classes/ImageVolume';
+import { restoreImagesFromBuffer } from './utils/restoreImagesFromBuffer';
 
 const ONE_GB = 1073741824;
 
@@ -170,7 +170,7 @@ class Cache implements ICache {
 
     // if we had views for the images of the volume, we need to restore them
     // to avoid memory leaks
-    this._restoreImagesFromBuffer(volume);
+    restoreImagesFromBuffer(volume);
 
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
@@ -333,6 +333,55 @@ class Cache implements ICache {
   }
 
   /**
+   * Common logic for putting an image into the cache
+   *
+   * @param imageId - ImageId for the image
+   * @param image - The loaded image
+   * @param cachedImage - The CachedImage object
+   */
+  private _putImageCommon(
+    imageId: string,
+    image: IImage,
+    cachedImage: ICachedImage
+  ): void {
+    if (!this._imageCache.get(imageId)) {
+      console.warn(
+        'The image was purged from the cache before it completed loading.'
+      );
+      return;
+    }
+
+    if (image.sizeInBytes === undefined || Number.isNaN(image.sizeInBytes)) {
+      throw new Error(
+        '_putImageCommon: image.sizeInBytes must not be undefined'
+      );
+    }
+    if (image.sizeInBytes.toFixed === undefined) {
+      throw new Error('_putImageCommon: image.sizeInBytes is not a number');
+    }
+
+    // check if there is enough space in unallocated + image Cache
+    if (!this.isCacheable(image.sizeInBytes)) {
+      throw new Error(Events.CACHE_SIZE_EXCEEDED);
+    }
+
+    // if there is, decache if necessary
+    this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
+
+    cachedImage.loaded = true;
+    cachedImage.image = image;
+    cachedImage.sizeInBytes = image.sizeInBytes;
+    this.incrementImageCacheSize(cachedImage.sizeInBytes);
+    const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
+      image: cachedImage,
+    };
+
+    triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
+
+    cachedImage.sharedCacheKey = image.sharedCacheKey;
+  }
+
+  /**
    * Puts a new image load object into the cache
    *
    * First, it creates a CachedImage object and put it inside the imageCache for
@@ -379,7 +428,7 @@ class Cache implements ICache {
     const cachedImage: ICachedImage = {
       loaded: false,
       imageId,
-      sharedCacheKey: undefined, // The sharedCacheKey for this imageId.  undefined by default
+      sharedCacheKey: undefined,
       imageLoadObject,
       timeStamp: Date.now(),
       sizeInBytes: 0,
@@ -389,53 +438,48 @@ class Cache implements ICache {
 
     return imageLoadObject.promise
       .then((image: IImage) => {
-        if (!this._imageCache.get(imageId)) {
-          // If the image has been purged before being loaded, we stop here.
-          console.warn(
-            'The image was purged from the cache before it completed loading.'
-          );
-          return;
-        }
-
-        if (
-          image.sizeInBytes === undefined ||
-          Number.isNaN(image.sizeInBytes)
-        ) {
-          throw new Error(
-            'putImageLoadObject: image.sizeInBytes must not be undefined'
-          );
-        }
-        if (image.sizeInBytes.toFixed === undefined) {
-          throw new Error(
-            'putImageLoadObject: image.sizeInBytes is not a number'
-          );
-        }
-
-        // check if there is enough space in unallocated + image Cache
-        if (!this.isCacheable(image.sizeInBytes)) {
-          throw new Error(Events.CACHE_SIZE_EXCEEDED);
-        }
-
-        // if there is, decache if necessary
-        this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
-
-        cachedImage.loaded = true;
-        cachedImage.image = image;
-        cachedImage.sizeInBytes = image.sizeInBytes;
-        this.incrementImageCacheSize(cachedImage.sizeInBytes);
-        const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
-          image: cachedImage,
-        };
-
-        triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
-
-        cachedImage.sharedCacheKey = image.sharedCacheKey;
+        this._putImageCommon(imageId, image, cachedImage);
       })
       .catch((error) => {
-        // console.warn(error)
         this._imageCache.delete(imageId);
         throw error;
       });
+  }
+
+  /**
+   * Puts a new image directly into the cache (synchronous version)
+   *
+   * @param imageId - ImageId for the image
+   * @param image - The loaded image
+   */
+  public putImageSync(imageId: string, image: IImage): void {
+    if (imageId === undefined) {
+      throw new Error('putImageSync: imageId must not be undefined');
+    }
+
+    if (this._imageCache.has(imageId)) {
+      throw new Error('putImageSync: imageId already in cache');
+    }
+
+    const cachedImage: ICachedImage = {
+      loaded: false,
+      imageId,
+      sharedCacheKey: undefined,
+      imageLoadObject: {
+        promise: Promise.resolve(image),
+      },
+      timeStamp: Date.now(),
+      sizeInBytes: 0,
+    };
+
+    this._imageCache.set(imageId, cachedImage);
+
+    try {
+      this._putImageCommon(imageId, image, cachedImage);
+    } catch (error) {
+      this._imageCache.delete(imageId);
+      throw error;
+    }
   }
 
   /**
@@ -926,68 +970,6 @@ class Cache implements ICache {
   public decrementVolumeCacheSize = (decrement: number) => {
     this._volumeCacheSize -= decrement;
   };
-
-  /**
-   * This function will restore the images' pixel data from the shared array buffer
-   * back to the individual images when the volume is purged from cache. It ensures
-   * that each image retrieves its correct portion of data from the buffer based on
-   * the previously stored offset and length information.
-   *
-   * @param volumeId - The volumeId whose images need to be restored.
-   */
-  private _restoreImagesFromBuffer(volume: IImageVolume) {
-    if (!(volume instanceof ImageVolume)) {
-      console.warn(
-        'Volume is not an ImageVolume. Cannot restore images from buffer.'
-      );
-      return;
-    }
-
-    // Retrieve the scalar data and the offset map from the volume
-    const scalarData = volume.getScalarData();
-    const imageCacheOffsetMap = volume.imageCacheOffsetMap;
-
-    if (imageCacheOffsetMap.size === 0) {
-      // This happens during testing and isn't an issue
-      // console.warn('No cached images to restore for this volume.');
-      return;
-    }
-
-    // Iterate over each image and restore its pixel data from the shared buffer
-    for (const [imageId, { offset }] of imageCacheOffsetMap) {
-      const image = this.getImage(imageId);
-
-      if (!image) {
-        console.warn(`Image with id ${imageId} not found in cache.`);
-        continue;
-      }
-
-      const viewPixelData = image.getPixelData();
-      const length = viewPixelData.length;
-
-      // Create a new view of the buffer for this specific image
-      // @ts-ignore
-      const pixelData = new viewPixelData.constructor(
-        scalarData.buffer,
-        offset,
-        length
-      );
-
-      // Restore the original getPixelData function and pixelData
-      image.getPixelData = () => pixelData;
-
-      if (image.imageFrame) {
-        image.imageFrame.pixelData = pixelData;
-      }
-
-      delete image.bufferView;
-
-      // Optionally, increment the image cache size again if needed
-      this.incrementImageCacheSize(image.sizeInBytes);
-    }
-
-    console.log(`Images restored from buffer for volume ${volume.volumeId}.`);
-  }
 }
 
 /**

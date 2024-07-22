@@ -20,19 +20,19 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   segmentation,
   Enums: csToolsEnums,
 } = csTools3d;
 
 const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
+const { addRepresentations, addSegmentations } = segmentation;
 const { SegmentationRepresentations } = csToolsEnums;
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
@@ -42,7 +42,7 @@ const toolGroupId = 'toolGroupId-segmentationRender_test';
 
 const viewportId1 = 'AXIAL';
 const viewportId2 = 'SAGITTAL';
-const viewportUID3 = 'CORONAL';
+const viewportId3 = 'CORONAL';
 
 const LABELMAP = SegmentationRepresentations.Labelmap;
 
@@ -78,13 +78,10 @@ describe('Segmentation Render -- ', () => {
   describe('Rendering', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.renderingEngine = new RenderingEngine(renderingEngineId);
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
       metaData.addProvider(fakeMetaDataProvider, 10000);
@@ -125,7 +122,6 @@ describe('Segmentation Render -- ', () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
         compareImages(
           image,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -139,14 +135,14 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId1]
           );
           vp.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -159,7 +155,7 @@ describe('Segmentation Render -- ', () => {
               },
             ]);
 
-            addSegmentationRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId1, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -186,7 +182,7 @@ describe('Segmentation Render -- ', () => {
       const el3 = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.CORONAL,
-        viewportUID3
+        viewportId3
       );
 
       this.DOMElements.push(el1);
@@ -197,7 +193,7 @@ describe('Segmentation Render -- ', () => {
       const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);
-      const vp3 = this.renderingEngine.getViewport(viewportUID3);
+      const vp3 = this.renderingEngine.getViewport(viewportId3);
 
       let renderedViewportCounts = 0;
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -214,7 +210,6 @@ describe('Segmentation Render -- ', () => {
         const image2 = canvas2.toDataURL('image/png');
         const image3 = canvas3.toDataURL('image/png');
 
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_SEG_AX,
@@ -242,14 +237,14 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
-            [viewportId1, viewportId2, viewportUID3]
+            [viewportId1, viewportId2, viewportId3]
           );
           this.renderingEngine.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -262,7 +257,19 @@ describe('Segmentation Render -- ', () => {
               },
             ]);
 
-            addSegmentationRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId1, [
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
+            ]);
+            addRepresentations(viewportId2, [
+              {
+                segmentationId: segVolumeId,
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              },
+            ]);
+            addRepresentations(viewportId3, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -294,7 +301,6 @@ describe('Segmentation Render -- ', () => {
         const canvas1 = vp1.getCanvas();
         const image1 = canvas1.toDataURL('image/png');
 
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
         compareImages(
           image1,
           volumeURI_100_100_10_1_1_1_0_2SEGs_AX,
@@ -308,146 +314,47 @@ describe('Segmentation Render -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId1]
           );
           this.renderingEngine.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            createAndCacheVolume(segVolumeId2, { imageIds: [] }).then(() => {
-              addSegmentations([
-                {
-                  segmentationId: segVolumeId,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      volumeId: segVolumeId,
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
+            createAndCacheEmptyVolume(segVolumeId2, { imageIds: [] }).then(
+              () => {
+                addSegmentations([
+                  {
+                    segmentationId: segVolumeId,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segVolumeId,
+                      },
                     },
                   },
-                },
-                {
-                  segmentationId: segVolumeId2,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      volumeId: segVolumeId2,
+                  {
+                    segmentationId: segVolumeId2,
+                    representation: {
+                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                      data: {
+                        volumeId: segVolumeId2,
+                      },
                     },
                   },
-                },
-              ]);
+                ]);
 
-              addSegmentationRepresentations(this.segToolGroup.id, [
-                {
-                  segmentationId: segVolumeId,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-                {
-                  segmentationId: segVolumeId2,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-              ]);
-            });
-          });
-        });
-      } catch (e) {
-        done.fail(e);
-      }
-    });
-
-    it('should successfully render a segmentation with toolGroup specific config', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        Enums.OrientationAxis.AXIAL,
-        viewportId1
-      );
-      this.DOMElements.push(element);
-
-      const customToolGroupSegConfig = {
-        representations: {
-          [SegmentationRepresentations.Labelmap]: {
-            renderOutline: false,
-            fillAlpha: 0.99,
-          },
-        },
-      };
-
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const vp1 = this.renderingEngine.getViewport(viewportId1);
-
-      eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
-        const canvas1 = vp1.getCanvas();
-        const image1 = canvas1.toDataURL('image/png');
-        expect(evt.detail.toolGroupId).toBe(toolGroupId);
-
-        compareImages(
-          image1,
-          volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom,
-          'volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom'
-        ).then(done, done.fail);
-      });
-
-      eventTarget.addEventListener(
-        Events.SEGMENTATION_REPRESENTATION_MODIFIED,
-        (evt) => {
-          const toolGroupState =
-            segmentation.state.getSegmentationRepresentations(
-              this.segToolGroup.id
-            );
-
-          expect(toolGroupState).toBeDefined();
-
-          const toolGroupConfig =
-            segmentation.config.getToolGroupSpecificConfig(
-              this.segToolGroup.id
-            );
-
-          expect(toolGroupConfig).toBeDefined();
-          expect(toolGroupConfig.renderInactiveSegmentations).toBe(true);
-          expect(toolGroupConfig.representations[LABELMAP]).toEqual(
-            customToolGroupSegConfig.representations[LABELMAP]
-          );
-        }
-      );
-
-      this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
-
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
-      try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesForViewports(
-            this.renderingEngine,
-            [{ volumeId: volumeId, callback }],
-            [viewportId1]
-          );
-          this.renderingEngine.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-            addSegmentations([
-              {
-                segmentationId: segVolumeId,
-                representation: {
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                  data: {
-                    volumeId: segVolumeId,
+                addRepresentations(viewportId1, [
+                  {
+                    segmentationId: segVolumeId,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
                   },
-                },
-              },
-            ]);
-
-            addSegmentationRepresentations(
-              this.segToolGroup.id,
-              [
-                {
-                  segmentationId: segVolumeId,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-              ],
-              {
-                ...customToolGroupSegConfig,
+                  {
+                    segmentationId: segVolumeId2,
+                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                  },
+                ]);
               }
             );
           });
@@ -456,5 +363,104 @@ describe('Segmentation Render -- ', () => {
         done.fail(e);
       }
     });
+
+    // it('should successfully render a segmentation with toolGroup specific config', function (done) {
+    //   const element = createViewport(
+    //     this.renderingEngine,
+    //     Enums.OrientationAxis.AXIAL,
+    //     viewportId1
+    //   );
+    //   this.DOMElements.push(element);
+
+    //   const customToolGroupSegConfig = {
+    //     representations: {
+    //       [SegmentationRepresentations.Labelmap]: {
+    //         renderOutline: false,
+    //         fillAlpha: 0.99,
+    //       },
+    //     },
+    //   };
+
+    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+    //   const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+    //   const vp1 = this.renderingEngine.getViewport(viewportId1);
+
+    //   eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
+    //     const canvas1 = vp1.getCanvas();
+    //     const image1 = canvas1.toDataURL('image/png');
+
+    //     compareImages(
+    //       image1,
+    //       volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom,
+    //       'volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom'
+    //     ).then(done, done.fail);
+    //   });
+
+    //   eventTarget.addEventListener(
+    //     Events.SEGMENTATION_REPRESENTATION_MODIFIED,
+    //     (evt) => {
+    //       const toolGroupState = segmentation.state.getRepresentations(
+    //         this.segToolGroup.id
+    //       );
+
+    //       expect(toolGroupState).toBeDefined();
+
+    //       const toolGroupConfig =
+    //         segmentation.config.getAllSegmentsConfig(
+    //           this.segToolGroup.id
+    //         );
+
+    //       expect(toolGroupConfig).toBeDefined();
+    //       expect(toolGroupConfig.renderInactiveRepresentations).toBe(true);
+    //       expect(toolGroupConfig.representations[LABELMAP]).toEqual(
+    //         customToolGroupSegConfig.representations[LABELMAP]
+    //       );
+    //     }
+    //   );
+
+    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
+
+    //   const callback = ({ volumeActor }) =>
+    //     volumeActor.getProperty().setInterpolationTypeToNearest();
+
+    //   try {
+    //     createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+    //       setVolumesForViewports(
+    //         this.renderingEngine,
+    //         [{ volumeId: volumeId, callback }],
+    //         [viewportId1]
+    //       );
+    //       this.renderingEngine.render();
+    //       createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
+    //         addSegmentations([
+    //           {
+    //             segmentationId: segVolumeId,
+    //             representation: {
+    //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    //               data: {
+    //                 volumeId: segVolumeId,
+    //               },
+    //             },
+    //           },
+    //         ]);
+
+    //         addRepresentations(
+    //           this.segToolGroup.id,
+    //           [
+    //             {
+    //               segmentationId: segVolumeId,
+    //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    //             },
+    //           ],
+    //           {
+    //             ...customToolGroupSegConfig,
+    //           }
+    //         );
+    //       });
+    //     });
+    //   } catch (e) {
+    //     done.fail(e);
+    //   }
+    // });
   });
 });

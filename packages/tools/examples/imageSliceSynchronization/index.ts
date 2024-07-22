@@ -199,7 +199,7 @@ async function run() {
   cornerstoneTools.utilities.stackPrefetch.enable(vp2.element);
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 

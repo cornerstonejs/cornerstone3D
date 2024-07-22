@@ -22,10 +22,8 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
-  segmentation,
   CircleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
@@ -228,7 +226,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -240,12 +237,10 @@ async function run() {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: true,
   });
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -280,11 +275,13 @@ async function run() {
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
+  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
+    imageIds: ctImageIds,
   });
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  // Define a volume in memory
+  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
+    imageIds: ptImageIds,
+  });
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';

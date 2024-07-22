@@ -44,5 +44,5 @@ export function invalidateBrushCursor(toolGroupId: string): void {
 
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+  triggerAnnotationRenderForViewportIds(viewportIds);
 }

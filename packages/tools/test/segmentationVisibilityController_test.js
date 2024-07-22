@@ -19,20 +19,20 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
   ToolGroupManager,
   Enums: csToolsEnums,
-  SegmentationDisplayTool,
+
   segmentation,
   RectangleScissorsTool,
 } = csTools3d;
 
 const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
+const { addRepresentations, addSegmentations } = segmentation;
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
@@ -73,15 +73,12 @@ describe('Segmentation Controller --', () => {
   describe('Visibility/Color Controller', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       csTools3d.addTool(RectangleScissorsTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
       this.segToolGroup.addTool(RectangleScissorsTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       });
@@ -143,9 +140,9 @@ describe('Segmentation Controller --', () => {
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
-        createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-          createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-            createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+            createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
               setVolumesForViewports(
                 this.renderingEngine,
                 [{ volumeId: volumeId }],
@@ -175,7 +172,7 @@ describe('Segmentation Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: seg1VolumeID,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -226,9 +223,9 @@ describe('Segmentation Controller --', () => {
     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
-    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-    //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheEmptyVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+    //         createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
     //           setVolumesForViewports(
     //             this.renderingEngine,
     //             [{ volumeId: volumeId }],
@@ -243,7 +240,7 @@ describe('Segmentation Controller --', () => {
     //             )
 
     //             // add two volumes on the segmentation
-    //             addSegmentationRepresentations(toolGroupId, [
+    //             addRepresentations(toolGroupId, [
     //               {
     //                 volumeId: seg1VolumeID,
     //                 colorLUTIndex: 1,
@@ -283,7 +280,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getSegmentationRepresentations(toolGroupId)
+    //       csTools3d.segmentation.state.getRepresentations(toolGroupId)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].active).toBe(true)
@@ -300,9 +297,9 @@ describe('Segmentation Controller --', () => {
     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
-    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-    //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheEmptyVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+    //         createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
     //           setVolumesForViewports(
     //             this.renderingEngine,
     //             [{ volumeId: volumeId }],
@@ -311,7 +308,7 @@ describe('Segmentation Controller --', () => {
     //             vp1.render()
 
     //             // add two volumes on the segmentation
-    //             addSegmentationRepresentations(toolGroupId, [
+    //             addRepresentations(toolGroupId, [
     //               {
     //                 volumeId: seg1VolumeID,
     //               },
@@ -320,11 +317,11 @@ describe('Segmentation Controller --', () => {
     //               },
     //             ]).then(() => {
     //               const segmentationData =
-    //                 segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+    //                 segmentation.activeSegmentation.getActiveRepresentation(
     //                   toolGroupId
     //                 )
 
-    //               segmentation.config.visibility.setSegmentationVisibility(
+    //               segmentation.config.visibility.setRepresentationVisibility(
     //                 toolGroupId,
     //                 segmentationData.segmentationRepresentationUID,
     //                 false

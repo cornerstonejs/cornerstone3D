@@ -71,13 +71,9 @@ import type {
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
   SegmentationRepresentationData,
+  Segmentation,
   SegmentationState,
-  ToolGroupSpecificContourRepresentation,
-  ToolGroupSpecificLabelmapRepresentation,
-  ToolGroupSpecificRepresentation,
-  ToolGroupSpecificRepresentationState,
-  ToolGroupSpecificRepresentations,
-  ToolGroupSpecificSurfaceRepresentation,
+  RepresentationPublicInput,
 } from './SegmentationStateTypes';
 
 // Cursors
@@ -187,14 +183,9 @@ export type {
   Segmentation,
   SegmentationPublicInput,
   SegmentationRepresentationConfig,
-  SegmentationRepresentationData,
-  SegmentationState,
-  ToolGroupSpecificContourRepresentation,
-  ToolGroupSpecificLabelmapRepresentation,
-  ToolGroupSpecificRepresentation,
-  ToolGroupSpecificRepresentationState,
-  ToolGroupSpecificRepresentations,
-  ToolGroupSpecificSurfaceRepresentation,
+  RepresentationConfig,
+  RepresentationPublicInput,
+  LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,

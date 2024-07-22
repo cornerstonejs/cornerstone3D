@@ -5,25 +5,25 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
+import addRepresentations from './addRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 async function computeVolumeSegmentationFromStack({
-  imageIdReferenceMap,
+  imageIds,
   options,
 }: {
-  imageIdReferenceMap: Map<string, string>;
+  imageIds: string[];
   options?: {
     volumeId?: string;
   };
 }): Promise<{ volumeId: string }> {
-  const segmentationImageIds = Array.from(imageIdReferenceMap.values());
+  const segmentationImageIds = imageIds;
 
   const additionalDetails = {
-    imageIdReferenceMap,
+    imageIds,
   };
 
   const volumeId = options?.volumeId ?? csUtils.uuidv4();
@@ -45,7 +45,7 @@ async function computeVolumeSegmentationFromStack({
  * @param params - The parameters for the conversion.
  * @param params.segmentationId - The segmentationId to convert.
  * @param [params.options] - The conversion options.
- * @param params.options.toolGroupId - The new toolGroupId to use for the segmentation.
+ * @param params.options.viewportId - The new viewportId to use for the segmentation.
  * @param [params.options.volumeId] - the new volumeId to use for the segmentation. If not provided, a new ID will be generated.
  * @param [params.options.newSegmentationId] - the new segmentationId to use for the segmentation. If not provided, a new ID will be generated.
  * @param [params.options.removeOriginal] - Whether or not to remove the original segmentation. Defaults to true.
@@ -58,7 +58,7 @@ async function convertStackToVolumeSegmentation({
 }: {
   segmentationId: string;
   options?: {
-    toolGroupId: string;
+    viewportId: string;
     volumeId?: string;
     removeOriginal?: boolean;
   };
@@ -69,13 +69,13 @@ async function convertStackToVolumeSegmentation({
     .LABELMAP as LabelmapSegmentationDataStack;
 
   const { volumeId } = await computeVolumeSegmentationFromStack({
-    imageIdReferenceMap: data.imageIdReferenceMap,
+    imageIds: data.imageIds,
     options,
   });
 
   await updateSegmentationState({
     segmentationId,
-    toolGroupId: options.toolGroupId,
+    viewportId: options.viewportId,
     options,
     volumeId,
   });
@@ -84,12 +84,12 @@ async function convertStackToVolumeSegmentation({
 // This function is responsible for updating the segmentation state
 async function updateSegmentationState({
   segmentationId,
-  toolGroupId,
+  viewportId,
   volumeId,
   options,
 }: {
   segmentationId: string;
-  toolGroupId: string;
+  viewportId: string;
   volumeId: string;
   options?: {
     removeOriginal?: boolean;
@@ -101,9 +101,9 @@ async function updateSegmentationState({
     const data = segmentation.representationData
       .LABELMAP as LabelmapSegmentationDataStack;
 
-    const imageIdReferenceMap = data.imageIdReferenceMap;
+    const { imageIds } = data;
 
-    Array.from(imageIdReferenceMap.values()).forEach((imageId) => {
+    imageIds.forEach((imageId) => {
       cache.removeImageLoadObject(imageId);
     });
 
@@ -117,14 +117,14 @@ async function updateSegmentationState({
     };
   }
 
-  await addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // await addRepresentations(viewportId, [
+  //   {
+  //     segmentationId,
+  //     type: SegmentationRepresentations.Labelmap,
+  //   },
+  // ]);
 
-  triggerSegmentationRender(toolGroupId);
+  triggerSegmentationRender(viewportId);
   // Note: It is crucial to trigger the data modified event. This ensures that the
   // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>

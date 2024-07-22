@@ -1,7 +1,6 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import _cloneDeep from 'lodash.clonedeep';
 
 const {
   cache,
@@ -207,7 +206,7 @@ describe('Sculptor Tool: ', () => {
           expect(freehandRoiAnnotation.metadata.toolName).toBe(
             PlanarFreehandROITool.toolName
           );
-          initialPoints = _cloneDeep(
+          initialPoints = structuredClone(
             freehandRoiAnnotation.data.contour.polyline
           );
         });
@@ -360,7 +359,7 @@ describe('Sculptor Tool: ', () => {
           expect(freehandRoiAnnotation.metadata.toolName).toBe(
             PlanarFreehandROITool.toolName
           );
-          initialPoints = _cloneDeep(
+          initialPoints = structuredClone(
             freehandRoiAnnotation.data.contour.polyline
           );
         });
@@ -452,7 +451,7 @@ describe('Sculptor Tool: ', () => {
 
       try {
         volumeLoader
-          .createAndCacheVolume(volumeId, { imageIds: [] })
+          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,

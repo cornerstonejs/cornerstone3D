@@ -1,6 +1,5 @@
 import { MouseBindings, ToolModes } from '../../enums';
 import get from 'lodash.get';
-import cloneDeep from 'lodash.clonedeep';
 import {
   triggerEvent,
   eventTarget,
@@ -763,7 +762,7 @@ export default class ToolGroup implements IToolGroup {
       get(this._toolInstances[toolName].configuration, configurationPath) ||
       this._toolInstances[toolName].configuration;
 
-    return cloneDeep(_configuration);
+    return structuredClone(_configuration);
   }
 
   /**
@@ -772,6 +771,23 @@ export default class ToolGroup implements IToolGroup {
    */
   public getPrevActivePrimaryToolName(): string {
     return this.prevActivePrimaryToolName;
+  }
+
+  /**
+   * Set Primary tool active
+   * Get the current active primary tool name and disable that
+   * And set the new tool active
+   */
+  public setActivePrimaryTool(toolName: string): void {
+    const activeToolName = this.getCurrentActivePrimaryToolName();
+    this.setToolDisabled(activeToolName);
+    this.setToolActive(toolName, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  }
+
+  public getCurrentActivePrimaryToolName(): string {
+    return this.currentActivePrimaryToolName;
   }
 
   /**

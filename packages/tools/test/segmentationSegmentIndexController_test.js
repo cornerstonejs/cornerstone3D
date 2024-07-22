@@ -19,12 +19,12 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   segmentation,
   Enums: csToolsEnums,
   utilities: csToolsUtils,
@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
+const { addRepresentations, addSegmentations } = segmentation;
 
 const {
   fakeVolumeLoader,
@@ -80,15 +80,12 @@ describe('Segmentation Index Controller --', () => {
   describe('Index/Lock Controller', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       csTools3d.addTool(RectangleScissorsTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
       this.segToolGroup.addTool(RectangleScissorsTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.segToolGroup.setToolActive(RectangleScissorsTool.toolName, {
         bindings: [{ mouseButton: 1 }],
       });
@@ -217,7 +214,7 @@ describe('Segmentation Index Controller --', () => {
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
@@ -243,7 +240,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -326,8 +323,8 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0]);
 
           const segmentationRepresentation =
-            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-              toolGroupId
+            segmentation.activeSegmentation.getActiveRepresentation(
+              viewportId1
             );
 
           segmentation.segmentIndex.setActiveSegmentIndex(
@@ -349,9 +346,7 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-          );
+          segmentation.activeSegmentation.getActiveRepresentation(viewportId1);
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -385,7 +380,7 @@ describe('Segmentation Index Controller --', () => {
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
@@ -411,7 +406,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -494,8 +489,8 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0]);
 
           const segmentationRepresentation =
-            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-              toolGroupId
+            segmentation.activeSegmentation.getActiveRepresentation(
+              viewportId1
             );
 
           segmentation.segmentIndex.setActiveSegmentIndex(
@@ -523,9 +518,7 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-          );
+          segmentation.activeSegmentation.getActiveRepresentation(viewportId1);
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -572,7 +565,7 @@ describe('Segmentation Index Controller --', () => {
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId }],
@@ -598,7 +591,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addSegmentationRepresentations(this.segToolGroup.id, [
+                addRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

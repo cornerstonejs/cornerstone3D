@@ -26,7 +26,8 @@ function getImageSliceDataForVolumeViewport(
     .getActors()
     .find(
       (a) =>
-        a.referenceId === imageVolume.volumeId || a.uid === imageVolume.volumeId
+        a.referencedId === imageVolume.volumeId ||
+        a.uid === imageVolume.volumeId
     );
 
   if (!actorEntry) {

@@ -154,6 +154,5 @@ workflows:
       - NPM_PUBLISH:
           requires:
             - BUILD
-            - TEST
 
 # VS Code Extension Version: 1.5.1

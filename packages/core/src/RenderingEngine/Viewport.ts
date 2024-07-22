@@ -4,7 +4,6 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { vec2, vec3 } from 'gl-matrix';
-import _cloneDeep from 'lodash.clonedeep';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
@@ -151,11 +150,11 @@ class Viewport implements IViewport {
       this.renderingEngineId
     );
 
-    this.defaultOptions = _cloneDeep(props.defaultOptions);
+    this.defaultOptions = structuredClone(props.defaultOptions);
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    this.options = _cloneDeep(props.defaultOptions);
+    this.options = structuredClone(props.defaultOptions);
     this.isDisabled = false;
   }
 
@@ -262,7 +261,7 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = <ViewportInputOptions>_cloneDeep(options);
+    this.options = <ViewportInputOptions>structuredClone(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -280,7 +279,7 @@ class Viewport implements IViewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = _cloneDeep(this.defaultOptions);
+    this.options = structuredClone(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -537,7 +536,10 @@ class Viewport implements IViewport {
     actors.forEach((actor) => this.addActor(actor));
 
     // set the clipping planes for the actors
-    this.resetCamera(resetCameraPanAndZoom, resetCameraPanAndZoom);
+    this.resetCamera({
+      resetPan: resetCameraPanAndZoom,
+      resetZoom: resetCameraPanAndZoom,
+    });
   }
 
   /**
@@ -878,18 +880,22 @@ class Viewport implements IViewport {
    * resetPan and resetZoom are true it places the focal point at the center of
    * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
    * is reset for the current view.
-   * @param resetPan - If true, the camera focal point is reset to the center of the volume (slice)
-   * @param resetZoom - If true, the camera zoom is reset to the default zoom
-   * @param storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
+   * @param options - The reset options
+   * @param options.resetPan - If true, the camera focal point is reset to the center of the volume (slice)
+   * @param options.resetZoom - If true, the camera zoom is reset to the default zoom
+   * @param options.resetToCenter - If true, the camera is reset to the center of the volume (slice)
+   * @param options.storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  public resetCamera(
-    resetPan = true,
-    resetZoom = true,
-    resetToCenter = true,
-    storeAsInitialCamera = true
-  ): boolean {
+  public resetCamera(options?): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetToCenter = true,
+      storeAsInitialCamera = true,
+    } = options || {};
+
     const renderer = this.getRenderer();
 
     // fix the flip right away, since we rely on the viewPlaneNormal and
@@ -903,7 +909,7 @@ class Viewport implements IViewport {
       flipVertical: false,
     });
 
-    const previousCamera = _cloneDeep(this.getCamera());
+    const previousCamera = structuredClone(this.getCamera());
     const bounds = renderer.computeVisiblePropBounds();
     const focalPoint = <Point3>[0, 0, 0];
     const imageData = this.getDefaultImageData();
@@ -1013,9 +1019,9 @@ class Viewport implements IViewport {
       clippingRange: clippingRangeToUse,
     });
 
-    const modifiedCamera = _cloneDeep(this.getCamera());
+    const modifiedCamera = structuredClone(this.getCamera());
 
-    this.setFitToCanvasCamera(_cloneDeep(this.getCamera()));
+    this.setFitToCanvasCamera(structuredClone(this.getCamera()));
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);
@@ -1107,7 +1113,7 @@ class Viewport implements IViewport {
    * could be a URL with parameters. Regardless it refers to the currently displaying
    * image as a string value.
    */
-  public getReferenceId(_specifier?: ViewReferenceSpecifier): string {
+  public getViewReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return null;
   }
 
@@ -1239,11 +1245,7 @@ class Viewport implements IViewport {
     return renderer.getActiveCamera();
   }
 
-  /**
-   * Get the camera's current state
-   * @returns The camera object.
-   */
-  public getCamera(): ICamera {
+  protected getCameraNoRotation(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
     return {
@@ -1260,6 +1262,19 @@ class Viewport implements IViewport {
   }
 
   /**
+   * Get the camera's current state
+   * @returns The camera object.
+   */
+  public getCamera(): ICamera {
+    const camera = this.getCameraNoRotation();
+
+    return {
+      ...camera,
+      rotation: this.getRotation(),
+    };
+  }
+
+  /**
    * Set the camera parameters
    * @param cameraInterface - ICamera
    * @param storeAsInitialCamera - to set the provided camera as the initial one,
@@ -1270,7 +1285,7 @@ class Viewport implements IViewport {
     storeAsInitialCamera = false
   ): void {
     const vtkCamera = this.getVtkActiveCamera();
-    const previousCamera = _cloneDeep(this.getCamera());
+    const previousCamera = structuredClone(this.getCamera());
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,
@@ -1417,7 +1432,6 @@ class Viewport implements IViewport {
         element: this.element,
         viewportId: this.id,
         renderingEngineId: this.renderingEngineId,
-        rotation: this.getRotation(),
       };
 
       triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
@@ -1631,7 +1645,7 @@ class Viewport implements IViewport {
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
-  ): boolean {
+  ): boolean | unknown {
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()

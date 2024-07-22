@@ -1,7 +1,7 @@
 import { IStackViewport, IVolumeViewport, Point3 } from '../types';
 import { setVolumesForViewports } from '../RenderingEngine/helpers';
 import {
-  createAndCacheVolume,
+  createAndCacheEmptyVolume,
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
 import { Events, OrientationAxis, ViewportType } from '../enums';
@@ -46,7 +46,7 @@ async function convertStackToVolumeViewport({
   const imageIds = viewport.getImageIds();
 
   // It is important to keep the camera before enabling the viewport
-  const prevCamera = viewport.getCamera();
+  const prevView = viewport.getViewReference();
 
   // this will disable the stack viewport and remove it from the toolGroup
   renderingEngine.enableElement({
@@ -64,7 +64,7 @@ async function convertStackToVolumeViewport({
   // imageIds or not so we just let the loader handle it and we have cache
   // optimizations in place to avoid fetching the same imageId if it is already
   // cached
-  const volume = await createAndCacheVolume(volumeId, {
+  const volume = await createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 
@@ -87,11 +87,7 @@ async function convertStackToVolumeViewport({
   );
 
   const volumeViewportNewVolumeHandler = () => {
-    if (!options.orientation) {
-      volumeViewport.setCamera({
-        ...prevCamera,
-      });
-    }
+    volumeViewport.setViewReference(prevView);
     volumeViewport.render();
 
     element.removeEventListener(

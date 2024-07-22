@@ -129,10 +129,7 @@ class VideoRedactionTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     return annotation;
   };
@@ -211,13 +208,7 @@ class VideoRedactionTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     evt.preventDefault();
   };
@@ -259,13 +250,7 @@ class VideoRedactionTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     evt.preventDefault();
   };
@@ -291,7 +276,6 @@ class VideoRedactionTool extends AnnotationTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     this.editData = null;
     this.isDrawing = false;
@@ -303,10 +287,7 @@ class VideoRedactionTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
   };
 
   _mouseDragCallback = (evt) => {
@@ -400,12 +381,8 @@ class VideoRedactionTool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
   };
 
   cancel(element) {
@@ -425,13 +402,7 @@ class VideoRedactionTool extends AnnotationTool {
     data.active = false;
     data.handles.activeHandleIndex = null;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     this.editData = null;
     return annotation.metadata.annotationUID;

@@ -40,7 +40,7 @@ import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/plana
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
@@ -285,8 +285,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ): PlanarFreehandROIAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     const annotation = this.createAnnotation(
       evt
@@ -303,7 +301,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -683,7 +681,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const { data } = annotation;
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        data.cachedStats[targetId].areaUnits == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -691,7 +689,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnit: null,
+          areaUnits: null,
         };
 
         this._calculateCachedStats(
@@ -1068,12 +1066,12 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (Number.isFinite(max)) {
@@ -1081,7 +1079,7 @@ function defaultGetTextLines(data, targetId): string[] {
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
   }
 
   if (perimeter) {

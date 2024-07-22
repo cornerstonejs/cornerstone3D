@@ -15,12 +15,12 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   Enums: csToolsEnums,
   segmentation,
   utilities: { segmentation: segUtils },
@@ -28,7 +28,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
+const { addRepresentations, addSegmentations } = segmentation;
 const { SegmentationRepresentations } = csToolsEnums;
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = testUtils;
@@ -69,13 +69,10 @@ describe('Segmentation State -- ', () => {
   describe('State', function () {
     beforeEach(function () {
       csTools3d.init();
-      csTools3d.addTool(SegmentationDisplayTool);
       cache.purgeCache();
       this.DOMElements = [];
 
       this.segToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-      this.segToolGroup.addTool(SegmentationDisplayTool.toolName);
-      this.segToolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
       this.renderingEngine = new RenderingEngine(renderingEngineId);
       registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
       metaData.addProvider(fakeMetaDataProvider, 10000);
@@ -100,7 +97,7 @@ describe('Segmentation State -- ', () => {
       });
     });
 
-    it('should successfully create a global and toolGroup state when segmentation is added', function (done) {
+    it('should successfully create a state when segmentation is added', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.AXIAL
@@ -129,34 +126,18 @@ describe('Segmentation State -- ', () => {
 
           const state = stateManager.getState();
 
-          expect(evt.detail.toolGroupId).toBe(toolGroupId);
           expect(state).toBeDefined();
-          expect(state.toolGroups).toBeDefined();
-
-          const toolGroupSegmentationState =
-            state.toolGroups[this.segToolGroup.id];
-
-          expect(toolGroupSegmentationState).toBeDefined();
-          expect(
-            toolGroupSegmentationState.segmentationRepresentations.length
-          ).toBe(1);
+          expect(state.representations).toBeDefined();
 
           const toolGroupSegRepresentations =
-            segmentation.state.getSegmentationRepresentations(
-              this.segToolGroup.id
-            );
-
-          expect(
-            toolGroupSegmentationState.segmentationRepresentations
-          ).toEqual(toolGroupSegRepresentations);
+            segmentation.state.getRepresentationsForViewport(viewportId);
 
           const segRepresentation = toolGroupSegRepresentations[0];
 
-          expect(segRepresentation.active).toBe(true);
           expect(segRepresentation.segmentationRepresentationUID).toBeDefined();
           expect(segRepresentation.segmentationId).toBe(segVolumeId);
           expect(segRepresentation.type).toBe(LABELMAP);
-          expect(segRepresentation.config).toBeDefined();
+          expect(segRepresentation.rendering).toBeDefined();
         }
       );
 
@@ -173,14 +154,14 @@ describe('Segmentation State -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId]
           );
           vp.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -193,7 +174,7 @@ describe('Segmentation State -- ', () => {
               },
             ]);
 
-            addSegmentationRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -220,7 +201,7 @@ describe('Segmentation State -- ', () => {
       eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
         const globalConfig = segmentation.config.getGlobalConfig();
 
-        expect(globalConfig.renderInactiveSegmentations).toBe(true);
+        expect(globalConfig.renderInactiveRepresentations).toBe(true);
         expect(globalConfig.representations).toBeDefined();
         expect(globalConfig.representations[LABELMAP]).toBeDefined();
 
@@ -250,14 +231,14 @@ describe('Segmentation State -- ', () => {
         volumeActor.getProperty().setInterpolationTypeToNearest();
 
       try {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
           setVolumesForViewports(
             this.renderingEngine,
             [{ volumeId: volumeId, callback }],
             [viewportId]
           );
           vp.render();
-          createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
+          createAndCacheEmptyVolume(segVolumeId, { imageIds: [] }).then(() => {
             addSegmentations([
               {
                 segmentationId: segVolumeId,
@@ -270,7 +251,7 @@ describe('Segmentation State -- ', () => {
               },
             ]);
 
-            addSegmentationRepresentations(this.segToolGroup.id, [
+            addRepresentations(viewportId, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,

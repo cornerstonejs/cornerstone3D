@@ -41,7 +41,6 @@ const { ViewportType } = csEnums;
 
 const {
     Enums: csToolsEnums,
-    SegmentationDisplayTool,
     ToolGroupManager,
     segmentation: csToolsSegmentation,
     utilities: csToolsUtilities
@@ -311,16 +310,9 @@ function exportSegmentation() {
 
     // Get active segmentation
     const activeSegmentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
-            toolGroupId
-        );
-    // Get active segmentation representation
-    const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-        );
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation();
 
-    if (!activeSegmentation || !activeSegmentationRepresentation) {
+    if (!activeSegmentation) {
         return;
     }
 
@@ -330,11 +322,10 @@ function exportSegmentation() {
     ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
-    if (labelmap.imageIdReferenceMap) {
+    if (labelmap.imageIds) {
         //
-        labelmap.imageIdReferenceMap.forEach(
-            async (derivedImagesId: string, imageId: string) => {
-                //
+        labelmap.imageIds.forEach((derivedImagesId: string) => {
+            /* //
                 await imageLoader.loadAndCacheImage(imageId);
                 //
                 const cacheImage = cache.getImage(imageId);
@@ -420,7 +411,7 @@ function removeActiveSegmentation() {
         );
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
             toolGroupId
         );
 
@@ -429,7 +420,7 @@ function removeActiveSegmentation() {
     }
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId, [
         activeSegmentationRepresentation.segmentationRepresentationUID
     ]);
 
@@ -444,9 +435,9 @@ function removeActiveSegmentation() {
     ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
-    if (labelmap.imageIdReferenceMap) {
+    if (labelmap.imageIds) {
         //
-        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
+        labelmap.imageIds.forEach((derivedImagesId: string) => {
             //
             cache.removeImageLoadObject(derivedImagesId);
         });
@@ -698,11 +689,11 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationIdRepresentations(
+            csToolsSegmentation.state.getRepresentationsBySegmentationId(
                 segmentationId
             );
 
-        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
+        csToolsSegmentation.activeSegmentation.setActiveRepresentation(
             toolGroupId,
             segmentationRepresentations[0].segmentationRepresentationUID
         );
@@ -818,7 +809,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId);
+    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();
@@ -834,9 +825,9 @@ function restart() {
         ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
         //
-        if (labelmap.imageIdReferenceMap) {
+        if (labelmap.imageIds) {
             //
-            labelmap.imageIdReferenceMap.forEach(derivedImagesId => {
+            labelmap.imageIds.forEach(derivedImagesId => {
                 cache.removeImageLoadObject(derivedImagesId);
             });
         }
@@ -854,13 +845,6 @@ async function addSegmentationsToState(segmentationId: string) {
     const derivedImages =
         imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
 
-    //
-    const imageIdReferenceMap =
-        csToolsUtilities.segmentation.createImageIdReferenceMap(
-            imageIds,
-            derivedImages.imageIds
-        );
-
     // Add the segmentations to state
     csToolsSegmentation.addSegmentations([
         {
@@ -868,14 +852,14 @@ async function addSegmentationsToState(segmentationId: string) {
             representation: {
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
                 data: {
-                    imageIdReferenceMap: imageIdReferenceMap
+                    imageIds: derivedImages.imageIds
                 }
             }
         }
     ]);
 
-    // Add the segmentation representation to the toolgroup
-    await csToolsSegmentation.addSegmentationRepresentations(toolGroupId, [
+    // Add the segmentation representation to the viewport
+    await csToolsSegmentation.addRepresentations(viewportIds[0], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap
@@ -1068,8 +1052,6 @@ async function run() {
     toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
     //
-    cornerstoneTools.addTool(SegmentationDisplayTool);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
 
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);

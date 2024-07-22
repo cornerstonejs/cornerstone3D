@@ -24,7 +24,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -47,7 +46,7 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'volumeSegmentationId';
-const toolGroupIds = ['toolgroupIdVolume'];
+const toolGroupId = 'toolgroupIdVolume';
 const segmentationRepresentationUIDs = [];
 
 const actionConfiguration = {
@@ -134,28 +133,26 @@ addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
-    toolGroupIds.forEach((toolGroupId) => {
-      const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-      // Set the currently active tool disabled
-      const toolName = toolGroup.getActivePrimaryMouseButtonTool();
+    // Set the currently active tool disabled
+    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
 
-      if (toolName) {
-        toolGroup.setToolDisabled(toolName);
-      }
+    if (toolName) {
+      toolGroup.setToolDisabled(toolName);
+    }
 
-      if (brushValues.includes(name)) {
-        toolGroup.setToolActive(name, {
-          bindings: [{ mouseButton: MouseBindings.Primary }],
-        });
-      } else {
-        const toolName = name;
+    if (brushValues.includes(name)) {
+      toolGroup.setToolActive(name, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
+    } else {
+      const toolName = name;
 
-        toolGroup.setToolActive(toolName, {
-          bindings: [{ mouseButton: MouseBindings.Primary }],
-        });
-      }
-    });
+      toolGroup.setToolActive(toolName, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
+    }
   },
 });
 
@@ -165,9 +162,7 @@ addSliderToToolbar({
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
-    toolGroupIds.forEach((toolGroupId) => {
-      segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
-    });
+    segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
   },
 });
 
@@ -231,9 +226,9 @@ async function addSegmentationsToState() {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the viewport
   segmentationRepresentationUIDs.push(
-    ...(await segmentation.addSegmentationRepresentations(toolGroupIds[0], [
+    ...(await segmentation.addRepresentations(viewportId1, [
       {
         segmentationId: segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -249,8 +244,7 @@ function createSegmentConfiguration(segmentIndex, otherSegments?) {
   const containedSegmentIndices = otherSegments
     ? { has: (segmentIndex) => otherSegments.indexOf(segmentIndex) !== -1 }
     : undefined;
-  const colorConfig = segmentation.config.color.getColorForSegmentIndex(
-    toolGroupIds[0],
+  const colorConfig = segmentation.config.color.getSegmentIndexColor(
     segmentationRepresentationUIDs[0],
     segmentIndex
   );
@@ -309,84 +303,79 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
-  toolGroupIds.forEach((toolGroupId) => {
-    const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    addManipulationBindings(toolGroup, { enableShiftClickZoom: true });
+  addManipulationBindings(toolGroup, { enableShiftClickZoom: true });
 
-    toolGroup.addTool(BidirectionalTool.toolName, {
-      actions: actionConfiguration,
-    });
-
-    // Segmentation Tools
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.addToolInstance(
-      brushInstanceNames.CircularBrush,
-      BrushTool.toolName,
-      {
-        activeStrategy: brushStrategies.CircularBrush,
-      }
-    );
-    toolGroup.addToolInstance(
-      brushInstanceNames.CircularEraser,
-      BrushTool.toolName,
-      {
-        activeStrategy: brushStrategies.CircularEraser,
-      }
-    );
-    toolGroup.addToolInstance(
-      brushInstanceNames.SphereBrush,
-      BrushTool.toolName,
-      {
-        activeStrategy: brushStrategies.SphereBrush,
-      }
-    );
-    toolGroup.addToolInstance(
-      brushInstanceNames.SphereEraser,
-      BrushTool.toolName,
-      {
-        activeStrategy: brushStrategies.SphereEraser,
-      }
-    );
-    toolGroup.addToolInstance(
-      brushInstanceNames.ThresholdBrush,
-      BrushTool.toolName,
-      {
-        activeStrategy: brushStrategies.ThresholdBrush,
-      }
-    );
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-    toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
-    });
-
-    toolGroup.setToolActive(PanTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Auxiliary, // Middle Click
-        },
-        {
-          mouseButton: MouseBindings.Primary,
-          modifierKey: KeyboardBindings.Ctrl,
-        },
-      ],
-    });
-    // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-    // hook instead of mouse buttons, it does not need to assign any mouse button.
-    // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolActive(BidirectionalTool.toolName);
+  toolGroup.addTool(BidirectionalTool.toolName, {
+    actions: actionConfiguration,
   });
+
+  // Segmentation Tools
+  toolGroup.addToolInstance(
+    brushInstanceNames.CircularBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.CircularBrush,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.CircularEraser,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.CircularEraser,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.SphereBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.SphereBrush,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.SphereEraser,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.SphereEraser,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.ThresholdBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.ThresholdBrush,
+    }
+  );
+
+  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Ctrl,
+      },
+    ],
+  });
+  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // hook instead of mouse buttons, it does not need to assign any mouse button.
+  // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(BidirectionalTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await getCtImageIds();
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 
@@ -409,7 +398,7 @@ async function run() {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
-  ToolGroupManager.getToolGroup(toolGroupIds[0]).addViewport(
+  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
     viewportId1,
     renderingEngineId
   );
@@ -428,7 +417,7 @@ async function run() {
   await addSegmentationsToState();
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
-  // // Add the segmentation representation to the toolgroup
+  // // Add the segmentation representation to the viewport
   // Setup configuration for contour bidirectional action
   createSegmentConfiguration(1);
   createSegmentConfiguration(2);

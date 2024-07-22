@@ -13,7 +13,7 @@ import {
   setTitleAndDescription,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -22,7 +22,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -44,8 +43,8 @@ const viewportId2 = 'CT_AXIAL_STACK_2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Toolgroup Labelmap Segmentation Configuration',
-  'Here we demonstrate how to change the configuration of how a specific tool group displays labelmap segmentations through via segmentation representations'
+  'Per Viewport Labelmap Segmentation Configuration ',
+  'Here we demonstrate how to change the configuration of how a specific segmentation is rendered in a viewport. We have two viewports, each with a different toolgroup. The left viewport uses a toolgroup with global configuration for segmentation representation. The right viewport uses a toolgroup with its own scoped segmentation representation. Toggling the outline rendering for this toolgroup, the viewport will display the tool group scoped representation over the global one.'
 );
 
 const size = '500px';
@@ -68,39 +67,31 @@ viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
+let leftRepresentationUID1,
+  leftRepresentationUID2,
+  rightRepresentationUID1,
+  rightRepresentationUID2;
+
 const instructions = document.createElement('p');
 instructions.innerText = `
-  The left viewport uses a toolgroup using only global configuration for
-  segmentation representation. The right viewport uses a differnet toolgroup
-  with its own scoped segmentation representation. Toggling the outline rendering
-  for this toolgroup, the viewport will display the tool group scoped representation
-  over the global one.
+  The left viewport uses a segmentation using only global configuration for
+  segmentation representation. The right viewport uses a different representation. Toggling the outline rendering
+  for right viewport does not affect the left viewport.
 `;
 // ============================= //
 
 addToggleButtonToToolbar({
   title: 'toggle outline rendering',
   onClick: (toggle) => {
-    let config = segmentation.config.getToolGroupSpecificConfig(toolGroupId2);
-
-    if (config.representations === undefined) {
-      config = {
-        renderInactiveSegmentations: true,
-        representations: {
+    [rightRepresentationUID1, rightRepresentationUID2].forEach(
+      (representationUID) => {
+        segmentation.config.setAllSegmentsConfig(representationUID, {
           LABELMAP: {
             renderOutline: toggle,
           },
-        },
-      };
-    } else {
-      config.representations.LABELMAP.renderOutline = toggle;
-    }
-
-    segmentation.config.setToolGroupSpecificConfig(toolGroupId2, config);
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    renderingEngine.renderViewports([viewportId1, viewportId2]);
+        });
+      }
+    );
   },
   defaultToggle: true,
 });
@@ -144,13 +135,13 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume1.volumeId,
     centerOffset: [50, 50, 0],
     cornerstone,
   });
 
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume2.volumeId,
     centerOffset: [-50, -50, 0],
     cornerstone,
@@ -165,17 +156,10 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
   const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
-
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -189,7 +173,7 @@ async function run() {
   const smallVolumeImageIds = [imageIds[0], imageIds[1]];
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds: smallVolumeImageIds,
   });
 
@@ -236,29 +220,31 @@ async function run() {
     [viewportId1, viewportId2]
   );
 
-  // // Add the segmentation representations to toolgroup1
-  await segmentation.addSegmentationRepresentations(toolGroupId1, [
-    {
-      segmentationId: segmentationId1,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-    {
-      segmentationId: segmentationId2,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // // Add the segmentation representations to viewportId1
+  [leftRepresentationUID1, leftRepresentationUID2] =
+    await segmentation.addRepresentations(viewportId1, [
+      {
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        segmentationId: segmentationId2,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
 
-  // // Add the segmentation representations to toolgroup2
-  await segmentation.addSegmentationRepresentations(toolGroupId2, [
-    {
-      segmentationId: segmentationId1,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-    {
-      segmentationId: segmentationId2,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // // Add the segmentation representations to viewportId2
+  [rightRepresentationUID1, rightRepresentationUID2] =
+    await segmentation.addRepresentations(viewportId2, [
+      {
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        segmentationId: segmentationId2,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2]);

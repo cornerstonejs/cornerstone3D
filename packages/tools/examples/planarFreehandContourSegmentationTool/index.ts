@@ -33,10 +33,11 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
+let renderingEngine;
+
 const { KeyboardBindings } = cornerstoneTools.Enums;
 
 const {
-  SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
   PanTool,
   StackScrollMouseWheelTool,
@@ -57,7 +58,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 let activeSegmentIndex = 0;
@@ -136,7 +136,7 @@ createInfoSection(content)
 
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
   const contourConfig = segmentationConfig.CONTOUR;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
@@ -178,16 +178,12 @@ function getSegmentsVisibilityState() {
   return segmentsVisibility;
 }
 
-function getSegmentationConfig(
-  toolGroupdId: string
-): cstTypes.RepresentationConfig {
+function getSegmentationConfig(): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
-      toolGroupdId,
-      segmentationRepresentationUID
-    ) ?? {};
+    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID1) ??
+    {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add CONTOUR object because getRepresentationConfig
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};
@@ -197,13 +193,12 @@ function getSegmentationConfig(
 }
 
 function updateSegmentationConfig(config) {
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
+  const segmentationConfig = getSegmentationConfig();
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
-    segmentationRepresentationUID,
+  segmentation.config.setAllSegmentsConfig(
+    segmentationRepresentationUID1,
     segmentationConfig
   );
 }
@@ -237,13 +232,20 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setSegmentationVisibility(
-      toolGroupId,
-      segmentationRepresentationUID,
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportIds[0],
+      segmentationRepresentationUID1,
+      !toggle
+    );
+    segmentation.config.visibility.setRepresentationVisibility(
+      viewportIds[1],
+      segmentationRepresentationUID2,
       !toggle
     );
 
     segmentsVisibility.fill(!toggle);
+
+    renderingEngine.render();
   },
 });
 
@@ -253,14 +255,21 @@ addButtonToToolbar({
     const segmentsVisibility = getSegmentsVisibilityState();
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    segmentation.config.visibility.setSegmentVisibility(
-      toolGroupId,
-      segmentationRepresentationUID,
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportIds[0],
+      segmentationRepresentationUID1,
+      activeSegmentIndex,
+      visible
+    );
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportIds[1],
+      segmentationRepresentationUID2,
       activeSegmentIndex,
       visible
     );
 
     segmentsVisibility[activeSegmentIndex] = visible;
+    renderingEngine.render();
   },
 });
 
@@ -351,7 +360,7 @@ function initializeGlobalConfig() {
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-
+let segmentationRepresentationUID1, segmentationRepresentationUID2;
 /**
  * Runs the demo
  */
@@ -360,7 +369,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
@@ -371,7 +379,6 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName, {
     cachedStats: true,
   });
@@ -408,8 +415,6 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
@@ -438,7 +443,7 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack and a volume viewport
   const viewportInputArray = [
@@ -469,7 +474,7 @@ async function run() {
   );
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds: volumeImageIds,
   });
 
@@ -503,22 +508,24 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Create a segmentation representation associated to the viewportId
+  segmentationRepresentationUID1 = await segmentation.addRepresentations(
+    viewportIds[0],
+    [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    ]);
-
-  // Store the segmentation representation that was just created
-  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
+    ]
+  );
+  segmentationRepresentationUID2 = await segmentation.addRepresentations(
+    viewportIds[1],
+    [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]
   );
 
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);

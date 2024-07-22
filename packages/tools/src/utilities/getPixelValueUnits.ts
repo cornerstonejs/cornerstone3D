@@ -1,14 +1,14 @@
 import { metaData } from '@cornerstonejs/core';
 
-type ModalityUnitOptions = {
+type pixelUnitsOptions = {
   isPreScaled: boolean;
   isSuvScaled: boolean;
 };
 
-function getModalityUnit(
+function getPixelValueUnits(
   modality: string,
   imageId: string,
-  options: ModalityUnitOptions
+  options: pixelUnitsOptions
 ): string {
   if (modality === 'CT') {
     return 'HU';
@@ -19,7 +19,7 @@ function getModalityUnit(
   }
 }
 
-function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
+function _handlePTModality(imageId: string, options: pixelUnitsOptions) {
   if (!options.isPreScaled) {
     return 'raw';
   }
@@ -30,7 +30,7 @@ function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
 
   const generalSeriesModule = metaData.get('generalSeriesModule', imageId);
 
-  // it might be possible that the referenceImageId is not the one
+  // it might be possible that the reference ImageId is not the one
   // that is being displayed. So we need to get the modality from imageId again
   if (generalSeriesModule?.modality === 'PT') {
     const petSeriesModule = metaData.get('petSeriesModule', imageId);
@@ -38,4 +38,4 @@ function _handlePTModality(imageId: string, options: ModalityUnitOptions) {
   }
 }
 
-export { getModalityUnit, ModalityUnitOptions };
+export { getPixelValueUnits, pixelUnitsOptions };

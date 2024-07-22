@@ -242,19 +242,20 @@ class VolumeViewport extends BaseVolumeViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(
-    resetPan = true,
-    resetZoom = true,
-    resetToCenter = true,
-    resetRotation = false,
-    supressEvents = false,
-    resetOrientation = true
-  ): boolean {
+  public resetCamera(options?): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetRotation = true,
+      resetToCenter = true,
+      suppressEvents = false,
+      resetOrientation = true,
+    } = options || {};
     const { orientation } = this.viewportProperties;
     if (orientation && resetOrientation) {
       this.applyViewOrientation(orientation, false);
     }
-    super.resetCamera(resetPan, resetZoom, resetToCenter);
+    super.resetCamera({ resetPan, resetZoom, resetToCenter });
 
     this.resetVolumeViewportClippingRange();
 
@@ -295,7 +296,7 @@ class VolumeViewport extends BaseVolumeViewport {
       }
     });
 
-    //Only reset the rotation of the camera if wanted (so we don't reset everytime resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
+    //Only reset the rotation of the camera if wanted (so we don't reset every time resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
     if (
       resetRotation &&
       MPR_CAMERA_VALUES[this.viewportProperties.orientation] !== undefined
@@ -308,7 +309,7 @@ class VolumeViewport extends BaseVolumeViewport {
       });
     }
 
-    if (!supressEvents) {
+    if (!suppressEvents) {
       const eventDetail: EventTypes.CameraResetEventDetail = {
         viewportId: this.id,
         camera: this.getCamera(),
@@ -531,7 +532,12 @@ class VolumeViewport extends BaseVolumeViewport {
     const resetZoom = true;
     const resetToCenter = true;
     const resetCameraRotation = true;
-    this.resetCamera(resetPan, resetZoom, resetToCenter, resetCameraRotation);
+    this.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetCameraRotation,
+    });
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }

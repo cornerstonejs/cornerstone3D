@@ -2,6 +2,9 @@ import { LoaderDecodeOptions } from './LoaderDecodeOptions';
 import { LoaderXhrRequestError, LoaderXhrRequestParams } from './XHRRequest';
 
 export interface LoaderOptions {
+  cornerstone?: any;
+  dicomParser?: any;
+  maxWebWorkers?: number;
   // callback to open the object
   open?: (
     xhr: XMLHttpRequest,

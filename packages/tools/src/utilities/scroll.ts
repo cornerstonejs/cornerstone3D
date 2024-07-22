@@ -104,7 +104,7 @@ export function scrollVolume(
 
     csUtils.triggerEvent(
       eventTarget,
-      EVENTS.VOLUME_SCROLL_OUT_OF_BOUNDS,
+      EVENTS.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
       VolumeScrollEventDetail
     );
   } else {

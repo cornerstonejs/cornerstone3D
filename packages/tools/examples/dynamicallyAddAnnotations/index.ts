@@ -263,10 +263,9 @@ const addProgrammaticAnnotation = (
     end as Types.Point3,
   ]);
 
-  cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds(
-    renderingEngine,
-    [viewport.id]
-  );
+  cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds([
+    viewport.id,
+  ]);
   viewport.render();
 };
 
@@ -278,7 +277,7 @@ async function initializeVolumeViewport(
   let volume = cache.getVolume(volumeId) as any;
 
   if (!volume) {
-    volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
       imageIds,
     });
 

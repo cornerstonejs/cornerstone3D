@@ -22,7 +22,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -89,7 +88,7 @@ addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,
@@ -148,7 +147,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -159,19 +157,12 @@ async function run() {
   addManipulationBindings(toolGroup2, { is3DViewport: true });
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
   toolGroup1.addToolInstance('CircularBrush', BrushTool.toolName, {
     activeStrategy: 'FILL_INSIDE_CIRCLE',
   });
   toolGroup1.addToolInstance('EraserBrush', BrushTool.toolName, {
     activeStrategy: 'ERASE_INSIDE_CIRCLE',
   });
-
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive('CircularBrush', {
     bindings: [
@@ -231,18 +222,20 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap:
-            cornerstoneTools.utilities.segmentation.createImageIdReferenceMap(
-              imageIds,
-              segmentationImageIds
-            ),
+          imageIds: segmentationImageIds,
         },
       },
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

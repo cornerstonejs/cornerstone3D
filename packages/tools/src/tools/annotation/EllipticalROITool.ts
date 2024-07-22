@@ -53,7 +53,7 @@ import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities/';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
@@ -241,7 +241,7 @@ class EllipticalROITool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -338,7 +338,7 @@ class EllipticalROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -410,7 +410,7 @@ class EllipticalROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -451,7 +451,7 @@ class EllipticalROITool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -493,7 +493,7 @@ class EllipticalROITool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -538,7 +538,7 @@ class EllipticalROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
@@ -638,12 +638,7 @@ class EllipticalROITool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -762,9 +757,6 @@ class EllipticalROITool extends AnnotationTool {
         viewport.worldToCanvas(p)
       ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
 
-      const rotation = Math.abs(
-        viewport.getRotation() - (data.initialRotation || 0)
-      );
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
       );
@@ -774,7 +766,7 @@ class EllipticalROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        data.cachedStats[targetId].areaUnits == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -782,7 +774,7 @@ class EllipticalROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnit: null,
+          areaUnits: null,
         };
 
         this._calculateCachedStats(annotation, viewport, renderingEngine);
@@ -1064,7 +1056,7 @@ class EllipticalROITool extends AnnotationTool {
         scale /
         scale;
 
-      const modalityUnitOptions = {
+      const pixelUnitsOptions = {
         isPreScaled: isViewportPreScaled(viewport, targetId),
 
         isSuvScaled: this.isSuvScaled(
@@ -1074,10 +1066,10 @@ class EllipticalROITool extends AnnotationTool {
         ),
       };
 
-      const modalityUnit = getModalityUnit(
+      const pixelValueUnits = getPixelValueUnits(
         metadata.Modality,
         annotation.metadata.referencedImageId,
-        modalityUnitOptions
+        pixelUnitsOptions
       );
 
       const pointsInShape = pointInShapeCallback(
@@ -1097,8 +1089,8 @@ class EllipticalROITool extends AnnotationTool {
         statsArray: stats.array,
         pointsInShape,
         isEmptyArea,
-        areaUnit: areaUnits,
-        modalityUnit,
+        areaUnits,
+        pixelValueUnits,
       };
     }
 
@@ -1164,7 +1156,7 @@ class EllipticalROITool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+  const { area, mean, stdDev, max, isEmptyArea, areaUnits, pixelValueUnits } =
     cachedVolumeStats;
 
   const textLines: string[] = [];
@@ -1172,20 +1164,20 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
   }
 
   return textLines;

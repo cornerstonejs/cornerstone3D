@@ -76,7 +76,7 @@ addButtonToToolbar({
     );
 
     // Apply the rotation to the camera of the viewport
-    viewport.setProperties({ rotation: Math.random() * 360 });
+    viewport.setViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
   },
 });
@@ -146,7 +146,7 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
     imageIds,
   });
 
