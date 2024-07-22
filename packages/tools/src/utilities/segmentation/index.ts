@@ -4,7 +4,10 @@ import createMergedLabelmapForIndex from './createMergedLabelmapForIndex';
 import isValidRepresentationConfig from './isValidRepresentationConfig';
 import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
 import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
-import { triggerSegmentationRender } from './triggerSegmentationRender';
+import {
+  triggerSegmentationRender,
+  triggerSegmentationRenderBySegmentationId,
+} from './triggerSegmentationRender';
 import floodFill from './floodFill';
 import {
   getBrushSizeForToolGroup,
@@ -33,6 +36,7 @@ export {
   createLabelmapVolumeForViewport,
   rectangleROIThresholdVolumeByRange,
   triggerSegmentationRender,
+  triggerSegmentationRenderBySegmentationId,
   floodFill,
   getBrushSizeForToolGroup,
   setBrushSizeForToolGroup,

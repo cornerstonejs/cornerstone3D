@@ -351,7 +351,7 @@ async function _startFromVolume(
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender(volumeToolGroupId);
+  utilities.segmentation.triggerSegmentationRender();
 }
 
 async function _startFromStack(
@@ -407,13 +407,13 @@ async function _startFromStack(
   ]);
 
   // Add the segmentation representation to the viewport
-  await segmentation.addRepresentations(stackToolGroupId, [
+  await segmentation.addRepresentations(viewportId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender(stackToolGroupId);
+  utilities.segmentation.triggerSegmentationRender();
 
   stackToolGroup.setToolActive('CircularBrush', {
     bindings: [

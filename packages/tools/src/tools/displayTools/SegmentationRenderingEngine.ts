@@ -36,9 +36,6 @@ const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
  * and their configurations. Note: This is a Singleton class and should not be
  * instantiated directly. To trigger a render for all the segmentations, you can use:
  *
- * ```
- * triggerSegmentationRender()
- * ```
  */
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set();
@@ -46,20 +43,27 @@ class SegmentationRenderingEngine {
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
 
-  public renderSegmentations(segmentationId?: string): void {
-    const viewportIds = this._getViewportIdsForSegmentation(segmentationId);
+  /**
+   * Renders the segmentations on the specified viewport or all viewports that has
+   * some sort of segmentation representation.
+   *
+   * @param viewportId - The ID of the viewport to render the segmentations on. If not provided, segmentations will be rendered on all viewports.
+   */
+  public renderSegmentationsForViewport(viewportId?: string): void {
+    const viewportIds = viewportId
+      ? [viewportId]
+      : this._getViewportIdsForSegmentation();
     this._setViewportsToBeRenderedNextFrame(viewportIds);
   }
 
-  public renderSegmentationsForViewports(viewportIds?: string[]): void {
-    if (!viewportIds?.length) {
-      const allViewports = this._getAllViewports();
-      this._setViewportsToBeRenderedNextFrame(
-        allViewports.map((viewport) => viewport.id)
-      );
-    } else {
-      this._setViewportsToBeRenderedNextFrame(viewportIds);
-    }
+  /**
+   * Renders the segmentation with the specified ID.
+   *
+   * @param segmentationId - The ID of the segmentation to render.
+   */
+  public renderSegmentation(segmentationId: string): void {
+    const viewportIds = this._getViewportIdsForSegmentation(segmentationId);
+    this._setViewportsToBeRenderedNextFrame(viewportIds);
   }
 
   _getAllViewports = () => {

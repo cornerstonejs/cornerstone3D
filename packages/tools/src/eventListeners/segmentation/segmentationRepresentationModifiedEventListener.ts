@@ -1,6 +1,6 @@
-import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
 import { SegmentationRepresentationModifiedEventType } from '../../types/EventTypes';
 import { getRepresentation } from '../../stateManagement/segmentation/segmentationState';
+import { segmentationRenderingEngine } from '../../tools/displayTools/SegmentationRenderingEngine';
 
 /** A function that listens to the `segmentationStateModified` event and triggers
  * the `triggerSegmentationRender` function. This function is called when the
@@ -20,7 +20,7 @@ const segmentationRepresentationModifiedListener = function (
 
   const segmentationId = segmentationRepresentation?.segmentationId;
 
-  triggerSegmentationRender(segmentationId);
+  segmentationRenderingEngine.renderSegmentation(segmentationId);
 };
 
 export default segmentationRepresentationModifiedListener;

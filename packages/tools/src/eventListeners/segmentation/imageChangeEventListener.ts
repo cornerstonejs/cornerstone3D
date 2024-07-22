@@ -11,7 +11,7 @@ import {
 } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
+import  from '../../utilities/segmentation/';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -106,7 +106,7 @@ function _imageChangeEventListener(evt) {
 
   //   if (!perViewportManualTriggers.has(viewportId)) {
   //     perViewportManualTriggers.set(viewportId, true);
-  //     triggerSegmentationRenderForViewports([viewportId]);
+  //     ForViewports([viewportId]);
   //   }
 
   //   // we should return here, since there is no segmentation actor to update
@@ -221,7 +221,7 @@ function _imageChangeEventListener(evt) {
         },
       ]);
 
-      triggerSegmentationRender();
+      ();
       return;
     } else {
       // if actor found

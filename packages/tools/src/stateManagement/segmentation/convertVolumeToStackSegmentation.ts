@@ -136,7 +136,7 @@ export async function updateStackSegmentationState({
     },
   ]);
 
-  triggerSegmentationRender();
+  triggerSegmentationRender(viewportId);
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
     triggerSegmentationDataModified(segmentationId)
   );
