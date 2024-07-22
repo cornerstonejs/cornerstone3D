@@ -522,7 +522,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
   public getFrameOfReferenceUID = (sliceIndex?: number): string =>
-    this.getImagePlaneReferenceData(sliceIndex)?.frameOfReferenceUID;
+    this.getImagePlaneReferenceData(sliceIndex)?.FrameOfReferenceUID;
 
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
@@ -1593,7 +1593,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (!imagePlaneModule) {
       return;
     }
-    const { imagePositionPatient, frameOfReferenceUID: frameOfReferenceUID } =
+    const { imagePositionPatient, frameOfReferenceUID: FrameOfReferenceUID } =
       imagePlaneModule;
     let { rowCosines, columnCosines } = imagePlaneModule;
     // Values are null, not undefined, so need to assign instead of defaulting
@@ -1603,7 +1603,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       vec3.cross([0, 0, 0], columnCosines, rowCosines)
     );
     return {
-      frameOfReferenceUID,
+      FrameOfReferenceUID,
       viewPlaneNormal,
       cameraFocalPoint: <Point3>imagePositionPatient,
       referencedImageId: imageId,

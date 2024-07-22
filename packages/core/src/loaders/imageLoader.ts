@@ -145,7 +145,10 @@ function loadImageFromCacheOrVolume(
     const { volume, imageIdIndex } = cachedVolumeInfo;
 
     if (volume instanceof ImageVolume) {
-      imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+      imageLoadObject = volume.getCornerstoneImageLoadObject(
+        imageId,
+        imageIdIndex
+      );
     }
     return imageLoadObject;
   }

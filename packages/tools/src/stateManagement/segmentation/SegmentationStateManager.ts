@@ -262,7 +262,7 @@ export default class SegmentationStateManager {
           segmentation.representationData
         );
         const segImage = cache.getImage(imageIds[0]);
-        if (segImage?.frameOfReferenceUID === frameOfReferenceUID) {
+        if (segImage?.FrameOfReferenceUID === frameOfReferenceUID) {
           convertStackToVolumeSegmentation(segmentation);
         }
       } else {
@@ -629,5 +629,4 @@ export default class SegmentationStateManager {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
-window.state = defaultSegmentationStateManager;
 export { defaultSegmentationStateManager };

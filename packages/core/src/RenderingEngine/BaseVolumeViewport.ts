@@ -1418,6 +1418,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: volume?.metadata?.Modality,
+        FrameOfReferenceUID: volume?.metadata?.FrameOfReferenceUID,
       },
       scaling: volume?.scaling,
       hasPixelSpacing: true,
