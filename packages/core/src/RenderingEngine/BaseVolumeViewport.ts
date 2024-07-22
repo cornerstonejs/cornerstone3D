@@ -129,17 +129,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return false;
   }
 
-  public resetCamera(
-    resetPan = true,
-    resetZoom = true,
-    resetToCenter = true,
-    resetRotation = false,
-    supressEvents = false,
-    resetOrientation = true
-  ): boolean {
-    return super.resetCamera();
-  }
-
   protected applyViewOrientation(
     orientation: OrientationAxis | OrientationVectors,
     resetCamera = true
@@ -156,20 +145,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     this.initialViewUp = viewUp;
 
     if (resetCamera) {
-      const resetPan = true,
-        resetZoom = true,
-        resetToCenter = true,
-        resetRotation = false,
-        suppressEvents = true,
-        resetOrientation = false;
-      this.resetCamera(
-        resetPan,
-        resetZoom,
-        resetToCenter,
-        resetRotation,
-        suppressEvents,
-        resetOrientation
-      );
+      this.resetCamera();
     }
   }
 

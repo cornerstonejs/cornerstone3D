@@ -40,11 +40,11 @@ import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/plana
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes } from '../../enums';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -744,7 +744,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         ),
       };
 
-      const modalityUnit = getModalityUnit(
+      const pixelValueUnits = getPixelValueUnits(
         metadata.Modality,
         annotation.metadata.referencedImageId,
         modalityUnitOptions
@@ -794,7 +794,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           imageData,
           metadata,
           cachedStats,
-          modalityUnit,
+          pixelValueUnits,
           calibratedScale,
         });
       } else {
@@ -803,7 +803,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           canvasCoordinates,
           targetId,
           cachedStats,
-          modalityUnit,
+          pixelValueUnits,
           calibratedScale,
         });
       }
@@ -827,7 +827,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     metadata,
     cachedStats,
     targetId,
-    modalityUnit,
+    pixelValueUnits,
     canvasCoordinates,
     calibratedScale,
   }) {
@@ -960,9 +960,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
        * modality units are pixel value units, eg HU or other
        * unit is linear measurement unit, eg mm
        */
-      areaUnit: areaUnits,
-      modalityUnit,
-      unit: units,
+      areaUnits,
+      pixelValueUnits,
+      lengthUnits: units,
     };
   }
 
@@ -971,7 +971,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     metadata,
     canvasCoordinates,
     cachedStats,
-    modalityUnit,
+    pixelValueUnits,
     calibratedScale,
   }) {
     const { scale, units } = calibratedScale;
@@ -979,8 +979,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     cachedStats[targetId] = {
       Modality: metadata.Modality,
       length: calculatePerimeter(canvasCoordinates, false) / scale,
-      modalityUnit,
-      unit: units,
+      pixelValueUnits,
+      getPixelValueUnitunit: units,
     };
   }
 
@@ -1056,9 +1056,9 @@ function defaultGetTextLines(data, targetId): string[] {
     perimeter,
     max,
     isEmptyArea,
-    areaUnit,
-    modalityUnit,
-    unit,
+    lengthUnits,
+    areaUnits,
+    pixelValueUnits,
   } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
@@ -1075,7 +1075,7 @@ function defaultGetTextLines(data, targetId): string[] {
   }
 
   if (Number.isFinite(max)) {
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
@@ -1083,12 +1083,12 @@ function defaultGetTextLines(data, targetId): string[] {
   }
 
   if (perimeter) {
-    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${unit}`);
+    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${lengthUnits}`);
   }
 
   if (length) {
     // No need to show length prefix as there is just the single value
-    textLines.push(`${roundNumber(length)} ${unit}`);
+    textLines.push(`${roundNumber(length)} ${lengthUnits}`);
   }
 
   return textLines;

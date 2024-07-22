@@ -45,10 +45,10 @@ import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecifi
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { pointInShapeCallback, roundNumber } from '../../utilities/';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -376,7 +376,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       ),
     };
 
-    const modalityUnit = getModalityUnit(
+    const pixelValueUnits = getPixelValueUnits(
       metadata.Modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
@@ -460,8 +460,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       stdDev: stats.stdDev?.value,
       max: stats.max?.value,
       statsArray: stats.array,
-      areaUnit: measureInfo.areaUnits,
-      modalityUnit,
+      areaUnits: measureInfo.areaUnits,
+      pixelValueUnits,
     };
   }
 
@@ -778,7 +778,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 function defaultGetTextLines(data): string[] {
   const cachedVolumeStats = data.cachedStats.statistics;
 
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnits, pixelValueUnits } =
+    cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -786,10 +787,10 @@ function defaultGetTextLines(data): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  textLines.push(`Area: ${roundNumber(area)} ${areaUnits}`);
+  textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
+  textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
+  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
 
   return textLines;
 }

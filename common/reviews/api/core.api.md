@@ -4,10 +4,7 @@
 
 ```ts
 
-import { default as default_2 } from 'packages/core/src/types/ActorSliceRange';
-import { default as default_3 } from 'packages/core/src/types/ICamera';
 import type { GetGPUTier } from 'detect-gpu';
-import { IImageCalibration as IImageCalibration_2 } from 'packages/core/src/types/IImageCalibration';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import type { TierResult } from 'detect-gpu';
@@ -164,8 +161,6 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
-    // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean, resetToCenter?: boolean, resetRotation?: boolean, supressEvents?: boolean, resetOrientation?: boolean): boolean;
     // (undocumented)
     abstract resetProperties(volumeId?: string): void;
     // (undocumented)
@@ -631,6 +626,7 @@ type CPUIImageData = {
     imageData: CPUImageData;
     metadata: {
         Modality: string;
+        FrameOfReferenceUID: string;
     };
     scalarData: PixelDataTypedArray;
     scaling: Scaling;
@@ -1141,9 +1137,9 @@ function getVolumeViewportScrollInfo(viewport: IVolumeViewport, volumeId: string
     numScrollSteps: number;
     currentStepIndex: number;
     sliceRangeInfo: {
-        sliceRange: default_2;
+        sliceRange: ActorSliceRange;
         spacingInNormalDirection: number;
-        camera: default_3;
+        camera: ICamera;
     };
 };
 
@@ -1409,6 +1405,8 @@ interface IImage {
     // (undocumented)
     decodeTimeInMS?: number;
     // (undocumented)
+    FrameOfReferenceUID?: string;
+    // (undocumented)
     getCanvas: () => HTMLCanvasElement;
     // (undocumented)
     getPixelData: () => PixelDataTypedArray;
@@ -1532,6 +1530,7 @@ interface IImageData {
     // (undocumented)
     metadata: {
         Modality: string;
+        FrameOfReferenceUID: string;
     };
     // (undocumented)
     origin: Point3;
@@ -1860,8 +1859,6 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     cancelLoading: () => void;
     // (undocumented)
-    convertToCornerstoneImage(imageId: string, imageIdIndex: number): IImageLoadObject;
-    // (undocumented)
     convertToImageSlicesAndCache(): string[];
     // (undocumented)
     protected cornerstoneImageMetaData: any;
@@ -2020,8 +2017,6 @@ interface IRenderingEngine {
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
     getStackViewports(): Array<StackViewport>;
-    // (undocumented)
-    getVideoViewports(): Array<VideoViewport>;
     // (undocumented)
     getViewport(id: string): IViewport;
     // (undocumented)
@@ -2396,7 +2391,10 @@ interface IWSIViewport extends IViewport {
     // (undocumented)
     getProperties: () => WSIViewportProperties;
     // (undocumented)
-    resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+    resetCamera(options?: {
+        resetPan?: boolean;
+        resetZoom?: boolean;
+    }): boolean;
     // (undocumented)
     resetProperties(): void;
     // (undocumented)
@@ -2825,8 +2823,6 @@ export class RenderingEngine implements IRenderingEngine {
     fillCanvasWithBackgroundColor(canvas: HTMLCanvasElement, backgroundColor: [number, number, number]): void;
     // (undocumented)
     getStackViewports(): Array<StackViewport>;
-    // (undocumented)
-    getVideoViewports(): Array<VideoViewport>;
     // (undocumented)
     getViewport(viewportId: string): IViewport;
     // (undocumented)
@@ -3353,6 +3349,7 @@ declare namespace Types {
         ICamera,
         StackViewport as IStackViewport,
         VideoViewport as IVideoViewport,
+        IWSIViewport,
         IVolumeViewport,
         IEnabledElement,
         ICache,
@@ -3624,7 +3621,7 @@ export class VideoViewport extends Viewport implements VideoViewport {
             indexToWorld: (point: Point2, destPoint?: Point3) => Point3;
         };
         hasPixelSpacing: boolean;
-        calibration: IImageCalibration_2;
+        calibration: IImageCalibration;
         preScale: {
             scaled: boolean;
         };
