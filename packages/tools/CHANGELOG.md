@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.82.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.4...v1.82.5) (2024-07-22)
+
+### Bug Fixes
+
+- **OrientationMarkerTool:** R and L are swapped ([#1395](https://github.com/cornerstonejs/cornerstone3D/issues/1395)) ([33b255a](https://github.com/cornerstonejs/cornerstone3D/commit/33b255aefcc963b62d63f5c584e0a8ca6215f3f5))
+
 ## [1.82.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.3...v1.82.4) (2024-07-10)
 
 ### Bug Fixes
