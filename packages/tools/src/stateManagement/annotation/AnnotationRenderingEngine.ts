@@ -3,10 +3,10 @@ import {
   triggerEvent,
   getRenderingEngine,
 } from '@cornerstonejs/core';
-import { Events, ToolModes } from '../enums';
-import { draw as drawSvg } from '../drawingSvg';
-import getToolsWithModesForElement from './getToolsWithModesForElement';
-import { AnnotationRenderedEventDetail } from '../types/EventTypes';
+import { Events, ToolModes } from '../../enums';
+import { draw as drawSvg } from '../../drawingSvg';
+import getToolsWithModesForElement from '../../utilities/getToolsWithModesForElement';
+import { AnnotationRenderedEventDetail } from '../../types/EventTypes';
 const { Active, Passive, Enabled } = ToolModes;
 
 /**
@@ -233,15 +233,4 @@ class AnnotationRenderingEngine {
 
 const annotationRenderingEngine = new AnnotationRenderingEngine();
 
-/**
- * It triggers the rendering of the annotations for the given HTML element using
- * the `AnnotationRenderingEngine`
- * @param element - The element to render the annotation on.
- */
-function triggerAnnotationRender(element: HTMLDivElement): void {
-  annotationRenderingEngine.renderViewport(element);
-}
-
-export { annotationRenderingEngine, triggerAnnotationRender };
-
-export default triggerAnnotationRender;
+export { annotationRenderingEngine };

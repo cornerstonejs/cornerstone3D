@@ -15,11 +15,11 @@ import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
 import { getRepresentationsForViewport } from '../../stateManagement/segmentation/segmentationState';
 import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
-import { surfaceDisplay } from './Surface';
-import { contourDisplay } from './Contour';
-import { labelmapDisplay } from './Labelmap';
+import { surfaceDisplay } from '../../tools/displayTools/Surface';
+import { contourDisplay } from '../../tools/displayTools/Contour';
+import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
 import { addTool, state } from '../../store';
-import PlanarFreehandContourSegmentationTool from '../annotation/PlanarFreehandContourSegmentationTool';
+import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 const renderers = {

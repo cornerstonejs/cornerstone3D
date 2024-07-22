@@ -1,4 +1,4 @@
-import { segmentationRenderingEngine } from '../../tools/displayTools/SegmentationRenderingEngine';
+import { segmentationRenderingEngine } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 
 /**
  * It triggers segmentation render for the given viewportIds
