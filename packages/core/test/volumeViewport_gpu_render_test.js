@@ -185,7 +185,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -222,7 +222,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -286,7 +286,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -323,7 +323,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -392,7 +392,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -429,7 +429,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -495,7 +495,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -539,7 +539,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -582,7 +582,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -624,7 +624,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -664,7 +664,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -706,7 +706,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -777,7 +777,7 @@ describe('Volume Viewport GPU -- ', () => {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,
@@ -818,7 +818,7 @@ describe('Volume Viewport GPU -- ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,

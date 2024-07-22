@@ -284,7 +284,7 @@ async function run() {
   viewport2 = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId2);
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 

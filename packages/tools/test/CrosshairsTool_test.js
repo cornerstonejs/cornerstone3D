@@ -20,7 +20,7 @@ const { transformWorldToIndex } = utilities;
 const { Events, ViewportType } = Enums;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const {
   CrosshairsTool,
   ToolGroupManager,
@@ -231,7 +231,7 @@ describe('Cornerstone Tools: ', () => {
     this.testToolGroup.addViewport(viewportId3, this.renderingEngine.id);
 
     try {
-      createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: volumeId }],
@@ -409,7 +409,7 @@ describe('Cornerstone Tools: ', () => {
     this.testToolGroup.addViewport(viewportId3, this.renderingEngine.id);
 
     try {
-      createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: volumeId }],
@@ -583,7 +583,7 @@ describe('Cornerstone Tools: ', () => {
     this.testToolGroup.addViewport(viewportId3, this.renderingEngine.id);
 
     try {
-      createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: volumeId }],
@@ -810,7 +810,7 @@ describe('Crosshairs with synchronizers: ', () => {
 
     this.renderingEngine.render();
     try {
-      createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: volumeId }],
@@ -1012,7 +1012,7 @@ describe('Crosshairs with synchronizers: ', () => {
 
     this.renderingEngine.render();
     try {
-      createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+      createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
           this.renderingEngine,
           [{ volumeId: volumeId }],

@@ -18,7 +18,7 @@
 //   getEnabledElement,
 // } = cornerstone3D;
 
-// const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
+// const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 // const { unregisterAllImageLoaders } = imageLoader;
 // const { ViewportType } = Enums;
 
@@ -166,8 +166,8 @@
 //       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
 //       try {
-//         createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-//           createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+//         createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+//           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
 //             setVolumesForViewports(
 //               this.renderingEngine,
 //               [{ volumeId: volumeId }],
@@ -239,8 +239,8 @@
 //     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
 //     //   try {
-//     //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-//     //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+//     //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+//     //       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
 //     //         setVolumesForViewports(
 //     //           this.renderingEngine,
 //     //           [{ volumeId: volumeId }],
@@ -331,8 +331,8 @@
 //     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
 //     //   try {
-//     //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-//     //       createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+//     //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+//     //       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
 //     //         setVolumesForViewports(
 //     //           this.renderingEngine,
 //     //           [{ volumeId: volumeId }],

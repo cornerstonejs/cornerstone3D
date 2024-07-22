@@ -187,12 +187,9 @@ async function run() {
   const imageIdsArray = [imageIds[50], imageIds[100]];
 
   const volumeId = 'VOLUME_ID';
-  const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
-    volumeId,
-    {
-      imageIds,
-    }
-  );
+  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
 
   volume.load();
 

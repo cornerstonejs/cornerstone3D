@@ -559,7 +559,7 @@ describe('Probe Tool: ', () => {
 
       try {
         volumeLoader
-          .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
+          .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             setVolumesForViewports(
               this.renderingEngine,

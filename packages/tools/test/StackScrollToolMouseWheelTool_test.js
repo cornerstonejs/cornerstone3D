@@ -166,16 +166,14 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
     try {
-      volumeLoader
-        .createAndCacheEmptyVolume(volumeId, { imageIds: [] })
-        .then(() => {
-          setVolumesForViewports(
-            this.renderingEngine,
-            [{ volumeId: volumeId }],
-            [viewportId]
-          );
-          vp.render();
-        });
+      volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        setVolumesForViewports(
+          this.renderingEngine,
+          [{ volumeId: volumeId }],
+          [viewportId]
+        );
+        vp.render();
+      });
     } catch (e) {
       done.fail(e);
     }

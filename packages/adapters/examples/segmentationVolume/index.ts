@@ -192,7 +192,7 @@ async function loadDicom(imageIds: string[]) {
     volumeId = volumeLoaderScheme + ":" + csUtilities.uuidv4();
 
     // Define a volume in memory
-    const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
         imageIds
     });
 

@@ -273,7 +273,7 @@ async function setup() {
   );
 
   // This will load the nifti file, no need to call .load again for nifti
-  await volumeLoader.createAndCacheEmptyVolume(volumeId);
+  await volumeLoader.createAndCacheVolume(volumeId);
 
   setVolumesForViewports(
     renderingEngine,

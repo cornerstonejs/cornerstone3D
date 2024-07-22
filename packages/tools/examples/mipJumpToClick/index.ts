@@ -168,10 +168,10 @@ async function run() {
   mipToolGroup.addViewport(viewportIds[2], renderingEngineId);
 
   // Define volumes in memory
-  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
-  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
 

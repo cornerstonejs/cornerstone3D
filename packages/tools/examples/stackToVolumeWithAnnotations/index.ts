@@ -209,7 +209,7 @@ async function run() {
   csToolsUtilities.stackContextPrefetch.enable(viewport.element);
 
   // const volumeId = 'volumeId';
-  // const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
+  // const volume = await cornerstone.volumeLoader.createAndCacheVolume(
   //   volumeId,
   //   {
   //     imageIds,

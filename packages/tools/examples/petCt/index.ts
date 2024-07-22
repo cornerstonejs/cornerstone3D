@@ -844,11 +844,11 @@ async function run() {
   ptImageIds = await getPtImageIds();
 
   // Define a volume in memory
-  ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
+  ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
   // Define a volume in memory
-  ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
+  ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
 

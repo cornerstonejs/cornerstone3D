@@ -21,7 +21,7 @@ function get4DVolumeInfo(imageIds: string[]) {
  * This function returns a promise that resolves to the StreamingDynamicImageVolume instance.
  *
  * In order to use the cornerstoneStreamingDynamicImageVolumeLoader you should use
- * createAndCacheEmptyVolume helper from the cornerstone-core volumeLoader module.
+ * createAndCacheVolume helper from the cornerstone-core volumeLoader module.
  *
  * @param volumeId - The ID of the volume
  * @param options - options for loading, imageIds

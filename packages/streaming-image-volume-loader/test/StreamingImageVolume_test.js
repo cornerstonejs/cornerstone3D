@@ -147,7 +147,7 @@ describe('StreamingImageVolume', () => {
     it('load: correctly streams pixel data from Images into Volume via a SharedArrayBuffer', async function () {
       const volumeId = 'fakeVolumeLoader:VOLUME';
 
-      await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+      await volumeLoader.createAndCacheVolume(volumeId, {
         imageIds: this.imageIds,
       });
       const volume = cache.getVolume(volumeId);
@@ -190,7 +190,7 @@ describe('StreamingImageVolume', () => {
       ];
 
       // caching volume
-      await volumeLoader.createAndCacheEmptyVolume('fakeVolumeLoader:VOLUME', {
+      await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
         imageIds: this.imageIds,
       });
 
@@ -223,7 +223,7 @@ describe('StreamingImageVolume', () => {
     });
 
     // it('cancelLoading: ', async function () {
-    //   await volumeLoader.createAndCacheEmptyVolume('fakeVolumeLoader:VOLUME', {
+    //   await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
     //     imageIds: this.imageIds,
     //   })
 
@@ -255,7 +255,7 @@ describe('StreamingImageVolume', () => {
     // })
 
     it('decache: properly decaches the Volume into a set of Images', async function () {
-      await volumeLoader.createAndCacheEmptyVolume('fakeVolumeLoader:VOLUME', {
+      await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
         imageIds: this.imageIds,
       });
 
@@ -292,7 +292,7 @@ describe('StreamingImageVolume', () => {
     });
 
     it('decache: completely removes the Volume from the cache', async function () {
-      await volumeLoader.createAndCacheEmptyVolume('fakeVolumeLoader:VOLUME', {
+      await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
         imageIds: this.imageIds,
       });
 
@@ -357,7 +357,7 @@ describe('StreamingImageVolume', () => {
   //   expect(cache.getImageLoadObject(imageIds[0])).toBeDefined()
 
   //   // caching volume
-  //   await volumeLoader.createAndCacheEmptyVolume('fakeVolumeLoader:VOLUME', {
+  //   await volumeLoader.createAndCacheVolume('fakeVolumeLoader:VOLUME', {
   //     imageIds: this.imageIds,
   //   })
 
@@ -440,7 +440,7 @@ describe('StreamingImageVolume', () => {
       const volumeId = 'cornerstoneStreamingImageVolume:volume';
 
       try {
-        await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+        await volumeLoader.createAndCacheVolume(volumeId, {
           imageIds: imageIds,
         });
         const volume = cache.getVolume(volumeId);

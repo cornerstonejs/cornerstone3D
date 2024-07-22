@@ -186,7 +186,7 @@ async function run() {
   const smallVolumeImageIds = [imageIds[0], imageIds[1]];
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds: smallVolumeImageIds,
   });
 

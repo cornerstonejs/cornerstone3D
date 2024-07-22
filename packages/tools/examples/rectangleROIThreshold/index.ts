@@ -320,11 +320,11 @@ async function run() {
   });
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
 

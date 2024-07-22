@@ -222,7 +222,7 @@ async function run() {
   );
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheEmptyVolume(ctVolumeId, {
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
     imageIds: ctImageIds,
   });
 
@@ -240,7 +240,7 @@ async function run() {
   // Load the PT in the background as we know we'll need it
 
   // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheEmptyVolume(ptVolumeId, {
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
   });
 

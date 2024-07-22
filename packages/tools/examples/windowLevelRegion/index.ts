@@ -130,7 +130,7 @@ async function initializeVolumeViewport(
   let volume = cache.getVolume(volumeId) as any;
 
   if (!volume) {
-    volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+    volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
     });
 

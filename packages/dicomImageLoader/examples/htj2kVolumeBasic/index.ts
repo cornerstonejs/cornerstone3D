@@ -294,7 +294,7 @@ async function run() {
     // Define a volume in memory
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
     const start = Date.now();
-    const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
       progressiveRendering,
     });

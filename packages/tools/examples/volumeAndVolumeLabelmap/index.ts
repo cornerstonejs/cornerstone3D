@@ -182,15 +182,12 @@ async function run() {
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
   const volumeId = 'VOLUME_ID';
-  const volume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
-    volumeId,
-    {
-      imageIds: ctImageIds,
-    }
-  );
+  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds: ctImageIds,
+  });
 
   const ptVolumeId = 'PT_VOLUME_ID';
-  const ptVolume = await cornerstone.volumeLoader.createAndCacheEmptyVolume(
+  const ptVolume = await cornerstone.volumeLoader.createAndCacheVolume(
     ptVolumeId,
     {
       imageIds: ptImageIds,

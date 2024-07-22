@@ -265,7 +265,7 @@ async function createVolume(numTimePoints: number): any {
   const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 

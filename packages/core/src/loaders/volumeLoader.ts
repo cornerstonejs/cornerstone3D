@@ -241,13 +241,13 @@ export function loadVolume(
  *
  * @returns Volume Loader Object
  */
-export async function createAndCacheEmptyVolume(
+export async function createAndCacheVolume(
   volumeId: string,
   options?: VolumeLoaderOptions
 ): Promise<Record<string, any>> {
   if (volumeId === undefined) {
     throw new Error(
-      'createAndCacheEmptyVolume: parameter volumeId must not be undefined'
+      'createAndCacheVolume: parameter volumeId must not be undefined'
     );
   }
 

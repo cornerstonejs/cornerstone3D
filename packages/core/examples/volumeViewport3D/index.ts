@@ -146,7 +146,7 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 

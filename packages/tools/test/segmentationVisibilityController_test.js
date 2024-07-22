@@ -19,7 +19,7 @@ const {
 } = cornerstone3D;
 
 const { unregisterAllImageLoaders } = imageLoader;
-const { registerVolumeLoader, createAndCacheEmptyVolume } = volumeLoader;
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
 const {
@@ -140,9 +140,9 @@ describe('Segmentation Controller --', () => {
       this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
 
       try {
-        createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-          createAndCacheEmptyVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-            createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+        createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+          createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+            createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
               setVolumesForViewports(
                 this.renderingEngine,
                 [{ volumeId: volumeId }],
@@ -223,9 +223,9 @@ describe('Segmentation Controller --', () => {
     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
-    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheEmptyVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-    //         createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+    //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
     //           setVolumesForViewports(
     //             this.renderingEngine,
     //             [{ volumeId: volumeId }],
@@ -297,9 +297,9 @@ describe('Segmentation Controller --', () => {
     //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
 
     //   try {
-    //     createAndCacheEmptyVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheEmptyVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-    //         createAndCacheEmptyVolume(volumeId, { imageIds: [] }).then(() => {
+    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+    //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
+    //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
     //           setVolumesForViewports(
     //             this.renderingEngine,
     //             [{ volumeId: volumeId }],

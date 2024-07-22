@@ -182,7 +182,7 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
-  const volume = await volumeLoader.createAndCacheEmptyVolume(volumeId, {
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 
