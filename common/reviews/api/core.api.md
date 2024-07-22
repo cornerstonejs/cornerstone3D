@@ -1859,6 +1859,8 @@ export class ImageVolume implements IImageVolume {
     // (undocumented)
     cancelLoading: () => void;
     // (undocumented)
+    convertToCornerstoneImage(imageId: string, imageIdIndex: number): IImageLoadObject;
+    // (undocumented)
     convertToImageSlicesAndCache(): string[];
     // (undocumented)
     protected cornerstoneImageMetaData: any;
