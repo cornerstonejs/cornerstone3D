@@ -282,7 +282,6 @@ export function createAndCacheDerivedImage(
     skipCreateBuffer ? 1 : length
   );
   const derivedImageId = imageId;
-
   ['imagePlaneModule', 'generalSeriesModule'].forEach((type) => {
     genericMetadataProvider.add(derivedImageId, {
       type,
@@ -384,6 +383,7 @@ export function createAndCacheLocalImage(
     rgba: undefined, // todo: how
     columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
     rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
+    FrameOfReferenceUID: imagePlaneModule.FrameOfReferenceUID,
     invert: false,
   } as IImage;
 

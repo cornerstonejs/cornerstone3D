@@ -1231,7 +1231,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const colorTransferFunction =
       this._getOrCreateColorTransferFunction(selectedVolumeId);
 
-    if (!this.initialTransferFunctionNodes) {
+    if (!this.initialTransferFunctionNodes && colorTransferFunction) {
       this.initialTransferFunctionNodes = getTransferFunctionNodes(
         colorTransferFunction
       );

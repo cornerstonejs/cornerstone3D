@@ -458,7 +458,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction: vtkImageData.getDirection(),
       scalarData: vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
-      metadata: { Modality: this.modality },
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
       calibration: { ...this.csImage.calibration, ...this.calibration },
@@ -478,7 +481,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       spacing,
       origin: metadata.origin,
       direction: metadata.direction,
-      metadata: { Modality: this.modality },
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      },
       scaling: this.scaling,
       imageData: {
         getDirection: () => metadata.direction,
@@ -516,7 +522,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
   public getFrameOfReferenceUID = (sliceIndex?: number): string =>
-    this.getImagePlaneReferenceData(sliceIndex)?.FrameOfReferenceUID;
+    this.getImagePlaneReferenceData(sliceIndex)?.frameOfReferenceUID;
 
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
@@ -1587,7 +1593,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (!imagePlaneModule) {
       return;
     }
-    const { imagePositionPatient, frameOfReferenceUID: FrameOfReferenceUID } =
+    const { imagePositionPatient, frameOfReferenceUID: frameOfReferenceUID } =
       imagePlaneModule;
     let { rowCosines, columnCosines } = imagePlaneModule;
     // Values are null, not undefined, so need to assign instead of defaulting
@@ -1597,7 +1603,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       vec3.cross([0, 0, 0], columnCosines, rowCosines)
     );
     return {
-      FrameOfReferenceUID,
+      frameOfReferenceUID,
       viewPlaneNormal,
       cameraFocalPoint: <Point3>imagePositionPatient,
       referencedImageId: imageId,

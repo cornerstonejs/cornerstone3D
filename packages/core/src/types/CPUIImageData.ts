@@ -20,7 +20,7 @@ type CPUIImageData = {
   spacing: Point3;
   origin: Point3;
   imageData: CPUImageData;
-  metadata: { Modality: string };
+  metadata: { Modality: string; FrameOfReferenceUID: string };
   scalarData: PixelDataTypedArray;
   scaling: Scaling;
   /** whether the image has pixel spacing and it is not undefined */

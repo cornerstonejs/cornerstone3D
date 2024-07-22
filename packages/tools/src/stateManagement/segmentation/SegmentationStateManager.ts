@@ -23,6 +23,7 @@ import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
+import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation';
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveRepresentations: true,
@@ -130,7 +131,10 @@ export default class SegmentationStateManager {
       const imageIds = this.getLabelmapImageIds(
         segmentation.representationData
       );
-      segmentation.representationData.LABELMAP.imageIds = imageIds;
+      (
+        segmentation.representationData
+          .LABELMAP as LabelmapSegmentationDataStack
+      ).imageIds = imageIds;
     }
     this.state.segmentations.push(segmentation);
   }
@@ -222,21 +226,18 @@ export default class SegmentationStateManager {
     const volumeViewport =
       enabledElement.viewport instanceof BaseVolumeViewport;
 
+    const segmentation = this.getSegmentation(representation.segmentationId);
+
+    const { representationData } = segmentation;
+
+    const isBaseVolumeSegmentation = 'volumeId' in representationData.LABELMAP;
+
     if (!volumeViewport) {
       // Stack Viewport
-      const representation = this.getRepresentation(
-        segmentationRepresentationUID
-      );
-
-      const segmentation = this.getSegmentation(representation.segmentationId);
-
-      const { representationData } = segmentation;
-
-      const isBaseVolumeSegmentation =
-        'volumeId' in representationData.LABELMAP;
 
       if (isBaseVolumeSegmentation) {
         // Volume Labelmap on Stack Viewport
+        // TODO: Implement
       } else {
         // Stack Labelmap on Stack Viewport
         this.updateSegmentationImageReferences(
@@ -246,6 +247,27 @@ export default class SegmentationStateManager {
       }
     } else {
       // Volume Viewport
+
+      // here we need check if the segmentation a volume segmentation and from the
+      // same Frame of Reference UID as the viewport, if so we are fine, if it is
+      // a stack segmentation and still from the same FOR we are able to convert
+      // the segmentation to a volume segmentation and render it on the volume viewport
+      // as well
+
+      const volumeViewport = enabledElement.viewport as Types.IVolumeViewport;
+      const frameOfReferenceUID = volumeViewport.getFrameOfReferenceUID();
+
+      if (!isBaseVolumeSegmentation) {
+        const imageIds = this.getLabelmapImageIds(
+          segmentation.representationData
+        );
+        const segImage = cache.getImage(imageIds[0]);
+        if (segImage?.frameOfReferenceUID === frameOfReferenceUID) {
+          convertStackToVolumeSegmentation(segmentation);
+        }
+      } else {
+        // TODO: Implement Volume Labelmap on Volume Viewport
+      }
     }
 
     // make all the other representations inactive first
