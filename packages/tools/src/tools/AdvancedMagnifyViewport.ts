@@ -283,7 +283,7 @@ class AdvancedMagnifyViewport {
     );
 
     sourceActors.filter(isSegmentation).forEach((actor) => {
-      segmentation.addRepresentations(this.viewportId, [
+      segmentation.addSegmentationRepresentations(this.viewportId, [
         {
           segmentationId: actor.referencedId,
           type: SegmentationRepresentations.Labelmap,

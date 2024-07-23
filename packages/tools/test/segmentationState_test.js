@@ -28,7 +28,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addRepresentations, addSegmentations } = segmentation;
+const { addSegmentationRepresentations, addSegmentations } = segmentation;
 const { SegmentationRepresentations } = csToolsEnums;
 
 const { fakeMetaDataProvider, fakeVolumeLoader } = testUtils;
@@ -176,7 +176,7 @@ describe('Segmentation State -- ', () => {
               },
             ]);
 
-            addRepresentations(viewportId, [
+            addSegmentationRepresentations(viewportId, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -253,7 +253,7 @@ describe('Segmentation State -- ', () => {
               },
             ]);
 
-            addRepresentations(viewportId, [
+            addSegmentationRepresentations(viewportId, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,

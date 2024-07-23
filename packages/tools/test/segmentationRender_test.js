@@ -32,7 +32,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addRepresentations, addSegmentations } = segmentation;
+const { addSegmentationRepresentations, addSegmentations } = segmentation;
 const { SegmentationRepresentations } = csToolsEnums;
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
@@ -155,7 +155,7 @@ describe('Segmentation Render -- ', () => {
               },
             ]);
 
-            addRepresentations(viewportId1, [
+            addSegmentationRepresentations(viewportId1, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -257,19 +257,19 @@ describe('Segmentation Render -- ', () => {
               },
             ]);
 
-            addRepresentations(viewportId1, [
+            addSegmentationRepresentations(viewportId1, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
               },
             ]);
-            addRepresentations(viewportId2, [
+            addSegmentationRepresentations(viewportId2, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
               },
             ]);
-            addRepresentations(viewportId3, [
+            addSegmentationRepresentations(viewportId3, [
               {
                 segmentationId: segVolumeId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -344,7 +344,7 @@ describe('Segmentation Render -- ', () => {
                 },
               ]);
 
-              addRepresentations(viewportId1, [
+              addSegmentationRepresentations(viewportId1, [
                 {
                   segmentationId: segVolumeId,
                   type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -442,7 +442,7 @@ describe('Segmentation Render -- ', () => {
     //           },
     //         ]);
 
-    //         addRepresentations(
+    //         addSegmentationRepresentations(
     //           this.segToolGroup.id,
     //           [
     //             {

@@ -21,7 +21,7 @@ import {
 } from './annotation/annotationState';
 
 import {
-  addRepresentations,
+  addSegmentationRepresentations,
   removeRepresentationsFromViewport,
 } from './segmentation';
 
@@ -45,6 +45,6 @@ export {
   resetAnnotationManager,
   invalidateAnnotation,
   // segmentations
-  addRepresentations,
+  addSegmentationRepresentations,
   removeRepresentationsFromViewport,
 };

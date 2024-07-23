@@ -172,7 +172,7 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setRepresentationVisibility(
+    segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportId,
       segmentationRepresentationUID,
       !toggle
@@ -297,15 +297,13 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the viewportId
-  const segmentationRepresentationUIDs = await segmentation.addRepresentations(
-    viewportId,
-    [
+  const segmentationRepresentationUIDs =
+    await segmentation.addSegmentationRepresentations(viewportId, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    ]
-  );
+    ]);
 
   // Store the segmentation representation that was just created
   [segmentationRepresentationUID] = segmentationRepresentationUIDs;

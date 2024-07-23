@@ -11,7 +11,7 @@ import { triggerSegmentationRepresentationModified } from '../triggerSegmentatio
  * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
  * @param visibility - boolean
  */
-function setRepresentationVisibility(
+function setSegmentationRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string,
   visibility: boolean
@@ -24,7 +24,7 @@ function setRepresentationVisibility(
     return;
   }
 
-  SegmentationState.setRepresentationVisibility(
+  SegmentationState.setSegmentationRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID,
     visibility
@@ -151,7 +151,7 @@ function getSegmentsHidden(
 }
 
 export {
-  setRepresentationVisibility,
+  setSegmentationRepresentationVisibility,
   getSegmentationRepresentationVisibility,
   setSegmentsVisibility,
   setSegmentIndexVisibility,

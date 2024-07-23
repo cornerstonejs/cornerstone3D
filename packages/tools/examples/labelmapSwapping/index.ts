@@ -74,7 +74,7 @@ addButtonToToolbar({
     if (segmentationDisplayed === segmentationId1) {
       // Add segmentation 2
       const [segmentationRepresentationUID] =
-        await segmentation.addRepresentations(viewportId, [
+        await segmentation.addSegmentationRepresentations(viewportId, [
           {
             segmentationId: segmentationId2,
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -86,7 +86,7 @@ addButtonToToolbar({
     } else {
       // Add segmentation 1
       const [segmentationRepresentationUID] =
-        await segmentation.addRepresentations(viewportId, [
+        await segmentation.addSegmentationRepresentations(viewportId, [
           {
             segmentationId: segmentationId1,
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -208,15 +208,13 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the first segmentation representation to the viewport
-  const [segmentationRepresentationUID] = await segmentation.addRepresentations(
-    viewportId,
-    [
+  const [segmentationRepresentationUID] =
+    await segmentation.addSegmentationRepresentations(viewportId, [
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
-    ]
-  );
+    ]);
 
   activeSegmentationRepresentationUID = segmentationRepresentationUID;
 

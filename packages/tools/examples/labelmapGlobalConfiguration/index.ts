@@ -247,7 +247,7 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the segmentation representations to the viewport
-  await segmentation.addRepresentations(viewportId, [
+  await segmentation.addSegmentationRepresentations(viewportId, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

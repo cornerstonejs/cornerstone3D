@@ -33,7 +33,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addRepresentations, addSegmentations } = segmentation;
+const { addSegmentationRepresentations, addSegmentations } = segmentation;
 
 const {
   fakeVolumeLoader,
@@ -240,7 +240,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(viewportId1, [
+                addSegmentationRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -406,7 +406,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(viewportId1, [
+                addSegmentationRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -591,7 +591,7 @@ describe('Segmentation Index Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(viewportId1, [
+                addSegmentationRepresentations(viewportId1, [
                   {
                     segmentationId: segmentationId,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,

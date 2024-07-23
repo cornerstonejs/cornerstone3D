@@ -22,7 +22,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addRepresentations } = segmentation;
+const { addSegmentationRepresentations } = segmentation;
 
 const { fakeMetaDataProvider, compareImages } = testUtils;
 
@@ -147,7 +147,7 @@ describe('Stack Segmentation Rendering -- ', () => {
                 cornerstone: cornerstone3D,
               });
 
-              addRepresentations(viewportId1, [
+              addSegmentationRepresentations(viewportId1, [
                 {
                   segmentationId,
                   type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -235,13 +235,13 @@ describe('Stack Segmentation Rendering -- ', () => {
                     cornerstone: cornerstone3D,
                   });
 
-                  addRepresentations(viewportId1, [
+                  addSegmentationRepresentations(viewportId1, [
                     {
                       segmentationId,
                       type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     },
                   ]);
-                  addRepresentations(viewportId1, [
+                  addSegmentationRepresentations(viewportId1, [
                     {
                       segmentationId: 'seg2',
                       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -386,7 +386,7 @@ describe('Stack Segmentation Rendering -- ', () => {
                 cornerstone: cornerstone3D,
               });
 
-              addRepresentations(viewportId1, [
+              addSegmentationRepresentations(viewportId1, [
                 {
                   segmentationId,
                   type: csToolsEnums.SegmentationRepresentations.Labelmap,

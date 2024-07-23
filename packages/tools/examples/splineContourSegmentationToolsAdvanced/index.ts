@@ -225,12 +225,15 @@ async function addNewSegmentation() {
 
   for (let i = 0; i < viewportIds.length; i++) {
     const viewportId = viewportIds[i];
-    const [uid] = await segmentation.addRepresentations(viewportId, [
-      {
-        segmentationId: newSegmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]);
+    const [uid] = await segmentation.addSegmentationRepresentations(
+      viewportId,
+      [
+        {
+          segmentationId: newSegmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Contour,
+        },
+      ]
+    );
 
     segmentationRepresentationUIDs[viewportId].push(uid);
   }
@@ -398,7 +401,7 @@ addToggleButtonToToolbar({
       const segmentationRepresentationUID =
         segmentationRepresentationUIDs[viewportId][segmentationIndex];
 
-      segmentation.config.visibility.setRepresentationVisibility(
+      segmentation.config.visibility.setSegmentationRepresentationVisibility(
         viewportId,
         segmentationRepresentationUID,
         !toggle

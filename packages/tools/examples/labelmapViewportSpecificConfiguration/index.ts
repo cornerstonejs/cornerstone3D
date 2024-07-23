@@ -222,7 +222,7 @@ async function run() {
 
   // // Add the segmentation representations to viewportId1
   [leftRepresentationUID1, leftRepresentationUID2] =
-    await segmentation.addRepresentations(viewportId1, [
+    await segmentation.addSegmentationRepresentations(viewportId1, [
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -235,7 +235,7 @@ async function run() {
 
   // // Add the segmentation representations to viewportId2
   [rightRepresentationUID1, rightRepresentationUID2] =
-    await segmentation.addRepresentations(viewportId2, [
+    await segmentation.addSegmentationRepresentations(viewportId2, [
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,

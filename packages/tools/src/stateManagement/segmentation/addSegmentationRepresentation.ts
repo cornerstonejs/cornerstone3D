@@ -13,7 +13,7 @@ import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
-async function addRepresentation(
+async function addSegmentationRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput,
   initialConfig?: SegmentationRepresentationConfig
@@ -41,7 +41,10 @@ async function addRepresentation(
     },
   };
 
-  SegmentationState.addRepresentationToViewport(viewportId, representation);
+  SegmentationState.addSegmentationRepresentationToViewport(
+    viewportId,
+    representation
+  );
 
   // Update the toolGroup specific configuration
   if (initialConfig) {
@@ -89,4 +92,4 @@ function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
   return colorLUTIndexToUse;
 }
 
-export { addRepresentation };
+export { addSegmentationRepresentation };

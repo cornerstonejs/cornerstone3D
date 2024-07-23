@@ -32,7 +32,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addRepresentations, addSegmentations } = segmentation;
+const { addSegmentationRepresentations, addSegmentations } = segmentation;
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
@@ -172,7 +172,7 @@ describe('Segmentation Controller --', () => {
                   },
                 ]);
 
-                addRepresentations(viewportId1, [
+                addSegmentationRepresentations(viewportId1, [
                   {
                     segmentationId: seg1VolumeID,
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -240,7 +240,7 @@ describe('Segmentation Controller --', () => {
     //             )
 
     //             // add two volumes on the segmentation
-    //             addRepresentations(toolGroupId, [
+    //             addSegmentationRepresentations(toolGroupId, [
     //               {
     //                 volumeId: seg1VolumeID,
     //                 colorLUTIndex: 1,
@@ -308,7 +308,7 @@ describe('Segmentation Controller --', () => {
     //             vp1.render()
 
     //             // add two volumes on the segmentation
-    //             addRepresentations(toolGroupId, [
+    //             addSegmentationRepresentations(toolGroupId, [
     //               {
     //                 volumeId: seg1VolumeID,
     //               },
@@ -321,7 +321,7 @@ describe('Segmentation Controller --', () => {
     //                   toolGroupId
     //                 )
 
-    //               segmentation.config.visibility.setRepresentationVisibility(
+    //               segmentation.config.visibility.setSegmentationRepresentationVisibility(
     //                 toolGroupId,
     //                 segmentationData.segmentationRepresentationUID,
     //                 false

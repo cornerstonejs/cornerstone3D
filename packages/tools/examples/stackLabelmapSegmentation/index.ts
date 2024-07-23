@@ -214,12 +214,15 @@ addButtonToToolbar({
     ]);
 
     // Add the segmentation representation to the viewport
-    const [uid] = await segmentation.addRepresentations(viewportId, [
-      {
-        segmentationId: newSegmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+    const [uid] = await segmentation.addSegmentationRepresentations(
+      viewportId,
+      [
+        {
+          segmentationId: newSegmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        },
+      ]
+    );
 
     segmentationRepresentationUIDs.push(uid);
 
@@ -427,18 +430,21 @@ async function run() {
   ]);
 
   // Add the segmentation representation to the viewport
-  const [uid] = await segmentation.addRepresentations(viewportId, [
+  const [uid] = await segmentation.addSegmentationRepresentations(viewportId, [
     {
       segmentationId: segmentationIds[0],
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  const [uid2] = await segmentation.addRepresentations(viewportId2, [
-    {
-      segmentationId: segmentationIds[0],
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  const [uid2] = await segmentation.addSegmentationRepresentations(
+    viewportId2,
+    [
+      {
+        segmentationId: segmentationIds[0],
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]
+  );
 
   segmentationRepresentationUIDs.push(uid);
 }

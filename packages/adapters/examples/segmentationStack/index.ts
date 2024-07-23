@@ -859,7 +859,7 @@ async function addSegmentationsToState(segmentationId: string) {
     ]);
 
     // Add the segmentation representation to the viewport
-    await csToolsSegmentation.addRepresentations(viewportIds[0], [
+    await csToolsSegmentation.addSegmentationRepresentations(viewportIds[0], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap

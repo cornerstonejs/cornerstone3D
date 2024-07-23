@@ -254,7 +254,7 @@ function getAllSegmentationRepresentationsRenderingStateForViewport(
  * @param segmentationRepresentation - The segmentation representation to add.
  * @param suppressEvents - (Optional) A flag indicating whether to suppress triggering events. Defaults to false.
  */
-function addRepresentationToViewport(
+function addSegmentationRepresentationToViewport(
   viewportId: string,
   segmentationRepresentation: SegmentationRepresentation,
   suppressEvents?: boolean
@@ -262,9 +262,11 @@ function addRepresentationToViewport(
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
   // check if the segmentation representation is already in the state
-  segmentationStateManager.addRepresentation(segmentationRepresentation);
+  segmentationStateManager.addSegmentationRepresentation(
+    segmentationRepresentation
+  );
 
-  segmentationStateManager.addRepresentationToViewport(
+  segmentationStateManager.addSegmentationRepresentationToViewport(
     viewportId,
     segmentationRepresentation.segmentationRepresentationUID
   );
@@ -397,13 +399,13 @@ function getSegmentationRepresentationVisibility(
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @param visible - The visibility to set for the segmentation representation in the viewport.
  */
-function setRepresentationVisibility(
+function setSegmentationRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string,
   visible: boolean
 ): void {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.setRepresentationVisibility(
+  segmentationStateManager.setSegmentationRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID,
     visible
@@ -495,7 +497,7 @@ export {
   setPerSegmentConfig,
   // viewport
   getAllSegmentationRepresentationsForViewport,
-  addRepresentationToViewport,
+  addSegmentationRepresentationToViewport,
   getAllSegmentationRepresentationsRenderingStateForViewport,
   // color
   addColorLUT,
@@ -505,7 +507,7 @@ export {
   // visibility
   getSegmentationRepresentationsForSegmentationId,
   getSegmentationRepresentationVisibility,
-  setRepresentationVisibility,
+  setSegmentationRepresentationVisibility,
   getViewportIdsWithSegmentation,
   // active
   getActiveRepresentation,

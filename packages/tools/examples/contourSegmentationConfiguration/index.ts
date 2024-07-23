@@ -203,13 +203,13 @@ async function run() {
   });
 
   // Add the segmentation representation to the viewport
-  segRepUID1 = await segmentation.addRepresentations(viewportId1, [
+  segRepUID1 = await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
-  segRepUID2 = await segmentation.addRepresentations(viewportId2, [
+  segRepUID2 = await segmentation.addSegmentationRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

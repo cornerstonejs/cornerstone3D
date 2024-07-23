@@ -32,7 +32,7 @@
 
 // const { Events } = csToolsEnums;
 
-// const { addRepresentations, addSegmentations } = segmentation;
+// const { addSegmentationRepresentations, addSegmentations } = segmentation;
 // const { SegmentationRepresentations } = csToolsEnums;
 
 // const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
@@ -187,7 +187,7 @@
 //                 },
 //               ]);
 
-//               representationUID = addRepresentations(
+//               representationUID = addSegmentationRepresentations(
 //                 viewportId1,
 //                 [
 //                   {
@@ -273,7 +273,7 @@
 //     //             },
 //     //           ]);
 
-//     //           addRepresentations(this.segToolGroup.id, [
+//     //           addSegmentationRepresentations(this.segToolGroup.id, [
 //     //             {
 //     //               segmentationId: seg1VolumeID,
 //     //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -354,7 +354,7 @@
 //     //           );
 
 //     //           // add two volumes on the segmentation
-//     //           addRepresentations(
+//     //           addSegmentationRepresentations(
 //     //             toolGroupId,
 //     //             [
 //     //               {

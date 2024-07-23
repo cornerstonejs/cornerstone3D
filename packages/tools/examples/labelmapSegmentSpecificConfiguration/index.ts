@@ -179,15 +179,13 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the segmentation representations to the viewport
-  [segmentationRepresentationUID] = await segmentation.addRepresentations(
-    viewportId,
-    [
+  [segmentationRepresentationUID] =
+    await segmentation.addSegmentationRepresentations(viewportId, [
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
-    ]
-  );
+    ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);

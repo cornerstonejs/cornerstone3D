@@ -5,7 +5,7 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
-import addRepresentations from './addRepresentations';
+import addSegmentationRepresentations from './addSegmentationRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
 import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
@@ -117,7 +117,7 @@ async function updateSegmentationState({
     };
   }
 
-  // await addRepresentations(viewportId, [
+  // await addSegmentationRepresentations(viewportId, [
   //   {
   //     segmentationId,
   //     type: SegmentationRepresentations.Labelmap,

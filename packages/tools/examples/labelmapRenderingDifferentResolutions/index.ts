@@ -147,13 +147,13 @@ async function addSegmentations(viewportId1) {
   });
 
   // Add segmentation representations to the viewports
-  segmentation.addRepresentations(viewportId1, [
+  segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId: highResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  segmentation.addRepresentations(viewportId1, [
+  segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId: lowResSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

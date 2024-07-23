@@ -74,7 +74,7 @@ let viewportId;
 addToggleButtonToToolbar({
   title: 'Hide All Segments',
   onClick: (toggle) => {
-    segmentation.config.visibility.setRepresentationVisibility(
+    segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportId,
       planarSegmentationRepresentationUID,
       !toggle
@@ -242,7 +242,7 @@ async function run() {
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the segmentation representation to the viewport
-  const segRepresentations1 = await segmentation.addRepresentations(
+  const segRepresentations1 = await segmentation.addSegmentationRepresentations(
     viewportId,
     [
       {

@@ -345,7 +345,7 @@ async function _startFromVolume(
     },
   ]);
   // Add the segmentation representation to the viewport
-  await segmentation.addRepresentations(volumeToolGroupId, [
+  await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -407,7 +407,7 @@ async function _startFromStack(
   ]);
 
   // Add the segmentation representation to the viewport
-  await segmentation.addRepresentations(viewportId, [
+  await segmentation.addSegmentationRepresentations(viewportId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
