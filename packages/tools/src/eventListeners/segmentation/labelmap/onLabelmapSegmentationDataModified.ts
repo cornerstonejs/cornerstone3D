@@ -46,7 +46,7 @@ const onLabelmapSegmentationDataModified = function (
   }
 
   const viewportIds =
-    SegmentationState.getViewportIdsWithSegmentationId(segmentationId);
+    SegmentationState.getViewportIdsWithSegmentation(segmentationId);
 
   if ('imageIds' in labelmapRepresentationData) {
     // get the stack from cache, we need the imageData to be updated to GPU

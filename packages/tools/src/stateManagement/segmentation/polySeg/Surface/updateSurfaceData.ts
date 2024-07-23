@@ -4,7 +4,7 @@ import {
   getSegmentation,
   getRepresentations,
   getRepresentationsForViewport,
-  getViewportIdsWithSegmentationId,
+  getViewportIdsWithSegmentation,
 } from '../../segmentationState';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
 import { SegmentationRepresentations } from '../../../../enums';
@@ -48,7 +48,7 @@ export async function updateSurfaceData(segmentationId) {
     if (!geometry) {
       // means it is a new segment getting added while we were
       // listening to the segmentation data modified event
-      const viewportIds = getViewportIdsWithSegmentationId(segmentationId);
+      const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
       return viewportIds.map((viewportId) => {
         const segmentationRepresentations =

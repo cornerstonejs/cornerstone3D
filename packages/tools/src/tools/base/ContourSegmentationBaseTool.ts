@@ -29,7 +29,7 @@ import {
   getActiveRepresentation,
   getRepresentationsBySegmentationId,
   getRepresentationsForViewport,
-  getViewportIdsWithSegmentationId,
+  getViewportIdsWithSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
@@ -177,7 +177,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       // and trigger the event for them to be able to render the segmentation
       // annotation as well
 
-      const viewportIds = getViewportIdsWithSegmentationId(segmentationId);
+      const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
       const toolGroupIds = viewportIds.map((viewportId) => {
         const toolGroup = getToolGroupForViewport(viewportId);
