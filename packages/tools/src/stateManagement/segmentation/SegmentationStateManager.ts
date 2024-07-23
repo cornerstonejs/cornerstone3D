@@ -164,7 +164,7 @@ export default class SegmentationStateManager {
    * Adds a segmentation representation to the representations object.
    * @param segmentationRepresentation - The segmentation representation object to add.
    */
-  addSegmentationRepresentation(
+  addSegmentationRepresentationState(
     segmentationRepresentation: SegmentationRepresentation
   ): void {
     const { segmentationRepresentationUID } = segmentationRepresentation;
@@ -177,7 +177,7 @@ export default class SegmentationStateManager {
    * @param viewportId - The ID of the viewport.
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    */
-  addSegmentationRepresentation(
+  addSegmentationRepresentationToViewport(
     viewportId: string,
     segmentationRepresentationUID: string
   ): void {

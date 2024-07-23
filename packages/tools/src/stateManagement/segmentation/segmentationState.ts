@@ -260,11 +260,11 @@ function addSegmentationRepresentation(
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
   // check if the segmentation representation is already in the state
-  segmentationStateManager.addSegmentationRepresentation(
+  segmentationStateManager.addSegmentationRepresentationState(
     segmentationRepresentation
   );
 
-  segmentationStateManager.addSegmentationRepresentation(
+  segmentationStateManager.addSegmentationRepresentationToViewport(
     viewportId,
     segmentationRepresentation.segmentationRepresentationUID
   );
