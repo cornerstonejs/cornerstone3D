@@ -1,4 +1,4 @@
-import removeRepresentationsFromViewport from './removeRepresentationsFromViewport';
+import removeSegmentationRepresentations from './removeSegmentationRepresentations';
 import addSegmentations from './addSegmentations';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import addRepresentationData from './addRepresentationData';
@@ -18,7 +18,7 @@ export {
   // functions
   addSegmentations,
   addSegmentationRepresentations,
-  removeRepresentationsFromViewport,
+  removeSegmentationRepresentations,
   addRepresentationData,
   // name spaces
   state,

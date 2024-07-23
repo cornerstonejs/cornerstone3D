@@ -307,7 +307,7 @@ async function exportSegmentation() {
 
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
             viewportIds[0]
         );
 
@@ -366,12 +366,12 @@ function removeActiveSegmentation() {
 
     // Get active segmentation representation
     const { segmentationId, segmentationRepresentationUID } =
-        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
         );
 
     //
-    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId, [
+    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId, [
         segmentationRepresentationUID
     ]);
 
@@ -719,7 +719,7 @@ function restart() {
     cache.removeVolumeLoadObject(volumeId);
 
     //
-    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId);
+    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId);
 
     //
     const segmentationIds = getSegmentationIds();

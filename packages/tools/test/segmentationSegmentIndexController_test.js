@@ -323,7 +323,7 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0]);
 
           const segmentationRepresentation =
-            segmentation.activeSegmentation.getActiveRepresentation(
+            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
               viewportId1
             );
 
@@ -346,7 +346,9 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveRepresentation(viewportId1);
+          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            viewportId1
+          );
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID
@@ -489,7 +491,7 @@ describe('Segmentation Index Controller --', () => {
           drawRectangle([20, 20, 0], [40, 40, 0]);
 
           const segmentationRepresentation =
-            segmentation.activeSegmentation.getActiveRepresentation(
+            segmentation.activeSegmentation.getActiveSegmentationRepresentation(
               viewportId1
             );
 
@@ -518,7 +520,9 @@ describe('Segmentation Index Controller --', () => {
 
         // active segmentation
         const segmentationRepresentation =
-          segmentation.activeSegmentation.getActiveRepresentation(viewportId1);
+          segmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            viewportId1
+          );
 
         expect(
           segmentationRepresentation.segmentationRepresentationUID

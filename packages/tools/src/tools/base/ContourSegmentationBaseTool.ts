@@ -26,7 +26,7 @@ import {
 } from '../../utilities/contourSegmentation';
 import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
 import {
-  getActiveRepresentation,
+  getActiveSegmentationRepresentation,
   getSegmentationRepresentationsForSegmentationId,
   getAllSegmentationRepresentationsForViewport,
   getViewportIdsWithSegmentation,
@@ -76,7 +76,9 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       return contourAnnotation;
     }
 
-    const activeSeg = activeSegmentation.getActiveRepresentation(viewport.id);
+    const activeSeg = activeSegmentation.getActiveSegmentationRepresentation(
+      viewport.id
+    );
 
     if (!activeSeg) {
       throw new Error(
@@ -272,7 +274,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
         segmentIndex
       );
 
-    const activeSegRep = getActiveRepresentation(viewportId);
+    const activeSegRep = getActiveSegmentationRepresentation(viewportId);
 
     const isActive =
       activeSegRep.segmentationRepresentationUID ===

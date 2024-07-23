@@ -67,7 +67,7 @@ addButtonToToolbar({
   title: 'Swap Segmentation',
   onClick: async () => {
     // Remove the currently displayed segmentation representation
-    segmentation.removeRepresentationsFromViewport(viewportId, [
+    segmentation.removeSegmentationRepresentations(viewportId, [
       activeSegmentationRepresentationUID,
     ]);
 

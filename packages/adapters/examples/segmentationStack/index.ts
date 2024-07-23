@@ -411,7 +411,7 @@ function removeActiveSegmentation() {
         );
     // Get active segmentation representation
     const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveRepresentation(
+        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
             toolGroupId
         );
 
@@ -420,7 +420,7 @@ function removeActiveSegmentation() {
     }
 
     //
-    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId, [
+    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId, [
         activeSegmentationRepresentation.segmentationRepresentationUID
     ]);
 
@@ -809,7 +809,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeRepresentationsFromViewport(toolGroupId);
+    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();

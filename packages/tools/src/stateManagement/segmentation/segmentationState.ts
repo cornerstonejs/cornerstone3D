@@ -418,11 +418,13 @@ function setSegmentationRepresentationVisibility(
  * @param viewportId - The ID of the viewport.
  * @returns The active segmentation representation, or undefined if not found.
  */
-function getActiveRepresentation(
+function getActiveSegmentationRepresentation(
   viewportId: string
 ): SegmentationRepresentation | undefined {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getActiveRepresentation(viewportId);
+  return segmentationStateManager.getActiveSegmentationRepresentation(
+    viewportId
+  );
 }
 
 /**
@@ -510,7 +512,7 @@ export {
   setSegmentationRepresentationVisibility,
   getViewportIdsWithSegmentation,
   // active
-  getActiveRepresentation,
+  getActiveSegmentationRepresentation,
   setActiveRepresentation,
   getLabelmapImageIdsForViewport,
   updateSegmentationImageReferences,

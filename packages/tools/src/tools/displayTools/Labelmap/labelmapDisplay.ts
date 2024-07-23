@@ -234,7 +234,8 @@ function _setLabelmapColorAndOpacity(
   const { rendering, config, colorLUTIndex } = segmentationRepresentation;
 
   // todo fix this
-  const activeSegRep = SegmentationState.getActiveRepresentation(viewportId);
+  const activeSegRep =
+    SegmentationState.getActiveSegmentationRepresentation(viewportId);
 
   const isActiveLabelmap = activeSegRep === segmentationRepresentation;
 

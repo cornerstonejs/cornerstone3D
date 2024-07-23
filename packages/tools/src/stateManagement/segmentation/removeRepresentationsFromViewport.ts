@@ -13,7 +13,7 @@ import {
  * @param segmentationRepresentationUIDs - The UIDs of the segmentation representations to remove.
  * @param immediate - if True the viewport will be re-rendered immediately.
  */
-function removeRepresentationsFromViewport(
+function removeSegmentationRepresentations(
   viewportId: string,
   segmentationRepresentationUIDs?: string[] | undefined,
   immediate?: boolean
@@ -51,4 +51,4 @@ function _removeSegmentation(
   }
 }
 
-export default removeRepresentationsFromViewport;
+export default removeSegmentationRepresentations;

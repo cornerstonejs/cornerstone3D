@@ -434,7 +434,7 @@ export default class SegmentationStateManager {
       true;
   }
 
-  getActiveRepresentation(
+  getActiveSegmentationRepresentation(
     viewportId: string
   ): SegmentationRepresentation | undefined {
     if (!this.state.viewports?.[viewportId]) {

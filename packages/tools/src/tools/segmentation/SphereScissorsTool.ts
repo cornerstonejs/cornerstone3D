@@ -116,7 +116,7 @@ class SphereScissorsTool extends BaseTool {
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveRepresentation(viewport.id);
+      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'

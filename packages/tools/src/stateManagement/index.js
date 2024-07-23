@@ -22,7 +22,7 @@ import {
 
 import {
   addSegmentationRepresentations,
-  removeRepresentationsFromViewport,
+  removeSegmentationRepresentations,
 } from './segmentation';
 
 export {
@@ -46,5 +46,5 @@ export {
   invalidateAnnotation,
   // segmentations
   addSegmentationRepresentations,
-  removeRepresentationsFromViewport,
+  removeSegmentationRepresentations,
 };

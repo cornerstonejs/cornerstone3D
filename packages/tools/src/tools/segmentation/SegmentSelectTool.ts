@@ -5,7 +5,7 @@ import { BaseTool } from '../base';
 import { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { getActiveRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
+import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
 import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import {
@@ -88,7 +88,9 @@ class SegmentSelectTool extends BaseTool {
 
     const { viewport } = enabledElement;
 
-    const activeSegmentationReps = getActiveRepresentation(viewport.id);
+    const activeSegmentationReps = getActiveSegmentationRepresentation(
+      viewport.id
+    );
 
     if (!activeSegmentationReps) {
       return;

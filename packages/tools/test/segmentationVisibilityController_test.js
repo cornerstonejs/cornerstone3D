@@ -317,7 +317,7 @@ describe('Segmentation Controller --', () => {
     //               },
     //             ]).then(() => {
     //               const segmentationData =
-    //                 segmentation.activeSegmentation.getActiveRepresentation(
+    //                 segmentation.activeSegmentation.getActiveSegmentationRepresentation(
     //                   toolGroupId
     //                 )
 
