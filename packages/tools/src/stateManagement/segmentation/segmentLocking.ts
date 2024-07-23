@@ -56,7 +56,7 @@ function setSegmentIndexLocked(
  * segments for.
  * @returns An array of locked segment indices.
  */
-function getLockedSegments(segmentationId: string): number[] | [] {
+function getLockedSegmentIndices(segmentationId: string): number[] | [] {
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
@@ -67,4 +67,4 @@ function getLockedSegments(segmentationId: string): number[] | [] {
   return Array.from(segmentsLocked);
 }
 
-export { isSegmentIndexLocked, setSegmentIndexLocked, getLockedSegments };
+export { isSegmentIndexLocked, setSegmentIndexLocked, getLockedSegmentIndices };

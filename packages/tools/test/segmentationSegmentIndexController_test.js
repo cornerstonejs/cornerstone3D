@@ -532,7 +532,7 @@ describe('Segmentation Index Controller --', () => {
 
         expect(anotherWayActiveSegmentIndex).toBe(2);
 
-        const locked1 = segmentation.segmentLocking.getLockedSegments(
+        const locked1 = segmentation.segmentLocking.getLockedSegmentIndices(
           segmentationRepresentation.segmentationId
         );
 

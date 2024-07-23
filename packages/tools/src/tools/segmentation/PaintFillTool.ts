@@ -87,7 +87,7 @@ class PaintFillTool extends BaseTool {
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked: number[] =
-      segmentLocking.getLockedSegments(segmentationId);
+      segmentLocking.getLockedSegmentIndices(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
 
     const labelmapData =

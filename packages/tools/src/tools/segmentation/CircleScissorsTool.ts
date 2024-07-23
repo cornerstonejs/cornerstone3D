@@ -121,7 +121,8 @@ class CircleScissorsTool extends BaseTool {
       activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
+    const segmentsLocked =
+      segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const segmentColor = segmentationConfig.color.getSegmentIndexColor(
       segmentationRepresentationUID,

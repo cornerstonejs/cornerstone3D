@@ -196,7 +196,8 @@ class BrushTool extends BaseTool {
       throw new Error('Not implemented yet');
     }
 
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
+    const segmentsLocked =
+      segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const { representationData } =
       segmentationState.getSegmentation(segmentationId);

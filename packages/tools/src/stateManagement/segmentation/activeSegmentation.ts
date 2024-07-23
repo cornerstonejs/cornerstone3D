@@ -1,4 +1,7 @@
-import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
+import {
+  SegmentationRepresentation,
+  Segmentation,
+} from '../../types/SegmentationStateTypes';
 import * as SegmentationState from './segmentationState';
 
 /**
@@ -8,6 +11,21 @@ import * as SegmentationState from './segmentationState';
  */
 function getActiveRepresentation(viewportId): SegmentationRepresentation {
   return SegmentationState.getActiveRepresentation(viewportId);
+}
+
+/**
+ * Retrieves the active segmentation for a given viewport.
+ * @param viewportId - The ID of the viewport.
+ * @returns The active segmentation, or null if no active segmentation is found.
+ */
+function getActiveSegmentation(viewportId): Segmentation {
+  const activeRepresentation = getActiveRepresentation(viewportId);
+
+  if (!activeRepresentation) {
+    return null;
+  }
+
+  return SegmentationState.getSegmentation(activeRepresentation.segmentationId);
 }
 
 /**
@@ -33,6 +51,7 @@ function setActiveRepresentation(
 export {
   // get
   getActiveRepresentation,
+  getActiveSegmentation,
   // set
   setActiveRepresentation,
 };
