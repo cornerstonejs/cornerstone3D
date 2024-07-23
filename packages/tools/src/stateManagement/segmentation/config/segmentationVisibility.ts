@@ -65,7 +65,7 @@ function setSegmentsVisibility(
   segmentIndices: number[],
   visibility: boolean
 ): void {
-  const hiddenSegments = getSegmentsHidden(
+  const hiddenSegments = getHiddenSegmentIndices(
     viewport,
     segmentationRepresentationUID
   );
@@ -92,7 +92,7 @@ function setSegmentIndexVisibility(
   segmentIndex: number,
   visibility: boolean
 ): void {
-  const hiddenSegments = getSegmentsHidden(
+  const hiddenSegments = getHiddenSegmentIndices(
     viewportId,
     segmentationRepresentationUID
   );
@@ -116,7 +116,7 @@ function getSegmentIndexVisibility(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): boolean {
-  const hiddenSegments = getSegmentsHidden(
+  const hiddenSegments = getHiddenSegmentIndices(
     viewportId,
     segmentationRepresentationUID
   );
@@ -131,14 +131,12 @@ function getSegmentIndexVisibility(
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @returns A set of numbers representing the hidden segments.
  */
-function getSegmentsHidden(
+function getHiddenSegmentIndices(
   viewportId: string,
   segmentationRepresentationUID: string
 ): Set<number> {
   const viewportRenderingState =
-    SegmentationState.getAllSegmentationRepresentationsRenderingStateForViewport(
-      viewportId
-    );
+    SegmentationState.getSegmentationRepresentationViewportStates(viewportId);
 
   if (!viewportRenderingState) {
     return new Set();
@@ -156,5 +154,5 @@ export {
   setSegmentsVisibility,
   setSegmentIndexVisibility,
   getSegmentIndexVisibility,
-  getSegmentsHidden,
+  getHiddenSegmentIndices,
 };

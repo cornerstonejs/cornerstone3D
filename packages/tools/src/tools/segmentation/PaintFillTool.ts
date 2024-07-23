@@ -16,7 +16,7 @@ import {
 } from '../../stateManagement/segmentation';
 import floodFill from '../../utilities/segmentation/floodFill';
 import {
-  getLabelmapImageIdsForViewport,
+  getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import { FloodFillResult, FloodFillGetter } from '../../types';
@@ -109,7 +109,7 @@ class PaintFillTool extends BaseTool {
 
       index = transformWorldToIndex(segmentation.imageData, worldPos);
     } else {
-      const currentSegmentationImageId = getLabelmapImageIdsForViewport(
+      const currentSegmentationImageId = getCurrentLabelmapImageIdForViewport(
         viewport.id,
         segmentationId
       );

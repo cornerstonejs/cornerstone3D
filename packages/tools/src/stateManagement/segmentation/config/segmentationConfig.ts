@@ -71,10 +71,12 @@ function setGlobalRepresentationConfig(
  * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
  * @returns The representation configuration for all segments.
  */
-function getAllSegmentsConfig(
+function getSegmentationRepresentationConfig(
   segmentationRepresentationUID: string
 ): RepresentationConfig {
-  return SegmentationState.getAllSegmentsConfig(segmentationRepresentationUID);
+  return SegmentationState.getSegmentationRepresentationConfig(
+    segmentationRepresentationUID
+  );
 }
 
 /**
@@ -166,7 +168,7 @@ export {
   getGlobalRepresentationConfig,
   setGlobalRepresentationConfig,
   // segmentation representation config
-  getAllSegmentsConfig,
+  getSegmentationRepresentationConfig,
   setAllSegmentsConfig,
   setPerSegmentConfig,
   getPerSegmentConfig,

@@ -51,7 +51,7 @@ import {
   LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
-import { getLabelmapImageIdsForViewport } from '../../stateManagement/segmentation/segmentationState';
+import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -244,7 +244,7 @@ class BrushTool extends BaseTool {
         segmentsLocked,
       };
     } else {
-      const segmentationImageId = getLabelmapImageIdsForViewport(
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
         viewport.id,
         segmentationId
       );

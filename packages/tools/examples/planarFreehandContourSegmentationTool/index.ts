@@ -180,8 +180,9 @@ function getSegmentsVisibilityState() {
 
 function getSegmentationConfig(): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID1) ??
-    {};
+    segmentation.config.getSegmentationRepresentationConfig(
+      segmentationRepresentationUID1
+    ) ?? {};
 
   // Add CONTOUR object because it
   // can return an empty object

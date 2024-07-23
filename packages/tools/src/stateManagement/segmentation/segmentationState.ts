@@ -116,12 +116,12 @@ function getSegmentationRepresentationsForSegmentationId(
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @returns The configuration for all segments.
  */
-function getAllSegmentsConfig(
+function getSegmentationRepresentationConfig(
   segmentationRepresentationUID: string
 ): RepresentationConfig {
   const segmentationStateManager = getDefaultSegmentationStateManager();
 
-  return segmentationStateManager.getAllSegmentsConfig(
+  return segmentationStateManager.getSegmentationRepresentationConfig(
     segmentationRepresentationUID
   );
 }
@@ -211,11 +211,11 @@ function getViewportIdsWithSegmentation(segmentationId: string): string[] {
  * @param viewportId - The ID of the viewport.
  * @returns An array of SegmentationRepresentation objects or an empty array if the viewport is not found.
  */
-function getAllSegmentationRepresentationsForViewport(
+function getSegmentationRepresentations(
   viewportId: string
 ): SegmentationRepresentation[] | [] {
   const viewportRenderingState =
-    getAllSegmentationRepresentationsRenderingStateForViewport(viewportId);
+    getSegmentationRepresentationViewportStates(viewportId);
 
   if (!viewportRenderingState) {
     return [];
@@ -233,9 +233,7 @@ function getAllSegmentationRepresentationsForViewport(
  * @param viewportId - The ID of the viewport.
  * @returns An object containing the rendering state of representations for the specified viewport.
  */
-function getAllSegmentationRepresentationsRenderingStateForViewport(
-  viewportId: string
-): {
+function getSegmentationRepresentationViewportStates(viewportId: string): {
   [segRepUID: string]: {
     visible: boolean;
     segmentsHidden: Set<number>;
@@ -457,12 +455,12 @@ function setActiveRepresentation(
  * @param segmentationId -  The ID of the segmentation.
  * @returns An array of labelmap image IDs.
  */
-function getLabelmapImageIdsForViewport(
+function getCurrentLabelmapImageIdForViewport(
   viewportId: string,
   segmentationId?: string
 ) {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getLabelmapImageIdsForViewport(
+  return segmentationStateManager.getCurrentLabelmapImageIdForViewport(
     viewportId,
     segmentationId
   );
@@ -493,14 +491,14 @@ export {
   // config
   getGlobalConfig,
   setGlobalConfig,
-  getAllSegmentsConfig,
+  getSegmentationRepresentationConfig,
   setAllSegmentsConfig,
   getPerSegmentConfig,
   setPerSegmentConfig,
   // viewport
-  getAllSegmentationRepresentationsForViewport,
+  getSegmentationRepresentations,
   addSegmentationRepresentationToViewport,
-  getAllSegmentationRepresentationsRenderingStateForViewport,
+  getSegmentationRepresentationViewportStates,
   // color
   addColorLUT,
   getColorLUT,
@@ -514,6 +512,6 @@ export {
   // active
   getActiveSegmentationRepresentation,
   setActiveRepresentation,
-  getLabelmapImageIdsForViewport,
+  getCurrentLabelmapImageIdForViewport,
   updateSegmentationImageReferences,
 };

@@ -65,7 +65,7 @@ function _imageChangeEventListener(evt) {
   ) as { viewport: Types.IStackViewport };
 
   const segmentationRepresentations =
-    SegmentationState.getAllSegmentationRepresentationsForViewport(viewportId);
+    SegmentationState.getSegmentationRepresentations(viewportId);
 
   if (!segmentationRepresentations?.length) {
     return;
@@ -130,10 +130,11 @@ function _imageChangeEventListener(evt) {
     // if cannot find a representation for this actor means it has stuck around
     // form previous renderings and should be removed
     const validActor = labelmapRepresentations.find((representation) => {
-      const derivedImageId = SegmentationState.getLabelmapImageIdsForViewport(
-        viewportId,
-        representation.segmentationId
-      );
+      const derivedImageId =
+        SegmentationState.getCurrentLabelmapImageIdForViewport(
+          viewportId,
+          representation.segmentationId
+        );
 
       return derivedImageId === actor.referencedId;
     });
@@ -146,10 +147,11 @@ function _imageChangeEventListener(evt) {
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
     const currentImageId = viewport.getCurrentImageId();
-    const derivedImageId = SegmentationState.getLabelmapImageIdsForViewport(
-      viewportId,
-      segmentationId
-    );
+    const derivedImageId =
+      SegmentationState.getCurrentLabelmapImageIdForViewport(
+        viewportId,
+        segmentationId
+      );
 
     if (!derivedImageId) {
       return;

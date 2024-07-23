@@ -13,7 +13,7 @@ import {
 
 import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
-import { getAllSegmentationRepresentationsForViewport } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
 import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import { surfaceDisplay } from '../../tools/displayTools/Surface';
 import { contourDisplay } from '../../tools/displayTools/Contour';
@@ -80,7 +80,7 @@ class SegmentationRenderingEngine {
     for (const viewport of viewports) {
       const viewportId = viewport.id;
       const segmentationRepresentations =
-        getAllSegmentationRepresentationsForViewport(viewportId);
+        getSegmentationRepresentations(viewportId);
 
       if (segmentationId) {
         const hasSegmentationRepresentation = segmentationRepresentations.some(
@@ -157,7 +157,7 @@ class SegmentationRenderingEngine {
 
   _triggerRender(viewportId?: string) {
     const segmentationRepresentations =
-      getAllSegmentationRepresentationsForViewport(viewportId);
+      getSegmentationRepresentations(viewportId);
 
     if (!segmentationRepresentations?.length) {
       return;

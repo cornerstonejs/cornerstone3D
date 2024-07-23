@@ -343,13 +343,13 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Retrieves the stack labelmap imageIds associated with the current imageId
+   * Retrieves the stack labelmap imageId associated with the current imageId
    * that is rendered on the viewport.
    * @param viewportId - The ID of the viewport.
    * @param segmentationId - The UID of the segmentation representation.
    * @returns A Map object containing the image ID reference map, or undefined if the enabled element is not found.
    */
-  getLabelmapImageIdsForViewport(
+  getCurrentLabelmapImageIdForViewport(
     viewportId: string,
     segmentationId: string
   ): string | undefined {
@@ -377,7 +377,7 @@ export default class SegmentationStateManager {
    * @param viewportId - The ID of the viewport.
    * @returns An array of SegmentationRepresentation objects.
    */
-  getAllSegmentationRepresentationsForViewport(
+  getSegmentationRepresentations(
     viewportId: string
   ): SegmentationRepresentation[] {
     const viewport = this.state.viewports[viewportId];
@@ -489,7 +489,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @returns The default representation config object.
    */
-  getAllSegmentsConfig(
+  getSegmentationRepresentationConfig(
     segmentationRepresentationUID: string
   ): RepresentationConfig {
     const config = this._getRepresentationConfig(segmentationRepresentationUID);

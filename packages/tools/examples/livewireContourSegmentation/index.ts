@@ -278,7 +278,7 @@ function getSegmentsVisibilityState() {
 
 function getSegmentationConfig(): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getAllSegmentsConfig(
+    segmentation.config.getSegmentationRepresentationConfig(
       segmentationRepresentationUIDs[0]
     ) ?? {};
 

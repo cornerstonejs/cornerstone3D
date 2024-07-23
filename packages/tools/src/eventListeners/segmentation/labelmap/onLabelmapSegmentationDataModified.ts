@@ -100,9 +100,7 @@ function performStackLabelmapUpdate({
 }) {
   viewportIds.forEach((viewportId) => {
     const viewportSegReps =
-      SegmentationState.getAllSegmentationRepresentationsForViewport(
-        viewportId
-      );
+      SegmentationState.getSegmentationRepresentations(viewportId);
 
     viewportSegReps.forEach((representation) => {
       if (representation.segmentationId !== segmentationId) {
@@ -132,7 +130,7 @@ function performStackLabelmapUpdate({
       const segImageData = actorEntry.actor.getMapper().getInputData();
 
       const currentSegmentationImageId =
-        SegmentationState.getLabelmapImageIdsForViewport(
+        SegmentationState.getCurrentLabelmapImageIdForViewport(
           viewportId,
           representation.segmentationId
         );

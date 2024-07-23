@@ -8,7 +8,7 @@ import {
 import { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import {
-  getLabelmapImageIdsForViewport,
+  getCurrentLabelmapImageIdForViewport,
   getSegmentationRepresentation,
 } from '../../../stateManagement/segmentation/segmentationState';
 /**
@@ -65,7 +65,7 @@ async function addLabelmapToElement(
     );
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
-    const segmentationImageId = getLabelmapImageIdsForViewport(
+    const segmentationImageId = getCurrentLabelmapImageIdForViewport(
       viewport.id,
       representation.segmentationId
     );

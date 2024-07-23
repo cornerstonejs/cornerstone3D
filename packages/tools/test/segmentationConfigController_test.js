@@ -144,7 +144,7 @@
 //         );
 
 //         const config =
-//           segmentation.config.getAllSegmentsConfig(representationUID);
+//           segmentation.config.getSegmentationRepresentationConfig(representationUID);
 
 //         const labelmapConfig =
 //           config.representations[SegmentationRepresentations.Labelmap];

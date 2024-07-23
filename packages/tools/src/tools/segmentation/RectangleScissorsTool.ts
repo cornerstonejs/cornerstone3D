@@ -32,7 +32,7 @@ import {
 } from '../../stateManagement/segmentation';
 
 import {
-  getLabelmapImageIdsForViewport,
+  getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';

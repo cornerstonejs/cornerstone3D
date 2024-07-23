@@ -283,8 +283,9 @@ function getCurrentSegmentationConfig(
     segmentationRepresentationUIDs[viewportId][segmentationIndex];
 
   const segmentationConfig =
-    segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID) ??
-    {};
+    segmentation.config.getSegmentationRepresentationConfig(
+      segmentationRepresentationUID
+    ) ?? {};
 
   // Add CONTOUR object because it
   // can return an empty object

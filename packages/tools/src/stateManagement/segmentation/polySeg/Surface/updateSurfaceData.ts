@@ -3,7 +3,7 @@ import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import {
   getSegmentation,
   getAllSegmentationRepresentations,
-  getAllSegmentationRepresentationsForViewport,
+  getSegmentationRepresentations,
   getViewportIdsWithSegmentation,
 } from '../../segmentationState';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
@@ -52,7 +52,7 @@ export async function updateSurfaceData(segmentationId) {
 
       return viewportIds.map((viewportId) => {
         const segmentationRepresentations =
-          getAllSegmentationRepresentationsForViewport(viewportId);
+          getSegmentationRepresentations(viewportId);
 
         return segmentationRepresentations.map((segmentationRepresentation) => {
           if (

@@ -404,7 +404,7 @@ describe('Segmentation Render -- ', () => {
     //       expect(toolGroupState).toBeDefined();
 
     //       const toolGroupConfig =
-    //         segmentation.config.getAllSegmentsConfig(
+    //         segmentation.config.getSegmentationRepresentationConfig(
     //           this.segToolGroup.id
     //         );
 

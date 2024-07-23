@@ -14,7 +14,7 @@ import {
   getGlobalConfig,
   getPerSegmentConfig,
 } from '../../../../stateManagement/segmentation/segmentationState';
-import { getSegmentsHidden } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
+import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
 import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config';
 
 function handleContourSegmentation(
@@ -57,7 +57,7 @@ function updateContourSets(
   const segmentsToSetToInvisible = [];
   const segmentsToSetToVisible = [];
 
-  const segmentsHidden = getSegmentsHidden(
+  const segmentsHidden = getHiddenSegmentIndices(
     viewport.id,
     segmentationRepresentationUID
   );
@@ -198,7 +198,7 @@ function addContourSetsToElement(
   const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
   const outlineWidthActive = newContourConfig.outlineWidthActive;
 
-  const segmentsHidden = getSegmentsHidden(
+  const segmentsHidden = getHiddenSegmentIndices(
     viewport.id,
     segmentationRepresentationUID
   );

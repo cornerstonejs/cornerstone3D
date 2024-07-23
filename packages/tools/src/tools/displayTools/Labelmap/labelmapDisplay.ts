@@ -22,7 +22,7 @@ import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import { polySeg } from '../../../stateManagement/segmentation';
-import { getSegmentsHidden } from '../../../stateManagement/segmentation/config/segmentationVisibility';
+import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
 import SegmentationStateManager from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 const MAX_NUMBER_COLORS = 255;
@@ -196,10 +196,11 @@ async function render(
     }
 
     // stack segmentation
-    const labelmapImageId = SegmentationState.getLabelmapImageIdsForViewport(
-      viewport.id,
-      segmentationId
-    );
+    const labelmapImageId =
+      SegmentationState.getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
@@ -277,7 +278,7 @@ function _setLabelmapColorAndOpacity(
     activeSegmentOutlineWidthDelta,
   } = _getLabelmapConfig(labelmapConfig, isActiveLabelmap);
 
-  const segmentsHidden = getSegmentsHidden(
+  const segmentsHidden = getHiddenSegmentIndices(
     viewportId,
     segmentationRepresentation.segmentationRepresentationUID
   );
