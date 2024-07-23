@@ -15,21 +15,26 @@
     "forceConsistentCasingInFileNames": true,
     "useDefineForClassFields": false,
     "jsx": "react-jsx",
-    "lib": ["ES6", "dom"], // "ES6", "DOM" | "es2015", "dom"
-    "module": "esnext", // esnext | commonjs
-    "moduleResolution": "node",
+    "lib": ["ES2022", "dom"],
+
     "noImplicitAny": false,
     "noImplicitThis": false,
-    "outDir": "lib",
+
     "pretty": true,
     "removeComments": true,
     "skipLibCheck": true,
-    "sourceMap": true,
     "strict": true,
     "strictNullChecks": false,
-    "target": "es5", // esnext | es5
+    "target": "ES2022",
     "downlevelIteration": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    //
+    "module": "esnext", // esnext | commonjs
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "sourceMap": false,
+
   },
   "exclude": [
     "node_modules",
@@ -37,6 +42,7 @@
     "packages/**/dist",
     "packages/**/lib",
     "packages/**/lib-esm",
+    "packages/adapters/**/*.js",
     "packages/docs",
     "packages/docs/**/*",
     "snippets",

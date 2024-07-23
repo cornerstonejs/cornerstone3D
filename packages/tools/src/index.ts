@@ -57,7 +57,6 @@ import {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   CircleROIStartEndThresholdTool,
-  SegmentationDisplayTool,
   BrushTool,
   AngleTool,
   CobbAngleTool,
@@ -136,7 +135,6 @@ export {
   SculptorTool,
   EraserTool,
   // Segmentation Display
-  SegmentationDisplayTool,
   // Segmentation Editing Tools
   RectangleScissorsTool,
   CircleScissorsTool,

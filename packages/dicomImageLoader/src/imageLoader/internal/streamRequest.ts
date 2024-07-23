@@ -3,9 +3,12 @@ import { getOptions } from './options';
 import { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
+import {
+  CornerstoneWadoRsLoaderOptions,
+  StreamingData,
+} from '../wadors/loadImage';
 
 const { ProgressiveIterator } = utilities;
-type RetrieveOptions = Types.RetrieveOptions;
 
 /**
  * This function does a streaming parse from an http request, delivering
@@ -24,8 +27,11 @@ export default function streamRequest(
   options: CornerstoneWadoRsLoaderOptions = {}
 ) {
   const globalOptions = getOptions();
-  const { retrieveOptions = {}, streamingData = {} } = options;
-  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
+  const {
+    retrieveOptions = {} as Types.RangeRetrieveOptions,
+    streamingData = {} as StreamingData,
+  } = options;
+  const minChunkSize = retrieveOptions.chunkSize || 128 * 1024;
 
   const errorInterceptor = (err: any) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -69,7 +75,9 @@ export default function streamRequest(
 
       let readDone = false;
       let encodedData = streamingData.encodedData;
+      // @ts-ignore
       let lastSize = streamingData.lastSize || 0;
+      // @ts-ignore
       streamingData.isPartial = true;
 
       while (!readDone) {
@@ -86,6 +94,7 @@ export default function streamRequest(
           continue;
         }
         lastSize = encodedData.length;
+        // @ts-ignore
         streamingData.isPartial = !done;
         const extracted = extractMultipart(
           contentType,

@@ -25,6 +25,8 @@ interface ICamera {
   viewPlaneNormal?: Point3;
   /** Camera viewUp - the direction of viewUP in camera */
   viewUp?: Point3;
+  /** rotation  */
+  rotation?: number;
   /** flip Horizontal */
   flipHorizontal?: boolean;
   /** flip Vertical */

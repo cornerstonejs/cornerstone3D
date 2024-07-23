@@ -279,7 +279,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { world: worldPos } = currentPoints;
-    const { renderingEngine } = getEnabledElement(element);
     const annotation = this.createAnnotation(evt);
     const contourHoleProcessingEnabled =
       getMouseModifierKey(evt.detail.event) ===
@@ -296,10 +295,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     this._activateDraw(element);
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      this.editData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportIds(this.editData.viewportIdsToRender);
 
     return annotation;
   }
@@ -371,7 +367,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { renderingEngine } = enabledElement;
 
     this._activateModify(element);
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -405,7 +401,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -433,7 +429,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     if (
       (this.isHandleOutsideImage &&
@@ -442,14 +437,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     ) {
       removeAnnotation(annotation.annotationUID);
       this.clearEditData();
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       return;
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     const changeType = newAnnotation
       ? ChangeTypes.Completed
@@ -573,7 +565,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.scissors.startSearch(worldToSlice(worldPos));
 
     annotation.invalidated = true;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (this.editData.closed) {
       // Update the annotation because `editData` will be set to null
@@ -621,7 +613,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // Store the new path
     this.editData.currentPath = currentPath;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -740,7 +732,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -763,7 +755,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData = null;
     this.scissors = null;

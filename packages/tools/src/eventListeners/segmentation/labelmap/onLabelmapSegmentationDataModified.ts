@@ -1,8 +1,8 @@
 import {
   cache,
-  getEnabledElementByIds,
   utilities as csUtils,
   VolumeViewport,
+  getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -11,7 +11,6 @@ import {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getToolGroup } from '../../../store/ToolGroupManager';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -21,27 +20,38 @@ const onLabelmapSegmentationDataModified = function (
 ): void {
   const { segmentationId, modifiedSlicesToUse } = evt.detail;
 
+  let modifiedSlices = modifiedSlicesToUse;
+
   const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId);
 
-  const toolGroupIds =
-    SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
-
   const labelmapRepresentationData = representationData[type];
+
+  if (
+    'stack' in labelmapRepresentationData &&
+    'volumeId' in labelmapRepresentationData
+  ) {
+    // we need to take away the modifiedSlicesToUse from the stack
+    // and update the volume for all the slices
+    modifiedSlices = [];
+  }
 
   if ('volumeId' in labelmapRepresentationData) {
     // get the volume from cache, we need the openGLTexture to be updated to GPU
     performVolumeLabelmapUpdate({
-      modifiedSlicesToUse,
+      modifiedSlicesToUse: modifiedSlices,
       representationData,
       type,
     });
   }
 
-  if ('imageIdReferenceMap' in labelmapRepresentationData) {
+  const viewportIds =
+    SegmentationState.getViewportIdsWithSegmentationId(segmentationId);
+
+  if ('imageIds' in labelmapRepresentationData) {
     // get the stack from cache, we need the imageData to be updated to GPU
     performStackLabelmapUpdate({
-      toolGroupIds,
+      viewportIds,
       segmentationId,
       representationData,
       type,
@@ -67,7 +77,7 @@ function performVolumeLabelmapUpdate({
 
   // Update the texture for the volume in the GPU
   let slicesToUpdate;
-  if (modifiedSlicesToUse && Array.isArray(modifiedSlicesToUse)) {
+  if (modifiedSlicesToUse?.length > 0) {
     slicesToUpdate = modifiedSlicesToUse;
   } else {
     const numSlices = imageData.getDimensions()[2];
@@ -83,61 +93,56 @@ function performVolumeLabelmapUpdate({
 }
 
 function performStackLabelmapUpdate({
-  toolGroupIds,
+  viewportIds,
   segmentationId,
   representationData,
   type,
 }) {
-  toolGroupIds.forEach((toolGroupId) => {
-    const toolGroupSegmentationRepresentations =
-      SegmentationState.getSegmentationRepresentations(toolGroupId);
+  viewportIds.forEach((viewportId) => {
+    const viewportSegReps =
+      SegmentationState.getRepresentationsForViewport(viewportId);
 
-    const toolGroup = getToolGroup(toolGroupId);
-    const viewportsInfo = toolGroup.getViewportsInfo();
-
-    toolGroupSegmentationRepresentations.forEach((representation) => {
+    viewportSegReps.forEach((representation) => {
       if (representation.segmentationId !== segmentationId) {
         return;
       }
 
-      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-        const viewport = getEnabledElementByIds(
+      const enabledElement = getEnabledElementByViewportId(viewportId);
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      if (viewport instanceof VolumeViewport) {
+        return;
+      }
+
+      const actorEntry = viewport.getActor(
+        representation.segmentationRepresentationUID
+      );
+
+      if (!actorEntry) {
+        return;
+      }
+
+      const segImageData = actorEntry.actor.getMapper().getInputData();
+
+      const currentSegmentationImageId =
+        SegmentationState.getLabelmapImageIdsForViewport(
           viewportId,
-          renderingEngineId
-        ).viewport;
-
-        if (viewport instanceof VolumeViewport) {
-          return;
-        }
-
-        const actorEntry = viewport.getActor(
-          representation.segmentationRepresentationUID
+          representation.segmentationId
         );
 
-        if (!actorEntry) {
-          return;
-        }
+      const segmentationImage = cache.getImage(currentSegmentationImageId);
+      segImageData.modified();
 
-        const currentImageId = viewport.getCurrentImageId();
-
-        const segImageData = actorEntry.actor.getMapper().getInputData();
-
-        const { imageIdReferenceMap } = representationData[
-          type
-        ] as LabelmapSegmentationDataStack;
-
-        const currentSegmentationImageId =
-          imageIdReferenceMap.get(currentImageId);
-
-        const segmentationImage = cache.getImage(currentSegmentationImageId);
-        segImageData.modified();
-
-        // update the cache with the new image data
-        csUtils.updateVTKImageDataWithCornerstoneImage(
-          segImageData,
-          segmentationImage
-        );
-      });
+      // update the cache with the new image data
+      csUtils.updateVTKImageDataWithCornerstoneImage(
+        segImageData,
+        segmentationImage
+      );
     });
   });
 }

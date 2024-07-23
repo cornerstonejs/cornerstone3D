@@ -26,7 +26,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   Enums: csToolsEnums,
   BrushTool,
   segmentation,
@@ -137,7 +137,6 @@ addSegmentIndexDropdown(segmentationId);
 
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -146,7 +145,6 @@ function setupTools(toolGroupId) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
@@ -175,8 +173,6 @@ function setupTools(toolGroupId) {
       },
     }
   );
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(optionsValues[0], {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -248,16 +244,13 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            allImageIds,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Add the segmentation representation to the viewport
+  const [uid] = await segmentation.addRepresentations(viewport.id, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

@@ -197,22 +197,22 @@ function prefetch(element) {
           stats.fillTime = Date.now() - stats.start;
           const { size } = stats.imageIds;
           stats.fillSize = size;
-          console.log(
-            'Done cache fill',
-            stats.fillTime,
-            'ms',
-            size,
-            'items',
-            'average total time',
-            roundNumber(stats.fillTime / size),
-            'ms',
-            'average load',
-            roundNumber(stats.loadTimeInMS / size),
-            'ms',
-            'average decode',
-            roundNumber(stats.decodeTimeInMS / size),
-            'ms'
-          );
+          // console.log(
+          //   'Done cache fill',
+          //   stats.fillTime,
+          //   'ms',
+          //   size,
+          //   'items',
+          //   'average total time',
+          //   roundNumber(stats.fillTime / size),
+          //   'ms',
+          //   'average load',
+          //   roundNumber(stats.loadTimeInMS / size),
+          //   'ms',
+          //   'average decode',
+          //   roundNumber(stats.decodeTimeInMS / size),
+          //   'ms'
+          // );
         }
       }
     }
@@ -235,9 +235,6 @@ function prefetch(element) {
     const options = {
       targetBuffer: {
         type: useNativeDataType ? undefined : 'Float32Array',
-      },
-      preScale: {
-        enabled: true,
       },
       useNativeDataType,
       requestType,

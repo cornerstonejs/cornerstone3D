@@ -15,18 +15,14 @@ import { debounce } from '../utilities';
 import { ToolModeChangedEventType } from '../types/EventTypes';
 import { segmentation } from '..';
 import { EventTypes, IToolGroup } from '../types';
-import {
-  AnnotationTool,
-  AdvancedMagnifyTool,
-  SegmentationDisplayTool,
-} from './';
+import { AnnotationTool, AdvancedMagnifyTool } from './';
 import { distanceToPoint } from '../utilities/math/point';
 
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
 
 // TODO: find a better to identify segmentation actors
-const isSegmentation = (actor) => actor.uid !== actor.referenceId;
+const isSegmentation = (actor) => actor.uid !== actor.referencedId;
 
 export type AutoPanCallbackData = {
   points: {
@@ -277,9 +273,7 @@ class AdvancedMagnifyViewport {
           toolInstance instanceof AnnotationTool &&
           !(toolInstance instanceof AdvancedMagnifyTool);
 
-        return (
-          isAnnotationTool || toolName === SegmentationDisplayTool.toolName
-        );
+        return isAnnotationTool;
       }
     );
 
@@ -289,9 +283,9 @@ class AdvancedMagnifyViewport {
     );
 
     sourceActors.filter(isSegmentation).forEach((actor) => {
-      segmentation.addSegmentationRepresentations(magnifyToolGroupId, [
+      segmentation.addRepresentations(this.viewportId, [
         {
-          segmentationId: actor.referenceId,
+          segmentationId: actor.referencedId,
           type: SegmentationRepresentations.Labelmap,
         },
       ]);

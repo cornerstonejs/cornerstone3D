@@ -82,7 +82,7 @@ function getReferencedImageId(
 }
 
 function getTargetId(viewport: Types.IViewport): string | undefined {
-  const targetId = viewport.getReferenceId?.();
+  const targetId = viewport.getViewReferenceId?.();
   if (targetId) {
     return targetId;
   }

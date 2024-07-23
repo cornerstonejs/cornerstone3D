@@ -230,7 +230,7 @@ export async function convertContourToStackLabelmap(
 
   triggerWorkerProgress(eventTarget, 1);
 
-  const imageIdReferenceMap = new Map();
+  const segImageIds = [];
   newSegmentationsScalarData.forEach(({ scalarData }, referencedImageId) => {
     const segmentationInfo = segmentationsInfo.get(referencedImageId);
     const { imageId: segImageId } = segmentationInfo;
@@ -239,11 +239,11 @@ export async function convertContourToStackLabelmap(
     segImage.getPixelData().set(scalarData);
     segImage.imageFrame?.pixelData?.set(scalarData);
 
-    imageIdReferenceMap.set(referencedImageId, segImageId);
+    segImageIds.push(segImageId);
   });
 
   return {
-    imageIdReferenceMap,
+    imageIds: segImageIds,
   };
 }
 

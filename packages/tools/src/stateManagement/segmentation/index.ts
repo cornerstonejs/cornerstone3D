@@ -1,6 +1,6 @@
-import removeSegmentationsFromToolGroup from './removeSegmentationsFromToolGroup';
+import removeRepresentationsFromViewport from './removeRepresentationsFromViewport';
 import addSegmentations from './addSegmentations';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
+import addRepresentations from './addRepresentations';
 import addRepresentationData from './addRepresentationData';
 import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation';
 import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation';
@@ -17,8 +17,8 @@ import * as polySegManager from './polySeg';
 export {
   // functions
   addSegmentations,
-  addSegmentationRepresentations,
-  removeSegmentationsFromToolGroup,
+  addRepresentations,
+  removeRepresentationsFromViewport,
   addRepresentationData,
   // name spaces
   state,

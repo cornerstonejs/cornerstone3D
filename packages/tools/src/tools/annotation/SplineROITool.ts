@@ -226,7 +226,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     this._activateDraw(element);
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   }
@@ -277,7 +277,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const { renderingEngine } = enabledElement;
 
     this._activateModify(element);
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -320,7 +320,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -378,7 +378,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       this.fireChangeOnUpdate.changeType = changeType;
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData = null;
     this.isDrawing = false;
@@ -426,7 +426,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     this.editData.lastCanvasPoint = evt.detail.currentPoints.canvas;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -468,7 +468,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     data.contour.closed = data.contour.closed || closeContour;
     annotation.invalidated = true;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (data.contour.closed) {
       this._endCallback(evt);
@@ -519,7 +519,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel(element: HTMLDivElement) {
@@ -544,7 +544,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData = null;
     return annotation.annotationUID;
@@ -727,16 +727,16 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
 
-    // If cachedStats does not exist, or the areaUnit is missing (as part of
+    // If cachedStats does not exist, or the areaUnits is missing (as part of
     // import/hydration etc.), force to recalculate the stats from the points
     if (
       !data.cachedStats[targetId] ||
-      data.cachedStats[targetId].areaUnit == null
+      data.cachedStats[targetId].areaUnits == null
     ) {
       data.cachedStats[targetId] = {
         Modality: null,
         area: null,
-        areaUnit: null,
+        areaUnits: null,
       };
 
       this._calculateCachedStats(annotation, element);
@@ -986,7 +986,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       this.getToolName()
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   private _deleteControlPointByIndex(
@@ -1012,7 +1012,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     annotation.invalidated = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   }
 
   deleteControlPointCallback = (
@@ -1204,7 +1204,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        areaUnit: areaUnits,
+        areaUnits,
       };
     }
 
@@ -1220,13 +1220,13 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, isEmptyArea, areaUnit } = cachedVolumeStats;
+  const { area, isEmptyArea, areaUnits } = cachedVolumeStats;
   const textLines: string[] = [];
 
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${roundNumber(area)} ${areaUnits}`;
 
     textLines.push(areaLine);
   }

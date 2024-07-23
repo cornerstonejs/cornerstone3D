@@ -11,7 +11,7 @@ import pointInShapeCallback from '../pointInShapeCallback';
  * @param options - frameNumbers: which frames to use as timepoints, if left
  * blank, gets data timepoints over all frames
  * maskVolumeId: segmentationId to get timepoint data of
- * imageCoordinate: world coordinate to get timepoint data of
+ * worldCoordinate: world coordinate to get timepoint data of
  * @returns
  */
 function getDataInTime(
@@ -19,7 +19,7 @@ function getDataInTime(
   options: {
     frameNumbers?;
     maskVolumeId?;
-    imageCoordinate?;
+    worldCoordinate?;
   }
 ): number[] | number[][] {
   let dataInTime;
@@ -29,16 +29,16 @@ function getDataInTime(
     ...Array(dynamicVolume.numTimePoints).keys(),
   ];
 
-  // You only need to provide either maskVolumeId OR imageCoordinate.
-  // Throws error if neither maskVolumeId or imageCoordinate is given,
-  // throws error if BOTH maskVolumeId and imageCoordinate is given
-  if (!options.maskVolumeId && !options.imageCoordinate) {
+  // You only need to provide either maskVolumeId OR worldCoordinate.
+  // Throws error if neither maskVolumeId or worldCoordinate is given,
+  // throws error if BOTH maskVolumeId and worldCoordinate is given
+  if (!options.maskVolumeId && !options.worldCoordinate) {
     throw new Error(
       'You should provide either maskVolumeId or imageCoordinate'
     );
   }
 
-  if (options.maskVolumeId && options.imageCoordinate) {
+  if (options.maskVolumeId && options.worldCoordinate) {
     throw new Error('You can only use one of maskVolumeId or imageCoordinate');
   }
 
@@ -54,10 +54,10 @@ function getDataInTime(
     return [dataInTime, ijkCoords];
   }
 
-  if (options.imageCoordinate) {
+  if (options.worldCoordinate) {
     const dataInTime = _getTimePointDataCoordinate(
       frames,
-      options.imageCoordinate,
+      options.worldCoordinate,
       dynamicVolume
     );
 

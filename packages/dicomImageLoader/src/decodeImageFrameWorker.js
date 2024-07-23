@@ -1,23 +1,23 @@
 /* eslint-disable complexity */
-import { ByteArray } from 'dicom-parser';
-import bilinear from './scaling/bilinear';
-import replicate from './scaling/replicate';
-import decodeLittleEndian from './decoders/decodeLittleEndian';
-import decodeBigEndian from './decoders/decodeBigEndian';
-import decodeRLE from './decoders/decodeRLE';
-import decodeJPEGBaseline8Bit from './decoders/decodeJPEGBaseline8Bit';
-// import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit';
-import decodeJPEGBaseline12Bit from './decoders/decodeJPEGBaseline12Bit-js';
-import decodeJPEGLossless from './decoders/decodeJPEGLossless';
-import decodeJPEGLS from './decoders/decodeJPEGLS';
-import decodeJPEG2000 from './decoders/decodeJPEG2000';
-import decodeHTJ2K from './decoders/decodeHTJ2K';
+import bilinear from './shared/scaling/bilinear';
+import replicate from './shared/scaling/replicate';
+import { expose } from 'comlink';
+
+import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
+import decodeBigEndian from './shared/decoders/decodeBigEndian';
+import decodeRLE from './shared/decoders/decodeRLE';
+import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
+// import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit';
+import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
+import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
+import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
+import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
+import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
-import applyModalityLUT from './scaling/scaleArray';
-import { ImageFrame, LoaderDecodeOptions, PixelDataTypedArray } from '../types';
-import getMinMax from './getMinMax';
-import getPixelDataTypeFromMinMax from './getPixelDataTypeFromMinMax';
-import isColorImage from './isColorImage';
+import applyModalityLUT from './shared/scaling/scaleArray';
+import getMinMax from './shared/getMinMax';
+import getPixelDataTypeFromMinMax from './shared/getPixelDataTypeFromMinMax';
+import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
   bilinear,
@@ -30,12 +30,12 @@ const imageUtils = {
  * callbackFn that is called with the results.
  */
 async function decodeImageFrame(
-  imageFrame: ImageFrame,
-  transferSyntax: string,
-  pixelData: ByteArray,
-  decodeConfig: LoaderDecodeOptions,
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  decodeConfig,
   options,
-  callbackFn?: (...args: any[]) => void
+  callbackFn
 ) {
   const start = new Date().getTime();
 
@@ -174,12 +174,7 @@ async function decodeImageFrame(
   return postProcessed;
 }
 
-function postProcessDecodedPixels(
-  imageFrame: ImageFrame,
-  options,
-  start: number,
-  decodeConfig: LoaderDecodeOptions
-) {
+function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const { use16BitDataType } = decodeConfig || {};
 
   const shouldShift =
@@ -287,6 +282,7 @@ function postProcessDecodedPixels(
     }
   } else if (disableScale) {
     imageFrame.preScale = {
+      enabled: true,
       scaled: false,
     };
 
@@ -313,15 +309,10 @@ function postProcessDecodedPixels(
 }
 
 function _handleTargetBuffer(
-  options: any,
-  imageFrame: ImageFrame,
-  typedArrayConstructors: {
-    Uint8Array: Uint8ArrayConstructor;
-    Uint16Array: Uint16ArrayConstructor;
-    Int16Array: Int16ArrayConstructor;
-    Float32Array: Float32ArrayConstructor;
-  },
-  pixelDataArray: PixelDataTypedArray
+  options,
+  imageFrame,
+  typedArrayConstructors,
+  pixelDataArray
 ) {
   const {
     arrayBuffer,
@@ -397,6 +388,7 @@ function _handlePreScaleSetup(
 
 function _getDefaultPixelDataArray(min, max, imageFrame) {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
+  // @ts-ignore
   const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
   typedArray.set(imageFrame.pixelData, 0);
 
@@ -454,4 +446,24 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
   return imageFrame;
 }
 
-export default decodeImageFrame;
+const obj = {
+  decodeTask({
+    imageFrame,
+    transferSyntax,
+    decodeConfig,
+    options,
+    pixelData,
+    callbackFn,
+  }) {
+    return decodeImageFrame(
+      imageFrame,
+      transferSyntax,
+      pixelData,
+      decodeConfig,
+      options,
+      callbackFn
+    );
+  },
+};
+
+expose(obj);

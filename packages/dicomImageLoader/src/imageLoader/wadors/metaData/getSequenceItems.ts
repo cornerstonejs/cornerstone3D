@@ -1,4 +1,4 @@
-import { WADORSMetaDataElement } from 'dicomImageLoader/src/types';
+import { WADORSMetaDataElement } from '../../../types';
 
 function getSequenceItems(element: any): WADORSMetaDataElement[] {
   // Value is not present if the attribute has a zero length value

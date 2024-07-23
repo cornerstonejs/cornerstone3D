@@ -1,5 +1,5 @@
 ---
-id: migrationGuides
+id: legacy-to-3d
 ---
 
 import Tabs from '@theme/Tabs';

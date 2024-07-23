@@ -25,7 +25,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -98,7 +97,7 @@ addButtonToToolbar({
   title: 'Convert surface to labelmap',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -120,7 +119,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -129,14 +127,6 @@ async function run() {
 
   addManipulationBindings(toolGroup1, { is3DViewport: true });
   addManipulationBindings(toolGroup2);
-
-  // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -233,8 +223,8 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,
@@ -242,7 +232,7 @@ async function run() {
   ]);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2]);
+  renderingEngine.render();
 }
 
 run();

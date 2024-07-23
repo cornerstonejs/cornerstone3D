@@ -1,14 +1,30 @@
 /* eslint import/extensions:0 */
+import { getOptions } from './imageLoader/internal';
 import registerLoaders from './imageLoader/registerLoaders';
 
 let cornerstone;
 let dicomParser;
+
+const workerFn = () => {
+  const instance = new Worker(
+    new URL('./decodeImageFrameWorker.js', import.meta.url),
+    { type: 'module' }
+  );
+  return instance;
+};
 
 const external = {
   set cornerstone(cs) {
     cornerstone = cs;
 
     registerLoaders(cornerstone);
+
+    const options = getOptions();
+
+    const workerManager = external.cornerstone.getWebWorkerManager();
+    workerManager.registerWorker('dicomImageLoader', workerFn, {
+      maxWorkerInstances: options.maxWebWorkers || 1,
+    });
   },
   get cornerstone() {
     if (!cornerstone) {

@@ -42,9 +42,6 @@ import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
 import AnnotationEraserTool from './AnnotationEraserTool';
 
-// Segmentation DisplayTool
-import SegmentationDisplayTool from './displayTools/SegmentationDisplayTool';
-
 // Segmentation Tools
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool';
 import CircleScissorsTool from './segmentation/CircleScissorsTool';
@@ -99,7 +96,7 @@ export {
   KeyImageTool,
   AnnotationEraserTool as EraserTool,
   // Segmentations Display
-  SegmentationDisplayTool,
+
   // Segmentations Tools
   RectangleScissorsTool,
   CircleScissorsTool,

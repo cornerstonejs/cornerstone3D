@@ -123,7 +123,7 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
-    const modality = getValue(metaData['00080060']);
+    const modality = getValue(metaData['00080060']) as string;
     const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
 
     return {

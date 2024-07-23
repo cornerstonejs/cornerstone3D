@@ -46,7 +46,7 @@ async function convertStackToVolumeViewport({
   const imageIds = viewport.getImageIds();
 
   // It is important to keep the camera before enabling the viewport
-  const prevCamera = viewport.getCamera();
+  const prevView = viewport.getViewReference();
 
   // this will disable the stack viewport and remove it from the toolGroup
   renderingEngine.enableElement({
@@ -87,11 +87,7 @@ async function convertStackToVolumeViewport({
   );
 
   const volumeViewportNewVolumeHandler = () => {
-    if (!options.orientation) {
-      volumeViewport.setCamera({
-        ...prevCamera,
-      });
-    }
+    volumeViewport.setViewReference(prevView);
     volumeViewport.render();
 
     element.removeEventListener(

@@ -63,6 +63,7 @@ content.appendChild(sleepResult);
 const workerFn = () => {
   return new Worker(new URL('./heavyTask.js', import.meta.url), {
     name: 'test-worker', // name used by the browser to name the worker
+    type: 'module',
   });
 };
 

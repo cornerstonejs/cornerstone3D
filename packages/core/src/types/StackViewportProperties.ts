@@ -7,8 +7,6 @@ import { ViewportProperties } from './ViewportProperties';
 type StackViewportProperties = ViewportProperties & {
   /** interpolation type - linear or nearest neighbor */
   interpolationType?: InterpolationType;
-  /** image rotation */
-  rotation?: number;
   /** suppress events (optional) */
   suppressEvents?: boolean;
   /** Indicates if the voi is a computed VOI (not user set) */

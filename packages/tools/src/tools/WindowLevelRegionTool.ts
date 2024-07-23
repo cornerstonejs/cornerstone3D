@@ -131,7 +131,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -153,7 +153,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     removeAnnotation(annotation.annotationUID);
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     triggerAnnotationCompleted(annotation);
 
@@ -199,7 +199,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   /**

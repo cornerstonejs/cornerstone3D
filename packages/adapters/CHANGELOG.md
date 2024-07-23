@@ -3,6 +3,66 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.19](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.18...v2.0.0-beta.19) (2024-07-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.18](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.17...v2.0.0-beta.18) (2024-07-04)
+
+### Features
+
+-   new segmentation state model per viewport ([#1374](https://github.com/dcmjs-org/dcmjs/issues/1374)) ([05cb720](https://github.com/dcmjs-org/dcmjs/commit/05cb7206e76ff07aafb953125b8e8e1a1be53d23))
+
+# [2.0.0-beta.17](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.16...v2.0.0-beta.17) (2024-06-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.16](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.15...v2.0.0-beta.16) (2024-06-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.15](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.14...v2.0.0-beta.15) (2024-06-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.14](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.13...v2.0.0-beta.14) (2024-06-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.13](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.12...v2.0.0-beta.13) (2024-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.12](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.11...v2.0.0-beta.12) (2024-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.11](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.10...v2.0.0-beta.11) (2024-06-13)
+
+### Features
+
+-   **viewport:** Various viewport-related changes and improvements ([#1324](https://github.com/dcmjs-org/dcmjs/issues/1324)) ([ea63b3e](https://github.com/dcmjs-org/dcmjs/commit/ea63b3ef88ace08ff1291a2f67989d027e51e41e))
+
+# [2.0.0-beta.10](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.9...v2.0.0-beta.10) (2024-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.9](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.8...v2.0.0-beta.9) (2024-06-13)
+
+### Features
+
+-   **dicom loader:** switch the build to es modules with types ([#1322](https://github.com/dcmjs-org/dcmjs/issues/1322)) ([89e95eb](https://github.com/dcmjs-org/dcmjs/commit/89e95eba292e3322c031d92bcc71a39bdd65e330))
+
+# [2.0.0-beta.8](https://github.com/dcmjs-org/dcmjs/compare/v2.0.0-beta.7...v2.0.0-beta.8) (2024-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.0.0-beta.7](https://github.com/dcmjs-org/dcmjs/compare/v1.77.12...v2.0.0-beta.7) (2024-06-11)
+
+### Features
+
+-   **structuredClone:** drop lodash.clonedeep in favor of structuredClone ([#517](https://github.com/dcmjs-org/dcmjs/issues/517)) ([04c863d](https://github.com/dcmjs-org/dcmjs/commit/04c863d442195ed9ad8271a581be646d78baca70))
+
 ## [1.82.5](https://github.com/dcmjs-org/dcmjs/compare/v1.82.4...v1.82.5) (2024-07-22)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

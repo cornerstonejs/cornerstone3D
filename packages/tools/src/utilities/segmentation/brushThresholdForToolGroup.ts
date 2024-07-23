@@ -43,7 +43,7 @@ export function setBrushThresholdForToolGroup(
 
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+  triggerAnnotationRenderForViewportIds(viewportIds);
 }
 
 export function getBrushThresholdForToolGroup(toolGroupId: string) {

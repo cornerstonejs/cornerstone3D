@@ -20,7 +20,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -149,7 +148,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -161,9 +159,7 @@ async function run() {
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(BrushTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(BrushTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -259,8 +255,20 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId3, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -268,7 +276,7 @@ async function run() {
   ]);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.render();
 }
 
 run();

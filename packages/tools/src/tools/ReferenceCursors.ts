@@ -212,7 +212,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
       false
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
@@ -250,8 +250,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     if (!enabledElement) {
       return;
     }
-    const { renderingEngine } = enabledElement;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   }
 
   //checks if we need to update the annotation position due to camera changes

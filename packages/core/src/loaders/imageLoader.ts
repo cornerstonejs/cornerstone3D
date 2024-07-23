@@ -145,7 +145,10 @@ function loadImageFromCacheOrVolume(
     const { volume, imageIdIndex } = cachedVolumeInfo;
 
     if (volume instanceof ImageVolume) {
-      imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
+      imageLoadObject = volume.getCornerstoneImageLoadObject(
+        imageId,
+        imageIdIndex
+      );
     }
     return imageLoadObject;
   }
@@ -282,7 +285,6 @@ export function createAndCacheDerivedImage(
     skipCreateBuffer ? 1 : length
   );
   const derivedImageId = imageId;
-
   ['imagePlaneModule', 'generalSeriesModule'].forEach((type) => {
     genericMetadataProvider.add(derivedImageId, {
       type,
@@ -384,6 +386,7 @@ export function createAndCacheLocalImage(
     rgba: undefined, // todo: how
     columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
     rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
+    FrameOfReferenceUID: imagePlaneModule.FrameOfReferenceUID,
     invert: false,
   } as IImage;
 

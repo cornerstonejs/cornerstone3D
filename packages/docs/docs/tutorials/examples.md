@@ -46,7 +46,7 @@ suggest the name of the example you are looking for if you make a typo.
 
 1. Clone the repository
 2. `yarn install`
-3. `yarn run example petct` // this should be run from the root of the repository
+3. `yarn run example petct` \// this should be run from the root of the repository
 
 ```
 

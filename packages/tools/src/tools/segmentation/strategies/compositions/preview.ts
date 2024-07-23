@@ -72,8 +72,7 @@ export default {
     }
 
     const configColor = previewColors?.[segmentIndex];
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
+    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
       segmentationRepresentationUID,
       segmentIndex
     );
@@ -82,8 +81,7 @@ export default {
     }
     const previewColor = configColor || lightenColor(...segmentColor);
 
-    segmentationConfig.color.setColorForSegmentIndex(
-      toolGroupId,
+    segmentationConfig.color.setSegmentIndexColor(
       segmentationRepresentationUID,
       previewSegmentIndex,
       previewColor as Types.Color

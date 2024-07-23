@@ -20,7 +20,7 @@ interface IImageData {
   /** vtkImageData object */
   imageData: vtkImageData;
   /** image metadata - currently only modality */
-  metadata: { Modality: string };
+  metadata: { Modality: string; FrameOfReferenceUID: string };
   /** image scaling for scaling pixelArray */
   scaling?: Scaling;
   /** whether the image has pixel spacing and it is not undefined */

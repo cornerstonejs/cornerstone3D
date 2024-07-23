@@ -171,9 +171,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId);
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
@@ -232,9 +230,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId);
 
     // Resets the viewport's camera
     viewport.resetCamera();

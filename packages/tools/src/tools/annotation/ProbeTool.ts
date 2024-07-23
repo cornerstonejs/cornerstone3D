@@ -44,9 +44,9 @@ import {
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+  pixelUnitsOptions,
+  getPixelValueUnits,
+} from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -199,7 +199,7 @@ class ProbeTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -265,7 +265,7 @@ class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   }
@@ -296,7 +296,7 @@ class ProbeTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -318,7 +318,7 @@ class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -334,12 +334,7 @@ class ProbeTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -537,7 +532,7 @@ class ProbeTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const modalityUnitOptions = {
+      const pixelUnitsOptions = {
         isPreScaled: isViewportPreScaled(viewport, targetId),
         isSuvScaled: this.isSuvScaled(
           viewport,
@@ -602,7 +597,7 @@ class ProbeTool extends AnnotationTool {
           index[2] = viewport.getCurrentImageIdIndex();
         }
 
-        let modalityUnit;
+        let pixelValueUnits;
 
         if (modality === 'US') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
@@ -614,14 +609,14 @@ class ProbeTool extends AnnotationTool {
           );
 
           value = hasEnhancedRegionValues ? calibratedResults.values : value;
-          modalityUnit = hasEnhancedRegionValues
+          pixelValueUnits = hasEnhancedRegionValues
             ? calibratedResults.units
             : 'raw';
         } else {
-          modalityUnit = getModalityUnit(
+          pixelValueUnits = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
-            modalityUnitOptions
+            pixelUnitsOptions
           );
         }
 
@@ -629,7 +624,7 @@ class ProbeTool extends AnnotationTool {
           index,
           value,
           Modality: modality,
-          modalityUnit,
+          pixelValueUnits,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -651,7 +646,7 @@ class ProbeTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, modalityUnit } = cachedVolumeStats;
+  const { index, value, pixelValueUnits } = cachedVolumeStats;
 
   if (value === undefined) {
     return;
@@ -661,12 +656,12 @@ function defaultGetTextLines(data, targetId): string[] {
 
   textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-  if (value instanceof Array && modalityUnit instanceof Array) {
+  if (value instanceof Array && pixelValueUnits instanceof Array) {
     for (let i = 0; i < value.length; i++) {
-      textLines.push(`${roundNumber(value[i])} ${modalityUnit[i]}`);
+      textLines.push(`${roundNumber(value[i])} ${pixelValueUnits[i]}`);
     }
   } else {
-    textLines.push(`${roundNumber(value)} ${modalityUnit}`);
+    textLines.push(`${roundNumber(value)} ${pixelValueUnits}`);
   }
 
   return textLines;

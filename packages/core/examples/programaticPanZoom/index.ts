@@ -85,7 +85,12 @@ addButtonToToolbar({
     const viewport = <Types.IVolumeViewport>(
       renderingEngine.getViewport(viewportId)
     );
-    viewport.resetCamera(false, true, false);
+
+    viewport.resetCamera({
+      resetZoom: true,
+      resetPan: false,
+      resetToCenter: false,
+    });
     viewport.render();
   },
 });

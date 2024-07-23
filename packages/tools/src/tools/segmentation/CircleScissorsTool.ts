@@ -28,7 +28,6 @@ import {
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
@@ -45,10 +44,11 @@ class CircleScissorsTool extends BaseTool {
   editData: {
     annotation: any;
     segmentIndex: number;
-    //
+    // volume labelmap
     volumeId: string;
     referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
+    // stack labelmap
+    imageId: string;
     //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
@@ -102,16 +102,15 @@ class CircleScissorsTool extends BaseTool {
     const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-    const toolGroupId = this.toolGroupId;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
+      activeSegmentation.getActiveRepresentation(viewport.id);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
@@ -124,8 +123,7 @@ class CircleScissorsTool extends BaseTool {
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
+    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
       segmentationRepresentationUID,
       segmentIndex
     );
@@ -192,12 +190,8 @@ class CircleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
-
       this.editData = {
         ...this.editData,
-        imageIdReferenceMap,
       };
     }
 
@@ -207,7 +201,7 @@ class CircleScissorsTool extends BaseTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return true;
   };
@@ -257,7 +251,7 @@ class CircleScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {

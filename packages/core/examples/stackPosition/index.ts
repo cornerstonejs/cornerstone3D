@@ -66,15 +66,13 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
     return;
   }
 
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
+  const { flipHorizontal } = viewport.getCamera();
+  const { rotation } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
   displayAreaInfo.innerText = `DisplayArea: ${JSON.stringify(displayArea)}`;
 });
-
-const counter = 0;
 
 function createDisplayArea(
   size,
@@ -177,8 +175,8 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 30 });
+    const { rotation } = viewport.getViewPresentation();
+    viewport.setViewPresentation({ rotation: rotation + 30 });
 
     viewport.render();
   },

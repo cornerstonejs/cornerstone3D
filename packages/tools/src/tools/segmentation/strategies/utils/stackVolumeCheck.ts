@@ -15,21 +15,20 @@ function isVolumeSegmentation(
 ): operationData is
   | LabelmapToolOperationDataVolume
   | LabelmapSegmentationDataVolume {
-  const { imageIdReferenceMap } =
-    operationData as LabelmapToolOperationDataStack;
+  const { imageIds } = operationData as LabelmapToolOperationDataStack;
   const { volumeId } = operationData as LabelmapToolOperationDataVolume;
 
-  if (volumeId && !imageIdReferenceMap) {
+  if (volumeId && !imageIds) {
     return true;
   }
 
-  if (imageIdReferenceMap && !volumeId) {
+  if (imageIds && !volumeId) {
     return false;
   }
 
-  if (volumeId && imageIdReferenceMap && !viewport) {
+  if (volumeId && imageIds && !viewport) {
     throw new Error(
-      'isVolumeSegmentation: viewport is required when both volumeId and imageIdReferenceMap are provided'
+      'isVolumeSegmentation: viewport is required when both volumeId and imageIds are provided'
     );
   }
 

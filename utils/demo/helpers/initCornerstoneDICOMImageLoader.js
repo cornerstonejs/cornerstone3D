@@ -9,32 +9,24 @@ const { preferSizeOverAccuracy, useNorm16Texture } =
   cornerstone.getConfiguration().rendering;
 
 export default function initCornerstoneDICOMImageLoader() {
-  cornerstoneDICOMImageLoader.external.cornerstone = cornerstone;
-  cornerstoneDICOMImageLoader.external.dicomParser = dicomParser;
-  cornerstoneDICOMImageLoader.configure({
-    useWebWorkers: true,
-    decodeConfig: {
-      convertFloatPixelDataToInt: false,
-      use16BitDataType: preferSizeOverAccuracy || useNorm16Texture,
-    },
-  });
-
   let maxWebWorkers = 1;
 
   if (navigator.hardwareConcurrency) {
     maxWebWorkers = Math.min(navigator.hardwareConcurrency, 7);
   }
 
-  var config = {
-    maxWebWorkers,
-    startWebWorkersOnDemand: false,
-    taskConfiguration: {
-      decodeTask: {
-        initializeCodecsOnStartup: false,
-        strict: false,
-      },
-    },
-  };
+  // cornerstone.
+  // cornerstoneDICOMImageLoader.
 
-  cornerstoneDICOMImageLoader.webWorkerManager.initialize(config);
+  // cornerstoneDICOMImageLoader.
+  cornerstoneDICOMImageLoader.configure({
+    cornerstone,
+    dicomParser,
+    useWebWorkers: true,
+    maxWebWorkers,
+    decodeConfig: {
+      convertFloatPixelDataToInt: false,
+      use16BitDataType: preferSizeOverAccuracy || useNorm16Texture,
+    },
+  });
 }

@@ -102,15 +102,12 @@ class KeyImageTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.configuration.getTextCallback((text) => {
       if (!text) {
         removeAnnotation(annotation.annotationUID);
-        triggerAnnotationRenderForViewportIds(
-          renderingEngine,
-          viewportIdsToRender
-        );
+        triggerAnnotationRenderForViewportIds(viewportIdsToRender);
         this.isDrawing = false;
         return;
       }
@@ -118,10 +115,7 @@ class KeyImageTool extends AnnotationTool {
 
       triggerAnnotationCompleted(annotation);
 
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     });
 
     return annotation;
@@ -247,7 +241,7 @@ class KeyImageTool extends AnnotationTool {
       element,
       this.getToolName()
     );
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     // Dispatching annotation modified
     triggerAnnotationModified(annotation, element);

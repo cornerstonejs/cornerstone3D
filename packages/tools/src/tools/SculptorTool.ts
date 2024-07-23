@@ -209,10 +209,7 @@ class SculptorTool extends BaseTool {
       cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
     }
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      this.commonData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportIds(this.commonData.viewportIdsToRender);
   }
 
   /**

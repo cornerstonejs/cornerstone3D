@@ -30,7 +30,6 @@ const DEFAULT_SEGMENTATION_CONFIG = {
 };
 
 const {
-  SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
   PlanarFreehandROITool,
   SculptorTool,
@@ -161,7 +160,6 @@ async function run() {
   cornerstoneTools.addTool(SculptorTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -171,7 +169,6 @@ async function run() {
   toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
   toolGroup.addTool(SculptorTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   // Set the initial state of the tools.
   toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
     bindings: [
@@ -268,20 +265,22 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Create a segmentation representation associated to the viewportId
+  const segmentationRepresentationUIDs = await segmentation.addRepresentations(
+    viewportIds[0],
+    [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    ]);
+    ]
+  );
 
   // Store the segmentation representation that was just created
   segmentationRepresentationUID = segmentationRepresentationUIDs[0];
 
   // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+  segmentation.activeSegmentation.setActiveRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   );

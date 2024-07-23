@@ -1,16 +1,13 @@
 import {
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   StackViewport,
   Types,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getToolGroup } from '../../../store/ToolGroupManager';
-import {
-  SegmentationRepresentationConfig,
-  ToolGroupSpecificRepresentation,
-} from '../../../types/SegmentationStateTypes';
+import { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './contourHandler/contourConfigCache';
 import { polySeg } from '../../../stateManagement/segmentation';
@@ -28,46 +25,40 @@ let polySegConversionInProgress = false;
  * @param renderImmediate - If true, the viewport will be rendered
  * immediately after the segmentation representation is removed.
  */
-function removeSegmentationRepresentation(
-  toolGroupId: string,
+function removeRepresentation(
+  viewportId: string,
   segmentationRepresentationUID: string,
   renderImmediate = false
 ): void {
-  _removeContourFromToolGroupViewports(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-  SegmentationState.removeSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+  if (!enabledElement) {
+    return;
+  }
+
+  const { viewport } = enabledElement;
+
+  SegmentationState.removeRepresentation(segmentationRepresentationUID);
 
   deleteConfigCache(segmentationRepresentationUID);
 
-  if (renderImmediate) {
-    const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      enabledElement.viewport.render();
-    });
+  if (!renderImmediate) {
+    return;
   }
+
+  viewport.render();
 }
 
 /**
  * It renders the contour sets for the given segmentation
  * @param viewport - The viewport object
- * @param representation - ToolGroupSpecificRepresentation
+ * @param representation - SegmentationRepresentation
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
   viewport: StackViewport | Types.IVolumeViewport,
-  representationConfig: ToolGroupSpecificRepresentation,
-  toolGroupConfig: SegmentationRepresentationConfig
+  contourRepresentation: ContourRepresentation
 ): Promise<void> {
-  const { segmentationId } = representationConfig;
+  const { segmentationId } = contourRepresentation;
   const segmentation = SegmentationState.getSegmentation(segmentationId);
 
   if (!segmentation) {
@@ -79,7 +70,7 @@ async function render(
   if (
     !contourData &&
     polySeg.canComputeRequestedRepresentation(
-      representationConfig.segmentationRepresentationUID
+      contourRepresentation.segmentationRepresentationUID
     ) &&
     !polySegConversionInProgress
   ) {
@@ -89,7 +80,7 @@ async function render(
       segmentationId,
       {
         segmentationRepresentationUID:
-          representationConfig.segmentationRepresentationUID,
+          contourRepresentation.segmentationRepresentationUID,
         viewport,
       }
     );
@@ -104,35 +95,12 @@ async function render(
       viewport,
       contourData.geometryIds,
       contourData.annotationUIDsMap,
-      representationConfig,
-      toolGroupConfig
+      contourRepresentation
     );
-  }
-}
-
-function _removeContourFromToolGroupViewports(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): void {
-  const toolGroup = getToolGroup(toolGroupId);
-
-  if (toolGroup === undefined) {
-    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`);
-  }
-
-  const { viewportsInfo } = toolGroup;
-
-  for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo;
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-    removeContourFromElement(segmentationRepresentationUID, toolGroupId);
   }
 }
 
 export default {
   render,
-  removeSegmentationRepresentation,
+  removeRepresentation,
 };

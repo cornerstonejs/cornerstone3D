@@ -115,7 +115,6 @@ class ReferenceLines extends AnnotationDisplayTool {
     };
 
     triggerAnnotationRenderForViewportIds(
-      renderingEngine,
       viewports
         .filter((viewport) => viewport.id !== sourceViewport.id)
         .map((viewport) => viewport.id)

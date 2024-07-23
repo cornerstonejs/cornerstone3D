@@ -48,7 +48,7 @@ import { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
@@ -232,7 +232,7 @@ class CircleROITool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -307,7 +307,7 @@ class CircleROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -353,7 +353,7 @@ class CircleROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -394,7 +394,7 @@ class CircleROITool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -424,7 +424,7 @@ class CircleROITool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -469,7 +469,7 @@ class CircleROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
@@ -523,12 +523,7 @@ class CircleROITool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -656,7 +651,7 @@ class CircleROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        data.cachedStats[targetId].areaUnits == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -664,7 +659,7 @@ class CircleROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnit: null,
+          areaUnits: null,
           radius: null,
           radiusUnit: null,
           perimeter: null,
@@ -939,10 +934,8 @@ class CircleROITool extends AnnotationTool {
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const handles = [pos1Index, pos2Index];
-        const { scale, units, areaUnits } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+        const { scale, lengthUnits, areaUnits } =
+          getCalibratedLengthUnitsAndScale(image, handles);
         const aspect = getCalibratedAspect(image);
         const area = Math.abs(
           Math.PI *
@@ -950,7 +943,7 @@ class CircleROITool extends AnnotationTool {
             (worldHeight / aspect / scale / 2)
         );
 
-        const modalityUnitOptions = {
+        const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
           isSuvScaled: this.isSuvScaled(
             viewport,
@@ -959,10 +952,10 @@ class CircleROITool extends AnnotationTool {
           ),
         };
 
-        const modalityUnit = getModalityUnit(
+        const pixelValueUnits = getPixelValueUnits(
           metadata.Modality,
           annotation.metadata.referencedImageId,
-          modalityUnitOptions
+          pixelUnitsOptions
         );
 
         const pointsInShape = pointInShapeCallback(
@@ -986,11 +979,11 @@ class CircleROITool extends AnnotationTool {
           statsArray: stats.array,
           pointsInShape: pointsInShape,
           isEmptyArea,
-          areaUnit: areaUnits,
+          areaUnits,
           radius: worldWidth / 2 / scale,
-          radiusUnit: units,
+          radiusUnit: lengthUnits,
           perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
-          modalityUnit,
+          pixelValueUnits,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -1027,8 +1020,8 @@ function defaultGetTextLines(data, targetId): string[] {
     stdDev,
     max,
     isEmptyArea,
-    areaUnit,
-    modalityUnit,
+    areaUnits,
+    pixelValueUnits,
   } = cachedVolumeStats;
   const textLines: string[] = [];
 
@@ -1042,20 +1035,20 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
   }
 
   return textLines;

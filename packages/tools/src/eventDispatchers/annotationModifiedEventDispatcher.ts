@@ -18,7 +18,7 @@ import { AnnotationModifiedEventType } from '../types/EventTypes';
 const onAnnotationModified = function (evt: AnnotationModifiedEventType) {
   const { viewportId, renderingEngineId } = evt.detail;
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  triggerAnnotationRenderForViewportIds(renderingEngine, [viewportId]);
+  triggerAnnotationRenderForViewportIds([viewportId]);
 };
 
 const enable = function () {

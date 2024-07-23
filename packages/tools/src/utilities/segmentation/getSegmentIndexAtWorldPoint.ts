@@ -3,7 +3,8 @@ import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
-  getSegmentationIdRepresentations,
+  getRepresentationsBySegmentationId,
+  getLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
   LabelmapSegmentationDataStack,
@@ -26,7 +27,7 @@ type Options = {
  *
  * @returns The index of the segment at the world point, or undefined if not found.
  */
-export function getSegmentAtWorldPoint(
+export function getSegmentIndexAtWorldPoint(
   segmentationId: string,
   worldPoint: Types.Point3,
   options = {} as Options
@@ -47,9 +48,17 @@ export function getSegmentAtWorldPoint(
 
   switch (desiredRepresentation) {
     case SegmentationRepresentations.Labelmap:
-      return getSegmentAtWorldForLabelmap(segmentation, worldPoint, options);
+      return getSegmentIndexAtWorldForLabelmap(
+        segmentation,
+        worldPoint,
+        options
+      );
     case SegmentationRepresentations.Contour:
-      return getSegmentAtWorldForContour(segmentation, worldPoint, options);
+      return getSegmentIndexAtWorldForContour(
+        segmentation,
+        worldPoint,
+        options
+      );
     default:
       return;
   }
@@ -63,7 +72,7 @@ export function getSegmentAtWorldPoint(
  *
  * @returns The segment index at the given world point, or undefined if not found.
  */
-export function getSegmentAtWorldForLabelmap(
+export function getSegmentIndexAtWorldForLabelmap(
   segmentation: Segmentation,
   worldPoint: Types.Point3,
   { viewport }: Options
@@ -85,11 +94,11 @@ export function getSegmentAtWorldForLabelmap(
   }
 
   // stack segmentation case
-  const { imageIdReferenceMap } = labelmapData as LabelmapSegmentationDataStack;
+  const segmentationImageId = getLabelmapImageIdsForViewport(
+    viewport.id,
+    segmentation.segmentationId
+  );
 
-  const currentImageId = (viewport as Types.IStackViewport).getCurrentImageId();
-
-  const segmentationImageId = imageIdReferenceMap.get(currentImageId);
   const image = cache.getImage(segmentationImageId);
 
   if (!image) {
@@ -99,7 +108,7 @@ export function getSegmentAtWorldForLabelmap(
   // find the first segmentationRepresentationUID for the segmentationId, since
   // that is what we use as actorUID in the viewport
 
-  const segmentationRepresentations = getSegmentationIdRepresentations(
+  const segmentationRepresentations = getRepresentationsBySegmentationId(
     segmentation.segmentationId
   );
 
@@ -129,7 +138,7 @@ export function getSegmentAtWorldForLabelmap(
  * @param options - The options for segmentation.
  * @returns The segment index at the given world point, or undefined if not found.
  */
-export function getSegmentAtWorldForContour(
+export function getSegmentIndexAtWorldForContour(
   segmentation: Segmentation,
   worldPoint: Types.Point3,
   { viewport }: Options

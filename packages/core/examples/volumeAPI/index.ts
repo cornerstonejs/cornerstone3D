@@ -164,7 +164,7 @@ addButtonToToolbar({
     );
 
     // Apply the rotation to the camera of the viewport
-    viewport.setProperties({ rotation: Math.random() * 360 });
+    viewport.getViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
   },
 });

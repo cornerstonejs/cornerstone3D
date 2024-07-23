@@ -50,7 +50,7 @@ export function setBrushSizeForToolGroup(
 
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+  triggerAnnotationRenderForViewportIds(viewportIds);
 }
 
 /**

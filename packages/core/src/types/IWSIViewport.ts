@@ -55,5 +55,5 @@ export default interface IWSIViewport extends IViewport {
   /**
    * Centers Pan and resets the zoom for stack viewport.
    */
-  resetCamera(resetPan?: boolean, resetZoom?: boolean): boolean;
+  resetCamera(options?: { resetPan?: boolean; resetZoom?: boolean }): boolean;
 }

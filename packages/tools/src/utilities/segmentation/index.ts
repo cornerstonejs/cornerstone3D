@@ -15,14 +15,13 @@ import {
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
-import { createImageIdReferenceMap } from './createImageIdReferenceMap';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
 import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
-import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
-import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
+import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
+import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 import { getBrushToolInstances } from './utilities';
 
@@ -40,14 +39,13 @@ export {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
   thresholdSegmentationByRange,
-  createImageIdReferenceMap,
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,
   segmentContourAction,
   invalidateBrushCursor,
   getUniqueSegmentIndices,
-  getSegmentAtWorldPoint,
-  getSegmentAtLabelmapBorder,
+  getSegmentIndexAtWorldPoint,
+  getSegmentIndexAtLabelmapBorder,
   getHoveredContourSegmentationAnnotation,
   getBrushToolInstances,
 };

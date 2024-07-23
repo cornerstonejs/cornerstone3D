@@ -4,7 +4,7 @@ import isNMReconstructable from '../../isNMReconstructable';
 import getNumberValues from './getNumberValues';
 
 function isNMModality(metaData) {
-  const modality = getValue(metaData['00080060']);
+  const modality = getValue(metaData['00080060']) as string;
 
   return modality.includes('NM');
 }

@@ -178,9 +178,6 @@ function prefetch(element) {
       targetBuffer: {
         type: useNativeDataType ? undefined : 'Float32Array',
       },
-      preScale: {
-        enabled: true,
-      },
       useNativeDataType,
       requestType,
     };

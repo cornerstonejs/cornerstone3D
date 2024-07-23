@@ -45,10 +45,10 @@ export type LabelmapSegmentationDataVolume = {
 
 export type LabelmapSegmentationDataStack = {
   /**
-   * This is a Map from referenced imageId to the segmentation (Derived) imageIds (can be
-   * multiple) that are associated with it.
+   * array of imageIds that are associated with this segmentation
+   * for each slice
    */
-  imageIdReferenceMap: Map<string, string>;
+  imageIds: string[];
 };
 
 export type LabelmapSegmentationData =
@@ -58,5 +58,5 @@ export type LabelmapSegmentationData =
   | {
       volumeId?: string;
       referencedVolumeId?: string;
-      imageIdReferenceMap?: Map<string, string>;
+      imageIds?: string[];
     };

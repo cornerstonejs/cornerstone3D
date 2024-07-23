@@ -83,7 +83,7 @@ function handleLabelmapSegmentation(segmentation, segmentationId) {
   if (isVolumeSegmentation(labelmapData)) {
     addVolumeSegmentIndices(keySet, segmentationId);
   } else {
-    addImageSegmentIndices(keySet, labelmapData.imageIdReferenceMap);
+    addImageSegmentIndices(keySet, labelmapData.imageIds);
   }
 
   return Array.from(keySet)
@@ -101,8 +101,8 @@ function addVolumeSegmentIndices(keySet, segmentationId) {
   });
 }
 
-function addImageSegmentIndices(keySet, imageIdReferenceMap) {
-  imageIdReferenceMap.forEach((segmentationImageId) => {
+function addImageSegmentIndices(keySet, imageIds) {
+  imageIds.forEach((segmentationImageId) => {
     const image = cache.getImage(segmentationImageId);
     const scalarData = image.getPixelData();
     scalarData.forEach((segmentIndex) => {

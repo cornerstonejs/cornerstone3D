@@ -26,7 +26,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -103,7 +102,7 @@ addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addRepresentations(viewportId3, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,
@@ -179,7 +178,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -190,19 +188,12 @@ async function run() {
   addManipulationBindings(toolGroup2, { is3DViewport: true });
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
   toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
     activeStrategy: 'FILL_INSIDE_SPHERE',
   });
   toolGroup1.addToolInstance('EraserBrush', BrushTool.toolName, {
     activeStrategy: 'ERASE_INSIDE_SPHERE',
   });
-
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive('SphereBrush', {
     bindings: [
@@ -284,8 +275,7 @@ async function run() {
 
   // Add some segmentations based on the source data volume
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -305,8 +295,14 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addRepresentations(viewportId1, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await segmentation.addRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -316,7 +312,7 @@ async function run() {
   // setBrushSizeForToolGroup(toolGroupId, 100);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.render();
 }
 
 run();

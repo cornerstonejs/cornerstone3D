@@ -80,7 +80,6 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     }
 
     triggerAnnotationRenderForViewportIds(
-      getRenderingEngine(viewportsInfo[0].renderingEngineId),
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
   };

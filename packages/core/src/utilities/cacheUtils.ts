@@ -28,7 +28,6 @@ export function setupCacheOptimizationEventListener(volumeId) {
       }
 
       const volume = cache.getVolume(volumeId);
-
       performCacheOptimizationForVolume(volume);
     }
   );
@@ -41,76 +40,73 @@ export function setupCacheOptimizationEventListener(volumeId) {
  * @param options.volumeId - The ID of the volume.
  */
 export function performCacheOptimizationForVolume(volume) {
+  // If the volume is not an ImageVolume (i.e., not image-based),
+  // we cannot perform cache optimization. Volumes like NIFTI are
+  // not image-based and cannot be optimized this way. However,
+  // other volumes like streaming image volumes or derived volumes
+  // from any image-based volume can be optimized. This is because
+  // they have an imageId, allowing us to allocate images with views.
+  // As a result, when they convert to a stack in the future,
+  // they already have the views of the volume's scalar data.
   if (!(volume instanceof ImageVolume)) {
+    return;
+  }
+
+  if (!volume.imageIds?.length) {
+    console.warn(
+      `Volume with ID ${volume.volumeId} does not have any images to optimize.`
+    );
+
     return;
   }
 
   const scalarData = volume.getScalarData();
 
-  volume.imageCacheOffsetMap.size > 0
-    ? _processImageCacheOffsetMap(volume, scalarData)
-    : _processVolumeImages(volume, scalarData);
-}
+  volume.imageIds.forEach((imageId, imageIdIndex) => {
+    let image = cache.getImage(imageId);
+    if (image) {
+      // check if this has already a view of the scalar data
+      if (image.bufferView) {
+        return;
+      }
 
-/**
- * This function will process the volume images and replace the pixel data of each
- * image in the image cache (if found) with a view of the volume's scalar data.
- * This function is used when the volume is derived from an already cached stack
- * of images.
- *
- * @param volume - The volume to process.
- * @param scalarData - The scalar data to use for the volume.
- */
-function _processImageCacheOffsetMap(volume, scalarData) {
-  volume.imageCacheOffsetMap.forEach(({ offset }, imageId) => {
-    const image = cache.getImage(imageId);
-    if (!image) {
+      // Handle the case where the image is in the cache but doesn't have a buffer view
+      const offset = _calculateOffset(volume, imageId, imageIdIndex);
+      _updateImageWithScalarDataView(image, scalarData, offset);
+      cache.decrementImageCacheSize(image.sizeInBytes);
       return;
     }
 
-    _updateImageWithScalarDataView(image, scalarData, offset);
-    cache.decrementImageCacheSize(image.sizeInBytes);
-  });
-}
+    const inOffSetMap =
+      volume.imageCacheOffsetMap.has(imageId) &&
+      volume.imageCacheOffsetMap.get(imageId).offset;
 
-/**
- * This function will process the volume images and replace the pixel data of each
- * image in the image cache (if found) with a view of the volume's scalar data.
- * This function is used when the volume is not derived from an already cached stack
- * of images.
- *
- * @param volume - The volume to process.
- * @param scalarData - The scalar data to use for the volume.
- */
-function _processVolumeImages(volume, scalarData) {
-  let compatibleScalarData = scalarData;
-
-  const sampleImageIdWithImage = volume.imageIds.find((imageId) => {
-    const image = cache.getImage(imageId);
-    return image;
-  });
-
-  if (!sampleImageIdWithImage) {
-    return;
-  }
-
-  const sampleImage = cache.getImage(sampleImageIdWithImage);
-  const samplePixelData =
-    sampleImage.imageFrame?.pixelData || sampleImage.getPixelData();
-
-  // Check if the types of scalarData and pixelData are different.
-  if (scalarData.constructor !== samplePixelData.constructor) {
-    // If so, create a new typed array of the same type as pixelData and copy the values from scalarData.
-    compatibleScalarData = new samplePixelData.constructor(scalarData.length);
-
-    // Copy values from scalarData to compatibleScalarData.
-    compatibleScalarData.set(scalarData);
-  }
-
-  volume.imageIds.forEach((imageId) => {
-    const image = cache.getImage(imageId);
-    if (!image) {
+    if (inOffSetMap) {
+      const image = cache.getImage(imageId);
+      const offset = volume.imageCacheOffsetMap.get(imageId).offset;
+      _updateImageWithScalarDataView(image, scalarData, offset);
+      cache.decrementImageCacheSize(image.sizeInBytes);
       return;
+    }
+
+    // extract the image from the volume
+    image = volume.getCornerstoneImage(imageId, imageIdIndex);
+
+    // 3. Caching the image
+    if (!cache.getImageLoadObject(imageId)) {
+      cache.putImageSync(imageId, image);
+    }
+
+    let compatibleScalarData = scalarData;
+    const samplePixelData = image.imageFrame?.pixelData || image.getPixelData();
+
+    // Check if the types of scalarData and pixelData are different.
+    if (scalarData.constructor !== samplePixelData.constructor) {
+      // If so, create a new typed array of the same type as pixelData and copy the values from scalarData.
+      compatibleScalarData = new samplePixelData.constructor(scalarData.length);
+
+      // Copy values from scalarData to compatibleScalarData.
+      compatibleScalarData.set(scalarData);
     }
 
     const index = volume.getImageIdIndex(imageId);
@@ -142,4 +138,14 @@ function _updateImageWithScalarDataView(image, scalarData, offset) {
     buffer: scalarData.buffer,
     offset,
   };
+}
+
+function _calculateOffset(volume, imageId, imageIdIndex) {
+  if (volume.imageCacheOffsetMap.has(imageId)) {
+    return volume.imageCacheOffsetMap.get(imageId).offset;
+  }
+
+  const image = volume.getCornerstoneImage(imageId, imageIdIndex);
+  const index = volume.getImageIdIndex(imageId);
+  return index * image.getPixelData().byteLength;
 }

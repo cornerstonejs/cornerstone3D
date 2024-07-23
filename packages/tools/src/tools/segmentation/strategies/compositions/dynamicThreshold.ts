@@ -82,10 +82,14 @@ export default {
       return;
     }
 
-    const { spacing } = (
-      viewport as Types.IStackViewport | Types.IVolumeViewport
-    ).getImageData();
+    // @ts-ignore
+    const imageData = viewport.getImageData();
 
+    if (!imageData) {
+      return;
+    }
+
+    const { spacing } = imageData;
     const centerCanvas = [
       viewport.element.clientWidth / 2,
       viewport.element.clientHeight / 2,

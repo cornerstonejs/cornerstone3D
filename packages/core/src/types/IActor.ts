@@ -28,8 +28,8 @@ export type ActorEntry = {
   uid: string;
   /** actual actor object */
   actor: Actor | VolumeActor | ImageActor | ICanvasActor;
-  /** the id of the reference volume from which this actor is derived or created*/
-  referenceId?: string;
+  /** the id of the referenced object (e.g., volume) from which this actor is derived or created*/
+  referencedId?: string;
   /** slab thickness for the actor */
   slabThickness?: number;
   /** clipping filter applied to actor surfaces*/
