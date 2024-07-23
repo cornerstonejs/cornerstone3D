@@ -397,7 +397,7 @@ describe('Segmentation Render -- ', () => {
     //   eventTarget.addEventListener(
     //     Events.SEGMENTATION_REPRESENTATION_MODIFIED,
     //     (evt) => {
-    //       const toolGroupState = segmentation.state.getRepresentations(
+    //       const toolGroupState = segmentation.state.getAllSegmentationRepresentations(
     //         this.segToolGroup.id
     //       );
 

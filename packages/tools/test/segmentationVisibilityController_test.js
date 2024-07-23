@@ -280,7 +280,7 @@ describe('Segmentation Controller --', () => {
     //     )
 
     //     const segmentationState =
-    //       csTools3d.segmentation.state.getRepresentations(toolGroupId)
+    //       csTools3d.segmentation.state.getAllSegmentationRepresentations(toolGroupId)
 
     //     // expect(segmentationState.length).toBe(2)
     //     // expect(segmentationState[0].active).toBe(true)

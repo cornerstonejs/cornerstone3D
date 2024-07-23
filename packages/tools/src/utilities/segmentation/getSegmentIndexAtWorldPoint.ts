@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
-  getRepresentationsBySegmentationId,
+  getSegmentationRepresentationsForSegmentationId,
   getLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import {
@@ -108,9 +108,10 @@ export function getSegmentIndexAtWorldForLabelmap(
   // find the first segmentationRepresentationUID for the segmentationId, since
   // that is what we use as actorUID in the viewport
 
-  const segmentationRepresentations = getRepresentationsBySegmentationId(
-    segmentation.segmentationId
-  );
+  const segmentationRepresentations =
+    getSegmentationRepresentationsForSegmentationId(
+      segmentation.segmentationId
+    );
 
   const { segmentationRepresentationUID } = segmentationRepresentations[0];
 

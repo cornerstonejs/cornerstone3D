@@ -7,7 +7,7 @@ import {
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
 import * as SegmentationState from './segmentationState';
-import { getRepresentationRenderingConfig } from './helpers/getRepresentationRenderingConfig';
+import { getSegmentationRepresentationRenderingConfig } from './helpers/getSegmentationRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { SegmentationRepresentations } from '../../enums';
@@ -32,7 +32,8 @@ async function addRepresentation(
     segmentationRepresentationUID,
     type: representationInput.type,
     colorLUTIndex: colorLUTIndexToUse,
-    rendering: getRepresentationRenderingConfig(representationInput),
+    rendering:
+      getSegmentationRepresentationRenderingConfig(representationInput),
     polySeg: options.polySeg,
     config: {
       allSegments: {},

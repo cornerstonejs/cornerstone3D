@@ -16,7 +16,7 @@ function setRepresentationVisibility(
   segmentationRepresentationUID: string,
   visibility: boolean
 ): void {
-  const representation = SegmentationState.getRepresentation(
+  const representation = SegmentationState.getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 
@@ -42,11 +42,11 @@ function setRepresentationVisibility(
  * @returns A boolean value that indicates whether the segmentation representation is visible or
  * not on the viewport
  */
-function getRepresentationVisibility(
+function getSegmentationRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string
 ): boolean | undefined {
-  return SegmentationState.getRepresentationVisibility(
+  return SegmentationState.getSegmentationRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID
   );
@@ -136,7 +136,9 @@ function getSegmentsHidden(
   segmentationRepresentationUID: string
 ): Set<number> {
   const viewportRenderingState =
-    SegmentationState.getRepresentationsRenderingStateForViewport(viewportId);
+    SegmentationState.getAllSegmentationRepresentationsRenderingStateForViewport(
+      viewportId
+    );
 
   if (!viewportRenderingState) {
     return new Set();
@@ -150,7 +152,7 @@ function getSegmentsHidden(
 
 export {
   setRepresentationVisibility,
-  getRepresentationVisibility,
+  getSegmentationRepresentationVisibility,
   setSegmentsVisibility,
   setSegmentIndexVisibility,
   getSegmentIndexVisibility,

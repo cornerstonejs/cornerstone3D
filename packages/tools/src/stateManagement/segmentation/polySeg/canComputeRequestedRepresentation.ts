@@ -1,7 +1,10 @@
 import { SegmentationRepresentations } from '../../../enums';
 import { validateLabelmap } from '../../../tools/displayTools/Labelmap';
 import { SegmentationRepresentationData } from '../../../types';
-import { getRepresentation, getSegmentation } from '../segmentationState';
+import {
+  getSegmentationRepresentation,
+  getSegmentation,
+} from '../segmentationState';
 
 // Map of conversion paths between source and target representations
 // You should read it as "source" -> "targets"
@@ -43,7 +46,7 @@ const conversionPaths = new Map<
 function canComputeRequestedRepresentation(
   segmentationRepresentationUID: string
 ): boolean {
-  const segmentationRepresentation = getRepresentation(
+  const segmentationRepresentation = getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 

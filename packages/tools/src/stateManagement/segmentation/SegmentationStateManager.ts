@@ -154,7 +154,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @returns The segmentation representation object.
    */
-  getRepresentation(
+  getSegmentationRepresentation(
     segmentationRepresentationUID: string
   ): SegmentationRepresentation | undefined {
     return this.state.representations[segmentationRepresentationUID];
@@ -191,7 +191,7 @@ export default class SegmentationStateManager {
       this.state.viewports[viewportId] = {};
     }
 
-    const representation = this.getRepresentation(
+    const representation = this.getSegmentationRepresentation(
       segmentationRepresentationUID
     );
 
@@ -377,7 +377,7 @@ export default class SegmentationStateManager {
    * @param viewportId - The ID of the viewport.
    * @returns An array of SegmentationRepresentation objects.
    */
-  getRepresentationsForViewport(
+  getAllSegmentationRepresentationsForViewport(
     viewportId: string
   ): SegmentationRepresentation[] {
     const viewport = this.state.viewports[viewportId];
@@ -387,7 +387,7 @@ export default class SegmentationStateManager {
     }
 
     return Object.keys(viewport).map((segRepUID) => {
-      return this.getRepresentation(segRepUID);
+      return this.getSegmentationRepresentation(segRepUID);
     });
   }
 
@@ -449,7 +449,7 @@ export default class SegmentationStateManager {
       return;
     }
 
-    return this.getRepresentation(activeSegRep[0]);
+    return this.getSegmentationRepresentation(activeSegRep[0]);
   }
 
   /**
@@ -472,7 +472,7 @@ export default class SegmentationStateManager {
     allSegments?: RepresentationConfig;
     perSegment?: SegmentRepresentationConfig;
   } {
-    const segmentationRepresentation = this.getRepresentation(
+    const segmentationRepresentation = this.getSegmentationRepresentation(
       segmentationRepresentationUID
     );
 
@@ -567,7 +567,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @returns The visibility of the segmentation representation in the viewport.
    */
-  getRepresentationVisibility(
+  getSegmentationRepresentationVisibility(
     viewportId: string,
     segmentationRepresentationUID: string
   ): boolean {

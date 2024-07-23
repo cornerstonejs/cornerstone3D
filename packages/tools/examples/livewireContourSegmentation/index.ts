@@ -282,7 +282,7 @@ function getSegmentationConfig(): cstTypes.RepresentationConfig {
       segmentationRepresentationUIDs[0]
     ) ?? {};
 
-  // Add CONTOUR object because getRepresentationConfig
+  // Add CONTOUR object because it
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};

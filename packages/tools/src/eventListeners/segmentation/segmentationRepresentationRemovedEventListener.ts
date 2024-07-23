@@ -1,5 +1,5 @@
 import { SegmentationRepresentationRemovedEventType } from '../../types/EventTypes';
-import { getRepresentation } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentation } from '../../stateManagement/segmentation/segmentationState';
 import { triggerSegmentationRenderBySegmentationId } from '../../utilities/segmentation';
 
 /** A function that listens to the `segmentationRepresentationRemoved` event and triggers
@@ -11,7 +11,9 @@ const segmentationRepresentationRemovedEventListener = function (
 ): void {
   const { segmentationRepresentationUID } = evt.detail;
 
-  const segmentation = getRepresentation(segmentationRepresentationUID);
+  const segmentation = getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 
   triggerSegmentationRenderBySegmentationId(segmentation.segmentationId);
 };

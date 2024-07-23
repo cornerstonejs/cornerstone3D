@@ -130,7 +130,9 @@ describe('Segmentation State -- ', () => {
           expect(state.representations).toBeDefined();
 
           const toolGroupSegRepresentations =
-            segmentation.state.getRepresentationsForViewport(viewportId);
+            segmentation.state.getAllSegmentationRepresentationsForViewport(
+              viewportId
+            );
 
           const segRepresentation = toolGroupSegRepresentations[0];
 

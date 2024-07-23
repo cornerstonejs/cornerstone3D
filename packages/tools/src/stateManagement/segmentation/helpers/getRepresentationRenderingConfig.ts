@@ -1,8 +1,8 @@
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import { RepresentationPublicInput } from '../../../types';
-import { getRepresentationRenderingConfig as getLabelmapRenderingConfig } from '../../../tools/displayTools/Labelmap/labelmapDisplay';
+import { getSegmentationRepresentationRenderingConfig as getLabelmapRenderingConfig } from '../../../tools/displayTools/Labelmap/labelmapDisplay';
 
-export function getRepresentationRenderingConfig(
+export function getSegmentationRepresentationRenderingConfig(
   representationInput: RepresentationPublicInput
 ) {
   const { type } = representationInput;

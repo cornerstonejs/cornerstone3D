@@ -2,7 +2,10 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
 import { contourDisplay } from '../../tools/displayTools/Contour';
 
-import { getRepresentations, getRepresentation } from './segmentationState';
+import {
+  getAllSegmentationRepresentations,
+  getSegmentationRepresentation,
+} from './segmentationState';
 
 /**
  * Remove the segmentation representation (representation) from the viewports of the toolGroup.
@@ -25,7 +28,7 @@ function _removeSegmentation(
   segmentationRepresentationUID: string,
   immediate?: boolean
 ): void {
-  const segmentationRepresentation = getRepresentation(
+  const segmentationRepresentation = getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 

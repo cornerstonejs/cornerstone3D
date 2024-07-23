@@ -65,7 +65,7 @@ function _imageChangeEventListener(evt) {
   ) as { viewport: Types.IStackViewport };
 
   const segmentationRepresentations =
-    SegmentationState.getRepresentationsForViewport(viewportId);
+    SegmentationState.getAllSegmentationRepresentationsForViewport(viewportId);
 
   if (!segmentationRepresentations?.length) {
     return;

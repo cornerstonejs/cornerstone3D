@@ -603,7 +603,7 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getRepresentationsBySegmentationId(
+            csToolsSegmentation.state.getSegmentationRepresentationsForSegmentationId(
                 segmentationId
             );
 

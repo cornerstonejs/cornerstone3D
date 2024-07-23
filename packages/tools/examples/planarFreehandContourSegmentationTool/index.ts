@@ -183,7 +183,7 @@ function getSegmentationConfig(): cstTypes.RepresentationConfig {
     segmentation.config.getAllSegmentsConfig(segmentationRepresentationUID1) ??
     {};
 
-  // Add CONTOUR object because getRepresentationConfig
+  // Add CONTOUR object because it
   // can return an empty object
   if (!segmentationConfig.CONTOUR) {
     segmentationConfig.CONTOUR = {};

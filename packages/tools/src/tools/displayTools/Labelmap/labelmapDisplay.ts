@@ -28,7 +28,7 @@ import SegmentationStateManager from '../../../stateManagement/segmentation/Segm
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
-function getRepresentationRenderingConfig() {
+function getSegmentationRepresentationRenderingConfig() {
   const cfun = vtkColorTransferFunction.newInstance();
   const ofun = vtkPiecewiseFunction.newInstance();
   ofun.addPoint(0, 0);
@@ -502,9 +502,13 @@ async function _addLabelmapToViewport(
 }
 
 export default {
-  getRepresentationRenderingConfig,
+  getSegmentationRepresentationRenderingConfig,
   render,
   removeRepresentation,
 };
 
-export { getRepresentationRenderingConfig, render, removeRepresentation };
+export {
+  getSegmentationRepresentationRenderingConfig,
+  render,
+  removeRepresentation,
+};

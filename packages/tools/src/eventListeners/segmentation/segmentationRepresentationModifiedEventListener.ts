@@ -1,5 +1,5 @@
 import { SegmentationRepresentationModifiedEventType } from '../../types/EventTypes';
-import { getRepresentation } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentation } from '../../stateManagement/segmentation/segmentationState';
 import { triggerSegmentationRenderBySegmentationId } from '../../utilities/segmentation';
 
 /** A function that listens to the `segmentationStateModified` event and triggers
@@ -10,8 +10,8 @@ const segmentationRepresentationModifiedListener = function (
   evt: SegmentationRepresentationModifiedEventType
 ): void {
   const { segmentationRepresentationUID } = evt.detail;
-  const segmentationRepresentation = getRepresentation
-    ? getRepresentation(segmentationRepresentationUID)
+  const segmentationRepresentation = getSegmentationRepresentation
+    ? getSegmentationRepresentation(segmentationRepresentationUID)
     : null;
 
   if (!segmentationRepresentation) {
