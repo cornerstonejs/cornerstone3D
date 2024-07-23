@@ -177,7 +177,7 @@ export default class SegmentationStateManager {
    * @param viewportId - The ID of the viewport.
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    */
-  addSegmentationRepresentationToViewport(
+  addSegmentationRepresentation(
     viewportId: string,
     segmentationRepresentationUID: string
   ): void {
@@ -196,7 +196,10 @@ export default class SegmentationStateManager {
     );
 
     if (representation.type !== SegmentationRepresentations.Labelmap) {
-      this.setActiveRepresentation(viewportId, segmentationRepresentationUID);
+      this.setActiveSegmentationRepresentation(
+        viewportId,
+        segmentationRepresentationUID
+      );
       return;
     }
 
@@ -271,7 +274,10 @@ export default class SegmentationStateManager {
     }
 
     // make all the other representations inactive first
-    this.setActiveRepresentation(viewportId, segmentationRepresentationUID);
+    this.setActiveSegmentationRepresentation(
+      viewportId,
+      segmentationRepresentationUID
+    );
   }
 
   /**
@@ -410,7 +416,7 @@ export default class SegmentationStateManager {
    * segmentation data.
    * @param segmentationRepresentationUID - string
    */
-  setActiveRepresentation(
+  setActiveSegmentationRepresentation(
     viewportId: string,
     segmentationRepresentationUID: string
   ): void {
@@ -525,7 +531,7 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation.
    * @param config - The configuration to be set for all segments.
    */
-  setAllSegmentsConfig(
+  setSegmentationRepresentationConfig(
     segmentationRepresentationUID: string,
     config: RepresentationConfig
   ): void {

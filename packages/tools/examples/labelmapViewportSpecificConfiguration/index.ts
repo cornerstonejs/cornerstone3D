@@ -85,11 +85,14 @@ addToggleButtonToToolbar({
   onClick: (toggle) => {
     [rightRepresentationUID1, rightRepresentationUID2].forEach(
       (representationUID) => {
-        segmentation.config.setAllSegmentsConfig(representationUID, {
-          LABELMAP: {
-            renderOutline: toggle,
-          },
-        });
+        segmentation.config.setSegmentationRepresentationConfig(
+          representationUID,
+          {
+            LABELMAP: {
+              renderOutline: toggle,
+            },
+          }
+        );
       }
     );
   },

@@ -59,7 +59,7 @@ function getSegmentationRepresentationVisibility(
  * @param segmentIndices - An array of segment indices.
  * @param visibility - The visibility state to set for the segments.
  */
-function setSegmentsVisibility(
+function setSegmentIndicesVisibility(
   viewport: string,
   segmentationRepresentationUID: string,
   segmentIndices: number[],
@@ -151,7 +151,7 @@ function getHiddenSegmentIndices(
 export {
   setSegmentationRepresentationVisibility,
   getSegmentationRepresentationVisibility,
-  setSegmentsVisibility,
+  setSegmentIndicesVisibility,
   setSegmentIndexVisibility,
   getSegmentIndexVisibility,
   getHiddenSegmentIndices,

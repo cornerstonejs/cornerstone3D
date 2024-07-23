@@ -8,7 +8,7 @@ import {
   getSegmentationRepresentationConfig,
   getPerSegmentConfig,
   getSegmentIndexConfig,
-  setAllSegmentsConfig,
+  setSegmentationRepresentationConfig,
   setPerSegmentConfig,
   setSegmentIndexConfig,
 } from './segmentationConfig';
@@ -23,7 +23,7 @@ export {
   getSegmentationRepresentationConfig,
   getPerSegmentConfig,
   getSegmentIndexConfig,
-  setAllSegmentsConfig,
+  setSegmentationRepresentationConfig,
   setPerSegmentConfig,
   setSegmentIndexConfig,
 };

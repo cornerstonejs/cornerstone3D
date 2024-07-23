@@ -41,10 +41,7 @@ async function addSegmentationRepresentation(
     },
   };
 
-  SegmentationState.addSegmentationRepresentationToViewport(
-    viewportId,
-    representation
-  );
+  SegmentationState.addSegmentationRepresentation(viewportId, representation);
 
   // Update the toolGroup specific configuration
   if (initialConfig) {
@@ -60,7 +57,7 @@ async function addSegmentationRepresentation(
     //   });
     // }
 
-    SegmentationState.setAllSegmentsConfig(
+    SegmentationState.setSegmentationRepresentationConfig(
       segmentationRepresentationUID,
       initialConfig.representations
     );

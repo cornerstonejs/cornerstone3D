@@ -296,7 +296,7 @@ function updateSegmentationConfig(config) {
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setAllSegmentsConfig(
+  segmentation.config.setSegmentationRepresentationConfig(
     segmentationRepresentationUIDs[0],
     segmentationConfig
   );

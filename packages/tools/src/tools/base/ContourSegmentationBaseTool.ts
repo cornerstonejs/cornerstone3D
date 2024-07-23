@@ -27,7 +27,7 @@ import {
 import { triggerAnnotationRenderForToolGroupIds } from '../../utilities';
 import {
   getActiveSegmentationRepresentation,
-  getSegmentationRepresentationsForSegmentationId,
+  getSegmentationRepresentationsForSegmentation,
   getSegmentationRepresentations,
   getViewportIdsWithSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
@@ -204,7 +204,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const { segmentationId, segmentIndex } = annotation.data.segmentation;
     const segmentation = segmentationState.getSegmentation(segmentationId);
     const segmentationRepresentations =
-      getSegmentationRepresentationsForSegmentationId(segmentationId);
+      getSegmentationRepresentationsForSegmentation(segmentationId);
 
     if (!segmentationRepresentations?.length) {
       // return defaults if no segmentation representation is found

@@ -152,7 +152,7 @@ function updateSegmentationConfig(config) {
 
   Object.assign(segmentationConfig.CONTOUR, config);
 
-  segmentation.config.setAllSegmentsConfig(
+  segmentation.config.setSegmentationRepresentationConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -426,7 +426,7 @@ async function run() {
   segmentationRepresentationUID = segmentationRepresentationUIDs[0];
 
   // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveRepresentation(
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
     viewportId,
     segmentationRepresentationUID
   );

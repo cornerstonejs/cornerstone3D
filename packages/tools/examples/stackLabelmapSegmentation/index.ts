@@ -226,7 +226,10 @@ addButtonToToolbar({
 
     segmentationRepresentationUIDs.push(uid);
 
-    segmentation.activeSegmentation.setActiveRepresentation(viewportId, uid);
+    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+      viewportId,
+      uid
+    );
 
     // update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, newSegmentationId);
@@ -241,7 +244,10 @@ addDropdownToToolbar({
     const name = String(nameAsStringOrNumber);
     const index = segmentationIds.indexOf(name);
     const uid = segmentationRepresentationUIDs[index];
-    segmentation.activeSegmentation.setActiveRepresentation(viewportId, uid);
+    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+      viewportId,
+      uid
+    );
 
     // Update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, name);

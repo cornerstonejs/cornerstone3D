@@ -38,12 +38,12 @@ function getActiveSegmentation(viewportId): Segmentation {
  * @param suppressEvent - Whether to suppress the event triggered by the change - default false.
  * @returns
  */
-function setActiveRepresentation(
+function setActiveSegmentationRepresentation(
   viewportId,
   segmentationRepresentationUID,
   suppressEvent = false
 ): void {
-  SegmentationState.setActiveRepresentation(
+  SegmentationState.setActiveSegmentationRepresentation(
     viewportId,
     segmentationRepresentationUID,
     suppressEvent
@@ -55,5 +55,5 @@ export {
   getActiveSegmentationRepresentation,
   getActiveSegmentation,
   // set
-  setActiveRepresentation,
+  setActiveSegmentationRepresentation,
 };

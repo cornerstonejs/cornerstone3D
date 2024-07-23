@@ -113,7 +113,7 @@ addSliderToToolbar({
   range: [0.1, 10],
   defaultValue: 4,
   onSelectedValueChange: (value) => {
-    segmentation.config.setAllSegmentsConfig(
+    segmentation.config.setSegmentationRepresentationConfig(
       planarSegmentationRepresentationUID,
       {
         CONTOUR: {

@@ -252,7 +252,10 @@ function updateActiveSegmentationState() {
   viewportIds.forEach((viewportId) => {
     const uid = segmentationRepresentationUIDs[viewportId][index];
 
-    segmentation.activeSegmentation.setActiveRepresentation(viewportId, uid);
+    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+      viewportId,
+      uid
+    );
   });
 
   segmentation.segmentIndex.setActiveSegmentIndex(
@@ -307,7 +310,7 @@ function updateCurrentSegmentationConfig(config) {
 
     Object.assign(segmentationConfig.CONTOUR, config);
 
-    segmentation.config.setAllSegmentsConfig(
+    segmentation.config.setSegmentationRepresentationConfig(
       segmentationRepresentationUID,
       segmentationConfig
     );

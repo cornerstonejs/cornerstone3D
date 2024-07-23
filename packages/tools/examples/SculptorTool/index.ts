@@ -278,7 +278,7 @@ async function run() {
   segmentationRepresentationUID = segmentationRepresentationUIDs[0];
 
   // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveRepresentation(
+  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
     toolGroupId,
     segmentationRepresentationUID
   );

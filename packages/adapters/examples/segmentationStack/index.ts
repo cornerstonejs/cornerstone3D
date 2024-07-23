@@ -689,11 +689,11 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationRepresentationsForSegmentationId(
+            csToolsSegmentation.state.getSegmentationRepresentationsForSegmentation(
                 segmentationId
             );
 
-        csToolsSegmentation.activeSegmentation.setActiveRepresentation(
+        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
             toolGroupId,
             segmentationRepresentations[0].segmentationRepresentationUID
         );

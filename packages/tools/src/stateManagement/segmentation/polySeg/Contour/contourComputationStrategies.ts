@@ -1,7 +1,10 @@
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import { getSegmentation, setAllSegmentsConfig } from '../../segmentationState';
+import {
+  getSegmentation,
+  setSegmentationRepresentationConfig,
+} from '../../segmentationState';
 import { PolySegConversionOptions } from '../../../../types';
 import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies';
 import {
@@ -73,7 +76,7 @@ export async function computeContourData(
     segmentationId
   );
 
-  setAllSegmentsConfig(segmentationRepresentationUID, {
+  setSegmentationRepresentationConfig(segmentationRepresentationUID, {
     CONTOUR: {
       fillAlpha: 0,
     },

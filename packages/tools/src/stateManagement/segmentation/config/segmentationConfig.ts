@@ -85,11 +85,14 @@ function getSegmentationRepresentationConfig(
  * @param segmentationRepresentationUID - The UID of the segmentation representation.
  * @param config - The configuration to be set for all segments.
  */
-function setAllSegmentsConfig(
+function setSegmentationRepresentationConfig(
   segmentationRepresentationUID: string,
   config: RepresentationConfig
 ): void {
-  SegmentationState.setAllSegmentsConfig(segmentationRepresentationUID, config);
+  SegmentationState.setSegmentationRepresentationConfig(
+    segmentationRepresentationUID,
+    config
+  );
 }
 
 /**
@@ -169,7 +172,7 @@ export {
   setGlobalRepresentationConfig,
   // segmentation representation config
   getSegmentationRepresentationConfig,
-  setAllSegmentsConfig,
+  setSegmentationRepresentationConfig,
   setPerSegmentConfig,
   getPerSegmentConfig,
   // segment index get/set
