@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.83.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.7...v1.83.0) (2024-07-24)
+
+**Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader
+
 ## [1.82.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.6...v1.82.7) (2024-07-24)
 
 **Note:** Version bump only for package @cornerstonejs/streaming-image-volume-loader

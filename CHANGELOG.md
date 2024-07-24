@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.83.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.7...v1.83.0) (2024-07-24)
+
+### Features
+
+- **pmap:** added parametric map adapter ([#1382](https://github.com/cornerstonejs/cornerstone3D/issues/1382)) ([4b5705d](https://github.com/cornerstonejs/cornerstone3D/commit/4b5705d937c202fb9f84c5aac2158e9577aa5aa4))
+
 ## [1.82.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.6...v1.82.7) (2024-07-24)
 
 ### Bug Fixes
