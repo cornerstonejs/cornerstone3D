@@ -272,6 +272,10 @@ function isCornerstoneInitialized(): boolean {
   return csRenderInitialized;
 }
 
+function resetInitialization(): void {
+  csRenderInitialized = false;
+}
+
 /**
  * This function returns a copy of the config object. This is used to prevent the
  * config object from being modified by other parts of the program.
@@ -328,4 +332,5 @@ export {
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,
+  resetInitialization,
 };

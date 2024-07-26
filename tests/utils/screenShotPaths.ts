@@ -2,6 +2,12 @@
  * Paths to the screenshots of the tests.
  */
 const screenShotPaths = {
+  renderingPipelines: {
+    preferSizeOverAccuracy1: 'preferSizeOverAccuracy1.png',
+    preferSizeOverAccuracy2: 'preferSizeOverAccuracy2.png',
+    norm16Texture1: 'norm16Texture1.png',
+    norm16Texture2: 'norm16Texture2.png',
+  },
   stackBasic: {
     viewport: 'viewport.png',
   },
