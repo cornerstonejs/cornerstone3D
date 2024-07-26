@@ -10,7 +10,7 @@ export default async function initDemo(config) {
   initVolumeLoader();
   await csRenderInit({
     peerImport,
-    ...(config.core ? config.core : {}),
+    ...(config?.core ? config.core : {}),
   });
   await csToolsInit();
 }

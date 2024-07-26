@@ -2,6 +2,9 @@
  * Paths to the screenshots of the tests.
  */
 const screenShotPaths = {
+  renderingPipelinesCPU: {
+    cpuRendering: 'stackManipulation-cpuRendering.png',
+  },
   renderingPipelines: {
     preferSizeOverAccuracy1: 'preferSizeOverAccuracy1.png',
     preferSizeOverAccuracy2: 'preferSizeOverAccuracy2.png',

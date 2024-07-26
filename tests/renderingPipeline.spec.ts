@@ -5,11 +5,11 @@ import {
   screenShotPaths,
 } from './utils/index';
 
-test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'renderingPipelines');
-});
-
 test.describe('Rendering Pipelines for GPU', async () => {
+  test.beforeEach(async ({ page }) => {
+    await visitExample(page, 'renderingPipelines');
+  });
+
   const renderingOptions = [
     { name: 'Prefer size over accuracy', key: 'preferSizeOverAccuracy' },
     { name: 'Use norm 16 texture', key: 'norm16Texture' },
@@ -49,6 +49,44 @@ test.describe('Rendering Pipelines for GPU', async () => {
   }
 });
 
+test.describe('Stack Viewport with CPU Rendering', () => {
+  test.beforeEach(async ({ page }) => {
+    await visitExample(page, 'renderingPipelinesCPU');
+  });
+
+  test('should correctly render using CPU and handle annotations', async ({
+    page,
+  }) => {
+    // Switch to CPU rendering
+    await selectRenderingOption(page, 'CPU Rendering');
+    await page.waitForTimeout(1000); // Wait for re-rendering
+
+    // Check CPU rendering
+    await checkCPURendering(page);
+
+    // Add an elliptical ROI and wait for rendering
+    await waitForRenderingAndAddEllipse(page);
+    // wait 2 seconds
+    await page.waitForTimeout(2000);
+    // Verify annotation stats
+    await verifyAnnotationStats(page);
+  });
+});
+
+async function checkCPURendering(page: Page) {
+  const isUsingCPU = await page.evaluate(() => {
+    return window.cornerstone.getShouldUseCPURendering();
+  });
+  expect(isUsingCPU).toBe(true);
+
+  const canvas = await page.locator('canvas').first();
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.renderingPipelinesCPU.cpuRendering
+  );
+}
+
 async function selectRenderingOption(page: Page, optionName: string) {
   await page.getByRole('combobox').selectOption(optionName);
 }
@@ -67,6 +105,11 @@ async function waitForRenderingAndAddEllipse(page: Page) {
   const canvas = await page.locator('canvas').first();
   await canvas.click({ position: { x: 58, y: 49 } });
   await canvas.click({ position: { x: 75, y: 63 } });
+
+  // render
+  await page.evaluate(() => {
+    window.cornerstone.getRenderingEngines()[0].render();
+  });
 }
 
 async function getAnnotation(page: Page) {
@@ -87,4 +130,10 @@ async function getDataType(page: Page) {
 function expectMeanInRange(mean: number) {
   expect(mean).toBeGreaterThan(-3100);
   expect(mean).toBeLessThan(-3000);
+}
+
+async function verifyAnnotationStats(page: Page) {
+  const annotation = await getAnnotation(page);
+  const stats = Object.values(annotation.data.cachedStats)[0];
+  expectMeanInRange(stats.mean);
 }
