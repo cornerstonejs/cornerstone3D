@@ -20,6 +20,7 @@ const rootPath = path.resolve(path.join(__dirname, '../..'));
 program
   .option('-c, --config [file.js]', 'Configuration file')
   .option('--no-browser', 'Do not open the browser')
+  .option('--https', 'Enable https')
   .parse(process.argv);
 
 const options = program.opts();
@@ -283,7 +284,7 @@ function run() {
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
-      `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+      `webpack serve --host 0.0.0.0 ${options.https ? '--https' : ''} --progress --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');

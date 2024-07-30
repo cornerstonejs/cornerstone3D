@@ -105,6 +105,12 @@ module.exports = {
     open: false,
     port: ${process.env.CS3D_PORT || 3000},
     historyApiFallback: true,
+    allowedHosts: [
+      '127.0.0.1',
+      'localhost',
+      // Change the next line to add your localhostname to run via localhostname
+      // 'braveheart2',
+    ],
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin"

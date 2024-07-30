@@ -47,7 +47,7 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Rectangle ROI Start End Threshold Tool',
+  'Circle ROI Start End Threshold Tool',
   'Here we demonstrate usage of the Start en End ROI tool'
 );
 
@@ -167,6 +167,7 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
 
+    console.debug(annotations);
     const labelmapVolume = cache.getVolume(segmentationId);
     const scalarData = labelmapVolume.getScalarData();
 

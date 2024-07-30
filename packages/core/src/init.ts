@@ -23,21 +23,17 @@ const defaultConfig: Cornerstone3DConfig = {
   },
   // cache
   enableCacheOptimization: true,
+  /**
+   * Imports peer modules.
+   * This may just fallback to the default import, but many packaging
+   * systems don't deal with peer imports properly.
+   */
+  peerImport: (moduleId) => null,
 };
 
 let config: Cornerstone3DConfig = {
-  gpuTier: undefined,
-  detectGPUConfig: {},
-  isMobile: false, // is mobile device
-  rendering: {
-    useCPURendering: false,
-    // GPU rendering options
-    preferSizeOverAccuracy: false,
-    useNorm16Texture: false,
-    strictZSpacingForVolumeViewport: true,
-  },
-  // cache
-  enableCacheOptimization: true,
+  ...defaultConfig,
+  rendering: { ...defaultConfig.rendering },
 };
 
 let webWorkerManager = null;
@@ -276,6 +272,10 @@ function isCornerstoneInitialized(): boolean {
   return csRenderInitialized;
 }
 
+function resetInitialization(): void {
+  csRenderInitialized = false;
+}
+
 /**
  * This function returns a copy of the config object. This is used to prevent the
  * config object from being modified by other parts of the program.
@@ -313,6 +313,10 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
+function peerImport(moduleId: string) {
+  return config.peerImport(moduleId);
+}
+
 export {
   init,
   getShouldUseCPURendering,
@@ -327,4 +331,6 @@ export {
   setConfiguration,
   getWebWorkerManager,
   canRenderFloatTextures,
+  peerImport,
+  resetInitialization,
 };

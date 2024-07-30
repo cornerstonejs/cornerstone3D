@@ -44,6 +44,13 @@ comes with various webpack configurations, you can use/run the
 force the reflected changes to be built again which is faster than `yarn build`.
 and it also watches for changes to the source code and rebuilds the package.
 
+## External Components
+
+Some components such as the `dicom-microscopy-viewer` are linked externally as
+optional inclusions in the overall `cornerstone3D` package. You will need to
+add a peerImport function which can import the required modules, and register
+your function with the cornerstone init method.
+
 ## Tips
 
 1. `yarn link` is actually a symlink between packages. If your linking is not working,

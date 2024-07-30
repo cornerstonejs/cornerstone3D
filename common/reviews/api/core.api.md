@@ -411,6 +411,7 @@ type Cornerstone3DConfig = {
         strictZSpacingForVolumeViewport: boolean;
     };
     enableCacheOptimization: boolean;
+    peerImport?: (moduleId: string) => any;
 };
 
 // @public (undocumented)
@@ -2521,7 +2522,7 @@ enum MetadataModules {
     // (undocumented)
     VOI_LUT = "voiLutModule",
     // (undocumented)
-    WEB_CLIENT = "webClient"
+    WADO_WEB_CLIENT = "wadoWebClient"
 }
 
 // @public (undocumented)
@@ -2532,7 +2533,14 @@ const metadataProvider: {
 
 // @public (undocumented)
 const metadataProvider_2: {
-    add: (imageId: string, payload: any) => void;
+    add: (imageId: string, payload: {
+        metadata: any;
+        type: string;
+    }) => void;
+    addRaw: (imageId: string, payload: {
+        metadata: any;
+        type: string;
+    }) => void;
     get: (type: string, imageId: string) => any;
     clear: () => void;
 };
@@ -2573,6 +2581,9 @@ type OrientationVectors = {
     viewPlaneNormal: Point3;
     viewUp: Point3;
 };
+
+// @public (undocumented)
+export function peerImport(moduleId: string): any;
 
 // @public (undocumented)
 function performCacheOptimizationForVolume(volume: any): void;
@@ -2877,6 +2888,9 @@ enum RequestType {
     // (undocumented)
     Thumbnail = "thumbnail"
 }
+
+// @public (undocumented)
+export function resetInitialization(): void;
 
 // @public (undocumented)
 export function resetUseCPURendering(): void;
@@ -4404,6 +4418,8 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
+    static getDicomMicroscopyViewer: () => Promise<any>;
+    // (undocumented)
     getFrameNumber(): number;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
@@ -4480,7 +4496,7 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)
-    setDataIds(imageIds: string[]): void;
+    setDataIds(imageIds: string[]): Promise<void>;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)

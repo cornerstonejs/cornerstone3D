@@ -1,9 +1,10 @@
 import {
+    Enums,
     adaptersSR,
     adaptersSEG,
-    Enums,
+    adaptersPMAP,
     adaptersRT,
     helpers
 } from "./adapters";
 
-export { adaptersSR, adaptersSEG, adaptersRT, Enums, helpers };
+export { adaptersSR, adaptersSEG, adaptersPMAP, adaptersRT, Enums, helpers };

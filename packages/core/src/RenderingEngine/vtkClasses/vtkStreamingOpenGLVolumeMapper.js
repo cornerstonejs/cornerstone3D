@@ -185,22 +185,37 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       }
 
       if (shouldReset) {
-        model.scalarTexture.setOglNorm16Ext(
-          model.context.getExtension('EXT_texture_norm16')
-        );
+        const norm16Ext = model.context.getExtension('EXT_texture_norm16');
+        model.scalarTexture.setOglNorm16Ext(norm16Ext);
 
         model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
         model.scalarTexture.resetFormatAndType();
 
-        model.scalarTexture.create3DFilterableFromRaw(
-          dims[0],
-          dims[1],
-          dims[2],
-          numComp,
-          scalars.getDataType(),
-          scalars.getData(),
-          model.renderable.getPreferSizeOverAccuracy()
-        );
+        // If preferSizeOverAccuracy is true or we're using a norm16 texture,
+        // we need to use the FromDataArray method to create the texture for scaling.
+        // Otherwise, we can use the FromRaw method.
+        if (
+          model.renderable.getPreferSizeOverAccuracy() ||
+          (norm16Ext && dataType === VtkDataTypes.UNSIGNED_SHORT) ||
+          dataType === VtkDataTypes.SHORT
+        ) {
+          model.scalarTexture.create3DFilterableFromDataArray(
+            dims[0],
+            dims[1],
+            dims[2],
+            scalars,
+            model.renderable.getPreferSizeOverAccuracy()
+          );
+        } else {
+          model.scalarTexture.create3DFilterableFromRaw(
+            dims[0],
+            dims[1],
+            dims[2],
+            numComp,
+            scalars.getDataType(),
+            scalars.getData()
+          );
+        }
       } else {
         model.scalarTexture.deactivate();
         model.scalarTexture.update3DFromRaw(data);

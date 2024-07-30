@@ -3,6 +3,72 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.83.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.0...v1.83.1) (2024-07-27)
+
+### Bug Fixes
+
+- **rendering:** norm16 and half float was not scaling correctly ([#1404](https://github.com/cornerstonejs/cornerstone3D/issues/1404)) ([fd218e8](https://github.com/cornerstonejs/cornerstone3D/commit/fd218e870e1a5a984d82fed838c02116f96d214c))
+
+# [1.83.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.7...v1.83.0) (2024-07-24)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.82.7](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.6...v1.82.7) (2024-07-24)
+
+### Bug Fixes
+
+- **ROIThresholdsTools:** Small fixes for Rectangle and Circle ROIStartEndThresholds tools ([#1377](https://github.com/cornerstonejs/cornerstone3D/issues/1377)) ([e9810e8](https://github.com/cornerstonejs/cornerstone3D/commit/e9810e8f01cf572fe8d8c48a32758816b2503ba5))
+
+## [1.82.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.5...v1.82.6) (2024-07-23)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.82.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.4...v1.82.5) (2024-07-22)
+
+### Bug Fixes
+
+- **OrientationMarkerTool:** R and L are swapped ([#1395](https://github.com/cornerstonejs/cornerstone3D/issues/1395)) ([33b255a](https://github.com/cornerstonejs/cornerstone3D/commit/33b255aefcc963b62d63f5c584e0a8ca6215f3f5))
+
+## [1.82.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.3...v1.82.4) (2024-07-10)
+
+### Bug Fixes
+
+- Navigation issues and naming issues for video/wsi ([#1386](https://github.com/cornerstonejs/cornerstone3D/issues/1386)) ([db9d5ca](https://github.com/cornerstonejs/cornerstone3D/commit/db9d5cabf22c0211a6a894119b5e0138a9221d04))
+
+## [1.82.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.2...v1.82.3) (2024-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.82.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.1...v1.82.2) (2024-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.82.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.82.0...v1.82.1) (2024-07-10)
+
+### Bug Fixes
+
+- **WindowLevelTool:** scalarData volume3d ([#1383](https://github.com/cornerstonejs/cornerstone3D/issues/1383)) ([2c61604](https://github.com/cornerstonejs/cornerstone3D/commit/2c61604e5d909d9e8c007441aebd6ccdbe835268))
+
+# [1.82.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.6...v1.82.0) (2024-07-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.81.6](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.5...v1.81.6) (2024-07-05)
+
+### Bug Fixes
+
+- **types:** Adding missing types ([#1367](https://github.com/cornerstonejs/cornerstone3D/issues/1367)) ([0fb4e16](https://github.com/cornerstonejs/cornerstone3D/commit/0fb4e16531c9bb302fb46590f6dac2adb1630bce))
+
+## [1.81.5](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.4...v1.81.5) (2024-07-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.81.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.3...v1.81.4) (2024-07-05)
+
+### Bug Fixes
+
+- Use the right type of measurements for non-closed freehand ([#1372](https://github.com/cornerstonejs/cornerstone3D/issues/1372)) ([de0112d](https://github.com/cornerstonejs/cornerstone3D/commit/de0112d5e433a87cf59683da8dc7c69ca965efd3))
+
 ## [1.81.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.81.2...v1.81.3) (2024-07-02)
 
 ### Bug Fixes

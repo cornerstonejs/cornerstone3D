@@ -2,6 +2,15 @@
  * Paths to the screenshots of the tests.
  */
 const screenShotPaths = {
+  renderingPipelinesCPU: {
+    cpuRendering: 'stackManipulation-cpuRendering.png',
+  },
+  renderingPipelines: {
+    preferSizeOverAccuracy1: 'preferSizeOverAccuracy1.png',
+    preferSizeOverAccuracy2: 'preferSizeOverAccuracy2.png',
+    norm16Texture1: 'norm16Texture1.png',
+    norm16Texture2: 'norm16Texture2.png',
+  },
   stackBasic: {
     viewport: 'viewport.png',
   },
@@ -81,7 +90,20 @@ const screenShotPaths = {
   stackSegmentation: {
     defaultSegmentation: 'defaultSegmentation.png',
     circularBrushSegment1: 'circularBrushSegment1.png',
-    paintFill: 'paintFill.png',
+    thresholdBrushSegment1: 'thresholdBrushSegment1.png',
+    dynamicThresholdInitialHighlightedPixels:
+      'dynamicThresholdInitialHighlightedPixels.png',
+    dynamicThresholdHighlightedContour:
+      'dynamicThresholdHighlightedContour.png',
+    dynamicThresholdConfirmedContour: 'dynamicThresholdConfirmedContour.png',
+    circularEraserSegmentation1: 'circularEraserSegmentation1.png',
+    circularEraserSegmentation2: 'circularEraserSegmentation2.png',
+    rectangleScissorSegmentation1: 'rectangleScissorSegmentation1.png',
+    rectangleScissorSegmentation2: 'rectangleScissorSegmentation2.png',
+    circularScissorSegmentation1: 'circularScissorSegmentation1.png',
+    circularScissorSegmentation2: 'circularScissorSegmentation2.png',
+    paintFillSeg1OuterCircle: 'paintFillSeg1OuterCircle.png',
+    paintFillSegmentation2: 'paintFillSegmentation2.png',
   },
 };
 
