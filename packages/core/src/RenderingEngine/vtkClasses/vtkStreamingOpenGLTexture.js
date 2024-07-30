@@ -232,6 +232,28 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     };
   };
 
+  publicAPI.setTextureParameters = (params) => {
+    if (params.width) {
+      model.width = params.width;
+    }
+
+    if (params.height) {
+      model.height = params.height;
+    }
+
+    if (params.depth) {
+      model.depth = params.depth;
+    }
+
+    if (params.numComps) {
+      model.inputNumComps = params.numComps;
+    }
+
+    if (params.dataType) {
+      model.inputDataType = params.dataType;
+    }
+  };
+
   /**
    * Called when a frame is loaded so that on next render we know which data to load in.
    * @param {number} frameIndex The frame to load in.

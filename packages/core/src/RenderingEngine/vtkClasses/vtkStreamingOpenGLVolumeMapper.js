@@ -233,20 +233,15 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // const data = image.getPointData().getScalars().getData();
 
       const dataType = 'Float32Array';
-      const data = [];
 
       let shouldReset = true;
-      if (
-        previousTextureParameters.dataType &&
-        previousTextureParameters.dataType === dataType
-      ) {
-        const previousTextureSize =
-          previousTextureParameters.width *
-          previousTextureParameters.height *
-          previousTextureParameters.depth *
-          previousTextureParameters.numComps;
-        if (data.length === previousTextureSize) {
-          shouldReset = false;
+      if (previousTextureParameters?.dataType === dataType) {
+        if (previousTextureParameters?.width === dims[0]) {
+          if (previousTextureParameters?.height === dims[1]) {
+            if (previousTextureParameters?.depth === dims[2]) {
+              shouldReset = false;
+            }
+          }
         }
       }
 
@@ -264,6 +259,14 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         //   dataType,
         //   data,
         // });
+
+        model.scalarTexture.setTextureParameters({
+          width: dims[0],
+          height: dims[1],
+          depth: dims[2],
+          numComps: 1,
+          dataType,
+        });
 
         // If preferSizeOverAccuracy is true or we're using a norm16 texture,
         // we need to use the FromDataArray method to create the texture for scaling.
@@ -294,8 +297,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       } else {
         // model.scalarTexture.deactivate();
         // model.scalarTexture.update3DFromRaw(data);
-        debugger;
-        console.debug('i am running an update');
       }
 
       model.scalarTextureString = toString;
