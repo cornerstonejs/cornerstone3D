@@ -176,7 +176,6 @@ async function decodeImageFrame(
 
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const { use16BitDataType } = decodeConfig || {};
-
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
@@ -299,8 +298,8 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     imageFrame.pixelData = pixelDataArray;
   }
 
-  imageFrame.minAfterScale = minAfterScale;
-  imageFrame.maxAfterScale = maxAfterScale;
+  imageFrame.smallestPixelValue = minAfterScale;
+  imageFrame.largestPixelValue = maxAfterScale;
 
   const end = new Date().getTime();
   imageFrame.decodeTimeInMS = end - start;

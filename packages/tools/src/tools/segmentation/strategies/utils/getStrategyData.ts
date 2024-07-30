@@ -86,14 +86,17 @@ function getStrategyData({ operationData, viewport }) {
     imageVoxelManager = image?.voxelManager;
   }
 
-  segmentationVoxelManager ||= VoxelManager.createVolumeVoxelManager(
-    segmentationDimensions,
-    segmentationScalarData
-  );
+  segmentationVoxelManager ||= VoxelManager.createVolumeVoxelManager({
+    dimensions: segmentationDimensions,
+    scalarData: segmentationScalarData,
+  });
 
   imageVoxelManager ||=
     imageDimensions &&
-    VoxelManager.createVolumeVoxelManager(imageDimensions, imageScalarData);
+    VoxelManager.createVolumeVoxelManager({
+      dimensions: imageDimensions,
+      scalarData: imageScalarData,
+    });
 
   return {
     segmentationImageData,

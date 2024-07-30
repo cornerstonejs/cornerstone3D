@@ -652,25 +652,22 @@ class Cache implements ICache {
             'putVolumeLoadObject: volume.sizeInBytes must not be undefined'
           );
         }
-        if (volume.sizeInBytes.toFixed === undefined) {
-          throw new Error(
-            'putVolumeLoadObject: volume.sizeInBytes is not a number'
-          );
-        }
+        // if (volume.sizeInBytes.toFixed === undefined) {
+        //   throw new Error(
+        //     'putVolumeLoadObject: volume.sizeInBytes is not a number'
+        //   );
+        // }
 
         // this.isCacheable is called at the volume loader, before requesting
         // the images of the volume
 
         this.decacheIfNecessaryUntilBytesAvailable(
           volume.sizeInBytes,
-          // @ts-ignore: // todo ImageVolume does not have imageIds
           volume.imageIds
         );
 
         // cachedVolume.loaded = true
         cachedVolume.volume = volume;
-        cachedVolume.sizeInBytes = volume.sizeInBytes;
-        this.incrementVolumeCacheSize(cachedVolume.sizeInBytes);
 
         const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
           volume: cachedVolume,

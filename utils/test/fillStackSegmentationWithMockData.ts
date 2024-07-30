@@ -33,10 +33,10 @@ export function fillStackSegmentationWithMockData({
     const image = cache.getImage(segmentationImageIds[z]);
     const voxelManager =
       image.voxelManager ||
-      utilities.VoxelManager.createVolumeVoxelManager(
-        [columns, rows, 1],
-        image.getPixelData()
-      );
+      utilities.VoxelManager.createVolumeVoxelManager({
+        dimensions: [columns, rows, 1],
+        scalarData: image.getPixelData(),
+      });
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(

@@ -237,6 +237,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * @param {number} frameIndex The frame to load in.
    */
   publicAPI.setUpdatedFrame = (frameIndex) => {
+    // model.setOpenGLRenderWindow(model._openGLRenderWindow);
+
     model.updatedFrames[frameIndex] = true;
   };
 }

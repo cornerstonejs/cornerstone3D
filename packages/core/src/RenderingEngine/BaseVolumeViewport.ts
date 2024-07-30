@@ -1412,9 +1412,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
-      scalarData: vtkImageData.getPointData().getScalars().isDeleted()
-        ? null
-        : vtkImageData.getPointData().getScalars().getData(),
+      // scalarData: vtkImageData.getPointData().getScalars()?.isDeleted()
+      //   ? null
+      //   : vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: volume?.metadata?.Modality,

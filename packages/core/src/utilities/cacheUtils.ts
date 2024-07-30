@@ -20,17 +20,17 @@ export function setupCacheOptimizationEventListener(volumeId) {
     return;
   }
 
-  eventTarget.addEventListenerOnce(
-    Events.IMAGE_VOLUME_LOADING_COMPLETED,
-    (evt) => {
-      if (evt.detail.volumeId !== volumeId) {
-        return;
-      }
+  // eventTarget.addEventListenerOnce(
+  //   Events.IMAGE_VOLUME_LOADING_COMPLETED,
+  //   (evt) => {
+  //     if (evt.detail.volumeId !== volumeId) {
+  //       return;
+  //     }
 
-      const volume = cache.getVolume(volumeId);
-      performCacheOptimizationForVolume(volume);
-    }
-  );
+  //     const volume = cache.getVolume(volumeId);
+  //     performCacheOptimizationForVolume(volume);
+  //   }
+  // );
 }
 
 /**

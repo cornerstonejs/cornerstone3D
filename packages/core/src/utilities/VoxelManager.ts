@@ -34,6 +34,8 @@ export default class VoxelManager<T> {
   public readonly dimensions: Point3;
   public numComps = 1;
 
+  public getScalarData: () => PixelDataTypedArray;
+
   points: Set<number>;
   width: number;
   frameSize: number;
@@ -63,7 +65,7 @@ export default class VoxelManager<T> {
    * Gets the voxel value at position i,j,k.
    */
   public getAtIJK = (i, j, k) => {
-    const index = i + j * this.width + k * this.frameSize;
+    const index = this.toIndex([i, j, k]);
     return this._get(index);
   };
 
@@ -72,7 +74,7 @@ export default class VoxelManager<T> {
    * that was modified.
    */
   public setAtIJK = (i: number, j: number, k: number, v) => {
-    const index = i + j * this.width + k * this.frameSize;
+    const index = this.toIndex([i, j, k]);
     if (this._set(index, v) !== false) {
       this.modifiedSlices.add(k);
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
@@ -206,7 +208,7 @@ export default class VoxelManager<T> {
   };
 
   /**
-   * Clears any map specific data, as wellas the modified slices, points and
+   * Clears any map specific data, as well as the modified slices, points and
    * bounds.
    */
   public clear() {
@@ -263,11 +265,15 @@ export default class VoxelManager<T> {
    * Note that the number of components can be larger than three, in case data
    * is stored in additional pixels.  However, the return type is still RGB.
    */
-  public static createRGBVolumeVoxelManager(
-    dimensions: Point3,
+  public static createRGBVolumeVoxelManager({
+    dimensions,
     scalarData,
-    numComponents
-  ): VoxelManager<RGB> {
+    numComponents,
+  }: {
+    dimensions: Point3;
+    scalarData;
+    numComponents;
+  }): VoxelManager<RGB> {
     const voxels = new VoxelManager<RGB>(
       dimensions,
       (index) => {
@@ -288,15 +294,44 @@ export default class VoxelManager<T> {
     return voxels;
   }
 
+  public static createStreamingVolumeVoxelManager({
+    dimensions,
+    imageIds,
+  }: {
+    dimensions: Point3;
+    imageIds: string[];
+  }): VoxelManager<number> {
+    const map = new Map<number, number>();
+
+    const voxelManager = new VoxelManager(
+      dimensions,
+      (index) => map.get(index),
+      (index, v) => map.set(index, v)
+    );
+    voxelManager.map = map;
+
+    // we are overriding the getScalarData method to return the scalar data
+    // based on imageIds
+    voxelManager.getScalarData = () => {
+      debugger;
+    };
+
+    return voxelManager;
+  }
+
   /**
    *  Creates a volume value accessor, based on a volume scalar data instance.
    * This also works for image value accessors for single plane (k=0) accessors.
    */
-  public static createVolumeVoxelManager(
-    dimensions: Point3,
+  public static createVolumeVoxelManager({
+    dimensions,
     scalarData,
-    numComponents = 0
-  ): VoxelManager<number> | VoxelManager<RGB> {
+    numComponents = 0,
+  }: {
+    dimensions: Point3;
+    scalarData;
+    numComponents?: number;
+  }): VoxelManager<number> | VoxelManager<RGB> {
     if (dimensions.length !== 3) {
       throw new Error(
         'Dimensions must be provided as [number, number, number] for [width, height, depth]'
@@ -314,23 +349,29 @@ export default class VoxelManager<T> {
       }
     }
     if (numComponents > 1) {
-      return VoxelManager.createRGBVolumeVoxelManager(
+      return VoxelManager.createRGBVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComponents
-      );
+        numComponents,
+      });
     }
-    return VoxelManager.createNumberVolumeVoxelManager(dimensions, scalarData);
+    return VoxelManager.createNumberVolumeVoxelManager({
+      dimensions,
+      scalarData,
+    });
   }
 
   /**
    * Creates a volume voxel manager that works on single numeric values stored
    * in an array like structure of numbers.
    */
-  public static createNumberVolumeVoxelManager(
-    dimensions: Point3,
-    scalarData
-  ): VoxelManager<number> {
+  public static createNumberVolumeVoxelManager({
+    dimensions,
+    scalarData,
+  }: {
+    dimensions: Point3;
+    scalarData;
+  }): VoxelManager<number> {
     const voxels = new VoxelManager<number>(
       dimensions,
       (index) => scalarData[index],
@@ -349,7 +390,11 @@ export default class VoxelManager<T> {
    * the map stores the index to value instances.
    * This is useful for sparse matrices containing pixel data.
    */
-  public static createMapVoxelManager<T>(dimension: Point3): VoxelManager<T> {
+  public static createMapVoxelManager<T>({
+    dimension,
+  }: {
+    dimension: Point3;
+  }): VoxelManager<T> {
     const map = new Map<number, T>();
     const voxelManager = new VoxelManager(
       dimension,
@@ -365,9 +410,11 @@ export default class VoxelManager<T> {
    * This will remember the original values in the voxels, and will apply the
    * update to the underlying source voxel manager.
    */
-  public static createHistoryVoxelManager<T>(
-    sourceVoxelManager: VoxelManager<T>
-  ): VoxelManager<T> {
+  public static createHistoryVoxelManager<T>({
+    sourceVoxelManager,
+  }: {
+    sourceVoxelManager: VoxelManager<T>;
+  }): VoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelManager;
     const voxelManager = new VoxelManager(
@@ -398,12 +445,15 @@ export default class VoxelManager<T> {
    * for each slice of a volume as it gets changed.  This can be used to
    * store image data that gets created as required.
    */
-  public static createLazyVoxelManager<T>(
-    dimensions: Point3,
-    planeFactory: (width: number, height: number) => T
-  ): VoxelManager<T> {
+  public static createLazyVoxelManager<T>({
+    dimensions,
+    planeFactory,
+  }: {
+    dimensions: Point3;
+    planeFactory: (width: number, height: number) => T;
+  }): VoxelManager<T> {
     const map = new Map<number, T>();
-    const [width, height, depth] = dimensions;
+    const [width, height] = dimensions;
     const planeSize = width * height;
 
     const voxelManager = new VoxelManager(
@@ -427,7 +477,11 @@ export default class VoxelManager<T> {
    * Creates a RLE based voxel manager.  This is effective for storing
    * segmentation maps or already RLE encoded data such as ultrasounds.
    */
-  public static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T> {
+  public static createRLEVoxelManager<T>({
+    dimensions,
+  }: {
+    dimensions: Point3;
+  }): VoxelManager<T> {
     const [width, height, depth] = dimensions;
     const map = new RLEVoxelMap<T>(width, height, depth);
 
@@ -456,20 +510,18 @@ export default class VoxelManager<T> {
       // This case means there is enough scalar data for at least one image,
       // with 1 or more components, and creates a volume voxel manager
       // that can lookup the data
-      image.voxelManager = VoxelManager.createVolumeVoxelManager(
-        [width, height, 1],
-        scalarData
-      );
+      image.voxelManager = VoxelManager.createVolumeVoxelManager({
+        dimensions: [width, height, 1],
+        scalarData,
+      });
       return;
     }
     // This case occurs when the image data is a dummy image data set
     // created just to prevent exceptions in the caching logic.  Then, the
     // RLE voxel manager can be created to store the data instead.
-    image.voxelManager = VoxelManager.createRLEVoxelManager<number>([
-      width,
-      height,
-      1,
-    ]);
+    image.voxelManager = VoxelManager.createRLEVoxelManager<number>({
+      dimensions: [width, height, 1],
+    });
     // The RLE voxel manager knows how to get scalar data pixel data representations.
     // That allows using the RLE representation as a normal pixel data representation
     // for VIEWING purposes.
@@ -478,6 +530,8 @@ export default class VoxelManager<T> {
     // storing an RLE representation, which doesn't have an up front size.
     image.sizeInBytes = DEFAULT_RLE_SIZE;
   }
+
+  public static;
 }
 
 export type { VoxelManager };

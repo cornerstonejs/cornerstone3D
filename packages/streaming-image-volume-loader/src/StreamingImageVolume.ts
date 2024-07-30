@@ -23,7 +23,7 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    * @returns volume scalar data
    */
   public getScalarData(): Types.PixelDataTypedArray {
-    return <Types.PixelDataTypedArray>this.scalarData;
+    return <Types.PixelDataTypedArray>this.voxelManager.getScalarData();
   }
 
   /**

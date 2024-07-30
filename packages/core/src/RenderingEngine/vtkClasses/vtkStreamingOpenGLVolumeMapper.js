@@ -38,10 +38,11 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       return;
     }
 
-    const scalars = image.getPointData() && image.getPointData().getScalars();
-    if (!scalars) {
-      return;
-    }
+    // Since it is fine to not have scalar data in the new model
+    // const scalars = image.getPointData() && image.getPointData().getScalars();
+    // if (!scalars) {
+    //   return;
+    // }
 
     const vprop = actor.getProperty();
 
@@ -61,9 +62,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       );
     }
 
-    const numComp = scalars.getNumberOfComponents();
+    // const numComp = scalars.getNumberOfComponents();
+    const numIComps = 1; // useIndependentComps ? numComp : 1;
     const useIndependentComps = publicAPI.useIndependentComponents(vprop);
-    const numIComps = useIndependentComps ? numComp : 1;
 
     const scalarOpacityFunc = vprop.getScalarOpacity();
     const opTex =
@@ -228,11 +229,13 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       const previousTextureParameters =
         model.scalarTexture.getTextureParameters();
 
-      const dataType = image.getPointData().getScalars().getDataType();
-      const data = image.getPointData().getScalars().getData();
+      // const dataType = image.getPointData().getScalars().getDataType();
+      // const data = image.getPointData().getScalars().getData();
+
+      const dataType = 'Float32Array';
+      const data = [];
 
       let shouldReset = true;
-
       if (
         previousTextureParameters.dataType &&
         previousTextureParameters.dataType === dataType
@@ -248,24 +251,51 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       }
 
       if (shouldReset) {
-        model.scalarTexture.setOglNorm16Ext(
-          model.context.getExtension('EXT_texture_norm16')
-        );
-
+        const norm16Ext = model.context.getExtension('EXT_texture_norm16');
+        model.scalarTexture.setOglNorm16Ext(norm16Ext);
         model.scalarTexture.resetFormatAndType();
 
-        model.scalarTexture.create3DFilterableFromRaw(
-          dims[0],
-          dims[1],
-          dims[2],
-          numComp,
-          scalars.getDataType(),
-          scalars.getData(),
-          model.renderable.getPreferSizeOverAccuracy()
-        );
+        // set the new texture parameters
+        // model.scalarTexture.setTextureParameters({
+        //   width: dims[0],
+        //   height: dims[1],
+        //   depth: dims[2],
+        //   numComps: 1,
+        //   dataType,
+        //   data,
+        // });
+
+        // If preferSizeOverAccuracy is true or we're using a norm16 texture,
+        // we need to use the FromDataArray method to create the texture for scaling.
+        // Otherwise, we can use the FromRaw method.
+        if (
+          model.renderable.getPreferSizeOverAccuracy() ||
+          (norm16Ext && dataType === VtkDataTypes.UNSIGNED_SHORT) ||
+          dataType === VtkDataTypes.SHORT
+        ) {
+          model.scalarTexture.create3DFilterableFromDataArray(
+            dims[0],
+            dims[1],
+            dims[2],
+            scalars,
+            model.renderable.getPreferSizeOverAccuracy()
+          );
+        } else {
+          console.debug('i have already got created');
+          model.scalarTexture.create3DFromRaw(
+            dims[0],
+            dims[1],
+            dims[2],
+            1,
+            'Float32Array',
+            null
+          );
+        }
       } else {
-        model.scalarTexture.deactivate();
-        model.scalarTexture.update3DFromRaw(data);
+        // model.scalarTexture.deactivate();
+        // model.scalarTexture.update3DFromRaw(data);
+        debugger;
+        console.debug('i am running an update');
       }
 
       model.scalarTextureString = toString;

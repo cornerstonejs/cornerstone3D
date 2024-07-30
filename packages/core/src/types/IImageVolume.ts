@@ -72,7 +72,7 @@ interface IImageVolume {
   getScalarData(): PixelDataTypedArray;
 
   /** A voxel manager to manage the scalar data */
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager: VoxelManager<number>;
 
   convertToImageSlicesAndCache(): string[];
 

@@ -229,6 +229,7 @@ function createImage(
       }
 
       if (!alreadyTyped) {
+        debugger;
         setPixelDataType(imageFrame);
       }
 
@@ -418,8 +419,8 @@ function createImage(
 
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
       if (image.windowCenter === undefined || image.windowWidth === undefined) {
-        const minVoi = image.imageFrame.minAfterScale;
-        const maxVoi = image.imageFrame.maxAfterScale;
+        const minVoi = image.imageFrame.smallestPixelValue;
+        const maxVoi = image.imageFrame.largestPixelValue;
 
         image.windowWidth = maxVoi - minVoi;
         image.windowCenter = (maxVoi + minVoi) / 2;

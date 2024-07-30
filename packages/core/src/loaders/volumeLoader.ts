@@ -122,17 +122,17 @@ function createInternalVTKRepresentation(
   imageData.setOrigin(origin);
 
   // Add scalar data to 3D or 4D volume
-  if (volume.isDynamicVolume()) {
-    const scalarDataArrays = (<IDynamicImageVolume>(
-      volume
-    )).getScalarDataArrays();
+  // if (volume.isDynamicVolume()) {
+  //   const scalarDataArrays = (<IDynamicImageVolume>(
+  //     volume
+  //   )).getScalarDataArrays();
 
-    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
-  } else {
-    const scalarData = volume.getScalarData();
+  //   addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
+  // } else {
+  //   const scalarData = volume.getScalarData();
 
-    addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
-  }
+  //   addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
+  // }
 
   return imageData;
 }
@@ -355,7 +355,7 @@ export async function createAndCacheDerivedVolume(
 
   await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
-  performCacheOptimizationForVolume(derivedVolume);
+  // performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }
@@ -463,7 +463,7 @@ export function createLocalVolume(
   };
   cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
-  performCacheOptimizationForVolume(derivedVolume);
+  // performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
 }
@@ -525,7 +525,7 @@ export async function createAndCacheVolumeFromImages(
   // since we generated the volume from images, we can optimize the cache
   // by replacing the pixelData of the images with a view of the volume's
   // scalarData
-  performCacheOptimizationForVolume(volume);
+  // performCacheOptimizationForVolume(volume);
 
   const volumeLoadObject = {
     promise: Promise.resolve(volume),

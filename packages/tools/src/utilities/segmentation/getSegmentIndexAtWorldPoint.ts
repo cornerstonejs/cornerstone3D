@@ -119,10 +119,10 @@ export function getSegmentIndexAtWorldForLabelmap(
 
   const dimensions = imageData.getDimensions();
   const voxelManager = (imageData.voxelManager ||
-    utilities.VoxelManager.createVolumeVoxelManager(
+    utilities.VoxelManager.createVolumeVoxelManager({
       dimensions,
-      imageData.getPointData().getScalars().getData()
-    )) as utilities.VoxelManager<number>;
+      scalarData: imageData.getPointData().getScalars().getData(),
+    })) as utilities.VoxelManager<number>;
 
   const segmentIndex = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
 

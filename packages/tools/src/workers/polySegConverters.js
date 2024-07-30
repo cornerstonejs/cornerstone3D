@@ -143,7 +143,10 @@ const polySegConverters = {
     } = args;
 
     const segmentationVoxelManager =
-      utilities.VoxelManager.createVolumeVoxelManager(dimensions, scalarData);
+      utilities.VoxelManager.createVolumeVoxelManager({
+        dimensions,
+        scalarData,
+      });
 
     const imageData = vtkImageData.newInstance();
     imageData.setDimensions(dimensions);
@@ -243,10 +246,10 @@ const polySegConverters = {
     segmentationsInfo.forEach((segmentationInfo, referencedImageId) => {
       const { dimensions, scalarData, direction, spacing, origin } =
         segmentationInfo;
-      const manager = utilities.VoxelManager.createVolumeVoxelManager(
+      const manager = utilities.VoxelManager.createVolumeVoxelManager({
         dimensions,
-        scalarData
-      );
+        scalarData,
+      });
 
       const imageData = vtkImageData.newInstance();
       imageData.setDimensions(dimensions);
@@ -419,12 +422,13 @@ const polySegConverters = {
     // by looping into each voxel with pointInShapeCallback
     // and check if the voxel is inside any of the reconstructed
     // labelmaps
-
+    const { dimensions } = args;
+    const scalarData = targetImageData.getPointData().getScalars().getData();
     const segmentationVoxelManager =
-      utilities.VoxelManager.createVolumeVoxelManager(
-        args.dimensions,
-        targetImageData.getPointData().getScalars().getData()
-      );
+      utilities.VoxelManager.createVolumeVoxelManager({
+        dimensions,
+        scalarData,
+      });
 
     const outputVolumesInfo = results.map((result) => {
       const { data, dimensions, direction, origin, spacing } = result;
@@ -444,10 +448,10 @@ const polySegConverters = {
 
       volume.modified();
 
-      const voxelManager = utilities.VoxelManager.createVolumeVoxelManager(
+      const voxelManager = utilities.VoxelManager.createVolumeVoxelManager({
         dimensions,
-        data
-      );
+        scalarData: data,
+      });
 
       const extent = volume.getExtent(); // e.g., [0, 176, 0, 268, 0, 337] for dimensions of [177, 269, 338]
 

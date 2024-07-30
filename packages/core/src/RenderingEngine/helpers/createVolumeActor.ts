@@ -57,14 +57,14 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  const numberOfComponents = imageData
-    .getPointData()
-    .getScalars()
-    .getNumberOfComponents();
+  // const numberOfComponents = imageData
+  //   .getPointData()
+  //   .getScalars()
+  //   .getNumberOfComponents();
 
-  if (numberOfComponents === 3) {
-    volumeActor.getProperty().setIndependentComponents(false);
-  }
+  // if (numberOfComponents === 3) {
+  //   volumeActor.getProperty().setIndependentComponents(false);
+  // }
 
   await setDefaultVolumeVOI(volumeActor, imageVolume, useNativeDataType);
 

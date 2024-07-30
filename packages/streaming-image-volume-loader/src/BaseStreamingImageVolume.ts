@@ -208,9 +208,9 @@ export default class BaseStreamingImageVolume
   public successCallback(imageId: string, image) {
     const imageIdIndex = this.getImageIdIndex(imageId);
     const options = this.getLoaderImageOptions(imageId);
-    const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
+    // const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
 
-    handleArrayBufferLoad(scalarData, image, options);
+    // handleArrayBufferLoad(scalarData, image, options);
 
     const { scalingParameters } = image.preScale || {};
     const { imageQualityStatus } = image;
@@ -367,17 +367,17 @@ export default class BaseStreamingImageVolume
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
     const { rows, columns } = imagePlaneModule;
     const imageIdIndex = this.getImageIdIndex(imageId);
-    const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
-    if (!scalarData) {
-      return null;
-    }
-    const arrayBuffer = scalarData.buffer;
-    // Length of one frame in voxels: length
-    // Length of one frame in bytes: lengthInBytes
-    const { type, length, lengthInBytes } = getScalarDataType(
-      scalarData,
-      this.numFrames
-    );
+    // const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
+    // if (!scalarData) {
+    //   return null;
+    // }
+    // const arrayBuffer = scalarData.buffer;
+    // // Length of one frame in voxels: length
+    // // Length of one frame in bytes: lengthInBytes
+    // const { type, length, lengthInBytes } = getScalarDataType(
+    //   scalarData,
+    //   this.numFrames
+    // );
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
 
@@ -442,11 +442,11 @@ export default class BaseStreamingImageVolume
         // volume without shared array buffer because the target is now an empty
         // 300-500MB volume array buffer. Instead the volume should be progressively
         // set in the main thread.
-        arrayBuffer:
-          arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-        offset: frameIndex * lengthInBytes,
-        length,
-        type,
+        // arrayBuffer:
+        //   arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
+        // offset: frameIndex * lengthInBytes,
+        // length,
+        // type,
         rows,
         columns,
       },
