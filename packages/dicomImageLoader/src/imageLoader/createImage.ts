@@ -17,6 +17,7 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
+import { LegacyMetadataModules } from './legacyMetadataModules';
 
 let lastImageIdDrawn = '';
 
@@ -102,12 +103,14 @@ function createImage(
   }
 
   const { cornerstone } = external;
-  const { MetadataModules } = cornerstone.Enums;
+  const MetadataModules =
+    cornerstone.Enums?.MetadataModules || LegacyMetadataModules;
+
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
-  imageFrame.decodeLevel = options.decodeLevel;
+  (imageFrame as any).decodeLevel = options.decodeLevel;
 
-  options.allowFloatRendering = cornerstone.canRenderFloatTextures();
+  options.allowFloatRendering = cornerstone.canRenderFloatTextures?.() || false;
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
