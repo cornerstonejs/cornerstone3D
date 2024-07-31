@@ -9,7 +9,6 @@ import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoo
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 
 import { getBoundingBoxAroundShapeWorld } from '../utilities/boundingBox';
-import { pointInShapeCallback } from '../utilities';
 import {
   containsPoint,
   getAABB,
@@ -25,7 +24,7 @@ import { isPlaneIntersectingAABB } from '../utilities/planar';
  * how these methods are used.
  *
  * See also the webworker docs at packages/docs/docs/concepts/cornerstone-core/web-worker.md
- * to learn more about how to use webworkers in the context of Cornerstone.
+ * to learn more about how to use web-workers in the context of Cornerstone.
  */
 const polySegConverters = {
   /**

@@ -1,5 +1,4 @@
 import type { InitializedOperationData } from '../BrushStrategy';
-import pointInShapeCallback from '../../../../utilities/pointInShapeCallback';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 
 /**

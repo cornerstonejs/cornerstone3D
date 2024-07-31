@@ -52,7 +52,7 @@ import {
 } from '../../utilities/getCalibratedUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInEllipse } from '../../utilities/math/ellipse';
-import { pointInShapeCallback, roundNumber } from '../../utilities';
+import { roundNumber } from '../../utilities';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 import cloneDeep from 'lodash.clonedeep';

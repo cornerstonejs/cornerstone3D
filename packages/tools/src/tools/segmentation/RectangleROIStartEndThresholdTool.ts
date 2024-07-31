@@ -44,7 +44,7 @@ import {
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { pointInShapeCallback, roundNumber } from '../../utilities/';
+import { roundNumber } from '../../utilities/';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';

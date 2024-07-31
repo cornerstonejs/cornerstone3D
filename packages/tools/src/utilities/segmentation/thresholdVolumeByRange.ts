@@ -1,5 +1,4 @@
 import { Types } from '@cornerstonejs/core';
-import { pointInShapeCallback } from '../../utilities';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { BoundsIJK } from '../../types';
 import {

@@ -38,7 +38,6 @@ import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
-import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import calculatePerimeter from '../../utilities/contours/calculatePerimeter';

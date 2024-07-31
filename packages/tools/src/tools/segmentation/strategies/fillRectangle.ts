@@ -5,7 +5,6 @@ import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
 } from '../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../utilities';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { LabelmapToolOperationData } from '../../../types';
 import { getStrategyData } from './utils/getStrategyData';

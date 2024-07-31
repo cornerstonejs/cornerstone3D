@@ -50,7 +50,6 @@ import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes'
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { pointInShapeCallback } from '../../utilities/';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;

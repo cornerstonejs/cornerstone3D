@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import cache from '../cache';
 import type {
   BoundsIJK,
@@ -5,9 +6,11 @@ import type {
   PixelDataTypedArray,
   IImage,
   RGB,
+  CPUImageData,
 } from '../types';
 import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 /**
  * Have a default size for cached RLE encoded images.  This is hard to guess
@@ -29,7 +32,7 @@ export default class VoxelManager<T> {
 
   public map: Map<number, T> | RLEVoxelMap<T>;
   public sourceVoxelManager: VoxelManager<T>;
-  public isInObject: (pointIPS, pointIJK) => boolean;
+  public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
   public numComps = 1;
 
@@ -153,63 +156,183 @@ export default class VoxelManager<T> {
 
   /**
    * Iterates over the voxels in the VoxelManager and applies a callback function to each voxel.
+   * It can operate on IJK and LPS coordinate systems, and it can be limited to a specific region
+   * of the data if the isInObject function is provided.
    *
-   * @param callback - A function to be called for each voxel. It receives an object with:
-   *   - value: The value of the voxel
-   *   - index: The linear index of the voxel
-   *   - pointIJK: The IJK coordinates of the voxel as a Point3
+   * For the LPS calculations, both direction and spacing should be provided.
    *
-   * @param options - Optional parameters to control the iteration:
-   *   - boundsIJK: A BoundsIJK object to limit the iteration to a specific region
-   *   - isWithinObject: A function that determines if a voxel should be processed.
-   *     It receives the same object as the callback and should return a boolean.
+   * If the boundsIJK is not provided, the iteration will be over the entire volume/data
+   *
    *
    * If the VoxelManager is backed by a Map, it will only iterate over the stored values.
    * Otherwise, it will iterate over all voxels within the specified or default bounds.
    */
   public forEach = (
-    callback: (args: { value: any; index: number; pointIJK: Point3 }) => void,
+    callback: (args: {
+      value: any;
+      index: number;
+      pointIJK: Point3;
+      pointLPS: Point3;
+    }) => void,
     options?: {
       boundsIJK?: BoundsIJK;
-      isWithinObject?: (args: {
-        value: any;
-        index: number;
-        pointIJK: Point3;
-      }) => boolean;
+      isInObject?: (pointLPS, pointIJK) => boolean;
+      returnPoints?: boolean;
+      voxelToWorldMapping?: {
+        imageData: vtkImageData | CPUImageData;
+      };
     }
   ) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
-    const { isWithinObject } = options || {};
+    const isInObject = options.isInObject || this.isInObject || (() => true);
+    const returnPoints = options.returnPoints || false;
+
+    const useLPSTransform = options?.voxelToWorldMapping?.imageData;
+
+    const iMin = boundsIJK[0][0];
+    const iMax = boundsIJK[0][1];
+    const jMin = boundsIJK[1][0];
+    const jMax = boundsIJK[1][1];
+    const kMin = boundsIJK[2][0];
+    const kMax = boundsIJK[2][1];
+
+    const pointsInShape = [];
+
+    if (useLPSTransform) {
+      const { imageData } = options.voxelToWorldMapping;
+      const direction = imageData.getDirection();
+      const rowCosines = direction.slice(0, 3);
+      const columnCosines = direction.slice(3, 6);
+      const scanAxisNormal = direction.slice(6, 9);
+
+      const spacing = imageData.getSpacing();
+      const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing;
+
+      // @ts-ignore will
+
+      const start = vec3.fromValues(iMin, jMin, kMin);
+
+      // @ts-ignore will be fixed in vtk-master
+      const worldPosStart = imageData.indexToWorld(start);
+
+      const rowStep = vec3.fromValues(
+        rowCosines[0] * rowSpacing,
+        rowCosines[1] * rowSpacing,
+        rowCosines[2] * rowSpacing
+      );
+
+      const columnStep = vec3.fromValues(
+        columnCosines[0] * columnSpacing,
+        columnCosines[1] * columnSpacing,
+        columnCosines[2] * columnSpacing
+      );
+
+      const scanAxisStep = vec3.fromValues(
+        scanAxisNormal[0] * scanAxisSpacing,
+        scanAxisNormal[1] * scanAxisSpacing,
+        scanAxisNormal[2] * scanAxisSpacing
+      );
+
+      const currentPos = vec3.clone(worldPosStart) as Point3;
+
+      for (let k = kMin; k <= kMax; k++) {
+        const startPosJ = vec3.clone(currentPos);
+
+        for (let j = jMin; j <= jMax; j++) {
+          const startPosI = vec3.clone(currentPos);
+
+          for (let i = iMin; i <= iMax; i++) {
+            const pointIJK = [i, j, k] as Point3;
+
+            // The current world position (pointLPS) is now in currentPos
+            if (isInObject(currentPos, pointIJK)) {
+              const index = this.toIndex(pointIJK);
+
+              const value = this._get(index);
+
+              if (returnPoints) {
+                pointsInShape.push({
+                  value,
+                  index,
+                  pointIJK,
+                  pointLPS: currentPos.slice(),
+                });
+              }
+
+              if (callback) {
+                callback({ value, index, pointIJK, pointLPS: currentPos });
+              }
+            }
+
+            // Increment currentPos by rowStep for the next iteration
+            vec3.add(currentPos, currentPos, rowStep);
+          }
+
+          // Reset currentPos to the start of the next J line and increment by columnStep
+          vec3.copy(currentPos, startPosI);
+          vec3.add(currentPos, currentPos, columnStep);
+        }
+
+        // Reset currentPos to the start of the next K slice and increment by scanAxisStep
+        vec3.copy(currentPos, startPosJ);
+        vec3.add(currentPos, currentPos, scanAxisStep);
+      }
+
+      return pointsInShape;
+    }
+
+    // We don't need the complex LPS calculations and we can just iterate over the data
+    // in the IJK coordinate system
+
     if (this.map) {
       // Optimize this for only values in the map
       for (const index of this.map.keys()) {
         const pointIJK = this.toIJK(index);
-        const value = this._get(index);
-        const callbackArguments = { value, index, pointIJK };
-        if (isWithinObject?.(callbackArguments) === false) {
+        if (isInObject?.(null, pointIJK) === false) {
           continue;
         }
-        callback(callbackArguments);
+        const value = this._get(index);
+
+        if (returnPoints) {
+          pointsInShape.push({
+            value,
+            index,
+            pointIJK,
+            pointLPS: null,
+          });
+        }
+
+        callback({ value, index, pointIJK, pointLPS: null });
       }
+
+      return pointsInShape;
     } else {
-      for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      for (let k = kMin; k <= kMax; k++) {
         const kIndex = k * this.frameSize;
-        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        for (let j = jMin; j <= jMax; j++) {
           const jIndex = kIndex + j * this.width;
-          for (
-            let i = boundsIJK[0][0], index = jIndex + i;
-            i <= boundsIJK[0][1];
-            i++, index++
-          ) {
+          for (let i = iMin, index = jIndex + i; i <= iMax; i++, index++) {
             const value = this.getAtIndex(index);
-            const callbackArguments = { value, index, pointIJK: [i, j, k] };
-            if (isWithinObject?.(callbackArguments) === false) {
+            const pointIJK = [i, j, k];
+
+            if (isInObject(null, pointIJK) === false) {
               continue;
             }
-            callback(callbackArguments);
+
+            if (returnPoints) {
+              pointsInShape.push({
+                value,
+                index,
+                pointIJK,
+                pointLPS: null,
+              });
+            }
+            callback({ value, index, pointIJK: [i, j, k], pointLPS: null });
           }
         }
       }
+
+      return pointsInShape;
     }
   };
 

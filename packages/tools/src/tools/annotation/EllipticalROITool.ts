@@ -51,7 +51,6 @@ import {
 import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { pointInShapeCallback } from '../../utilities/';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';

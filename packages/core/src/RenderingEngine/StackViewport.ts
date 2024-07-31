@@ -456,7 +456,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
-      scalarData: vtkImageData.getPointData().getScalars().getData(),
+      get scalarData() {
+        return this.csImage.voxelManager.getScalarData();
+      },
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: this.modality,
