@@ -92,9 +92,10 @@ function cornerstoneStreamingImageVolumeLoader(
       imageIds,
     } = volumeProps;
 
-    const voxelManager = csUtils.VoxelManager.createStreamingVolumeVoxelManager(
-      { dimensions, imageIds }
-    );
+    const voxelManager = csUtils.VoxelManager.createImageVolumeVoxelManager({
+      dimensions,
+      imageIds,
+    });
 
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties

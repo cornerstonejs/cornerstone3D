@@ -1407,21 +1407,21 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const volume = cache.getVolume(volumeId);
 
     const vtkImageData = actor.getMapper().getInputData();
+
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
-      // scalarData: vtkImageData.getPointData().getScalars()?.isDeleted()
-      //   ? null
-      //   : vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: volume?.metadata?.Modality,
         FrameOfReferenceUID: volume?.metadata?.FrameOfReferenceUID,
       },
+      // scalarData: volume.voxelManager.getScalarData(),
       scaling: volume?.scaling,
       hasPixelSpacing: true,
+      voxelManager: volume?.voxelManager,
     };
   }
 

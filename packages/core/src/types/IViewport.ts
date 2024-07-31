@@ -7,6 +7,7 @@ import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
 import BoundsLPS from './BoundsLPS';
+import type { mat4 } from 'gl-matrix';
 
 /**
  * Specifies what view to get a reference for.
@@ -360,6 +361,18 @@ interface IViewport {
   getCurrentImageIdIndex(): number;
   /** gets the positional slice location in the view, similar to scrollbar, the top image is 0, the bottom is getNumberOfSlices - 1 */
   getSliceIndex(): number;
+
+  /**
+   * Gets the slice view information
+   */
+  getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  };
   /**
    * Gets a referenced image url of some sort - could be a real image id, or
    * could be a URL with parameters. Regardless it refers to the currently displaying

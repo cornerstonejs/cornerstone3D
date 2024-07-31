@@ -143,7 +143,7 @@ const polySegConverters = {
     } = args;
 
     const segmentationVoxelManager =
-      utilities.VoxelManager.createVolumeVoxelManager({
+      utilities.VoxelManager.createScalarVolumeVoxelManager({
         dimensions,
         scalarData,
       });
@@ -246,7 +246,7 @@ const polySegConverters = {
     segmentationsInfo.forEach((segmentationInfo, referencedImageId) => {
       const { dimensions, scalarData, direction, spacing, origin } =
         segmentationInfo;
-      const manager = utilities.VoxelManager.createVolumeVoxelManager({
+      const manager = utilities.VoxelManager.createScalarVolumeVoxelManager({
         dimensions,
         scalarData,
       });
@@ -425,7 +425,7 @@ const polySegConverters = {
     const { dimensions } = args;
     const scalarData = targetImageData.getPointData().getScalars().getData();
     const segmentationVoxelManager =
-      utilities.VoxelManager.createVolumeVoxelManager({
+      utilities.VoxelManager.createScalarVolumeVoxelManager({
         dimensions,
         scalarData,
       });
@@ -448,10 +448,11 @@ const polySegConverters = {
 
       volume.modified();
 
-      const voxelManager = utilities.VoxelManager.createVolumeVoxelManager({
-        dimensions,
-        scalarData: data,
-      });
+      const voxelManager =
+        utilities.VoxelManager.createScalarVolumeVoxelManager({
+          dimensions,
+          scalarData: data,
+        });
 
       const extent = volume.getExtent(); // e.g., [0, 176, 0, 268, 0, 337] for dimensions of [177, 269, 338]
 

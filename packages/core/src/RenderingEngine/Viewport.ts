@@ -3,7 +3,7 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import { vec2, vec3 } from 'gl-matrix';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
@@ -44,6 +44,8 @@ import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
 import { InterpolationType } from '../enums';
+import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
+import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -1108,6 +1110,10 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
+  public getImageData(): any {
+    throw new Error('Not implemented');
+  }
+
   /**
    * Gets a referenced image url of some sort - could be a real image id, or
    * could be a URL with parameters. Regardless it refers to the currently displaying
@@ -1678,7 +1684,7 @@ class Viewport implements IViewport {
    * specifying what image s displayed.  All of this information is available
    * externally, but this method combines the parts of this that are appropriate
    * for remember or applying to other views, without necessarily needing to know
-   * what all the atributes are.  That differs from methods like getCamera which
+   * what all the attributes are.  That differs from methods like getCamera which
    * fetch exact view details that are not likely to be identical between viewports
    * as they change sizes or apply to different images.
    *

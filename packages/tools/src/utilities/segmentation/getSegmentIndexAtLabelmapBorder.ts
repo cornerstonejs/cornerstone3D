@@ -87,7 +87,7 @@ export function getSegmentIndexAtLabelmapBorder(
 
   const dimensions = imageData.getDimensions();
   const voxelManager = (imageData.voxelManager ||
-    utilities.VoxelManager.createVolumeVoxelManager({
+    utilities.VoxelManager.createScalarVolumeVoxelManager({
       dimensions,
       scalarData: imageData.getPointData().getScalars().getData(),
     })) as utilities.VoxelManager<number>;

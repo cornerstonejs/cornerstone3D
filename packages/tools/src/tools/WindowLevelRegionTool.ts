@@ -75,7 +75,7 @@ class WindowLevelRegionTool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
@@ -146,8 +146,6 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const { renderingEngine } = getEnabledElement(element);
-
     this.editData = null;
     this.isDrawing = false;
 
@@ -196,8 +194,6 @@ class WindowLevelRegionTool extends AnnotationTool {
     points[2] = topLeftWorld;
 
     annotation.invalidated = true;
-
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
@@ -333,7 +329,6 @@ class WindowLevelRegionTool extends AnnotationTool {
     top = clip(top, 0, imageData.height);
     width = Math.floor(Math.min(width, Math.abs(imageData.width - left)));
     height = Math.floor(Math.min(height, Math.abs(imageData.height - top)));
-
     // Get the pixel data in the rectangular region
     const pixelLuminanceData = windowLevel.getLuminanceFromRegion(
       imageData,

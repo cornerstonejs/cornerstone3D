@@ -1,3 +1,4 @@
+import cache from '../cache';
 import type {
   BoundsIJK,
   Point3,
@@ -41,6 +42,7 @@ export default class VoxelManager<T> {
   frameSize: number;
   _get: (index: number) => T;
   _set: (index: number, v: T) => boolean | void;
+  _getConstructor?: () => PixelDataTypedArray;
 
   /**
    * Creates a generic voxel value accessor, with access to the values
@@ -63,6 +65,7 @@ export default class VoxelManager<T> {
 
   /**
    * Gets the voxel value at position i,j,k.
+   * This method should be used in favor of getAtIJKPoint when performance is a concern.
    */
   public getAtIJK = (i, j, k) => {
     const index = this.toIndex([i, j, k]);
@@ -72,6 +75,8 @@ export default class VoxelManager<T> {
   /**
    * Sets the voxel value at position i,j,k and records the slice
    * that was modified.
+   *
+   * This method should be used in favor of setAtIJKPoint when performance is a concern.
    */
   public setAtIJK = (i: number, j: number, k: number, v) => {
     const index = this.toIndex([i, j, k]);
@@ -80,37 +85,6 @@ export default class VoxelManager<T> {
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
     }
   };
-
-  /**
-   * Adds a point as an array or an index value to the set of points
-   * associated with this voxel value.
-   * Can be used for tracking clicked points or other modified values.
-   */
-  public addPoint(point: Point3 | number) {
-    const index = Array.isArray(point)
-      ? point[0] + this.width * point[1] + this.frameSize * point[2]
-      : point;
-    if (!this.points) {
-      this.points = new Set<number>();
-    }
-    this.points.add(index);
-  }
-
-  /**
-   * Gets the list of added points as an array of Point3 values
-   */
-  public getPoints(): Point3[] {
-    return this.points
-      ? [...this.points].map((index) => this.toIJK(index))
-      : [];
-  }
-
-  /**
-   * Gets the points added using addPoint as an array of indices.
-   */
-  public getPointIndices(): number[] {
-    return this.points ? [...this.points] : [];
-  }
 
   /**
    * Gets the voxel value at the given Point3 location.
@@ -169,9 +143,32 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Iterate over the points within the bounds, or the modified points if recorded.
+   * Iterates over the voxels in the VoxelManager and applies a callback function to each voxel.
+   *
+   * @param callback - A function to be called for each voxel. It receives an object with:
+   *   - value: The value of the voxel
+   *   - index: The linear index of the voxel
+   *   - pointIJK: The IJK coordinates of the voxel as a Point3
+   *
+   * @param options - Optional parameters to control the iteration:
+   *   - boundsIJK: A BoundsIJK object to limit the iteration to a specific region
+   *   - isWithinObject: A function that determines if a voxel should be processed.
+   *     It receives the same object as the callback and should return a boolean.
+   *
+   * If the VoxelManager is backed by a Map, it will only iterate over the stored values.
+   * Otherwise, it will iterate over all voxels within the specified or default bounds.
    */
-  public forEach = (callback, options?) => {
+  public forEach = (
+    callback: (args: { value: any; index: number; pointIJK: Point3 }) => void,
+    options?: {
+      boundsIJK?: BoundsIJK;
+      isWithinObject?: (args: {
+        value: any;
+        index: number;
+        pointIJK: Point3;
+      }) => boolean;
+    }
+  ) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const { isWithinObject } = options || {};
     if (this.map) {
@@ -252,12 +249,95 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Gets the pixel data for the given array.
+   * Adds a point as an array or an index value to the set of points
+   * associated with this voxel value.
+   * Can be used for tracking clicked points or other modified values.
    */
-  public getPixelData: (
-    sliceIndex?: number,
-    pixelData?: PixelDataTypedArray
-  ) => PixelDataTypedArray;
+  public addPoint(point: Point3 | number) {
+    const index = Array.isArray(point)
+      ? point[0] + this.width * point[1] + this.frameSize * point[2]
+      : point;
+    if (!this.points) {
+      this.points = new Set<number>();
+    }
+    this.points.add(index);
+  }
+
+  /**
+   * Gets the list of added points as an array of Point3 values
+   */
+  public getPoints(): Point3[] {
+    return this.points
+      ? [...this.points].map((index) => this.toIJK(index))
+      : [];
+  }
+
+  /**
+   * Gets the points added using addPoint as an array of indices.
+   */
+  public getPointIndices(): number[] {
+    return this.points ? [...this.points] : [];
+  }
+
+  /**
+   * Retrieves the slice data for a given slice view.
+   *
+   * @param sliceViewInfo - An object containing information about the slice view.
+   * @param sliceViewInfo.sliceIndex - The index of the slice.
+   * @param sliceViewInfo.slicePlane - The axis of the slice (0 for YZ plane, 1 for XZ plane, 2 for XY plane).
+   * @returns A typed array containing the pixel data for the specified slice.
+   * @throws Error if an invalid slice axis is provided.
+   */
+  public getSliceData(sliceViewInfo: {
+    sliceIndex: number;
+    slicePlane: number;
+  }): PixelDataTypedArray {
+    const { sliceIndex, slicePlane } = sliceViewInfo;
+    const [width, height, depth] = this.dimensions;
+
+    let sliceSize: number;
+    // Todo: fix the default
+    const SliceDataConstructor = (this._getConstructor?.() ||
+      Float32Array) as PixelDataTypedArray;
+
+    let sliceData: PixelDataTypedArray;
+    switch (slicePlane) {
+      case 0: // YZ plane
+        sliceSize = height * depth;
+        sliceData = new SliceDataConstructor(sliceSize);
+        for (let i = 0; i < height; i++) {
+          for (let j = 0; j < depth; j++) {
+            const index = sliceIndex + i * width + j * this.frameSize;
+            sliceData[i * depth + j] = this._get(index);
+          }
+        }
+        break;
+      case 1: // XZ plane
+        sliceSize = width * depth;
+        sliceData = new SliceDataConstructor(sliceSize);
+        for (let i = 0; i < width; i++) {
+          for (let j = 0; j < depth; j++) {
+            const index = i + sliceIndex * width + j * this.frameSize;
+            sliceData[i + j * width] = this._get(index);
+          }
+        }
+        break;
+      case 2: {
+        // XY plane
+        sliceSize = width * height;
+        sliceData = new SliceDataConstructor(sliceSize);
+        const startIndex = sliceIndex * this.frameSize;
+        for (let i = 0; i < sliceSize; i++) {
+          sliceData[i] = this._get(startIndex + i);
+        }
+        break;
+      }
+      default:
+        throw new Error('Invalid slice axis');
+    }
+
+    return sliceData;
+  }
 
   /**
    * Creates a voxel manager backed by an array of scalar data having the
@@ -265,7 +345,7 @@ export default class VoxelManager<T> {
    * Note that the number of components can be larger than three, in case data
    * is stored in additional pixels.  However, the return type is still RGB.
    */
-  public static createRGBVolumeVoxelManager({
+  public static createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
     numComponents,
@@ -294,26 +374,73 @@ export default class VoxelManager<T> {
     return voxels;
   }
 
-  public static createStreamingVolumeVoxelManager({
+  /**
+   * Creates a VoxelManager for an image volume. which are those volumes
+   * that are composed of multiple images, one for each slice.
+   * @param dimensions - The dimensions of the image volume.
+   * @param imageIds - The array of image IDs.
+   * @returns A VoxelManager instance for the image volume.
+   */
+  public static createImageVolumeVoxelManager({
     dimensions,
     imageIds,
   }: {
     dimensions: Point3;
     imageIds: string[];
   }): VoxelManager<number> {
-    const map = new Map<number, number>();
+    const pixelsPerSlice = dimensions[0] * dimensions[1];
+
+    function getPixelInfo(index, imageIds, cache, pixelsPerSlice) {
+      const sliceIndex = Math.floor(index / pixelsPerSlice);
+      const imageId = imageIds[sliceIndex];
+      const image = cache.getImage(imageId);
+
+      if (!image) {
+        // Todo: better handle this case
+        throw new Error(`Image not found for imageId: ${imageId}`);
+      }
+
+      const pixelData = image.getPixelData();
+      const pixelIndex = index % pixelsPerSlice;
+
+      return { pixelData, pixelIndex };
+    }
+
+    function getVoxelValue(index, imageIds, cache, pixelsPerSlice) {
+      const { pixelData, pixelIndex } = getPixelInfo(
+        index,
+        imageIds,
+        cache,
+        pixelsPerSlice
+      );
+      return pixelData[pixelIndex];
+    }
+
+    function setVoxelValue(index, v, imageIds, cache, pixelsPerSlice) {
+      const { pixelData, pixelIndex } = getPixelInfo(
+        index,
+        imageIds,
+        cache,
+        pixelsPerSlice
+      );
+
+      if (pixelData[pixelIndex] === v) {
+        return false;
+      }
+
+      pixelData[pixelIndex] = v;
+      return true;
+    }
 
     const voxelManager = new VoxelManager(
       dimensions,
-      (index) => map.get(index),
-      (index, v) => map.set(index, v)
+      (index) => getVoxelValue(index, imageIds, cache, pixelsPerSlice),
+      (index, v) => setVoxelValue(index, v, imageIds, cache, pixelsPerSlice)
     );
-    voxelManager.map = map;
 
-    // we are overriding the getScalarData method to return the scalar data
-    // based on imageIds
-    voxelManager.getScalarData = () => {
-      debugger;
+    voxelManager._getConstructor = () => {
+      return getPixelInfo(0, imageIds, cache, pixelsPerSlice).pixelData
+        .constructor;
     };
 
     return voxelManager;
@@ -322,8 +449,12 @@ export default class VoxelManager<T> {
   /**
    *  Creates a volume value accessor, based on a volume scalar data instance.
    * This also works for image value accessors for single plane (k=0) accessors.
+   *
+   * This should be deprecated in favor of the createImageVolumeVoxelManager
+   * method since that one does not need to know the number of scalar data and
+   * it creates them on the fly.
    */
-  public static createVolumeVoxelManager({
+  public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
     numComponents = 0,
@@ -349,13 +480,13 @@ export default class VoxelManager<T> {
       }
     }
     if (numComponents > 1) {
-      return VoxelManager.createRGBVolumeVoxelManager({
+      return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
         numComponents,
       });
     }
-    return VoxelManager.createNumberVolumeVoxelManager({
+    return VoxelManager._createNumberVolumeVoxelManager({
       dimensions,
       scalarData,
     });
@@ -365,7 +496,7 @@ export default class VoxelManager<T> {
    * Creates a volume voxel manager that works on single numeric values stored
    * in an array like structure of numbers.
    */
-  public static createNumberVolumeVoxelManager({
+  private static _createNumberVolumeVoxelManager({
     dimensions,
     scalarData,
   }: {
@@ -510,7 +641,7 @@ export default class VoxelManager<T> {
       // This case means there is enough scalar data for at least one image,
       // with 1 or more components, and creates a volume voxel manager
       // that can lookup the data
-      image.voxelManager = VoxelManager.createVolumeVoxelManager({
+      image.voxelManager = VoxelManager.createScalarVolumeVoxelManager({
         dimensions: [width, height, 1],
         scalarData,
       });

@@ -33,7 +33,7 @@ export function fillStackSegmentationWithMockData({
     const image = cache.getImage(segmentationImageIds[z]);
     const voxelManager =
       image.voxelManager ||
-      utilities.VoxelManager.createVolumeVoxelManager({
+      utilities.VoxelManager.createScalarVolumeVoxelManager({
         dimensions: [columns, rows, 1],
         scalarData: image.getPixelData(),
       });

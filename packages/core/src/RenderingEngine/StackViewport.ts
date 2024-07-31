@@ -2880,6 +2880,27 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   };
 
   /**
+   * Returns information about the current slice view.
+   * @returns An object containing the slice index and slice axis.
+   * @throws Error if the view is oblique.
+   */
+  public getSliceInfo(): {
+    sliceIndex: number;
+    slicePlane: number;
+    width: number;
+    height: number;
+  } {
+    const sliceIndex = this.getSliceIndex();
+    const { dimensions } = this.getImageData();
+    return {
+      width: dimensions[0],
+      height: dimensions[1],
+      sliceIndex,
+      slicePlane: 2,
+    };
+  }
+
+  /**
    * Checks to see if this target is or could be shown in this viewport
    */
   public isReferenceViewable(
