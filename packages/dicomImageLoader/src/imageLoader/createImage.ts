@@ -229,7 +229,6 @@ function createImage(
       }
 
       if (!alreadyTyped) {
-        debugger;
         setPixelDataType(imageFrame);
       }
 

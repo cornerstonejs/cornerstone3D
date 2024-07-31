@@ -403,16 +403,21 @@ class Cache implements ICache {
     imageLoadObject: IImageLoadObject
   ): Promise<any> {
     if (imageId === undefined) {
+      console.error('putImageLoadObject: imageId must not be undefined');
       throw new Error('putImageLoadObject: imageId must not be undefined');
     }
 
     if (imageLoadObject.promise === undefined) {
+      console.error(
+        'putImageLoadObject: imageLoadObject.promise must not be undefined'
+      );
       throw new Error(
         'putImageLoadObject: imageLoadObject.promise must not be undefined'
       );
     }
 
     if (this._imageCache.has(imageId)) {
+      console.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
       throw new Error('putImageLoadObject: imageId already in cache');
     }
 
@@ -420,6 +425,9 @@ class Cache implements ICache {
       imageLoadObject.cancelFn &&
       typeof imageLoadObject.cancelFn !== 'function'
     ) {
+      console.error(
+        'putImageLoadObject: imageLoadObject.cancel must be a function'
+      );
       throw new Error(
         'putImageLoadObject: imageLoadObject.cancel must be a function'
       );
@@ -434,13 +442,14 @@ class Cache implements ICache {
       sizeInBytes: 0,
     };
 
-    this._imageCache.set(imageId, cachedImage);
-
     return imageLoadObject.promise
       .then((image: IImage) => {
+        // For some reason we need to put it here after the rework of volumes
+        this._imageCache.set(imageId, cachedImage);
         this._putImageCommon(imageId, image, cachedImage);
       })
       .catch((error) => {
+        console.error(`Error caching image ${imageId}:`, error);
         this._imageCache.delete(imageId);
         throw error;
       });

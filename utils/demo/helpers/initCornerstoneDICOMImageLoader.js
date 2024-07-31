@@ -23,7 +23,7 @@ export default function initCornerstoneDICOMImageLoader() {
     cornerstone,
     dicomParser,
     useWebWorkers: true,
-    maxWebWorkers,
+    maxWebWorkers: 1,
     decodeConfig: {
       convertFloatPixelDataToInt: false,
       use16BitDataType: preferSizeOverAccuracy || useNorm16Texture,

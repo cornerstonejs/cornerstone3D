@@ -446,11 +446,10 @@ export default class BaseStreamingImageVolume
         //   arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
         // offset: frameIndex * lengthInBytes,
         // length,
-        // type,
+        type: 'Float32Array',
         rows,
         columns,
       },
-      skipCreateImage: true,
       allowFloatRendering,
       preScale: {
         enabled: this.isPreScaled,
@@ -463,7 +462,7 @@ export default class BaseStreamingImageVolume
       requestType: requestTypeDefault,
       transferSyntaxUID,
       // The loader is used to load the image into the cache
-      loader: imageLoader.loadImage,
+      // loader: imageLoader.loadAndCacheImage,
       additionalDetails: {
         imageId,
         imageIdIndex,
@@ -483,7 +482,7 @@ export default class BaseStreamingImageVolume
     }
 
     const uncompressedIterator = ProgressiveIterator.as(
-      imageLoader.loadImage(imageId, options)
+      imageLoader.loadAndCacheImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
       // scalarData is the volume container we are progressively loading into

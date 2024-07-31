@@ -105,17 +105,11 @@ export class ImageVolume implements IImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
+    this.vtkOpenGLTexture.setVolumeId(volumeId);
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
 
     this.voxelManager = voxelManager;
-
-    this.voxelManager.getScalarData = () => {
-      // we need to accumulate the scalar data from the image caches since
-      // we don't have a scalar data anymore in the volume object for performance
-      // reasons
-      debugger;
-    };
 
     if (imageData) {
       this.imageData = imageData;
@@ -217,6 +211,10 @@ export class ImageVolume implements IImageVolume {
    */
   public getImageIdIndex(imageId: string): number {
     return this._imageIdsIndexMap.get(imageId);
+  }
+
+  public getImageIdByIndex(imageIdIndex: number): string {
+    return this._imageIds[imageIdIndex];
   }
 
   /**

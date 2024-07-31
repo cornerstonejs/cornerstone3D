@@ -250,16 +250,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         model.scalarTexture.setOglNorm16Ext(norm16Ext);
         model.scalarTexture.resetFormatAndType();
 
-        // set the new texture parameters
-        // model.scalarTexture.setTextureParameters({
-        //   width: dims[0],
-        //   height: dims[1],
-        //   depth: dims[2],
-        //   numComps: 1,
-        //   dataType,
-        //   data,
-        // });
-
         model.scalarTexture.setTextureParameters({
           width: dims[0],
           height: dims[1],
@@ -284,7 +274,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             model.renderable.getPreferSizeOverAccuracy()
           );
         } else {
-          console.debug('i have already got created');
           model.scalarTexture.create3DFromRaw(
             dims[0],
             dims[1],
@@ -295,8 +284,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           );
         }
       } else {
-        // model.scalarTexture.deactivate();
-        // model.scalarTexture.update3DFromRaw(data);
+        model.scalarTexture.deactivate();
+        model.scalarTexture.update3DFromRaw();
       }
 
       model.scalarTextureString = toString;
