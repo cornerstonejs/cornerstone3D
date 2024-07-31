@@ -1799,7 +1799,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
       isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
       (!this.useNativeDataType ||
-        dataType === image.getPixelData().constructor.name)
+        dataType === image.voxelManager.getScalarData().constructor.name)
     );
   }
 
@@ -1859,7 +1859,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           return;
         }
 
-        const pixelData = image.getPixelData();
+        const pixelData = image.voxelManager.getScalarData();
 
         // handle the case where the pixelData is a Float32Array
         // CPU path cannot handle it, it should be converted to Uint16Array
@@ -2176,7 +2176,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._cpuFallbackEnabledElement.metadata = {
       ...metadata,
     };
-    this.cpuImagePixelData = image.getPixelData();
+    this.cpuImagePixelData = image.voxelManager.getScalarData();
 
     const viewportSettingToUse = Object.assign(
       {},
@@ -2226,7 +2226,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         direction,
         spacing,
         numComps,
-        pixelArray: image.getPixelData(),
+        pixelArray: image.voxelManager.getScalarData(),
       });
 
       const imageActor = this.createActorMapper(imagedata);
@@ -2336,7 +2336,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
 
-    const pixelArray = image.getPixelData();
+    const pixelArray = image.voxelManager.getScalarData();
     this._createVTKImageData({
       origin,
       direction,

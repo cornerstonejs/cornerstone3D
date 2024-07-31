@@ -104,7 +104,7 @@ function addVolumeSegmentIndices(keySet, segmentationId) {
 function addImageSegmentIndices(keySet, imageIds) {
   imageIds.forEach((segmentationImageId) => {
     const image = cache.getImage(segmentationImageId);
-    const scalarData = image.getPixelData();
+    const scalarData = image.voxelManager.getScalarData();
     scalarData.forEach((segmentIndex) => {
       if (segmentIndex !== 0) {
         keySet.add(segmentIndex);

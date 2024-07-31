@@ -1418,7 +1418,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         Modality: volume?.metadata?.Modality,
         FrameOfReferenceUID: volume?.metadata?.FrameOfReferenceUID,
       },
-      // scalarData: volume.voxelManager.getScalarData(),
+      get scalarData() {
+        return volume?.voxelManager.getScalarData();
+      },
       scaling: volume?.scaling,
       hasPixelSpacing: true,
       voxelManager: volume?.voxelManager,

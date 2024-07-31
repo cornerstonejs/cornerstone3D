@@ -544,13 +544,6 @@ class VolumeViewport extends BaseVolumeViewport {
       throw new Error('Unable to determine slice axis');
     }
 
-    // Check if the view plane normal is pointing in the negative direction
-    if (viewPlaneNormal[sliceAxis] < 0) {
-      console.warn(
-        'View plane normal is pointing in the negative direction. Slice index might need to be inverted.'
-      );
-    }
-
     // Dot the diagonal with row/column to find the image width/height
     const sliceWidth = vec3.dot(ijkRowVec, ijkDiagonal) + 1;
     const sliceHeight = vec3.dot(ijkColVec, ijkDiagonal) + 1;
@@ -563,6 +556,23 @@ class VolumeViewport extends BaseVolumeViewport {
       sliceToIndexMatrix,
       indexToSliceMatrix,
     };
+  }
+
+  /**
+   * Retrieves the pixel data for the current slice being displayed in the viewport.
+   *
+   * Note: this method cannot return the oblique planes pixel data as they
+   * are interpolated in the gpu side
+   *
+   * @returns The pixel data for the current slice, which can be in any of the axial, sagittal
+   * or coronal directions
+   *
+   */
+  public getCurrentSlicePixelData() {
+    const { voxelManager } = this.getImageData();
+
+    const sliceData = voxelManager.getSliceData(this.getSliceViewInfo());
+    return sliceData;
   }
 
   /**

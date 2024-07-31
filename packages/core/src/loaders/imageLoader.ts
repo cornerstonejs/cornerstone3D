@@ -7,6 +7,7 @@ import {
   getBufferConfiguration,
   triggerEvent,
   uuidv4,
+  VoxelManager,
 } from '../utilities';
 import {
   IImage,
@@ -94,19 +95,34 @@ function loadImageFromImageLoader(
   }
   // Load using the registered loader
   const imageLoadObject = loader(imageId, options);
+
   // Broadcast an image loaded event once the image is loaded
-  imageLoadObject.promise.then(
-    function (image) {
+  imageLoadObject.promise
+    .then((image: IImage) => {
+      const scalarData = image.getPixelData();
+      const { width, height, numComps } = image;
+
+      const voxelManager = VoxelManager.createImageVoxelManager({
+        scalarData,
+        width,
+        height,
+        numComponents: numComps,
+      });
+
+      image.voxelManager = voxelManager;
+
+      delete image.getPixelData;
+      delete image.imageFrame.pixelData;
+
       triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
-    },
-    function (error) {
+    })
+    .catch((error) => {
       const errorObject: EventTypes.ImageLoadedFailedEventDetail = {
         imageId,
         error,
       };
       triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorObject);
-    }
-  );
+    });
   return imageLoadObject;
 }
 

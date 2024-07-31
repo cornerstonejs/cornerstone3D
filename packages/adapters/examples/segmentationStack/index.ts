@@ -282,7 +282,7 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
         const cachedImage = cache.getImage(imageId);
 
         if (cachedImage) {
-            const pixelData = cachedImage.getPixelData();
+            const pixelData = cachedimage.voxelManager.getScalarData();
 
             //
             pixelData.set(
@@ -336,7 +336,7 @@ function exportSegmentation() {
                 // TODO
                 // generateLabelMaps2DFrom3D required "scalarData" and "dimensions"
                 cacheSegmentationImage.scalarData =
-                    cacheSegmentationImage.getPixelData();
+                    cacheSegmentationimage.voxelManager.getScalarData();
                 cacheSegmentationImage.dimensions = [
                     cacheSegmentationImage.columns,
                     cacheSegmentationImage.rows,
@@ -530,7 +530,7 @@ function removeActiveSegment() {
             const image = cache.getImage(derivedImagesId);
 
             // Get pixel data
-            const pixelData = image.getPixelData();
+            const pixelData = image.voxelManager.getScalarData();
 
             //
             const frameLength = image.columns * image.rows;

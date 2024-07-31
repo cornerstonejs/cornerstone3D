@@ -98,7 +98,8 @@ export function performCacheOptimizationForVolume(volume) {
     }
 
     let compatibleScalarData = scalarData;
-    const samplePixelData = image.imageFrame?.pixelData || image.getPixelData();
+    const samplePixelData =
+      image.imageFrame?.pixelData || image.voxelManager.getScalarData();
 
     // Check if the types of scalarData and pixelData are different.
     if (scalarData.constructor !== samplePixelData.constructor) {
@@ -110,7 +111,7 @@ export function performCacheOptimizationForVolume(volume) {
     }
 
     const index = volume.getImageIdIndex(imageId);
-    const offset = index * image.getPixelData().byteLength;
+    const offset = index * image.voxelManager.getScalarData().byteLength;
 
     _updateImageWithScalarDataView(image, compatibleScalarData, offset);
     cache.decrementImageCacheSize(image.sizeInBytes);
@@ -120,7 +121,7 @@ export function performCacheOptimizationForVolume(volume) {
 function _updateImageWithScalarDataView(image, scalarData, offset) {
   const pixelData = image.imageFrame
     ? image.imageFrame.pixelData
-    : image.getPixelData();
+    : image.voxelManager.getScalarData();
 
   const view = new pixelData.constructor(
     scalarData.buffer,
@@ -147,5 +148,5 @@ function _calculateOffset(volume, imageId, imageIdIndex) {
 
   const image = volume.getCornerstoneImage(imageId, imageIdIndex);
   const index = volume.getImageIdIndex(imageId);
-  return index * image.getPixelData().byteLength;
+  return index * image.voxelManager.getScalarData().byteLength;
 }

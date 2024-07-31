@@ -27,15 +27,18 @@ export default class VoxelManager<T> {
     [Infinity, -Infinity],
   ] as BoundsIJK;
 
-  // Provide direct access to the underlying data, if any
-  public scalarData: PixelDataTypedArray;
   public map: Map<number, T> | RLEVoxelMap<T>;
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointIPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
   public numComps = 1;
 
-  public getScalarData: () => PixelDataTypedArray;
+  public getRange: () => [number, number];
+  private scalarData = null as PixelDataTypedArray;
+  // caching for sliceData as it is expensive to get it from the cache
+  // I think we need to have a way to invalidate this cache and also have
+  // a limit on the number of slices to cache since it can grow indefinitely
+  private _sliceDataCache = null as Map<string, PixelDataTypedArray>;
 
   points: Set<number>;
   width: number;
@@ -43,6 +46,12 @@ export default class VoxelManager<T> {
   _get: (index: number) => T;
   _set: (index: number, v: T) => boolean | void;
   _getConstructor?: () => PixelDataTypedArray;
+  _getScalarDataLength?: () => number;
+  _getScalarData?: () => PixelDataTypedArray;
+  _getSliceData: (args: {
+    sliceIndex: number;
+    slicePlane: number;
+  }) => PixelDataTypedArray;
 
   /**
    * Creates a generic voxel value accessor, with access to the values
@@ -205,6 +214,45 @@ export default class VoxelManager<T> {
   };
 
   /**
+   * Retrieves the scalar data.
+   * If the scalar data is already available, it will be returned.
+   * Otherwise, if the `_getScalarData` method is defined, it will be called to retrieve the scalar data.
+   * If neither the scalar data nor the `_getScalarData` method is available, an error will be thrown.
+   *
+   * @returns The scalar data.
+   * @throws {Error} If no scalar data is available.
+   */
+  getScalarData = () => {
+    if (this.scalarData) {
+      return this.scalarData;
+    }
+
+    if (this._getScalarData) {
+      return this._getScalarData();
+    }
+
+    throw new Error('No scalar data available');
+  };
+
+  /**
+   * Gets the length of the scalar data.
+   *
+   * @returns The length of the scalar data.
+   * @throws {Error} If no scalar data is available.
+   */
+  getScalarDataLength = () => {
+    if (this.scalarData) {
+      return this.scalarData.length;
+    }
+
+    if (this._getScalarDataLength) {
+      return this._getScalarDataLength();
+    }
+
+    throw new Error('No scalar data available');
+  };
+
+  /**
    * Clears any map specific data, as well as the modified slices, points and
    * bounds.
    */
@@ -218,6 +266,22 @@ export default class VoxelManager<T> {
     });
     this.modifiedSlices.clear();
     this.points?.clear();
+  }
+
+  public getConstructor() {
+    if (this.scalarData) {
+      return this.scalarData.constructor;
+    }
+
+    if (this._getConstructor) {
+      return this._getConstructor();
+    }
+
+    console.warn(
+      'No scalar data available or can be used to get the constructor'
+    );
+
+    return null;
   }
 
   /**
@@ -273,13 +337,6 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Gets the points added using addPoint as an array of indices.
-   */
-  public getPointIndices(): number[] {
-    return this.points ? [...this.points] : [];
-  }
-
-  /**
    * Retrieves the slice data for a given slice view.
    *
    * @param sliceViewInfo - An object containing information about the slice view.
@@ -288,17 +345,43 @@ export default class VoxelManager<T> {
    * @returns A typed array containing the pixel data for the specified slice.
    * @throws Error if an invalid slice axis is provided.
    */
-  public getSliceData(sliceViewInfo: {
+  public getSliceData({
+    sliceIndex,
+    slicePlane,
+  }: {
     sliceIndex: number;
     slicePlane: number;
   }): PixelDataTypedArray {
-    const { sliceIndex, slicePlane } = sliceViewInfo;
+    const hash = `${sliceIndex}-${slicePlane}`;
+
+    if (this._sliceDataCache.has(hash)) {
+      return this._sliceDataCache.get(hash);
+    }
+
+    const sliceData = this._getSliceData({ sliceIndex, slicePlane });
+
+    this._sliceDataCache.set(hash, sliceData);
+
+    return sliceData;
+  }
+
+  public getSliceData = ({
+    sliceIndex,
+    slicePlane,
+  }: {
+    sliceIndex: number;
+    slicePlane: number;
+  }): PixelDataTypedArray => {
     const [width, height, depth] = this.dimensions;
+    const frameSize = width * height;
+    const startIndex = sliceIndex * frameSize;
 
     let sliceSize: number;
-    // Todo: fix the default
-    const SliceDataConstructor = (this._getConstructor?.() ||
-      Float32Array) as PixelDataTypedArray;
+    const SliceDataConstructor = this.getConstructor();
+
+    if (!SliceDataConstructor) {
+      return [] as PixelDataTypedArray;
+    }
 
     let sliceData: PixelDataTypedArray;
     switch (slicePlane) {
@@ -307,7 +390,7 @@ export default class VoxelManager<T> {
         sliceData = new SliceDataConstructor(sliceSize);
         for (let i = 0; i < height; i++) {
           for (let j = 0; j < depth; j++) {
-            const index = sliceIndex + i * width + j * this.frameSize;
+            const index = sliceIndex + i * width + j * frameSize;
             sliceData[i * depth + j] = this._get(index);
           }
         }
@@ -317,27 +400,24 @@ export default class VoxelManager<T> {
         sliceData = new SliceDataConstructor(sliceSize);
         for (let i = 0; i < width; i++) {
           for (let j = 0; j < depth; j++) {
-            const index = i + sliceIndex * width + j * this.frameSize;
+            const index = i + sliceIndex * width + j * frameSize;
             sliceData[i + j * width] = this._get(index);
           }
         }
         break;
-      case 2: {
-        // XY plane
+      case 2: // XY plane
         sliceSize = width * height;
         sliceData = new SliceDataConstructor(sliceSize);
-        const startIndex = sliceIndex * this.frameSize;
         for (let i = 0; i < sliceSize; i++) {
           sliceData[i] = this._get(startIndex + i);
         }
         break;
-      }
       default:
-        throw new Error('Invalid slice axis');
+        throw new Error('Invalid slice plane');
     }
 
     return sliceData;
-  }
+  };
 
   /**
    * Creates a voxel manager backed by an array of scalar data having the
@@ -397,10 +477,11 @@ export default class VoxelManager<T> {
 
       if (!image) {
         // Todo: better handle this case
-        throw new Error(`Image not found for imageId: ${imageId}`);
+        console.warn(`Image not found for imageId: ${imageId}`);
+        return { pixelData: null, pixelIndex: null };
       }
 
-      const pixelData = image.getPixelData();
+      const pixelData = image.voxelManager.getScalarData();
       const pixelIndex = index % pixelsPerSlice;
 
       return { pixelData, pixelIndex };
@@ -439,8 +520,40 @@ export default class VoxelManager<T> {
     );
 
     voxelManager._getConstructor = () => {
-      return getPixelInfo(0, imageIds, cache, pixelsPerSlice).pixelData
-        .constructor;
+      const { pixelData } = getPixelInfo(0, imageIds, cache, pixelsPerSlice);
+      return pixelData?.constructor;
+    };
+
+    voxelManager.getMiddleSliceData = () => {
+      const middleSliceIndex = Math.floor(dimensions[2] / 2);
+      return voxelManager.getSliceData({
+        sliceIndex: middleSliceIndex,
+        slicePlane: 2,
+      });
+    };
+
+    // Todo: need a way to make it understand dirty status if pixel data is changed
+    voxelManager.getRange = () => {
+      // get all the pixel data
+      let minValue, maxValue;
+      for (const imageId of imageIds) {
+        const image = cache.getImage(imageId);
+
+        // min and max pixel value is correct, //todo this is not true
+        // for dynamically changing data such as labelmaps in segmentation
+        if (image.minPixelValue < minValue) {
+          minValue = image.minPixelValue;
+        }
+        if (image.maxPixelValue > maxValue) {
+          maxValue = image.maxPixelValue;
+        }
+      }
+      return [minValue, maxValue];
+    };
+
+    voxelManager._getScalarDataLength = () => {
+      const { pixelData } = getPixelInfo(0, imageIds, cache, pixelsPerSlice);
+      return pixelData.length * dimensions[2];
     };
 
     return voxelManager;
@@ -468,11 +581,45 @@ export default class VoxelManager<T> {
         'Dimensions must be provided as [number, number, number] for [width, height, depth]'
       );
     }
+
     if (!numComponents) {
       numComponents =
         scalarData.length / dimensions[0] / dimensions[1] / dimensions[2];
       // We only support 1,3,4 component data, and sometimes the scalar data
       // doesn't match for some reason, so throw an exception
+      if (numComponents > 4 || numComponents < 1 || numComponents === 2) {
+        throw new Error(
+          `Number of components ${numComponents} must be 1, 3 or 4`
+        );
+      }
+    }
+    if (numComponents > 1) {
+      return VoxelManager.createRGBScalarVolumeVoxelManager({
+        dimensions,
+        scalarData,
+        numComponents,
+      });
+    }
+    return VoxelManager._createNumberVolumeVoxelManager({
+      dimensions,
+      scalarData,
+    });
+  }
+
+  public static createImageVoxelManager({
+    width,
+    height,
+    scalarData,
+    numComponents = 1,
+  }: {
+    width: number;
+    height: number;
+    scalarData: PixelDataTypedArray;
+    numComponents?: number;
+  }): VoxelManager<number> | VoxelManager<RGB> {
+    const dimensions = [width, height, 1] as Point3;
+    if (!numComponents) {
+      numComponents = scalarData.length / width / height;
       if (numComponents > 4 || numComponents < 1 || numComponents === 2) {
         throw new Error(
           `Number of components ${numComponents} must be 1, 3 or 4`
@@ -501,7 +648,7 @@ export default class VoxelManager<T> {
     scalarData,
   }: {
     dimensions: Point3;
-    scalarData;
+    scalarData: PixelDataTypedArray;
   }): VoxelManager<number> {
     const voxels = new VoxelManager<number>(
       dimensions,
@@ -513,6 +660,7 @@ export default class VoxelManager<T> {
       }
     );
     voxels.scalarData = scalarData;
+
     return voxels;
   }
 
@@ -634,7 +782,7 @@ export default class VoxelManager<T> {
    */
   public static addInstanceToImage(image: IImage) {
     const { width, height } = image;
-    const scalarData = image.getPixelData();
+    const scalarData = image.voxelManager.getScalarData();
     // This test works for single images, or single representations of images
     // from a volume representation, for grayscale, indexed and RGB or RGBA images.
     if (scalarData?.length >= width * height) {

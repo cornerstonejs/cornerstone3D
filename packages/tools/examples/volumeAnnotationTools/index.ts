@@ -18,7 +18,7 @@ console.warn(
 );
 
 const {
-  WindowLevelRegionTool,
+  ProbeTool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
   ZoomTool,
@@ -84,7 +84,7 @@ async function run() {
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(WindowLevelRegionTool);
+  cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
@@ -93,13 +93,13 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(WindowLevelRegionTool.toolName, { volumeId });
+  toolGroup.addTool(ProbeTool.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(WindowLevelRegionTool.toolName, {
+  toolGroup.setToolActive(ProbeTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click

@@ -1,5 +1,5 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
+import { Point3, Scaling, Mat3, PixelDataTypedArray, RGB } from '../types';
 import IImageCalibration from './IImageCalibration';
 import { VoxelManager } from '../utilities';
 
@@ -27,7 +27,7 @@ interface IImageData {
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
 
-  voxelManager?: VoxelManager<number>;
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 
   calibration?: IImageCalibration;
 

@@ -530,7 +530,7 @@ export class ImageVolume implements IImageVolume {
       photometricInterpretation,
     };
 
-    const pixelData = image.getPixelData();
+    const pixelData = image.voxelManager.getScalarData();
     const bitsAllocated = pixelData.BYTES_PER_ELEMENT * 8;
 
     const imagePixelModule = {

@@ -1,4 +1,5 @@
-import type { Point3, Scaling, Mat3, PixelDataTypedArray } from '../types';
+import type { Point3, Scaling, Mat3, PixelDataTypedArray, RGB } from '../types';
+import { VoxelManager } from '../utilities';
 import IImageCalibration from './IImageCalibration';
 
 type CPUImageData = {
@@ -27,7 +28,9 @@ type CPUIImageData = {
   hasPixelSpacing?: boolean;
   calibration?: IImageCalibration;
 
-  /** preScale object */
+  voxelManager?:
+    | VoxelManager<number>
+    | VoxelManager<RGB> /** preScale object */;
   preScale?: {
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;

@@ -121,7 +121,7 @@ class PaintFillTool extends BaseTool {
       }
 
       const segmentationImage = cache.getImage(currentSegmentationImageId);
-      scalarData = segmentationImage.getPixelData();
+      scalarData = segmentationimage.voxelManager.getScalarData();
       const { imageData } = viewport.getImageData();
       dimensions = imageData.getDimensions();
       direction = imageData.getDirection();

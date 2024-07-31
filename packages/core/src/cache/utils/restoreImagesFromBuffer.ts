@@ -35,7 +35,7 @@ export function restoreImagesFromBuffer(volume: IImageVolume) {
       continue;
     }
 
-    const viewPixelData = image.getPixelData();
+    const viewPixelData = image.voxelManager.getScalarData();
     const length = viewPixelData.length;
 
     // Create a new view of the buffer for this specific image

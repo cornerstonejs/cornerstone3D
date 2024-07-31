@@ -507,7 +507,7 @@ export async function createAndCacheVolumeFromImages(
     const imageLoadObject = cache.getImageLoadObject(imageId);
 
     return imageLoadObject.promise.then((image) => {
-      const pixelData = image.getPixelData();
+      const pixelData = image.voxelManager.getScalarData();
       const offset = imageIdIndex * image.rows * image.columns;
 
       (volumeProps.scalarData as PixelDataTypedArray).set(pixelData, offset);

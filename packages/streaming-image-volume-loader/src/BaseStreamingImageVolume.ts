@@ -673,7 +673,7 @@ export default class BaseStreamingImageVolume
     scalingParametersToUse: Types.ScalingParameters
   ) {
     if (!image.preScale?.enabled) {
-      return image.getPixelData().slice(0);
+      return image.voxelManager.getScalarData().slice(0);
     }
 
     const imageIsAlreadyScaled = image.preScale?.scaled;
@@ -684,7 +684,7 @@ export default class BaseStreamingImageVolume
 
     if (!imageIsAlreadyScaled && noScalingParametersToUse) {
       // no need to scale the image
-      return image.getPixelData().slice(0);
+      return image.voxelManager.getScalarData().slice(0);
     }
 
     if (
@@ -695,7 +695,7 @@ export default class BaseStreamingImageVolume
     ) {
       // if not already scaled, just scale the image.
       // copy so that it doesn't get modified
-      const pixelDataCopy = image.getPixelData().slice(0);
+      const pixelDataCopy = image.voxelManager.getScalarData().slice(0);
       const scaledArray = scaleArray(pixelDataCopy, scalingParametersToUse);
       return scaledArray;
     }
@@ -720,10 +720,10 @@ export default class BaseStreamingImageVolume
 
     if (rescaleSlopeIsSame && rescaleInterceptIsSame && suvbwIsSame) {
       // if the scaling parameters are the same, we don't need to scale the image again
-      return image.getPixelData();
+      return image.voxelManager.getScalarData();
     }
 
-    const pixelDataCopy = image.getPixelData().slice(0);
+    const pixelDataCopy = image.voxelManager.getScalarData().slice(0);
     // the general formula for scaling is  scaledPixelValue = suvbw * (pixelValue * rescaleSlope) + rescaleIntercept
     const newSuvbw = suvbwToUse / suvbwUsed;
     const newRescaleSlope = rescaleSlopeToUse / rescaleSlopeUsed;
@@ -799,7 +799,9 @@ function handleArrayBufferLoad(scalarData, image, options) {
   }
   const offset = options.targetBuffer.offset; // in bytes
   const length = options.targetBuffer.length; // in frames
-  const pixelData = image.pixelData ? image.pixelData : image.getPixelData();
+  const pixelData = image.pixelData
+    ? image.pixelData
+    : image.voxelManager.getScalarData();
 
   try {
     if (scalarData instanceof Float32Array) {

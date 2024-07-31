@@ -70,7 +70,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
           continue;
         }
 
-        const data = image.getPixelData();
+        const data = image.voxelManager.getScalarData();
         if (data instanceof Uint8Array) {
           bytesPerVoxel = 1;
           TypedArrayConstructor = Uint8Array;
