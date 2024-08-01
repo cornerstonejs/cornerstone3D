@@ -22,14 +22,15 @@
     "url": "https://github.com/DedalusDIIT/cornerstone3D.git"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com/",
+    "cache": "~/.npm"
   },
   "scripts": {
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
     "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle",
     "copy-dts": "echo 'not implemented yet'",
-    "build": "yarn run build:all && yarn run copy-dts && yalc push",
+    "build": "yarn run build:all && yarn run copy-dts",
     "api-check": "echo 'not implemented yet'",
     "build:update-api": "echo 'not implemented yet'",
     "cm": "npx git-cz",
