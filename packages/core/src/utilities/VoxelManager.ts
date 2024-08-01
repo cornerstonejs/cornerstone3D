@@ -178,16 +178,14 @@ export default class VoxelManager<T> {
       boundsIJK?: BoundsIJK;
       isInObject?: (pointLPS, pointIJK) => boolean;
       returnPoints?: boolean;
-      voxelToWorldMapping?: {
-        imageData: vtkImageData | CPUImageData;
-      };
+      imageData: vtkImageData | CPUImageData;
     }
   ) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const isInObject = options.isInObject || this.isInObject || (() => true);
-    const returnPoints = options.returnPoints || false;
+    const returnPoints = options.returnPoints || true;
 
-    const useLPSTransform = options?.voxelToWorldMapping?.imageData;
+    const useLPSTransform = options?.imageData;
 
     const iMin = boundsIJK[0][0];
     const iMax = boundsIJK[0][1];
@@ -199,7 +197,7 @@ export default class VoxelManager<T> {
     const pointsInShape = [];
 
     if (useLPSTransform) {
-      const { imageData } = options.voxelToWorldMapping;
+      const { imageData } = options;
       const direction = imageData.getDirection();
       const rowCosines = direction.slice(0, 3);
       const columnCosines = direction.slice(3, 6);
@@ -374,6 +372,22 @@ export default class VoxelManager<T> {
 
     throw new Error('No scalar data available');
   };
+
+  public get sizeInBytes(): number {
+    const bytePerVoxel = this.getBytePerVoxel();
+
+    return this.getScalarDataLength() * bytePerVoxel;
+  }
+
+  public get getBytePerVoxel() {
+    if (this.scalarData) {
+      return this.scalarData.BYTES_PER_ELEMENT;
+    }
+
+    // get the first element of the scalar data
+    const value = this._get(0);
+    return value.BYTES_PER_ELEMENT;
+  }
 
   /**
    * Clears any map specific data, as well as the modified slices, points and
@@ -610,7 +624,7 @@ export default class VoxelManager<T> {
       return { pixelData, pixelIndex };
     }
 
-    function getVoxelValue(index, imageIds, cache, pixelsPerSlice) {
+    function getVoxelValue(index, imageIds, pixelsPerSlice) {
       const { pixelData, pixelIndex } = getPixelInfo(
         index,
         imageIds,
@@ -620,7 +634,7 @@ export default class VoxelManager<T> {
       return pixelData[pixelIndex];
     }
 
-    function setVoxelValue(index, v, imageIds, cache, pixelsPerSlice) {
+    function setVoxelValue(index, v, imageIds, pixelsPerSlice) {
       const { pixelData, pixelIndex } = getPixelInfo(
         index,
         imageIds,
@@ -638,8 +652,8 @@ export default class VoxelManager<T> {
 
     const voxelManager = new VoxelManager(
       dimensions,
-      (index) => getVoxelValue(index, imageIds, cache, pixelsPerSlice),
-      (index, v) => setVoxelValue(index, v, imageIds, cache, pixelsPerSlice)
+      (index) => getVoxelValue(index, imageIds, pixelsPerSlice),
+      (index, v) => setVoxelValue(index, v, imageIds, pixelsPerSlice)
     );
 
     voxelManager._getConstructor = () => {
@@ -896,6 +910,8 @@ export default class VoxelManager<T> {
     voxelManager.getPixelData = map.getPixelData.bind(map);
     return voxelManager;
   }
+
+  public clone;
 
   /**
    * This method adds a voxelManager instance to the image object

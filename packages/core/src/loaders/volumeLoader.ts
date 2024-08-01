@@ -17,6 +17,7 @@ import {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   uuidv4,
+  VoxelManager,
 } from '../utilities';
 import {
   Point3,
@@ -31,10 +32,7 @@ import {
   PixelDataTypedArrayString,
 } from '../types';
 import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
-import {
-  performCacheOptimizationForVolume,
-  setupCacheOptimizationEventListener,
-} from '../utilities/cacheUtils';
+import { imageLoader } from '..';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -42,10 +40,7 @@ interface VolumeLoaderOptions {
 
 interface DerivedVolumeOptions {
   volumeId: string;
-  targetBuffer?: {
-    type: PixelDataTypedArrayString;
-    sharedArrayBuffer?: boolean;
-  };
+  targetBufferType?: PixelDataTypedArrayString;
 }
 interface LocalVolumeOptions {
   metadata: Metadata;
@@ -181,7 +176,7 @@ function loadVolumeFromVolumeLoader(
 
   const volumeLoadObject = loader(volumeId, options);
 
-  setupCacheOptimizationEventListener(volumeId);
+  // setupCacheOptimizationEventListener(volumeId);
 
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
@@ -282,10 +277,10 @@ export async function createAndCacheVolume(
  *
  * @returns ImageVolume
  */
-export async function createAndCacheDerivedVolume(
+export function createAndCacheDerivedVolume(
   referencedVolumeId: string,
   options: DerivedVolumeOptions
-): Promise<IImageVolume> {
+): IImageVolume {
   const referencedVolume = cache.getVolume(referencedVolumeId);
   if (!referencedVolume) {
     throw new Error(
@@ -294,68 +289,45 @@ export async function createAndCacheDerivedVolume(
   }
 
   let { volumeId } = options;
-  const { targetBuffer } = options;
 
   if (volumeId === undefined) {
     volumeId = uuidv4();
   }
 
   const { metadata, dimensions, spacing, origin, direction } = referencedVolume;
-  const scalarData = referencedVolume.getScalarData();
-  const scalarLength = scalarData.length;
-
-  const { volumeScalarData, numBytes } = generateVolumeScalarData(
-    targetBuffer,
-    scalarLength
-  );
-
-  // Todo: handle more than one component for segmentation (RGB)
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: 1,
-    values: volumeScalarData,
-  });
-
-  const derivedImageData = vtkImageData.newInstance();
-
-  derivedImageData.setDimensions(dimensions);
-  derivedImageData.setSpacing(spacing);
-  derivedImageData.setDirection(direction);
-  derivedImageData.setOrigin(origin);
-  derivedImageData.getPointData().setScalars(scalarArray);
 
   const referencedImageIds = referencedVolume.imageIds ?? [];
 
-  let derivedVolumeImageIds = [];
-  if (referencedImageIds.length) {
-    derivedVolumeImageIds = referencedImageIds.map((imageId) => {
-      return `derived:${imageId}`;
-    });
-  }
+  // put the imageIds into the cache synchronously since they are just empty
+  // images
+  const derivedImages = imageLoader.createAndCacheDerivedImages(
+    referencedImageIds,
+    {
+      targetBufferType: options.targetBufferType,
+    }
+  );
+
+  const derivedVolumeImageIds = derivedImages.map((image) => image.imageId);
+
+  const voxelManager = VoxelManager.createImageVolumeVoxelManager({
+    dimensions,
+    imageIds: derivedVolumeImageIds,
+  });
 
   const derivedVolume = new ImageVolume({
     volumeId,
     metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
+    voxelManager,
     origin,
     direction,
-    imageData: derivedImageData,
-    scalarData: volumeScalarData,
-    sizeInBytes: numBytes,
     referencedVolumeId,
-    // imageIds: [],
     imageIds: derivedVolumeImageIds,
     referencedImageIds: referencedVolume.imageIds ?? [],
   });
 
-  const volumeLoadObject = {
-    promise: Promise.resolve(derivedVolume),
-  };
-
-  await cache.putVolumeLoadObject(volumeId, volumeLoadObject);
-
-  // performCacheOptimizationForVolume(derivedVolume);
+  cache.putVolumeSync(volumeId, derivedVolume);
 
   return derivedVolume;
 }
@@ -365,7 +337,7 @@ export async function createAndCacheDerivedVolume(
  * dimensions, spacing, origin, direction, metadata, scalarData. It should be noted that
  * scalarData should be provided for this function to work. If a volume with the same
  * Id exists in the cache it returns it immediately.
- * @param options -  { scalarData, metadata, dimensions, spacing, origin, direction }
+ * @param options - {scalarData, metadata, dimensions, spacing, origin, direction }
  * @param volumeId - Id of the generated volume
  *
  * @returns ImageVolume
@@ -375,6 +347,9 @@ export function createLocalVolume(
   volumeId: string,
   preventCache = false
 ): IImageVolume {
+  // Todo: probably we need to deprecate this, or have it named like
+  // createMemoryIntensiveVolume or something like that so that it shows
+  // it is not recommended to use this function for large volumes
   const { metadata, dimensions, spacing, origin, direction, targetBuffer } =
     options;
 
@@ -446,9 +421,13 @@ export function createLocalVolume(
     spacing,
     origin,
     direction,
+    voxelManager: VoxelManager.createImageVoxelManager({
+      width: dimensions[0],
+      height: dimensions[1],
+      numComponents: 1,
+      scalarData: scalarData,
+    }),
     imageData: imageData,
-    scalarData,
-    sizeInBytes: numBytes,
     referencedImageIds: options.referencedImageIds || [],
     referencedVolumeId: options.referencedVolumeId,
     imageIds: options.imageIds || [],
@@ -466,78 +445,6 @@ export function createLocalVolume(
   // performCacheOptimizationForVolume(derivedVolume);
 
   return derivedVolume;
-}
-
-export async function createAndCacheVolumeFromImages(
-  volumeId: string,
-  imageIds: string[],
-  options: {
-    preventCache?: boolean;
-    additionalDetails?: Record<string, any>;
-  } = {}
-): Promise<IImageVolume> {
-  const { preventCache = false } = options;
-
-  if (imageIds === undefined) {
-    throw new Error(
-      'createAndCacheVolumeFromImages: parameter imageIds must not be undefined'
-    );
-  }
-
-  if (volumeId === undefined) {
-    throw new Error(
-      'createAndCacheVolumeFromImages: parameter volumeId must not be undefined'
-    );
-  }
-
-  const cachedVolume = cache.getVolume(volumeId);
-
-  if (cachedVolume) {
-    return Promise.resolve(cachedVolume);
-  }
-
-  const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
-
-  // volume is an empty volume, we need to load the data from the imageIds
-  // into the volume scalarData
-
-  // it is important to get the imageIds from the volumeProps
-  // since they are sorted
-  const imagePromises = volumeProps.imageIds.map((imageId, imageIdIndex) => {
-    const imageLoadObject = cache.getImageLoadObject(imageId);
-
-    return imageLoadObject.promise.then((image) => {
-      const pixelData = image.voxelManager.getScalarData();
-      const offset = imageIdIndex * image.rows * image.columns;
-
-      (volumeProps.scalarData as PixelDataTypedArray).set(pixelData, offset);
-    });
-  });
-
-  await Promise.all(imagePromises);
-
-  const volume = new ImageVolume({
-    ...volumeProps,
-    referencedImageIds: imageIds,
-    ...options,
-  });
-
-  // since we generated the volume from images, we can optimize the cache
-  // by replacing the pixelData of the images with a view of the volume's
-  // scalarData
-  // performCacheOptimizationForVolume(volume);
-
-  const volumeLoadObject = {
-    promise: Promise.resolve(volume),
-  };
-
-  if (preventCache) {
-    return volumeLoadObject.promise;
-  }
-
-  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
-
-  return volumeLoadObject.promise;
 }
 
 /**
@@ -594,9 +501,7 @@ export async function createAndCacheDerivedSegmentationVolume(
 ): Promise<IImageVolume> {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
-    targetBuffer: {
-      type: 'Uint8Array',
-    },
+    targetBufferType: 'Uint8Array',
   });
 }
 

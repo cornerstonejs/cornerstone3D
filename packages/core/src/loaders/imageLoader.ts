@@ -30,11 +30,6 @@ export interface ImageLoaderOptions {
   ignoreCache?: boolean;
 }
 
-interface DerivedImages {
-  imageIds: Array<string>;
-  promises: Array<Promise<IImage>>;
-}
-
 type LocalImageOptions = {
   scalarData?: PixelDataTypedArray;
   targetBufferType?: PixelDataTypedArrayString;
@@ -59,7 +54,6 @@ type LocalImageOptions = {
 
 type DerivedImageOptions = LocalImageOptions & {
   imageId?: string;
-  targetBufferType?: PixelDataTypedArrayString;
 };
 
 /**
@@ -111,7 +105,7 @@ function loadImageFromImageLoader(
 
       image.voxelManager = voxelManager;
 
-      delete image.getPixelData;
+      image.getPixelData = () => voxelManager.getScalarData();
       delete image.imageFrame.pixelData;
 
       triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
@@ -272,9 +266,8 @@ export function loadAndCacheImages(
  */
 export function createAndCacheDerivedImage(
   referencedImageId: string,
-  options: DerivedImageOptions = {},
-  preventCache = false
-): Promise<IImage> {
+  options: DerivedImageOptions = {}
+): IImage {
   if (referencedImageId === undefined) {
     throw new Error(
       'createAndCacheDerivedImage: parameter imageId must not be undefined'
@@ -324,18 +317,15 @@ export function createAndCacheDerivedImage(
 
   const localImage = createAndCacheLocalImage(
     { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },
-    imageId,
-    true
+    imageId
   );
 
-  const imageLoadObject = {
-    promise: Promise.resolve(localImage),
-  };
-
-  if (!preventCache) {
-    cache.putImageLoadObject(derivedImageId, imageLoadObject);
+  // 3. Caching the image
+  if (!cache.getImageLoadObject(imageId)) {
+    cache.putImageSync(imageId, localImage);
   }
-  return imageLoadObject.promise;
+
+  return localImage;
 }
 
 /**
@@ -351,9 +341,9 @@ export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
   options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
-    targetBufferType?: PixelDataTypedArrayString;
+    target?: PixelDataTypedArrayString;
   } = {}
-): DerivedImages {
+): IImage[] {
   if (referencedImageIds?.length === 0) {
     throw new Error(
       'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
@@ -361,7 +351,7 @@ export function createAndCacheDerivedImages(
   }
 
   const derivedImageIds = [];
-  const allPromises = referencedImageIds.map((referencedImageId) => {
+  const images = referencedImageIds.map((referencedImageId) => {
     const newOptions: DerivedImageOptions = {
       imageId:
         options.getDerivedImageId?.(referencedImageId) || `derived:${uuidv4()}`,
@@ -371,17 +361,19 @@ export function createAndCacheDerivedImages(
     return createAndCacheDerivedImage(referencedImageId, newOptions);
   });
 
-  return { imageIds: derivedImageIds, promises: allPromises };
+  return images;
 }
 
 export function createAndCacheLocalImage(
   options: LocalImageOptions,
-  imageId: string,
-  preventCache = false
+  imageId: string
 ): IImage {
   const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
 
-  const length = imagePlaneModule.rows * imagePlaneModule.columns;
+  const width = imagePlaneModule.columns;
+  const height = imagePlaneModule.rows;
+  const length = width * height;
+  const numComps = 1;
 
   const image = {
     imageId: imageId,
@@ -393,12 +385,11 @@ export function createAndCacheLocalImage(
     slope: 1,
     minPixelValue: 0,
     maxPixelValue: 255,
-    voiLUTFunction: undefined,
-    rows: imagePlaneModule.rows,
-    columns: imagePlaneModule.columns,
+    rows: height,
+    columns: width,
     getCanvas: undefined, // todo: which canvas?
-    height: imagePlaneModule.rows,
-    width: imagePlaneModule.columns,
+    height,
+    width,
     rgba: undefined, // todo: how
     columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
     rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
@@ -436,18 +427,23 @@ export function createAndCacheLocalImage(
     image.getPixelData = () => imageScalarData;
   }
 
+  const voxelManager = VoxelManager.createImageVoxelManager({
+    height,
+    width,
+    numComponents: numComps,
+    scalarData: image.getPixelData(),
+  });
+
+  image.getPixelData = () => voxelManager.getScalarData();
+
+  image.voxelManager = voxelManager;
+
   // The onCacheAdd may modify the size in bytes for this image, which is ok,
   // as this is used after resolution for cache storage.  It may also do
   // thinks like adding alternative representations such as VoxelManager
   options.onCacheAdd?.(image);
 
-  const imageLoadObject = {
-    promise: Promise.resolve(image),
-  };
-
-  if (!preventCache) {
-    cache.putImageLoadObject(image.imageId, imageLoadObject);
-  }
+  cache.putImageSync(image.imageId, image);
 
   return image;
 }
@@ -579,11 +575,12 @@ export function unregisterAllImageLoaders(): void {
  */
 export function createAndCacheDerivedSegmentationImages(
   referencedImageIds: Array<string>,
-  options: DerivedImageOptions = {
+  options = {} as DerivedImageOptions
+): IImage[] {
+  return createAndCacheDerivedImages(referencedImageIds, {
+    ...options,
     targetBufferType: 'Uint8Array',
-  }
-): DerivedImages {
-  return createAndCacheDerivedImages(referencedImageIds, options);
+  });
 }
 
 /**
@@ -598,9 +595,10 @@ export function createAndCacheDerivedSegmentationImages(
  */
 export function createAndCacheDerivedSegmentationImage(
   referencedImageId: string,
-  options: DerivedImageOptions = {
+  options = {} as DerivedImageOptions
+): IImage {
+  return createAndCacheDerivedImage(referencedImageId, {
+    ...options,
     targetBufferType: 'Uint8Array',
-  }
-): Promise<IImage> {
-  return createAndCacheDerivedImage(referencedImageId, options);
+  });
 }
