@@ -834,6 +834,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     // Using an arbitrary start point (canvasPoint), calculate the
     // mm spacing for the canvas in the X and Y directions.
+    const { voxelManager } = viewport.getImageData();
     const canvasPoint = canvasCoordinates[0];
     const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
     const deltaXPoint = viewport.canvasToWorld([
@@ -910,39 +911,46 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let curRow = 0;
     let intersections = [];
     let intersectionCounter = 0;
-    const pointsInShape = pointInShapeCallback(
-      imageData,
-      (pointLPS, _pointIJK) => {
-        let result = true;
-        const point = viewport.worldToCanvas(pointLPS);
-        if (point[1] != curRow) {
-          intersectionCounter = 0;
-          curRow = point[1];
-          intersections = getLineSegmentIntersectionsCoordinates(
-            canvasCoordinates,
-            point,
-            [canvasPosEnd[0], point[1]]
-          );
-          intersections.sort(
-            (function (index) {
-              return function (a, b) {
-                return a[index] === b[index] ? 0 : a[index] < b[index] ? -1 : 1;
-              };
-            })(0)
-          );
-        }
-        if (intersections.length && point[0] > intersections[0][0]) {
-          intersections.shift();
-          intersectionCounter++;
-        }
-        if (intersectionCounter % 2 === 0) {
-          result = false;
-        }
-        return result;
-      },
+    const pointsInShape = voxelManager.forEach(
       this.configuration.statsCalculator.statsCallback,
-      boundsIJK
+      {
+        imageData,
+        isInObject: (pointLPS, _pointIJK) => {
+          let result = true;
+          const point = viewport.worldToCanvas(pointLPS);
+          if (point[1] != curRow) {
+            intersectionCounter = 0;
+            curRow = point[1];
+            intersections = getLineSegmentIntersectionsCoordinates(
+              canvasCoordinates,
+              point,
+              [canvasPosEnd[0], point[1]]
+            );
+            intersections.sort(
+              (function (index) {
+                return function (a, b) {
+                  return a[index] === b[index]
+                    ? 0
+                    : a[index] < b[index]
+                    ? -1
+                    : 1;
+                };
+              })(0)
+            );
+          }
+          if (intersections.length && point[0] > intersections[0][0]) {
+            intersections.shift();
+            intersectionCounter++;
+          }
+          if (intersectionCounter % 2 === 0) {
+            result = false;
+          }
+          return result;
+        },
+        boundsIJK,
+      }
     );
+
     const stats = this.configuration.statsCalculator.getStatistics();
 
     cachedStats[targetId] = {

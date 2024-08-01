@@ -28,13 +28,14 @@ async function computeVolumeSegmentationFromStack({
 
   const volumeId = options?.volumeId ?? csUtils.uuidv4();
 
-  await volumeLoader.createAndCacheVolumeFromImages(
-    volumeId,
-    segmentationImageIds,
-    {
-      additionalDetails,
-    }
-  );
+  // Todo: fix this
+  // await volumeLoader.createAndCacheVolumeFromImages(
+  //   volumeId,
+  //   segmentationImageIds,
+  //   {
+  //     additionalDetails,
+  //   }
+  // );
 
   return { volumeId };
 }

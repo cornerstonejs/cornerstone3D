@@ -138,8 +138,11 @@ export async function convertContourToStackLabelmap(
   });
 
   // create
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+    imageIds
+  );
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);

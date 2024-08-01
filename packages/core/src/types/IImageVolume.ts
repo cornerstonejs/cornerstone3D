@@ -68,9 +68,6 @@ interface IImageVolume {
   //cancel load
   cancelLoading?: () => void;
 
-  /** return the volume scalar data */
-  getScalarData(): PixelDataTypedArray;
-
   /** A voxel manager to manage the scalar data */
   voxelManager: VoxelManager<number>;
 

@@ -962,11 +962,8 @@ class CircleROITool extends AnnotationTool {
           {
             isInObject: (pointLPS) =>
               pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-            returnPoints: true,
             boundsIJK,
-            voxelToWorldMapping: {
-              imageData,
-            },
+            imageData,
           }
         );
 

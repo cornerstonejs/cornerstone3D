@@ -868,7 +868,7 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata } = image;
+      const { dimensions, imageData, metadata, voxelManager } = image;
 
       const pos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -936,13 +936,13 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          () => true,
+        const pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
-          boundsIJK
+          {
+            boundsIJK,
+            imageData,
+          }
         );
-
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {

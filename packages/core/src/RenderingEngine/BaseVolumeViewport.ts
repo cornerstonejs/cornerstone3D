@@ -1659,16 +1659,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const imageData = actor.getMapper().getInputData();
 
     const volume = cache.getVolume(uid);
-    const { dimensions } = volume;
-
     const index = transformWorldToIndex(imageData, point);
 
-    const voxelIndex =
-      index[2] * dimensions[0] * dimensions[1] +
-      index[1] * dimensions[0] +
-      index[0];
-
-    return volume.getScalarData()[voxelIndex];
+    return volume.voxelManager.getAtIJKPoint(index);
   }
 
   /**
