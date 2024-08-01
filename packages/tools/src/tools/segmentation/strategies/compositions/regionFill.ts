@@ -12,9 +12,9 @@ export default {
     const {
       segmentsLocked,
       segmentationImageData,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       previewVoxelManager: previewVoxelManager,
-      imageVoxelManager: imageVoxelManager,
+      imageVoxelManager,
       brushStrategy,
       centerIJK,
     } = operationData;
@@ -32,12 +32,12 @@ export default {
         }
       : (data) => setValue(operationData, data);
 
-    pointInShapeCallback(
-      segmentationImageData as unknown,
-      imageVoxelManager?.isInObject || segmentationVoxelManager.isInObject,
-      callback,
-      segmentationVoxelManager.boundsIJK
-    );
+    imageVoxelManager.forEach(callback, {
+      imageData: segmentationImageData,
+      isInObject:
+        imageVoxelManager?.isInObject || segmentationVoxelManager.isInObject,
+      boundsIJK: segmentationVoxelManager.boundsIJK,
+    });
 
     previewVoxelManager.addPoint(centerIJK);
   },

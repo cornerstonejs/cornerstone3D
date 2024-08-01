@@ -20,10 +20,10 @@ const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
-      imageVoxelManager: imageVoxelManager,
+      imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup

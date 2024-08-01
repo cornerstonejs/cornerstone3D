@@ -18,8 +18,8 @@ export default {
       operationName,
       centerIJK,
       strategySpecificConfiguration,
-      segmentationVoxelManager: segmentationVoxelManager,
-      imageVoxelManager: imageVoxelManager,
+      segmentationVoxelManager,
+      imageVoxelManager,
       segmentIndex,
     } = operationData;
     const { THRESHOLD } = strategySpecificConfiguration;

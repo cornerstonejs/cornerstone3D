@@ -35,10 +35,10 @@ export default {
     const {
       segmentIndex,
       previewSegmentIndex,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       centerIJK,
       strategySpecificConfiguration,
-      imageVoxelManager: imageVoxelManager,
+      imageVoxelManager,
       segmentationImageData,
       preview,
     } = operationData;
@@ -55,12 +55,11 @@ export default {
       hasPreviewIndex ||= value === previewSegmentIndex;
     };
 
-    pointInShapeCallback(
-      segmentationImageData as unknown,
-      imageVoxelManager.isInObject,
-      callback,
-      segmentationVoxelManager.boundsIJK
-    );
+    imageVoxelManager.forEach(callback, {
+      imageData: segmentationImageData,
+      isInObject: imageVoxelManager.isInObject,
+      boundsIJK: segmentationVoxelManager.boundsIJK,
+    });
 
     if (!hasSegmentIndex && !hasPreviewIndex) {
       return;
