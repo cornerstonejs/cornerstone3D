@@ -1,3 +1,4 @@
+import { Enums } from '@cornerstonejs/core';
 import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
@@ -17,7 +18,6 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
-import { LegacyMetadataModules } from './legacyMetadataModules';
 
 let lastImageIdDrawn = '';
 
@@ -104,7 +104,7 @@ function createImage(
 
   const { cornerstone } = external;
   const MetadataModules =
-    cornerstone.Enums?.MetadataModules || LegacyMetadataModules;
+    cornerstone.Enums?.MetadataModules || Enums.MetadataModules;
 
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);

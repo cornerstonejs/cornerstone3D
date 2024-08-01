@@ -1,3 +1,4 @@
+import { Enums } from '@cornerstonejs/core';
 import external from '../../../externalModules';
 import getNumberValues from './getNumberValues';
 import parseImageId from '../parseImageId';
@@ -23,11 +24,10 @@ import {
 import { getUSEnhancedRegions } from './USHelpers';
 import getVOILUTFunction from './getVOILUTFunction';
 import getVOI from './getVOI';
-import { LegacyMetadataModules } from '../../legacyMetadataModules';
 
 function metaDataProvider(type, imageId) {
   const MetadataModules =
-    external.cornerstone.Enums?.MetadataModules || LegacyMetadataModules;
+    external.cornerstone.Enums?.MetadataModules || Enums.MetadataModules;
   const { dicomParser } = external;
 
   // Several providers use array queries
