@@ -229,9 +229,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       const previousTextureParameters =
         model.scalarTexture.getTextureParameters();
 
-      // const dataType = image.getPointData().getScalars().getDataType();
-      // const data = image.getPointData().getScalars().getData();
-
       // @ts-ignore
       const dataType = image.getDataType();
 

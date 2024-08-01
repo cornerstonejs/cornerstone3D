@@ -207,23 +207,7 @@ export default class BaseStreamingImageVolume
 
   public successCallback(imageId: string, image) {
     const imageIdIndex = this.getImageIdIndex(imageId);
-    const options = this.getLoaderImageOptions(imageId);
-    // const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
-
-    // handleArrayBufferLoad(scalarData, image, options);
-
-    const { scalingParameters } = image.preScale || {};
     const { imageQualityStatus } = image;
-    const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
-
-    // Check if there is a cached image for the same imageURI (different
-    // data loader scheme)
-    const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-
-    // Check if the image was already loaded by another volume and we are here
-    // since we got the imageLoadObject from the cache from the other already loaded
-    // volume
-    const cachedVolume = cache.getVolumeContainingImageId(imageId);
 
     // check if the load was cancelled while we were waiting for the image
     // if so we don't want to do anything
@@ -236,39 +220,10 @@ export default class BaseStreamingImageVolume
     }
 
     // if it is not a cached image or volume
-    if (!cachedImage && !(cachedVolume && cachedVolume.volume !== this)) {
-      return this.updateTextureAndTriggerEvents(
-        imageIdIndex,
-        imageId,
-        imageQualityStatus
-      );
-    }
-
-    // it is either cachedImage or cachedVolume
-    const isFromImageCache = !!cachedImage;
-
-    if (isFromImageCache && options.targetBuffer) {
-      // put it in the imageCacheOffsetMap, since we are going to use it
-      // for cache optimization later
-      this.imageCacheOffsetMap.set(imageId, {
-        imageIdIndex,
-        frameIndex,
-        offset: options.targetBuffer?.offset || 0,
-        length: options.targetBuffer?.length,
-      });
-    }
-
-    const cachedImageOrVolume = cachedImage || cachedVolume.volume;
-
-    this.handleImageComingFromCache(
-      cachedImageOrVolume,
-      isFromImageCache,
-      scalingParameters,
-      scalarData,
-      frameIndex,
-      scalarData.buffer,
+    return this.updateTextureAndTriggerEvents(
       imageIdIndex,
-      imageId
+      imageId,
+      imageQualityStatus
     );
   }
 
@@ -421,8 +376,6 @@ export default class BaseStreamingImageVolume
       this.isPreScaled = false;
     }
 
-    const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
-
     return {
       // WADO Image Loader
       targetBuffer: {
@@ -519,56 +472,6 @@ export default class BaseStreamingImageVolume
     });
 
     return requests;
-  }
-
-  private handleImageComingFromCache(
-    cachedImageOrVolume,
-    isFromImageCache: boolean,
-    scalingParameters,
-    scalarData: Types.PixelDataTypedArray,
-    frameIndex: number,
-    arrayBuffer: ArrayBufferLike,
-    imageIdIndex: number,
-    imageId: string
-  ) {
-    const imageLoadObject = isFromImageCache
-      ? cachedImageOrVolume.imageLoadObject
-      : cachedImageOrVolume.convertToCornerstoneImage(imageId, imageIdIndex);
-
-    imageLoadObject.promise
-      .then((cachedImage) => {
-        const imageScalarData = this._scaleIfNecessary(
-          cachedImage,
-          scalingParameters
-        );
-        // todo add scaling and slope
-        const { pixelsPerImage, bytesPerImage } = this.cornerstoneImageMetaData;
-        const TypedArray = scalarData.constructor;
-        let byteOffset = bytesPerImage * frameIndex;
-
-        // create a view on the volume arraybuffer
-        const bytePerPixel = bytesPerImage / pixelsPerImage;
-
-        if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-          byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
-        }
-
-        // @ts-ignore
-        const volumeBufferView = new TypedArray(
-          arrayBuffer,
-          byteOffset,
-          pixelsPerImage
-        );
-        volumeBufferView.set(imageScalarData);
-        this.updateTextureAndTriggerEvents(
-          imageIdIndex,
-          imageId,
-          cachedImage.imageQualityStatus
-        );
-      })
-      .catch((err) => {
-        this.errorCallback(imageId, true, err);
-      });
   }
 
   /**

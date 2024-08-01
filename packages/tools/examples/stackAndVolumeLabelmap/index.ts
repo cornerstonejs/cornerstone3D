@@ -184,7 +184,9 @@ async function run() {
   viewport1 = renderingEngine.getViewport(viewportId1);
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
-  const imageIdsArray = [imageIds[50], imageIds[100]];
+  const imageId = imageIds[80];
+  console.debug(imageId);
+  const imageIdsArray = [imageId];
 
   const volumeId = 'VOLUME_ID';
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
@@ -196,6 +198,7 @@ async function run() {
   await viewport2.setStack(imageIdsArray, 0);
 
   viewport1.setVolumes([{ volumeId }]);
+
   renderingEngine.render();
 
   const segmentationVolumeId = 'SEGMENTATION_VOLUME_ID';
@@ -234,6 +237,11 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
+
+  setTimeout(() => {
+    viewport1.setProperties({ interpolationType: 0 });
+    renderingEngine.render();
+  }, 1000);
 }
 
 run();

@@ -137,6 +137,8 @@ function loadImageFromCacheOrVolume(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
+  return loadImageFromImageLoader(imageId, options);
+
   if (options.ignoreCache) {
     return loadImageFromImageLoader(imageId, options);
   }
