@@ -166,6 +166,10 @@ export class ImageVolume implements IImageVolume {
     }
   }
 
+  public get sizeInBytes(): number {
+    return this.voxelManager.sizeInBytes;
+  }
+
   public get scalarData(): PixelDataTypedArray | PixelDataTypedArray[] {
     const isDynamicVolume = this.isDynamicVolume();
     const scalarData = this.voxelManager.getScalarData();

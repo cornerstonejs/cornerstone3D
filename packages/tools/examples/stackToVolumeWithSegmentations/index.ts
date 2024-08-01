@@ -358,8 +358,10 @@ async function _startFromStack(
   imageIds: string[],
   renderingEngine: RenderingEngine
 ) {
-  const { imageIds: segmentationImageIds } =
+  const derivedImages =
     await cornerstone.imageLoader.createAndCacheDerivedImages(imageIds);
+
+  const segmentationImageIds = derivedImages.map((image) => image.imageId);
 
   // Instantiate a rendering engine
   // Create a stack viewport

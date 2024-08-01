@@ -203,7 +203,7 @@ async function run() {
         representation: {
           type: csToolsEnums.SegmentationRepresentations.Labelmap,
           data: {
-            imageIds: segmentationImages.imageIds,
+            imageIds: segmentationImages.map((it) => it.imageId),
           },
         },
       },

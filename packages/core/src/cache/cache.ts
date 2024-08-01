@@ -14,7 +14,6 @@ import {
 import { triggerEvent, imageIdToURI } from '../utilities';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
-import { restoreImagesFromBuffer } from './utils/restoreImagesFromBuffer';
 
 const ONE_GB = 1073741824;
 
@@ -167,10 +166,6 @@ class Cache implements ICache {
     if (volume.imageData) {
       volume.imageData.delete();
     }
-
-    // if we had views for the images of the volume, we need to restore them
-    // to avoid memory leaks
-    restoreImagesFromBuffer(volume);
 
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
@@ -591,6 +586,70 @@ class Cache implements ICache {
 
     return this._imageCache.get(foundImageId);
   }
+
+  /**
+   * Common logic for putting a volume into the cache
+   *
+   * @param volumeId - VolumeId for the volume
+   * @param volume - The loaded volume
+   * @param cachedVolume - The CachedVolume object
+   */
+  private _putVolumeCommon(
+    volumeId: string,
+    volume: IImageVolume,
+    cachedVolume: ICachedVolume
+  ): void {
+    if (!this._volumeCache.get(volumeId)) {
+      console.warn(
+        'The volume was purged from the cache before it completed loading.'
+      );
+      return;
+    }
+
+    cachedVolume.loaded = true;
+    cachedVolume.volume = volume;
+    const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
+      volume: cachedVolume,
+    };
+
+    triggerEvent(eventTarget, Events.VOLUME_CACHE_VOLUME_ADDED, eventDetails);
+  }
+
+  /**
+   * Puts a new volume directly into the cache (synchronous version)
+   *
+   * @param volumeId - VolumeId for the volume
+   * @param volume - The loaded volume
+   */
+  public putVolumeSync(volumeId: string, volume: IImageVolume): void {
+    if (volumeId === undefined) {
+      throw new Error('putVolumeSync: volumeId must not be undefined');
+    }
+
+    if (this._volumeCache.has(volumeId)) {
+      throw new Error('putVolumeSync: volumeId already in cache');
+    }
+
+    const cachedVolume: ICachedVolume = {
+      loaded: false,
+      volumeId,
+      volumeLoadObject: {
+        promise: Promise.resolve(volume),
+      },
+      timeStamp: Date.now(),
+      sizeInBytes: 0,
+    };
+
+    this._volumeCache.set(volumeId, cachedVolume);
+
+    try {
+      this._putVolumeCommon(volumeId, volume, cachedVolume);
+    } catch (error) {
+      this._volumeCache.delete(volumeId);
+      throw error;
+    }
+  }
+
   /**
    * Puts a new image load object into the cache
    *
@@ -633,9 +692,6 @@ class Cache implements ICache {
       );
     }
 
-    // todo: @Erik there are two loaded flags, one inside cachedVolume and the other
-    // inside the volume.loadStatus.loaded, the actual all pixelData loaded is the
-    // loadStatus one. This causes confusion
     const cachedVolume: ICachedVolume = {
       loaded: false,
       volumeId,
@@ -648,45 +704,7 @@ class Cache implements ICache {
 
     return volumeLoadObject.promise
       .then((volume: IImageVolume) => {
-        if (!this._volumeCache.get(volumeId)) {
-          // If the image has been purged before being loaded, we stop here.
-          console.warn(
-            'The image was purged from the cache before it completed loading.'
-          );
-          return;
-        }
-
-        if (Number.isNaN(volume.sizeInBytes)) {
-          throw new Error(
-            'putVolumeLoadObject: volume.sizeInBytes must not be undefined'
-          );
-        }
-        // if (volume.sizeInBytes.toFixed === undefined) {
-        //   throw new Error(
-        //     'putVolumeLoadObject: volume.sizeInBytes is not a number'
-        //   );
-        // }
-
-        // this.isCacheable is called at the volume loader, before requesting
-        // the images of the volume
-
-        this.decacheIfNecessaryUntilBytesAvailable(
-          volume.sizeInBytes,
-          volume.imageIds
-        );
-
-        // cachedVolume.loaded = true
-        cachedVolume.volume = volume;
-
-        const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
-          volume: cachedVolume,
-        };
-
-        triggerEvent(
-          eventTarget,
-          Events.VOLUME_CACHE_VOLUME_ADDED,
-          eventDetails
-        );
+        this._putVolumeCommon(volumeId, volume, cachedVolume);
       })
       .catch((error) => {
         this._volumeCache.delete(volumeId);

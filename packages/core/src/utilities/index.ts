@@ -79,7 +79,6 @@ import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
-import * as cacheUtils from './cacheUtils';
 import * as color from './color';
 
 export {
@@ -160,7 +159,6 @@ export {
   RLEVoxelMap,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
-  cacheUtils,
   roundNumber,
   roundToPrecision,
   getViewportImageIds,

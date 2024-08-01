@@ -12,13 +12,12 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
 const {
-  CircleROITool,
+  EllipticalROITool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
   ZoomTool,
@@ -84,7 +83,7 @@ async function run() {
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(CircleROITool);
+  cornerstoneTools.addTool(EllipticalROITool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
@@ -93,13 +92,13 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(CircleROITool.toolName, { volumeId });
+  toolGroup.addTool(EllipticalROITool.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(CircleROITool.toolName, {
+  toolGroup.setToolActive(EllipticalROITool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
