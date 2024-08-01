@@ -17,6 +17,7 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
+import { PixelDataTypedArrayString } from '../../../core/src/types';
 
 let lastImageIdDrawn = '';
 
@@ -302,6 +303,8 @@ function createImage(
 
       const image: DICOMLoaderIImage = {
         imageId,
+        dataType: imageFrame.pixelData.constructor
+          .name as PixelDataTypedArrayString,
         color: isColorImage,
         calibration: calibrationModule,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,

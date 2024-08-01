@@ -1,7 +1,15 @@
 import { vec3 } from 'gl-matrix';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
-import { ImageVolumeProps, Mat3, Point3 } from '../types';
+import {
+  ImageVolumeProps,
+  Mat3,
+  PixelDataTypedArrayString,
+  Point3,
+} from '../types';
+import getScalingParameters from './getScalingParameters';
+import { hasFloatScalingParameters } from './hasFloatScalingParameters';
+import { canRenderFloatTextures, getConfiguration } from '../init';
 
 /**
  * Generates volume properties from a list of image IDs.
@@ -31,7 +39,6 @@ function generateVolumePropsFromImageIds(
   );
 
   const scanAxisNormal = vec3.create();
-
   vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
   const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
@@ -54,12 +61,83 @@ function generateVolumePropsFromImageIds(
     dimensions,
     spacing,
     origin,
+    dataType: _determineDataType(sortedImageIds, volumeMetadata),
     direction,
     metadata: volumeMetadata,
     imageIds: sortedImageIds,
     volumeId,
     voxelManager: null,
   };
+}
+
+/**
+ * Determines the appropriate data type based on bits allocated and other parameters.
+ * @param BitsAllocated - The number of bits allocated for each pixel.
+ * @param signed - Whether the data is signed.
+ * @param use16BitDataType - Flag to use 16-bit data type.
+ * @param canRenderFloat - Whether float rendering is supported.
+ * @param floatAfterScale - Whether to use float after scaling.
+ * @param hasNegativeRescale - Whether there's a negative rescale.
+ * @returns The determined data type.
+ */
+function _determineDataType(
+  imageIds,
+  volumeMetadata
+): PixelDataTypedArrayString {
+  const { BitsAllocated, PixelRepresentation, PhotometricInterpretation } =
+    volumeMetadata;
+
+  const signed = PixelRepresentation === 1;
+  const numComponents = PhotometricInterpretation === 'RGB' ? 3 : 1;
+
+  const imageIdIndex = Math.floor(imageIds.length / 2);
+  const imageId = imageIds[imageIdIndex];
+  const scalingParameters = getScalingParameters(imageId);
+  const hasNegativeRescale =
+    scalingParameters.rescaleIntercept < 0 ||
+    scalingParameters.rescaleSlope < 0;
+
+  // The prescale is ALWAYS used with modality LUT, so we can assume that
+  // if the rescale slope is not an integer, we need to use Float32
+  const floatAfterScale = hasFloatScalingParameters(scalingParameters);
+  const canRenderFloat = canRenderFloatTextures();
+  const { useNorm16Texture, preferSizeOverAccuracy } =
+    getConfiguration().rendering;
+  const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
+
+  switch (BitsAllocated) {
+    case 8:
+      if (signed) {
+        throw new Error(
+          '8 Bit signed images are not yet supported by this plugin.'
+        );
+      }
+      return 'Uint8Array';
+
+    case 16:
+      // Temporary fix for 16 bit images to use Float32
+      if (!use16BitDataType || (canRenderFloat && floatAfterScale)) {
+        return 'Float32Array';
+      }
+      if (signed || hasNegativeRescale) {
+        return 'Int16Array';
+      }
+      if (!signed && !hasNegativeRescale) {
+        return 'Uint16Array';
+      }
+      return 'Float32Array';
+
+    case 24:
+      return 'Uint8Array';
+
+    case 32:
+      return 'Float32Array';
+
+    default:
+      throw new Error(
+        `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`
+      );
+  }
 }
 
 export { generateVolumePropsFromImageIds };

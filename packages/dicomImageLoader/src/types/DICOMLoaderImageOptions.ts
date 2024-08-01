@@ -12,7 +12,7 @@ export interface DICOMLoaderImageOptions {
     scalingParameters?: Types.ScalingParameters;
   };
   targetBuffer?: {
-    type: 'Uint8Array' | 'Uint16Array' | 'Int16Array' | 'Float32Array';
+    type: Types.PixelDataTypedArrayString;
     arrayBuffer: ArrayBufferLike;
     length: number;
     offset: number;

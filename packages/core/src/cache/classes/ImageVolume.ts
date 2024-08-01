@@ -17,9 +17,11 @@ import {
   ImageVolumeProps,
   IImage,
   IImageLoadObject,
+  PixelDataTypedArrayString,
 } from '../../types';
 import cache from '../cache';
 import * as metaData from '../../metaData';
+import vtkCustomImageData from '../../RenderingEngine/vtkClasses/vtkCustomImageData';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -48,6 +50,7 @@ export class ImageVolume implements IImageVolume {
   metadata: Metadata;
   /** volume origin, Note this is an opinionated origin for the volume */
   origin: Point3;
+  dataType: PixelDataTypedArrayString;
   voxelManager: VoxelManager<number>;
   /** Whether preScaling has been performed on the volume */
   /** volume scaling parameters if it contains scaled data */
@@ -88,14 +91,16 @@ export class ImageVolume implements IImageVolume {
       spacing,
       origin,
       direction,
+      dataType,
       volumeId,
       referencedVolumeId,
-      imageData,
       metadata,
       referencedImageIds,
       additionalDetails,
       voxelManager,
     } = props;
+
+    let { imageData } = props;
 
     this.imageIds = imageIds;
     this.volumeId = volumeId;
@@ -104,44 +109,29 @@ export class ImageVolume implements IImageVolume {
     this.spacing = spacing;
     this.origin = origin;
     this.direction = direction;
+    this.dataType = dataType;
+
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
+
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
 
     this.voxelManager = voxelManager;
 
-    if (imageData) {
-      this.imageData = imageData;
-    } else {
-      const imageData = vtkImageData.newInstance();
-      // const { scalarData } = generateEmptyVolumeData(imageIds, {
-      //   ...metadata,
-      //   dimensions,
-      // });
-
-      // const scalarArray = vtkDataArray.newInstance({
-      //   name: 'Pixels',
-      //   numberOfComponents: 1,
-      //   values: scalarData,
-      // });
-
+    if (!imageData) {
+      imageData = vtkCustomImageData.newInstance();
       imageData.setDimensions(dimensions);
       imageData.setSpacing(spacing);
       imageData.setDirection(direction);
       imageData.setOrigin(origin);
-      // imageData.getPointData().setScalars(scalarArray);
 
       this.imageData = imageData;
-
-      // We need a way to identify when the volume is passed to the webgl
-      // so that we can then release the memory of the scalar data in the
-      // image volume, and replace it with a reference to the scalar data
-      // from the image cache
-      // setTimeout(() => {
-      //   this.scalarData = null;
-      // }, 1000);
     }
+    // @ts-ignore
+    imageData.setDataType(dataType);
+    // @ts-ignore
+    imageData.setVoxelManager(this.voxelManager);
 
     this.numFrames = this._getNumFrames();
     this._reprocessImageIds();

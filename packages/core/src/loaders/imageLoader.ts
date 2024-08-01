@@ -316,7 +316,13 @@ export function createAndCacheDerivedImage(
   });
 
   const localImage = createAndCacheLocalImage(
-    { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },
+    {
+      scalarData: imageScalarData,
+      onCacheAdd,
+      skipCreateBuffer,
+      targetBufferType: imageScalarData.constructor
+        .name as PixelDataTypedArrayString,
+    },
     imageId
   );
 
@@ -341,7 +347,7 @@ export function createAndCacheDerivedImages(
   referencedImageIds: Array<string>,
   options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
-    target?: PixelDataTypedArrayString;
+    targetBufferType?: PixelDataTypedArrayString;
   } = {}
 ): IImage[] {
   if (referencedImageIds?.length === 0) {
@@ -382,6 +388,7 @@ export function createAndCacheLocalImage(
     windowWidth: 0,
     color: false,
     numComps: 1,
+    dataType: options.targetBufferType,
     slope: 1,
     minPixelValue: 0,
     maxPixelValue: 255,

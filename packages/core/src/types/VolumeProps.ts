@@ -3,6 +3,7 @@ import type Point3 from './Point3';
 import type Metadata from './Metadata';
 import Mat3 from './Mat3';
 import { VoxelManager } from '../utilities';
+import { PixelDataTypedArrayString } from './PixelDataTypedArray';
 
 /**
  * Properties required to instantiate a Volume object.
@@ -33,6 +34,8 @@ interface VolumeProps {
 
   /** Must have voxel manager */
   voxelManager: VoxelManager<number>;
+
+  dataType: PixelDataTypedArrayString;
 
   /** Property to store additional information */
   additionalDetails?: Record<string, any>;

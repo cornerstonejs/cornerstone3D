@@ -49,7 +49,6 @@ import applyPreset from './applyPreset';
 import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
-import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
@@ -140,7 +139,6 @@ export {
   deepMerge,
   PointsManager,
   getScalingParameters,
-  getScalarDataType,
   colormap,
   getImageLegacy,
   ProgressiveIterator,
