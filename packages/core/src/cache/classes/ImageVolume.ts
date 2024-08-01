@@ -132,6 +132,8 @@ export class ImageVolume implements IImageVolume {
     imageData.setDataType(dataType);
     // @ts-ignore
     imageData.setVoxelManager(this.voxelManager);
+    // @ts-ignore
+    imageData.setId(volumeId);
 
     this.numFrames = this._getNumFrames();
     this._reprocessImageIds();

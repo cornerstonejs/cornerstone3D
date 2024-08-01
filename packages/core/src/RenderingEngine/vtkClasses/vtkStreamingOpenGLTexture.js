@@ -154,6 +154,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     };
   };
 
+  publicAPI.getVolumeId = () => model.volumeId;
+
   publicAPI.setTextureParameters = (params) => {
     if (params.width) {
       model.width = params.width;

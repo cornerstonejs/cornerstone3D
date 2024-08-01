@@ -33,6 +33,7 @@ import {
 } from '../types';
 import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 import { imageLoader } from '..';
+import vtkCustomImageData from '../RenderingEngine/vtkClasses/vtkCustomImageData';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -58,45 +59,6 @@ interface LocalVolumeOptions {
   };
 }
 
-/**
- * Adds a single scalar data to a 3D volume
- */
-function addScalarDataToImageData(
-  imageData: vtkImageDataType,
-  scalarData: PixelDataTypedArray,
-  dataArrayAttrs
-) {
-  const scalarArray = vtkDataArray.newInstance({
-    name: `Pixels`,
-    values: scalarData,
-    ...dataArrayAttrs,
-  });
-
-  imageData.getPointData().setScalars(scalarArray);
-}
-
-/**
- * Adds multiple scalar data (time points) to a 4D volume
- */
-function addScalarDataArraysToImageData(
-  imageData: vtkImageDataType,
-  scalarDataArrays: PixelDataTypedArray[],
-  dataArrayAttrs
-) {
-  scalarDataArrays.forEach((scalarData, i) => {
-    const vtkScalarArray = vtkDataArray.newInstance({
-      name: `timePoint-${i}`,
-      values: scalarData,
-      ...dataArrayAttrs,
-    });
-
-    imageData.getPointData().addArray(vtkScalarArray);
-  });
-
-  // Set the first as active otherwise nothing is displayed on the screen
-  imageData.getPointData().setActiveScalars('timePoint-0');
-}
-
 function createInternalVTKRepresentation(
   volume: IImageVolume
 ): vtkImageDataType {
@@ -108,13 +70,14 @@ function createInternalVTKRepresentation(
     numComponents = 3;
   }
 
-  const imageData = vtkImageData.newInstance();
+  const imageData = vtkCustomImageData.newInstance();
   const dataArrayAttrs = { numberOfComponents: numComponents };
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
+  imageData.setDataType(volume.dataType);
 
   // Add scalar data to 3D or 4D volume
   // if (volume.isDynamicVolume()) {
@@ -307,6 +270,8 @@ export function createAndCacheDerivedVolume(
     }
   );
 
+  const dataType = derivedImages[0].dataType;
+
   const derivedVolumeImageIds = derivedImages.map((image) => image.imageId);
 
   const voxelManager = VoxelManager.createImageVolumeVoxelManager({
@@ -316,6 +281,7 @@ export function createAndCacheDerivedVolume(
 
   const derivedVolume = new ImageVolume({
     volumeId,
+    dataType,
     metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
@@ -325,7 +291,7 @@ export function createAndCacheDerivedVolume(
     referencedVolumeId,
     imageIds: derivedVolumeImageIds,
     referencedImageIds: referencedVolume.imageIds ?? [],
-  });
+  }) as IImageVolume;
 
   cache.putVolumeSync(volumeId, derivedVolume);
 
@@ -413,6 +379,14 @@ export function createLocalVolume(
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
   imageData.getPointData().setScalars(scalarArray);
+  // imageData.setDataType(dataType);
+
+  const voxelManager = VoxelManager.createImageVoxelManager({
+    width: dimensions[0],
+    height: dimensions[1],
+    numComponents: 1,
+    scalarData: scalarData,
+  });
 
   const derivedVolume = new ImageVolume({
     volumeId,
@@ -421,12 +395,7 @@ export function createLocalVolume(
     spacing,
     origin,
     direction,
-    voxelManager: VoxelManager.createImageVoxelManager({
-      width: dimensions[0],
-      height: dimensions[1],
-      numComponents: 1,
-      scalarData: scalarData,
-    }),
+    voxelManager,
     imageData: imageData,
     referencedImageIds: options.referencedImageIds || [],
     referencedVolumeId: options.referencedVolumeId,

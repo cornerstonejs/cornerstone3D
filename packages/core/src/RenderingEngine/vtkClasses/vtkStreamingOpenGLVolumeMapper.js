@@ -232,7 +232,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // const dataType = image.getPointData().getScalars().getDataType();
       // const data = image.getPointData().getScalars().getData();
 
-      const dataType = 'Float32Array';
+      // @ts-ignore
+      const dataType = image.getDataType();
 
       let shouldReset = true;
       if (previousTextureParameters?.dataType === dataType) {
@@ -279,7 +280,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             dims[1],
             dims[2],
             1,
-            'Float32Array',
+            dataType,
             null
           );
         }

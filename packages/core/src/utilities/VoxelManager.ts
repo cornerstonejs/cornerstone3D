@@ -607,7 +607,7 @@ export default class VoxelManager<T> {
   }): VoxelManager<number> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
-    function getPixelInfo(index, imageIds, cache, pixelsPerSlice) {
+    function getPixelInfo(index) {
       const sliceIndex = Math.floor(index / pixelsPerSlice);
       const imageId = imageIds[sliceIndex];
       const image = cache.getImage(imageId);
@@ -624,23 +624,13 @@ export default class VoxelManager<T> {
       return { pixelData, pixelIndex };
     }
 
-    function getVoxelValue(index, imageIds, pixelsPerSlice) {
-      const { pixelData, pixelIndex } = getPixelInfo(
-        index,
-        imageIds,
-        cache,
-        pixelsPerSlice
-      );
+    function getVoxelValue(index) {
+      const { pixelData, pixelIndex } = getPixelInfo(index);
       return pixelData[pixelIndex];
     }
 
-    function setVoxelValue(index, v, imageIds, pixelsPerSlice) {
-      const { pixelData, pixelIndex } = getPixelInfo(
-        index,
-        imageIds,
-        cache,
-        pixelsPerSlice
-      );
+    function setVoxelValue(index, v) {
+      const { pixelData, pixelIndex } = getPixelInfo(index);
 
       if (pixelData[pixelIndex] === v) {
         return false;
@@ -652,12 +642,12 @@ export default class VoxelManager<T> {
 
     const voxelManager = new VoxelManager(
       dimensions,
-      (index) => getVoxelValue(index, imageIds, pixelsPerSlice),
-      (index, v) => setVoxelValue(index, v, imageIds, pixelsPerSlice)
+      (index) => getVoxelValue(index),
+      (index, v) => setVoxelValue(index, v)
     );
 
     voxelManager._getConstructor = () => {
-      const { pixelData } = getPixelInfo(0, imageIds, cache, pixelsPerSlice);
+      const { pixelData } = getPixelInfo(0);
       return pixelData?.constructor;
     };
 

@@ -18,10 +18,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
+import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -31,10 +28,7 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import {
-  getCurrentLabelmapImageIdForViewport,
-  getSegmentation,
-} from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
