@@ -1,9 +1,9 @@
 /* eslint import/extensions: 0 */
 import { expect } from 'chai';
-import getVOI from '../../../src/imageLoader/wadouri/metaData/getVOI.js';
-import xhrRequest from '../../../src/imageLoader/internal/xhrRequest.js';
-import dataSetCacheManager from '../../../src/imageLoader/wadouri/dataSetCacheManager.js';
-import parseImageId from '../../../src/imageLoader/wadouri/parseImageId.js';
+import getVOI from '../../../../src/imageLoader/wadouri/metaData/getVOI.js';
+import xhrRequest from '../../../../src/imageLoader/internal/xhrRequest.js';
+import dataSetCacheManager from '../../../../src/imageLoader/wadouri/dataSetCacheManager.js';
+import parseImageId from '../../../../src/imageLoader/wadouri/parseImageId.js';
 
 describe('getVOI', function () {
   it('should parse window center and width from frame voi lut sequence', (done) => {
