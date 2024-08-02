@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.83.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.2...v1.83.3) (2024-08-02)
+
+### Bug Fixes
+
+- Palette color display ([#1414](https://github.com/cornerstonejs/cornerstone3D/issues/1414)) ([b8ba075](https://github.com/cornerstonejs/cornerstone3D/commit/b8ba0755d6fef208f7c71091ea235a8df6b7adf9))
+
 ## [1.83.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.1...v1.83.2) (2024-08-02)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
