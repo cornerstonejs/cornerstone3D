@@ -1,9 +1,9 @@
 /* eslint import/extensions: 0 */
 import { expect } from 'chai';
-import getVOILUTFunction from '../../../src/imageLoader/wadouri/metaData/getVOILUTFunction.js';
-import xhrRequest from '../../../src/imageLoader/internal/xhrRequest.js';
-import dataSetCacheManager from '../../../src/imageLoader/wadouri/dataSetCacheManager.js';
-import parseImageId from '../../../src/imageLoader/wadouri/parseImageId.js';
+import xhrRequest from '../../../../src/imageLoader/internal/xhrRequest.js';
+import dataSetCacheManager from '../../../../src/imageLoader/wadouri/dataSetCacheManager.js';
+import parseImageId from '../../../../src/imageLoader/wadouri/parseImageId.js';
+import getVOILUTFunction from '../../../../src/imageLoader/wadouri/metaData/getVOILUTFunction.js';
 
 describe('getVOILUTFunction', function () {
   it('should parse voi lut function from frame voi lut sequence', (done) => {
