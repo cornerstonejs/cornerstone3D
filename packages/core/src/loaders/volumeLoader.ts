@@ -28,6 +28,7 @@ import {
   PixelDataTypedArray,
   IVolumeLoadObject,
   PixelDataTypedArrayString,
+  IDynamicImageVolume,
 } from '../types';
 import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 import { imageLoader } from '..';
@@ -57,6 +58,45 @@ interface LocalVolumeOptions {
   };
 }
 
+/**
+ * Adds a single scalar data to a 3D volume
+ */
+function addScalarDataToImageData(
+  imageData: vtkImageDataType,
+  scalarData: PixelDataTypedArray,
+  dataArrayAttrs
+) {
+  const scalarArray = vtkDataArray.newInstance({
+    name: `Pixels`,
+    values: scalarData,
+    ...dataArrayAttrs,
+  });
+
+  imageData.getPointData().setScalars(scalarArray);
+}
+
+/**
+ * Adds multiple scalar data (time points) to a 4D volume
+ */
+function addScalarDataArraysToImageData(
+  imageData: vtkImageDataType,
+  scalarDataArrays: PixelDataTypedArray[],
+  dataArrayAttrs
+) {
+  scalarDataArrays.forEach((scalarData, i) => {
+    const vtkScalarArray = vtkDataArray.newInstance({
+      name: `timePoint-${i}`,
+      values: scalarData,
+      ...dataArrayAttrs,
+    });
+
+    imageData.getPointData().addArray(vtkScalarArray);
+  });
+
+  // Set the first as active otherwise nothing is displayed on the screen
+  imageData.getPointData().setActiveScalars('timePoint-0');
+}
+
 function createInternalVTKRepresentation(
   volume: IImageVolume
 ): vtkImageDataType {
@@ -76,19 +116,20 @@ function createInternalVTKRepresentation(
   imageData.setOrigin(origin);
   imageData.setDataType(volume.dataType);
   imageData.setNumberOfComponents(numComponents);
+  const dataArrayAttrs = { numberOfComponents: numComponents };
 
   // Add scalar data to 3D or 4D volume
-  // if (volume.isDynamicVolume()) {
-  //   const scalarDataArrays = (<IDynamicImageVolume>(
-  //     volume
-  //   )).getScalarDataArrays();
+  if (volume.isDynamicVolume()) {
+    const scalarDataArrays = (<IDynamicImageVolume>(
+      volume
+    )).getScalarDataArrays();
 
-  //   addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
-  // } else {
-  //   const scalarData = volume.getScalarData();
-
-  //   addScalarDataToImageData(imageData, scalarData, dataArrayAttrs);
-  // }
+    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
+  } else {
+    if (volume.hasVolumeScalarData) {
+      addScalarDataToImageData(imageData, volume.scalarData, dataArrayAttrs);
+    }
+  }
 
   return imageData;
 }

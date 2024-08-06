@@ -230,6 +230,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
       // @ts-ignore
       const dataType = image.getDataType();
+      const hasVolumeScalarData = model.scalarTexture.getHasVolumeScalarData();
 
       let shouldReset = true;
       if (previousTextureParameters?.dataType === dataType) {
@@ -271,14 +272,28 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             model.renderable.getPreferSizeOverAccuracy()
           );
         } else {
-          model.scalarTexture.create3DFromRaw(
-            dims[0],
-            dims[1],
-            dims[2],
-            numIComps,
-            dataType,
-            null
-          );
+          if (!hasVolumeScalarData) {
+            model.scalarTexture.create3DFromRaw(
+              dims[0],
+              dims[1],
+              dims[2],
+              numIComps,
+              dataType,
+              null
+            );
+          } else {
+            const scalars =
+              image.getPointData() && image.getPointData().getScalars();
+
+            model.scalarTexture.create3DFromRaw(
+              dims[0],
+              dims[1],
+              dims[2],
+              numIComps,
+              scalars.getDataType(),
+              scalars.getData()
+            );
+          }
         }
       } else {
         model.scalarTexture.deactivate();

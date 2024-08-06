@@ -16,6 +16,10 @@ import cache from '../../cache';
 function vtkStreamingOpenGLTexture(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLTexture');
 
+  model.updatedFrames = [];
+  model.volumeId = null;
+  model.hasVolumeScalarData = false;
+
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
   publicAPI.create3DFilterableFromRaw = (
@@ -146,6 +150,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   };
 
   publicAPI.getVolumeId = () => model.volumeId;
+
+  publicAPI.setHasVolumeScalarData = (hasVolumeScalarData) => {
+    model.hasVolumeScalarData = hasVolumeScalarData;
+  };
+
+  publicAPI.getHasVolumeScalarData = () => model.hasVolumeScalarData;
 
   publicAPI.setTextureParameters = (params) => {
     if (params.width) {

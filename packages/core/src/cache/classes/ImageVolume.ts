@@ -1,7 +1,5 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import {
-  generateEmptyVolumeData,
   genericMetadataProvider,
   getMinMax,
   imageIdToURI,
@@ -18,6 +16,7 @@ import {
   IImage,
   IImageLoadObject,
   PixelDataTypedArrayString,
+  RGB,
 } from '../../types';
 import cache from '../cache';
 import * as metaData from '../../metaData';
@@ -50,8 +49,6 @@ export class ImageVolume implements IImageVolume {
   metadata: Metadata;
   /** volume origin, Note this is an opinionated origin for the volume */
   origin: Point3;
-  dataType: PixelDataTypedArrayString;
-  voxelManager: VoxelManager<number>;
   /** Whether preScaling has been performed on the volume */
   /** volume scaling parameters if it contains scaled data */
   scaling?: {
@@ -83,6 +80,21 @@ export class ImageVolume implements IImageVolume {
   /** Property to store additional information */
   additionalDetails?: Record<string, any>;
 
+  /**
+   * The new volume model which solely relies on the separate image data
+   * and do not cache the volume data at all
+   */
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  dataType?: PixelDataTypedArrayString;
+
+  /**
+   * To be deprecated scalarData and sizeInBytes
+   * which is the old model of allocating the volume data
+   * and caching it in the volume object
+   */
+  scalarDataProp?: PixelDataTypedArray;
+  // sizeInBytes?: number;
+
   constructor(props: ImageVolumeProps) {
     const {
       imageIds,
@@ -98,6 +110,7 @@ export class ImageVolume implements IImageVolume {
       referencedImageIds,
       additionalDetails,
       voxelManager,
+      scalarData,
     } = props;
 
     let { imageData } = props;
@@ -110,9 +123,17 @@ export class ImageVolume implements IImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
+    this.scalarDataProp = scalarData;
 
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
+
+    if (this.scalarDataProp) {
+      // We will transition to the new voxel manager approach, but for now,
+      // 4D and NIfTI formats require additional work before we can
+      // completely remove the old method.
+      this.vtkOpenGLTexture.setHasVolumeScalarData(true);
+    }
 
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
@@ -125,8 +146,6 @@ export class ImageVolume implements IImageVolume {
       imageData.setSpacing(spacing);
       imageData.setDirection(direction);
       imageData.setOrigin(origin);
-
-      this.imageData = imageData;
     }
     // @ts-ignore
     imageData.setDataType(dataType);
@@ -135,11 +154,15 @@ export class ImageVolume implements IImageVolume {
     // @ts-ignore
     imageData.setId(volumeId);
 
+    this.imageData = imageData;
+
     this.numFrames = this._getNumFrames();
     this._reprocessImageIds();
 
     //Todo: fix this
-    // this._createCornerstoneImageMetaData();
+    if (scalarData) {
+      this._createCornerstoneImageMetaData();
+    }
 
     if (scaling) {
       this.scaling = scaling;
@@ -158,16 +181,23 @@ export class ImageVolume implements IImageVolume {
     }
   }
 
+  public get hasVolumeScalarData(): boolean {
+    return this.scalarDataProp ? true : false;
+  }
+
   public get sizeInBytes(): number {
     return this.voxelManager.sizeInBytes;
   }
 
   public get scalarData(): PixelDataTypedArray | PixelDataTypedArray[] {
-    const isDynamicVolume = this.isDynamicVolume();
-    const scalarData = this.voxelManager.getScalarData();
-    return isDynamicVolume
-      ? <PixelDataTypedArray>scalarData
-      : [<PixelDataTypedArray>scalarData];
+    if (this.scalarDataProp) {
+      const isDynamicVolume = this.isDynamicVolume();
+      return isDynamicVolume
+        ? <PixelDataTypedArray>this.scalarDataProp
+        : <PixelDataTypedArray>this.scalarDataProp;
+    }
+
+    return this.voxelManager.getScalarData();
   }
 
   /** return the image ids for the volume if it is made of separated images */
@@ -259,11 +289,12 @@ export class ImageVolume implements IImageVolume {
     if (this.isDynamicVolume()) {
       throw new Error('Not implemented');
     } else {
-      throw new Error('Not implemented modified in the new voxel manager');
-      // this.scalarData = this.imageData
-      //   .getPointData()
-      //   .getScalars()
-      //   .getData() as PixelDataTypedArray;
+      if (this.scalarDataProp) {
+        this.scalarDataProp = this.imageData
+          .getPointData()
+          .getScalars()
+          .getData() as PixelDataTypedArray;
+      }
     }
 
     this.numFrames = this._getNumFrames();
@@ -301,6 +332,7 @@ export class ImageVolume implements IImageVolume {
 
   public getScalarDataLength(): number {
     const { scalarData } = this;
+
     return this.isDynamicVolume()
       ? (<PixelDataTypedArray[]>scalarData)[0].length
       : (<PixelDataTypedArray>scalarData).length;
@@ -317,7 +349,6 @@ export class ImageVolume implements IImageVolume {
       return this.imageIds.length;
     }
 
-    throw new Error('get num frames Not implemented yet for 4d');
     const { imageIds, scalarData } = this;
     const scalarDataCount = this.isDynamicVolume() ? scalarData.length : 1;
 

@@ -6,6 +6,8 @@ import {
   IImageLoadObject,
   Mat3,
   PixelDataTypedArrayString,
+  PixelDataTypedArray,
+  RGB,
 } from '../types';
 
 /**
@@ -34,8 +36,6 @@ interface IImageVolume {
       suvbwToSuvbsa?: number;
     };
   };
-  /** volume size in bytes */
-  sizeInBytes?: number;
   /** volume spacing */
   spacing: Point3;
   /** number of voxels in the volume */
@@ -67,10 +67,21 @@ interface IImageVolume {
   //cancel load
   cancelLoading?: () => void;
 
-  /** A voxel manager to manage the scalar data */
-  voxelManager: VoxelManager<number>;
+  /**
+   * The new volume model which solely relies on the separate image data
+   * and do not cache the volume data at all
+   */
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  dataType?: PixelDataTypedArrayString;
 
-  dataType: PixelDataTypedArrayString;
+  /**
+   * To be deprecated scalarData and sizeInBytes
+   * which is the old model of allocating the volume data
+   * and caching it in the volume object
+   */
+  sizeInBytes?: number;
+  hasVolumeScalarData?: boolean;
+
   convertToImageSlicesAndCache(): string[];
 
   /** return the index of a given imageId */
@@ -87,6 +98,7 @@ interface IImageVolume {
 
   /** */
   get imageCacheOffsetMap(): Map<string, any>;
+  get scalarData(): PixelDataTypedArray;
 
   /**
    * Mark the volume as having had the pixel data changed externally

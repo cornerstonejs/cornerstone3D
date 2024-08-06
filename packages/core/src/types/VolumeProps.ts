@@ -3,7 +3,10 @@ import type Point3 from './Point3';
 import type Metadata from './Metadata';
 import Mat3 from './Mat3';
 import { VoxelManager } from '../utilities';
-import { PixelDataTypedArrayString } from './PixelDataTypedArray';
+import {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
 
 /**
  * Properties required to instantiate a Volume object.
@@ -32,10 +35,20 @@ interface VolumeProps {
   /** Image data representing the volume */
   imageData?: vtkImageData;
 
-  /** Must have voxel manager */
-  voxelManager: VoxelManager<number>;
+  /**
+   * The new volume model which solely relies on the separate image data
+   * and do not cache the volume data at all
+   */
+  voxelManager?: VoxelManager<number>;
+  dataType?: PixelDataTypedArrayString;
 
-  dataType: PixelDataTypedArrayString;
+  /**
+   * To be deprecated scalarData and sizeInBytes
+   * which is the old model of allocating the volume data
+   * and caching it in the volume object
+   */
+  scalarData?: PixelDataTypedArray;
+  sizeInBytes?: number;
 
   /** Property to store additional information */
   additionalDetails?: Record<string, any>;
