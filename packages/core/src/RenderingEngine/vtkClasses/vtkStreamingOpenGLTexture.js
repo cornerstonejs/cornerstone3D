@@ -122,6 +122,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const zOffset = frameIndex;
 
     // Update the texture sub-image
+    // Todo: need to check other systems if it can handle it
     gl.texSubImage3D(
       model.target, // target
       0, // level
@@ -142,16 +143,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   publicAPI.setVolumeId = (volumeId) => {
     model.volumeId = volumeId;
-
-    model.volumeInfo = {
-      scale: [1],
-      offset: [0],
-      dataComputedScale: [1],
-      dataComputedOffset: [0],
-      width: 512,
-      height: 512,
-      depth: 311,
-    };
   };
 
   publicAPI.getVolumeId = () => model.volumeId;

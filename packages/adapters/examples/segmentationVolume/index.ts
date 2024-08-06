@@ -283,6 +283,7 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
     //
     const derivedVolume = await addSegmentationsToState(newSegmentationId);
     //
+    // Todo: need to move to the new model with voxel manager
     const derivedVolumeScalarData = derivedVolume.getScalarData();
     //
     derivedVolumeScalarData.set(
@@ -455,6 +456,7 @@ function removeActiveSegment() {
     const volume = cache.getVolume(activeSegmentation.segmentationId);
 
     // Get scalar data
+    // Todo: need to move to the new model with voxel manager
     const scalarData = volume.getScalarData();
 
     //

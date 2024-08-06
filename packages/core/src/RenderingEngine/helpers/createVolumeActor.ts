@@ -57,6 +57,7 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
+  // Todo: fix this for 3D RGB
   // const numberOfComponents = imageData
   //   .getPointData()
   //   .getScalars()

@@ -482,26 +482,6 @@ export default class VoxelManager<T> {
    * @returns A typed array containing the pixel data for the specified slice.
    * @throws Error if an invalid slice axis is provided.
    */
-  public getSliceData({
-    sliceIndex,
-    slicePlane,
-  }: {
-    sliceIndex: number;
-    slicePlane: number;
-  }): PixelDataTypedArray {
-    const hash = `${sliceIndex}-${slicePlane}`;
-
-    if (this._sliceDataCache.has(hash)) {
-      return this._sliceDataCache.get(hash);
-    }
-
-    const sliceData = this._getSliceData({ sliceIndex, slicePlane });
-
-    this._sliceDataCache.set(hash, sliceData);
-
-    return sliceData;
-  }
-
   public getSliceData = ({
     sliceIndex,
     slicePlane,
@@ -520,6 +500,7 @@ export default class VoxelManager<T> {
       return [] as PixelDataTypedArray;
     }
 
+    // Todo: optimize it when we have scalar data
     let sliceData: PixelDataTypedArray;
     switch (slicePlane) {
       case 0: // YZ plane
@@ -626,6 +607,11 @@ export default class VoxelManager<T> {
 
     function getVoxelValue(index) {
       const { pixelData, pixelIndex } = getPixelInfo(index);
+
+      if (!pixelData || !pixelIndex) {
+        return null;
+      }
+
       return pixelData[pixelIndex];
     }
 

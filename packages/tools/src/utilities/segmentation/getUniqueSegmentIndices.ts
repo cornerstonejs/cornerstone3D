@@ -93,10 +93,9 @@ function handleLabelmapSegmentation(segmentation, segmentationId) {
 
 function addVolumeSegmentIndices(keySet, segmentationId) {
   const volume = cache.getVolume(segmentationId);
-  const scalarData = volume.getScalarData();
-  scalarData.forEach((segmentIndex) => {
-    if (segmentIndex !== 0) {
-      keySet.add(segmentIndex);
+  volume.voxelManager.forEach(({ value }) => {
+    if (value !== 0) {
+      keySet.add(value);
     }
   });
 }

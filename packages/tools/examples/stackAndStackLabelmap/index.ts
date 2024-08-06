@@ -37,8 +37,8 @@ const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Segmentation in StackViewport',
-  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image. We show that even with different stack ordering, we are capable of mathcing the correct labelmap and render them on the second viewport'
+  'Segmentation in StackViewport with Different Stack Ordering',
+  'This example demonstrates how to render a segmentation in a StackViewport, even when the underlying image stacks have different ordering. We use a mammography image as an example, showcasing how the correct labelmap is matched and rendered on a second viewport, regardless of the stack order.'
 );
 
 const size = '500px';
