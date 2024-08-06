@@ -92,7 +92,7 @@ export class ImageVolume implements IImageVolume {
    * which is the old model of allocating the volume data
    * and caching it in the volume object
    */
-  scalarDataProp?: PixelDataTypedArray;
+  private scalarDataProp?: PixelDataTypedArray | PixelDataTypedArray[];
   // sizeInBytes?: number;
 
   constructor(props: ImageVolumeProps) {

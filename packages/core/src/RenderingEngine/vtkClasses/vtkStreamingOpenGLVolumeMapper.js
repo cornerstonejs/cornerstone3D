@@ -297,7 +297,12 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         }
       } else {
         model.scalarTexture.deactivate();
-        model.scalarTexture.update3DFromRaw();
+        if (hasVolumeScalarData) {
+          const data = image.getPointData().getScalars().getData();
+          model.scalarTexture.update3DFromRaw(data);
+        } else {
+          model.scalarTexture.update3DFromRaw();
+        }
       }
 
       model.scalarTextureString = toString;

@@ -374,12 +374,10 @@ export default class VoxelManager<T> {
   };
 
   public get sizeInBytes(): number {
-    const bytePerVoxel = this.getBytePerVoxel();
-
-    return this.getScalarDataLength() * bytePerVoxel;
+    return this.getScalarDataLength() * this.bytePerVoxel;
   }
 
-  public get getBytePerVoxel() {
+  public get bytePerVoxel() {
     if (this.scalarData) {
       return this.scalarData.BYTES_PER_ELEMENT;
     }
@@ -717,6 +715,37 @@ export default class VoxelManager<T> {
       dimensions,
       scalarData,
     });
+  }
+
+  public static createScalarDynamicVolumeVoxelManager({
+    scalarDataArrays,
+    dimensions,
+    timePoint = 0,
+  }: {
+    scalarDataArrays: PixelDataTypedArray[];
+    dimensions: Point3;
+    timePoint: number;
+  }): VoxelManager<number> {
+    let activeScalarData = scalarDataArrays[timePoint];
+
+    const voxelManager = new VoxelManager<number>(
+      dimensions,
+      (index) => activeScalarData[index],
+      (index, v) => {
+        const isChanged = activeScalarData[index] !== v;
+        activeScalarData[index] = v;
+        return isChanged;
+      }
+    );
+
+    voxelManager.scalarData = activeScalarData;
+
+    // Set the active time point
+    voxelManager.setTimePoint = (timePoint) => {
+      activeScalarData = scalarDataArrays[timePoint];
+    };
+
+    return voxelManager;
   }
 
   public static createImageVoxelManager({

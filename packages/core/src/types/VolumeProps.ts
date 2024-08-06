@@ -48,7 +48,7 @@ interface VolumeProps {
    * which is the old model of allocating the volume data
    * and caching it in the volume object
    */
-  scalarData?: PixelDataTypedArray;
+  scalarData?: PixelDataTypedArray | PixelDataTypedArray[];
   sizeInBytes?: number;
 
   /** Property to store additional information */

@@ -376,22 +376,45 @@ export default class BaseStreamingImageVolume
       this.isPreScaled = false;
     }
 
-    return {
-      // WADO Image Loader
-      targetBuffer: {
+    let targetBuffer = {
+      type: this.dataType,
+      rows,
+      columns,
+    };
+
+    if (this.hasVolumeScalarData) {
+      const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
+      if (!scalarData) {
+        return null;
+      }
+      const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
+
+      const arrayBuffer = scalarData.buffer;
+      // Length of one frame in voxels: length
+      // Length of one frame in bytes: lengthInBytes
+      const { type, length, lengthInBytes } = getScalarDataType(
+        scalarData,
+        this.numFrames
+      );
+
+      targetBuffer = {
+        ...targetBuffer,
         // keeping this in the options means a large empty volume array buffer
         // will be transferred to the worker. This is undesirable for streaming
         // volume without shared array buffer because the target is now an empty
         // 300-500MB volume array buffer. Instead the volume should be progressively
         // set in the main thread.
-        // arrayBuffer:
-        //   arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-        // offset: frameIndex * lengthInBytes,
-        // length,
-        type: this.dataType,
-        rows,
-        columns,
-      },
+        arrayBuffer:
+          arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
+        offset: frameIndex * lengthInBytes,
+        length,
+        type,
+      };
+    }
+
+    return {
+      // WADO Image Loader
+      targetBuffer,
       allowFloatRendering,
       preScale: {
         enabled: this.isPreScaled,
@@ -424,7 +447,9 @@ export default class BaseStreamingImageVolume
     }
 
     const uncompressedIterator = ProgressiveIterator.as(
-      imageLoader.loadAndCacheImage(imageId, options)
+      this.hasVolumeScalarData
+        ? imageLoader.loadImage(imageId, options)
+        : imageLoader.loadAndCacheImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
       // scalarData is the volume container we are progressively loading into
@@ -657,4 +682,26 @@ export default class BaseStreamingImageVolume
 
     this.scaling = { PT: petScaling };
   }
+}
+
+function getScalarDataType(scalarData, numFrames) {
+  let type, byteSize;
+  if (scalarData instanceof Uint8Array) {
+    type = 'Uint8Array';
+    byteSize = 1;
+  } else if (scalarData instanceof Float32Array) {
+    type = 'Float32Array';
+    byteSize = 4;
+  } else if (scalarData instanceof Uint16Array) {
+    type = 'Uint16Array';
+    byteSize = 2;
+  } else if (scalarData instanceof Int16Array) {
+    type = 'Int16Array';
+    byteSize = 2;
+  } else {
+    throw new Error('Unsupported array type');
+  }
+  const length = scalarData.length / numFrames;
+  const lengthInBytes = length * byteSize;
+  return { type, byteSize, length, lengthInBytes };
 }

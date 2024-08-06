@@ -160,6 +160,8 @@ export default class StreamingDynamicImageVolume
 
     this._timePointIndex = newTimePointIndex;
     imageData.getPointData().setActiveScalars(`timePoint-${newTimePointIndex}`);
+    this.voxelManager.setTimePoint(newTimePointIndex);
+
     this.invalidateVolume(true);
 
     triggerEvent(
