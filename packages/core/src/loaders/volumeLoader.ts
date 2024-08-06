@@ -69,13 +69,13 @@ function createInternalVTKRepresentation(
   }
 
   const imageData = vtkCustomImageData.newInstance();
-  const dataArrayAttrs = { numberOfComponents: numComponents };
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
   imageData.setDataType(volume.dataType);
+  imageData.setNumberOfComponents(numComponents);
 
   // Add scalar data to 3D or 4D volume
   // if (volume.isDynamicVolume()) {

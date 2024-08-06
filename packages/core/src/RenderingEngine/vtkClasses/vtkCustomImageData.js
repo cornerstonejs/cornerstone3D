@@ -13,6 +13,7 @@ function vtkCustomImageData(publicAPI, model) {
   model.dataType = null;
   model.voxelManager = null;
   model.id = null;
+  model.numberOfComponents = 1;
 
   // Add custom methods to the public API
   publicAPI.getDataType = () => model.dataType;
@@ -27,6 +28,15 @@ function vtkCustomImageData(publicAPI, model) {
   };
 
   publicAPI.getId = () => model.id;
+
+  publicAPI.setNumberOfComponents = (numberOfComponents) => {
+    if (model.numberOfComponents !== numberOfComponents) {
+      model.numberOfComponents = numberOfComponents;
+      publicAPI.modified();
+    }
+  };
+
+  publicAPI.getNumberOfComponents = () => model.numberOfComponents;
 
   publicAPI.getVoxelManager = () => model.voxelManager;
   publicAPI.setVoxelManager = (voxelManager) => {

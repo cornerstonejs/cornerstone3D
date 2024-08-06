@@ -62,8 +62,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       );
     }
 
-    // const numComp = scalars.getNumberOfComponents();
-    const numIComps = 1; // useIndependentComps ? numComp : 1;
+    const numIComps = image.getNumberOfComponents();
     const useIndependentComps = publicAPI.useIndependentComponents(vprop);
 
     const scalarOpacityFunc = vprop.getScalarOpacity();
@@ -276,7 +275,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             dims[0],
             dims[1],
             dims[2],
-            1,
+            numIComps,
             dataType,
             null
           );
