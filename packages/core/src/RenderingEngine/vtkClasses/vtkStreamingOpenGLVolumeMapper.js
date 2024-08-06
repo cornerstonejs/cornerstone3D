@@ -15,7 +15,6 @@ function computeFnToString(pwfun, useIComps, numberOfComponents) {
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
  * into GPU memory using the new methods on vtkStreamingOpenGLTexture.
  *
- *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
  */
@@ -256,44 +255,27 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
         });
 
-        // If preferSizeOverAccuracy is true or we're using a norm16 texture,
-        // we need to use the FromDataArray method to create the texture for scaling.
-        // Otherwise, we can use the FromRaw method.
-        if (
-          model.renderable.getPreferSizeOverAccuracy() ||
-          (norm16Ext && dataType === VtkDataTypes.UNSIGNED_SHORT) ||
-          dataType === VtkDataTypes.SHORT
-        ) {
-          model.scalarTexture.create3DFilterableFromDataArray(
+        if (!hasVolumeScalarData) {
+          model.scalarTexture.create3DFromRaw(
             dims[0],
             dims[1],
             dims[2],
-            scalars,
-            model.renderable.getPreferSizeOverAccuracy()
+            numIComps,
+            dataType,
+            null
           );
         } else {
-          if (!hasVolumeScalarData) {
-            model.scalarTexture.create3DFromRaw(
-              dims[0],
-              dims[1],
-              dims[2],
-              numIComps,
-              dataType,
-              null
-            );
-          } else {
-            const scalars =
-              image.getPointData() && image.getPointData().getScalars();
+          const scalars =
+            image.getPointData() && image.getPointData().getScalars();
 
-            model.scalarTexture.create3DFromRaw(
-              dims[0],
-              dims[1],
-              dims[2],
-              numIComps,
-              scalars.getDataType(),
-              scalars.getData()
-            );
-          }
+          model.scalarTexture.create3DFromRaw(
+            dims[0],
+            dims[1],
+            dims[2],
+            numIComps,
+            scalars.getDataType(),
+            scalars.getData()
+          );
         }
       } else {
         model.scalarTexture.deactivate();
