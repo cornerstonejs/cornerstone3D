@@ -1,5 +1,5 @@
 import * as NiftiReader from 'nifti-reader-js';
-import { eventTarget, triggerEvent } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
 import NiftiImageVolume from '../NiftiImageVolume';
 import { rasToLps } from './convert';
 import Events from '../enums/Events';
@@ -116,6 +116,12 @@ export default async function fetchAndAllocateNiftiVolume(
     scalarData,
     pixelRepresentation
   );
+
+  const voxelManager = utilities.VoxelManager.createScalarVolumeVoxelManager({
+    dimensions,
+    scalarData,
+  });
+
   return new NiftiImageVolume(
     // ImageVolume properties
     {
@@ -126,6 +132,7 @@ export default async function fetchAndAllocateNiftiVolume(
       origin,
       direction,
       scalarData,
+      voxelManager,
       sizeInBytes: scalarData.byteLength,
       imageIds: [],
     },
