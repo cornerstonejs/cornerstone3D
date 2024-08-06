@@ -1,13 +1,13 @@
 {
   "name": "root",
-  "description": "Cornerstone.js Monorepo Root",
+  "description": "DU Viewer fork of cornerstone3D",
   "private": true,
   "workspaces": [
     "packages/*",
     "addOns/externals/*",
     "addOns/local/*"
   ],
-  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "repository": "https://github.com/DedalusDIIT/cornerstone3D",
   "sideEffects": false,
   "engines": {
     "node": ">=18",
@@ -176,5 +176,9 @@
     "not ie < 11",
     "not op_mini all"
   ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "cache": "~/.npm"
+  },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

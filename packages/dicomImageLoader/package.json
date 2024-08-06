@@ -1,6 +1,6 @@
 {
-  "name": "@cornerstonejs/dicom-image-loader",
-  "version": "1.83.1",
+  "name": "@dedalusdiit/cornerstone-dicom-image-loader",
+  "version": "1.83.1-ded6",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -10,7 +10,7 @@
     "imaging"
   ],
   "author": "@cornerstonejs (previously Chris Hafey)",
-  "homepage": "https://github.com/cornerstonejs/cornerstone3D",
+  "homepage": "https://github.com/DedalusDIIT/cornerstone3D",
   "license": "MIT",
   "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
   "module": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
@@ -19,10 +19,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/cornerstonejs/cornerstone3D.git"
+    "url": "https://github.com/DedalusDIIT/cornerstone3D.git"
   },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com/",
+    "cache": "~/.npm"
   },
   "scripts": {
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",

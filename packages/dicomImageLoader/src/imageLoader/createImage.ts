@@ -1,3 +1,4 @@
+import { Enums } from '@cornerstonejs/core';
 import { ByteArray } from 'dicom-parser';
 import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
@@ -102,12 +103,14 @@ function createImage(
   }
 
   const { cornerstone } = external;
-  const { MetadataModules } = cornerstone.Enums;
+  const MetadataModules =
+    cornerstone.Enums?.MetadataModules || Enums.MetadataModules;
+
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
-  imageFrame.decodeLevel = options.decodeLevel;
+  (imageFrame as any).decodeLevel = options.decodeLevel;
 
-  options.allowFloatRendering = cornerstone.canRenderFloatTextures();
+  options.allowFloatRendering = cornerstone.canRenderFloatTextures?.() || false;
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {

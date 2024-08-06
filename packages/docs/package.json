@@ -2,7 +2,7 @@
   "name": "docs",
   "version": "1.83.1",
   "private": true,
-  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "repository": "https://github.com/DedalusDIIT/cornerstone3D",
   "scripts": {
     "preinstall": "node preinstall.js",
     "build": "yarn run build:docs",

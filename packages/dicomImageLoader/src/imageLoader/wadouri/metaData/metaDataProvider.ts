@@ -1,3 +1,4 @@
+import { Enums } from '@cornerstonejs/core';
 import external from '../../../externalModules';
 import getNumberValues from './getNumberValues';
 import parseImageId from '../parseImageId';
@@ -21,9 +22,12 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import getVOILUTFunction from './getVOILUTFunction';
+import getVOI from './getVOI';
 
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = external.cornerstone.Enums;
+  const MetadataModules =
+    external.cornerstone.Enums?.MetadataModules || Enums.MetadataModules;
   const { dicomParser } = external;
 
   // Several providers use array queries
@@ -196,13 +200,18 @@ function metaDataProvider(type, imageId) {
     const modalityLUTOutputPixelRepresentation =
       getModalityLUTOutputPixelRepresentation(dataSet);
 
+    const windowCenter = getNumberValues(dataSet, 'x00281050', 1);
+    const windowWidth = getNumberValues(dataSet, 'x00281051', 1);
+    const voiFromSequence = getVOI(dataSet);
+
     return {
-      windowCenter: getNumberValues(dataSet, 'x00281050', 1),
-      windowWidth: getNumberValues(dataSet, 'x00281051', 1),
+      windowCenter: windowCenter || voiFromSequence.windowCenter,
+      windowWidth: windowWidth || voiFromSequence.windowWidth,
       voiLUTSequence: getLUTs(
         modalityLUTOutputPixelRepresentation,
         dataSet.elements.x00283010
       ),
+      voiLUTFunction: getVOILUTFunction(dataSet.elements.x52009229),
     };
   }
 
