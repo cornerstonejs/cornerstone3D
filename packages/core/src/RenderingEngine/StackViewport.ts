@@ -554,7 +554,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       mapper.setPreferSizeOverAccuracy(true);
     }
 
-    if (imageData.getPointData().getNumberOfComponents() > 1) {
+    if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
     }
 
