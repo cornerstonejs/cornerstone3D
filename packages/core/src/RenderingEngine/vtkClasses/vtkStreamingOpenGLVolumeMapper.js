@@ -61,7 +61,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       );
     }
 
-    const numIComps = image.getNumberOfComponents();
+    const { numberOfComponents: numIComps } = image.get('numberOfComponents');
     const useIndependentComps = publicAPI.useIndependentComponents(vprop);
 
     const scalarOpacityFunc = vprop.getScalarOpacity();
@@ -232,8 +232,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       const previousTextureParameters =
         model.scalarTexture.getTextureParameters();
 
-      // @ts-ignore
-      const dataType = image.getDataType();
+      const dataType = image.get('dataType').dataType;
       const hasVolumeScalarData = model.scalarTexture.getHasVolumeScalarData();
 
       let shouldReset = true;
@@ -257,7 +256,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           width: dims[0],
           height: dims[1],
           depth: dims[2],
-          numComps: 1,
+          numComps: numIComps,
           dataType,
         });
 
@@ -270,6 +269,12 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             dataType,
             null
           );
+
+          // run the update as soon as possible if we have updated
+          // frames
+          if (model.scalarTexture.hasUpdatedFrames) {
+            model.scalarTexture.update3DFromRaw();
+          }
         } else {
           const scalars =
             image.getPointData() && image.getPointData().getScalars();

@@ -32,7 +32,6 @@ import {
 } from '../types';
 import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 import { imageLoader } from '..';
-import vtkCustomImageData from '../RenderingEngine/vtkClasses/vtkCustomImageData';
 
 interface VolumeLoaderOptions {
   imageIds: Array<string>;
@@ -108,14 +107,16 @@ function createInternalVTKRepresentation(
     numComponents = 3;
   }
 
-  const imageData = vtkCustomImageData.newInstance();
+  const imageData = vtkImageData.newInstance();
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
-  imageData.setDataType(volume.dataType);
-  imageData.setNumberOfComponents(numComponents);
+  imageData.set({
+    dataType: volume.dataType,
+    numberOfComponents: numComponents,
+  });
   const dataArrayAttrs = { numberOfComponents: numComponents };
 
   // Add scalar data to 3D or 4D volume
@@ -503,10 +504,10 @@ export function getUnknownVolumeLoaderSchema(): string {
  * @param options - The options for creating the derived volume.
  * @returns A promise that resolves to the created derived segmentation volume.
  */
-export async function createAndCacheDerivedSegmentationVolume(
+export function createAndCacheDerivedSegmentationVolume(
   referencedVolumeId: string,
   options = {} as DerivedVolumeOptions
-): Promise<IImageVolume> {
+): IImageVolume {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
     targetBufferType: 'Uint8Array',
@@ -521,11 +522,11 @@ export async function createAndCacheDerivedSegmentationVolume(
  * @param preventCache - Whether to prevent caching the volume.
  * @returns A promise that resolves to the created image volume.
  */
-export async function createLocalSegmentationVolume(
+export function createLocalSegmentationVolume(
   options: LocalVolumeOptions,
   volumeId: string,
   preventCache = false
-): Promise<IImageVolume> {
+): IImageVolume {
   if (!options.scalarData) {
     options.scalarData = new Uint8Array(
       options.dimensions[0] * options.dimensions[1] * options.dimensions[2]

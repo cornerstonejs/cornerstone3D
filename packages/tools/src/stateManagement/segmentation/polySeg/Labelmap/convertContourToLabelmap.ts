@@ -33,7 +33,8 @@ export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ContourSegmentationData,
   options: PolySegConversionOptions = {}
 ) {
-  const { viewport } = options;
+  const viewport = options.viewport as Types.IVolumeViewport;
+  const volumeId = viewport.getVolumeId();
 
   const imageIds = utilities.getViewportImageIds(viewport);
 
@@ -45,26 +46,13 @@ export async function convertContourToVolumeLabelmap(
 
   const segmentationVolumeId = utilities.uuidv4();
 
-  const volumeProps = utilities.generateVolumePropsFromImageIds(
-    imageIds,
-    segmentationVolumeId
-  );
+  const segmentationVolume =
+    volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+      volumeId: segmentationVolumeId,
+    });
 
-  const { metadata, dimensions, origin, direction, spacing, scalarData } =
-    volumeProps;
-
-  const segmentationVolume = await volumeLoader.createLocalSegmentationVolume(
-    {
-      dimensions,
-      origin,
-      direction,
-      spacing,
-      metadata,
-      imageIds: imageIds.map((imageId) => `generated://${imageId}`),
-      referencedImageIds: imageIds,
-    },
-    segmentationVolumeId
-  );
+  const { dimensions, origin, direction, spacing, voxelManager } =
+    segmentationVolume;
 
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);
@@ -77,7 +65,7 @@ export async function convertContourToVolumeLabelmap(
     {
       segmentIndices,
       dimensions,
-      scalarData,
+      scalarData: voxelManager.getCompleteScalarDataArray?.(),
       origin,
       direction,
       spacing,
@@ -94,13 +82,8 @@ export async function convertContourToVolumeLabelmap(
 
   triggerWorkerProgress(eventTarget, 1);
 
-  segmentationVolume.imageData
-    .getPointData()
-    .getScalars()
-    .setData(newScalarData);
-  segmentationVolume.imageData.modified();
+  voxelManager.setCompleteScalarDataArray(newScalarData);
 
-  // update the scalarData in the volume as well
   segmentationVolume.modified();
 
   return {

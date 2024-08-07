@@ -20,7 +20,6 @@ import {
 } from '../../types';
 import cache from '../cache';
 import * as metaData from '../../metaData';
-import vtkCustomImageData from '../../RenderingEngine/vtkClasses/vtkCustomImageData';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -141,18 +140,19 @@ export class ImageVolume implements IImageVolume {
     this.voxelManager = voxelManager;
 
     if (!imageData) {
-      imageData = vtkCustomImageData.newInstance();
+      imageData = vtkImageData.newInstance();
       imageData.setDimensions(dimensions);
       imageData.setSpacing(spacing);
       imageData.setDirection(direction);
       imageData.setOrigin(origin);
     }
-    // @ts-ignore
-    imageData.setDataType(dataType);
-    // @ts-ignore
-    imageData.setVoxelManager(this.voxelManager);
-    // @ts-ignore
-    imageData.setId(volumeId);
+
+    imageData.set({
+      dataType,
+      voxelManager,
+      id: volumeId,
+      numberOfComponents: voxelManager.numberOfComponents || 1,
+    });
 
     this.imageData = imageData;
 
@@ -285,6 +285,7 @@ export class ImageVolume implements IImageVolume {
    */
   public modified() {
     this.imageData.modified();
+    this.vtkOpenGLTexture.modified();
 
     if (this.isDynamicVolume()) {
       throw new Error('Not implemented');

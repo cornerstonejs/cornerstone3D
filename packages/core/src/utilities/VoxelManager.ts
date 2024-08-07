@@ -34,7 +34,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
-  public numComps = 1;
+  public numberOfComponents = 1;
 
   public getRange: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
@@ -565,7 +565,7 @@ export default class VoxelManager<T> {
         return isChanged;
       }
     );
-    voxels.numComps = numComponents;
+    voxels.numberOfComponents = numComponents;
     voxels.scalarData = scalarData;
     return voxels;
   }
@@ -665,6 +665,29 @@ export default class VoxelManager<T> {
     voxelManager._getScalarDataLength = () => {
       const { pixelData } = getPixelInfo(0, imageIds, cache, pixelsPerSlice);
       return pixelData.length * dimensions[2];
+    };
+
+    /**
+     * Retrieves the scalar data in a memory-inefficient manner.
+     * Useful for debugging, testing, or methods requiring all scalar data at once.
+     * @returns {ArrayLike<number>} The scalar data array
+     */
+    voxelManager.getCompleteScalarDataArray = () => {
+      const ScalarDataConstructor = voxelManager._getConstructor();
+      const dataLength = voxelManager.getScalarDataLength();
+      const scalarData = new ScalarDataConstructor(dataLength);
+
+      for (let i = 0; i < dataLength; i++) {
+        scalarData[i] = voxelManager._get(i);
+      }
+
+      return scalarData;
+    };
+
+    voxelManager.setCompleteScalarDataArray = (scalarData) => {
+      for (let i = 0; i < scalarData.length; i++) {
+        voxelManager._set(i, scalarData[i]);
+      }
     };
 
     return voxelManager;

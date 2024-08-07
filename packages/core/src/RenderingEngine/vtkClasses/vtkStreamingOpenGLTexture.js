@@ -120,6 +120,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     model.updatedFrames[frameIndex] = true;
   };
 
+  publicAPI.modified = () => {
+    const volume = cache.getVolume(model.volumeId);
+    const imageIds = volume.imageIds;
+
+    for (let i = 0; i < imageIds.length; i++) {
+      model.updatedFrames[i] = true;
+    }
+  };
+
+  publicAPI.hasUpdatedFrames = () => {
+    return model.updatedFrames.some((frame) => frame);
+  };
+
   function update3DTextureLegacy(data, updatedFrames) {
     let bytesPerVoxel;
     let TypedArrayConstructor;
