@@ -4,7 +4,6 @@ import { StreamingData } from '../imageLoader/wadors/loadImage';
 
 export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;
-  useNativeDataType?: boolean;
   allowFloatRendering?: boolean;
   skipCreateImage?: boolean;
   preScale?: {

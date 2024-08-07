@@ -224,6 +224,11 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       const dims = image.getDimensions();
       model.scalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
 
+      // Set not to use half float initially since we don't know if the
+      // streamed data is actually half float compatible or not yet, as
+      // the data has not arrived due to streaming
+      model.scalarTexture.setUseHalfFloat(false);
+
       const previousTextureParameters =
         model.scalarTexture.getTextureParameters();
 
@@ -244,7 +249,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
       if (shouldReset) {
         const norm16Ext = model.context.getExtension('EXT_texture_norm16');
-        model.scalarTexture.setOglNorm16Ext(norm16Ext);
+        model.scalarTexture.setOglNorm16Ext(null);
+        // model.scalarTexture.setOglNorm16Ext(norm16Ext);
         model.scalarTexture.resetFormatAndType();
 
         model.scalarTexture.setTextureParameters({
@@ -349,9 +355,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
   // publicAPI.hardReset = () => {
   //   model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow);
   //   model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.scalarTexture.setOglNorm16Ext(
-  //     model.context.getExtension('EXT_texture_norm16')
-  //   );
+  //
   //   model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
   //   model.scalarTexture.resetFormatAndType();
   // };

@@ -1755,12 +1755,6 @@ class Viewport implements IViewport {
     }
   }
 
-  protected _shouldUseNativeDataType() {
-    const { useNorm16Texture, preferSizeOverAccuracy } =
-      getConfiguration().rendering;
-    return useNorm16Texture || preferSizeOverAccuracy;
-  }
-
   _getCorners(bounds: Array<number>): Array<number>[] {
     return [
       [bounds[0], bounds[2], bounds[4]],

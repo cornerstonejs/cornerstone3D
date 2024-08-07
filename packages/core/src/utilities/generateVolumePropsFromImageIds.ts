@@ -74,7 +74,6 @@ function generateVolumePropsFromImageIds(
  * Determines the appropriate data type based on bits allocated and other parameters.
  * @param BitsAllocated - The number of bits allocated for each pixel.
  * @param signed - Whether the data is signed.
- * @param use16BitDataType - Flag to use 16-bit data type.
  * @param canRenderFloat - Whether float rendering is supported.
  * @param floatAfterScale - Whether to use float after scaling.
  * @param hasNegativeRescale - Whether there's a negative rescale.
@@ -88,7 +87,6 @@ function _determineDataType(
     volumeMetadata;
 
   const signed = PixelRepresentation === 1;
-  const numComponents = PhotometricInterpretation === 'RGB' ? 3 : 1;
 
   const imageIdIndex = Math.floor(imageIds.length / 2);
   const imageId = imageIds[imageIdIndex];
@@ -101,9 +99,6 @@ function _determineDataType(
   // if the rescale slope is not an integer, we need to use Float32
   const floatAfterScale = hasFloatScalingParameters(scalingParameters);
   const canRenderFloat = canRenderFloatTextures();
-  const { useNorm16Texture, preferSizeOverAccuracy } =
-    getConfiguration().rendering;
-  const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
 
   switch (BitsAllocated) {
     case 8:
@@ -116,7 +111,7 @@ function _determineDataType(
 
     case 16:
       // Temporary fix for 16 bit images to use Float32
-      if (!use16BitDataType || (canRenderFloat && floatAfterScale)) {
+      if (canRenderFloat && floatAfterScale) {
         return 'Float32Array';
       }
       if (signed || hasNegativeRescale) {

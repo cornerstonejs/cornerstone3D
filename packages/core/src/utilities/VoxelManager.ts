@@ -803,6 +803,14 @@ export default class VoxelManager<T> {
     );
     voxels.scalarData = scalarData;
 
+    voxels.getMiddleSliceData = () => {
+      const middleSliceIndex = Math.floor(dimensions[2] / 2);
+      return voxels.getSliceData({
+        sliceIndex: middleSliceIndex,
+        slicePlane: 2,
+      });
+    };
+
     return voxels;
   }
 

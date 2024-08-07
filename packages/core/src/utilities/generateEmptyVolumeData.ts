@@ -28,9 +28,6 @@ function generateEmptyVolumeData(
     BitsAllocated,
     dimensions,
   } = metadata;
-  const { useNorm16Texture, preferSizeOverAccuracy } =
-    getConfiguration().rendering;
-  const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
 
   // For a streaming volume, the data type cannot rely on CSWIL to load
   // the proper array buffer type. This is because the target buffer container
@@ -81,7 +78,7 @@ function generateEmptyVolumeData(
       // Temporary fix for 16 bit images to use Float32
       // until the new dicom image loader handler the conversion
       // correctly
-      if (!use16BitDataType || (canRenderFloat && floatAfterScale)) {
+      if (canRenderFloat && floatAfterScale) {
         sizeInBytes = length * 4;
         scalarData = useSharedArrayBuffer
           ? createFloat32SharedArray(length)

@@ -172,12 +172,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
   // CPU fallback
   private useCPURendering: boolean;
-  // Since WebGL natively supports 8 bit int and Float32, we should check if
-  // extra configuration flags has been set to use native data type
-  // which would save a lot of memory and speed up rendering but it is not
-  // yet widely supported in all hardwares. This feature can be turned on
-  // by setting useNorm16Texture or preferSizeOverAccuracy in the configuration
-  private useNativeDataType = false;
   private cpuImagePixelData: PixelDataTypedArray;
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
@@ -203,7 +197,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.scaling = {};
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
-    this.useNativeDataType = this._shouldUseNativeDataType();
     this._configureRenderingPipeline();
 
     this.useCPURendering
@@ -233,7 +226,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
-    this.useNativeDataType = this._shouldUseNativeDataType();
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const key in this.renderingPipelineFunctions) {
@@ -1800,8 +1792,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
       isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
-      (!this.useNativeDataType ||
-        dataType === image.voxelManager.getScalarData().constructor.name)
+      dataType === image.voxelManager.getScalarData().constructor.name
     );
   }
 
@@ -2060,25 +2051,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const imageIdIndex = this.imageIds.indexOf(imageId);
     const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
-    /**
-     * If use16bittexture is specified, the CSWIL will automatically choose the
-     * array type when no targetBuffer is provided. When CSWIL is initialized,
-     * the use16bit should match the settings of cornerstone3D (either preferSizeOverAccuracy
-     * or norm16 textures need to be enabled)
-     *
-     * If use16bittexture is not specified, we force the Float32Array for now
-     */
-    const additionalDetails = { imageId, imageIdIndex };
     const options = {
-      targetBuffer: {
-        type: this.useNativeDataType ? undefined : 'Float32Array',
-      },
       useRGBA: false,
       transferSyntaxUID,
-      useNativeDataType: this.useNativeDataType,
       priority: 5,
       requestType: RequestType.Interaction,
-      additionalDetails,
+      additionalDetails: { imageId, imageIdIndex },
     };
     return options;
   }

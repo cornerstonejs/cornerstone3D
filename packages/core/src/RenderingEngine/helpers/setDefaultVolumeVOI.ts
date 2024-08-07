@@ -21,17 +21,15 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * Finally it sets the VOI on the volumeActor transferFunction
  * @param volumeActor - The volume actor
  * @param imageVolume - The image volume that we want to set the VOI for.
- * @param useNativeDataType -  The image data type is native or Float32Array
  */
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
-  imageVolume: IImageVolume,
-  useNativeDataType: boolean
+  imageVolume: IImageVolume
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
   if (!voi && imageVolume?.imageIds?.length) {
-    voi = await getVOIFromMiddleSliceMinMax(imageVolume, useNativeDataType);
+    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
     voi = handlePreScaledVolume(imageVolume, voi);
   }
 
@@ -116,12 +114,10 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * and max pixel values, it calculates the VOI.
  *
  * @param imageVolume - The image volume that we want to get the VOI from.
- * @param useNativeDataType -  The image data type is native or Float32Array
  * @returns The VOIRange with lower and upper values
  */
 async function getVOIFromMiddleSliceMinMax(
-  imageVolume: IImageVolume,
-  useNativeDataType: boolean
+  imageVolume: IImageVolume
 ): Promise<VOIRange> {
   const { imageIds } = imageVolume;
 

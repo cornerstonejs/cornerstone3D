@@ -282,8 +282,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         }
 
         const data = image.voxelManager.getScalarData();
-
         const gl = model.context;
+
+        const dataType = data.constructor.name;
+        const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
 
         // Bind the texture
         publicAPI.bind();
@@ -304,7 +306,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
           1, // depth (1 slice)
           model.format, // format
           model.openGLDataType, // type
-          data // data
+          pixData // data
         );
 
         // Unbind the texture

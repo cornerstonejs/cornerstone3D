@@ -135,15 +135,6 @@ function createImage(
 
   const { decodeConfig } = getOptions();
 
-  // check if the options to use the 16 bit data type is set
-  // on the image load options, and prefer that over the global
-  // options of the dicom loader
-  decodeConfig.use16BitDataType =
-    (options && options.targetBuffer?.type === 'Uint16Array') ||
-    options.targetBuffer?.type === 'Int16Array'
-      ? true
-      : options.useNativeDataType || decodeConfig.use16BitDataType;
-
   // Remove any property of the `imageFrame` that cannot be transferred to the worker,
   // such as promises and functions.
   // This is necessary because the `imageFrame` object is passed to the worker.
@@ -165,7 +156,6 @@ function createImage(
     decodeConfig
   );
 
-  const { use16BitDataType } = decodeConfig;
   const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
@@ -200,8 +190,8 @@ function createImage(
 
         const typedArrayConstructors = {
           Uint8Array,
-          Uint16Array: use16BitDataType ? Uint16Array : undefined,
-          Int16Array: use16BitDataType ? Int16Array : undefined,
+          Uint16Array,
+          Int16Array,
           Float32Array,
         };
 

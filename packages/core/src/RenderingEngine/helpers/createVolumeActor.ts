@@ -33,8 +33,7 @@ async function createVolumeActor(
   props: createVolumeActorInterface,
   element: HTMLDivElement,
   viewportId: string,
-  suppressEvents = false,
-  useNativeDataType = false
+  suppressEvents = false
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -64,7 +63,7 @@ async function createVolumeActor(
     volumeActor.getProperty().setIndependentComponents(false);
   }
 
-  await setDefaultVolumeVOI(volumeActor, imageVolume, useNativeDataType);
+  await setDefaultVolumeVOI(volumeActor, imageVolume);
 
   if (callback) {
     callback({ volumeActor, volumeId });

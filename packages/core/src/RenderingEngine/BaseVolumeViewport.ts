@@ -77,7 +77,6 @@ import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
  */
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
-  useNativeDataType = false;
   private _FrameOfReferenceUID: string;
 
   protected initialTransferFunctionNodes: any;
@@ -95,7 +94,6 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
-    this.useNativeDataType = this._shouldUseNativeDataType();
 
     if (this.useCPURendering) {
       throw new Error(
@@ -1081,8 +1079,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents,
-        this.useNativeDataType
+        suppressEvents
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -1149,8 +1146,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents,
-        this.useNativeDataType
+        suppressEvents
       );
 
       if (visibility === false) {

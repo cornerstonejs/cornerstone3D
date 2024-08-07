@@ -6,7 +6,6 @@ import { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
  * @param targetBufferType - The type of the target buffer.
  * @param length - The length of the target buffer.
  * @param options - Options for the target buffer. Currently supports
- * `use16BitTexture` and `isVolumeBuffer`.
  * @returns Returns an object containing the number of bytes and the type array
  * constructor of the target buffer, which you then use to create the target buffer
  * with new TypedArrayConstructor(length).
@@ -14,14 +13,14 @@ import { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
 function getBufferConfiguration(
   targetBufferType: PixelDataTypedArrayString,
   length: number,
-  options: { use16BitTexture?: boolean; isVolumeBuffer?: boolean } = {}
+  options: { isVolumeBuffer?: boolean } = {}
 ): {
   numBytes: number;
   TypedArrayConstructor: new (
     length: number | SharedArrayBuffer
   ) => PixelDataTypedArray;
 } {
-  const { use16BitTexture = false, isVolumeBuffer = false } = options;
+  const { isVolumeBuffer = false } = options;
 
   switch (targetBufferType) {
     case 'Float32Array':
@@ -32,27 +31,19 @@ function getBufferConfiguration(
       if (!isVolumeBuffer) {
         return { numBytes: length * 2, TypedArrayConstructor: Uint16Array };
       } else {
-        if (use16BitTexture) {
-          return { numBytes: length * 2, TypedArrayConstructor: Uint16Array };
-        } else {
-          console.warn(
-            'Uint16Array is not supported for volume rendering, switching back to Float32Array'
-          );
-          return { numBytes: length * 4, TypedArrayConstructor: Float32Array };
-        }
+        console.warn(
+          'Uint16Array is not supported for volume rendering, switching back to Float32Array'
+        );
+        return { numBytes: length * 4, TypedArrayConstructor: Float32Array };
       }
     case 'Int16Array':
       if (!isVolumeBuffer) {
         return { numBytes: length * 2, TypedArrayConstructor: Int16Array };
       } else {
-        if (use16BitTexture) {
-          return { numBytes: length * 2, TypedArrayConstructor: Int16Array };
-        } else {
-          console.warn(
-            'Int16Array is not supported for volume rendering, switching back to Float32Array'
-          );
-          return { numBytes: length * 4, TypedArrayConstructor: Float32Array };
-        }
+        console.warn(
+          'Int16Array is not supported for volume rendering, switching back to Float32Array'
+        );
+        return { numBytes: length * 4, TypedArrayConstructor: Float32Array };
       }
     default:
       if (targetBufferType) {

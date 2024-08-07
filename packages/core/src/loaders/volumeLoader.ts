@@ -553,13 +553,10 @@ function generateVolumeScalarData(
   },
   scalarLength: number
 ) {
-  const { useNorm16Texture } = getConfiguration().rendering;
-
   const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
     targetBuffer?.type,
     scalarLength,
     {
-      use16BitTexture: useNorm16Texture,
       isVolumeBuffer: true,
     }
   );
