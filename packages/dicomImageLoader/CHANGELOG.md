@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.83.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.3...v1.83.4) (2024-08-07)
+
+### Bug Fixes
+
+- add missing import ImageFrame type logic ([#1415](https://github.com/cornerstonejs/cornerstone3D/issues/1415)) ([c7a71f4](https://github.com/cornerstonejs/cornerstone3D/commit/c7a71f454fe6bb5b650a37587229d61096034a0e))
+
 ## [1.83.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.2...v1.83.3) (2024-08-02)
 
 ### Bug Fixes
