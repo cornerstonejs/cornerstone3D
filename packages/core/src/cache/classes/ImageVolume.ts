@@ -86,7 +86,7 @@ export class ImageVolume implements IImageVolume {
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
-  numberOfTimePoints? = null as number;
+  numTimePoints? = null as number;
 
   /**
    * To be deprecated scalarData and sizeInBytes
@@ -153,11 +153,6 @@ export class ImageVolume implements IImageVolume {
     this.numFrames = this._getNumFrames();
     this._reprocessImageIds();
 
-    //Todo: fix this
-    if (scalarData) {
-      this._createCornerstoneImageMetaData();
-    }
-
     if (scaling) {
       this.scaling = scaling;
     }
@@ -206,7 +201,7 @@ export class ImageVolume implements IImageVolume {
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
-    return this.numberOfTimePoints && this.numberOfTimePoints > 1;
+    return this.numTimePoints && this.numTimePoints > 1;
   }
 
   /**
@@ -267,32 +262,6 @@ export class ImageVolume implements IImageVolume {
     this.numFrames = this._getNumFrames();
   }
 
-  /**
-   * If completelyRemove is true, remove the volume completely from the cache. Otherwise,
-   * convert the volume to cornerstone images (stack images) and store it in the cache
-   * @param completelyRemove - If true, the image will be removed from the
-   * cache completely.
-   */
-  public decache(completelyRemove = false): void | Array<string> {
-    if (completelyRemove) {
-      this.removeFromCache();
-    } else {
-      this.convertToImageSlicesAndCache();
-
-      const otherVolumes = cache.filterVolumesByReferenceId(this.volumeId);
-
-      if (otherVolumes.length) {
-        otherVolumes.forEach((volume) => {
-          volume.referencedImageIds = this.imageIds;
-        });
-      }
-
-      if (completelyRemove) {
-        this.removeFromCache();
-      }
-    }
-  }
-
   public removeFromCache() {
     cache.removeVolumeLoadObject(this.volumeId);
   }
@@ -312,260 +281,7 @@ export class ImageVolume implements IImageVolume {
       return this.imageIds.length;
     }
 
-    return this.numberOfTimePoints;
-  }
-
-  /**
-   * Creates the metadata required for converting the volume to an cornerstoneImage
-   */
-  private _createCornerstoneImageMetaData() {
-    const { numFrames } = this;
-
-    if (numFrames === 0) {
-      return;
-    }
-
-    const bytesPerImage = this.sizeInBytes / numFrames;
-    const scalarDataLength = this.getScalarDataLength();
-    const numComponents = scalarDataLength / this.numVoxels;
-    const pixelsPerImage =
-      this.dimensions[0] * this.dimensions[1] * numComponents;
-
-    const { PhotometricInterpretation, voiLut, VOILUTFunction } = this.metadata;
-
-    let windowCenter = [];
-    let windowWidth = [];
-
-    if (voiLut && voiLut.length) {
-      windowCenter = voiLut.map((voi) => {
-        return voi.windowCenter;
-      });
-
-      windowWidth = voiLut.map((voi) => {
-        return voi.windowWidth;
-      });
-    }
-
-    const color = numComponents > 1 ? true : false; //todo: fix this
-
-    this.cornerstoneImageMetaData = {
-      bytesPerImage,
-      numComponents,
-      pixelsPerImage,
-      windowCenter,
-      windowWidth,
-      color,
-      // we use rgb (3 components) for the color volumes (and not rgba), and not rgba (which is used
-      // in some parts of the lib for stack viewing in CPU)
-      rgba: false,
-      spacing: this.spacing,
-      dimensions: this.dimensions,
-      photometricInterpretation: PhotometricInterpretation,
-      voiLUTFunction: VOILUTFunction,
-      invert: PhotometricInterpretation === 'MONOCHROME1',
-    };
-  }
-
-  protected getScalarDataByImageIdIndex(
-    imageIdIndex: number
-  ): PixelDataTypedArray {
-    if (imageIdIndex < 0 || imageIdIndex >= this.imageIds.length) {
-      throw new Error('imageIdIndex out of range');
-    }
-
-    const scalarDataArrays = this.getScalarDataArrays();
-    const scalarDataIndex = Math.floor(imageIdIndex / this.numFrames);
-
-    return scalarDataArrays[scalarDataIndex];
-  }
-
-  /**
-   * Converts the requested imageId inside the volume to a cornerstoneImage
-   * object. It uses the typedArray set method to copy the pixelData from the
-   * correct offset in the scalarData to a new array for the image
-   *
-   * @param imageId - the imageId of the image to be converted
-   * @param imageIdIndex - the index of the imageId in the imageIds array
-   * @returns image object containing the pixel data, metadata, and other information
-   */
-  public getCornerstoneImage(imageId: string, imageIdIndex: number): IImage {
-    const { imageIds } = this;
-    const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
-
-    const {
-      bytesPerImage,
-      pixelsPerImage,
-      windowCenter,
-      windowWidth,
-      numComponents,
-      color,
-      dimensions,
-      spacing,
-      invert,
-      voiLUTFunction,
-      photometricInterpretation,
-    } = this.cornerstoneImageMetaData;
-
-    // 1. Grab the buffer and it's type
-    const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
-    const volumeBuffer = scalarData.buffer;
-    // (not sure if this actually works, TypeScript keeps complaining)
-    const TypedArray = scalarData.constructor;
-
-    // 2. Given the index of the image and frame length in bytes,
-    //    create a view on the volume arraybuffer
-    const bytePerPixel = bytesPerImage / pixelsPerImage;
-
-    let byteOffset = bytesPerImage * frameIndex;
-
-    // If there is a discrepancy between the volume typed array
-    // and the bitsAllocated for the image. The reason is that VTK uses Float32
-    // on the GPU and if the type is not Float32, it will convert it. So for not
-    // having a performance issue, we convert all types initially to Float32 even
-    // if they are not Float32.
-    if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-      byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
-    }
-
-    // 3. Create a new TypedArray of the same type for the new
-    //    Image that will be created
-    // @ts-ignore
-    const imageScalarData = new TypedArray(pixelsPerImage);
-    // @ts-ignore
-    const volumeBufferView = new TypedArray(
-      volumeBuffer,
-      byteOffset,
-      pixelsPerImage
-    );
-
-    // 4. Use e.g. TypedArray.set() to copy the data from the larger
-    //    buffer's view into the smaller one
-    imageScalarData.set(volumeBufferView);
-
-    // 5. Create an Image Object from imageScalarData and put it into the Image cache
-    const volumeImageId = imageIds[imageIdIndex];
-    const modalityLutModule =
-      metaData.get('modalityLutModule', volumeImageId) || {};
-    const minMax = getMinMax(imageScalarData);
-    const intercept = modalityLutModule.rescaleIntercept
-      ? modalityLutModule.rescaleIntercept
-      : 0;
-
-    const imageOrientationPatient = [
-      this.direction[0],
-      this.direction[1],
-      this.direction[2],
-      this.direction[3],
-      this.direction[4],
-      this.direction[5],
-    ];
-
-    const precision = 6;
-    const imagePositionPatient = [
-      parseFloat(
-        (
-          this.origin[0] +
-          imageIdIndex * this.direction[6] * this.spacing[0]
-        ).toFixed(precision)
-      ),
-      parseFloat(
-        (
-          this.origin[1] +
-          imageIdIndex * this.direction[7] * this.spacing[1]
-        ).toFixed(precision)
-      ),
-      parseFloat(
-        (
-          this.origin[2] +
-          imageIdIndex * this.direction[8] * this.spacing[2]
-        ).toFixed(precision)
-      ),
-    ];
-
-    const image = {
-      imageId,
-      intercept,
-      windowCenter,
-      windowWidth,
-      voiLUTFunction,
-      color,
-      rgba: false,
-      numComps: numComponents,
-      // Note the dimensions were defined as [Columns, Rows, Frames]
-      rows: dimensions[1],
-      columns: dimensions[0],
-      sizeInBytes: imageScalarData.byteLength,
-      getPixelData: () => imageScalarData,
-      minPixelValue: minMax.min,
-      maxPixelValue: minMax.max,
-      slope: modalityLutModule.rescaleSlope
-        ? modalityLutModule.rescaleSlope
-        : 1,
-      getCanvas: undefined, // todo: which canvas?
-      height: dimensions[0],
-      width: dimensions[1],
-      columnPixelSpacing: spacing[0],
-      rowPixelSpacing: spacing[1],
-      invert,
-      photometricInterpretation,
-    };
-
-    const pixelData = image.voxelManager.getScalarData();
-    const bitsAllocated = pixelData.BYTES_PER_ELEMENT * 8;
-
-    const imagePixelModule = {
-      // bitsStored: number;
-      // samplesPerPixel: number;
-      // highBit: number;
-      // pixelRepresentation: string;
-      // modality: string;
-      bitsAllocated,
-      photometricInterpretation: image.photometricInterpretation,
-      windowWidth: image.windowWidth,
-      windowCenter: image.windowCenter,
-      voiLUTFunction: image.voiLUTFunction,
-    };
-
-    const imagePlaneModule = {
-      rowCosines: [this.direction[0], this.direction[1], this.direction[2]],
-      columnCosines: [this.direction[3], this.direction[4], this.direction[5]],
-      pixelSpacing: [this.spacing[0], this.spacing[1]],
-      // sliceLocation?: number;
-      // sliceThickness?: number;
-      // frameOfReferenceUID: string;
-      imageOrientationPatient: imageOrientationPatient,
-      imagePositionPatient: imagePositionPatient,
-      columnPixelSpacing: image.columnPixelSpacing,
-      rowPixelSpacing: image.rowPixelSpacing,
-      columns: image.columns,
-      rows: image.rows,
-    };
-
-    const generalSeriesModule = {
-      // modality: image.modality,
-      // seriesInstanceUID: string;
-      // seriesNumber: number;
-      // studyInstanceUID: string;
-      // seriesDate: DicomDateObject;
-      // seriesTime: DicomTimeObject;
-    };
-
-    const metadata = {
-      imagePixelModule,
-      imagePlaneModule,
-      generalSeriesModule,
-    };
-
-    ['imagePixelModule', 'imagePlaneModule', 'generalSeriesModule'].forEach(
-      (type) => {
-        genericMetadataProvider.add(imageId, {
-          type,
-          metadata: metadata[type],
-        });
-      }
-    );
-
-    return image;
+    return this.numTimePoints;
   }
 
   /**
@@ -577,29 +293,6 @@ export class ImageVolume implements IImageVolume {
   }
 
   /**
-   * Converts the requested imageId inside the volume to a cornerstoneImage
-   * object. It uses the typedArray set method to copy the pixelData from the
-   * correct offset in the scalarData to a new array for the image
-   *
-   * @param imageId - the imageId of the image to be converted
-   * @param imageIdIndex - the index of the imageId in the imageIds array
-   * @returns imageLoadObject containing the promise that resolves
-   * to the cornerstone image
-   */
-  public getCornerstoneImageLoadObject(
-    imageId: string,
-    imageIdIndex: number
-  ): IImageLoadObject {
-    const image = this.getCornerstoneImage(imageId, imageIdIndex);
-
-    const imageLoadObject = {
-      promise: Promise.resolve(image),
-    };
-
-    return imageLoadObject;
-  }
-
-  /**
    * Returns an array of all the volume's images as Cornerstone images.
    * It iterates over all the imageIds and converts them to Cornerstone images.
    *
@@ -608,73 +301,9 @@ export class ImageVolume implements IImageVolume {
   public getCornerstoneImages(): IImage[] {
     const { imageIds } = this;
 
-    return imageIds.map((imageId, imageIdIndex) => {
-      return this.getCornerstoneImage(imageId, imageIdIndex);
+    return imageIds.map((imageId) => {
+      return cache.getImage(imageId);
     });
-  }
-
-  /**
-   * Converts all the volume images (imageIds) to cornerstoneImages and caches them.
-   * It iterates over all the imageIds and convert them until there is no
-   * enough space left inside the imageCache. Finally it will decache the Volume.
-   */
-  public convertToImageSlicesAndCache() {
-    // 1. Try to decache images in the volatile Image Cache to provide
-    //    enough space to store another entire copy of the volume (as Images).
-    //    If we do not have enough, we will store as many images in the cache
-    //    as possible, and the rest of the volume will be decached.
-    const byteLength = this.sizeInBytes;
-
-    if (!this.imageIds?.length) {
-      // generate random imageIds
-      // check if the referenced volume has imageIds to see how many
-      // images we need to generate
-      const referencedVolumeId = this.referencedVolumeId;
-
-      let numSlices = this.dimensions[2];
-      if (referencedVolumeId) {
-        const referencedVolume = cache.getVolume(referencedVolumeId);
-        numSlices = referencedVolume?.imageIds?.length ?? numSlices;
-      }
-
-      this.imageIds = Array.from({ length: numSlices }, (_, i) => {
-        return `generated:${this.volumeId}:${i}`;
-      });
-
-      this._reprocessImageIds();
-      this.numFrames = this._getNumFrames();
-      this._createCornerstoneImageMetaData();
-    }
-
-    const numImages = this.imageIds.length;
-    const { bytesPerImage } = this.cornerstoneImageMetaData;
-    let bytesRemaining = cache.decacheIfNecessaryUntilBytesAvailable(
-      byteLength,
-      this.imageIds
-    );
-
-    for (let imageIdIndex = 0; imageIdIndex < numImages; imageIdIndex++) {
-      const imageId = this.imageIds[imageIdIndex];
-
-      bytesRemaining = bytesRemaining - bytesPerImage;
-
-      // 2. Convert each imageId to a cornerstone Image object which is
-      // resolved inside the promise of imageLoadObject
-      const image = this.getCornerstoneImage(imageId, imageIdIndex);
-
-      // 3. Caching the image
-      if (!cache.getImageLoadObject(imageId)) {
-        cache.putImageSync(imageId, image);
-      }
-
-      // 4. If we know we won't be able to add another Image to the cache
-      //    without breaching the limit, stop here.
-      if (bytesRemaining <= bytesPerImage) {
-        break;
-      }
-    }
-
-    return this.imageIds;
   }
 }
 

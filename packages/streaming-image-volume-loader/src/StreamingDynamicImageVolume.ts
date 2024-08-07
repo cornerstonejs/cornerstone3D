@@ -25,7 +25,7 @@ export default class StreamingDynamicImageVolume
     const { imageIdGroups, splittingTag } = imageVolumeProperties;
     this._splittingTag = splittingTag;
     this._imageIdGroups = imageIdGroups;
-    this.numberOfTimePoints = this._imageIdGroups.length;
+    this.numTimePoints = this._imageIdGroups.length;
   }
 
   private _getImageIdsToLoad(): string[] {
@@ -73,8 +73,8 @@ export default class StreamingDynamicImageVolume
     const newIndex = this._timePointIndex + delta;
 
     if (newIndex < 0) {
-      this.timePointIndex = this.numberOfTimePoints - 1;
-    } else if (newIndex >= this.numberOfTimePoints) {
+      this.timePointIndex = this.numTimePoints - 1;
+    } else if (newIndex >= this.numTimePoints) {
       this.timePointIndex = 0;
     } else {
       this.timePointIndex = newIndex;
@@ -102,7 +102,7 @@ export default class StreamingDynamicImageVolume
       {
         volumeId: this.volumeId,
         imageIdGroupIndex: index,
-        numImageIdGroups: this.numberOfTimePoints,
+        numImageIdGroups: this.numTimePoints,
         splittingTag: this.splittingTag,
       }
     );

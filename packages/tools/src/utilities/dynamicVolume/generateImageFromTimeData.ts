@@ -25,17 +25,15 @@ function generateImageFromTimeData(
     throw new Error('Please provide two or more time points');
   }
 
-  // Gets scalar data for all time frames
-  const typedArrays = dynamicVolume.getScalarDataArrays();
+  const voxelManager = dynamicVolume.voxelManager;
 
-  const arrayLength = typedArrays[0].length;
+  const arrayLength = voxelManager.getScalarDataLength();
   const finalArray = new Float32Array(arrayLength);
 
   if (operation === Enums.DynamicOperatorType.SUM) {
-    for (let i = 0; i < numFrames; i++) {
-      const currentArray = typedArrays[frames[i]];
+    for (const timepoint of frames) {
       for (let j = 0; j < arrayLength; j++) {
-        finalArray[j] += currentArray[j];
+        finalArray[j] += voxelManager.getAtIndexAndTimePoint(j, timepoint);
       }
     }
     return finalArray;
@@ -46,16 +44,17 @@ function generateImageFromTimeData(
       throw new Error('Please provide only 2 time points for subtraction.');
     }
     for (let j = 0; j < arrayLength; j++) {
-      finalArray[j] += typedArrays[frames[0]][j] - typedArrays[frames[1]][j];
+      finalArray[j] +=
+        voxelManager.getAtIndexAndTimePoint(j, frames[0]) -
+        voxelManager.getAtIndexAndTimePoint(j, frames[1]);
     }
     return finalArray;
   }
 
   if (operation === Enums.DynamicOperatorType.AVERAGE) {
-    for (let i = 0; i < numFrames; i++) {
-      const currentArray = typedArrays[frames[i]];
+    for (const timepoint of frames) {
       for (let j = 0; j < arrayLength; j++) {
-        finalArray[j] += currentArray[j];
+        finalArray[j] += voxelManager.getAtIndexAndTimePoint(j, timepoint);
       }
     }
     for (let k = 0; k < arrayLength; k++) {

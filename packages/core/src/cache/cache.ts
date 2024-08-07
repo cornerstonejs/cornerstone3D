@@ -172,10 +172,6 @@ class Cache implements ICache {
       volumeLoadObject.cancelFn();
     }
 
-    if (volumeLoadObject.decache) {
-      volumeLoadObject.decache();
-    }
-
     this._volumeCache.delete(volumeId);
   };
 

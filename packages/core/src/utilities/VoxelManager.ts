@@ -786,6 +786,10 @@ export default class VoxelManager<T> {
       voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
     };
 
+    voxelManager.getAtIndexAndTimePoint = (index, timePoint) => {
+      return voxelGroups[timePoint]._get(index);
+    };
+
     return voxelManager;
   }
 
@@ -964,8 +968,6 @@ export default class VoxelManager<T> {
     voxelManager.getPixelData = map.getPixelData.bind(map);
     return voxelManager;
   }
-
-  public clone;
 
   /**
    * This method adds a voxelManager instance to the image object

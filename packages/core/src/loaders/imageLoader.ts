@@ -121,65 +121,6 @@ function loadImageFromImageLoader(
 }
 
 /**
- * Gets the imageLoadObject by 1) Looking in to the cache to see if the
- * imageLoadObject has already been cached, 2) Checks inside the volume cache
- * to see if there is a volume that contains the same imageURI for the requested
- * imageID 3) Checks inside the imageCache for similar imageURI that might have
- * been stored as a result of decaching a volume 4) Finally if none were found
- * it request it from the registered imageLoaders.
- *
- * @param imageId - A Cornerstone Image Object's imageId
- * @param options - Options to be passed to the Image Loader
- *
- * @returns An Object which can be used to act after an image is loaded or loading fails
- */
-function loadImageFromCacheOrVolume(
-  imageId: string,
-  options: ImageLoaderOptions
-): IImageLoadObject {
-  return loadImageFromImageLoader(imageId, options);
-
-  if (options.ignoreCache) {
-    return loadImageFromImageLoader(imageId, options);
-  }
-
-  // 1. Check inside the image cache for imageId
-  let imageLoadObject = cache.getImageLoadObject(imageId);
-  if (imageLoadObject !== undefined) {
-    return imageLoadObject;
-  }
-  // 2. Check if there exists a volume in the cache containing the imageId,
-  // we copy the pixelData over.
-  const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId);
-  if (cachedVolumeInfo?.volume?.loadStatus?.loaded) {
-    // 2.1 Convert the volume at the specific slice to a cornerstoneImage object.
-    // this will copy the pixel data over.
-    const { volume, imageIdIndex } = cachedVolumeInfo;
-
-    if (volume instanceof ImageVolume) {
-      imageLoadObject = volume.getCornerstoneImageLoadObject(
-        imageId,
-        imageIdIndex
-      );
-    }
-    return imageLoadObject;
-  }
-  // 3. If no volume found, we search inside the imageCache for the imageId
-  // that has the same URI which had been cached if the volume was converted
-  // to an image
-  const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-  if (cachedImage) {
-    imageLoadObject = cachedImage.imageLoadObject;
-    return imageLoadObject;
-  }
-  // 4. if not in image cache nor inside the volume cache, we request the
-  // image loaders to load it
-  imageLoadObject = loadImageFromImageLoader(imageId, options);
-
-  return imageLoadObject;
-}
-
-/**
  * Loads an image given an imageId and optional priority and returns a promise
  * which will resolve to the loaded image object or fail if an error occurred.
  * The loaded image is not stored in the cache.
@@ -198,7 +139,7 @@ export function loadImage(
     throw new Error('loadImage: parameter imageId must not be undefined');
   }
 
-  return loadImageFromCacheOrVolume(imageId, options).promise;
+  return loadImageFromImageLoader(imageId, options).promise;
 }
 
 /**
@@ -220,7 +161,7 @@ export function loadAndCacheImage(
       'loadAndCacheImage: parameter imageId must not be undefined'
     );
   }
-  const imageLoadObject = loadImageFromCacheOrVolume(imageId, options);
+  const imageLoadObject = loadImageFromImageLoader(imageId, options);
 
   // if not inside cache, store it
   if (!cache.getImageLoadObject(imageId)) {
