@@ -284,7 +284,8 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
     const derivedVolume = await addSegmentationsToState(newSegmentationId);
     //
     // Todo: need to move to the new model with voxel manager
-    const derivedVolumeScalarData = derivedVolume.getScalarData();
+    const derivedVolumeScalarData =
+        derivedVolume.voxelManager.getCompleteScalarDataArray();
     //
     derivedVolumeScalarData.set(
         new Uint8Array(generateToolState.labelmapBufferArray[0])

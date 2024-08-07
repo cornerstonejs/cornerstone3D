@@ -96,10 +96,10 @@ function addScalarDataArraysToImageData(
   imageData.getPointData().setActiveScalars('timePoint-0');
 }
 
-function createInternalVTKRepresentation(
+function constructScalarDataIfNecessary(
   volume: IImageVolume
 ): vtkImageDataType {
-  const { dimensions, metadata, spacing, direction, origin } = volume;
+  const { imageData, metadata } = volume;
   const { PhotometricInterpretation } = metadata;
 
   let numComponents = 1;
@@ -107,16 +107,6 @@ function createInternalVTKRepresentation(
     numComponents = 3;
   }
 
-  const imageData = vtkImageData.newInstance();
-
-  imageData.setDimensions(dimensions);
-  imageData.setSpacing(spacing);
-  imageData.setDirection(direction);
-  imageData.setOrigin(origin);
-  imageData.set({
-    dataType: volume.dataType,
-    numberOfComponents: numComponents,
-  });
   const dataArrayAttrs = { numberOfComponents: numComponents };
 
   // Add scalar data to 3D or 4D volume
@@ -225,7 +215,7 @@ export function loadVolume(
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
   return volumeLoadObject.promise.then((volume: IImageVolume) => {
-    volume.imageData = createInternalVTKRepresentation(volume);
+    constructScalarDataIfNecessary(volume);
     return volume;
   });
 }
@@ -258,7 +248,7 @@ export async function createAndCacheVolume(
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
   volumeLoadObject.promise.then((volume: IImageVolume) => {
-    volume.imageData = createInternalVTKRepresentation(volume);
+    volume.imageData = constructScalarDataIfNecessary(volume);
   });
 
   cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch((err) => {
@@ -448,7 +438,6 @@ export function createLocalVolume(
   imageData.setDirection(direction);
   imageData.setOrigin(origin);
   imageData.getPointData().setScalars(scalarArray);
-  // imageData.setDataType(dataType);
 
   const voxelManager = VoxelManager.createImageVoxelManager({
     width: dimensions[0],
@@ -456,6 +445,8 @@ export function createLocalVolume(
     numComponents: 1,
     scalarData: scalarData,
   });
+
+  imageData.set({ voxelManager: voxelManager });
 
   const derivedVolume = new ImageVolume({
     volumeId,

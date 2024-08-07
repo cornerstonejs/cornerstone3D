@@ -23,13 +23,20 @@ function thresholdSegmentationByRange(
   thresholdVolumeInformation: ThresholdInformation[],
   overlapType: number
 ): Types.IImageVolume {
-  const scalarData = segmentationVolume.getScalarData();
-
   // prepare a list of volume information objects for callback functions
   const { baseVolumeIdx, volumeInfoList } = processVolumes(
     segmentationVolume,
     thresholdVolumeInformation
   );
+
+  const baseVolume = volumeInfoList[baseVolumeIdx];
+  const refImageData = baseVolume.imageData;
+  const refVoxelManager = baseVolume.volume.voxelManager;
+
+  const scalarDataLength =
+    segmentationVolume.voxelManager.getScalarDataLength();
+
+  const segVoxelManager = segmentationVolume.voxelManager;
 
   /**
    * This function will test all overlaps between a voxel in base volume
@@ -43,11 +50,17 @@ function thresholdSegmentationByRange(
   volumeInfoList.forEach((volumeInfo) => {
     const { volumeSize } = volumeInfo;
 
-    if (volumeSize === scalarData.length) {
-      _handleSameSizeVolume(scalarData, segmentationIndex, volumeInfo);
+    if (volumeSize === scalarDataLength) {
+      _handleSameSizeVolume(
+        segVoxelManager,
+        refVoxelManager,
+        segmentationIndex,
+        volumeInfo
+      );
     } else {
       _handleDifferentSizeVolume(
-        scalarData,
+        segVoxelManager,
+        refVoxelManager,
         segmentationIndex,
         volumeInfo,
         volumeInfoList,
@@ -63,7 +76,8 @@ function thresholdSegmentationByRange(
 }
 
 function _handleDifferentSizeVolume(
-  scalarData: Types.PixelDataTypedArray,
+  segVoxelManager,
+  refVoxelManager,
   segmentationIndex: number,
   volumeInfo: any,
   volumeInfoList: any,
@@ -74,8 +88,10 @@ function _handleDifferentSizeVolume(
 
   let total, overlaps, range;
 
-  for (let i = 0; i < scalarData.length; i++) {
-    if (scalarData[i] === segmentationIndex) {
+  const segScalarDataLength = segVoxelManager.getScalarDataLength();
+
+  for (let i = 0; i < segScalarDataLength; i++) {
+    if (segScalarDataLength.getAtIndex(i) === segmentationIndex) {
       const overlapBounds = getVoxelOverlap(
         imageData,
         dimensions,
@@ -96,31 +112,34 @@ function _handleDifferentSizeVolume(
       let overlapTest = false;
 
       // check all voxel overlaps
-      pointInShapeCallback(
+      segVoxelManager.forEach(callbackOverlap, {
         imageData,
-        () => true,
-        callbackOverlap,
-        overlapBounds
-      );
+        boundsIJK: overlapBounds,
+      });
 
       overlapTest = overlapType === 0 ? overlaps > 0 : overlaps === total;
-      scalarData[i] = overlapTest ? segmentationIndex : 0;
+      segVoxelManager.setAtIndex(i, overlapTest ? segmentationIndex : 0);
     }
   }
   return { total, range, overlaps };
 }
 
 function _handleSameSizeVolume(
-  scalarData: Types.PixelDataTypedArray,
+  segVoxelManager,
+  refVoxelManager,
   segmentationIndex: number,
   volumeInfo: any
 ) {
-  const { referenceValues, lower, upper } = volumeInfo;
+  const { lower, upper } = volumeInfo;
+  const scalarDataLength = segVoxelManager.getScalarDataLength();
 
-  for (let i = 0; i < scalarData.length; i++) {
-    if (scalarData[i] === segmentationIndex) {
-      const value = referenceValues[i];
-      scalarData[i] = value >= lower && value <= upper ? segmentationIndex : 0;
+  for (let i = 0; i < scalarDataLength; i++) {
+    if (segVoxelManager.getAtIndex[i] === segmentationIndex) {
+      const value = refVoxelManager.getAtIndex(i);
+      segVoxelManager.setAtIndex(
+        i,
+        value >= lower && value <= upper ? segmentationIndex : 0
+      );
     }
   }
 }

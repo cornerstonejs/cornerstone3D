@@ -95,7 +95,8 @@ function _getTimePointDataCoordinate(frames, coordinate, volume) {
 
 function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   const { imageData: maskImageData } = segmentationVolume;
-  const segScalarData = segmentationVolume.getScalarData();
+  const segScalarData =
+    segmentationVolume.voxelManager.getCompleteScalarDataArray();
 
   const len = segScalarData.length;
 

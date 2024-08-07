@@ -166,7 +166,7 @@ addButtonToToolbar({
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
 
     const labelmapVolume = cache.getVolume(segmentationId);
-    const scalarData = labelmapVolume.getScalarData();
+    const scalarData = labelmapVolume.voxelManager.getCompleteScalarDataArray();
 
     //We set the segmentation to 0
     for (let i = 0; i < scalarData.length; i++) {

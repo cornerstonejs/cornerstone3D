@@ -30,11 +30,14 @@ function createMergedLabelmapForIndex(
 
   const labelmap = labelmaps[0];
 
-  const arrayType = (labelmap.getScalarData() as any).constructor;
-  const outputData = new arrayType(labelmap.getScalarData().length);
+  const arrayType = (labelmap.voxelManager.getCompleteScalarDataArray() as any)
+    .constructor;
+  const outputData = new arrayType(
+    labelmap.voxelManager.getCompleteScalarDataArray().length
+  );
 
   labelmaps.forEach((labelmap) => {
-    const scalarData = labelmap.getScalarData();
+    const scalarData = labelmap.voxelManager.getCompleteScalarDataArray();
     for (let i = 0; i < scalarData.length; i++) {
       if (scalarData[i] === segmentIndex) {
         outputData[i] = segmentIndex;

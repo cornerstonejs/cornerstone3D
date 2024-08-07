@@ -163,7 +163,7 @@ let computedVolume;
 
 async function createVolumeFromTimeData(dataInTime) {
   // Fill the scalar data of the computed volume with the operation data
-  const scalarData = computedVolume.getScalarData();
+  const scalarData = computedVolume.voxelManager.getCompleteScalarDataArray();
   for (let i = 0; i < dataInTime.length; i++) {
     scalarData[i] = dataInTime[i];
   }

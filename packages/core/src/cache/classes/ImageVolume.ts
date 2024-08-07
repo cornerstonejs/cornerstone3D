@@ -154,6 +154,7 @@ export class ImageVolume implements IImageVolume {
       numberOfComponents: voxelManager.numberOfComponents || 1,
     });
 
+    debugger;
     this.imageData = imageData;
 
     this.numFrames = this._getNumFrames();
