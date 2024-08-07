@@ -9,7 +9,7 @@ import {
 } from '../types';
 import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
-import { canRenderFloatTextures, getConfiguration } from '../init';
+import { canRenderFloatTextures } from '../init';
 
 /**
  * Generates volume properties from a list of image IDs.

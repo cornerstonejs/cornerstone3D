@@ -741,31 +741,49 @@ export default class VoxelManager<T> {
   }
 
   public static createScalarDynamicVolumeVoxelManager({
-    scalarDataArrays,
+    imageIdGroups,
     dimensions,
     timePoint = 0,
   }: {
-    scalarDataArrays: PixelDataTypedArray[];
+    imageIdGroups: string[][];
     dimensions: Point3;
     timePoint: number;
   }): VoxelManager<number> {
-    let activeScalarData = scalarDataArrays[timePoint];
+    const voxelGroups = imageIdGroups.map((imageIds) => {
+      const voxels = VoxelManager.createImageVolumeVoxelManager({
+        dimensions,
+        imageIds,
+      });
 
+      return voxels;
+    });
+
+    // Create a VoxelManager that will manage the active voxel group
     const voxelManager = new VoxelManager<number>(
       dimensions,
-      (index) => activeScalarData[index],
-      (index, v) => {
-        const isChanged = activeScalarData[index] !== v;
-        activeScalarData[index] = v;
-        return isChanged;
-      }
+      (index) => voxelGroups[timePoint]._get(index),
+      (index, v) => voxelGroups[timePoint]._set(index, v)
     );
 
-    voxelManager.scalarData = activeScalarData;
+    voxelManager.getScalarDataLength = () => {
+      return voxelGroups[timePoint].getScalarDataLength();
+    };
 
-    // Set the active time point
+    voxelManager.getConstructor = () => {
+      return voxelGroups[timePoint].getConstructor();
+    };
+
+    voxelManager.getRange = () => {
+      return voxelGroups[timePoint].getRange();
+    };
+
+    voxelManager.getMiddleSliceData = () => {
+      return voxelGroups[timePoint].getMiddleSliceData();
+    };
+
     voxelManager.setTimePoint = (timePoint) => {
-      activeScalarData = scalarDataArrays[timePoint];
+      voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
+      voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
     };
 
     return voxelManager;

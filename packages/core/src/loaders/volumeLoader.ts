@@ -58,74 +58,6 @@ interface LocalVolumeOptions {
 }
 
 /**
- * Adds a single scalar data to a 3D volume
- */
-function addScalarDataToImageData(
-  imageData: vtkImageDataType,
-  scalarData: PixelDataTypedArray,
-  dataArrayAttrs
-) {
-  const scalarArray = vtkDataArray.newInstance({
-    name: `Pixels`,
-    values: scalarData,
-    ...dataArrayAttrs,
-  });
-
-  imageData.getPointData().setScalars(scalarArray);
-}
-
-/**
- * Adds multiple scalar data (time points) to a 4D volume
- */
-function addScalarDataArraysToImageData(
-  imageData: vtkImageDataType,
-  scalarDataArrays: PixelDataTypedArray[],
-  dataArrayAttrs
-) {
-  scalarDataArrays.forEach((scalarData, i) => {
-    const vtkScalarArray = vtkDataArray.newInstance({
-      name: `timePoint-${i}`,
-      values: scalarData,
-      ...dataArrayAttrs,
-    });
-
-    imageData.getPointData().addArray(vtkScalarArray);
-  });
-
-  // Set the first as active otherwise nothing is displayed on the screen
-  imageData.getPointData().setActiveScalars('timePoint-0');
-}
-
-function constructScalarDataIfNecessary(
-  volume: IImageVolume
-): vtkImageDataType {
-  const { imageData, metadata } = volume;
-  const { PhotometricInterpretation } = metadata;
-
-  let numComponents = 1;
-  if (PhotometricInterpretation === 'RGB') {
-    numComponents = 3;
-  }
-
-  const dataArrayAttrs = { numberOfComponents: numComponents };
-
-  // Add scalar data to 3D or 4D volume
-  if (volume.isDynamicVolume()) {
-    const scalarDataArrays = (<IDynamicImageVolume>(
-      volume
-    )).getScalarDataArrays();
-
-    addScalarDataArraysToImageData(imageData, scalarDataArrays, dataArrayAttrs);
-  } else {
-    if (volume.hasVolumeScalarData) {
-      addScalarDataToImageData(imageData, volume.scalarData, dataArrayAttrs);
-    }
-  }
-
-  return imageData;
-}
-
-/**
  * This module deals with VolumeLoaders and loading volumes
  */
 
@@ -215,7 +147,6 @@ export function loadVolume(
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
   return volumeLoadObject.promise.then((volume: IImageVolume) => {
-    constructScalarDataIfNecessary(volume);
     return volume;
   });
 }
@@ -246,10 +177,6 @@ export async function createAndCacheVolume(
   }
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
-
-  volumeLoadObject.promise.then((volume: IImageVolume) => {
-    volume.imageData = constructScalarDataIfNecessary(volume);
-  });
 
   cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch((err) => {
     throw err;

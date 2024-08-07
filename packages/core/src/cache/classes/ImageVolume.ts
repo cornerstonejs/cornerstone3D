@@ -86,13 +86,14 @@ export class ImageVolume implements IImageVolume {
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
+  numberOfTimePoints? = null as number;
+
   /**
    * To be deprecated scalarData and sizeInBytes
    * which is the old model of allocating the volume data
    * and caching it in the volume object
    */
   private scalarDataProp?: PixelDataTypedArray | PixelDataTypedArray[];
-  // sizeInBytes?: number;
 
   constructor(props: ImageVolumeProps) {
     const {
@@ -127,13 +128,6 @@ export class ImageVolume implements IImageVolume {
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
 
-    if (this.scalarDataProp) {
-      // We will transition to the new voxel manager approach, but for now,
-      // 4D and NIfTI formats require additional work before we can
-      // completely remove the old method.
-      this.vtkOpenGLTexture.setHasVolumeScalarData(true);
-    }
-
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
 
@@ -154,7 +148,6 @@ export class ImageVolume implements IImageVolume {
       numberOfComponents: voxelManager.numberOfComponents || 1,
     });
 
-    debugger;
     this.imageData = imageData;
 
     this.numFrames = this._getNumFrames();
@@ -182,23 +175,8 @@ export class ImageVolume implements IImageVolume {
     }
   }
 
-  public get hasVolumeScalarData(): boolean {
-    return this.scalarDataProp ? true : false;
-  }
-
   public get sizeInBytes(): number {
     return this.voxelManager.sizeInBytes;
-  }
-
-  public get scalarData(): PixelDataTypedArray | PixelDataTypedArray[] {
-    if (this.scalarDataProp) {
-      const isDynamicVolume = this.isDynamicVolume();
-      return isDynamicVolume
-        ? <PixelDataTypedArray>this.scalarDataProp
-        : <PixelDataTypedArray>this.scalarDataProp;
-    }
-
-    return this.voxelManager.getScalarData();
   }
 
   /** return the image ids for the volume if it is made of separated images */
@@ -228,7 +206,7 @@ export class ImageVolume implements IImageVolume {
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
-    return false;
+    return this.numberOfTimePoints && this.numberOfTimePoints > 1;
   }
 
   /**
@@ -264,19 +242,6 @@ export class ImageVolume implements IImageVolume {
 
     this.vtkOpenGLTexture.releaseGraphicsResources();
     this.vtkOpenGLTexture.delete();
-  }
-
-  /**
-   * Return all scalar data objects (buffers) which will be only one for
-   * 3D volumes and one per time point for 4D volumes
-   * images of each 3D volume is stored
-   * @returns scalar data array
-   */
-  public getScalarDataArrays(): PixelDataTypedArray[] {
-    const scalarData = this.scalarData;
-    return this.isDynamicVolume()
-      ? <PixelDataTypedArray[]>scalarData
-      : [<PixelDataTypedArray>scalarData];
   }
 
   /**
@@ -333,11 +298,7 @@ export class ImageVolume implements IImageVolume {
   }
 
   public getScalarDataLength(): number {
-    const { scalarData } = this;
-
-    return this.isDynamicVolume()
-      ? (<PixelDataTypedArray[]>scalarData)[0].length
-      : (<PixelDataTypedArray>scalarData).length;
+    return this.voxelManager.getScalarDataLength();
   }
 
   /**
@@ -351,17 +312,7 @@ export class ImageVolume implements IImageVolume {
       return this.imageIds.length;
     }
 
-    const { imageIds, scalarData } = this;
-    const scalarDataCount = this.isDynamicVolume() ? scalarData.length : 1;
-
-    return imageIds.length / scalarDataCount;
-  }
-
-  private _getScalarDataLength(): number {
-    const { scalarData } = this;
-    return this.isDynamicVolume()
-      ? (<PixelDataTypedArray[]>scalarData)[0].length
-      : (<PixelDataTypedArray>scalarData).length;
+    return this.numberOfTimePoints;
   }
 
   /**
@@ -375,7 +326,7 @@ export class ImageVolume implements IImageVolume {
     }
 
     const bytesPerImage = this.sizeInBytes / numFrames;
-    const scalarDataLength = this._getScalarDataLength();
+    const scalarDataLength = this.getScalarDataLength();
     const numComponents = scalarDataLength / this.numVoxels;
     const pixelsPerImage =
       this.dimensions[0] * this.dimensions[1] * numComponents;

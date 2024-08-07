@@ -80,7 +80,6 @@ interface IImageVolume {
    * and caching it in the volume object
    */
   sizeInBytes?: number;
-  hasVolumeScalarData?: boolean;
 
   convertToImageSlicesAndCache(): string[];
 

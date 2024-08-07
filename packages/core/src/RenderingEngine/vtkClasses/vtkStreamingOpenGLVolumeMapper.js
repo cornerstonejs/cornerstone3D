@@ -233,7 +233,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         model.scalarTexture.getTextureParameters();
 
       const dataType = image.get('dataType').dataType;
-      const hasVolumeScalarData = model.scalarTexture.getHasVolumeScalarData();
 
       let shouldReset = true;
       if (previousTextureParameters?.dataType === dataType) {
@@ -260,42 +259,25 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
         });
 
-        if (!hasVolumeScalarData) {
-          model.scalarTexture.create3DFromRaw(
-            dims[0],
-            dims[1],
-            dims[2],
-            numIComps,
-            dataType,
-            null
-          );
+        console.debug(dims);
 
-          // run the update as soon as possible if we have updated
-          // frames
-          if (model.scalarTexture.hasUpdatedFrames) {
-            model.scalarTexture.update3DFromRaw();
-          }
-        } else {
-          const scalars =
-            image.getPointData() && image.getPointData().getScalars();
+        model.scalarTexture.create3DFromRaw(
+          dims[0],
+          dims[1],
+          dims[2],
+          numIComps,
+          dataType,
+          null
+        );
 
-          model.scalarTexture.create3DFromRaw(
-            dims[0],
-            dims[1],
-            dims[2],
-            numIComps,
-            scalars.getDataType(),
-            scalars.getData()
-          );
+        // run the update as soon as possible if we have updated
+        // frames
+        if (model.scalarTexture.hasUpdatedFrames) {
+          model.scalarTexture.update3DFromRaw();
         }
       } else {
         model.scalarTexture.deactivate();
-        if (hasVolumeScalarData) {
-          const data = image.getPointData().getScalars().getData();
-          model.scalarTexture.update3DFromRaw(data);
-        } else {
-          model.scalarTexture.update3DFromRaw();
-        }
+        model.scalarTexture.update3DFromRaw();
       }
 
       model.scalarTextureString = toString;

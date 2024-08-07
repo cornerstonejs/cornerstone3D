@@ -376,41 +376,11 @@ export default class BaseStreamingImageVolume
       this.isPreScaled = false;
     }
 
-    let targetBuffer = {
+    const targetBuffer = {
       type: this.dataType,
       rows,
       columns,
     };
-
-    if (this.hasVolumeScalarData) {
-      const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
-      if (!scalarData) {
-        return null;
-      }
-      const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
-
-      const arrayBuffer = scalarData.buffer;
-      // Length of one frame in voxels: length
-      // Length of one frame in bytes: lengthInBytes
-      const { type, length, lengthInBytes } = getScalarDataType(
-        scalarData,
-        this.numFrames
-      );
-
-      targetBuffer = {
-        ...targetBuffer,
-        // keeping this in the options means a large empty volume array buffer
-        // will be transferred to the worker. This is undesirable for streaming
-        // volume without shared array buffer because the target is now an empty
-        // 300-500MB volume array buffer. Instead the volume should be progressively
-        // set in the main thread.
-        arrayBuffer:
-          arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-        offset: frameIndex * lengthInBytes,
-        length,
-        type,
-      };
-    }
 
     return {
       // WADO Image Loader
@@ -447,9 +417,7 @@ export default class BaseStreamingImageVolume
     }
 
     const uncompressedIterator = ProgressiveIterator.as(
-      this.hasVolumeScalarData
-        ? imageLoader.loadImage(imageId, options)
-        : imageLoader.loadAndCacheImage(imageId, options)
+      imageLoader.loadAndCacheImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
       // scalarData is the volume container we are progressively loading into

@@ -1,6 +1,5 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
-import HalfFloat from '@kitware/vtk.js/Common/Core/HalfFloat';
 import { getConfiguration } from '../../init';
 import cache from '../../cache';
 
@@ -18,7 +17,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   model.updatedFrames = [];
   model.volumeId = null;
-  model.hasVolumeScalarData = false;
 
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
@@ -51,34 +49,93 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    *
    * @param {Float32Array|Uint8Array|Int16Array|Uint16Array} data The data array which has been updated.
    */
-  publicAPI.update3DFromRaw = (data) => {
+  publicAPI.update3DFromRaw = () => {
     const { updatedFrames } = model;
 
-    if (!updatedFrames.length || !model.volumeId) {
+    if (!model.volumeId) {
       return;
     }
+
+    const volume = cache.getVolume(model.volumeId);
+    const isDynamicVolume = volume.isDynamicVolume();
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
 
-    if (model.hasVolumeScalarData) {
-      return update3DTextureLegacy(data, updatedFrames);
-    } else {
-      return updateTextureImagesUsingVoxelManager(updatedFrames);
+    if (isDynamicVolume) {
+      updateDynamicVolumeTexture();
+      return;
     }
+
+    // for dynamic volumes, we need to update the texture for the current time point
+    // so there is no need to take a look at the updatedFrames really
+    if (!updatedFrames.length) {
+      return;
+    }
+
+    return updateTextureImagesUsingVoxelManager(updatedFrames);
   };
+
+  function updateDynamicVolumeTexture() {
+    const volume = cache.getVolume(model.volumeId);
+
+    // loop over imageIds of the current time point and update the texture
+    const imageIds = volume.getCurrentTimePointImageIds();
+
+    for (let i = 0; i < imageIds.length; i++) {
+      const imageId = imageIds[i];
+      const image = cache.getImage(imageId);
+
+      if (!image) {
+        continue;
+      }
+
+      const data = image.voxelManager.getScalarData();
+      const gl = model.context;
+
+      const dataType = data.constructor.name;
+      const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
+
+      // Bind the texture
+      publicAPI.bind();
+
+      // Calculate the offset within the 3D texture
+      let zOffset = i;
+
+      // Update the texture sub-image
+      // Todo: need to check other systems if it can handle it
+      gl.texSubImage3D(
+        model.target, // target
+        0, // level
+        0, // xoffset
+        0, // yoffset
+        zOffset, // zoffset
+        model.width, // width
+        model.height, // height
+        1, // depth (1 slice)
+        model.format, // format
+        model.openGLDataType, // type
+        pixData // data
+      );
+
+      // Unbind the texture
+      publicAPI.deactivate();
+      // Reset the updated flag
+    }
+
+    if (model.generateMipmap) {
+      model.context.generateMipmap(model.target);
+    }
+
+    publicAPI.deactivate();
+    return true;
+  }
 
   publicAPI.setVolumeId = (volumeId) => {
     model.volumeId = volumeId;
   };
 
   publicAPI.getVolumeId = () => model.volumeId;
-
-  publicAPI.setHasVolumeScalarData = (hasVolumeScalarData) => {
-    model.hasVolumeScalarData = hasVolumeScalarData;
-  };
-
-  publicAPI.getHasVolumeScalarData = () => model.hasVolumeScalarData;
 
   publicAPI.setTextureParameters = (params) => {
     if (params.width) {
@@ -136,7 +193,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   function update3DTextureLegacy(data, updatedFrames) {
     let bytesPerVoxel;
     let TypedArrayConstructor;
-
     if (data instanceof Uint8Array) {
       bytesPerVoxel = 1;
       TypedArrayConstructor = Uint8Array;
@@ -211,22 +267,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
             zOffset + block * multiRowBlockLengthInBytes,
             multiRowBlockLength
           );
-
-          if (
-            model.useHalfFloat &&
-            (TypedArrayConstructor === Uint16Array ||
-              TypedArrayConstructor === Int16Array)
-          ) {
-            // in the case we want to use halfFloat rendering (preferSizeOverAccuracy = true),
-            // we need to convert uint16 and int16 into fp16 format.
-            // This is the step where precision is lost for streaming volume viewport.
-            for (let idx = 0; idx < dataView.length; idx++) {
-              dataView[idx] = HalfFloat.toHalf(dataView[idx]);
-            }
-            if (TypedArrayConstructor === Int16Array) {
-              dataView = new Uint16Array(dataView);
-            }
-          }
 
           gl.texSubImage3D(
             model.target, // target
