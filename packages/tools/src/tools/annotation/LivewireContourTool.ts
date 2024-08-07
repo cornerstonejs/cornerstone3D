@@ -3,6 +3,9 @@ import {
   getEnabledElement,
   utilities as csUtils,
   VolumeViewport,
+  utilities,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -19,7 +22,12 @@ import type {
   SVGDrawingHelper,
 } from '../../types';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
-import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
+import {
+  getCalibratedLengthUnitsAndScale,
+  math,
+  throttle,
+  triggerAnnotationRenderForViewportIds,
+} from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
@@ -32,6 +40,7 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -43,6 +52,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
   touchDragCallback: any;
   mouseDragCallback: any;
+  _throttledCalculateCachedStats: any;
   editData: {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
@@ -68,6 +78,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        calculateStats: true,
         preventHandleOutsideImage: false,
         /**
          * Specify which modifier key is used to add a hole to a contour. The
@@ -135,6 +146,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    );
   }
 
   protected setupBaseEditData(
@@ -879,10 +895,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotationStyle: Record<string, any>;
     svgDrawingHelper: SVGDrawingHelper;
   }): boolean {
-    const { annotation, enabledElement, svgDrawingHelper, annotationStyle } =
-      renderContext;
+    const {
+      annotation,
+      enabledElement,
+      svgDrawingHelper,
+      annotationStyle,
+      targetId,
+    } = renderContext;
 
     const { viewport } = enabledElement;
+    const { element } = viewport;
     const { worldToCanvas } = viewport;
     const { annotationUID, data, highlighted } = annotation;
     const { handles } = data;
@@ -916,8 +938,139 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
 
+    if (
+      !data.cachedStats[targetId] ||
+      data.cachedStats[targetId].areaUnit == null
+    ) {
+      data.cachedStats[targetId] = {
+        Modality: null,
+        area: null,
+        areaUnit: null,
+      };
+
+      this._calculateCachedStats(annotation, element);
+    } else if (annotation.invalidated) {
+      this._throttledCalculateCachedStats(annotation, element);
+    }
+
     return true;
   }
+
+  private _calculateCachedStats = (
+    annotation: LivewireContourAnnotation,
+    element: HTMLDivElement
+  ) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
+    const data = annotation.data;
+
+    if (!data.contour.closed) {
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
+    const { cachedStats } = data;
+    const { polyline: points } = data.contour;
+    const targetIds = Object.keys(cachedStats);
+
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i];
+      const image = this.getTargetIdImage(targetId, renderingEngine);
+
+      if (!image) {
+        continue;
+      }
+
+      const { metadata } = image;
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
+      const { imageData } = image;
+      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+        image,
+        () => {
+          const {
+            maxX: canvasMaxX,
+            maxY: canvasMaxY,
+            minX: canvasMinX,
+            minY: canvasMinY,
+          } = math.polyline.getAABB(canvasCoordinates);
+
+          const topLeftBBWorld = viewport.canvasToWorld([
+            canvasMinX,
+            canvasMinY,
+          ]);
+
+          const topLeftBBIndex = utilities.transformWorldToIndex(
+            imageData,
+            topLeftBBWorld
+          );
+
+          const bottomRightBBWorld = viewport.canvasToWorld([
+            canvasMaxX,
+            canvasMaxY,
+          ]);
+
+          const bottomRightBBIndex = utilities.transformWorldToIndex(
+            imageData,
+            bottomRightBBWorld
+          );
+
+          return [topLeftBBIndex, bottomRightBBIndex];
+        }
+      );
+      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
+
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
+
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        areaUnit: areaUnits,
+      };
+    }
+
+    this.triggerAnnotationModified(
+      annotation,
+      enabledElement,
+      ChangeTypes.StatsUpdated
+    );
+
+    return cachedStats;
+  };
+
+  triggerAnnotationModified = (
+    annotation: LivewireContourAnnotation,
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.StatsUpdated
+  ): void => {
+    const { viewportId, renderingEngineId } = enabledElement;
+    const eventType = Events.ANNOTATION_MODIFIED;
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+      changeType,
+    };
+
+    triggerEvent(eventTarget, eventType, eventDetail);
+  };
 
   protected updateAnnotation(livewirePath: LivewirePath) {
     if (!this.editData || !livewirePath) {
