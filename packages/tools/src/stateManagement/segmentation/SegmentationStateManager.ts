@@ -261,7 +261,6 @@ export default class SegmentationStateManager {
       }
     } else {
       // Volume Viewport
-
       // here we need check if the segmentation a volume segmentation and from the
       // same Frame of Reference UID as the viewport, if so we are fine, if it is
       // a stack segmentation and still from the same FOR we are able to convert

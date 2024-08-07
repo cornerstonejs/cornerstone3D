@@ -37,6 +37,7 @@ export async function convertLabelmapToSurface(
   isVolume = true
 ): Promise<Types.SurfaceData> {
   let volumeId;
+
   if (isVolume) {
     volumeId = (labelmapRepresentationData as LabelmapSegmentationDataVolume)
       .volumeId;
@@ -50,8 +51,7 @@ export async function convertLabelmapToSurface(
   }
 
   const volume = cache.getVolume(volumeId);
-
-  const scalarData = volume.getScalarData();
+  const scalarData = volume.voxelManager.getCompleteScalarDataArray();
   const { dimensions, spacing, origin, direction } = volume;
 
   triggerWorkerProgress(eventTarget, 0);

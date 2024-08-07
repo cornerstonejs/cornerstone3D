@@ -338,6 +338,35 @@ export function createAndCacheDerivedVolume(
   return derivedVolume;
 }
 
+export async function createAndCacheVolumeFromImages(
+  volumeId: string,
+  imageIds: string[]
+): Promise<IImageVolume> {
+  if (imageIds === undefined) {
+    throw new Error(
+      'createAndCacheVolumeFromImages: parameter imageIds must not be undefined'
+    );
+  }
+
+  if (volumeId === undefined) {
+    throw new Error(
+      'createAndCacheVolumeFromImages: parameter volumeId must not be undefined'
+    );
+  }
+
+  const cachedVolume = cache.getVolume(volumeId);
+
+  if (cachedVolume) {
+    return cachedVolume;
+  }
+
+  const volume = (await createAndCacheVolume(volumeId, {
+    imageIds,
+  })) as IImageVolume;
+
+  return volume;
+}
+
 /**
  * Creates and cache a volume based on a set of provided properties including
  * dimensions, spacing, origin, direction, metadata, scalarData. It should be noted that

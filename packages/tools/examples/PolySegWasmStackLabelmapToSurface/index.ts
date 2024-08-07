@@ -238,12 +238,6 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  await segmentation.addSegmentationRepresentations(viewportId2, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2]);
