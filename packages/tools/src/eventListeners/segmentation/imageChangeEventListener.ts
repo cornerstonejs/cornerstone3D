@@ -84,10 +84,11 @@ function _imageChangeEventListener(evt) {
   // Update the maps
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
-    const labelmapImageId = SegmentationState.updateSegmentationImageReferences(
-      viewportId,
-      segmentationId
-    );
+    const labelmapImageId =
+      SegmentationState.updateLabelmapSegmentationImageReferences(
+        viewportId,
+        segmentationId
+      );
   });
 
   // const segmentationFound = actors.find((actor) => {

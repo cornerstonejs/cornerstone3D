@@ -206,7 +206,7 @@ export async function convertContourToStackLabelmap(
       direction,
       spacing,
       origin,
-      scalarData: segimage.voxelManager.getScalarData(),
+      scalarData: segImage.voxelManager.getScalarData(),
       imageId: segImageId,
       dimensions: [segImage.width, segImage.height, 1],
     });
@@ -239,7 +239,7 @@ export async function convertContourToStackLabelmap(
     const { imageId: segImageId } = segmentationInfo;
 
     const segImage = cache.getImage(segImageId);
-    segimage.voxelManager.getScalarData().set(scalarData);
+    segImage.voxelManager.getScalarData().set(scalarData);
     segImage.imageFrame?.pixelData?.set(scalarData);
 
     segImageIds.push(segImageId);

@@ -25,7 +25,6 @@ import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
 import {
   annotationHydration,
@@ -82,7 +81,6 @@ export {
   getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,
-  pointInSurroundingSphereCallback,
   viewport,
   cine,
   clip,

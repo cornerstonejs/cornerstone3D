@@ -233,6 +233,17 @@ export default class SegmentationStateManager {
 
     const { representationData } = segmentation;
 
+    const isLabelmap = representationData.LABELMAP;
+
+    if (!isLabelmap) {
+      // make all the other representations inactive first
+      this.setActiveSegmentationRepresentation(
+        viewportId,
+        segmentationRepresentationUID
+      );
+      return;
+    }
+
     const isBaseVolumeSegmentation = 'volumeId' in representationData.LABELMAP;
 
     if (!volumeViewport) {
@@ -243,7 +254,7 @@ export default class SegmentationStateManager {
         // TODO: Implement
       } else {
         // Stack Labelmap on Stack Viewport
-        this.updateSegmentationImageReferences(
+        this.updateLabelmapSegmentationImageReferences(
           viewportId,
           segmentation.segmentationId
         );
@@ -286,7 +297,10 @@ export default class SegmentationStateManager {
    * @param segmentationId - The Id of the segmentation representation.
    * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
    */
-  updateSegmentationImageReferences(viewportId, segmentationId): string {
+  updateLabelmapSegmentationImageReferences(
+    viewportId,
+    segmentationId
+  ): string {
     const segmentation = this.getSegmentation(segmentationId);
     if (!segmentation) {
       return;
@@ -297,6 +311,10 @@ export default class SegmentationStateManager {
     }
 
     const { representationData } = segmentation;
+
+    if (!representationData.LABELMAP) {
+      return;
+    }
 
     const labelmapImageIds = this.getLabelmapImageIds(representationData);
     const enabledElement = getEnabledElementByViewportId(viewportId);

@@ -1,8 +1,8 @@
 import { expose } from 'comlink';
+import { utilities } from '@cornerstonejs/core';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import ICRPolySeg from '@icr/polyseg-wasm';
-import { utilities } from '@cornerstonejs/core';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
@@ -197,27 +197,33 @@ const polySegConverters = {
         const firstDim = (sharedDimensionIndex + 1) % 3;
         const secondDim = (sharedDimensionIndex + 2) % 3;
 
-        // Run the pointInShapeCallback for the combined bounding box
-        pointInShapeCallback(
-          imageData,
-          (pointLPS) => {
-            const point2D = [pointLPS[firstDim], pointLPS[secondDim]];
+        const voxels = utilities.VoxelManager.createScalarVolumeVoxelManager({
+          dimensions,
+          scalarData,
+        });
 
-            // Check if the point is inside any of the polylines for this segment
-            const isInside = containsPoint(projectedPolyline, point2D, {
-              holes,
-            });
-
-            return isInside;
-          },
+        voxels.forEach(
           ({ pointIJK }) => {
             segmentationVoxelManager.setAtIJKPoint(pointIJK, index);
           },
-          [
-            [iMin, iMax],
-            [jMin, jMax],
-            [kMin, kMax],
-          ]
+          {
+            imageData,
+            isInObject: (pointLPS) => {
+              const point2D = [pointLPS[firstDim], pointLPS[secondDim]];
+
+              // Check if the point is inside any of the polylines for this segment
+              const isInside = containsPoint(projectedPolyline, point2D, {
+                holes,
+              });
+
+              return isInside;
+            },
+            boundsIJK: [
+              [iMin, iMax],
+              [jMin, jMax],
+              [kMin, kMax],
+            ],
+          }
         );
       }
     }
@@ -306,27 +312,33 @@ const polySegConverters = {
         const firstDim = (sharedDimensionIndex + 1) % 3;
         const secondDim = (sharedDimensionIndex + 2) % 3;
 
-        // Run the pointInShapeCallback for the combined bounding box
-        pointInShapeCallback(
-          imageData,
-          (pointLPS) => {
-            const point2D = [pointLPS[firstDim], pointLPS[secondDim]];
+        const voxels = utilities.VoxelManager.createScalarVolumeVoxelManager({
+          dimensions: imageData.getDimensions(),
+          scalarData: imageData.getPointData().getScalars().getData(),
+        });
 
-            // Check if the point is inside any of the polylines for this segment
-            const isInside = containsPoint(projectedPolyline, point2D, {
-              holes,
-            });
-
-            return isInside;
-          },
+        voxels.forEach(
           ({ pointIJK }) => {
             segmentationVoxelManager.setAtIJKPoint(pointIJK, index);
           },
-          [
-            [iMin, iMax],
-            [jMin, jMax],
-            [kMin, kMax],
-          ]
+          {
+            imageData,
+            isInObject: (pointLPS) => {
+              const point2D = [pointLPS[firstDim], pointLPS[secondDim]];
+
+              // Check if the point is inside any of the polylines for this segment
+              const isInside = containsPoint(projectedPolyline, point2D, {
+                holes,
+              });
+
+              return isInside;
+            },
+            boundsIJK: [
+              [iMin, iMax],
+              [jMin, jMax],
+              [kMin, kMax],
+            ],
+          }
         );
       }
     }
@@ -418,7 +430,7 @@ const polySegConverters = {
     targetImageData.modified();
 
     // we need to then consolidate the results into a single volume
-    // by looping into each voxel with pointInShapeCallback
+    // by looping into each voxel with voxelmanager for each
     // and check if the voxel is inside any of the reconstructed
     // labelmaps
     const { dimensions } = args;
@@ -464,9 +476,12 @@ const polySegConverters = {
       };
     });
 
-    pointInShapeCallback(
-      targetImageData,
-      () => true, // we want to loop into all voxels
+    const voxels = utilities.VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: targetImageData.getDimensions(),
+      scalarData: targetImageData.getPointData().getScalars().getData(),
+    });
+
+    voxels.forEach(
       ({ pointIJK, pointLPS }) => {
         // Check if the point is inside any of the reconstructed labelmaps
         // Todo: we can optimize this by returning early if the bounding box
@@ -500,7 +515,8 @@ const polySegConverters = {
         } catch (error) {
           // right now there is weird error if the point is outside the volume
         }
-      }
+      },
+      { imageData: targetImageData }
     );
 
     return segmentationVoxelManager.scalarData;
