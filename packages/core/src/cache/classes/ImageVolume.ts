@@ -121,10 +121,19 @@ export class ImageVolume implements IImageVolume {
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
 
+    if (!voxelManager) {
+      const voxelManager = VoxelManager.createImageVolumeVoxelManager({
+        dimensions,
+        imageIds,
+      });
+
+      this.voxelManager = voxelManager;
+    } else {
+      this.voxelManager = voxelManager;
+    }
+
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
-
-    this.voxelManager = voxelManager;
 
     if (!imageData) {
       imageData = vtkImageData.newInstance();
@@ -136,9 +145,9 @@ export class ImageVolume implements IImageVolume {
 
     imageData.set({
       dataType,
-      voxelManager,
+      voxelManager: this.voxelManager,
       id: volumeId,
-      numberOfComponents: voxelManager.numberOfComponents || 1,
+      numberOfComponents: this.voxelManager.numberOfComponents || 1,
     });
 
     this.imageData = imageData;

@@ -219,18 +219,12 @@ export function createAndCacheDerivedVolume(
 
   const derivedVolumeImageIds = derivedImages.map((image) => image.imageId);
 
-  const voxelManager = VoxelManager.createImageVolumeVoxelManager({
-    dimensions,
-    imageIds: derivedVolumeImageIds,
-  });
-
   const derivedVolume = new ImageVolume({
     volumeId,
     dataType,
     metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
-    voxelManager,
     origin,
     direction,
     referencedVolumeId,
