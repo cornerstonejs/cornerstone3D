@@ -133,7 +133,7 @@
     "lint-staged": "^13.2.2",
     "lodash": "^4.17.21",
     "mocha": "^10.4.0",
-    "netlify-cli": "^14.3.1",
+    "netlify-cli": "^17.28.0",
     "open-cli": "^7.0.1",
     "path-browserify": "^1.0.1",
     "postcss": "^8.4.23",
