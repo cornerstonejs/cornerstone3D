@@ -259,8 +259,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
         });
 
-        console.debug(dims);
-
         model.scalarTexture.create3DFromRaw(
           dims[0],
           dims[1],
