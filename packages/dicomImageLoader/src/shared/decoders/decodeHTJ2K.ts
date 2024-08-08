@@ -57,8 +57,7 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
 async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
-  // const decoder = local.decoder; // This is much slower for some reason
-  const decoder = new local.codec.HTJ2KDecoder();
+  const decoder = local.decoder;
 
   // get pointer to the source/encoded bit stream buffer in WASM memory
   // that can hold the encoded bitstream
