@@ -526,7 +526,6 @@ describe('Cache', () => {
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           dimensions,
           sizeInBytes: volumeSizeInBytes,
-          scalarData,
           metadata: {
             PhotometricInterpretation: 'MONOCHROME2',
           },
@@ -622,7 +621,6 @@ describe('Cache', () => {
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           sizeInBytes: volume2SizeInBytes,
           dimensions,
-          scalarData,
           metadata: {},
         },
         // Streaming properties
