@@ -39,9 +39,7 @@
   },
   "dependencies": {
     "@cornerstonejs/core": "^2.0.0-beta.20",
-    "@cornerstonejs/dicom-image-loader": "^2.0.0-beta.20",
-    "nifti-reader-js": "^0.6.8",
-    "fflate": "0.8.2"
+    "nifti-reader-js": "^0.6.8"
   },
   "contributors": [
     {

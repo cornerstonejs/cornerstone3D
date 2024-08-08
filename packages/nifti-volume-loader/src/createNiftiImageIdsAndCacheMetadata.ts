@@ -1,5 +1,6 @@
 import * as NiftiReader from 'nifti-reader-js';
 import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
+import type { mat3 } from 'gl-matrix';
 import { rasToLps } from './helpers/convert';
 import Events from './enums/Events';
 import { NIFTI_LOADER_SCHEME } from './constants';
@@ -77,6 +78,7 @@ export async function fetchArrayBuffer({
     }
     return { data: receivedData, headerInfo: niftiHeader, sliceInfo };
   } catch (error) {
+    // @ts-ignore
     if (error.name === 'AbortError') {
       console.log('Fetch aborted');
     } else {
@@ -145,14 +147,28 @@ async function readStream(
   }
 }
 
-function handleNiftiHeader(data) {
+function handleNiftiHeader(data): {
+  dimensions: number[];
+  direction: mat3;
+  isValid: boolean;
+  message: string;
+  origin: number[];
+  version: number;
+  orientation: number[];
+  spacing: number[];
+  header: any;
+  arrayConstructor: any;
+} {
   if (data.length < HEADER_CHECK_SIZE) {
+    // @ts-ignore
     return { isValid: false, message: 'Not enough data to check header' };
   }
 
   try {
     const headerBuffer = data.slice(0, HEADER_CHECK_SIZE).buffer;
     const header = NiftiReader.readHeader(headerBuffer);
+
+    // @ts-ignore
     const version = header.sizeof_hdr === NIFTI2_HEADER_SIZE ? 2 : 1;
     const { orientation, origin, spacing } = rasToLps(header);
     const { dimensions, direction } = makeVolumeMetadata(
@@ -177,6 +193,7 @@ function handleNiftiHeader(data) {
     };
   } catch (error) {
     console.error('Error reading Nifti header:', error);
+    // @ts-ignore
     return { isValid: false, message: 'Error reading Nifti header' };
   }
 }
@@ -198,7 +215,7 @@ async function fetchAndAllocateNiftiVolume(volumeId) {
 
   urlsMap.set(niftiURL, { controller, loading: true });
 
-  const niftiHeader = await new Promise((resolve) => {
+  const niftiHeader = (await new Promise((resolve) => {
     fetchArrayBuffer({
       url: niftiURL,
       onProgress,
@@ -206,7 +223,18 @@ async function fetchAndAllocateNiftiVolume(volumeId) {
       onLoad,
       onHeader: resolve, // Pass the resolve function to handle image IDs
     });
-  });
+  })) as {
+    dimensions: number[];
+    direction: mat3;
+    isValid: boolean;
+    message: string;
+    origin: number[];
+    version: number;
+    orientation: number[];
+    spacing: number[];
+    header: any;
+    arrayConstructor: any;
+  };
 
   const {
     dimensions,
@@ -328,6 +356,7 @@ async function fetchAndAllocateNiftiVolume(volumeId) {
       },
     });
 
+    // @ts-ignore
     utilities.genericMetadataProvider.addRaw(imageId, {
       type: 'niftiHeader',
       metadata: {

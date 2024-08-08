@@ -41,7 +41,7 @@ interface VolumeProps {
    * and do not cache the volume data at all
    */
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
-  dataType?: PixelDataTypedArrayString;
+  dataType: PixelDataTypedArrayString;
 
   /**
    * To be deprecated scalarData and sizeInBytes

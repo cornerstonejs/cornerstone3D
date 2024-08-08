@@ -5,7 +5,6 @@ import { StreamingData } from '../imageLoader/wadors/loadImage';
 export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;
   allowFloatRendering?: boolean;
-  skipCreateImage?: boolean;
   preScale?: {
     enabled: boolean;
     scalingParameters?: Types.ScalingParameters;

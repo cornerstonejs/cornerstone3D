@@ -33,6 +33,7 @@ function generateImageFromTimeData(
   if (operation === Enums.DynamicOperatorType.SUM) {
     for (const timepoint of frames) {
       for (let j = 0; j < arrayLength; j++) {
+        // @ts-ignore
         finalArray[j] += voxelManager.getAtIndexAndTimePoint(j, timepoint);
       }
     }
@@ -45,7 +46,9 @@ function generateImageFromTimeData(
     }
     for (let j = 0; j < arrayLength; j++) {
       finalArray[j] +=
+        // @ts-ignore
         voxelManager.getAtIndexAndTimePoint(j, frames[0]) -
+        // @ts-ignore
         voxelManager.getAtIndexAndTimePoint(j, frames[1]);
     }
     return finalArray;
@@ -54,6 +57,7 @@ function generateImageFromTimeData(
   if (operation === Enums.DynamicOperatorType.AVERAGE) {
     for (const timepoint of frames) {
       for (let j = 0; j < arrayLength; j++) {
+        // @ts-ignore
         finalArray[j] += voxelManager.getAtIndexAndTimePoint(j, timepoint);
       }
     }

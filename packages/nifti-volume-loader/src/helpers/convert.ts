@@ -1,3 +1,4 @@
+import { Types } from '@cornerstonejs/core';
 import { parseAffineMatrix } from './affineUtilities';
 
 /**

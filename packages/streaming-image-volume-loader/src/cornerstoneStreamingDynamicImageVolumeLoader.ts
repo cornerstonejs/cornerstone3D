@@ -82,6 +82,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       imageIdGroups: sortedImageIdGroups,
       splittingTag,
       voxelManager,
+      dataType: null,
     },
     // Streaming properties
     {

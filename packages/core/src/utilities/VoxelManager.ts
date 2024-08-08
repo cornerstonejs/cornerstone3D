@@ -188,7 +188,7 @@ export default class VoxelManager<T> {
       boundsIJK?: BoundsIJK;
       isInObject?: (pointLPS, pointIJK) => boolean;
       returnPoints?: boolean;
-      imageData: vtkImageData | CPUImageData;
+      imageData?: vtkImageData | CPUImageData;
     }
   ) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();

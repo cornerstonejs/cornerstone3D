@@ -141,7 +141,12 @@ async function fetchAndProcessNiftiData(
   const { scalarData } = modalityScaleNifti(niftiHeader, niftiImage);
   niftiScalarData = scalarData;
 
-  return createImage(imageId, sliceIndex, imagePixelModule, imagePlaneModule);
+  return createImage(
+    imageId,
+    sliceIndex,
+    imagePixelModule,
+    imagePlaneModule
+  ) as unknown as Types.IImage;
 }
 
 function waitForNiftiData(
@@ -155,7 +160,12 @@ function waitForNiftiData(
       if (niftiScalarData) {
         clearInterval(intervalId);
         resolve(
-          createImage(imageId, sliceIndex, imagePixelModule, imagePlaneModule)
+          createImage(
+            imageId,
+            sliceIndex,
+            imagePixelModule,
+            imagePlaneModule
+          ) as unknown as Types.IImage
         );
       }
     }, 10);
@@ -167,7 +177,7 @@ function createImage(
   sliceIndex: number,
   imagePixelModule: Types.ImagePixelModule,
   imagePlaneModule: Types.ImagePlaneModule
-): Types.IImage {
+) {
   const { rows, columns } = imagePlaneModule;
   const numVoxels = rows * columns;
   const sliceOffset = numVoxels * sliceIndex;
@@ -175,6 +185,7 @@ function createImage(
   const pixelData = new niftiScalarData.constructor(numVoxels);
   pixelData.set(niftiScalarData.subarray(sliceOffset, sliceOffset + numVoxels));
 
+  // @ts-ignore
   const voxelManager = utilities.VoxelManager.createImageVoxelManager({
     width: columns,
     height: rows,

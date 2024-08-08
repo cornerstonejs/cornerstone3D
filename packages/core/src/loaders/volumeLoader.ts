@@ -375,6 +375,7 @@ export function createLocalVolume(
     referencedImageIds: options.referencedImageIds || [],
     referencedVolumeId: options.referencedVolumeId,
     imageIds: options.imageIds || [],
+    dataType: scalarData.constructor.name as PixelDataTypedArrayString,
   });
 
   if (preventCache) {

@@ -14,6 +14,8 @@ export default class StreamingDynamicImageVolume
   private _splittingTag: string;
   private _imageIdGroups: string[][];
 
+  public numTimePoints: number;
+
   constructor(
     imageVolumeProperties: Types.ImageVolumeProps & {
       splittingTag: string;
@@ -92,6 +94,7 @@ export default class StreamingDynamicImageVolume
     }
 
     this._timePointIndex = index;
+    // @ts-ignore
     this.voxelManager.setTimePoint(index);
 
     this.invalidateVolume(true);

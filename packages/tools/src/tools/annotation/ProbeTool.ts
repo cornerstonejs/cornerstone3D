@@ -589,7 +589,9 @@ class ProbeTool extends AnnotationTool {
             (value) => value !== null
           );
 
-          value = hasEnhancedRegionValues ? calibratedResults.values : value;
+          value = (
+            hasEnhancedRegionValues ? calibratedResults.values : value
+          ) as number;
           pixelValueUnits = hasEnhancedRegionValues
             ? calibratedResults.units
             : 'raw';

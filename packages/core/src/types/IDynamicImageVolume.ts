@@ -11,6 +11,8 @@ interface IDynamicImageVolume extends IImageVolume {
   set timePointIndex(newTimePointIndex: number);
   /** Returns the number of time points */
   get numTimePoints(): number;
+
+  scroll(delta: number): void;
 }
 
 export default IDynamicImageVolume;

@@ -1,10 +1,5 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import {
-  genericMetadataProvider,
-  getMinMax,
-  imageIdToURI,
-  VoxelManager,
-} from '../../utilities';
+import { imageIdToURI, VoxelManager } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import {
   Metadata,
@@ -14,12 +9,10 @@ import {
   PixelDataTypedArray,
   ImageVolumeProps,
   IImage,
-  IImageLoadObject,
   PixelDataTypedArrayString,
   RGB,
 } from '../../types';
 import cache from '../cache';
-import * as metaData from '../../metaData';
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
