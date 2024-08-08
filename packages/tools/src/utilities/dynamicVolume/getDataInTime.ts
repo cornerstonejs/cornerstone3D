@@ -186,12 +186,10 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
       count++;
     };
 
-    pointInShapeCallback(
-      dynamicVolume.imageData,
-      () => true,
-      averageCallback,
-      overlapIJKMinMax
-    );
+    dynamicVolume.voxelManager.forEach(averageCallback, {
+      imageData: dynamicVolume.imageData,
+      boundsIJK: overlapIJKMinMax,
+    });
 
     // average the values
     const averageValues = [];
@@ -207,7 +205,12 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   // we theoretically can use them, however, we kind of need to compute the
   // pointLPS for each of the non-zero voxel indices, which is a bit of a pain.
   // Todo: consider using the nonZeroVoxelIndices to compute the pointLPS
-  pointInShapeCallback(maskImageData, () => true, callback);
+
+  const { voxelManager } = maskImageData.get('voxelManager');
+
+  voxelManager.forEach(callback, {
+    imageData: maskImageData,
+  });
 
   return [values, ijkCoords];
 }

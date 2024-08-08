@@ -507,6 +507,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       preScale: {
         ...this.csImage.preScale,
       },
+      voxelManager: this.csImage.voxelManager,
     };
   }
 

@@ -202,6 +202,7 @@ function _imageChangeEventListener(evt) {
       const scalarArray = vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: 1,
+        // @ts-ignore
         values: [...derivedImage.voxelManager.getScalarData()],
       });
 

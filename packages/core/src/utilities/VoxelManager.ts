@@ -353,7 +353,7 @@ export default class VoxelManager<T> {
    * @returns The scalar data.
    * @throws {Error} If no scalar data is available.
    */
-  getScalarData = () => {
+  public getScalarData() {
     if (this.scalarData) {
       return this.scalarData;
     }
@@ -363,7 +363,7 @@ export default class VoxelManager<T> {
     }
 
     throw new Error('No scalar data available');
-  };
+  }
 
   /**
    * Gets the length of the scalar data.
@@ -371,7 +371,7 @@ export default class VoxelManager<T> {
    * @returns The length of the scalar data.
    * @throws {Error} If no scalar data is available.
    */
-  getScalarDataLength = () => {
+  public getScalarDataLength() {
     if (this.scalarData) {
       return this.scalarData.length;
     }
@@ -381,7 +381,7 @@ export default class VoxelManager<T> {
     }
 
     throw new Error('No scalar data available');
-  };
+  }
 
   public get sizeInBytes(): number {
     return this.getScalarDataLength() * this.bytePerVoxel;
