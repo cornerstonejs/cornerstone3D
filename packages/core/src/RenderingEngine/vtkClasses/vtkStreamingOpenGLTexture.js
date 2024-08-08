@@ -73,6 +73,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return;
     }
 
+    debugger;
+
     return updateTextureImagesUsingVoxelManager(updatedFrames);
   };
 

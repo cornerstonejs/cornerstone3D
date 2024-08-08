@@ -1,10 +1,5 @@
 import * as NiftiReader from 'nifti-reader-js';
-import {
-  eventTarget,
-  metaData,
-  triggerEvent,
-  utilities,
-} from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
 import { rasToLps } from './helpers/convert';
 import Events from './enums/Events';
 import { NIFTI_LOADER_SCHEME } from './constants';
@@ -16,8 +11,11 @@ const NIFTI1_HEADER_SIZE = 348;
 const NIFTI2_HEADER_SIZE = 540;
 const HEADER_CHECK_SIZE = Math.max(NIFTI1_HEADER_SIZE, NIFTI2_HEADER_SIZE);
 
-// I really spent couple of hours here to use the stream request in the dicomImageLoader
-// but could not make the decompression work properly and i gave up.
+// Note: I spent several hours attempting to use the stream request in dicomImageLoader,
+// but I couldn't make the decompression work properly and eventually gave up.
+// For some reason, fflate and pako cannot decompress stream data, returning undefined.
+// The decompression stream I'm using here also doesn't work correctly
+// with the streamRequest in dicomImageLoader for an unknown reason.
 export async function fetchArrayBuffer({
   url,
   onProgress,
@@ -232,17 +230,45 @@ async function fetchAndAllocateNiftiVolume(volumeId) {
   const imageIds = [];
   for (let i = 0; i < numImages; i++) {
     const imageId = `nifti:${niftiURL}?frame=${i}`;
+    const imageIdIndex = i;
     imageIds.push(imageId);
 
+    const imageOrientationPatient = [
+      direction[0],
+      direction[1],
+      direction[2],
+      direction[3],
+      direction[4],
+      direction[5],
+    ];
+
+    const precision = 6;
+    const imagePositionPatient = [
+      parseFloat(
+        (origin[0] + imageIdIndex * direction[6] * spacing[0]).toFixed(
+          precision
+        )
+      ),
+      parseFloat(
+        (origin[1] + imageIdIndex * direction[7] * spacing[1]).toFixed(
+          precision
+        )
+      ),
+      parseFloat(
+        (origin[2] + imageIdIndex * direction[8] * spacing[2]).toFixed(
+          precision
+        )
+      ),
+    ];
     // Create metadata for the image
     const imagePlaneMetadata = {
       frameOfReferenceUID: '1.2.840.10008.1.4',
       rows: dimensions[1],
       columns: dimensions[0],
-      imageOrientationPatient: direction,
+      imageOrientationPatient,
       rowCosines: direction.slice(0, 3),
       columnCosines: direction.slice(3, 6),
-      imagePositionPatient: [...origin],
+      imagePositionPatient,
       sliceThickness: spacing[2],
       sliceLocation: origin[2] + i * spacing[2],
       pixelSpacing: [spacing[0], spacing[1]],

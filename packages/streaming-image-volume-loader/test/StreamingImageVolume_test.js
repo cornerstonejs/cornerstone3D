@@ -144,7 +144,7 @@ describe('StreamingImageVolume', () => {
       this.imageLoader = imageLoader;
     });
 
-    it('load: correctly streams pixel data from Images into Volume via a SharedArrayBuffer', async function () {
+    it('load: correctly streams pixel data from Images into Volume ', async function () {
       const volumeId = 'fakeVolumeLoader:VOLUME';
 
       await volumeLoader.createAndCacheVolume(volumeId, {

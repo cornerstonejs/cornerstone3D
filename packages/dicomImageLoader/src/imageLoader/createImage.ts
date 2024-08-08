@@ -126,13 +126,6 @@ function createImage(
     }
   }
 
-  // we need to identify if the target buffer is a SharedArrayBuffer
-  // since inside the webworker we don't have access to the window
-  // to say if it is a SharedArrayBuffer or not with instanceof
-  options.isSharedArrayBuffer =
-    options.targetBuffer?.arrayBuffer &&
-    options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
-
   const { decodeConfig } = getOptions();
 
   // Remove any property of the `imageFrame` that cannot be transferred to the worker,
@@ -169,7 +162,6 @@ function createImage(
       }
       // If we have a target buffer that was written to in the
       // Decode task, point the image to it here.
-      // We can't have done it within the thread incase it was a SharedArrayBuffer.
       let alreadyTyped = false;
       // We can safely render color image in 8 bit, so no need to convert
       if (options.targetBuffer && options.targetBuffer.type && !isColorImage) {

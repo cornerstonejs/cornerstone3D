@@ -16,9 +16,7 @@ function getBufferConfiguration(
   options: { isVolumeBuffer?: boolean } = {}
 ): {
   numBytes: number;
-  TypedArrayConstructor: new (
-    length: number | SharedArrayBuffer
-  ) => PixelDataTypedArray;
+  TypedArrayConstructor: new (length: number) => PixelDataTypedArray;
 } {
   const { isVolumeBuffer = false } = options;
 

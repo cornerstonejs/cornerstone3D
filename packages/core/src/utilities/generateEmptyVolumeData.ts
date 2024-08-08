@@ -1,15 +1,7 @@
 import cache from '../cache';
 import { Events } from '../enums';
-import {
-  canRenderFloatTextures,
-  getConfiguration,
-  getShouldUseSharedArrayBuffer,
-} from '../init';
+import { canRenderFloatTextures } from '../init';
 import { Point3 } from '../types';
-import createFloat32SharedArray from './createFloat32SharedArray';
-import createInt16SharedArray from './createInt16SharedArray';
-import createUint16SharedArray from './createUInt16SharedArray';
-import createUint8SharedArray from './createUint8SharedArray';
 import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 
@@ -50,7 +42,6 @@ function generateEmptyVolumeData(
 
   const signed = PixelRepresentation === 1;
   const numComponents = PhotometricInterpretation === 'RGB' ? 3 : 1;
-  const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
   const length = dimensions[0] * dimensions[1] * dimensions[2];
   const handleCache = (sizeInBytes) => {
     if (!cache.isCacheable(sizeInBytes)) {
@@ -69,9 +60,7 @@ function generateEmptyVolumeData(
       }
       sizeInBytes = length * numComponents;
       handleCache(sizeInBytes);
-      scalarData = useSharedArrayBuffer
-        ? createUint8SharedArray(length * numComponents)
-        : new Uint8Array(length * numComponents);
+      scalarData = new Uint8Array(length * numComponents);
       break;
 
     case 16:
@@ -80,9 +69,7 @@ function generateEmptyVolumeData(
       // correctly
       if (canRenderFloat && floatAfterScale) {
         sizeInBytes = length * 4;
-        scalarData = useSharedArrayBuffer
-          ? createFloat32SharedArray(length)
-          : new Float32Array(length);
+        scalarData = new Float32Array(length);
 
         break;
       }
@@ -90,26 +77,20 @@ function generateEmptyVolumeData(
       sizeInBytes = length * 2;
       if (signed || hasNegativeRescale) {
         handleCache(sizeInBytes);
-        scalarData = useSharedArrayBuffer
-          ? createInt16SharedArray(length)
-          : new Int16Array(length);
+        scalarData = new Int16Array(length);
         break;
       }
 
       if (!signed && !hasNegativeRescale) {
         handleCache(sizeInBytes);
-        scalarData = useSharedArrayBuffer
-          ? createUint16SharedArray(length)
-          : new Uint16Array(length);
+        scalarData = new Uint16Array(length);
         break;
       }
 
       // Default to Float32 again
       sizeInBytes = length * 4;
       handleCache(sizeInBytes);
-      scalarData = useSharedArrayBuffer
-        ? createFloat32SharedArray(length)
-        : new Float32Array(length);
+      scalarData = new Float32Array(length);
       break;
 
     case 24:
@@ -117,16 +98,12 @@ function generateEmptyVolumeData(
       handleCache(sizeInBytes);
 
       // hacky because we don't support alpha channel in dicom
-      scalarData = useSharedArrayBuffer
-        ? createUint8SharedArray(length * numComponents)
-        : new Uint8Array(length * numComponents);
+      scalarData = new Uint8Array(length * numComponents);
       break;
     case 32:
       sizeInBytes = length * 4;
       handleCache(sizeInBytes);
-      scalarData = useSharedArrayBuffer
-        ? createFloat32SharedArray(length)
-        : new Float32Array(length);
+      scalarData = new Float32Array(length);
       break;
     default:
       throw new Error(

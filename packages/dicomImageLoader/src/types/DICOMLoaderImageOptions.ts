@@ -18,7 +18,6 @@ export interface DICOMLoaderImageOptions {
     rows?: number;
     columns?: number;
   };
-  isSharedArrayBuffer?: boolean;
   loader?: LoadRequestFunction;
   decodeLevel?: number;
   retrieveOptions?: Types.RetrieveOptions;

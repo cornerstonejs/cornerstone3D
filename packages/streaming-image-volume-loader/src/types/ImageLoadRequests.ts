@@ -10,7 +10,7 @@ export default interface ImageLoadRequests {
   imageIdIndex: number;
   options: {
     targetBuffer: {
-      arrayBuffer: SharedArrayBuffer | undefined;
+      arrayBuffer: undefined;
       offset: number;
       length: number;
       type: string;

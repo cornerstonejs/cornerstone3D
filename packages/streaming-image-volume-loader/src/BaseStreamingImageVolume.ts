@@ -5,7 +5,6 @@ import {
   imageLoadPoolManager,
   triggerEvent,
   ImageVolume,
-  cache,
   imageLoader,
   utilities as csUtils,
   ProgressiveRetrieveImages,
@@ -427,7 +426,6 @@ export default class BaseStreamingImageVolume
   }
 
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
-    // SharedArrayBuffer
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
 

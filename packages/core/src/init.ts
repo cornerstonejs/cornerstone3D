@@ -1,14 +1,10 @@
 import { getGPUTier } from 'detect-gpu';
-import { SharedArrayBufferModes } from './enums';
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
-let useSharedArrayBuffer = true;
-let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
 import { deepMerge } from './utilities';
 import { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
-// TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
   gpuTier: undefined,
@@ -60,19 +56,6 @@ function _hasActiveWebGLContext() {
   return (
     gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext
   );
-}
-
-function hasSharedArrayBuffer() {
-  try {
-    /*eslint-disable no-constant-condition */
-    if (new SharedArrayBuffer(0)) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch {
-    return false;
-  }
 }
 
 function _hasNorm16TextureSupport() {
@@ -158,8 +141,6 @@ async function init(configuration = config): Promise<boolean> {
     }
   }
 
-  setUseSharedArrayBuffer(sharedArrayBufferMode);
-
   csRenderInitialized = true;
 
   if (!webWorkerManager) {
@@ -222,45 +203,6 @@ function getShouldUseCPURendering(): boolean {
   return config.rendering.useCPURendering;
 }
 
-function setUseSharedArrayBuffer(mode: SharedArrayBufferModes | boolean): void {
-  if (mode == SharedArrayBufferModes.AUTO) {
-    sharedArrayBufferMode = SharedArrayBufferModes.AUTO;
-    const hasSharedBuffer = hasSharedArrayBuffer();
-    if (!hasSharedBuffer) {
-      useSharedArrayBuffer = false;
-      console.warn(
-        `CornerstoneRender: SharedArray Buffer not allowed, performance may be slower.
-        Try ensuring page is cross-origin isolated to enable SharedArrayBuffer.`
-      );
-    } else {
-      useSharedArrayBuffer = true;
-      // eslint-disable-next-line no-console
-      console.log('CornerstoneRender: using SharedArrayBuffer');
-    }
-    return;
-  }
-
-  if (mode == SharedArrayBufferModes.TRUE || mode == true) {
-    sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
-    useSharedArrayBuffer = true;
-    return;
-  }
-
-  if (mode == SharedArrayBufferModes.FALSE || mode == false) {
-    sharedArrayBufferMode = SharedArrayBufferModes.FALSE;
-    useSharedArrayBuffer = false;
-    return;
-  }
-}
-
-function resetUseSharedArrayBuffer(): void {
-  setUseSharedArrayBuffer(sharedArrayBufferMode);
-}
-
-function getShouldUseSharedArrayBuffer(): boolean {
-  return useSharedArrayBuffer;
-}
-
 /**
  *
  * Returns whether or not cornerstone-core has been initialized.
@@ -316,13 +258,10 @@ function peerImport(moduleId: string) {
 export {
   init,
   getShouldUseCPURendering,
-  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
-  setUseSharedArrayBuffer,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
-  resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,

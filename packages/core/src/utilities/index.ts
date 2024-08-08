@@ -13,10 +13,6 @@ import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMeta
 import clamp from './clamp';
 import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
-import createUint8SharedArray from './createUint8SharedArray';
-import createFloat32SharedArray from './createFloat32SharedArray';
-import createUint16SharedArray from './createUInt16SharedArray';
-import createInt16SharedArray from './createInt16SharedArray';
 import getViewportModality from './getViewportModality';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
@@ -99,10 +95,6 @@ export {
   isEqualAbs,
   isEqualNegative,
   isOpposite,
-  createFloat32SharedArray,
-  createUint8SharedArray,
-  createUint16SharedArray,
-  createInt16SharedArray,
   getViewportModality,
   windowLevel,
   convertToGrayscale,

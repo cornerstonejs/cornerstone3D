@@ -10,14 +10,7 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 
-import {
-  createUint16SharedArray,
-  createUint8SharedArray,
-  createFloat32SharedArray,
-  getBufferConfiguration,
-  uuidv4,
-  VoxelManager,
-} from '../utilities';
+import { getBufferConfiguration, uuidv4, VoxelManager } from '../utilities';
 import {
   Point3,
   Metadata,
@@ -28,9 +21,7 @@ import {
   PixelDataTypedArray,
   IVolumeLoadObject,
   PixelDataTypedArrayString,
-  IDynamicImageVolume,
 } from '../types';
-import { getConfiguration, getShouldUseSharedArrayBuffer } from '../init';
 import { imageLoader } from '..';
 
 interface VolumeLoaderOptions {
@@ -53,7 +44,6 @@ interface LocalVolumeOptions {
   referencedVolumeId?: string;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
-    sharedArrayBuffer?: boolean;
   };
 }
 
@@ -100,8 +90,6 @@ function loadVolumeFromVolumeLoader(
   }
 
   const volumeLoadObject = loader(volumeId, options);
-
-  // setupCacheOptimizationEventListener(volumeId);
 
   // Broadcast a volume loaded event once the image is loaded
   volumeLoadObject.promise.then(
@@ -497,7 +485,6 @@ export function createLocalSegmentationVolume(
 function generateVolumeScalarData(
   targetBuffer: {
     type: PixelDataTypedArrayString;
-    sharedArrayBuffer?: boolean;
   },
   scalarLength: number
 ) {
@@ -515,28 +502,7 @@ function generateVolumeScalarData(
   }
 
   let volumeScalarData;
-  if (targetBuffer?.sharedArrayBuffer ?? getShouldUseSharedArrayBuffer()) {
-    switch (targetBuffer.type) {
-      case 'Float32Array':
-        volumeScalarData = createFloat32SharedArray(scalarLength);
-        break;
-      case 'Uint8Array':
-        volumeScalarData = createUint8SharedArray(scalarLength);
-        break;
-      case 'Uint16Array':
-        volumeScalarData = createUint16SharedArray(scalarLength);
-        break;
-      case 'Int16Array':
-        volumeScalarData = createUint16SharedArray(scalarLength);
-        break;
-      default:
-        throw new Error(
-          'generateVolumeScalarData: SharedArrayBuffer is not supported for the specified target buffer type'
-        );
-    }
-  } else {
-    volumeScalarData = new TypedArrayConstructor(scalarLength);
-  }
+  volumeScalarData = new TypedArrayConstructor(scalarLength);
 
   return { volumeScalarData, numBytes };
 }

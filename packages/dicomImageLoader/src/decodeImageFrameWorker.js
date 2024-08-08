@@ -288,12 +288,9 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     maxAfterScale = maxBeforeScale;
   }
 
-  // assign the array buffer to the pixelData only if it is not a SharedArrayBuffer
-  // since we can't transfer ownership of a SharedArrayBuffer to another thread
-  // in the workers
   const hasTargetBuffer = options.targetBuffer !== undefined;
 
-  if (!hasTargetBuffer || !options.isSharedArrayBuffer) {
+  if (!hasTargetBuffer) {
     imageFrame.pixelData = pixelDataArray;
   }
 

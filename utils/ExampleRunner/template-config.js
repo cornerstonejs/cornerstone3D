@@ -7,7 +7,7 @@ const csStreamingBasePath = path.resolve(
   'packages/streaming-image-volume-loader/src/index'
 );
 const csDICOMImageLoaderDistPath = path.resolve(
-  'packages/dicomImageLoader/dist/esm/src/imageLoader/index'
+  'packages/dicomImageLoader/src/imageLoader/index'
 );
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 

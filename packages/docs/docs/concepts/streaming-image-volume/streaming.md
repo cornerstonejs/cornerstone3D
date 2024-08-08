@@ -59,7 +59,6 @@ Otherwise, the volume's image loader is the same as wadors image loader written 
 
 
 ```js
-// using sharedArrayBufferImageLoader to load the images
 const imageIds = ['wadors:imageId1', 'wadors:imageId2'];
 
 const ctVolumeId = 'cornerstoneStreamingImageVolume:CT_VOLUME';

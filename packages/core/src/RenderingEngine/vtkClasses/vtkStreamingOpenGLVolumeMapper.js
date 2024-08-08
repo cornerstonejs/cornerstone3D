@@ -247,8 +247,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
       if (shouldReset) {
         const norm16Ext = model.context.getExtension('EXT_texture_norm16');
-        model.scalarTexture.setOglNorm16Ext(null);
-        // model.scalarTexture.setOglNorm16Ext(norm16Ext);
+        // model.scalarTexture.setOglNorm16Ext(null);
+        model.scalarTexture.setOglNorm16Ext(norm16Ext);
         model.scalarTexture.resetFormatAndType();
 
         model.scalarTexture.setTextureParameters({
