@@ -58,7 +58,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     const volume = cache.getVolume(model.volumeId);
     const isDynamicVolume = volume.isDynamicVolume();
-
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
@@ -96,6 +95,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       const dataType = data.constructor.name;
       const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
+
+      // Bind the texture
+      publicAPI.bind();
 
       // Calculate the offset within the 3D texture
       let zOffset = i;

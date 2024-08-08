@@ -24,6 +24,7 @@ console.warn(
 const {
   ToolGroupManager,
   Enums: csToolsEnums,
+  segmentation,
   CircleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
@@ -45,7 +46,7 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Rectangle ROI Start End Threshold Tool',
+  'Circle ROI Start End Threshold Tool',
   'Here we demonstrate usage of the Start en End ROI tool'
 );
 
@@ -166,12 +167,6 @@ addButtonToToolbar({
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
 
     const labelmapVolume = cache.getVolume(segmentationId);
-    const scalarData = labelmapVolume.voxelManager.getCompleteScalarDataArray();
-
-    //We set the segmentation to 0
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
-    }
 
     annotations.map((annotation, i) => {
       // @ts-ignore
@@ -179,7 +174,10 @@ addButtonToToolbar({
       for (let i = 0; i < pointsInVolume.length; i++) {
         for (let j = 0; j < pointsInVolume[i].length; j++) {
           if (pointsInVolume[i][j].value > 2) {
-            scalarData[pointsInVolume[i][j].index] = 1;
+            labelmapVolume.voxelManager.setAtIndex(
+              pointsInVolume[i][j].index,
+              1
+            );
           }
         }
       }
@@ -275,13 +273,11 @@ async function run() {
   });
 
   // Define a volume in memory
-  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
-    imageIds: ctImageIds,
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
   });
-  // Define a volume in memory
-  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
-    imageIds: ptImageIds,
-  });
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -331,20 +327,23 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
+  const viewportIds = [viewportId1, viewportId2, viewportId3];
+
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+    viewportIds
   );
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  viewportIds.map(async (viewportId) => {
+    // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  });
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

@@ -95,22 +95,21 @@ function _getTimePointDataCoordinate(frames, coordinate, volume) {
 
 function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   const { imageData: maskImageData } = segmentationVolume;
-  const segScalarData =
-    segmentationVolume.voxelManager.getCompleteScalarDataArray();
+  const segVoxelManager = segmentationVolume.voxelManager;
 
-  const len = segScalarData.length;
+  const scalarDataLength = segVoxelManager.getScalarDataLength();
 
   // Pre-allocate memory for array
   const nonZeroVoxelIndices = [];
-  nonZeroVoxelIndices.length = len;
+  nonZeroVoxelIndices.length = scalarDataLength;
   const ijkCoords = [];
 
   const dimensions = segmentationVolume.dimensions;
 
   // Get the index of every non-zero voxel in mask
   let actualLen = 0;
-  for (let i = 0, len = segScalarData.length; i < len; i++) {
-    if (segScalarData[i] !== 0) {
+  for (let i = 0, len = scalarDataLength; i < len; i++) {
+    if (segVoxelManager.getAtIndex(i) !== 0) {
       ijkCoords.push([
         i % dimensions[0],
         Math.floor((i / dimensions[0]) % dimensions[1]),
@@ -126,7 +125,7 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   const dynamicVolumeScalarDataArray = dynamicVolume.getScalarDataArrays();
   const values = [];
   const isSameVolume =
-    dynamicVolumeScalarDataArray[0].length === len &&
+    dynamicVolumeScalarDataArray[0].length === scalarDataLength &&
     JSON.stringify(dynamicVolume.spacing) ===
       JSON.stringify(segmentationVolume.spacing);
 
