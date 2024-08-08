@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import type { mat4 } from 'gl-matrix';
 import {
   Events as EVENTS,
   VideoEnums as VideoViewportEnum,
@@ -428,6 +429,17 @@ class VideoViewport extends Viewport implements IVideoViewport {
 
       videoElement.addEventListener('seeked', seekEventListener);
     }
+  }
+
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
   }
 
   // Sets the frame number - note according to DICOM, this is 1 based

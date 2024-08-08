@@ -2182,6 +2182,17 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     );
   }
 
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
+  }
+
   /**
    * This method is used to add images to the stack viewport.
    * It takes an array of stack inputs, each containing an imageId and an actor UID.

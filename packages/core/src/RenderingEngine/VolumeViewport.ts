@@ -658,7 +658,7 @@ class VolumeViewport extends BaseVolumeViewport {
         `imageVolume with id: ${volumeActor.uid} does not exist in cache`
       );
     }
-    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
     if (isImageActor(volumeActor)) {
       const transferFunction = (volumeActor.actor as ImageActor)

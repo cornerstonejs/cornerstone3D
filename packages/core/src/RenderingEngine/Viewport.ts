@@ -41,11 +41,8 @@ import type {
   DataSetOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
 import { InterpolationType } from '../enums';
-import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
-import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -58,7 +55,7 @@ import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
  */
 class Viewport implements IViewport {
   /**
-   * CameraViewPresentation is a view preentation selector that has all the
+   * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for
    * choosing presentation information between two viewports showing the same
    * type of orientation of a view, such as the CT, PT and fusion views in the
@@ -289,6 +286,17 @@ class Viewport implements IViewport {
     if (immediate) {
       this.render();
     }
+  }
+
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
   }
 
   /**

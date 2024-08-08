@@ -27,8 +27,8 @@ function calculateViewportsSpatialRegistration(
   viewport1: IStackViewport | IVolumeViewport,
   viewport2: IStackViewport | IVolumeViewport
 ): void {
-  const imageId1 = viewport1.getCurrentImageId();
-  const imageId2 = viewport2.getCurrentImageId();
+  const imageId1 = viewport1.getSliceIndex();
+  const imageId2 = viewport2.getSliceIndex();
 
   const imagePlaneModule1 = metaData.get('imagePlaneModule', imageId1);
   const imagePlaneModule2 = metaData.get('imagePlaneModule', imageId2);

@@ -4,7 +4,7 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import { vec2, vec3 } from 'gl-matrix';
-
+import type { mat4 } from 'gl-matrix';
 import cache from '../cache';
 import {
   MPR_CAMERA_VALUES,
@@ -125,6 +125,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
   }
 
   protected applyViewOrientation(
@@ -1657,7 +1668,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const volume = cache.getVolume(uid);
     const index = transformWorldToIndex(imageData, point);
 
-    return volume.voxelManager.getAtIJKPoint(index);
+    return volume.voxelManager.getAtIJKPoint(index) as number;
   }
 
   /**
@@ -1691,7 +1702,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * Gets the volumeId to use for references.
    * Returns undefined if the specified volume is NOT in this viewport.
    */
-  protected getVolumeId(specifier?: ViewReferenceSpecifier) {
+  public getVolumeId(specifier?: ViewReferenceSpecifier) {
     const actorEntries = this.getActors();
     if (!actorEntries) {
       return;

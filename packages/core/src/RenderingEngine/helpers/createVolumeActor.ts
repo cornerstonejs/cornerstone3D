@@ -57,7 +57,7 @@ async function createVolumeActor(
   volumeActor.setMapper(volumeMapper);
 
   // Todo: fix this for 3D RGB
-  const { numberOfComponents } = imageData.get('numberOfComponents');
+  const { numberOfComponents } = imageData.get('numberOfComponents') as any;
 
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);

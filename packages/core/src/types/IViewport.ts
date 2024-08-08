@@ -243,6 +243,8 @@ interface IViewport {
   /** unique identifier of the viewport */
   id: string;
 
+  getImageData: () => any;
+
   getWidget: (id: string) => any;
 
   addWidget: (id: string, widget: any) => void;

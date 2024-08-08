@@ -35,6 +35,8 @@ export default class VoxelManager<T> {
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
   public numberOfComponents = 1;
+  public getCompleteScalarDataArray?: () => ArrayLike<number>;
+  public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
 
   public getRange: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
@@ -136,6 +138,14 @@ export default class VoxelManager<T> {
       Math.floor(index / this.frameSize),
     ];
   }
+
+  public getMiddleSliceData = () => {
+    const middleSliceIndex = Math.floor(this.dimensions[2] / 2);
+    return this.getSliceData({
+      sliceIndex: middleSliceIndex,
+      slicePlane: 2,
+    });
+  };
 
   /**
    * Converts an IJK Point3 value to an index value
@@ -377,13 +387,13 @@ export default class VoxelManager<T> {
     return this.getScalarDataLength() * this.bytePerVoxel;
   }
 
-  public get bytePerVoxel() {
+  public get bytePerVoxel(): number {
     if (this.scalarData) {
       return this.scalarData.BYTES_PER_ELEMENT;
     }
 
     // get the first element of the scalar data
-    const value = this._get(0);
+    const value = this._get(0) as unknown as { BYTES_PER_ELEMENT: number };
     return value.BYTES_PER_ELEMENT;
   }
 
@@ -494,8 +504,15 @@ export default class VoxelManager<T> {
     let sliceSize: number;
     const SliceDataConstructor = this.getConstructor();
 
-    if (!SliceDataConstructor) {
-      return [] as PixelDataTypedArray;
+    function isValidConstructor(
+      ctor: any
+    ): ctor is new (length: number) => PixelDataTypedArray {
+      return typeof ctor === 'function';
+    }
+
+    if (!isValidConstructor(SliceDataConstructor)) {
+      // Return an empty typed array instead of an empty regular array
+      return new Uint8Array(0) as PixelDataTypedArray;
     }
 
     // Todo: optimize it when we have scalar data
@@ -507,7 +524,7 @@ export default class VoxelManager<T> {
         for (let i = 0; i < height; i++) {
           for (let j = 0; j < depth; j++) {
             const index = sliceIndex + i * width + j * frameSize;
-            sliceData[i * depth + j] = this._get(index);
+            this.setSliceDataValue(sliceData, i * depth + j, this._get(index));
           }
         }
         break;
@@ -517,7 +534,7 @@ export default class VoxelManager<T> {
         for (let i = 0; i < width; i++) {
           for (let j = 0; j < depth; j++) {
             const index = i + sliceIndex * width + j * frameSize;
-            sliceData[i + j * width] = this._get(index);
+            this.setSliceDataValue(sliceData, i + j * width, this._get(index));
           }
         }
         break;
@@ -525,7 +542,7 @@ export default class VoxelManager<T> {
         sliceSize = width * height;
         sliceData = new SliceDataConstructor(sliceSize);
         for (let i = 0; i < sliceSize; i++) {
-          sliceData[i] = this._get(startIndex + i);
+          this.setSliceDataValue(sliceData, i, this._get(startIndex + i));
         }
         break;
       default:
@@ -534,6 +551,32 @@ export default class VoxelManager<T> {
 
     return sliceData;
   };
+
+  private setSliceDataValue(
+    sliceData: PixelDataTypedArray,
+    index: number,
+    value: T
+  ): void {
+    if (Array.isArray(value)) {
+      // Handle RGB values
+      for (let i = 0; i < value.length; i++) {
+        sliceData[index * value.length + i] = this.toNumber(value[i]);
+      }
+    } else {
+      // Handle single number values
+      sliceData[index] = this.toNumber(value);
+    }
+  }
+
+  private toNumber(value: T | number): number {
+    if (typeof value === 'number') {
+      return value;
+    }
+    if (Array.isArray(value)) {
+      return value[0] || 0;
+    }
+    return 0;
+  }
 
   /**
    * Creates a voxel manager backed by an array of scalar data having the
@@ -630,6 +673,7 @@ export default class VoxelManager<T> {
       (index, v) => setVoxelValue(index, v)
     );
 
+    // @ts-ignore
     voxelManager._getConstructor = () => {
       const { pixelData } = getPixelInfo(0);
       return pixelData?.constructor;
@@ -663,7 +707,7 @@ export default class VoxelManager<T> {
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { pixelData } = getPixelInfo(0, imageIds, cache, pixelsPerSlice);
+      const { pixelData } = getPixelInfo(0);
       return pixelData.length * dimensions[2];
     };
 
@@ -675,6 +719,7 @@ export default class VoxelManager<T> {
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
       const dataLength = voxelManager.getScalarDataLength();
+      // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
 
       for (let i = 0; i < dataLength; i++) {
@@ -781,11 +826,13 @@ export default class VoxelManager<T> {
       return voxelGroups[timePoint].getMiddleSliceData();
     };
 
+    // @ts-ignore
     voxelManager.setTimePoint = (timePoint) => {
       voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
       voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
     };
 
+    // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index, timePoint) => {
       return voxelGroups[timePoint]._get(index);
     };
@@ -965,6 +1012,7 @@ export default class VoxelManager<T> {
       (index, v) => map.set(index, v)
     );
     voxelManager.map = map;
+    // @ts-ignore
     voxelManager.getPixelData = map.getPixelData.bind(map);
     return voxelManager;
   }
@@ -999,6 +1047,7 @@ export default class VoxelManager<T> {
     // The RLE voxel manager knows how to get scalar data pixel data representations.
     // That allows using the RLE representation as a normal pixel data representation
     // for VIEWING purposes.
+    // @ts-ignore
     image.getPixelData = image.voxelManager.getPixelData;
     // Assign a different size to the cached data because this is actually
     // storing an RLE representation, which doesn't have an up front size.

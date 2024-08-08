@@ -81,8 +81,6 @@ interface IImageVolume {
    */
   sizeInBytes?: number;
 
-  convertToImageSlicesAndCache(): string[];
-
   /** return the index of a given imageId */
   getImageIdIndex(imageId: string): number;
 
@@ -97,7 +95,6 @@ interface IImageVolume {
 
   /** */
   get imageCacheOffsetMap(): Map<string, any>;
-  get scalarData(): PixelDataTypedArray;
 
   /**
    * Mark the volume as having had the pixel data changed externally

@@ -17,8 +17,6 @@ const defaultConfig: Cornerstone3DConfig = {
     useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
-  // cache
-  enableCacheOptimization: true,
   /**
    * Imports peer modules.
    * This may just fallback to the default import, but many packaging
