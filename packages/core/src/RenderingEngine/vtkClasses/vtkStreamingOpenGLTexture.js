@@ -58,6 +58,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     const volume = cache.getVolume(model.volumeId);
     const isDynamicVolume = volume.isDynamicVolume();
+
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
@@ -72,8 +73,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     if (!updatedFrames.length) {
       return;
     }
-
-    debugger;
 
     return updateTextureImagesUsingVoxelManager(updatedFrames);
   };
@@ -97,9 +96,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       const dataType = data.constructor.name;
       const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
-
-      // Bind the texture
-      publicAPI.bind();
 
       // Calculate the offset within the 3D texture
       let zOffset = i;
@@ -191,138 +187,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   publicAPI.hasUpdatedFrames = () => {
     return model.updatedFrames.some((frame) => frame);
   };
-
-  function update3DTextureLegacy(data, updatedFrames) {
-    let bytesPerVoxel;
-    let TypedArrayConstructor;
-    if (data instanceof Uint8Array) {
-      bytesPerVoxel = 1;
-      TypedArrayConstructor = Uint8Array;
-    } else if (data instanceof Int16Array) {
-      bytesPerVoxel = 2;
-      TypedArrayConstructor = Int16Array;
-    } else if (data instanceof Uint16Array) {
-      bytesPerVoxel = 2;
-      TypedArrayConstructor = Uint16Array;
-    } else if (data instanceof Float32Array) {
-      bytesPerVoxel = 4;
-      TypedArrayConstructor = Float32Array;
-    } else {
-      throw new Error(`No support for given TypedArray.`);
-    }
-
-    for (let i = 0; i < updatedFrames.length; i++) {
-      if (updatedFrames[i]) {
-        const buffer = data.buffer;
-        const frameIndex = i;
-
-        const frameLength = model.width * model.height;
-        const frameLengthInBytes =
-          frameLength * model.components * bytesPerVoxel;
-
-        const zOffset = frameIndex * frameLengthInBytes;
-        const rowLength = model.width * model.components;
-
-        const gl = model.context;
-
-        /**
-         * It appears that the implementation of texSubImage3D uses 2D textures to do the texture copy if
-         * MAX_TEXTURE_SIZE is greater than MAX_TEXTURE_SIZE_3D. As such if you make a single block too big
-         * the transfer messes up cleanly and you render a black box or some data if you are lucky.
-         *
-         * This block-size based on 2D texture size seems like the safest approach that should work on most systems.
-         *
-         * There are certainly further optimizations that could be done here, we can do bigger chunks with other systems
-         * But we need to find the _exact_ criteria. And then its not even guaranteed it'll be much faster.
-         */
-        const MAX_TEXTURE_SIZE = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-        let blockHeight = Math.floor(
-          (bytesPerVoxel * MAX_TEXTURE_SIZE) / model.width
-        );
-
-        // Cap to actual frame height:
-        blockHeight = Math.min(blockHeight, model.height);
-        const { useNorm16Texture, preferSizeOverAccuracy } =
-          getConfiguration().rendering;
-        // TODO: there is currently a bug in chrome and safari which requires
-        // blockheight = 1 for norm16 textures:
-        // https://bugs.chromium.org/p/chromium/issues/detail?id=1408247
-        // https://bugs.webkit.org/show_bug.cgi?id=252039
-        if (useNorm16Texture && !preferSizeOverAccuracy) {
-          blockHeight = 1;
-        }
-
-        const multiRowBlockLength = rowLength * blockHeight;
-        const multiRowBlockLengthInBytes = multiRowBlockLength * bytesPerVoxel;
-
-        const normalBlocks = Math.floor(model.height / blockHeight);
-
-        const lastBlockHeight = model.height % blockHeight;
-        const multiRowLastBlockLength = rowLength * lastBlockHeight;
-
-        // Perform most blocks.
-        for (let block = 0; block < normalBlocks; block++) {
-          const yOffset = block * blockHeight;
-
-          let dataView = new TypedArrayConstructor(
-            buffer,
-            zOffset + block * multiRowBlockLengthInBytes,
-            multiRowBlockLength
-          );
-
-          gl.texSubImage3D(
-            model.target, // target
-            0, // mipMap level (always zero)
-            0, // xOffset
-            yOffset, // yOffset
-            frameIndex,
-            model.width,
-            blockHeight, //model.height,
-            1, // numFramesInBlock,
-            model.format,
-            model.openGLDataType,
-            dataView
-          );
-        }
-
-        // perform last block if present
-        if (lastBlockHeight !== 0) {
-          const yOffset = normalBlocks * blockHeight;
-
-          // Dataview of last block
-          const dataView = new TypedArrayConstructor(
-            buffer,
-            zOffset + normalBlocks * multiRowBlockLengthInBytes,
-            multiRowLastBlockLength
-          );
-
-          gl.texSubImage3D(
-            model.target, // target
-            0, // mipMap level (always zero)
-            0, // xOffset
-            yOffset, // yOffset
-            frameIndex,
-            model.width,
-            lastBlockHeight, //model.height,
-            1, // numFramesInBlock,
-            model.format,
-            model.openGLDataType,
-            dataView
-          );
-        }
-      }
-    }
-
-    // Reset updatedFrames
-    model.updatedFrames = [];
-
-    if (model.generateMipmap) {
-      model.context.generateMipmap(model.target);
-    }
-
-    publicAPI.deactivate();
-    return true;
-  }
 
   function updateTextureImagesUsingVoxelManager(updatedFrames) {
     const volume = cache.getVolume(model.volumeId);

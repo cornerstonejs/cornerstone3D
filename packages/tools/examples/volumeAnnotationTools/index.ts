@@ -9,6 +9,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -84,12 +85,11 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(EllipticalROITool.toolName, { volumeId });
@@ -195,6 +195,15 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+
+  setTimeout(() => {
+    debugger;
+    renderingEngine.getViewports().forEach((viewport) => {
+      viewport.setProperties({ interpolationType: 1 });
+    });
+
+    renderingEngine.render();
+  }, 2000);
 }
 
 run();
