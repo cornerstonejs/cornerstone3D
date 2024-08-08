@@ -91,12 +91,16 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         imageDataCopy.getPointData().setScalars(scalars);
 
         // Connect pipeline
+        // @ts-ignore
         mSquares.setInputData(imageDataCopy);
         const cValues = [1];
+        // @ts-ignore
         mSquares.setContourValues(cValues);
+        // @ts-ignore
         mSquares.setMergePoints(false);
 
         // Perform marching squares
+        // @ts-ignore
         const msOutput = mSquares.getOutputData();
 
         // Clean up output from marching squares

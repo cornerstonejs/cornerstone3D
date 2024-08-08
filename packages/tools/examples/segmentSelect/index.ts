@@ -318,8 +318,11 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const imageIdsArray = [stackImageIds[0]];
 
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(imageIdsArray);
+  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+    imageIdsArray
+  );
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   await viewport1.setStack(imageIdsArray, 0);
   await viewport3.setStack(imageIdsArray, 0);

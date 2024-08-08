@@ -7,7 +7,7 @@ import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
  * @returns 4D series infos
  */
 function getDynamicVolumeInfo(imageIds) {
-  const { imageIdsGroups: timePoints, splittingTag } =
+  const { imageIdGroups: timePoints, splittingTag } =
     splitImageIdsBy4DTags(imageIds);
   const isDynamicVolume = timePoints.length > 1;
 

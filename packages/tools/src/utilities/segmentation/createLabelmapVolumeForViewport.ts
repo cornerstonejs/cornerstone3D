@@ -23,9 +23,9 @@ export default async function createLabelmapVolumeForViewport(input: {
   segmentationId?: string;
   options?: {
     volumeId: string;
-    scalarData: Float32Array | Uint8Array | Uint16Array | Int16Array;
+    scalarData: Types.PixelDataTypedArray;
     targetBuffer: {
-      type: 'Float32Array' | 'Uint8Array' | 'Uint16Array' | 'Int8Array';
+      type: Types.PixelDataTypedArrayString;
     };
     metadata: Types.Metadata;
     dimensions: Types.Point3;

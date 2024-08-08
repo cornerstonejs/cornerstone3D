@@ -1,4 +1,9 @@
-import { VolumeViewport, volumeLoader, utilities } from '@cornerstonejs/core';
+import {
+  VolumeViewport,
+  volumeLoader,
+  utilities,
+  imageLoader,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
@@ -103,7 +108,8 @@ async function computeLabelmapFromSurfaceSegmentation(
   segmentationId,
   options: PolySegConversionOptions = {}
 ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
-  const isVolume = options.viewport instanceof VolumeViewport ?? true;
+  const { viewport } = options;
+  const isVolume = viewport instanceof VolumeViewport ?? true;
 
   const segmentIndices = options.segmentIndices?.length
     ? options.segmentIndices
@@ -119,7 +125,7 @@ async function computeLabelmapFromSurfaceSegmentation(
     }
   });
 
-  if (isVolume && !options.viewport) {
+  if (isVolume && !viewport) {
     // Todo: we don't have support for volume viewport without providing the
     // viewport, since we need to get the referenced volumeId from the viewport
     // but we can alternatively provide the volumeId directly, or even better
@@ -132,33 +138,19 @@ async function computeLabelmapFromSurfaceSegmentation(
 
   let segmentationVolume;
   if (isVolume) {
-    const defaultActor = options.viewport.getDefaultActor();
-    const { uid: volumeId } = defaultActor;
+    const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
     segmentationVolume =
       await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
   } else {
-    // for stack we basically need to create a volume from the stack
-    // imageIds and then create a segmentation volume from that and finally
-    // convert the surface to a labelmap and later on convert the labelmap
-    // to a stack labelmap
     const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
-    const volumeId = 'generatedSegmentationVolumeId';
-    const volumeProps = utilities.generateVolumePropsFromImageIds(
-      imageIds,
-      volumeId
-    );
+    const segImages =
+      imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
 
-    // we don't need the imageIds for the viewport (e.g., CT), but rather
-    // want to use the imageIds as a reference
-    delete volumeProps.imageIds;
+    const segImageIds = segImages.map((image) => image.imageId);
 
-    segmentationVolume = await volumeLoader.createLocalSegmentationVolume(
-      {
-        ...volumeProps,
-        scalarData: volumeProps.scalarData as Types.PixelDataTypedArray,
-        referencedImageIds: imageIds,
-      },
-      volumeId
+    segmentationVolume = await volumeLoader.createAndCacheVolumeFromImages(
+      'generatedSegmentationVolumeId',
+      segImageIds
     );
   }
 

@@ -55,7 +55,7 @@ function createViewport(renderingEngine, orientation, width, height) {
 }
 
 // For some reason the cpu rendering is not working properly in the CI
-xdescribe('StackViewport CPU -- ', () => {
+describe('StackViewport CPU -- ', () => {
   beforeEach(() => {
     setUseCPURendering(true);
   });

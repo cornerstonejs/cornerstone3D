@@ -10,12 +10,10 @@ export default interface ImageLoadRequests {
   imageIdIndex: number;
   options: {
     targetBuffer: {
-      arrayBuffer: SharedArrayBuffer | undefined;
-      offset: number;
-      length: number;
       type: string;
+      rows: number;
+      columns: number;
     };
-    skipCreateImage: boolean;
     preScale: {
       enabled: boolean;
       scalingParameters: Types.ScalingParameters;

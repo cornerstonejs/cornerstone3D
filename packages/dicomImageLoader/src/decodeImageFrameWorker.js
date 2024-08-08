@@ -175,8 +175,6 @@ async function decodeImageFrame(
 }
 
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
-  const { use16BitDataType } = decodeConfig || {};
-
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
@@ -201,8 +199,8 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
 
   const typedArrayConstructors = {
     Uint8Array,
-    Uint16Array: use16BitDataType ? Uint16Array : undefined,
-    Int16Array: use16BitDataType ? Int16Array : undefined,
+    Uint16Array,
+    Int16Array,
     Float32Array,
   };
 
@@ -290,17 +288,9 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     maxAfterScale = maxBeforeScale;
   }
 
-  // assign the array buffer to the pixelData only if it is not a SharedArrayBuffer
-  // since we can't transfer ownership of a SharedArrayBuffer to another thread
-  // in the workers
-  const hasTargetBuffer = options.targetBuffer !== undefined;
-
-  if (!hasTargetBuffer || !options.isSharedArrayBuffer) {
-    imageFrame.pixelData = pixelDataArray;
-  }
-
-  imageFrame.minAfterScale = minAfterScale;
-  imageFrame.maxAfterScale = maxAfterScale;
+  imageFrame.pixelData = pixelDataArray;
+  imageFrame.smallestPixelValue = minAfterScale;
+  imageFrame.largestPixelValue = maxAfterScale;
 
   const end = new Date().getTime();
   imageFrame.decodeTimeInMS = end - start;
@@ -325,9 +315,7 @@ function _handleTargetBuffer(
   const TypedArrayConstructor = typedArrayConstructors[type];
 
   if (!TypedArrayConstructor) {
-    throw new Error(
-      `target array ${type} is not supported, you need to set use16BitDataType to true if you want to use Uint16Array or Int16Array.`
-    );
+    throw new Error(`target array ${type} is not supported, or doesn't exist.`);
   }
 
   if (rows && rows != imageFrame.rows) {

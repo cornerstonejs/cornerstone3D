@@ -1,10 +1,4 @@
-import {
-  getEnabledElement,
-  StackViewport,
-  Enums,
-  VideoViewport,
-  WSIViewport,
-} from '@cornerstonejs/core';
+import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
 import { getToolState } from './state';
 
 export const requestType = Enums.RequestType.Prefetch;

@@ -33,7 +33,8 @@ export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ContourSegmentationData,
   options: PolySegConversionOptions = {}
 ) {
-  const { viewport } = options;
+  const viewport = options.viewport as Types.IVolumeViewport;
+  const volumeId = viewport.getVolumeId();
 
   const imageIds = utilities.getViewportImageIds(viewport);
 
@@ -45,26 +46,13 @@ export async function convertContourToVolumeLabelmap(
 
   const segmentationVolumeId = utilities.uuidv4();
 
-  const volumeProps = utilities.generateVolumePropsFromImageIds(
-    imageIds,
-    segmentationVolumeId
-  );
+  const segmentationVolume =
+    volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+      volumeId: segmentationVolumeId,
+    });
 
-  const { metadata, dimensions, origin, direction, spacing, scalarData } =
-    volumeProps;
-
-  const segmentationVolume = await volumeLoader.createLocalSegmentationVolume(
-    {
-      dimensions,
-      origin,
-      direction,
-      spacing,
-      metadata,
-      imageIds: imageIds.map((imageId) => `generated://${imageId}`),
-      referencedImageIds: imageIds,
-    },
-    segmentationVolumeId
-  );
+  const { dimensions, origin, direction, spacing, voxelManager } =
+    segmentationVolume;
 
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);
@@ -77,7 +65,7 @@ export async function convertContourToVolumeLabelmap(
     {
       segmentIndices,
       dimensions,
-      scalarData,
+      scalarData: voxelManager.getCompleteScalarDataArray?.(),
       origin,
       direction,
       spacing,
@@ -94,13 +82,8 @@ export async function convertContourToVolumeLabelmap(
 
   triggerWorkerProgress(eventTarget, 1);
 
-  segmentationVolume.imageData
-    .getPointData()
-    .getScalars()
-    .setData(newScalarData);
-  segmentationVolume.imageData.modified();
+  voxelManager.setCompleteScalarDataArray(newScalarData);
 
-  // update the scalarData in the volume as well
   segmentationVolume.modified();
 
   return {
@@ -138,8 +121,11 @@ export async function convertContourToStackLabelmap(
   });
 
   // create
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+    imageIds
+  );
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   const { segmentIndices, annotationUIDsInSegmentMap } =
     _getAnnotationMapFromSegmentation(contourRepresentationData, options);
@@ -203,7 +189,7 @@ export async function convertContourToStackLabelmap(
       direction,
       spacing,
       origin,
-      scalarData: segImage.getPixelData(),
+      scalarData: segImage.voxelManager.getScalarData(),
       imageId: segImageId,
       dimensions: [segImage.width, segImage.height, 1],
     });
@@ -236,7 +222,7 @@ export async function convertContourToStackLabelmap(
     const { imageId: segImageId } = segmentationInfo;
 
     const segImage = cache.getImage(segImageId);
-    segImage.getPixelData().set(scalarData);
+    segImage.voxelManager.getScalarData().set(scalarData);
     segImage.imageFrame?.pixelData?.set(scalarData);
 
     segImageIds.push(segImageId);

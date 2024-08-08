@@ -1,7 +1,10 @@
 import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackColormap from './CPUFallbackColormap';
 import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
 import type VoxelManager from '../utilities/VoxelManager';
 import { ImageQualityStatus } from '../enums';
 import IImageCalibration from './IImageCalibration';
@@ -126,6 +129,7 @@ interface IImage {
   imageFrame?: any;
 
   FrameOfReferenceUID?: string;
+  dataType: PixelDataTypedArrayString;
 
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 

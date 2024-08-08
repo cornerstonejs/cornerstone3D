@@ -1,15 +1,10 @@
-import { cache, utilities } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from './stackVolumeCheck';
 import { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 
-const { VoxelManager } = utilities;
-
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
-  let imageDimensions: Types.Point3;
-  let segmentationDimensions: Types.Point3;
   let imageVoxelManager;
   let segmentationVoxelManager;
 
@@ -27,13 +22,11 @@ function getStrategyData({ operationData, viewport }) {
     // but for other operations we don't need it so make it optional
     if (referencedVolumeId) {
       const imageVolume = cache.getVolume(referencedVolumeId);
-      imageScalarData = imageVolume.getScalarData();
-      imageDimensions = imageVolume.dimensions;
+      imageVoxelManager = imageVolume.voxelManager;
     }
 
     ({ imageData: segmentationImageData } = segmentationVolume);
-    segmentationScalarData = segmentationVolume.getScalarData();
-    segmentationDimensions = segmentationVolume.dimensions;
+    // segmentationDimensions = segmentationVolume.dimensions;
   } else {
     const { segmentationRepresentationUID, segmentationId } =
       operationData as LabelmapToolOperationDataStack;
@@ -58,8 +51,10 @@ function getStrategyData({ operationData, viewport }) {
     if (!actor) {
       return;
     }
+
+    const currentSegImage = cache.getImage(labelmapImageId);
     segmentationImageData = actor.actor.getMapper().getInputData();
-    segmentationVoxelManager = segmentationImageData.voxelManager;
+    segmentationVoxelManager = currentSegImage.voxelManager;
     const currentSegmentationImageId = operationData.imageId;
 
     const segmentationImage = cache.getImage(currentSegmentationImageId);
@@ -75,31 +70,17 @@ function getStrategyData({ operationData, viewport }) {
     // This is the pixel data of the image that is being segmented in the cache
     // and we need to use this to for the modification
     imageScalarData = image?.getPixelData() || imageData.getScalarData();
-    imageDimensions = image
-      ? [image.columns, image.rows, 1]
-      : imageData.dimensions;
-    segmentationDimensions = [
-      segmentationImage.columns,
-      segmentationImage.rows,
-      1,
-    ];
     imageVoxelManager = image?.voxelManager;
   }
 
-  segmentationVoxelManager ||= VoxelManager.createVolumeVoxelManager(
-    segmentationDimensions,
-    segmentationScalarData
-  );
-
-  imageVoxelManager ||=
-    imageDimensions &&
-    VoxelManager.createVolumeVoxelManager(imageDimensions, imageScalarData);
-
   return {
+    // image data
     segmentationImageData,
+    // scalar data
     segmentationScalarData,
-    segmentationVoxelManager,
     imageScalarData,
+    // voxel managers
+    segmentationVoxelManager,
     imageVoxelManager,
   };
 }

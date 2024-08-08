@@ -41,7 +41,6 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 
 const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -52,8 +51,6 @@ const volumeId = ptVolumeId;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-
-let segmentationRepresentationByUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -426,8 +423,6 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-
-  segmentationRepresentationByUID = segmentationRepresentationByUIDs[0];
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

@@ -25,7 +25,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "exports": {
+"exports": {
     ".": {
       "import": "./dist/esm/src/imageLoader/index.js"
     },
@@ -40,17 +40,18 @@
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
     "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle && yarn run build:esm",
+    "build:update-api": "echo 'not implemented yet'",
     "copy-dts": "echo 'not implemented yet'",
     "clean": "shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "api-check": "echo 'not implemented yet'",
-    "build:update-api": "echo 'not implemented yet'",
     "cm": "npx git-cz",
     "clean:dist": "shx rm -rf dist",
     "clean:docs": "shx rm -rf documentation",
     "clean:coverage": "shx rm -rf coverage",
     "doc": "npm run doc:generate && opn documentation/index.html",
     "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
+    "dev": "tsc --project ./tsconfig.esm.json --watch",
     "eslint": "eslint -c .eslintrc.js src",
     "eslint-quiet": "eslint -c .eslintrc.js --quiet src",
     "eslint-fix": "eslint -c .eslintrc.js --fix src",
@@ -64,7 +65,6 @@
     "test:firefox": "karma start config/karma/karma-firefox.js",
     "test:watch": "karma start config/karma/karma-watch.js",
     "watch": "npm run clean && shx mkdir dist && npm run webpack:watch",
-    "dev": "npm run webpack:dev",
     "webpack:dev": "webpack serve --progress --config .webpack/webpack-dev.js",
     "webpack:dynamic-import": "webpack --progress --config .webpack/webpack-dynamic-import",
     "webpack:bundle": "webpack --progress --config .webpack/webpack-bundle",

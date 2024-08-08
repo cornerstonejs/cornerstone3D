@@ -34,8 +34,6 @@ interface ImageFrame {
       suvbw?: number;
     };
   };
-  minAfterScale?: number;
-  maxAfterScale?: number;
   imageId: string;
 
   // Remaining information is about the general load process

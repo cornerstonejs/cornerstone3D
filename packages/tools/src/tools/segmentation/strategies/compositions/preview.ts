@@ -92,7 +92,7 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
       preview,
@@ -126,7 +126,7 @@ export default {
   ) => {
     const {
       previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
     } = operationData;
     if (previewVoxelManager.modifiedSlices.size === 0) {
       return;

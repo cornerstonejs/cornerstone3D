@@ -835,14 +835,14 @@ class LengthTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { length, unit } = cachedVolumeStats;
+  const { length, lengthUnits } = cachedVolumeStats;
 
   // Can be null on load
   if (length === undefined || length === null || isNaN(length)) {
     return;
   }
 
-  const textLines = [`${roundNumber(length)} ${unit}`];
+  const textLines = [`${roundNumber(length)} ${lengthUnits}`];
 
   return textLines;
 }

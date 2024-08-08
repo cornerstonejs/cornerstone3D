@@ -180,7 +180,11 @@ class SegmentationRenderingEngine {
         const display = renderers[representation.type];
 
         try {
-          const viewportId = display.render(viewport, representation);
+          const viewportId = display.render(
+            // @ts-ignore
+            viewport,
+            representation
+          );
           viewportRenderList.push(viewportId);
         } catch (error) {
           console.error(error);

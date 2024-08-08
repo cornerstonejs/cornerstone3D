@@ -195,8 +195,10 @@ addButtonToToolbar({
   onClick: async () => {
     const currentImageId = viewport.getCurrentImageId();
 
-    const { imageId: newSegImageId } =
-      await imageLoader.createAndCacheDerivedSegmentationImage(currentImageId);
+    const segmentationImage =
+      imageLoader.createAndCacheDerivedSegmentationImage(currentImageId);
+
+    const newSegImageId = segmentationImage.imageId;
 
     const newSegmentationId = `SEGMENTATION_${newSegImageId}`;
     segmentationIds.push(newSegmentationId);
@@ -409,12 +411,14 @@ async function run() {
   const imageIdsArray = [imageIds[0], imageIds[100], mgImageIds[0]];
   const imageIdsArray2 = [imageIds[100]];
 
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(imageIdsArray);
+  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+    imageIdsArray
+  );
 
   await viewport.setStack(imageIdsArray, 0);
   await viewport2.setStack(imageIdsArray2, 0);
 
+  const segmentationImageIds = segImages.map((it) => it.imageId);
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray.slice(0, 2),
     segmentationImageIds,

@@ -13,7 +13,6 @@ import {
 } from '../../helpers/clipAndCacheSurfacesForViewport';
 import { extractContourData } from './utils/extractContourData';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
-import { getToolGroupForViewport } from '../../../../store/ToolGroupManager';
 
 // the map between segment index and the intersection points and lines
 export type RawContourData = Map<number, SurfaceClipResult[]>;

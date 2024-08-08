@@ -248,11 +248,11 @@
 
     function convolute(kernel, multiplier, calculateWWWC) {
         const promise = cornerstoneDICOMImageLoader.webWorkerManager.addTask('convolveTask', {
-            pixelData :loadedImage.getPixelData(),
+            pixelData :loadedimage.voxelManager.getScalarData(),
             kernel : kernel,
             multiplier: multiplier,
             imageFrame: {
-                typedArrayName: loadedImage.getPixelData().constructor.name,
+                typedArrayName: loadedimage.voxelManager.getScalarData().constructor.name,
                 width : loadedImage.width,
                 height : loadedImage.height
             }

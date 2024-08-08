@@ -7,7 +7,6 @@ const { windowLevel } = utilities;
 export default function makeVolumeMetadata(
   niftiHeader,
   orientation,
-  scalarData,
   pixelRepresentation
 ): {
   volumeMetadata: Types.Metadata;
@@ -15,25 +14,26 @@ export default function makeVolumeMetadata(
   direction: Types.Mat3;
 } {
   const { numBitsPerVoxel, littleEndian, pixDims, dims } = niftiHeader;
-  let min = Infinity;
-  let max = -Infinity;
+  const min = Infinity;
+  const max = -Infinity;
   const frameLength = dims[1] * dims[2];
   const middleFrameIndex = Math.floor(dims[3] / 2);
   const offset = frameLength * middleFrameIndex;
-  for (
-    let voxelIndex = offset;
-    voxelIndex < offset + frameLength;
-    voxelIndex++
-  ) {
-    const voxelValue = scalarData[voxelIndex];
-    if (voxelValue > max) {
-      max = voxelValue;
-    }
-    if (voxelValue < min) {
-      min = voxelValue;
-    }
-  }
-  const { windowWidth, windowCenter } = windowLevel.toWindowLevel(min, max);
+  // for (
+  //   let voxelIndex = offset;
+  //   voxelIndex < offset + frameLength;
+  //   voxelIndex++
+  // ) {
+  //   const voxelValue = scalarData[voxelIndex];
+  //   if (voxelValue > max) {
+  //     max = voxelValue;
+  //   }
+  //   if (voxelValue < min) {
+  //     min = voxelValue;
+  //   }
+  // }
+  // const { windowWidth, windowCenter } = windowLevel.toWindowLevel(min, max);
+  const { windowWidth, windowCenter } = { windowWidth: 400, windowCenter: 40 };
 
   const rowCosines = vec3.create();
   const columnCosines = vec3.create();

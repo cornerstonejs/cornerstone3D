@@ -30,13 +30,15 @@ function createMergedLabelmapForIndex(
 
   const labelmap = labelmaps[0];
 
-  const arrayType = (labelmap.getScalarData() as any).constructor;
-  const outputData = new arrayType(labelmap.getScalarData().length);
+  const arrayType = labelmap.voxelManager.getConstructor() as any;
+
+  const outputData = new arrayType(labelmap.voxelManager.getScalarDataLength());
 
   labelmaps.forEach((labelmap) => {
-    const scalarData = labelmap.getScalarData();
-    for (let i = 0; i < scalarData.length; i++) {
-      if (scalarData[i] === segmentIndex) {
+    const voxelManager = labelmap.voxelManager;
+    const scalarDataLength = voxelManager.getScalarDataLength();
+    for (let i = 0; i < scalarDataLength; i++) {
+      if (voxelManager.getAtIndex(i) === segmentIndex) {
         outputData[i] = segmentIndex;
       }
     }
@@ -52,7 +54,8 @@ function createMergedLabelmapForIndex(
   };
 
   const preventCache = true;
-  // Todo: following should be async
+
+  // Todo: make the local volume also use the new volume model
   const mergedVolume = volumeLoader.createLocalVolume(
     options,
     volumeId,

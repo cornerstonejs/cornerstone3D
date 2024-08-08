@@ -173,18 +173,23 @@ class WindowLevelTool extends BaseTool {
 
     if (volumeId) {
       const imageVolume = cache.getVolume(volumeId);
-      const { dimensions } = imageVolume;
-      const scalarData = imageVolume.getScalarData();
-      const calculatedDynamicRange = this._getImageDynamicRangeFromMiddleSlice(
-        scalarData,
-        dimensions
+
+      const { voxelManager } = viewport.getImageData();
+
+      const middleSlicePixelData = voxelManager.getMiddleSliceData();
+      const calculatedDynamicRange = middleSlicePixelData.reduce(
+        (acc, pixel) => {
+          return [Math.min(acc[0], pixel), Math.max(acc[1], pixel)];
+        },
+        [Infinity, -Infinity]
       );
+
       const BitsStored = imageVolume?.metadata?.BitsStored;
       const metadataDynamicRange = BitsStored ? 2 ** BitsStored : Infinity;
       // Burned in Pixels often use pixel values above the BitsStored.
       // This results in a multiplier which is way higher than what you would
       // want in practice. Thus we take the min between the metadata dynamic
-      // range and actual middel slice dynamic range.
+      // range and actual middle slice dynamic range.
       imageDynamicRange = Math.min(
         calculatedDynamicRange,
         metadataDynamicRange
@@ -199,7 +204,15 @@ class WindowLevelTool extends BaseTool {
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
-    const { imageData } = viewport.getImageData();
+    const { imageData, voxelManager } = viewport.getImageData();
+
+    // this should address the case where the voxelManager is used
+    // for the new volume viewport model
+    if (voxelManager?.getRange) {
+      const range = voxelManager.getRange();
+      return range[1] - range[0];
+    }
+
     const dimensions = imageData.getDimensions();
 
     if (imageData.getRange) {

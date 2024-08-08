@@ -36,8 +36,8 @@ const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Segmentation in StackViewport',
-  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image. We show that even with different stack ordering, we are capable of mathcing the correct labelmap and render them on the second viewport'
+  'Segmentation in Multiple Orthographic Viewports',
+  'This example demonstrates how to render and synchronize a segmentation across multiple Orthographic Viewports displaying different volumes. It showcases the ability to interact with the segmentation in one viewport and see the changes reflected in the others.'
 );
 
 const size = '500px';

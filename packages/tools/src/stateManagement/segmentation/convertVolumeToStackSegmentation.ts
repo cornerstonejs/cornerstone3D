@@ -1,9 +1,4 @@
-import {
-  Types,
-  cache,
-  eventTarget,
-  getRenderingEngines,
-} from '@cornerstonejs/core';
+import { Types, cache, eventTarget } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
@@ -19,41 +14,7 @@ export async function computeStackSegmentationFromVolume({
 }): Promise<{ imageIds: string[] }> {
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
-  // we need to decache the segmentation Volume so that we use it
-  // for the conversion
-
-  // So here we have two scenarios that we need to handle:
-  // 1. the volume was derived from a stack and we need to decache it, this is easy
-  // since we just need purge the volume from the cache and those images will get
-  // their copy of the image back
-  // 2. It was actually a native volume and we need to decache it, this is a bit more
-  // complicated since then we need to decide on the imageIds for it to get
-  // decached to
-  const hasCachedImages = segmentationVolume.imageCacheOffsetMap.size > 0;
-  // Initialize the variable to hold the final result
-  let isAllImagesCached = false;
-
-  if (hasCachedImages) {
-    // Check if every imageId in the volume is in the _imageCache
-    isAllImagesCached = segmentationVolume.imageIds.every((imageId) =>
-      cache.getImage(imageId)
-    );
-  }
-
-  //Todo: This is a hack to get the rendering engine
-  const renderingEngine = getRenderingEngines()[0];
-  const volumeUsedInOtherViewports = renderingEngine
-    .getVolumeViewports()
-    .find((vp) => vp.hasVolumeId(volumeId));
-
-  segmentationVolume.decache(!volumeUsedInOtherViewports && isAllImagesCached);
-
-  const imageIds =
-    _getLabelmapImageIdsForViewportForStackSegmentation(segmentationVolume);
-
-  // check if the imageIds have been cache, if not we should actually copy
-
-  return { imageIds };
+  return { imageIds: segmentationVolume.imageIds };
 }
 
 // Updated original function to call the new separate functions
@@ -70,16 +31,14 @@ export async function convertVolumeToStackSegmentation({
 }): Promise<void> {
   const segmentation = getSegmentation(segmentationId);
 
-  const data = segmentation.representationData
+  const { volumeId } = segmentation.representationData
     .LABELMAP as LabelmapSegmentationDataVolume;
-  const { imageIds } = await computeStackSegmentationFromVolume({
-    volumeId: data.volumeId,
-  });
+  const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
   await updateStackSegmentationState({
     segmentationId,
     viewportId: options.viewportId,
-    imageIds,
+    imageIds: segmentationVolume.imageIds,
     options,
   });
 }
@@ -140,68 +99,4 @@ export async function updateStackSegmentationState({
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
     triggerSegmentationDataModified(segmentationId)
   );
-}
-
-function _getLabelmapImageIdsForViewportForStackSegmentation(
-  segmentationVolume: Types.IImageVolume
-) {
-  // There might be or might not be segmentationImageIds, if it is a volume
-  // segmentation converted from stack segmentation, there will be segmentationImageIds
-  // otherwise, if it is empty volume segmentation derived from
-  // a volume that is not a stack, there will be no segmentationImageIds
-
-  if (segmentationVolume.additionalDetails?.imageIds) {
-    // this means the segmentation volume is derived from a stack segmentation
-    // and we can use the imageIds from the additionalDetails
-    return segmentationVolume.additionalDetails.imageIds;
-  } else if (
-    segmentationVolume.referencedImageIds?.length &&
-    !segmentationVolume.referencedImageIds[0].startsWith('derived')
-  ) {
-    // this means the segmentation volume is derived from a stack segmentation
-    // and we can use the referencedImageIds from the segmentationVolume
-    const segmentationImageIds = segmentationVolume.imageIds;
-
-    return [...segmentationImageIds].reverse();
-  } else {
-    // check if the segmentation volume is derived from another volume and
-    // whether if that volume has imageIds
-    const referencedVolumeId = segmentationVolume.referencedVolumeId;
-    const referencedVolume = cache.getVolume(referencedVolumeId);
-
-    if (!referencedVolume) {
-      throw new Error(
-        'Cannot convert volumetric segmentation without referenced volume to stack segmentation yet'
-      );
-    }
-
-    if (!referencedVolume?.imageIds?.length) {
-      throw new Error(
-        'Cannot convert volumetric segmentation without imageIds to stack segmentation yet'
-      );
-    }
-
-    if (referencedVolume.imageIds?.[0].startsWith('derived')) {
-      throw new Error(
-        `Cannot convert volume segmentation that is derived from another segmentation
-         to stack segmentation yet, include the additionalDetails.imageIds
-         in the volume segmentation in case you need it for the conversion`
-      );
-    }
-
-    // if the referenced volume has imageIds, and itself is not derived from
-    // another segmentation then we can use the imageIds from the referenced volume
-    const referencedImageIds = referencedVolume.imageIds;
-
-    let segmentationImageIdsToUse = segmentationVolume.imageIds;
-    if (!segmentationImageIdsToUse?.length) {
-      // If segmentation Ids don't exist it means that the segmentation is literally
-      // just a volume so we need to assume imageIds and decache it to the _imageCache
-      // so that it can be used for the conversion
-      segmentationImageIdsToUse =
-        segmentationVolume.convertToImageSlicesAndCache();
-    }
-
-    return [...segmentationImageIdsToUse].reverse();
-  }
 }

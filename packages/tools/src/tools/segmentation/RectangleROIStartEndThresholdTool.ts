@@ -44,7 +44,7 @@ import {
 import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { pointInShapeCallback, roundNumber } from '../../utilities/';
+import { roundNumber } from '../../utilities/';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
@@ -392,7 +392,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       const projectionPoint = projectionPoints[i][0];
 
-      const { dimensions, imageData } = imageVolume;
+      const { dimensions, imageData, voxelManager } = imageVolume;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
       //We only need to change the Z of our bounds so we are getting the Z from the current projection point
@@ -440,11 +440,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          () => true,
+        const pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
-          boundsIJK
+          {
+            boundsIJK,
+            imageData,
+          }
         );
 
         //@ts-ignore

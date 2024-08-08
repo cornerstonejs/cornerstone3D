@@ -5,14 +5,16 @@ import {
   volumeLoader,
   setVolumesForViewports,
   eventTarget,
+  imageLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  cornerstoneNiftiImageVolumeLoader,
   Enums as NiftiEnums,
+  cornerstoneNiftiImageLoader,
+  createNiftiImageIdsAndCacheMetadata,
 } from '@cornerstonejs/nifti-volume-loader';
 
-import { addDropdownToToolbar } from '../../../../utils/demo/helpers';
+import { addDropdownToToolbar, initDemo } from '../../../../utils/demo/helpers';
 
 const {
   LengthTool,
@@ -21,7 +23,6 @@ const {
   StackScrollMouseWheelTool,
   ZoomTool,
   Enums: csToolsEnums,
-  init: csTools3dInit,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -34,7 +35,6 @@ const {
   ArrowAnnotateTool,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // This is for debugging purposes
@@ -126,15 +126,17 @@ addDropdownToToolbar({
   },
 });
 
+const niftiURL =
+  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${niftiURL}`; // VolumeId with loader id + volume id
+
 async function setup() {
-  await csInit();
-  await csTools3dInit();
+  await initDemo();
 
-  volumeLoader.registerVolumeLoader('nifti', cornerstoneNiftiImageVolumeLoader);
+  imageLoader.registerImageLoader('nifti', cornerstoneNiftiImageLoader);
 
-  const niftiURL =
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
-  const volumeId = 'nifti:' + niftiURL;
+  const imageIds = await createNiftiImageIdsAndCacheMetadata({ url: niftiURL });
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
@@ -273,7 +275,11 @@ async function setup() {
   );
 
   // This will load the nifti file, no need to call .load again for nifti
-  await volumeLoader.createAndCacheVolume(volumeId);
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  await volume.load();
 
   setVolumesForViewports(
     renderingEngine,

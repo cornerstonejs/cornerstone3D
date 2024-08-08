@@ -2,10 +2,11 @@ import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VoxelManager } from '../utilities';
 import {
   Metadata,
-  PixelDataTypedArray,
   Point3,
   IImageLoadObject,
   Mat3,
+  PixelDataTypedArrayString,
+  PixelDataTypedArray,
   RGB,
 } from '../types';
 
@@ -35,8 +36,6 @@ interface IImageVolume {
       suvbwToSuvbsa?: number;
     };
   };
-  /** volume size in bytes */
-  sizeInBytes?: number;
   /** volume spacing */
   spacing: Point3;
   /** number of voxels in the volume */
@@ -68,13 +67,19 @@ interface IImageVolume {
   //cancel load
   cancelLoading?: () => void;
 
-  /** return the volume scalar data */
-  getScalarData(): PixelDataTypedArray;
-
-  /** A voxel manager to manage the scalar data */
+  /**
+   * The new volume model which solely relies on the separate image data
+   * and do not cache the volume data at all
+   */
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  dataType?: PixelDataTypedArrayString;
 
-  convertToImageSlicesAndCache(): string[];
+  /**
+   * To be deprecated scalarData and sizeInBytes
+   * which is the old model of allocating the volume data
+   * and caching it in the volume object
+   */
+  sizeInBytes?: number;
 
   /** return the index of a given imageId */
   getImageIdIndex(imageId: string): number;

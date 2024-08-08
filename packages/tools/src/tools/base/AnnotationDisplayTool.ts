@@ -127,7 +127,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
     viewport: Types.IViewport,
     worldPos: Types.Point3,
     viewPlaneNormal: Types.Point3,
-    viewUp: Types.Point3
+    viewUp?: Types.Point3
   ): string {
     const targetId = this.getTargetId(viewport);
 

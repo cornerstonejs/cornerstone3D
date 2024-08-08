@@ -80,7 +80,8 @@ export function processVolumes(
   thresholdVolumeInformation: ThresholdInformation[]
 ) {
   const { spacing: segmentationSpacing } = segmentationVolume;
-  const scalarData = segmentationVolume.getScalarData();
+  const scalarDataLength =
+    segmentationVolume.voxelManager.getScalarDataLength();
 
   // prepare a list of volume information objects for callback functions
   const volumeInfoList = [];
@@ -90,23 +91,21 @@ export function processVolumes(
       thresholdVolumeInformation[i].volume;
 
     const volumeSize =
-      thresholdVolumeInformation[i].volume.getScalarData().length;
+      thresholdVolumeInformation[i].volume.voxelManager.getScalarDataLength();
     // discover the index of the volume the segmentation data is based on
     if (
-      volumeSize === scalarData.length &&
+      volumeSize === scalarDataLength &&
       equalsCheck(spacing, segmentationSpacing)
     ) {
       baseVolumeIdx = i;
     }
 
     // prepare information used in callback functions
-    const referenceValues = imageData.getPointData().getScalars().getData();
     const lower = thresholdVolumeInformation[i].lower;
     const upper = thresholdVolumeInformation[i].upper;
 
     volumeInfoList.push({
       imageData,
-      referenceValues,
       lower,
       upper,
       spacing,

@@ -36,6 +36,7 @@ interface CPUFallbackEnabledElement {
     imagePlaneModule?: ImagePlaneModule;
     imagePixelModule?: ImagePixelModule;
   };
+  voxelManager?: any;
 }
 
 export default CPUFallbackEnabledElement;

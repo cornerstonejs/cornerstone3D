@@ -499,7 +499,7 @@ function _createDynamicVolumeViewportCinePlayContext(
     },
     scroll(delta: number): void {
       // Updating this property (setter) makes it move to the desired time point
-      volume.timePointIndex += delta;
+      volume.scroll(delta);
     },
   };
 }

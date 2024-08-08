@@ -370,6 +370,29 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   /**
+   * Retrieves a stack viewport by its ID. used just for type safety
+   *
+   * @param viewportId - The ID of the viewport to retrieve.
+   * @returns The stack viewport with the specified ID.
+   * @throws Error if the viewport with the given ID does not exist or is not a StackViewport.
+   */
+  public getStackViewport(viewportId: string): IStackViewport {
+    this._throwIfDestroyed();
+
+    const viewport = this.getViewport(viewportId);
+
+    if (!viewport) {
+      throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+
+    if (!(viewport instanceof StackViewport)) {
+      throw new Error(`Viewport with Id ${viewportId} is not a StackViewport.`);
+    }
+
+    return viewport;
+  }
+
+  /**
    * Filters all the available viewports and return the stack viewports
    * @returns stack viewports registered on the rendering Engine
    */
@@ -378,15 +401,10 @@ class RenderingEngine implements IRenderingEngine {
 
     const viewports = this.getViewports();
 
-    const isStackViewport = (
-      viewport: IViewport
-    ): viewport is StackViewport => {
-      return viewport instanceof StackViewport;
-    };
-
-    return viewports.filter(isStackViewport) as Array<IStackViewport>;
+    return viewports.filter(
+      (vp) => vp instanceof StackViewport
+    ) as IStackViewport[];
   }
-
   /**
    * Return all the viewports that are volume viewports
    * @returns An array of VolumeViewport objects.

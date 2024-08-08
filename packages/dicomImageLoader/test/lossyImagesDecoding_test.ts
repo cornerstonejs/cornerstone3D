@@ -106,8 +106,8 @@ describe('Test lossy TransferSyntaxes decoding', function () {
           createImage(imageId, pixelData, curTransferSyntax, {})
             .then((image) => {
               const uncompressedImagePixelData =
-                uncompressedImage.getPixelData();
-              const curPixelData = image.getPixelData();
+                uncompressedimage.voxelManager.getScalarData();
+              const curPixelData = image.voxelManager.getScalarData();
 
               for (let i = 0; i < curPixelData.length - 1; i++) {
                 const threshold = testsData.threshold;

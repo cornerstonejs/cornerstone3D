@@ -1,6 +1,5 @@
 import { utilities, cache, Types } from '@cornerstonejs/core';
 import { getVoxelOverlap } from '../segmentation/utilities';
-import pointInShapeCallback from '../pointInShapeCallback';
 
 /**
  * Gets the scalar data for a series of time points for either a single
@@ -96,21 +95,21 @@ function _getTimePointDataCoordinate(frames, coordinate, volume) {
 
 function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   const { imageData: maskImageData } = segmentationVolume;
-  const segScalarData = segmentationVolume.getScalarData();
+  const segVoxelManager = segmentationVolume.voxelManager;
 
-  const len = segScalarData.length;
+  const scalarDataLength = segVoxelManager.getScalarDataLength();
 
   // Pre-allocate memory for array
   const nonZeroVoxelIndices = [];
-  nonZeroVoxelIndices.length = len;
+  nonZeroVoxelIndices.length = scalarDataLength;
   const ijkCoords = [];
 
   const dimensions = segmentationVolume.dimensions;
 
   // Get the index of every non-zero voxel in mask
   let actualLen = 0;
-  for (let i = 0, len = segScalarData.length; i < len; i++) {
-    if (segScalarData[i] !== 0) {
+  for (let i = 0, len = scalarDataLength; i < len; i++) {
+    if (segVoxelManager.getAtIndex(i) !== 0) {
       ijkCoords.push([
         i % dimensions[0],
         Math.floor((i / dimensions[0]) % dimensions[1]),
@@ -126,7 +125,7 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   const dynamicVolumeScalarDataArray = dynamicVolume.getScalarDataArrays();
   const values = [];
   const isSameVolume =
-    dynamicVolumeScalarDataArray[0].length === len &&
+    dynamicVolumeScalarDataArray[0].length === scalarDataLength &&
     JSON.stringify(dynamicVolume.spacing) ===
       JSON.stringify(segmentationVolume.spacing);
 
@@ -187,12 +186,10 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
       count++;
     };
 
-    pointInShapeCallback(
-      dynamicVolume.imageData,
-      () => true,
-      averageCallback,
-      overlapIJKMinMax
-    );
+    dynamicVolume.voxelManager.forEach(averageCallback, {
+      imageData: dynamicVolume.imageData,
+      boundsIJK: overlapIJKMinMax,
+    });
 
     // average the values
     const averageValues = [];
@@ -208,7 +205,12 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   // we theoretically can use them, however, we kind of need to compute the
   // pointLPS for each of the non-zero voxel indices, which is a bit of a pain.
   // Todo: consider using the nonZeroVoxelIndices to compute the pointLPS
-  pointInShapeCallback(maskImageData, () => true, callback);
+
+  const { voxelManager } = maskImageData.get('voxelManager');
+
+  voxelManager.forEach(callback, {
+    imageData: maskImageData,
+  });
 
   return [values, ijkCoords];
 }

@@ -23,7 +23,6 @@ import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import { polySeg } from '../../../stateManagement/segmentation';
 import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
-import SegmentationStateManager from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -162,7 +161,6 @@ async function render(
   if (!labelmapData) {
     return;
   }
-
   if (isVolumeSegmentation(labelmapData, viewport)) {
     if (viewport instanceof StackViewport) {
       return;
@@ -475,8 +473,10 @@ function _needsTransferFunctionUpdate(
     oldFillAlpha !== fillAlpha ||
     oldRenderFill !== renderFill ||
     oldRenderOutline !== renderOutline ||
-    oldOutlineWidth !== outlineWidth ||
-    // update the cache
+    oldOutlineWidth !== outlineWidth;
+
+  // Update the cache only if needed
+  if (forceOpacityUpdate || forceColorUpdate) {
     labelMapConfigCache.set(cacheUID, {
       fillAlpha,
       renderFill,
@@ -484,6 +484,7 @@ function _needsTransferFunctionUpdate(
       outlineWidth,
       segmentColor: segmentColor.slice(), // Create a copy
     });
+  }
 
   return {
     forceOpacityUpdate,

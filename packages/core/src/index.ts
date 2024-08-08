@@ -33,13 +33,10 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
-  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
-  setUseSharedArrayBuffer,
   resetUseCPURendering,
-  resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
@@ -147,10 +144,6 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
-  // SharedArrayBuffer
-  getShouldUseSharedArrayBuffer,
-  setUseSharedArrayBuffer,
-  resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
   ProgressiveRetrieveImages,

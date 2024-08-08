@@ -13,10 +13,10 @@ const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points,
-      imageVoxelManager: imageVoxelManager,
+      imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup

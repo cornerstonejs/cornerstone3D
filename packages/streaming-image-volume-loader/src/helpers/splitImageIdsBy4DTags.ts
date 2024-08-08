@@ -177,13 +177,13 @@ function getPetFrameReferenceTime(imageId) {
  * @returns imageIds grouped by 4D tags
  */
 function splitImageIdsBy4DTags(imageIds: string[]): {
-  imageIdsGroups: string[][];
+  imageIdGroups: string[][];
   splittingTag: string | null;
 } {
   const positionGroups = getIPPGroups(imageIds);
   if (!positionGroups) {
     // When no position groups are found, return the original array wrapped and indicate no tag was used
-    return { imageIdsGroups: [imageIds], splittingTag: null };
+    return { imageIdGroups: [imageIds], splittingTag: null };
   }
 
   const tags = [
@@ -217,15 +217,15 @@ function splitImageIdsBy4DTags(imageIds: string[]): {
         .map(Number.parseFloat)
         .sort((a, b) => a - b);
 
-      const imageIdsGroups = sortedKeys.map((key) =>
+      const imageIdGroups = sortedKeys.map((key) =>
         frame_groups[key].map((item) => item.imageId)
       );
-      return { imageIdsGroups, splittingTag: tags[i] };
+      return { imageIdGroups, splittingTag: tags[i] };
     }
   }
 
   // Return the same imagesIds for non-4D volumes and indicate no tag was used
-  return { imageIdsGroups: [imageIds], splittingTag: null };
+  return { imageIdGroups: [imageIds], splittingTag: null };
 }
 
 export default splitImageIdsBy4DTags;

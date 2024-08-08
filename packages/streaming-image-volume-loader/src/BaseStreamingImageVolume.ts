@@ -5,7 +5,6 @@ import {
   imageLoadPoolManager,
   triggerEvent,
   ImageVolume,
-  cache,
   imageLoader,
   utilities as csUtils,
   ProgressiveRetrieveImages,
@@ -43,6 +42,8 @@ export default class BaseStreamingImageVolume
   protected cachedFrames = [];
   protected reRenderTarget = 0;
   protected reRenderFraction = 2;
+
+  public dataType: Types.PixelDataTypedArrayString;
 
   loadStatus: {
     loaded: boolean;
@@ -207,23 +208,7 @@ export default class BaseStreamingImageVolume
 
   public successCallback(imageId: string, image) {
     const imageIdIndex = this.getImageIdIndex(imageId);
-    const options = this.getLoaderImageOptions(imageId);
-    const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
-
-    handleArrayBufferLoad(scalarData, image, options);
-
-    const { scalingParameters } = image.preScale || {};
     const { imageQualityStatus } = image;
-    const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
-
-    // Check if there is a cached image for the same imageURI (different
-    // data loader scheme)
-    const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-
-    // Check if the image was already loaded by another volume and we are here
-    // since we got the imageLoadObject from the cache from the other already loaded
-    // volume
-    const cachedVolume = cache.getVolumeContainingImageId(imageId);
 
     // check if the load was cancelled while we were waiting for the image
     // if so we don't want to do anything
@@ -236,39 +221,10 @@ export default class BaseStreamingImageVolume
     }
 
     // if it is not a cached image or volume
-    if (!cachedImage && !(cachedVolume && cachedVolume.volume !== this)) {
-      return this.updateTextureAndTriggerEvents(
-        imageIdIndex,
-        imageId,
-        imageQualityStatus
-      );
-    }
-
-    // it is either cachedImage or cachedVolume
-    const isFromImageCache = !!cachedImage;
-
-    if (isFromImageCache && options.targetBuffer) {
-      // put it in the imageCacheOffsetMap, since we are going to use it
-      // for cache optimization later
-      this.imageCacheOffsetMap.set(imageId, {
-        imageIdIndex,
-        frameIndex,
-        offset: options.targetBuffer?.offset || 0,
-        length: options.targetBuffer?.length,
-      });
-    }
-
-    const cachedImageOrVolume = cachedImage || cachedVolume.volume;
-
-    this.handleImageComingFromCache(
-      cachedImageOrVolume,
-      isFromImageCache,
-      scalingParameters,
-      scalarData,
-      frameIndex,
-      scalarData.buffer,
+    return this.updateTextureAndTriggerEvents(
       imageIdIndex,
-      imageId
+      imageId,
+      imageQualityStatus
     );
   }
 
@@ -367,17 +323,6 @@ export default class BaseStreamingImageVolume
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
     const { rows, columns } = imagePlaneModule;
     const imageIdIndex = this.getImageIdIndex(imageId);
-    const scalarData = this.getScalarDataByImageIdIndex(imageIdIndex);
-    if (!scalarData) {
-      return null;
-    }
-    const arrayBuffer = scalarData.buffer;
-    // Length of one frame in voxels: length
-    // Length of one frame in bytes: lengthInBytes
-    const { type, length, lengthInBytes } = getScalarDataType(
-      scalarData,
-      this.numFrames
-    );
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
 
@@ -432,25 +377,15 @@ export default class BaseStreamingImageVolume
       this.isPreScaled = false;
     }
 
-    const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
+    const targetBuffer = {
+      type: this.dataType,
+      rows,
+      columns,
+    };
 
     return {
       // WADO Image Loader
-      targetBuffer: {
-        // keeping this in the options means a large empty volume array buffer
-        // will be transferred to the worker. This is undesirable for streaming
-        // volume without shared array buffer because the target is now an empty
-        // 300-500MB volume array buffer. Instead the volume should be progressively
-        // set in the main thread.
-        arrayBuffer:
-          arrayBuffer instanceof ArrayBuffer ? undefined : arrayBuffer,
-        offset: frameIndex * lengthInBytes,
-        length,
-        type,
-        rows,
-        columns,
-      },
-      skipCreateImage: true,
+      targetBuffer,
       allowFloatRendering,
       preScale: {
         enabled: this.isPreScaled,
@@ -463,7 +398,7 @@ export default class BaseStreamingImageVolume
       requestType: requestTypeDefault,
       transferSyntaxUID,
       // The loader is used to load the image into the cache
-      loader: imageLoader.loadImage,
+      // loader: imageLoader.loadAndCacheImage,
       additionalDetails: {
         imageId,
         imageIdIndex,
@@ -483,7 +418,7 @@ export default class BaseStreamingImageVolume
     }
 
     const uncompressedIterator = ProgressiveIterator.as(
-      imageLoader.loadImage(imageId, options)
+      imageLoader.loadAndCacheImage(imageId, options)
     );
     return uncompressedIterator.forEach((image) => {
       // scalarData is the volume container we are progressively loading into
@@ -493,7 +428,6 @@ export default class BaseStreamingImageVolume
   }
 
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
-    // SharedArrayBuffer
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
 
@@ -531,56 +465,6 @@ export default class BaseStreamingImageVolume
     });
 
     return requests;
-  }
-
-  private handleImageComingFromCache(
-    cachedImageOrVolume,
-    isFromImageCache: boolean,
-    scalingParameters,
-    scalarData: Types.PixelDataTypedArray,
-    frameIndex: number,
-    arrayBuffer: ArrayBufferLike,
-    imageIdIndex: number,
-    imageId: string
-  ) {
-    const imageLoadObject = isFromImageCache
-      ? cachedImageOrVolume.imageLoadObject
-      : cachedImageOrVolume.convertToCornerstoneImage(imageId, imageIdIndex);
-
-    imageLoadObject.promise
-      .then((cachedImage) => {
-        const imageScalarData = this._scaleIfNecessary(
-          cachedImage,
-          scalingParameters
-        );
-        // todo add scaling and slope
-        const { pixelsPerImage, bytesPerImage } = this.cornerstoneImageMetaData;
-        const TypedArray = scalarData.constructor;
-        let byteOffset = bytesPerImage * frameIndex;
-
-        // create a view on the volume arraybuffer
-        const bytePerPixel = bytesPerImage / pixelsPerImage;
-
-        if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-          byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
-        }
-
-        // @ts-ignore
-        const volumeBufferView = new TypedArray(
-          arrayBuffer,
-          byteOffset,
-          pixelsPerImage
-        );
-        volumeBufferView.set(imageScalarData);
-        this.updateTextureAndTriggerEvents(
-          imageIdIndex,
-          imageId,
-          cachedImage.imageQualityStatus
-        );
-      })
-      .catch((err) => {
-        this.errorCallback(imageId, true, err);
-      });
   }
 
   /**
@@ -674,7 +558,7 @@ export default class BaseStreamingImageVolume
     scalingParametersToUse: Types.ScalingParameters
   ) {
     if (!image.preScale?.enabled) {
-      return image.getPixelData().slice(0);
+      return image.voxelManager.getScalarData().slice(0);
     }
 
     const imageIsAlreadyScaled = image.preScale?.scaled;
@@ -685,7 +569,7 @@ export default class BaseStreamingImageVolume
 
     if (!imageIsAlreadyScaled && noScalingParametersToUse) {
       // no need to scale the image
-      return image.getPixelData().slice(0);
+      return image.voxelManager.getScalarData().slice(0);
     }
 
     if (
@@ -696,7 +580,7 @@ export default class BaseStreamingImageVolume
     ) {
       // if not already scaled, just scale the image.
       // copy so that it doesn't get modified
-      const pixelDataCopy = image.getPixelData().slice(0);
+      const pixelDataCopy = image.voxelManager.getScalarData().slice(0);
       const scaledArray = scaleArray(pixelDataCopy, scalingParametersToUse);
       return scaledArray;
     }
@@ -721,10 +605,10 @@ export default class BaseStreamingImageVolume
 
     if (rescaleSlopeIsSame && rescaleInterceptIsSame && suvbwIsSame) {
       // if the scaling parameters are the same, we don't need to scale the image again
-      return image.getPixelData();
+      return image.voxelManager.getScalarData();
     }
 
-    const pixelDataCopy = image.getPixelData().slice(0);
+    const pixelDataCopy = image.voxelManager.getScalarData().slice(0);
     // the general formula for scaling is  scaledPixelValue = suvbw * (pixelValue * rescaleSlope) + rescaleIntercept
     const newSuvbw = suvbwToUse / suvbwUsed;
     const newRescaleSlope = rescaleSlopeToUse / rescaleSlopeUsed;
@@ -788,56 +672,4 @@ function getScalarDataType(scalarData, numFrames) {
   const length = scalarData.length / numFrames;
   const lengthInBytes = length * byteSize;
   return { type, byteSize, length, lengthInBytes };
-}
-
-/**
- * Sets the scalar data at the appropriate offset to the
- * byte data from the image.
- */
-function handleArrayBufferLoad(scalarData, image, options) {
-  if (!(scalarData.buffer instanceof ArrayBuffer)) {
-    return;
-  }
-  const offset = options.targetBuffer.offset; // in bytes
-  const length = options.targetBuffer.length; // in frames
-  const pixelData = image.pixelData ? image.pixelData : image.getPixelData();
-
-  try {
-    if (scalarData instanceof Float32Array) {
-      const bytesInFloat = 4;
-      const floatView = new Float32Array(pixelData);
-      if (floatView.length !== length) {
-        throw 'Error pixelData length does not match frame length';
-      }
-      // since set is based on the underlying type,
-      // we need to divide the offset bytes by the byte type
-      scalarData.set(floatView, offset / bytesInFloat);
-    }
-    if (scalarData instanceof Int16Array) {
-      const bytesInInt16 = 2;
-      const intView = new Int16Array(pixelData);
-      if (intView.length !== length) {
-        throw 'Error pixelData length does not match frame length';
-      }
-      scalarData.set(intView, offset / bytesInInt16);
-    }
-    if (scalarData instanceof Uint16Array) {
-      const bytesInUint16 = 2;
-      const intView = new Uint16Array(pixelData);
-      if (intView.length !== length) {
-        throw 'Error pixelData length does not match frame length';
-      }
-      scalarData.set(intView, offset / bytesInUint16);
-    }
-    if (scalarData instanceof Uint8Array) {
-      const bytesInUint8 = 1;
-      const intView = new Uint8Array(pixelData);
-      if (intView.length !== length) {
-        throw 'Error pixelData length does not match frame length';
-      }
-      scalarData.set(intView, offset / bytesInUint8);
-    }
-  } catch (e) {
-    console.error(e);
-  }
 }

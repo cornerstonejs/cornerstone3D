@@ -159,16 +159,6 @@ class DragProbeTool extends ProbeTool {
       styleSpecifier,
     });
 
-    const pixelUnitsOptions = {
-      isPreScaled: isViewportPreScaled(viewport, targetId),
-
-      isSuvScaled: this.isSuvScaled(
-        viewport,
-        targetId,
-        annotation.metadata.referencedImageId
-      ),
-    };
-
     if (
       !data.cachedStats[targetId] ||
       data.cachedStats[targetId].value == null

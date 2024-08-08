@@ -52,7 +52,7 @@ import {
 } from '../../utilities/getCalibratedUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInEllipse } from '../../utilities/math/ellipse';
-import { pointInShapeCallback, roundNumber } from '../../utilities';
+import { roundNumber } from '../../utilities';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 import cloneDeep from 'lodash.clonedeep';
@@ -670,7 +670,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const worldPos1 = topLeftWorld;
       const worldPos2 = bottomRightWorld;
 
-      const { dimensions, imageData } = imageVolume;
+      const { dimensions, imageData, voxelManager } = imageVolume;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -726,12 +726,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
         };
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          //@ts-ignore
-          (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
+        const pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
-          boundsIJK
+          {
+            isInObject: (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
+            boundsIJK,
+            imageData,
+          }
         );
 
         //@ts-ignore
