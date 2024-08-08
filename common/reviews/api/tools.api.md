@@ -3533,6 +3533,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         annotation: LivewireContourAnnotation;
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
+        movingTextBox?: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
         lastCanvasPoint?: Types_2.Point2;

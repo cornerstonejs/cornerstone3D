@@ -10,7 +10,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
+import {
+  drawHandles as drawHandlesSvg,
+  drawLinkedTextBox as drawLinkedTextBoxSvg,
+} from '../../drawingSvg';
 import { state } from '../../store';
 import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
@@ -20,11 +23,13 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  TextBoxHandle,
 } from '../../types';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 import {
   getCalibratedLengthUnitsAndScale,
   math,
+  roundNumber,
   throttle,
   triggerAnnotationRenderForViewportIds,
 } from '../../utilities';
@@ -41,6 +46,7 @@ import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -57,6 +63,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
+    movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
     lastCanvasPoint?: Types.Point2;
@@ -78,6 +85,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        getTextLines: defaultGetTextLines,
         calculateStats: true,
         preventHandleOutsideImage: false,
         /**
@@ -381,6 +389,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
+      movingTextBox: false,
     };
 
     const enabledElement = getEnabledElement(element);
@@ -402,8 +411,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     annotation.highlighted = true;
 
-    const { points } = data.handles;
-    const handleIndex = points.findIndex((p) => p === handle);
+    let movingTextBox = false;
+    let handleIndex;
+
+    if ((handle as TextBoxHandle).worldPosition) {
+      movingTextBox = true;
+    } else {
+      const { points } = data.handles;
+
+      handleIndex = points.findIndex((p) => p === handle);
+    }
 
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -415,6 +432,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation,
       viewportIdsToRender,
       handleIndex,
+      movingTextBox,
     };
     this._activateModify(element);
 
@@ -735,6 +753,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     annotation.invalidated = true;
     editData.hasMoved = true;
+    editData.closed = true;
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -742,16 +761,33 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex } = this.editData;
-    if (handleIndex === undefined) {
-      // Drag mode - moving object
-      console.warn('No drag implemented for livewire');
+    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
+      this.editData;
+    const { data } = annotation;
+
+    if (movingTextBox) {
+      // Drag mode - moving text box
+      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
+      const worldPosDelta = deltaPoints.world;
+
+      const { textBox } = data.handles;
+      const { worldPosition } = textBox;
+
+      worldPosition[0] += worldPosDelta[0];
+      worldPosition[1] += worldPosDelta[1];
+      worldPosition[2] += worldPosDelta[2];
+
+      textBox.hasMoved = true;
+    } else if (handleIndex === undefined) {
+      console.warn('Drag annotation not implemented');
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
       this.editHandle(worldPos, element, annotation, handleIndex);
     }
+
+    this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -953,6 +989,13 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this._throttledCalculateCachedStats(annotation, element);
     }
 
+    this._renderStats(
+      annotation,
+      viewport,
+      svgDrawingHelper,
+      annotationStyle.textbox
+    );
+
     return true;
   }
 
@@ -1055,6 +1098,60 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return cachedStats;
   };
 
+  private _renderStats = (
+    annotation,
+    viewport,
+    svgDrawingHelper,
+    textboxStyle
+  ) => {
+    const data = annotation.data;
+    const targetId = this.getTargetId(viewport);
+
+    if (!data.contour.closed || !textboxStyle.visibility) {
+      return;
+    }
+
+    const textLines = this.configuration.getTextLines(data, targetId);
+    if (!textLines || textLines.length === 0) {
+      return;
+    }
+
+    const canvasCoordinates = data.handles.points.map((p) =>
+      viewport.worldToCanvas(p)
+    );
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const textBoxUID = 'textBox';
+    const boundingBox = drawLinkedTextBoxSvg(
+      svgDrawingHelper,
+      annotation.annotationUID ?? '',
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      textboxStyle
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+  };
+
   triggerAnnotationModified = (
     annotation: LivewireContourAnnotation,
     enabledElement: Types.IEnabledElement,
@@ -1107,3 +1204,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
 LivewireContourTool.toolName = 'LivewireContour';
 export default LivewireContourTool;
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, areaUnit } = cachedVolumeStats;
+  const textLines: string[] = [];
+
+  if (area) {
+    const areaLine = `Area: ${roundNumber(area)} ${areaUnit}`;
+
+    textLines.push(areaLine);
+  }
+
+  return textLines;
+}
