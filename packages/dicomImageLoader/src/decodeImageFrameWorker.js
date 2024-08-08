@@ -288,12 +288,7 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     maxAfterScale = maxBeforeScale;
   }
 
-  const hasTargetBuffer = options.targetBuffer !== undefined;
-
-  if (!hasTargetBuffer) {
-    imageFrame.pixelData = pixelDataArray;
-  }
-
+  imageFrame.pixelData = pixelDataArray;
   imageFrame.smallestPixelValue = minAfterScale;
   imageFrame.largestPixelValue = maxAfterScale;
 
