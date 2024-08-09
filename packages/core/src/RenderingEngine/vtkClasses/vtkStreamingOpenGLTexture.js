@@ -76,61 +76,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return updateTextureImagesUsingVoxelManager(updatedFrames);
   };
 
-  function updateDynamicVolumeTexture() {
-    const volume = cache.getVolume(model.volumeId);
-
-    // loop over imageIds of the current time point and update the texture
-    const imageIds = volume.getCurrentTimePointImageIds();
-
-    for (let i = 0; i < imageIds.length; i++) {
-      const imageId = imageIds[i];
-      const image = cache.getImage(imageId);
-
-      if (!image) {
-        continue;
-      }
-
-      const data = image.voxelManager.getScalarData();
-      const gl = model.context;
-
-      const dataType = data.constructor.name;
-      const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
-
-      // Bind the texture
-      publicAPI.bind();
-
-      // Calculate the offset within the 3D texture
-      let zOffset = i;
-
-      // Update the texture sub-image
-      // Todo: need to check other systems if it can handle it
-      gl.texSubImage3D(
-        model.target, // target
-        0, // level
-        0, // xoffset
-        0, // yoffset
-        zOffset, // zoffset
-        model.width, // width
-        model.height, // height
-        1, // depth (1 slice)
-        model.format, // format
-        model.openGLDataType, // type
-        pixData // data
-      );
-
-      // Unbind the texture
-      publicAPI.deactivate();
-      // Reset the updated flag
-    }
-
-    if (model.generateMipmap) {
-      model.context.generateMipmap(model.target);
-    }
-
-    publicAPI.deactivate();
-    return true;
-  }
-
   publicAPI.setVolumeId = (volumeId) => {
     model.volumeId = volumeId;
   };
@@ -239,6 +184,61 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         // Reset the updated flag
         updatedFrames[i] = null;
       }
+    }
+
+    if (model.generateMipmap) {
+      model.context.generateMipmap(model.target);
+    }
+
+    publicAPI.deactivate();
+    return true;
+  }
+
+  function updateDynamicVolumeTexture() {
+    const volume = cache.getVolume(model.volumeId);
+
+    // loop over imageIds of the current time point and update the texture
+    const imageIds = volume.getCurrentTimePointImageIds();
+
+    for (let i = 0; i < imageIds.length; i++) {
+      const imageId = imageIds[i];
+      const image = cache.getImage(imageId);
+
+      if (!image) {
+        continue;
+      }
+
+      const data = image.voxelManager.getScalarData();
+      const gl = model.context;
+
+      const dataType = data.constructor.name;
+      const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
+
+      // Bind the texture
+      publicAPI.bind();
+
+      // Calculate the offset within the 3D texture
+      let zOffset = i;
+
+      // Update the texture sub-image
+      // Todo: need to check other systems if it can handle it
+      gl.texSubImage3D(
+        model.target, // target
+        0, // level
+        0, // xoffset
+        0, // yoffset
+        zOffset, // zoffset
+        model.width, // width
+        model.height, // height
+        1, // depth (1 slice)
+        model.format, // format
+        model.openGLDataType, // type
+        pixData // data
+      );
+
+      // Unbind the texture
+      publicAPI.deactivate();
+      // Reset the updated flag
     }
 
     if (model.generateMipmap) {

@@ -167,7 +167,7 @@ async function run() {
   // render stack viewport
   renderingEngine.getStackViewports()[0].setStack(imageIds);
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
     ['COLOR_VOLUME_1', 'COLOR_VOLUME_2', 'COLOR_VOLUME_3']

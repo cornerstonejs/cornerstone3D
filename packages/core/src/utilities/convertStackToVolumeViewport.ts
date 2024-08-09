@@ -76,7 +76,7 @@ async function convertStackToVolumeViewport({
     renderingEngine.getViewport(viewportId)
   );
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {

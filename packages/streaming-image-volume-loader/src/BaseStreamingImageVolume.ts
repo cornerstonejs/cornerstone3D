@@ -62,14 +62,14 @@ export default class BaseStreamingImageVolume
   }
 
   protected invalidateVolume(immediate: boolean): void {
-    const { imageData, vtkOpenGLTexture } = this;
+    const { vtkOpenGLTexture } = this;
     const { numFrames } = this;
 
     for (let i = 0; i < numFrames; i++) {
       vtkOpenGLTexture.setUpdatedFrame(i);
     }
 
-    imageData.modified();
+    this.modified();
 
     if (immediate) {
       autoLoad(this.volumeId);
@@ -118,7 +118,6 @@ export default class BaseStreamingImageVolume
     const { framesUpdated, framesProcessed, totalNumFrames } = evt;
     const { volumeId, reRenderFraction, loadStatus, metadata } = this;
     const { FrameOfReferenceUID } = metadata;
-
     // TODO: probably don't want this here
     if (this.autoRenderOnLoad) {
       if (
@@ -173,7 +172,6 @@ export default class BaseStreamingImageVolume
     }
 
     this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
-    this.imageData.modified();
 
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
