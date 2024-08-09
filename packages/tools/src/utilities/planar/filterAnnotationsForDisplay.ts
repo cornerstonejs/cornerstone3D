@@ -32,6 +32,7 @@ export default function filterAnnotationsForDisplay(
       spacingInNormalDirection
     );
   }
+
   if (viewport instanceof StackViewport) {
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId();
@@ -40,9 +41,12 @@ export default function filterAnnotationsForDisplay(
     // created on the volumeViewport initially and has the volumeLoader scheme
     // but shares the same imageId
     const colonIndex = imageId.indexOf(':');
-
     filterOptions.imageURI = imageId.substring(colonIndex + 1);
+    filterOptions.currentImageId = imageId;
   }
+
+  filterOptions.isFiltering = true;
+
   return annotations.filter((annotation) => {
     if (!annotation.isVisible) {
       return false;

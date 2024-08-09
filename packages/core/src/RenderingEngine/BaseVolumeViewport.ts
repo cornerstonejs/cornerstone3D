@@ -5,6 +5,7 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 
 import { vec2, vec3 } from 'gl-matrix';
 
+import * as metaData from '../metaData';
 import cache from '../cache';
 import {
   MPR_CAMERA_VALUES,
@@ -675,12 +676,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (!viewRef.FrameOfReferenceUID) {
       return false;
     }
+
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
+
     if (options?.withNavigation) {
       return true;
     }
+
     const currentSliceIndex = this.getSliceIndex();
     const { sliceIndex } = viewRef;
     if (Array.isArray(sliceIndex)) {
@@ -688,6 +692,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         sliceIndex[0] <= currentSliceIndex && currentSliceIndex <= sliceIndex[1]
       );
     }
+
     return sliceIndex === undefined || sliceIndex === currentSliceIndex;
   }
 

@@ -43,10 +43,7 @@ import {
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -119,6 +116,7 @@ class ProbeTool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        useViewReference: false,
       },
     }
   ) {
@@ -152,31 +150,42 @@ class ProbeTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
+
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-
     const referencedImageId = this.getReferencedImageId(
       viewport,
       worldPos,
       viewPlaneNormal,
       viewUp
     );
-
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const points = [<Types.Point3>[...worldPos]];
+
+    const refImageProps = {
+      viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+      viewUp: <Types.Point3>[...viewUp],
+      FrameOfReferenceUID,
+      referencedImageId,
+    };
+
+    const viewRefProps = {
+      ...viewport.getViewReference({ points }),
+      viewPlaneNormal: undefined,
+      viewUp: undefined,
+      cameraFocalPoint: points[0],
+    };
 
     const annotation = {
       invalidated: true,
       highlighted: true,
       metadata: {
         toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
+        ...(this.configuration.useViewReference ? viewRefProps : refImageProps),
       },
       data: {
         label: '',
-        handles: { points: [<Types.Point3>[...worldPos]] },
+        handles: { points },
         cachedStats: {},
       },
     };

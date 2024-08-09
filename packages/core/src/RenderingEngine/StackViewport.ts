@@ -2903,7 +2903,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     let { imageURI } = options;
-    const { referencedImageId, sliceIndex } = viewRef;
+    const { currentImageId, isFiltering = false } = options;
+    const {
+      referencedImageId,
+      sliceIndex,
+      cameraFocalPoint,
+      FrameOfReferenceUID,
+    } = viewRef;
 
     if (viewRef.volumeId && !referencedImageId) {
       return options.asVolume === true;
@@ -2913,16 +2919,61 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (options.withNavigation && typeof sliceIndex === 'number') {
       testIndex = sliceIndex;
     }
+
     const imageId = this.imageIds[testIndex];
     if (!imageId) {
       return false;
     }
+
     if (!imageURI) {
       // Remove the dataLoader scheme since that can change
       const colonIndex = imageId.indexOf(':');
       imageURI = imageId.substring(colonIndex + 1);
     }
-    return referencedImageId?.endsWith(imageURI);
+
+    const endsWith = referencedImageId?.endsWith(imageURI);
+    if (endsWith) {
+      return endsWith;
+    }
+
+    if (cameraFocalPoint && FrameOfReferenceUID) {
+      const imageIds =
+        isFiltering === true
+          ? this.imageIds.filter((imageId) => imageId === currentImageId)
+          : this.imageIds;
+      let foundIndex = -1;
+      for (let i = 0; i < imageIds.length; ++i) {
+        const imageMetadata = metaData.get('instance', imageIds[i]);
+        if (imageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID) {
+          continue;
+        }
+
+        const sliceNormal = [0, 0, 0];
+        const orientation = imageMetadata.ImageOrientationPatient;
+        sliceNormal[0] =
+          orientation[1] * orientation[5] - orientation[2] * orientation[4];
+        sliceNormal[1] =
+          orientation[2] * orientation[3] - orientation[0] * orientation[5];
+        sliceNormal[2] =
+          orientation[0] * orientation[4] - orientation[1] * orientation[3];
+
+        let distanceAlongNormal = 0;
+        for (let j = 0; j < 3; ++j) {
+          distanceAlongNormal +=
+            sliceNormal[j] * imageMetadata.ImagePositionPatient[j];
+        }
+
+        /** Assuming 2 mm tolerance */
+        if (Math.abs(distanceAlongNormal - cameraFocalPoint[2]) > 2) {
+          continue;
+        }
+        foundIndex = i;
+        break;
+      }
+      return foundIndex !== -1;
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -2965,7 +3016,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     if (!viewRef) {
       return;
     }
-    const { referencedImageId, sliceIndex } = viewRef;
+    const {
+      referencedImageId,
+      sliceIndex,
+      cameraFocalPoint,
+      FrameOfReferenceUID,
+    } = viewRef;
+
     if (
       typeof sliceIndex === 'number' &&
       referencedImageId &&
@@ -2976,6 +3033,41 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const foundIndex = this.imageIds.indexOf(referencedImageId);
       if (foundIndex !== -1) {
         this.scroll(foundIndex - this.targetImageIdIndex);
+      } else if (cameraFocalPoint && FrameOfReferenceUID) {
+        let foundIndex = -1;
+        for (let i = 0; i < this.imageIds.length; ++i) {
+          const imageMetadata = metaData.get('instance', this.imageIds[i]);
+          if (imageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID) {
+            continue;
+          }
+
+          const sliceNormal = [0, 0, 0];
+          const orientation = imageMetadata.ImageOrientationPatient;
+          sliceNormal[0] =
+            orientation[1] * orientation[5] - orientation[2] * orientation[4];
+          sliceNormal[1] =
+            orientation[2] * orientation[3] - orientation[0] * orientation[5];
+          sliceNormal[2] =
+            orientation[0] * orientation[4] - orientation[1] * orientation[3];
+
+          let distanceAlongNormal = 0;
+          for (let j = 0; j < 3; ++j) {
+            distanceAlongNormal +=
+              sliceNormal[j] * imageMetadata.ImagePositionPatient[j];
+          }
+
+          /** Assuming 2 mm tolerance */
+          if (Math.abs(distanceAlongNormal - cameraFocalPoint[2]) > 2) {
+            continue;
+          }
+          foundIndex = i;
+          break;
+        }
+        if (foundIndex !== -1) {
+          console.debug('Index found:', foundIndex);
+          this.scroll(foundIndex - this.targetImageIdIndex);
+          return;
+        }
       } else {
         throw new Error('Unsupported - referenced image id not found');
       }

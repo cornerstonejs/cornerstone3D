@@ -35,6 +35,12 @@ export default function filterAnnotationsWithinSlice(
     (td: Annotation) => {
       let annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
 
+      // If point graphic type then don't set view plane normal
+      // @ts-ignore
+      if (td.metadata.graphicType === 'POINT') {
+        return true;
+      }
+
       if (!annotationViewPlaneNormal) {
         // This code is run to set the annotation view plane normal
         // for historical data which was saved without the normal.
