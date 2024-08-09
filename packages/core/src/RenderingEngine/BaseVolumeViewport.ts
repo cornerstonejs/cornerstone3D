@@ -1070,13 +1070,13 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
+        `imageVolume with id: ${firstImageVolume.volumeId} does not exist, you need to create/allocate the volume first`
       );
     }
 
     const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID;
 
-    await this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID);
+    this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID);
 
     this._FrameOfReferenceUID = FrameOfReferenceUID;
 
@@ -1143,10 +1143,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     const volumeActors = [];
 
-    await this._isValidVolumeInputArray(
-      volumeInputArray,
-      this._FrameOfReferenceUID
-    );
+    this._isValidVolumeInputArray(volumeInputArray, this._FrameOfReferenceUID);
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
@@ -1279,15 +1276,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     // Check all other volumes exist and have the same FrameOfReference
     for (let i = 1; i < numVolumes; i++) {
-      const volumeInput = volumeInputArray[i];
-
-      const imageVolume = await loadVolume(volumeInput.volumeId);
-
-      if (!imageVolume) {
-        throw new Error(
-          `imageVolume with id: ${imageVolume.volumeId} does not exist`
-        );
-      }
+      const imageVolume = cache.getVolume(volumeInputArray[i].volumeId);
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
         throw new Error(
