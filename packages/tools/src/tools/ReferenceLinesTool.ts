@@ -246,11 +246,16 @@ class ReferenceLines extends AnnotationDisplayTool {
     const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
     const color = this.getStyle('color', styleSpecifier, annotation);
     const shadow = this.getStyle('shadow', styleSpecifier, annotation);
-
-    let canvasCoordinates = [lineStartWorld, lineEndWorld].map((world) =>
+    const canvasCoords = [lineStartWorld, lineEndWorld].map((world) =>
       targetViewport.worldToCanvas(world)
     );
+    if (canvasCoords.length < 2) {
+      return renderStatus;
+    }
 
+
+    let canvasCoordinates: Types.Point2[] = [];
+    // If the full dimension is enabled, we need to calculate the intersection
     if (this.configuration.showFullDimension) {
       canvasCoordinates = this.handleFullDimension(
         targetViewport,
@@ -258,12 +263,13 @@ class ReferenceLines extends AnnotationDisplayTool {
         viewPlaneNormal,
         viewUp,
         lineEndWorld,
-        canvasCoordinates
+        canvasCoords
       );
     }
 
+    // If the full dimension is not enabled or the intersection is not found
     if (canvasCoordinates.length < 2) {
-      return renderStatus;
+      canvasCoordinates = canvasCoords;
     }
 
     const dataId = `${annotationUID}-line`;
