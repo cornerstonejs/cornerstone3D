@@ -198,9 +198,9 @@ async function run() {
   });
 
   // Set the volume to load
-  volume.load();
+  await volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

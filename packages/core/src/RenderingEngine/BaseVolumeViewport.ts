@@ -22,7 +22,6 @@ import {
 import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
-import { loadVolume } from '../loaders/volumeLoader';
 import type {
   ActorEntry,
   ColormapPublic,
@@ -89,6 +88,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   // Camera properties
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
+  private volumeIds = new Set<string>();
 
   constructor(props: ViewportInput) {
     super(props);
@@ -1079,6 +1079,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID);
 
     this._FrameOfReferenceUID = FrameOfReferenceUID;
+    volumeInputArray.forEach((volumeInput) => {
+      this._addVolumeId(volumeInput.volumeId);
+    });
 
     const volumeActors = [];
 
@@ -1144,6 +1147,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const volumeActors = [];
 
     this._isValidVolumeInputArray(volumeInputArray, this._FrameOfReferenceUID);
+
+    volumeInputArray.forEach((volumeInput) => {
+      this._addVolumeId(volumeInput.volumeId);
+    });
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
@@ -1367,10 +1374,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   public hasVolumeId(volumeId: string): boolean {
     // Note: this assumes that the uid of the volume is the same as the volumeId
     // which is not guaranteed to be the case for SEG.
-    const actorEntries = this.getActors();
-    return actorEntries.some((actorEntry) => {
-      return actorEntry.uid === volumeId;
-    });
+    return this.volumeIds.has(volumeId);
   }
 
   /**
@@ -1741,6 +1745,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
       ','
     )}&focalPoint=${focalPoint.join(',')}`;
+  }
+
+  private _addVolumeId(volumeId: string): void {
+    this.volumeIds.add(volumeId);
   }
 
   abstract setBlendMode(
