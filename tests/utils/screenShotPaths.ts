@@ -90,7 +90,8 @@ const screenShotPaths = {
   stackSegmentation: {
     defaultSegmentation: 'defaultSegmentation.png',
     circularBrushSegment1: 'circularBrushSegment1.png',
-    thresholdBrushSegment1: 'thresholdBrushSegment1.png',
+    thresholdBrushFatSegment1: 'thresholdBrushFatSegment1.png',
+    thresholdBrushBoneSegment1: 'thresholdBrushBoneSegment1.png',
     dynamicThresholdInitialHighlightedPixels:
       'dynamicThresholdInitialHighlightedPixels.png',
     dynamicThresholdHighlightedContour:
