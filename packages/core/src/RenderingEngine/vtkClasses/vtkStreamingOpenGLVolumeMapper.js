@@ -37,12 +37,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       return;
     }
 
-    // Since it is fine to not have scalar data in the new model
-    // const scalars = image.getPointData() && image.getPointData().getScalars();
-    // if (!scalars) {
-    //   return;
-    // }
-
     const vprop = actor.getProperty();
 
     if (!model.jitterTexture.getHandle()) {
@@ -256,7 +250,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           width: dims[0],
           height: dims[1],
           depth: dims[2],
-          numComps: numIComps,
+          numberOfComponents: numIComps,
           dataType,
         });
 

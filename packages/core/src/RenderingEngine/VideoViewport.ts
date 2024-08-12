@@ -203,7 +203,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.hasPixelSpacing = !!imagePlaneModule.columnPixelSpacing;
     return {
       bitsAllocated: 8,
-      numComps: 3,
+      numberOfComponents: 3,
       origin,
       rows,
       columns,

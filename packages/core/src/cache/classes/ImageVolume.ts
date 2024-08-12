@@ -149,7 +149,7 @@ export class ImageVolume implements IImageVolume {
       dataType: scalarData ? scalarData.constructor.name : dataType,
       voxelManager: this.voxelManager,
       id: volumeId,
-      numberOfComponents: this.voxelManager.numComps || 1,
+      numberOfComponents: this.voxelManager.numberOfComponents || 1,
     });
 
     if (!scalarData) {
@@ -177,7 +177,7 @@ export class ImageVolume implements IImageVolume {
       // we can provide the scalar data directly to the imageVolume
       // and here we are setting the scalar data directly to the imageData
       const dataArrayAttrs = {
-        numberOfComponents: this.voxelManager.numComps || 1,
+        numberOfComponents: this.voxelManager.numberOfComponents || 1,
         dataType: this.dataType,
       };
 

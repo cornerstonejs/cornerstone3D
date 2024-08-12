@@ -54,7 +54,6 @@ function createViewport(renderingEngine, orientation, width, height) {
   return element;
 }
 
-// For some reason the cpu rendering is not working properly in the CI
 describe('StackViewport CPU -- ', () => {
   beforeEach(() => {
     setUseCPURendering(true);
@@ -76,7 +75,7 @@ describe('StackViewport CPU -- ', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -277,7 +276,7 @@ describe('StackViewport CPU -- ', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -436,7 +435,7 @@ describe('StackViewport CPU -- ', () => {
 
   //   afterEach(function () {
   //     cache.purgeCache();
-  //     this.renderingEngine.destroy();
+  //     this.renderingEngine?.destroy();
   //     metaData.removeProvider(fakeMetaDataProvider);
   //     imageLoader.unregisterAllImageLoaders();
   //     this.DOMElements.forEach((el) => {

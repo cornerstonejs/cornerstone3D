@@ -183,7 +183,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.hasPixelSpacing = !!(width && height);
     return {
       bitsAllocated: 8,
-      numComps: 3,
+      numberOfComponents: 3,
       origin,
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
       dimensions: [xVoxels, yVoxels, zVoxels],
@@ -226,7 +226,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return {
       dimensions: metadata.dimensions,
       spacing,
-      numComps: 3,
+      numberOfComponents: 3,
       origin: metadata.origin,
       direction: metadata.direction,
       metadata: { Modality: this.modality },

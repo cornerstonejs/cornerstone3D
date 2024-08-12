@@ -101,7 +101,7 @@ const EPSILON = 1; // Slice Thickness
 
 interface ImageDataMetaData {
   bitsAllocated: number;
-  numComps: number;
+  numberOfComponents: number;
   origin: Point3;
   direction: Mat3;
   dimensions: Point3;
@@ -1553,15 +1553,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const zSpacing = EPSILON;
     const zVoxels = 1;
 
-    const numComps =
-      image.numComps ||
+    const numberOfComponents =
+      image.numberOfComponents ||
       this._getNumCompsFromPhotometricInterpretation(
         imagePixelModule.photometricInterpretation
       );
 
     return {
       bitsAllocated: imagePixelModule.bitsAllocated,
-      numComps,
+      numberOfComponents,
       origin,
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal] as Mat3,
       dimensions: [xVoxels, yVoxels, zVoxels],
@@ -1634,7 +1634,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     direction,
     dimensions,
     spacing,
-    numComps,
+    numberOfComponents,
     pixelArray,
   }) {
     const values = new pixelArray.constructor(pixelArray.length);
@@ -1642,7 +1642,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // Todo: I guess nothing should be done for use16bit?
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
-      numberOfComponents: numComps,
+      numberOfComponents: numberOfComponents,
       values: values,
     });
 
@@ -1668,7 +1668,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     direction,
     dimensions,
     spacing,
-    numComps,
+    numberOfComponents,
     pixelArray,
   }): void {
     this._imageData = this.createVTKImageData({
@@ -1676,7 +1676,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction,
       dimensions,
       spacing,
-      numComps,
+      numberOfComponents,
       pixelArray,
     });
   }
@@ -2209,7 +2209,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const { imageId } = stackInput;
       const image = cache.getImage(imageId);
 
-      const { origin, dimensions, direction, spacing, numComps } =
+      const { origin, dimensions, direction, spacing, numberOfComponents } =
         this.getImageDataMetadata(image);
 
       const imagedata = this.createVTKImageData({
@@ -2217,7 +2217,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         dimensions,
         direction,
         spacing,
-        numComps,
+        numberOfComponents,
         pixelArray: image.voxelManager.getScalarData(),
       });
 
@@ -2321,7 +2321,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction,
       dimensions,
       spacing,
-      numComps,
+      numberOfComponents,
       imagePixelModule,
     } = this.getImageDataMetadata(image);
 
@@ -2334,7 +2334,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction,
       dimensions,
       spacing,
-      numComps,
+      numberOfComponents,
       pixelArray,
     });
 

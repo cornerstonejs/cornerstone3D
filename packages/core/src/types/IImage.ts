@@ -18,6 +18,7 @@ interface IImage {
   imageId: string;
   /** referenced imageId if this image is derived from */
   referencedImageId?: string;
+  /** a key that can be used to show the image is part of a shared cache e.g., volume */
   sharedCacheKey?: string;
   /** Whether the image is Pre-scaled during loading */
   isPreScaled?: boolean;
@@ -68,7 +69,7 @@ interface IImage {
   /** is image rgb and alpha */
   rgba: boolean;
   /** number of components in the image */
-  numComps: number;
+  numberOfComponents: number;
   /** CPU: custom render method for the image */
   render?: (
     enabledElement: CPUFallbackEnabledElement,

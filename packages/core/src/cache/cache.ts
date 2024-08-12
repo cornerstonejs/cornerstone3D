@@ -19,7 +19,7 @@ const ONE_GB = 1073741824;
 
 /**
  * Stores images, volumes and geometry.
- * There are two sizes - the max cache size, that controls the overal maximum
+ * There are two sizes - the max cache size, that controls the overall maximum
  * size, and the instance size, which controls how big any single object can
  * be.  Defaults are 3 GB and 2 GB - 8 bytes (just enough to allow allocating it
  * without crashing).
@@ -28,21 +28,14 @@ const ONE_GB = 1073741824;
  */
 class Cache implements ICache {
   // used to store image data (2d)
-  private readonly _imageCache = new Map<string, ICachedImage>(); // volatile space
+  private readonly _imageCache = new Map<string, ICachedImage>();
   // used to store volume data (3d)
-  private readonly _volumeCache = new Map<string, ICachedVolume>(); // non-volatile space
+  private readonly _volumeCache = new Map<string, ICachedVolume>();
   // Todo: contour for now, but will be used for surface, etc.
-  private readonly _geometryCache: Map<string, ICachedGeometry>;
+  private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
   private _imageCacheSize = 0;
-  private _volumeCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
-  private _maxInstanceSize = 4 * ONE_GB - 8;
-
-  constructor() {
-    // used to store object data (contour, surface, etc.)
-    this._geometryCache = new Map();
-  }
 
   /**
    * Set the maximum cache Size
@@ -65,20 +58,22 @@ class Cache implements ICache {
   /**
    * Checks if there is enough space in the cache for requested byte size
    *
-   * It returns false, if the sum of volatile (image) cache and unallocated cache
-   * is less than the requested byteLength
+   * It returns true if the available space (unallocated space minus shared cache size)
+   * is greater than the requested byteLength.
    *
    * @param byteLength - byte length of requested byte size
    *
-   * @returns - boolean indicating if there is enough space in the cache
+   * @returns boolean indicating if there is enough space in the cache
    */
   public isCacheable = (byteLength: number): boolean => {
-    if (byteLength > this._maxInstanceSize) {
-      return false;
-    }
     const unallocatedSpace = this.getBytesAvailable();
-    const imageCacheSize = this._imageCacheSize;
-    const availableSpace = unallocatedSpace + imageCacheSize;
+
+    // Calculate the size of images with shared cache keys
+    const sharedCacheSize = Array.from(this._imageCache.values())
+      .filter((image) => image.sharedCacheKey)
+      .reduce((total, image) => total + (image.sizeInBytes || 0), 0);
+
+    const availableSpace = unallocatedSpace - sharedCacheSize;
 
     return availableSpace > byteLength;
   };
@@ -91,19 +86,11 @@ class Cache implements ICache {
   public getMaxCacheSize = (): number => this._maxCacheSize;
 
   /**
-   * Returns maximum size of a single instance (volume or single image)
-   *
-   * @returns maximum instance size
-   */
-  public getMaxInstanceSize = (): number => this._maxInstanceSize;
-
-  /**
    * Returns current size of the cache
    *
    * @returns current size of the cache
    */
-  public getCacheSize = (): number =>
-    this._imageCacheSize + this._volumeCacheSize;
+  public getCacheSize = (): number => this._imageCacheSize;
 
   /**
    * Returns the unallocated size of the cache
@@ -118,12 +105,19 @@ class Cache implements ICache {
    *
    * @param imageId - imageId
    *
+   * @throws Error if the image is part of a shared cache key
    */
   private _decacheImage = (imageId: string) => {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
       return;
+    }
+
+    if (cachedImage.sharedCacheKey) {
+      throw new Error(
+        'Cannot decache an image with a shared cache key. You need to manually decache the volume first.'
+      );
     }
 
     const { imageLoadObject } = cachedImage;
@@ -141,7 +135,7 @@ class Cache implements ICache {
   };
 
   /**
-   * Deletes the volumeId from the volume cache
+   * Deletes the volumeId from the volume cache and removes shared cache keys for its images
    *
    * @param volumeId - volumeId
    *
@@ -170,6 +164,16 @@ class Cache implements ICache {
     if (volumeLoadObject.cancelFn) {
       // Cancel any in-progress loading
       volumeLoadObject.cancelFn();
+    }
+
+    // Remove shared cache keys for the volume's images
+    if (volume.imageIds) {
+      volume.imageIds.forEach((imageId) => {
+        const cachedImage = this._imageCache.get(imageId);
+        if (cachedImage && cachedImage.sharedCacheKey === volumeId) {
+          cachedImage.sharedCacheKey = undefined;
+        }
+      });
     }
 
     this._volumeCache.delete(volumeId);
@@ -260,7 +264,9 @@ class Cache implements ICache {
       return bytesAvailable;
     }
 
-    let cachedImages = Array.from(this._imageCache.values());
+    let cachedImages = Array.from(this._imageCache.values()).filter(
+      (cachedImage) => !cachedImage.sharedCacheKey
+    );
 
     // Cache size has been exceeded, create list of images sorted by timeStamp
     // So we can purge the least recently used image
@@ -302,9 +308,6 @@ class Cache implements ICache {
     }
 
     // Remove the imageIds (both volume related and not related)
-    cachedImages = Array.from(this._imageCache.values());
-    cachedImageIds = cachedImages.map((im) => im.imageId);
-
     // Remove volume-image Ids from volatile cache until the requested number of bytes
     // become available
     for (const imageId of cachedImageIds) {
@@ -433,10 +436,10 @@ class Cache implements ICache {
       sizeInBytes: 0,
     };
 
+    this._imageCache.set(imageId, cachedImage);
+
     return imageLoadObject.promise
       .then((image: IImage) => {
-        // For some reason we need to put it here after the rework of volumes
-        this._imageCache.set(imageId, cachedImage);
         this._putImageCommon(imageId, image, cachedImage);
       })
       .catch((error) => {
@@ -604,6 +607,16 @@ class Cache implements ICache {
 
     cachedVolume.loaded = true;
     cachedVolume.volume = volume;
+
+    // If the volume has image IDs, we need to make sure that they are not getting
+    // deleted automatically.  Mark the imageIds somehow so that they are discernable from the others.
+    volume.imageIds?.forEach((imageId) => {
+      const image = this._imageCache.get(imageId);
+      if (image) {
+        image.sharedCacheKey = volumeId;
+      }
+    });
+
     const eventDetails: EventTypes.VolumeCacheVolumeAddedEventDetail = {
       volume: cachedVolume,
     };
@@ -876,8 +889,6 @@ class Cache implements ICache {
       );
     }
 
-    this.incrementVolumeCacheSize(-cachedVolume.sizeInBytes);
-
     const eventDetails = {
       volume: cachedVolume,
       volumeId,
@@ -965,30 +976,12 @@ class Cache implements ICache {
   };
 
   /**
-   * Increases the cache size with the provided increment
-   *
-   * @param increment - bytes length
-   */
-  public incrementVolumeCacheSize = (increment: number) => {
-    this._volumeCacheSize += increment;
-  };
-
-  /**
    * Decreases the image cache size with the provided decrement
    *
    * @param decrement - bytes length
    */
   public decrementImageCacheSize = (decrement: number) => {
     this._imageCacheSize -= decrement;
-  };
-
-  /**
-   * Decreases the cache size with the provided decrement
-   *
-   * @param decrement - bytes length
-   */
-  public decrementVolumeCacheSize = (decrement: number) => {
-    this._volumeCacheSize -= decrement;
   };
 }
 

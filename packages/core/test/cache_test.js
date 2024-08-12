@@ -1,5 +1,8 @@
-import * as cornerstoneStreamingImageVolumeLoader from '@cornerstonejs/streaming-image-volume-loader';
+import * as cornerstoneStreamingImageVolumeLoader from '../../streaming-image-volume-loader/src/index';
 import * as cornerstone from '../src/index';
+
+// jest globals
+import { beforeAll, describe, it, expect, afterEach } from '@jest/globals';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { cache, Enums } = cornerstone;
@@ -10,7 +13,6 @@ describe('Cache', () => {
     // initialize the library
     cornerstone.init();
     // Use max instance size for max cache size so they don't interfere
-    cache.setMaxCacheSize(cache.getMaxInstanceSize());
   });
 
   describe('Set maximum cache size', function () {
@@ -156,9 +158,9 @@ describe('Cache', () => {
         cancelFn: undefined,
       };
 
-      await expectAsync(
+      await expect(
         cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejected();
+      ).rejects.toThrow();
 
       expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined();
 
@@ -177,9 +179,9 @@ describe('Cache', () => {
         cancelFn: undefined,
       };
 
-      await expectAsync(
+      await expect(
         cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejected();
+      ).rejects.toThrow();
 
       expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined();
 
@@ -227,7 +229,6 @@ describe('Cache', () => {
 
     it('should cache images when there is enough volatile + unallocated space', async function () {
       // Use max instance size for max cache size so they don't interfere
-      cache.setMaxCacheSize(cache.getMaxInstanceSize());
       const maxCacheSize = cache.getMaxCacheSize();
 
       const image1SizeInBytes = maxCacheSize - 10000;
@@ -265,77 +266,6 @@ describe('Cache', () => {
 
       cacheSize = cache.getCacheSize();
       expect(cacheSize).toBe(image1.sizeInBytes + image2.sizeInBytes);
-    });
-
-    it('should unsuccessfully caching an image when there is not enough volatile + unallocated space', async function () {
-      const maxCacheSize = cache.getMaxCacheSize();
-
-      const volumeSizeInBytes = maxCacheSize - 10000;
-      const image1SizeInBytes = 11000;
-
-      const volumeId = 'aVolumeId';
-
-      const dimensions = [10, 10, 10];
-
-      // Arrange
-      const volume = new StreamingImageVolume(
-        // ImageVolume properties
-        {
-          volumeId,
-          spacing: [1, 1, 1],
-          origin: [0, 0, 0],
-          direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-          dimensions,
-          sizeInBytes: volumeSizeInBytes,
-          metadata: {
-            voiLut: [
-              { windowCenter: 500, windowWidth: 500 },
-              { windowCenter: 1500, windowWidth: 1500 },
-            ],
-            PhotometricInterpretation: 'MONOCHROME2',
-          },
-        },
-        // Streaming properties
-        {
-          imageIds: ['imageid1', 'imageid2'],
-          loadStatus: {
-            loaded: false,
-            loading: false,
-            cachedFrames: [],
-            callbacks: [],
-          },
-        }
-      );
-
-      const volumeLoadObject = {
-        promise: Promise.resolve(volume),
-        cancelFn: undefined,
-      };
-
-      const image1 = {
-        imageId: 'anImageId1',
-        sizeInBytes: image1SizeInBytes,
-      };
-
-      const imageLoadObject1 = {
-        promise: Promise.resolve(image1),
-        cancelFn: undefined,
-      };
-
-      cache.putVolumeLoadObject(volume.volumeId, volumeLoadObject);
-      await volumeLoadObject.promise;
-
-      let cacheSize = cache.getCacheSize();
-      expect(cacheSize).toBe(volume.sizeInBytes);
-
-      await expectAsync(
-        cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejectedWithError(Enums.Events.CACHE_SIZE_EXCEEDED);
-
-      expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined();
-
-      cacheSize = cache.getCacheSize();
-      expect(cacheSize).toBe(volume.sizeInBytes);
     });
   });
 
@@ -445,13 +375,6 @@ describe('Cache', () => {
       );
 
       expect(retrievedVolumeLoadObject).toBe(volumeLoadObject);
-    });
-
-    it('should throw an error if volumeId is not defined (getVolumeLoadObject()', function () {
-      // Assert
-      expect(function () {
-        cache.getVolumeLoadObject(undefined);
-      }).toThrow();
     });
 
     it('should fail silently to retrieve a promise for an volumeId not in the cache', function () {
@@ -570,93 +493,6 @@ describe('Cache', () => {
       await volumeLoadObject.promise;
       cacheSize = cache.getCacheSize();
       expect(cacheSize).toBe(volume.sizeInBytes); // it should remove the image (volatile)
-    });
-
-    it('should unsuccessfully cache a volume when there is not enough volatile + unallocated space', async function () {
-      const maxCacheSize = cache.getMaxCacheSize();
-
-      const volume1SizeInBytes = maxCacheSize - 10000;
-      const volume2SizeInBytes = maxCacheSize;
-
-      const dimensions = [10, 10, 10];
-
-      const volumeId1 = 'aVolumeId1';
-      const volumeId2 = 'aVolumeId2';
-
-      // Arrange
-      const volume1 = new StreamingImageVolume(
-        // ImageVolume properties
-        {
-          volumeId: volumeId1,
-          spacing: [1, 1, 1],
-          origin: [0, 0, 0],
-          direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-          dimensions,
-          sizeInBytes: volume1SizeInBytes,
-          metadata: {},
-        },
-        // Streaming properties
-        {
-          imageIds: ['imageid1', 'imageid2'],
-          loadStatus: {
-            loaded: false,
-            loading: false,
-            cachedFrames: [],
-            callbacks: [],
-          },
-        }
-      );
-
-      const volumeLoadObject1 = {
-        promise: Promise.resolve(volume1),
-        cancelFn: undefined,
-      };
-
-      const volume2 = new StreamingImageVolume(
-        // ImageVolume properties
-        {
-          volumeId: volumeId2,
-          spacing: [1, 1, 1],
-          origin: [0, 0, 0],
-          direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-          sizeInBytes: volume2SizeInBytes,
-          dimensions,
-          metadata: {},
-        },
-        // Streaming properties
-        {
-          imageIds: ['imageid11', 'imageid22'],
-          loadStatus: {
-            loaded: false,
-            loading: false,
-            cachedFrames: [],
-            callbacks: [],
-          },
-        }
-      );
-
-      const volumeLoadObject2 = {
-        promise: Promise.resolve(volume2),
-        cancelFn: undefined,
-      };
-
-      const promise1 = cache.putVolumeLoadObject(
-        volume1.volumeId,
-        volumeLoadObject1
-      );
-      await promise1;
-
-      let cacheSize = cache.getCacheSize();
-      expect(cacheSize).toBe(volume1.sizeInBytes);
-
-      await expectAsync(
-        cache.putImageLoadObject(volume2.volumeId, volumeLoadObject2)
-      ).toBeRejectedWithError(Enums.Events.CACHE_SIZE_EXCEEDED);
-
-      expect(cache.getVolumeLoadObject(volume2.volumeId)).not.toBeDefined();
-
-      cacheSize = cache.getCacheSize();
-      expect(cacheSize).toBe(volume1.sizeInBytes);
     });
   });
 });

@@ -2,7 +2,6 @@ import * as cornerstone3D from '../src/index';
 import * as csTools3d from '../../tools/src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
-// nearest neighbor interpolation
 import * as imageURI_64_33_20_5_1_1_0_nearest from './groundTruth/imageURI_64_33_20_5_1_1_0_nearest.png';
 import * as imageURI_64_64_20_5_1_1_0_nearest from './groundTruth/imageURI_64_64_20_5_1_1_0_nearest.png';
 import * as imageURI_64_64_30_10_5_5_0_nearest from './groundTruth/imageURI_64_64_30_10_5_5_0_nearest.png';
@@ -21,7 +20,6 @@ import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50
 import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png';
 import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibrated_1_5_imageURI_11_11_4_1_1_1_0_1.png';
 
-// import { User } from ... doesn't work right now since we don't have named exports set up
 const {
   utilities: { calibrateImageSpacing },
 } = csTools3d;
@@ -79,7 +77,7 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -89,7 +87,7 @@ describe('renderingCore -- Stack', () => {
       });
     });
 
-    it('Should render one stack viewport of square size properly: nearest', function (done) {
+    fit('Should render one stack viewport of square size properly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
       // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
@@ -99,6 +97,7 @@ describe('renderingCore -- Stack', () => {
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
+        debugger;
         compareImages(
           image,
           imageURI_64_64_20_5_1_1_0_nearest,
@@ -382,7 +381,7 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -456,7 +455,7 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -538,7 +537,7 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -633,7 +632,7 @@ describe('renderingCore -- Stack', () => {
     afterEach(function () {
       cache.purgeCache();
 
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -769,7 +768,7 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -881,7 +880,7 @@ describe('renderingCore -- Stack', () => {
 
     afterEach(function () {
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {

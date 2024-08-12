@@ -64,7 +64,7 @@ describe('RenderingEngineAPI -- ', () => {
     });
 
     afterEach(function () {
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       [this.elementAxial, this.elementSagittal, this.elementCustom].forEach(
         (el) => {
           if (el.parentNode) {
@@ -85,7 +85,7 @@ describe('RenderingEngineAPI -- ', () => {
     });
 
     it('should be able to destroy the rendering engine', function () {
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
 
       expect(function () {
         this.renderingEngine.getViewports();
@@ -93,8 +93,8 @@ describe('RenderingEngineAPI -- ', () => {
     });
 
     it('should be able to handle destroy of an engine that has been destroyed', function () {
-      this.renderingEngine.destroy();
-      const response = this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
+      const response = this.renderingEngine?.destroy();
       expect(response).toBeUndefined();
     });
   });
@@ -120,7 +120,7 @@ describe('RenderingEngineAPI -- ', () => {
     });
 
     afterEach(function () {
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       [
         this.elementAxial,
         this.elementSagittal,

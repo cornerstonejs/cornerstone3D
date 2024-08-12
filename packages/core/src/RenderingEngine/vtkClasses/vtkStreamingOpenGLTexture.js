@@ -24,19 +24,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     width,
     height,
     depth,
-    numComps,
+    numberOfComponents,
     dataType,
     data,
     preferSizeOverAccuracy
   ) => {
     model.inputDataType = dataType;
-    model.inputNumComps = numComps;
+    model.inputNumComps = numberOfComponents;
 
     superCreate3DFilterableFromRaw(
       width,
       height,
       depth,
-      numComps,
+      numberOfComponents,
       dataType,
       data,
       preferSizeOverAccuracy
@@ -95,8 +95,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       model.depth = params.depth;
     }
 
-    if (params.numComps) {
-      model.inputNumComps = params.numComps;
+    if (params.numberOfComponents) {
+      model.inputNumComps = params.numberOfComponents;
     }
 
     if (params.dataType) {
@@ -109,7 +109,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       width: model.width,
       height: model.height,
       depth: model.depth,
-      numComps: model.inputNumComps,
+      numberOfComponents: model.inputNumComps,
       dataType: model.inputDataType,
     };
   };

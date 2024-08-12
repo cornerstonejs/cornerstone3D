@@ -34,7 +34,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
-  public numComps = 1;
+  public numberOfComponents = 1;
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
 
@@ -593,16 +593,16 @@ export default class VoxelManager<T> {
   public static createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numComps,
+    numberOfComponents,
   }: {
     dimensions: Point3;
     scalarData;
-    numComps;
+    numberOfComponents;
   }): VoxelManager<RGB> {
     const voxels = new VoxelManager<RGB>(
       dimensions,
       (index) => {
-        index *= numComps;
+        index *= numberOfComponents;
         return [scalarData[index++], scalarData[index++], scalarData[index++]];
       },
       (index, v) => {
@@ -614,7 +614,7 @@ export default class VoxelManager<T> {
         return isChanged;
       }
     );
-    voxels.numComps = numComps;
+    voxels.numberOfComponents = numberOfComponents;
     voxels.scalarData = scalarData;
     return voxels;
   }
@@ -759,11 +759,11 @@ export default class VoxelManager<T> {
   public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numComps = 0,
+    numberOfComponents = 0,
   }: {
     dimensions: Point3;
     scalarData;
-    numComps?: number;
+    numberOfComponents?: number;
   }): VoxelManager<number> | VoxelManager<RGB> {
     if (dimensions.length !== 3) {
       throw new Error(
@@ -771,20 +771,26 @@ export default class VoxelManager<T> {
       );
     }
 
-    if (!numComps) {
-      numComps =
+    if (!numberOfComponents) {
+      numberOfComponents =
         scalarData.length / dimensions[0] / dimensions[1] / dimensions[2];
       // We only support 1,3,4 component data, and sometimes the scalar data
       // doesn't match for some reason, so throw an exception
-      if (numComps > 4 || numComps < 1 || numComps === 2) {
-        throw new Error(`Number of components ${numComps} must be 1, 3 or 4`);
+      if (
+        numberOfComponents > 4 ||
+        numberOfComponents < 1 ||
+        numberOfComponents === 2
+      ) {
+        throw new Error(
+          `Number of components ${numberOfComponents} must be 1, 3 or 4`
+        );
       }
     }
-    if (numComps > 1) {
+    if (numberOfComponents > 1) {
       return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComps,
+        numberOfComponents,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({
@@ -852,25 +858,31 @@ export default class VoxelManager<T> {
     width,
     height,
     scalarData,
-    numComps = 1,
+    numberOfComponents = 1,
   }: {
     width: number;
     height: number;
     scalarData: PixelDataTypedArray;
-    numComps?: number;
+    numberOfComponents?: number;
   }): VoxelManager<number> | VoxelManager<RGB> {
     const dimensions = [width, height, 1] as Point3;
-    if (!numComps) {
-      numComps = scalarData.length / width / height;
-      if (numComps > 4 || numComps < 1 || numComps === 2) {
-        throw new Error(`Number of components ${numComps} must be 1, 3 or 4`);
+    if (!numberOfComponents) {
+      numberOfComponents = scalarData.length / width / height;
+      if (
+        numberOfComponents > 4 ||
+        numberOfComponents < 1 ||
+        numberOfComponents === 2
+      ) {
+        throw new Error(
+          `Number of components ${numberOfComponents} must be 1, 3 or 4`
+        );
       }
     }
-    if (numComps > 1) {
+    if (numberOfComponents > 1) {
       return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComps,
+        numberOfComponents,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({

@@ -126,7 +126,7 @@ describe('imageLoader -- ', function () {
         this.options
       );
 
-      await expectAsync(imageLoadObject).toBeResolvedTo(this.image1);
+      await expect(imageLoadObject).resolves.toEqual(this.image1);
     });
 
     it('allows loading without storage in image cache (imageLoader.loadAndCacheImage)', async function () {
@@ -139,7 +139,7 @@ describe('imageLoader -- ', function () {
         this.options
       );
 
-      await expectAsync(imageLoadObject).toBeResolvedTo(this.image2);
+      await expect(imageLoadObject).resolves.toEqual(this.image2);
     });
 
     it('falls back to the unknownImageLoader if no appropriate scheme is present', async function () {
@@ -153,7 +153,7 @@ describe('imageLoader -- ', function () {
         this.options
       );
 
-      await expectAsync(imageLoadObject).toBeResolvedTo(this.image2);
+      await expect(imageLoadObject).resolves.toEqual(this.image2);
     });
   });
 
@@ -172,7 +172,7 @@ describe('imageLoader -- ', function () {
         this.options
       );
 
-      await expectAsync(imageLoadObject).toBeResolvedTo(this.image1);
+      await expect(imageLoadObject).resolves.toEqual(this.image1);
     });
   });
 
