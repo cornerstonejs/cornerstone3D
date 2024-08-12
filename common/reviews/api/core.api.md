@@ -677,13 +677,13 @@ function createAndCacheDerivedSegmentationVolume(referencedVolumeId: string, opt
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): Promise<IImageVolume>;
 
 // @public (undocumented)
-function createAndCacheEmptyVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
-
-// @public (undocumented)
 function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
 function createAndCacheLocalImage(options: LocalImageOptions, imageId: string, preventCache?: boolean): IImage;
+
+// @public (undocumented)
+function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): Promise<Record<string, any>>;
 
 // @public (undocumented)
 function createAndCacheVolumeFromImages(volumeId: string, imageIds: string[], options?: {
@@ -1858,8 +1858,6 @@ export class ImageVolume implements IImageVolume {
     additionalDetails?: Record<string, any>;
     // (undocumented)
     cancelLoading: () => void;
-    // (undocumented)
-    convertToCornerstoneImage(imageId: string, imageIdIndex: number): IImageLoadObject;
     // (undocumented)
     convertToImageSlicesAndCache(): string[];
     // (undocumented)
@@ -4150,7 +4148,7 @@ type VolumeLoadedFailedEventDetail = {
 declare namespace volumeLoader {
     export {
         loadVolume,
-        createAndCacheEmptyVolume,
+        createAndCacheVolume,
         createAndCacheDerivedVolume,
         createLocalVolume,
         createAndCacheVolumeFromImages,

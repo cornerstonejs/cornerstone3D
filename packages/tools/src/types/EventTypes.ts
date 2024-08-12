@@ -28,6 +28,8 @@ type NormalizedInteractionEventDetail = {
 type MouseCustomEventDetail = NormalizedInteractionEventDetail & {
   /** The original event object. */
   event: Record<string, unknown> | MouseEvent;
+  /** An override for the buttons to allow setting them separately */
+  buttons?: number;
 };
 
 type TouchCustomEventDetail = NormalizedInteractionEventDetail & {

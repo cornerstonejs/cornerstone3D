@@ -1,4 +1,8 @@
-import { getEnabledElementByIds, VolumeViewport } from '@cornerstonejs/core';
+import {
+  getEnabledElementByIds,
+  getEnabledElement,
+  VolumeViewport,
+} from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { scroll } from '../utilities';
 import { PublicToolProps, ToolProps, EventTypes } from '../types';
@@ -8,7 +12,8 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
  * stack of images by pressing the mouse click and dragging
  */
 class StackScrollTool extends BaseTool {
-  static toolName;
+  static toolName = 'StackScroll';
+
   deltaY: number;
   constructor(
     toolProps: PublicToolProps = {},
@@ -23,6 +28,27 @@ class StackScrollTool extends BaseTool {
   ) {
     super(toolProps, defaultToolProps);
     this.deltaY = 1;
+  }
+
+  /**
+   * Allows binding to the mouse wheel for performing stack scrolling.
+   */
+  mouseWheelCallback(evt: EventTypes.MouseWheelEventType): void {
+    const { wheel, element } = evt.detail;
+    const { direction } = wheel;
+    const { invert } = this.configuration;
+    const { viewport } = getEnabledElement(element);
+    const delta = direction * (invert ? -1 : 1);
+
+    const volumeId = this.getTargetVolumeId(viewport);
+
+    scroll(viewport, {
+      delta,
+      debounceLoading: this.configuration.debounceIfNotLoaded,
+      loop: this.configuration.loop,
+      volumeId,
+      scrollSlabs: this.configuration.scrollSlabs,
+    });
   }
 
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
@@ -75,5 +101,4 @@ class StackScrollTool extends BaseTool {
   }
 }
 
-StackScrollTool.toolName = 'StackScroll';
 export default StackScrollTool;

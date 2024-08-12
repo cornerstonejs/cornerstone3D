@@ -6,6 +6,7 @@ import {
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { KeyboardBindings } from '../../src/enums';
 
 // This is for debugging purposes
 console.warn(
@@ -15,7 +16,7 @@ console.warn(
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   PlanarRotateTool,
   ToolGroupManager,
@@ -50,7 +51,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Middle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+  'Middle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll\n Shift or Primary + Wheel: Planar Rotate';
 
 content.append(instructions);
 // ============================= //
@@ -87,7 +88,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PlanarRotateTool);
 
@@ -99,7 +100,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
+  toolGroup.addTool(StackScrollTool.toolName, { loop: false });
   toolGroup.addTool(PlanarRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
@@ -125,9 +126,27 @@ async function run() {
       },
     ],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+
+  // The Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
+  // and needs to be registered against the 'Wheel' binding.
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel, // Wheel Mouse
+      },
+    ],
+  });
+  toolGroup.setToolActive(PlanarRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel, // Shift Wheel Mouse
+        modifierKey: KeyboardBindings.Shift,
+      },
+      {
+        mouseButton: MouseBindings.Wheel_Primary, // Left Click+Wheel Mouse
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
