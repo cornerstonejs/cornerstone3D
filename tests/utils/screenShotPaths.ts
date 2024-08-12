@@ -111,6 +111,9 @@ const screenShotPaths = {
     coronal: 'coronal.png',
     sagittal: 'sagittal.png',
   },
+  contourRendering: {
+    viewport: 'viewport.png',
+  },
 };
 
 export { screenShotPaths };
