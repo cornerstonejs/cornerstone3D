@@ -100,7 +100,7 @@ function loadImageFromImageLoader(
         scalarData,
         width,
         height,
-        numComponents: numComps,
+        numComps,
       });
 
       image.voxelManager = voxelManager;
@@ -380,7 +380,7 @@ export function createAndCacheLocalImage(
   const voxelManager = VoxelManager.createImageVoxelManager({
     height,
     width,
-    numComponents: numComps,
+    numComps,
     scalarData: image.getPixelData(),
   });
 

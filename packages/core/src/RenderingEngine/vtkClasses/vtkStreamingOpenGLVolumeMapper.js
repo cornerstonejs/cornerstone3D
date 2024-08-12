@@ -233,8 +233,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         model.scalarTexture.getTextureParameters();
 
       const dataType = image.get('dataType').dataType;
+      const hasScalarVolume = image.get('hasScalarVolume').hasScalarVolume;
 
       let shouldReset = true;
+
       if (previousTextureParameters?.dataType === dataType) {
         if (previousTextureParameters?.width === dims[0]) {
           if (previousTextureParameters?.height === dims[1]) {
@@ -247,7 +249,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
       if (shouldReset) {
         const norm16Ext = model.context.getExtension('EXT_texture_norm16');
-        // model.scalarTexture.setOglNorm16Ext(null);
         model.scalarTexture.setOglNorm16Ext(norm16Ext);
         model.scalarTexture.resetFormatAndType();
 
@@ -265,7 +266,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dims[2],
           numIComps,
           dataType,
-          null
+          hasScalarVolume ? image.getPointData().getScalars().getData() : null
         );
 
         // run the update as soon as possible if we have updated

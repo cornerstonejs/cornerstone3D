@@ -128,6 +128,7 @@ const fakeVolumeLoader = (volumeId) => {
     origin: [0, 0, 0],
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     scalarData: pixelData,
+    numComps: rgb ? 3 : 1,
     sizeInBytes: pixelData.byteLength,
     imageData: imageData,
     imageIds: [],

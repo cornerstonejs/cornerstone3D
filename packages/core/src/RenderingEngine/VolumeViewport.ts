@@ -431,14 +431,19 @@ class VolumeViewport extends BaseVolumeViewport {
   };
 
   /**
-   * Returns information about the current slice view in the volume viewport.
-   * This method provides details about the slice index and the axis along which
-   * the slicing is performed.
+   * Returns detailed information about the current slice view in the volume viewport.
+   * This method provides comprehensive data about the slice's position, orientation,
+   * and dimensions within the volume.
+   *
+   * @returns An object containing the following properties:
+   * @property sliceIndex - The current slice index in the view direction.
+   * @property slicePlane - The axis along which the slicing is performed (0 for X, 1 for Y, 2 for Z).
+   * @property width - The width of the slice in voxels.
+   * @property height - The height of the slice in voxels.
+   * @property sliceToIndexMatrix - A 4x4 matrix for transforming from slice coordinates to volume index coordinates.
+   * @property indexToSliceMatrix - A 4x4 matrix for transforming from volume index coordinates to slice coordinates.
    *
    * @throws {Error} If the view is oblique or if the slice axis cannot be determined.
-   * @returns An object containing the slice index and the slice axis.
-   *   - sliceIndex: The current slice index in the volume.
-   *   - slicePlane: The primary axis of slicing (0 for X, 1 for Y, 2 for Z).
    */
   public getSliceViewInfo(): {
     sliceIndex: number;

@@ -1,4 +1,5 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { imageIdToURI, VoxelManager } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import {
@@ -121,16 +122,17 @@ export class ImageVolume implements IImageVolume {
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
 
-    if (!voxelManager) {
-      const voxelManager = VoxelManager.createImageVolumeVoxelManager({
-        dimensions,
-        imageIds,
-      });
-
-      this.voxelManager = voxelManager;
-    } else {
-      this.voxelManager = voxelManager;
-    }
+    this.voxelManager =
+      voxelManager ??
+      (this.scalarDataProp
+        ? VoxelManager.createScalarVolumeVoxelManager({
+            dimensions,
+            scalarData: this.scalarDataProp,
+          })
+        : VoxelManager.createImageVolumeVoxelManager({
+            dimensions,
+            imageIds,
+          }));
 
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
@@ -144,11 +146,53 @@ export class ImageVolume implements IImageVolume {
     }
 
     imageData.set({
-      dataType,
+      dataType: scalarData ? scalarData.constructor.name : dataType,
       voxelManager: this.voxelManager,
       id: volumeId,
-      numberOfComponents: this.voxelManager.numberOfComponents || 1,
+      numberOfComponents: this.voxelManager.numComps || 1,
     });
+
+    if (!scalarData) {
+      imageData.getPointData = () => {
+        console.warn(
+          'Scalar data is not available, you need to use voxelManager to get scalar data'
+        );
+        return imageData.getPointData();
+      };
+
+      // make it impossible to get the scalar data from the imageData
+      imageData.getPointData().getScalars = () => {
+        throw new Error(
+          'Scalar data is not available, you need to use voxelManager to get scalar data'
+        );
+      };
+
+      imageData.set({
+        hasScalarVolume: false,
+      });
+    } else {
+      // IMPORTANT: We strongly discourage using this method to set
+      // scalar data as it will break the consistency of the volume data
+      // and the voxel manager, however for testing and debugging purposes
+      // we can provide the scalar data directly to the imageVolume
+      // and here we are setting the scalar data directly to the imageData
+      const dataArrayAttrs = {
+        numberOfComponents: this.voxelManager.numComps || 1,
+        dataType: this.dataType,
+      };
+
+      const scalarArray = vtkDataArray.newInstance({
+        name: `Pixels`,
+        values: scalarData,
+        ...dataArrayAttrs,
+      });
+
+      imageData.getPointData().setScalars(scalarArray);
+
+      imageData.set({
+        hasScalarVolume: true,
+      });
+    }
 
     this.imageData = imageData;
 
@@ -203,7 +247,7 @@ export class ImageVolume implements IImageVolume {
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
-    return this.numTimePoints && this.numTimePoints > 1;
+    return this.numTimePoints > 1;
   }
 
   /**

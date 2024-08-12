@@ -35,7 +35,7 @@ export function fillStackSegmentationWithMockData({
       image.voxelManager ||
       utilities.VoxelManager.createScalarVolumeVoxelManager({
         dimensions: [columns, rows, 1],
-        scalarData: image.voxelManager.getScalarData(),
+        scalarData: image.voxelManager.getCompleteScalarDataArray(),
       });
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {

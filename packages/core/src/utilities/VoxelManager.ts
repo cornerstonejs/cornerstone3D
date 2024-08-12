@@ -34,7 +34,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
-  public numberOfComponents = 1;
+  public numComps = 1;
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
 
@@ -244,6 +244,10 @@ export default class VoxelManager<T> {
       const currentPos = vec3.clone(worldPosStart) as Point3;
 
       for (let k = kMin; k <= kMax; k++) {
+        // Todo: There is an optimized version of this in the currently closed source
+        // code - it is quite noticeably faster as it pre-generates i,j,k arrays
+        // and adds the three numbers for each dimension. That version actually works
+        // with sparse data voxel managers, whereas this one doesn't
         const startPosJ = vec3.clone(currentPos);
 
         for (let j = jMin; j <= jMax; j++) {
@@ -546,7 +550,9 @@ export default class VoxelManager<T> {
         }
         break;
       default:
-        throw new Error('Invalid slice plane');
+        throw new Error(
+          'Oblique plane - todo - implement as ortho normal vector'
+        );
     }
 
     return sliceData;
@@ -587,16 +593,16 @@ export default class VoxelManager<T> {
   public static createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numComponents,
+    numComps,
   }: {
     dimensions: Point3;
     scalarData;
-    numComponents;
+    numComps;
   }): VoxelManager<RGB> {
     const voxels = new VoxelManager<RGB>(
       dimensions,
       (index) => {
-        index *= numComponents;
+        index *= numComps;
         return [scalarData[index++], scalarData[index++], scalarData[index++]];
       },
       (index, v) => {
@@ -608,7 +614,7 @@ export default class VoxelManager<T> {
         return isChanged;
       }
     );
-    voxels.numberOfComponents = numComponents;
+    voxels.numComps = numComps;
     voxels.scalarData = scalarData;
     return voxels;
   }
@@ -714,7 +720,11 @@ export default class VoxelManager<T> {
     /**
      * Retrieves the scalar data in a memory-inefficient manner.
      * Useful for debugging, testing, or methods requiring all scalar data at once.
-     * @returns {ArrayLike<number>} The scalar data array
+     *
+     * IMPORTANT: This is READ ONLY. Changes to the returned buffer are never
+     * reflected in the underlying data unless individually merged back.
+     *
+     * @returns {ArrayLike<number>} The scalar data array (read-only)
      */
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
@@ -749,11 +759,11 @@ export default class VoxelManager<T> {
   public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numComponents = 0,
+    numComps = 0,
   }: {
     dimensions: Point3;
     scalarData;
-    numComponents?: number;
+    numComps?: number;
   }): VoxelManager<number> | VoxelManager<RGB> {
     if (dimensions.length !== 3) {
       throw new Error(
@@ -761,22 +771,20 @@ export default class VoxelManager<T> {
       );
     }
 
-    if (!numComponents) {
-      numComponents =
+    if (!numComps) {
+      numComps =
         scalarData.length / dimensions[0] / dimensions[1] / dimensions[2];
       // We only support 1,3,4 component data, and sometimes the scalar data
       // doesn't match for some reason, so throw an exception
-      if (numComponents > 4 || numComponents < 1 || numComponents === 2) {
-        throw new Error(
-          `Number of components ${numComponents} must be 1, 3 or 4`
-        );
+      if (numComps > 4 || numComps < 1 || numComps === 2) {
+        throw new Error(`Number of components ${numComps} must be 1, 3 or 4`);
       }
     }
-    if (numComponents > 1) {
+    if (numComps > 1) {
       return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComponents,
+        numComps,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({
@@ -844,27 +852,25 @@ export default class VoxelManager<T> {
     width,
     height,
     scalarData,
-    numComponents = 1,
+    numComps = 1,
   }: {
     width: number;
     height: number;
     scalarData: PixelDataTypedArray;
-    numComponents?: number;
+    numComps?: number;
   }): VoxelManager<number> | VoxelManager<RGB> {
     const dimensions = [width, height, 1] as Point3;
-    if (!numComponents) {
-      numComponents = scalarData.length / width / height;
-      if (numComponents > 4 || numComponents < 1 || numComponents === 2) {
-        throw new Error(
-          `Number of components ${numComponents} must be 1, 3 or 4`
-        );
+    if (!numComps) {
+      numComps = scalarData.length / width / height;
+      if (numComps > 4 || numComps < 1 || numComps === 2) {
+        throw new Error(`Number of components ${numComps} must be 1, 3 or 4`);
       }
     }
-    if (numComponents > 1) {
+    if (numComps > 1) {
       return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComponents,
+        numComps,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({

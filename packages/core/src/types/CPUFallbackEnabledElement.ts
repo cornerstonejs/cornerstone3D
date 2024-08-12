@@ -8,6 +8,8 @@ import CPUFallbackColormap from './CPUFallbackColormap';
 import CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
 import { ImagePlaneModule } from './ImagePlaneModule';
 import { ImagePixelModule } from './ImagePixelModule';
+import RGB from './RGB';
+import { VoxelManager } from '../utilities';
 
 interface CPUFallbackEnabledElement {
   scale?: number;
@@ -36,7 +38,7 @@ interface CPUFallbackEnabledElement {
     imagePlaneModule?: ImagePlaneModule;
     imagePixelModule?: ImagePixelModule;
   };
-  voxelManager?: any;
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 }
 
 export default CPUFallbackEnabledElement;

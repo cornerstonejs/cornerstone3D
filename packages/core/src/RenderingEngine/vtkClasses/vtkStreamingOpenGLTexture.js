@@ -148,6 +148,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         const image = cache.getImage(imageIds[i]);
 
         if (!image) {
+          console.warn(`Image not found for imageId: ${imageIds[i]}`);
           continue;
         }
 

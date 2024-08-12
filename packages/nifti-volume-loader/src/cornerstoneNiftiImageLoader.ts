@@ -136,6 +136,10 @@ async function fetchAndProcessNiftiData(
   if (NiftiReader.isNIFTI(niftiBuffer)) {
     niftiHeader = NiftiReader.readHeader(niftiBuffer);
     niftiImage = NiftiReader.readImage(niftiHeader, niftiBuffer);
+  } else {
+    const errorMessage = 'The provided buffer is not a valid NIFTI file.';
+    console.warn(errorMessage);
+    throw new Error(errorMessage);
   }
 
   const { scalarData } = modalityScaleNifti(niftiHeader, niftiImage);
@@ -189,7 +193,7 @@ function createImage(
   const voxelManager = utilities.VoxelManager.createImageVoxelManager({
     width: columns,
     height: rows,
-    numComponents: 1,
+    numComps: 1,
     scalarData: pixelData,
   });
 

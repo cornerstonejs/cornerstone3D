@@ -365,7 +365,19 @@ interface IViewport {
   getSliceIndex(): number;
 
   /**
-   * Gets the slice view information
+   * Returns detailed information about the current slice view in the volume viewport.
+   * This method provides comprehensive data about the slice's position, orientation,
+   * and dimensions within the volume.
+   *
+   * @returns An object containing the following properties:
+   * @property sliceIndex - The current slice index in the view direction.
+   * @property slicePlane - The axis along which the slicing is performed (0 for X, 1 for Y, 2 for Z).
+   * @property width - The width of the slice in voxels.
+   * @property height - The height of the slice in voxels.
+   * @property sliceToIndexMatrix - A 4x4 matrix for transforming from slice coordinates to volume index coordinates.
+   * @property indexToSliceMatrix - A 4x4 matrix for transforming from volume index coordinates to slice coordinates.
+   *
+   * @throws {Error} If the view is oblique or if the slice axis cannot be determined.
    */
   getSliceViewInfo(): {
     width: number;
