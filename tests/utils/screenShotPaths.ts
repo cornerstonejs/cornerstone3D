@@ -106,6 +106,11 @@ const screenShotPaths = {
     paintFillSeg1OuterCircle: 'paintFillSeg1OuterCircle.png',
     paintFillSegmentation2: 'paintFillSegmentation2.png',
   },
+  labelmapRendering: {
+    axial: 'axial.png',
+    coronal: 'coronal.png',
+    sagittal: 'sagittal.png',
+  },
 };
 
 export { screenShotPaths };
