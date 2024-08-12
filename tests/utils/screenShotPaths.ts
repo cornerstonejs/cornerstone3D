@@ -114,6 +114,17 @@ const screenShotPaths = {
   contourRendering: {
     viewport: 'viewport.png',
   },
+  labelmapGlobalConfiguration: {
+    defaultGlobalConfig: 'defaultGlobalConfig.png',
+    toggleInactiveSegmentation: 'toggleInactiveSegmentation.png',
+    toggleOutlineRendering: 'toggleOutlineRendering.png',
+    toggleFillRendering: 'toggleFillRendering.png',
+    outlineWidthActive: 'outlineWidthActive.png',
+    outlineAlphaActive: 'outlineAlphaActive.png',
+    outlineWidthInactive: 'outlineWidthInactive.png',
+    fillAlphaActive: 'fillAlphaActive.png',
+    fillAlphaInactive: 'fillAlphaInactive.png',
+  },
 };
 
 export { screenShotPaths };
