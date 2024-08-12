@@ -86,7 +86,7 @@ describe('Segmentation State -- ', () => {
       eventTarget.reset();
       csTools3d.destroy();
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       unregisterAllImageLoaders();
       ToolGroupManager.destroyToolGroup(toolGroupId);

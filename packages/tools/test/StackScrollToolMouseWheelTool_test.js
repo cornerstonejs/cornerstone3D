@@ -87,7 +87,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   afterEach(function () {
     csTools3d.destroy();
     cache.purgeCache();
-    this.renderingEngine.destroy();
+    this.renderingEngine?.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     imageLoader.unregisterAllImageLoaders();
     ToolGroupManager.destroyToolGroup(toolGroupId);

@@ -96,7 +96,7 @@ describe('Cornerstone Tools: ', () => {
     csTools3d.destroy();
 
     cache.purgeCache();
-    this.renderingEngine.destroy();
+    this.renderingEngine?.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     unregisterAllImageLoaders();
     ToolGroupManager.destroyToolGroup('volume');
@@ -627,7 +627,7 @@ describe('Crosshairs with synchronizers: ', () => {
     csTools3d.destroy();
 
     cache.purgeCache();
-    this.renderingEngine.destroy();
+    this.renderingEngine?.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     unregisterAllImageLoaders();
     ToolGroupManager.destroyToolGroup('volume');

@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities } from '../../packages/core/src/index';
 
 /**
  * Creates a mock ellipsoid stack segmentation.

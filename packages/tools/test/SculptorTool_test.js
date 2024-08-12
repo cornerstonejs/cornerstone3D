@@ -95,7 +95,7 @@ describe('Sculptor Tool: ', () => {
       csTools3d.destroy();
       cache.purgeCache();
       eventTarget.reset();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       ToolGroupManager.destroyToolGroup('stack');

@@ -17,3 +17,14 @@ export default {
   setValue,
   threshold,
 };
+
+export {
+  erase,
+  islandRemoval,
+  preview,
+  regionFill,
+  setValue,
+  threshold,
+  dynamicThreshold,
+  determineSegmentIndex,
+};

@@ -4,6 +4,7 @@ id: faq
 
 # Frequently Asked Questions
 
+
 ### What is the difference between Cornerstone (legacy) and Cornerstone3D (alpha) and react-vtkjs-viewport?
 
 Although Cornerstone (legacy) has gpu-accelerated rendering through webgl, it only handles

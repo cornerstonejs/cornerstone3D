@@ -49,7 +49,7 @@ describe('stackContextPrefetch:', () => {
       }
     });
     cache.purgeCache();
-    this.renderingEngine.destroy();
+    this.renderingEngine?.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     imageLoader.unregisterAllImageLoaders();
     this.DOMElements.forEach((el) => {

@@ -1,10 +1,10 @@
 import BrushStrategy from './BrushStrategy';
 import { SPHERE_STRATEGY } from './fillSphere';
-import compositions from './compositions';
+import { erase } from './compositions';
 
 const ERASE_SPHERE_STRATEGY = new BrushStrategy(
   'EraseSphere',
-  compositions.erase,
+  erase,
   ...SPHERE_STRATEGY.compositions
 );
 

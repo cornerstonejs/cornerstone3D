@@ -80,7 +80,7 @@ describe('ToolGroup Manager: ', () => {
       ToolGroupManager.destroy();
       csTools3d.destroy();
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {
@@ -150,7 +150,7 @@ describe('ToolGroup Manager: ', () => {
       ToolGroupManager.destroyToolGroup('volume1');
       csTools3d.destroy();
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       unregisterAllImageLoaders();
       this.DOMElements.forEach((el) => {

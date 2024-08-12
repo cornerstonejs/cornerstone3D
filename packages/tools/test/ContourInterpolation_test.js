@@ -264,7 +264,7 @@ describe('Contours Interpolation: ', () => {
       csTools3d.destroy();
       eventTarget.reset();
       cache.purgeCache();
-      this.renderingEngine.destroy();
+      this.renderingEngine?.destroy();
       metaData.removeProvider(fakeMetaDataProvider);
       imageLoader.unregisterAllImageLoaders();
       ToolGroupManager.destroyToolGroup(toolGroupId);

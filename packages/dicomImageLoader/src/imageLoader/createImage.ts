@@ -317,7 +317,7 @@ function createImage(
         rgba: isColorImage && useRGBA,
         getPixelData: () => imageFrame.pixelData,
         getCanvas: undefined,
-        numComps: undefined,
+        numberOfComponents: undefined,
       };
 
       if (image.color) {

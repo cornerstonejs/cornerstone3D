@@ -11,7 +11,15 @@ import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
 import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
-import compositions from './compositions';
+import {
+  regionFill,
+  setValue,
+  determineSegmentIndex,
+  preview,
+  dynamicThreshold,
+  threshold,
+  islandRemoval,
+} from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
 const { transformWorldToIndex, isEqual } = csUtils;
@@ -122,23 +130,23 @@ function createPointInEllipse(worldInfo: {
 
 const CIRCLE_STRATEGY = new BrushStrategy(
   'Circle',
-  compositions.regionFill,
-  compositions.setValue,
+  regionFill,
+  setValue,
   initializeCircle,
-  compositions.determineSegmentIndex,
-  compositions.preview
+  determineSegmentIndex,
+  preview
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   'CircleThreshold',
-  compositions.regionFill,
-  compositions.setValue,
+  regionFill,
+  setValue,
   initializeCircle,
-  compositions.determineSegmentIndex,
-  compositions.dynamicThreshold,
-  compositions.threshold,
-  compositions.preview,
-  compositions.islandRemoval
+  determineSegmentIndex,
+  dynamicThreshold,
+  threshold,
+  preview,
+  islandRemoval
 );
 
 /**

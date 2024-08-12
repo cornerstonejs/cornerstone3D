@@ -2,14 +2,14 @@
 id: karma-tests
 ---
 
-# Writing Karma Tests
+# Writing Tests
 
 To make sure our rendering and tools don't break upon future modifications, we have
 written tests for them. Rendering tests includes comparing the rendered images
 with the expected images. Tools tests includes comparing the output of the tools
 with the expected output.
 
-### Running Karma Tests Locally
+### Running Tests Locally
 
 You can run `yarn run test` to run all tests locally.
 By default, `karma.conf.js` will run the tests in a headless chrome browser to make

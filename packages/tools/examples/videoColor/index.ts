@@ -138,7 +138,7 @@ addButtonToToolbar({
   title: 'Avg Color Correct',
   onClick() {
     const white = getAverageWhite(
-      viewport.getImageData().imageData.getScalarData()
+      viewport.getImageData().imageData.
     );
     console.log('White=', white);
     viewport.setAverageWhite(white);

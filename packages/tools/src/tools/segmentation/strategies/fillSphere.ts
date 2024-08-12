@@ -4,7 +4,15 @@ import { vec3 } from 'gl-matrix';
 
 import BrushStrategy from './BrushStrategy';
 import type { InitializedOperationData, Composition } from './BrushStrategy';
-import compositions from './compositions';
+import {
+  regionFill,
+  setValue,
+  determineSegmentIndex,
+  preview,
+  dynamicThreshold,
+  threshold,
+  islandRemoval,
+} from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';
 import { createEllipseInPoint } from './fillCircle';
 const { transformWorldToIndex } = csUtils;
@@ -66,11 +74,11 @@ const sphereComposition = {
 
 const SPHERE_STRATEGY = new BrushStrategy(
   'Sphere',
-  compositions.regionFill,
-  compositions.setValue,
+  regionFill,
+  setValue,
   sphereComposition,
-  compositions.determineSegmentIndex,
-  compositions.preview
+  determineSegmentIndex,
+  preview
 );
 
 /**
@@ -84,9 +92,9 @@ const fillInsideSphere = SPHERE_STRATEGY.strategyFunction;
 const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   'SphereThreshold',
   ...SPHERE_STRATEGY.compositions,
-  compositions.dynamicThreshold,
-  compositions.threshold,
-  compositions.islandRemoval
+  dynamicThreshold,
+  threshold,
+  islandRemoval
 );
 
 /**

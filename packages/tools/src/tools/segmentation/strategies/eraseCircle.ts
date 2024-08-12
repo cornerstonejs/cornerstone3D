@@ -1,10 +1,10 @@
 import BrushStrategy from './BrushStrategy';
 import { CIRCLE_STRATEGY } from './fillCircle';
-import compositions from './compositions';
+import { erase } from './compositions';
 
 const ERASE_CIRCLE_STRATEGY = new BrushStrategy(
   'EraseCircle',
-  compositions.erase,
+  erase,
   ...CIRCLE_STRATEGY.compositions
 );
 

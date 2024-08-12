@@ -91,7 +91,7 @@ describe('Synchronizer Manager: ', () => {
     SynchronizerManager.destroySynchronizer(synchronizerId);
     csTools3d.destroy();
     cache.purgeCache();
-    this.renderingEngine.destroy();
+    this.renderingEngine?.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     unregisterAllImageLoaders();
     ToolGroupManager.destroyToolGroup('volume1');
@@ -237,7 +237,7 @@ describe('Synchronizer Manager: ', () => {
     SynchronizerManager.destroy();
     csTools3d.destroy();
     cache.purgeCache();
-    this.renderingEngine.destroy();
+    this.renderingEngine?.destroy();
     metaData.removeProvider(fakeMetaDataProvider);
     unregisterAllImageLoaders();
     ToolGroupManager.destroyToolGroup('volume1');

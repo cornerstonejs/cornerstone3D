@@ -1,5 +1,8 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
-import { annotation, utilities as cstUtils } from '@cornerstonejs/tools';
+import { utilities as csUtils } from '../../packages/core/src/index';
+import {
+  annotation,
+  utilities as cstUtils,
+} from '../../packages/tools/src/index';
 
 export function addMockContourSegmentation({
   segmentationId,

@@ -1,11 +1,13 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { ImageVolume } from '@cornerstonejs/core';
+import { ImageVolume, cache, utilities } from '../../packages/core/src/index';
 import {
-  getVerticalBarRGBVolume,
-  getVerticalBarVolume,
-  getExactRegionVolume,
+  getVerticalBarImages,
+  getExactRegionImages,
+  getVerticalBarRGBImages,
 } from './testUtilsPixelData';
+
+import { colors } from './testUtils';
 
 /**
  * It creates a volume based on the volumeId name for testing purposes. It splits the volumeId
@@ -73,6 +75,8 @@ const fakeVolumeLoader = (volumeId) => {
 
   const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
 
+  const imageIds = new Array(slices).fill().map((_, i) => `${volumeId}_${i}`);
+
   const volumeMetadata = {
     BitsAllocated: rgb ? 24 : 8,
     BitsStored: rgb ? 24 : 8,
@@ -87,11 +91,11 @@ const fakeVolumeLoader = (volumeId) => {
     Rows: rows,
   };
 
-  let pixelData;
+  let pixelDataArray;
   if (rgb) {
-    pixelData = getVerticalBarRGBVolume(rows, columns, slices);
+    pixelDataArray = getVerticalBarRGBImages(rows, columns, slices);
   } else if (useExactRegion) {
-    pixelData = getExactRegionVolume(
+    pixelDataArray = getExactRegionImages(
       rows,
       columns,
       slices,
@@ -104,34 +108,65 @@ const fakeVolumeLoader = (volumeId) => {
       valueForSegmentIndex
     );
   } else {
-    pixelData = getVerticalBarVolume(rows, columns, slices);
+    pixelDataArray = getVerticalBarImages(rows, columns, slices);
   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: rgb ? 3 : 1,
-    values: pixelData,
+  const numberOfComponents = rgb ? 3 : 1;
+
+  // cache the images with their metadata so that when the image is requested, it can be returned
+  // from the cache instead of being created again
+  pixelDataArray.forEach((pixelData, i) => {
+    const voxelManager = utilities.VoxelManager.createImageVoxelManager({
+      width: columns,
+      height: rows,
+      scalarData: pixelData,
+      numberOfComponents,
+    });
+
+    const imageId = imageIds[i];
+    const image = {
+      rows,
+      columns,
+      width: columns,
+      height: rows,
+      imageId,
+      intercept: 0,
+      slope: 1,
+      invert: false,
+      windowCenter: 40,
+      windowWidth: 400,
+      maxPixelValue: 255,
+      minPixelValue: 0,
+      voxelManager,
+      rowPixelSpacing: y_spacing,
+      columnPixelSpacing: x_spacing,
+      getPixelData: () => voxelManager.getScalarData(),
+      sizeInBytes: rows * columns * numberOfComponents,
+      FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
+      imageFrame: {
+        photometricInterpretation: rgb ? 'RGB' : 'MONOCHROME2',
+      },
+    };
+
+    cache.putImageSync(imageId, image);
   });
 
-  const imageData = vtkImageData.newInstance();
-  imageData.setDimensions(dimensions);
-  imageData.setSpacing([1, 1, 1]);
-  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-  imageData.setOrigin([0, 0, 0]);
-  imageData.getPointData().setScalars(scalarArray);
+  const volumeVoxelManager =
+    utilities.VoxelManager.createImageVolumeVoxelManager({
+      dimensions,
+      imageIds,
+    });
 
   const imageVolume = new ImageVolume({
     volumeId,
     metadata: volumeMetadata,
     dimensions: dimensions,
+    voxelManager: volumeVoxelManager,
     spacing: [1, 1, 1],
     origin: [0, 0, 0],
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    scalarData: pixelData,
-    numComps: rgb ? 3 : 1,
-    sizeInBytes: pixelData.byteLength,
-    imageData: imageData,
-    imageIds: [],
+    numberOfComponents: rgb ? 3 : 1,
+    imageIds,
   });
 
   return {
