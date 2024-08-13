@@ -28,9 +28,7 @@ type CPUIImageData = {
   hasPixelSpacing?: boolean;
   calibration?: IImageCalibration;
 
-  voxelManager?:
-    | VoxelManager<number>
-    | VoxelManager<RGB> /** preScale object */;
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
   preScale?: {
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;

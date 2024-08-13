@@ -81,6 +81,18 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     superModified();
   };
 
+  publicAPI.modified = () => {
+    superModified();
+
+    // this is really not efficient, but it works for now
+    const volume = cache.getVolume(model.volumeId);
+    const imageIds = volume.imageIds;
+
+    for (let i = 0; i < imageIds.length; i++) {
+      model.updatedFrames[i] = true;
+    }
+  };
+
   function updateTextureImagesUsingVoxelManager() {
     const volume = cache.getVolume(model.volumeId);
     const imageIds = volume.imageIds;

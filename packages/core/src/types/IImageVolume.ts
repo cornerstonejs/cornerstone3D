@@ -71,7 +71,7 @@ interface IImageVolume {
    * The new volume model which solely relies on the separate image data
    * and do not cache the volume data at all
    */
-  voxelManager?: VoxelManager<number | RGB>;
+  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
   /**

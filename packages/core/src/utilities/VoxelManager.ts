@@ -593,7 +593,7 @@ export default class VoxelManager<T> {
   public static createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numberOfComponents,
+    numberOfComponents = 3,
   }: {
     dimensions: Point3;
     scalarData;
@@ -629,12 +629,12 @@ export default class VoxelManager<T> {
   public static createImageVolumeVoxelManager({
     dimensions,
     imageIds,
-    numberOfComponents,
+    numberOfComponents = 1,
   }: {
     dimensions: Point3;
     imageIds: string[];
     numberOfComponents: number;
-  }): VoxelManager<number | RGB> {
+  }): VoxelManager<number> | VoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
     function getPixelInfo(index) {
@@ -797,8 +797,9 @@ export default class VoxelManager<T> {
         if (pixelData && SliceDataConstructor) {
           const sliceStart = sliceIndex * sliceSize;
           const sliceEnd = sliceStart + sliceSize;
+          // @ts-ignore
           const sliceData = new SliceDataConstructor(sliceSize);
-
+          // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
           pixelData.set(sliceData);
         }
@@ -817,7 +818,7 @@ export default class VoxelManager<T> {
       ];
     };
 
-    return voxelManager;
+    return voxelManager as VoxelManager<number> | VoxelManager<RGB>;
   }
 
   /**
@@ -831,7 +832,7 @@ export default class VoxelManager<T> {
   public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numberOfComponents = 0,
+    numberOfComponents = 1,
   }: {
     dimensions: Point3;
     scalarData;
@@ -881,7 +882,7 @@ export default class VoxelManager<T> {
     dimensions: Point3;
     timePoint: number;
     numberOfComponents?: number;
-  }): VoxelManager<number | RGB> {
+  }): VoxelManager<number> | VoxelManager<RGB> {
     if (!numberOfComponents) {
       const firstImage = cache.getImage(imageIdGroups[0][0]);
       if (!firstImage) {
@@ -911,11 +912,12 @@ export default class VoxelManager<T> {
     });
 
     // Create a VoxelManager that will manage the active voxel group
-    const voxelManager = new VoxelManager<number | RGB>(
+    const voxelManager = new VoxelManager(
       dimensions,
       (index) => voxelGroups[timePoint]._get(index),
+      // @ts-ignore
       (index, v) => voxelGroups[timePoint]._set(index, v)
-    );
+    ) as VoxelManager<number> | VoxelManager<RGB>;
 
     voxelManager.numberOfComponents = numberOfComponents;
 
@@ -935,20 +937,26 @@ export default class VoxelManager<T> {
       return voxelGroups[timePoint].getMiddleSliceData();
     };
 
+    // @ts-ignore
     voxelManager.setTimePoint = (newTimePoint: number) => {
       timePoint = newTimePoint;
+      // @ts-ignore
       voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
+      // @ts-ignore
       voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
     };
 
+    // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
       return voxelGroups[tp]._get(index);
     };
 
+    // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
       return voxelGroups[tp].getCompleteScalarDataArray();
     };
 
+    // @ts-ignore
     voxelManager.getCurrentTimePointScalarData = () => {
       return voxelGroups[timePoint].getCompleteScalarDataArray();
     };
@@ -985,12 +993,12 @@ export default class VoxelManager<T> {
         dimensions,
         scalarData,
         numberOfComponents,
-      });
+      }) as VoxelManager<RGB>;
     }
     return VoxelManager._createNumberVolumeVoxelManager({
       dimensions,
       scalarData,
-    });
+    }) as VoxelManager<number>;
   }
 
   /**
