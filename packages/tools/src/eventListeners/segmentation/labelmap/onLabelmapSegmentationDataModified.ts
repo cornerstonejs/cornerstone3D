@@ -89,7 +89,15 @@ function performVolumeLabelmapUpdate({
   });
 
   // Trigger modified on the imageData to update the image
+  // this is the start of the rendering pipeline for updating the texture
+  // to the gpu
+  const beforeMTime = imageData.getMTime();
+
   imageData.modified();
+
+  const afterMTime = imageData.getMTime();
+
+  console.debug(beforeMTime, afterMTime);
 }
 
 function performStackLabelmapUpdate({

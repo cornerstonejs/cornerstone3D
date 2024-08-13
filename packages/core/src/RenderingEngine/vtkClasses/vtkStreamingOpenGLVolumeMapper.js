@@ -311,6 +311,25 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     model.VBOBuildTime.modified();
   };
 
+  publicAPI.getNeedToRebuildBufferObjects = (ren, actor) => {
+    // first do a coarse check
+    // if (
+    //   model.VBOBuildTime.getMTime() < publicAPI.getMTime() ||
+    //   model.VBOBuildTime.getMTime() < actor.getMTime() ||
+    //   model.VBOBuildTime.getMTime() < model.renderable.getMTime() ||
+    //   model.VBOBuildTime.getMTime() < actor.getProperty().getMTime() ||
+    //   model.VBOBuildTime.getMTime() < model.currentInput.getMTime() ||
+    //   model.VBOBuildTime.getMTime() < model.scalarTexture.getMTime() ||
+    //   !model.scalarTexture?.getHandle() ||
+    //   !model.colorTexture?.getHandle() ||
+    //   !model.labelOutlineThicknessTexture?.getHandle()
+    // ) {
+    //   return true;
+    // }
+    // return false;
+    return true;
+  };
+
   publicAPI.getRenderTargetSize = () => {
     if (model._useSmallViewport) {
       return [model._smallViewportWidth, model._smallViewportHeight];

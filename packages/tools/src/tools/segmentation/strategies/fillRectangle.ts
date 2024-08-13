@@ -42,11 +42,7 @@ function fillRectangle(
     return;
   }
 
-  const {
-    segmentationImageData,
-    segmentationScalarData,
-    segmentationVoxelManager,
-  } = strategyData;
+  const { segmentationImageData, segmentationVoxelManager } = strategyData;
 
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(segmentationImageData, world);
@@ -112,7 +108,7 @@ function fillRectangle(
       return;
     }
 
-    segmentationScalarData[index] = segmentIndex;
+    segmentationVoxelManager.setAtIndex(index, segmentIndex);
   };
 
   segmentationVoxelManager.forEach(callback, {
