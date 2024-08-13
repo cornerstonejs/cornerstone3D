@@ -95,8 +95,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         const image = cache.getImage(imageIds[i]);
 
         if (!image) {
-          unsuccessfulFrames.push(i);
-
+          debugger;
           console.warn('image not found', i);
           continue;
         }

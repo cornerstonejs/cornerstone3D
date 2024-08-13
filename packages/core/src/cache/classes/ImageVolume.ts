@@ -77,7 +77,7 @@ export class ImageVolume implements IImageVolume {
    * The new volume model which solely relies on the separate image data
    * and do not cache the volume data at all
    */
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: VoxelManager<number | RGB>;
   dataType?: PixelDataTypedArrayString;
 
   numTimePoints? = null as number;
@@ -125,6 +125,7 @@ export class ImageVolume implements IImageVolume {
       VoxelManager.createImageVolumeVoxelManager({
         dimensions,
         imageIds,
+        numberOfComponents,
       });
 
     this.numVoxels =
@@ -142,8 +143,7 @@ export class ImageVolume implements IImageVolume {
       dataType: dataType,
       voxelManager: this.voxelManager,
       id: volumeId,
-      numberOfComponents:
-        this.voxelManager.numberOfComponents || numberOfComponents || 1,
+      numberOfComponents: numberOfComponents || 1,
     });
 
     // imageData.getPointData = () => {

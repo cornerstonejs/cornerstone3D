@@ -56,6 +56,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
 
     const { numberOfComponents: numIComps } = image.get('numberOfComponents');
+    debugger;
     const useIndependentComps = publicAPI.useIndependentComponents(vprop);
 
     const scalarOpacityFunc = vprop.getScalarOpacity();
@@ -265,9 +266,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
         // run the update as soon as possible if we have updated
         // frames
-        if (model.scalarTexture.hasUpdatedFrames) {
-          model.scalarTexture.update3DFromRaw();
-        }
+        // if (model.scalarTexture.hasUpdatedFrames) {
+        //   model.scalarTexture.update3DFromRaw();
+        // }
       } else {
         model.scalarTexture.deactivate();
         model.scalarTexture.update3DFromRaw();

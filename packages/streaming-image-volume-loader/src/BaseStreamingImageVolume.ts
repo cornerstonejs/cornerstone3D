@@ -185,6 +185,9 @@ export default class BaseStreamingImageVolume
       this.loadStatus.loading = false;
     }
 
+    debugger;
+    this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
+
     this.callLoadStatusCallback({
       success: true,
       imageIdIndex,
@@ -415,13 +418,7 @@ export default class BaseStreamingImageVolume
     }
 
     const uncompressedIterator = ProgressiveIterator.as(
-      imageLoader.loadAndCacheImage(imageId, options).then(() => {
-        // IMPORTANT: this is the most important line of this entire project
-        // It tells the texture to update the frame only after the image has been loaded
-        // and cached, since otherwise it will not be able to render the image
-        // since we grab it from the cache to create a volume texture
-        this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
-      })
+      imageLoader.loadAndCacheImage(imageId, options)
     );
 
     return uncompressedIterator.forEach((image) => {
