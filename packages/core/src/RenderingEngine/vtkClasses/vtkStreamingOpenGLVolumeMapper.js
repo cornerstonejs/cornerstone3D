@@ -56,7 +56,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     }
 
     const { numberOfComponents: numIComps } = image.get('numberOfComponents');
-    debugger;
     const useIndependentComps = publicAPI.useIndependentComponents(vprop);
 
     const scalarOpacityFunc = vprop.getScalarOpacity();

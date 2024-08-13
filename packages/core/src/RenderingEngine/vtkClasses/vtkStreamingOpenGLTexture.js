@@ -81,7 +81,13 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     model.updatedFrames[frameIndex] = true;
 
-    let unsuccessfulFrames = publicAPI.update3DFromRaw();
+    publicAPI.update3DFromRaw();
+
+    // Todo: the progressive iterator is messing around with the last
+    // texture update, for now i have it like this to make it work
+    setTimeout(() => {
+      publicAPI.update3DFromRaw();
+    }, 40);
   };
 
   function updateTextureImagesUsingVoxelManager() {

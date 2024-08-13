@@ -185,7 +185,6 @@ export default class BaseStreamingImageVolume
       this.loadStatus.loading = false;
     }
 
-    debugger;
     this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
 
     this.callLoadStatusCallback({

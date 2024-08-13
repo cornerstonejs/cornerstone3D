@@ -629,10 +629,12 @@ export default class VoxelManager<T> {
   public static createImageVolumeVoxelManager({
     dimensions,
     imageIds,
+    numberOfComponents,
   }: {
     dimensions: Point3;
     imageIds: string[];
-  }): VoxelManager<number> {
+    numberOfComponents: number;
+  }): VoxelManager<number | RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
     function getPixelInfo(index) {
@@ -641,13 +643,12 @@ export default class VoxelManager<T> {
       const image = cache.getImage(imageId);
 
       if (!image) {
-        // Todo: better handle this case
         console.warn(`Image not found for imageId: ${imageId}`);
         return { pixelData: null, pixelIndex: null };
       }
 
       const pixelData = image.voxelManager.getScalarData();
-      const pixelIndex = index % pixelsPerSlice;
+      const pixelIndex = (index % pixelsPerSlice) * numberOfComponents;
 
       return { pixelData, pixelIndex };
     }
@@ -655,22 +656,46 @@ export default class VoxelManager<T> {
     function getVoxelValue(index) {
       const { pixelData, pixelIndex } = getPixelInfo(index);
 
-      if (!pixelData || !pixelIndex) {
+      if (!pixelData || pixelIndex === null) {
         return null;
       }
 
-      return pixelData[pixelIndex];
+      if (numberOfComponents === 1) {
+        return pixelData[pixelIndex];
+      } else {
+        return [
+          pixelData[pixelIndex],
+          pixelData[pixelIndex + 1],
+          pixelData[pixelIndex + 2],
+        ] as RGB;
+      }
     }
 
     function setVoxelValue(index, v) {
       const { pixelData, pixelIndex } = getPixelInfo(index);
 
-      if (pixelData[pixelIndex] === v) {
+      if (!pixelData || pixelIndex === null) {
         return false;
       }
 
-      pixelData[pixelIndex] = v;
-      return true;
+      let isChanged = false;
+
+      if (numberOfComponents === 1) {
+        if (pixelData[pixelIndex] !== v) {
+          pixelData[pixelIndex] = v as number;
+          isChanged = true;
+        }
+      } else {
+        const rgbValue = v as RGB;
+        for (let i = 0; i < numberOfComponents; i++) {
+          if (pixelData[pixelIndex + i] !== rgbValue[i]) {
+            pixelData[pixelIndex + i] = rgbValue[i];
+            isChanged = true;
+          }
+        }
+      }
+
+      return isChanged;
     }
 
     const voxelManager = new VoxelManager(
@@ -678,6 +703,8 @@ export default class VoxelManager<T> {
       (index) => getVoxelValue(index),
       (index, v) => setVoxelValue(index, v)
     );
+
+    voxelManager.numberOfComponents = numberOfComponents;
 
     // @ts-ignore
     voxelManager._getConstructor = () => {
@@ -732,16 +759,33 @@ export default class VoxelManager<T> {
       // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
 
-      for (let i = 0; i < dataLength; i++) {
-        scalarData[i] = voxelManager._get(i);
+      for (let i = 0; i < dataLength; i += numberOfComponents) {
+        const value = voxelManager._get(i / numberOfComponents);
+        if (numberOfComponents === 1) {
+          scalarData[i] = value as number;
+        } else {
+          const rgbValue = value as RGB;
+          for (let j = 0; j < numberOfComponents; j++) {
+            scalarData[i + j] = rgbValue[j];
+          }
+        }
       }
 
       return scalarData;
     };
 
     voxelManager.setCompleteScalarDataArray = (scalarData) => {
-      for (let i = 0; i < scalarData.length; i++) {
-        voxelManager._set(i, scalarData[i]);
+      for (let i = 0; i < scalarData.length; i += numberOfComponents) {
+        if (numberOfComponents === 1) {
+          voxelManager._set(i, scalarData[i]);
+        } else {
+          const rgbValue: RGB = [
+            scalarData[i],
+            scalarData[i + 1],
+            scalarData[i + 2],
+          ];
+          voxelManager._set(i / numberOfComponents, rgbValue);
+        }
       }
     };
 
