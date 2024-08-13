@@ -433,10 +433,11 @@ class Cache implements ICache {
       sizeInBytes: 0,
     };
 
+    // For some reason we need to put it here after the rework of volumes
+    this._imageCache.set(imageId, cachedImage);
+
     return imageLoadObject.promise
       .then((image: IImage) => {
-        // For some reason we need to put it here after the rework of volumes
-        this._imageCache.set(imageId, cachedImage);
         this._putImageCommon(imageId, image, cachedImage);
       })
       .catch((error) => {
