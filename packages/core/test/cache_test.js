@@ -1,6 +1,5 @@
 import * as cornerstoneStreamingImageVolumeLoader from '@cornerstonejs/streaming-image-volume-loader';
 import * as cornerstone from '../src/index';
-import { createFloat32SharedArray } from '../src/utilities';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
 const { cache, Enums } = cornerstone;
@@ -277,9 +276,6 @@ describe('Cache', () => {
       const volumeId = 'aVolumeId';
 
       const dimensions = [10, 10, 10];
-      const scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
-      );
 
       // Arrange
       const volume = new StreamingImageVolume(
@@ -291,7 +287,6 @@ describe('Cache', () => {
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           dimensions,
           sizeInBytes: volumeSizeInBytes,
-          scalarData,
           metadata: {
             voiLut: [
               { windowCenter: 500, windowWidth: 500 },
@@ -357,9 +352,6 @@ describe('Cache', () => {
       const volumeId = 'aVolumeId';
 
       const dimensions = [10, 10, 10];
-      const scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
-      );
       // Arrange
       this.volume = new StreamingImageVolume(
         // ImageVolume properties
@@ -370,7 +362,6 @@ describe('Cache', () => {
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           dimensions,
           sizeInBytes: 1000000,
-          scalarData,
           metadata: {
             voiLut: [
               { windowCenter: 500, windowWidth: 500 },
@@ -524,9 +515,6 @@ describe('Cache', () => {
       const volumeId = 'aVolumeId';
 
       const dimensions = [10, 10, 10];
-      const scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
-      );
 
       // Arrange
       const volume = new StreamingImageVolume(
@@ -538,7 +526,6 @@ describe('Cache', () => {
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           dimensions,
           sizeInBytes: volumeSizeInBytes,
-          scalarData,
           metadata: {
             PhotometricInterpretation: 'MONOCHROME2',
           },
@@ -592,9 +579,6 @@ describe('Cache', () => {
       const volume2SizeInBytes = maxCacheSize;
 
       const dimensions = [10, 10, 10];
-      const scalarData = createFloat32SharedArray(
-        dimensions[0] * dimensions[1] * dimensions[2]
-      );
 
       const volumeId1 = 'aVolumeId1';
       const volumeId2 = 'aVolumeId2';
@@ -608,7 +592,6 @@ describe('Cache', () => {
           origin: [0, 0, 0],
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           dimensions,
-          scalarData,
           sizeInBytes: volume1SizeInBytes,
           metadata: {},
         },
@@ -638,7 +621,6 @@ describe('Cache', () => {
           direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
           sizeInBytes: volume2SizeInBytes,
           dimensions,
-          scalarData,
           metadata: {},
         },
         // Streaming properties

@@ -1,6 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -59,7 +60,16 @@ function createViewport(renderingEngine, viewportType, width, height) {
   return element;
 }
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`;
+const volumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 4,
+  xSpacing: 1,
+  ySpacing: 1,
+  rgb: 1,
+});
 
 describe('Sculptor Tool: ', () => {
   beforeAll(() => {
@@ -115,7 +125,19 @@ describe('Sculptor Tool: ', () => {
         metadata: {
           viewPlaneNormal: [0, 0, -1],
           viewUp: [0, -1, 0],
-          referencedImageId: 'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
+          referencedImageId: encodeImageIdInfo({
+            loader: 'fakeImageLoader',
+            name: 'imageURI',
+            rows: 64,
+            columns: 64,
+            barStart: 10,
+            barWidth: 5,
+            xSpacing: 1,
+            ySpacing: 1,
+            rgb: 0,
+            pt: 0,
+            sliceIndex: 0,
+          }),
           toolName: 'PlanarFreehandROI',
         },
         data: {
@@ -167,7 +189,19 @@ describe('Sculptor Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageId1 = encodeImageIdInfo({
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      });
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationModified = () => {

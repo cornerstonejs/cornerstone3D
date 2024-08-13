@@ -5,7 +5,6 @@ import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
 } from '../../../utilities/boundingBox';
-import { pointInShapeCallback } from '../../../utilities';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { LabelmapToolOperationData } from '../../../types';
 import { getStrategyData } from './utils/getStrategyData';
@@ -27,8 +26,7 @@ type OperationData = LabelmapToolOperationData & {
 // Todo: why we have another constraintFn? in addition to the one in the operationData?
 function fillRectangle(
   enabledElement: Types.IEnabledElement,
-  operationData: OperationData,
-  inside = true
+  operationData: OperationData
 ): void {
   const { points, segmentsLocked, segmentIndex, segmentationId } =
     operationData;
@@ -44,7 +42,7 @@ function fillRectangle(
     return;
   }
 
-  const { segmentationImageData, segmentationScalarData } = strategyData;
+  const { segmentationImageData, segmentationVoxelManager } = strategyData;
 
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(segmentationImageData, world);
@@ -110,15 +108,14 @@ function fillRectangle(
       return;
     }
 
-    segmentationScalarData[index] = segmentIndex;
+    segmentationVoxelManager.setAtIndex(index, segmentIndex);
   };
 
-  pointInShapeCallback(
-    segmentationImageData,
-    pointInShapeFn,
-    callback,
-    boundsIJK
-  );
+  segmentationVoxelManager.forEach(callback, {
+    isInObject: pointInShapeFn,
+    boundsIJK,
+    imageData: segmentationImageData,
+  });
 
   triggerSegmentationDataModified(segmentationId);
 }
@@ -133,7 +130,7 @@ export function fillInsideRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillRectangle(enabledElement, operationData, true);
+  fillRectangle(enabledElement, operationData);
 }
 
 /**
@@ -146,5 +143,5 @@ export function fillOutsideRectangle(
   enabledElement: Types.IEnabledElement,
   operationData: OperationData
 ): void {
-  fillRectangle(enabledElement, operationData, false);
+  fillRectangle(enabledElement, operationData);
 }

@@ -213,8 +213,11 @@ async function run() {
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+    imageIds
+  );
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   segmentation.addSegmentations([
     {
@@ -230,12 +233,6 @@ async function run() {
 
   // Add the segmentation representation to the viewport
   await segmentation.addSegmentationRepresentations(viewportId1, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-  await segmentation.addSegmentationRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

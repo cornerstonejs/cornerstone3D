@@ -50,7 +50,6 @@ import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes'
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { pointInShapeCallback } from '../../utilities/';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
@@ -869,7 +868,7 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata } = image;
+      const { dimensions, imageData, metadata, voxelManager } = image;
 
       const pos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -937,13 +936,13 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          () => true,
+        const pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
-          boundsIJK
+          {
+            boundsIJK,
+            imageData,
+          }
         );
-
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {

@@ -4,6 +4,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 import * as imageURI_64_64_10_5_1_1_0_SEG_Mocked from './groundTruth/imageURI_64_64_10_5_1_1_0_SEG_Mocked.png';
 import * as imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked from './groundTruth/imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked.png';
 import * as imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed from './groundTruth/imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed.png';
+import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
 const { cache, RenderingEngine, Enums, metaData, imageLoader, eventTarget } =
   cornerstone3D;
@@ -104,7 +105,21 @@ describe('Stack Segmentation Rendering -- ', () => {
       const element = createViewport(this.renderingEngine);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId1);
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -166,7 +181,21 @@ describe('Stack Segmentation Rendering -- ', () => {
       const element = createViewport(this.renderingEngine);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId1);
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -261,7 +290,21 @@ describe('Stack Segmentation Rendering -- ', () => {
       const element = createViewport(this.renderingEngine);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId1);
 
       const compareImageCallback = (evt) => {

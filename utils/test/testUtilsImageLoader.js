@@ -1,3 +1,4 @@
+import { decodeImageIdInfo } from './testUtils';
 import {
   getVerticalBarImage,
   getVerticalBarRGBImage,
@@ -23,9 +24,9 @@ import {
  * @returns Promise that resolves to the image
  */
 const fakeImageLoader = (imageId) => {
-  const imageURI = imageId.split(':')[1];
-  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
-    imageURI.split('_').map((v) => parseFloat(v));
+  const imageInfo = decodeImageIdInfo(imageId);
+  const { rows, columns, barStart, barWidth, xSpacing, ySpacing, rgb } =
+    imageInfo;
 
   let pixelData;
 
@@ -49,8 +50,8 @@ const fakeImageLoader = (imageId) => {
     windowWidth: 400,
     maxPixelValue: 255,
     minPixelValue: 0,
-    rowPixelSpacing: y_spacing,
-    columnPixelSpacing: x_spacing,
+    rowPixelSpacing: ySpacing,
+    columnPixelSpacing: xSpacing,
     getPixelData: () => pixelData,
     sizeInBytes: rows * columns * 1, // 1 byte for now
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
@@ -73,8 +74,6 @@ const fakeImageLoader = (imageId) => {
  * metaData.addProvider(fakeMetaDataProvider, 10000)
  * ```
  *
- *
- *
  * @param {string} type - metadata type
  * @param {string} imageId - the imageId
  * @returns metadata based on the imageId and type
@@ -90,17 +89,28 @@ function fakeMetaDataProvider(type, imageId) {
   if (Array.isArray(imageId)) {
     return;
   }
+
   if (typeof imageId !== 'string') {
     throw new Error(
       `Expected imageId to be of type string, but received ${imageId}`
     );
   }
-  const imageURI = imageId.split(':')[1];
-  const [_, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, PT] =
-    imageURI.split('_').map((v) => parseFloat(v));
+
+  const imageInfo = decodeImageIdInfo(imageId);
+  const {
+    rows,
+    columns,
+    barStart,
+    barWidth,
+    xSpacing,
+    ySpacing,
+    rgb,
+    PT = false,
+  } = imageInfo;
 
   const modality = PT ? 'PT' : 'MR';
   const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
+
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
       photometricInterpretation,
@@ -136,9 +146,9 @@ function fakeMetaDataProvider(type, imageId) {
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
       imagePositionPatient: [0, 0, 0],
-      pixelSpacing: [x_spacing, y_spacing],
-      rowPixelSpacing: y_spacing,
-      columnPixelSpacing: x_spacing,
+      pixelSpacing: [xSpacing, ySpacing],
+      rowPixelSpacing: ySpacing,
+      columnPixelSpacing: xSpacing,
     };
 
     return imagePlaneModule;

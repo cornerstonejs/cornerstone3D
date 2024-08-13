@@ -3,7 +3,7 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import { vec2, vec3 } from 'gl-matrix';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
@@ -41,7 +41,6 @@ import type {
   DataSetOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import { getConfiguration } from '../init';
 import IImageCalibration from '../types/IImageCalibration';
 import { InterpolationType } from '../enums';
 
@@ -56,7 +55,7 @@ import { InterpolationType } from '../enums';
  */
 class Viewport implements IViewport {
   /**
-   * CameraViewPresentation is a view preentation selector that has all the
+   * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for
    * choosing presentation information between two viewports showing the same
    * type of orientation of a view, such as the CT, PT and fusion views in the
@@ -287,6 +286,17 @@ class Viewport implements IViewport {
     if (immediate) {
       this.render();
     }
+  }
+
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
   }
 
   /**
@@ -1108,6 +1118,10 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
+  public getImageData(): any {
+    throw new Error('Not implemented');
+  }
+
   /**
    * Gets a referenced image url of some sort - could be a real image id, or
    * could be a URL with parameters. Regardless it refers to the currently displaying
@@ -1678,7 +1692,7 @@ class Viewport implements IViewport {
    * specifying what image s displayed.  All of this information is available
    * externally, but this method combines the parts of this that are appropriate
    * for remember or applying to other views, without necessarily needing to know
-   * what all the atributes are.  That differs from methods like getCamera which
+   * what all the attributes are.  That differs from methods like getCamera which
    * fetch exact view details that are not likely to be identical between viewports
    * as they change sizes or apply to different images.
    *
@@ -1747,12 +1761,6 @@ class Viewport implements IViewport {
     if (rotation >= 0) {
       this.setRotation(rotation);
     }
-  }
-
-  protected _shouldUseNativeDataType() {
-    const { useNorm16Texture, preferSizeOverAccuracy } =
-      getConfiguration().rendering;
-    return useNorm16Texture || preferSizeOverAccuracy;
   }
 
   _getCorners(bounds: Array<number>): Array<number>[] {

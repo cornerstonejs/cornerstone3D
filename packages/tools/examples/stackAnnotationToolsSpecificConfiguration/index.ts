@@ -132,14 +132,17 @@ addDropdownToToolbar({
 //Here are the function with all your custom text to show
 function getTextLinesLength(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { length, unit } = cachedVolumeStats;
+  const { length, lengthUnits } = cachedVolumeStats;
 
   // Can be null on load
   if (length === undefined || length === null || isNaN(length)) {
     return;
   }
 
-  const textLines = [`${Math.round(length)} ${unit}`, `(your custom text)`];
+  const textLines = [
+    `${Math.round(length)} ${lengthUnits}`,
+    `(your custom text)`,
+  ];
 
   return textLines;
 }

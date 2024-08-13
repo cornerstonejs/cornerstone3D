@@ -46,7 +46,6 @@ import {
 import { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { pointInShapeCallback } from '../../utilities';
 import { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
@@ -880,7 +879,7 @@ class CircleROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata, hasPixelSpacing } = image;
+      const { dimensions, imageData, metadata, voxelManager } = image;
 
       const pos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -958,14 +957,14 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          (pointLPS) =>
-            pointInEllipse(ellipseObj, pointLPS, {
-              fast: true,
-            }),
+        const pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
-          boundsIJK
+          {
+            isInObject: (pointLPS) =>
+              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+            boundsIJK,
+            imageData,
+          }
         );
 
         const stats = this.configuration.statsCalculator.getStatistics();

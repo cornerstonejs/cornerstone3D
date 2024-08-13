@@ -17,6 +17,7 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
+import { PixelDataTypedArrayString } from '../../../core/src/types';
 
 let lastImageIdDrawn = '';
 
@@ -125,23 +126,7 @@ function createImage(
     }
   }
 
-  // we need to identify if the target buffer is a SharedArrayBuffer
-  // since inside the webworker we don't have access to the window
-  // to say if it is a SharedArrayBuffer or not with instanceof
-  options.isSharedArrayBuffer =
-    options.targetBuffer?.arrayBuffer &&
-    options.targetBuffer.arrayBuffer instanceof SharedArrayBuffer;
-
   const { decodeConfig } = getOptions();
-
-  // check if the options to use the 16 bit data type is set
-  // on the image load options, and prefer that over the global
-  // options of the dicom loader
-  decodeConfig.use16BitDataType =
-    (options && options.targetBuffer?.type === 'Uint16Array') ||
-    options.targetBuffer?.type === 'Int16Array'
-      ? true
-      : options.useNativeDataType || decodeConfig.use16BitDataType;
 
   // Remove any property of the `imageFrame` that cannot be transferred to the worker,
   // such as promises and functions.
@@ -164,21 +149,13 @@ function createImage(
     decodeConfig
   );
 
-  const { use16BitDataType } = decodeConfig;
   const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | ImageFrame>((resolve, reject) => {
     // eslint-disable-next-line complexity
     decodePromise.then(function (imageFrame: ImageFrame) {
-      // if it is desired to skip creating image, return the imageFrame
-      // after the decode. This might be useful for some applications
-      // that only need the decoded pixel data and not the image object
-      if (options.skipCreateImage) {
-        return resolve(imageFrame);
-      }
       // If we have a target buffer that was written to in the
       // Decode task, point the image to it here.
-      // We can't have done it within the thread incase it was a SharedArrayBuffer.
       let alreadyTyped = false;
       // We can safely render color image in 8 bit, so no need to convert
       if (options.targetBuffer && options.targetBuffer.type && !isColorImage) {
@@ -199,8 +176,8 @@ function createImage(
 
         const typedArrayConstructors = {
           Uint8Array,
-          Uint16Array: use16BitDataType ? Uint16Array : undefined,
-          Int16Array: use16BitDataType ? Int16Array : undefined,
+          Uint16Array,
+          Int16Array,
           Float32Array,
         };
 
@@ -302,6 +279,8 @@ function createImage(
 
       const image: DICOMLoaderIImage = {
         imageId,
+        dataType: imageFrame.pixelData.constructor
+          .name as PixelDataTypedArrayString,
         color: isColorImage,
         calibration: calibrationModule,
         columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
@@ -338,7 +317,7 @@ function createImage(
         rgba: isColorImage && useRGBA,
         getPixelData: () => imageFrame.pixelData,
         getCanvas: undefined,
-        numComps: undefined,
+        numberOfComponents: imageFrame.samplesPerPixel,
       };
 
       if (image.color) {
@@ -418,8 +397,8 @@ function createImage(
 
       // set the ww/wc to cover the dynamic range of the image if no values are supplied
       if (image.windowCenter === undefined || image.windowWidth === undefined) {
-        const minVoi = image.imageFrame.minAfterScale;
-        const maxVoi = image.imageFrame.maxAfterScale;
+        const minVoi = image.imageFrame.smallestPixelValue;
+        const maxVoi = image.imageFrame.largestPixelValue;
 
         image.windowWidth = maxVoi - minVoi;
         image.windowCenter = (maxVoi + minVoi) / 2;

@@ -33,8 +33,7 @@ async function createVolumeActor(
   props: createVolumeActorInterface,
   element: HTMLDivElement,
   viewportId: string,
-  suppressEvents = false,
-  useNativeDataType = false
+  suppressEvents = false
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -57,16 +56,14 @@ async function createVolumeActor(
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  const numberOfComponents = imageData
-    .getPointData()
-    .getScalars()
-    .getNumberOfComponents();
+  // Todo: fix this for 3D RGB
+  const { numberOfComponents } = imageData.get('numberOfComponents') as any;
 
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);
   }
 
-  await setDefaultVolumeVOI(volumeActor, imageVolume, useNativeDataType);
+  await setDefaultVolumeVOI(volumeActor, imageVolume);
 
   if (callback) {
     callback({ volumeActor, volumeId });

@@ -289,7 +289,7 @@ async function run() {
     volume.load();
 
     // Set volumes on the viewports
-    await setVolumesForViewports(
+    setVolumesForViewports(
         renderingEngine,
         [{ volumeId }],
         [viewportId1, viewportId2, viewportId3]

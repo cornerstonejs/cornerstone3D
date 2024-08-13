@@ -154,14 +154,16 @@ async function run() {
   volume.load();
   viewport = renderingEngine.getViewport(viewportId);
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
-    () => {
-      viewport.setProperties({
-        preset: 'CT-Bone',
-      });
-      viewport.render();
-    }
-  );
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId]
+  ).then(() => {
+    viewport.setProperties({
+      preset: 'CT-Bone',
+    });
+    viewport.render();
+  });
 }
 
 run();

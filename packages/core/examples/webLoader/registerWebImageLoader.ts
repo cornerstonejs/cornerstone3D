@@ -100,6 +100,7 @@ function createImage(image, imageId) {
     rowPixelSpacing: 1, // for web it's always 1
     invert: false,
     sizeInBytes: rows * columns * 3,
+    numberOfComponents: 3,
   };
 }
 

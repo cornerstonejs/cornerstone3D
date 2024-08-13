@@ -864,14 +864,14 @@ class HeightTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { height, unit } = cachedVolumeStats;
+  const { height, lengthUnits } = cachedVolumeStats;
 
   // Can be null on load
   if (height === undefined || height === null || isNaN(height)) {
     return;
   }
 
-  const textLines = [`${roundNumber(height)} ${unit}`];
+  const textLines = [`${roundNumber(height)} ${lengthUnits}`];
 
   return textLines;
 }

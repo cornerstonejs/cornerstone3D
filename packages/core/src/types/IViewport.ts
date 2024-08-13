@@ -7,6 +7,7 @@ import ViewportType from '../enums/ViewportType';
 import ViewportStatus from '../enums/ViewportStatus';
 import DisplayArea from './displayArea';
 import BoundsLPS from './BoundsLPS';
+import type { mat4 } from 'gl-matrix';
 
 /**
  * Specifies what view to get a reference for.
@@ -242,6 +243,8 @@ interface IViewport {
   /** unique identifier of the viewport */
   id: string;
 
+  getImageData: () => any;
+
   getWidget: (id: string) => any;
 
   addWidget: (id: string, widget: any) => void;
@@ -360,6 +363,30 @@ interface IViewport {
   getCurrentImageIdIndex(): number;
   /** gets the positional slice location in the view, similar to scrollbar, the top image is 0, the bottom is getNumberOfSlices - 1 */
   getSliceIndex(): number;
+
+  /**
+   * Returns detailed information about the current slice view in the volume viewport.
+   * This method provides comprehensive data about the slice's position, orientation,
+   * and dimensions within the volume.
+   *
+   * @returns An object containing the following properties:
+   * @property sliceIndex - The current slice index in the view direction.
+   * @property slicePlane - The axis along which the slicing is performed (0 for X, 1 for Y, 2 for Z).
+   * @property width - The width of the slice in voxels.
+   * @property height - The height of the slice in voxels.
+   * @property sliceToIndexMatrix - A 4x4 matrix for transforming from slice coordinates to volume index coordinates.
+   * @property indexToSliceMatrix - A 4x4 matrix for transforming from volume index coordinates to slice coordinates.
+   *
+   * @throws {Error} If the view is oblique or if the slice axis cannot be determined.
+   */
+  getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  };
   /**
    * Gets a referenced image url of some sort - could be a real image id, or
    * could be a URL with parameters. Regardless it refers to the currently displaying

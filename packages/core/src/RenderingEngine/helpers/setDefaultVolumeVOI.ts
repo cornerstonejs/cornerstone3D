@@ -21,24 +21,18 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * Finally it sets the VOI on the volumeActor transferFunction
  * @param volumeActor - The volume actor
  * @param imageVolume - The image volume that we want to set the VOI for.
- * @param useNativeDataType -  The image data type is native or Float32Array
  */
 async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
-  imageVolume: IImageVolume,
-  useNativeDataType: boolean
+  imageVolume: IImageVolume
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
   if (!voi && imageVolume?.imageIds?.length) {
-    voi = await getVOIFromMinMax(imageVolume, useNativeDataType);
+    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
     voi = handlePreScaledVolume(imageVolume, voi);
   }
-  // if (!voi || voi.lower === undefined || voi.upper === undefined) {
-  //   throw new Error(
-  //     'Could not get VOI from metadata, nor from the min max of the image middle slice'
-  //   );
-  // }
+
   if (
     (voi?.lower === 0 && voi?.upper === 0) ||
     voi?.lower === undefined ||
@@ -120,15 +114,12 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
  * and max pixel values, it calculates the VOI.
  *
  * @param imageVolume - The image volume that we want to get the VOI from.
- * @param useNativeDataType -  The image data type is native or Float32Array
  * @returns The VOIRange with lower and upper values
  */
-async function getVOIFromMinMax(
-  imageVolume: IImageVolume,
-  useNativeDataType: boolean
+async function getVOIFromMiddleSliceMinMax(
+  imageVolume: IImageVolume
 ): Promise<VOIRange> {
   const { imageIds } = imageVolume;
-  const scalarData = imageVolume.getScalarData();
 
   // Get the middle image from the list of imageIds
   const imageIdIndex = Math.floor(imageIds.length / 2);
@@ -137,11 +128,6 @@ async function getVOIFromMinMax(
     metaData.get('generalSeriesModule', imageId) || {};
   const { modality } = generalSeriesModule;
   const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
-
-  const numImages = imageIds.length;
-  const bytesPerImage = scalarData.byteLength / numImages;
-  const voxelsPerImage = scalarData.length / numImages;
-  const bytePerPixel = scalarData.BYTES_PER_ELEMENT;
 
   const scalingParameters: ScalingParameters = {
     rescaleSlope: modalityLutModule.rescaleSlope,
@@ -161,17 +147,10 @@ async function getVOIFromMinMax(
     }
   }
 
-  const byteOffset = imageIdIndex * bytesPerImage;
-
   const options = {
-    targetBuffer: {
-      type: useNativeDataType ? undefined : 'Float32Array',
-    },
     priority: PRIORITY,
     requestType: REQUEST_TYPE,
-    useNativeDataType,
     preScale: {
-      enabled: true,
       scalingParameters: scalingParametersToUse,
     },
   };
@@ -192,48 +171,18 @@ async function getVOIFromMinMax(
   if (!imageVolume.referencedImageIds?.length) {
     // we should ignore the cache here,
     // since we want to load the image from with the most
-    // recent prescale settings
+    // recent preScale settings
     image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
 
-  const imageScalarData = image
-    ? image.getPixelData()
-    : _getImageScalarDataFromImageVolume(
-        imageVolume,
-        byteOffset,
-        bytePerPixel,
-        voxelsPerImage
-      );
+  const imageScalarData = image?.getPixelData();
 
   // Get the min and max pixel values of the middle slice
   const { min, max } = getMinMax(imageScalarData);
-
   return {
     lower: min,
     upper: max,
   };
-}
-
-function _getImageScalarDataFromImageVolume(
-  imageVolume,
-  byteOffset,
-  bytePerPixel,
-  voxelsPerImage
-) {
-  const { scalarData } = imageVolume;
-  const { buffer } = scalarData;
-  if (scalarData.BYTES_PER_ELEMENT !== bytePerPixel) {
-    byteOffset *= scalarData.BYTES_PER_ELEMENT / bytePerPixel;
-  }
-
-  const TypedArray = scalarData.constructor;
-  const imageScalarData = new TypedArray(voxelsPerImage);
-
-  const volumeBufferView = new TypedArray(buffer, byteOffset, voxelsPerImage);
-
-  imageScalarData.set(volumeBufferView);
-
-  return imageScalarData;
 }
 
 function _isCurrentImagePTPrescaled(modality, imageVolume) {

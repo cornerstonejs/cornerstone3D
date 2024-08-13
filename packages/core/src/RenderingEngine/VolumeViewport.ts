@@ -2,7 +2,7 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache';
-import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import { BlendModes, OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
@@ -29,7 +29,9 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import { vec3 } from 'gl-matrix';
+import { glMatrix, mat4, vec3 } from 'gl-matrix';
+import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
+import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -429,6 +431,156 @@ class VolumeViewport extends BaseVolumeViewport {
   };
 
   /**
+   * Returns detailed information about the current slice view in the volume viewport.
+   * This method provides comprehensive data about the slice's position, orientation,
+   * and dimensions within the volume.
+   *
+   * @returns An object containing the following properties:
+   * @property sliceIndex - The current slice index in the view direction.
+   * @property slicePlane - The axis along which the slicing is performed (0 for X, 1 for Y, 2 for Z).
+   * @property width - The width of the slice in voxels.
+   * @property height - The height of the slice in voxels.
+   * @property sliceToIndexMatrix - A 4x4 matrix for transforming from slice coordinates to volume index coordinates.
+   * @property indexToSliceMatrix - A 4x4 matrix for transforming from volume index coordinates to slice coordinates.
+   *
+   * @throws {Error} If the view is oblique or if the slice axis cannot be determined.
+   */
+  public getSliceViewInfo(): {
+    sliceIndex: number;
+    slicePlane: number;
+    width: number;
+    height: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    const { width: canvasWidth, height: canvasHeight } = this.getCanvas();
+
+    // Get three points from the canvas to help us identify the orientation of
+    // the slice. Using canvas width/height to get point far away for each other
+    // because points such as (0,0), (1,0) and (0,1) may be converted to the same
+    // ijk index when the image is zoomed in.
+    const ijkOriginPoint = transformCanvasToIJK(this, [0, 0]);
+    const ijkRowPoint = transformCanvasToIJK(this, [canvasWidth - 1, 0]);
+    const ijkColPoint = transformCanvasToIJK(this, [0, canvasHeight - 1]);
+
+    // Subtract the points to get the row and column vectors in index space
+    const ijkRowVec = vec3.sub(vec3.create(), ijkRowPoint, ijkOriginPoint);
+    const ijkColVec = vec3.sub(vec3.create(), ijkColPoint, ijkOriginPoint);
+    const ijkSliceVec = vec3.cross(vec3.create(), ijkRowVec, ijkColVec);
+
+    vec3.normalize(ijkRowVec, ijkRowVec);
+    vec3.normalize(ijkColVec, ijkColVec);
+    vec3.normalize(ijkSliceVec, ijkSliceVec);
+
+    const { dimensions } = this.getImageData();
+    const [sx, sy, sz] = dimensions;
+
+    // All eight volume corners in index space
+    // prettier-ignore
+    const ijkCorners: Point3[] = [
+      [     0,        0,        0], // top-left-front
+      [sx - 1,        0,        0], // top-right-front
+      [     0,   sy - 1,        0], // bottom-left-front
+      [sx - 1,   sy - 1,        0], // bottom-right-front
+      [     0,        0,   sz - 1], // top-left-back
+      [sx - 1,        0,   sz - 1], // top-right-back
+      [     0,   sy - 1,   sz - 1], // bottom-left-back
+      [sx - 1,   sy - 1,   sz - 1], // bottom-right-back
+    ];
+
+    // Project the volume corners onto the canvas
+    const canvasCorners = ijkCorners.map((ijkCorner) =>
+      transformIJKToCanvas(this, ijkCorner)
+    );
+
+    // Calculate the AABB from the corners project onto the canvas
+    const canvasAABB = canvasCorners.reduce(
+      (aabb, canvasPoint) => {
+        aabb.minX = Math.min(aabb.minX, canvasPoint[0]);
+        aabb.minY = Math.min(aabb.minY, canvasPoint[1]);
+        aabb.maxX = Math.max(aabb.maxX, canvasPoint[0]);
+        aabb.maxY = Math.max(aabb.maxY, canvasPoint[1]);
+
+        return aabb;
+      },
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+    );
+
+    // Get the top-left, bottom-right and the diagonal vector of
+    // the slice in index space
+    const ijkTopLeft = transformCanvasToIJK(this, [
+      canvasAABB.minX,
+      canvasAABB.minY,
+    ]);
+
+    // prettier-ignore
+    const sliceToIndexMatrix = mat4.fromValues(
+      ijkRowVec[0],   ijkRowVec[1],   ijkRowVec[2],  0,
+      ijkColVec[0],   ijkColVec[1],   ijkColVec[2],  0,
+     ijkSliceVec[0], ijkSliceVec[1], ijkSliceVec[2],  0,
+     ijkTopLeft[0],  ijkTopLeft[1],  ijkTopLeft[2],  1
+    );
+
+    const ijkBottomRight = transformCanvasToIJK(this, [
+      canvasAABB.maxX,
+      canvasAABB.maxY,
+    ]);
+    const ijkDiagonal = vec3.sub(vec3.create(), ijkBottomRight, ijkTopLeft);
+
+    const indexToSliceMatrix = mat4.invert(mat4.create(), sliceToIndexMatrix);
+
+    const { viewPlaneNormal } = this.getCamera();
+
+    // Check if the view is oblique
+    const isOblique =
+      viewPlaneNormal.filter((component) => Math.abs(component) > EPSILON)
+        .length > 1;
+
+    if (isOblique) {
+      throw new Error('getSliceInfo is not supported for oblique views');
+    }
+
+    // Find the primary axis
+    const sliceAxis = viewPlaneNormal.findIndex(
+      (component) => Math.abs(component) > 1 - EPSILON
+    );
+
+    if (sliceAxis === -1) {
+      throw new Error('Unable to determine slice axis');
+    }
+
+    // Dot the diagonal with row/column to find the image width/height
+    const sliceWidth = vec3.dot(ijkRowVec, ijkDiagonal) + 1;
+    const sliceHeight = vec3.dot(ijkColVec, ijkDiagonal) + 1;
+
+    return {
+      sliceIndex: this.getSliceIndex(),
+      width: sliceWidth,
+      height: sliceHeight,
+      slicePlane: sliceAxis,
+      sliceToIndexMatrix,
+      indexToSliceMatrix,
+    };
+  }
+
+  /**
+   * Retrieves the pixel data for the current slice being displayed in the viewport.
+   *
+   * Note: this method cannot return the oblique planes pixel data as they
+   * are interpolated in the gpu side
+   *
+   * @returns The pixel data for the current slice, which can be in any of the axial, sagittal
+   * or coronal directions
+   *
+   */
+  public getCurrentSlicePixelData() {
+    const { voxelManager } = this.getImageData();
+
+    const sliceData = voxelManager.getSliceData(this.getSliceViewInfo());
+    return sliceData;
+  }
+
+  /**
    * Uses viewport camera and volume actor to decide if the viewport
    * is looking at the volume in the direction of acquisition (imageIds).
    * If so, it uses the origin and focalPoint to find which imageId is
@@ -511,7 +663,7 @@ class VolumeViewport extends BaseVolumeViewport {
         `imageVolume with id: ${volumeActor.uid} does not exist in cache`
       );
     }
-    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
     if (isImageActor(volumeActor)) {
       const transferFunction = (volumeActor.actor as ImageActor)

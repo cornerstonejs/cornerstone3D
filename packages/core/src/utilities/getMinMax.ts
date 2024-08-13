@@ -1,10 +1,12 @@
+import { PixelDataTypedArray } from '../types';
+
 /**
  * Calculate the minimum and maximum values in an Array
  *
  * @param storedPixelData - The pixel data to calculate the min and max values for
  * @returns an object with two properties: min and max
  */
-export default function getMinMax(storedPixelData: number[]): {
+export default function getMinMax(storedPixelData: PixelDataTypedArray): {
   min: number;
   max: number;
 } {

@@ -47,8 +47,8 @@ const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Segmentation in StackViewport',
-  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image. We show that even with different stack ordering, we are capable of mathcing the correct labelmap and render them on the second viewport'
+  'Segmentation in Orthographic and Stack Viewports',
+  'This example demonstrates how to render a segmentation in both Orthographic and Stack Viewports using a volume. It showcases the synchronization of the segmentation between the two viewports, even when displaying different slices or orientations.'
 );
 
 const size = '500px';
@@ -170,21 +170,23 @@ async function run() {
         orientation: 'sagittal',
       },
     },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.STACK,
-      element: element2,
-    },
+    // {
+    //   viewportId: viewportId2,
+    //   type: ViewportType.STACK,
+    //   element: element2,
+    // },
   ];
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1);
-  toolGroup.addViewport(viewportId2);
+  // toolGroup.addViewport(viewportId2);
 
   viewport1 = renderingEngine.getViewport(viewportId1);
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
-  const imageIdsArray = [imageIds[50], imageIds[100]];
+  const imageId = imageIds[80];
+  console.debug(imageId);
+  const imageIdsArray = [imageId];
 
   const volumeId = 'VOLUME_ID';
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
@@ -193,9 +195,10 @@ async function run() {
 
   volume.load();
 
-  await viewport2.setStack(imageIdsArray, 0);
+  // await viewport2.setStack(imageIdsArray, 0);
 
   viewport1.setVolumes([{ volumeId }]);
+
   renderingEngine.render();
 
   const segmentationVolumeId = 'SEGMENTATION_VOLUME_ID';
@@ -228,12 +231,17 @@ async function run() {
   ]);
 
   // adding the same segmentation to the stack viewport
-  await segmentation.addSegmentationRepresentations(viewportId2, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // await segmentation.addSegmentationRepresentations(viewportId2, [
+  //   {
+  //     segmentationId,
+  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //   },
+  // ]);
+
+  // setTimeout(() => {
+  //   viewport1.setProperties({ interpolationType: 0 });
+  //   renderingEngine.render();
+  // }, 1000);
 }
 
 run();

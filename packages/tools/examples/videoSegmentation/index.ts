@@ -224,11 +224,12 @@ async function run() {
   addVideoTime(viewportGrid, viewport);
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(allImageIds, {
-      skipCreateBuffer: true,
-      onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
-    });
+  const segImages = await imageLoader.createAndCacheDerivedImages(allImageIds, {
+    skipCreateBuffer: true,
+    onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
+  });
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,

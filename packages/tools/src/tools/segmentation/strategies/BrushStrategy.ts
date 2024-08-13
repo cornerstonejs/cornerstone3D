@@ -218,7 +218,9 @@ export default class BrushStrategy {
     } = data;
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
-      VoxelManager.createHistoryVoxelManager(segmentationVoxelManager);
+      VoxelManager.createHistoryVoxelManager({
+        sourceVoxelManager: segmentationVoxelManager,
+      });
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
@@ -232,7 +234,6 @@ export default class BrushStrategy {
       segmentationImageData,
       previewVoxelManager,
       viewport,
-
       centerWorld: null,
       brushStrategy: this,
     };

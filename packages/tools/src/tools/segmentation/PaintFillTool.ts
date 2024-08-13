@@ -82,8 +82,7 @@ class PaintFillTool extends BaseTool {
       );
     }
 
-    const { segmentationId, type, segmentationRepresentationUID } =
-      activeSegmentationRepresentation;
+    const { segmentationId, type } = activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked: number[] =
@@ -97,6 +96,7 @@ class PaintFillTool extends BaseTool {
     let direction: Types.Mat3;
     let scalarData: Types.PixelDataTypedArray;
     let index: Types.Point3;
+    let voxelManager;
 
     if (isVolumeSegmentation(labelmapData, viewport)) {
       const { volumeId } = representationData[
@@ -105,8 +105,8 @@ class PaintFillTool extends BaseTool {
 
       const segmentation = cache.getVolume(volumeId);
       ({ dimensions, direction } = segmentation);
-      scalarData = segmentation.getScalarData();
 
+      voxelManager = segmentation.voxelManager;
       index = transformWorldToIndex(segmentation.imageData, worldPos);
     } else {
       const currentSegmentationImageId = getCurrentLabelmapImageIdForViewport(
@@ -120,14 +120,16 @@ class PaintFillTool extends BaseTool {
         );
       }
 
-      const segmentationImage = cache.getImage(currentSegmentationImageId);
-      scalarData = segmentationImage.getPixelData();
       const { imageData } = viewport.getImageData();
       dimensions = imageData.getDimensions();
       direction = imageData.getDirection();
+
+      const image = cache.getImage(currentSegmentationImageId);
+
+      voxelManager = image.voxelManager;
+
       index = transformWorldToIndex(imageData, worldPos);
     }
-
     const fixedDimension = this.getFixedDimension(
       viewPlaneNormal,
       direction as number[]
@@ -144,7 +146,7 @@ class PaintFillTool extends BaseTool {
       getScalarDataPositionFromPlane,
       inPlaneSeedPoint,
       fixedDimensionValue,
-    } = this.generateHelpers(scalarData, dimensions, index, fixedDimension);
+    } = this.generateHelpers(voxelManager, dimensions, index, fixedDimension);
 
     // Check if within volume
     if (
@@ -171,12 +173,12 @@ class PaintFillTool extends BaseTool {
     const { flooded } = floodFillResult;
 
     flooded.forEach((index) => {
-      const scalarDataPosition = getScalarDataPositionFromPlane(
+      const scalarDataIndex = getScalarDataPositionFromPlane(
         index[0],
         index[1]
       );
 
-      scalarData[scalarDataPosition] = segmentIndex;
+      voxelManager.setAtIndex(scalarDataIndex, segmentIndex);
     });
 
     const framesModified = this.getFramesModified(
@@ -228,7 +230,7 @@ class PaintFillTool extends BaseTool {
   };
 
   private generateHelpers = (
-    scalarData: Types.PixelDataTypedArray,
+    voxelManager,
     dimensions: Types.Point3,
     seedIndex3D: Types.Point3,
     fixedDimension = 2
@@ -254,11 +256,11 @@ class PaintFillTool extends BaseTool {
     }
 
     const getScalarDataPosition = (x: number, y: number, z: number): number => {
-      return z * dimensions[1] * dimensions[0] + y * dimensions[0] + x;
+      return voxelManager.toIndex([x, y, z]);
     };
 
     const getLabelValue = (x: number, y: number, z: number): number => {
-      return scalarData[getScalarDataPosition(x, y, z)];
+      return voxelManager.getAtIJK(x, y, z);
     };
 
     const floodFillGetter = this.generateFloodFillGetter(

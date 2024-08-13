@@ -42,8 +42,31 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId1 = 'VIEWPORT1';
 const viewportId2 = 'VIEWPORT2';
 
-const ctVolumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
-const ptVolumeId = `fakeVolumeLoader:volumeURI_100_100_15_1_1_1_0`;
+const ctVolumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+  zSpacing: 1,
+  rgb: 0,
+  pt: 0,
+});
+
+const ptVolumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 15,
+  xSpacing: 1,
+  ySpacing: 1,
+  zSpacing: 1,
+  rgb: 0,
+  pt: 0,
+});
 
 let synchronizerId;
 

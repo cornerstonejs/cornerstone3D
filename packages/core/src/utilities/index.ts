@@ -13,10 +13,6 @@ import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMeta
 import clamp from './clamp';
 import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
-import createUint8SharedArray from './createUint8SharedArray';
-import createFloat32SharedArray from './createFloat32SharedArray';
-import createUint16SharedArray from './createUInt16SharedArray';
-import createInt16SharedArray from './createInt16SharedArray';
 import getViewportModality from './getViewportModality';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
@@ -49,7 +45,6 @@ import applyPreset from './applyPreset';
 import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
-import getScalarDataType from './getScalarDataType';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import getImageLegacy from './getImageLegacy';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
@@ -73,13 +68,11 @@ import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
-
 // name spaces
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
-import * as cacheUtils from './cacheUtils';
 import * as color from './color';
 
 export {
@@ -101,10 +94,6 @@ export {
   isEqualAbs,
   isEqualNegative,
   isOpposite,
-  createFloat32SharedArray,
-  createUint8SharedArray,
-  createUint16SharedArray,
-  createInt16SharedArray,
   getViewportModality,
   windowLevel,
   convertToGrayscale,
@@ -141,7 +130,6 @@ export {
   deepMerge,
   PointsManager,
   getScalingParameters,
-  getScalarDataType,
   colormap,
   getImageLegacy,
   ProgressiveIterator,
@@ -160,7 +148,6 @@ export {
   RLEVoxelMap,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
-  cacheUtils,
   roundNumber,
   roundToPrecision,
   getViewportImageIds,

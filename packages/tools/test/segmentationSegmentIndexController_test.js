@@ -121,7 +121,18 @@ describe('Segmentation Index Controller --', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
       const drawRectangle = (index1, index2) => {
@@ -261,7 +272,18 @@ describe('Segmentation Index Controller --', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
       const drawRectangle = (index1, index2) => {
@@ -429,7 +451,18 @@ describe('Segmentation Index Controller --', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
       const drawRectangle = (index1, index2) => {

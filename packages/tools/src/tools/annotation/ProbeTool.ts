@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 
 import {
   getEnabledElement,
@@ -149,7 +149,7 @@ class ProbeTool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
     const camera = viewport.getCamera();
@@ -158,8 +158,7 @@ class ProbeTool extends AnnotationTool {
     const referencedImageId = this.getReferencedImageId(
       viewport,
       worldPos,
-      viewPlaneNormal,
-      viewUp
+      viewPlaneNormal
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -550,37 +549,17 @@ class ProbeTool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata } = image;
-      const scalarData =
-        'getScalarData' in image ? image.getScalarData() : image.scalarData;
+      const { dimensions, imageData, metadata, voxelManager } = image;
 
       const modality = metadata.Modality;
-      const index = transformWorldToIndex(imageData, worldPos);
+      let ijk = transformWorldToIndex(imageData, worldPos);
 
-      index[0] = Math.round(index[0]);
-      index[1] = Math.round(index[1]);
-      index[2] = Math.round(index[2]);
+      ijk = vec3.round(ijk, ijk);
 
-      const samplesPerPixel =
-        scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
-
-      if (csUtils.indexWithinDimensions(index, dimensions)) {
+      if (csUtils.indexWithinDimensions(ijk, dimensions)) {
         this.isHandleOutsideImage = false;
-        const yMultiple = dimensions[0] * samplesPerPixel;
-        const zMultiple = dimensions[0] * dimensions[1] * samplesPerPixel;
 
-        const baseIndex =
-          index[2] * zMultiple +
-          index[1] * yMultiple +
-          index[0] * samplesPerPixel;
-        let value =
-          samplesPerPixel > 2
-            ? [
-                scalarData[baseIndex],
-                scalarData[baseIndex + 1],
-                scalarData[baseIndex + 2],
-              ]
-            : scalarData[baseIndex];
+        let value = voxelManager.getAtIJKPoint(ijk);
 
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index
@@ -594,21 +573,23 @@ class ProbeTool extends AnnotationTool {
 
           const viewport = viewports[0];
 
-          index[2] = viewport.getCurrentImageIdIndex();
+          ijk[2] = viewport.getCurrentImageIdIndex();
         }
 
         let pixelValueUnits;
 
         if (modality === 'US') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
-            index,
+            ijk,
           ]);
 
           const hasEnhancedRegionValues = calibratedResults.values.every(
             (value) => value !== null
           );
 
-          value = hasEnhancedRegionValues ? calibratedResults.values : value;
+          value = (
+            hasEnhancedRegionValues ? calibratedResults.values : value
+          ) as number;
           pixelValueUnits = hasEnhancedRegionValues
             ? calibratedResults.units
             : 'raw';
@@ -621,7 +602,7 @@ class ProbeTool extends AnnotationTool {
         }
 
         cachedStats[targetId] = {
-          index,
+          index: ijk,
           value,
           Modality: modality,
           pixelValueUnits,
@@ -629,7 +610,7 @@ class ProbeTool extends AnnotationTool {
       } else {
         this.isHandleOutsideImage = true;
         cachedStats[targetId] = {
-          index,
+          index: ijk,
           Modality: modality,
         };
       }

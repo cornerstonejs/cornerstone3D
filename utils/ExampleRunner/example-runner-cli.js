@@ -264,8 +264,8 @@ function run() {
 
   // for some reason the esm build of the dicom image loader
   // requires the core to be built first and cannot link it
-  // shell.cd('../../core');
-  // shell.exec(`yarn run build:esm`);
+  shell.cd('../../core');
+  shell.exec(`yarn run build:esm`);
 
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
@@ -290,7 +290,9 @@ function run() {
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
-      `webpack serve --host 0.0.0.0 ${options.https ? '--https' : ''} --progress --config ${webpackConfigPath}`
+      `webpack serve --host 0.0.0.0 ${
+        options.https ? '--https' : ''
+      } --progress --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');

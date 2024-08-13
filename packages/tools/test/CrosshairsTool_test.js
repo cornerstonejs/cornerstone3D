@@ -46,7 +46,16 @@ const viewportId4 = 'VIEWPORT4';
 const viewportId5 = 'VIEWPORT5';
 const viewportId6 = 'VIEWPORT6';
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+const volumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+  rgb: 1,
+});
 
 function createViewports(renderingEngine, viewportType, width, height) {
   const element1 = document.createElement('div');

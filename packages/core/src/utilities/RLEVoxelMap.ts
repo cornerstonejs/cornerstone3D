@@ -44,7 +44,7 @@ export default class RLEVoxelMap<T> {
    */
   protected kMultiple = 1;
   /** Number of components in the value */
-  protected numComps = 1;
+  protected numberOfComponents = 1;
 
   /**
    * The default value returned for get.
@@ -263,19 +263,19 @@ export default class RLEVoxelMap<T> {
   ): PixelDataTypedArray {
     if (!pixelData) {
       pixelData = new this.pixelDataConstructor(
-        this.width * this.height * this.numComps
+        this.width * this.height * this.numberOfComponents
       );
     } else {
       pixelData.fill(0);
     }
-    const { width, height, numComps } = this;
+    const { width, height, numberOfComponents } = this;
 
     for (let j = 0; j < height; j++) {
       const row = this.getRun(j, k);
       if (!row) {
         continue;
       }
-      if (numComps === 1) {
+      if (numberOfComponents === 1) {
         for (const rle of row) {
           const rowOffset = j * width;
           const { start, end, value } = rle;
@@ -285,10 +285,10 @@ export default class RLEVoxelMap<T> {
         }
       } else {
         for (const rle of row) {
-          const rowOffset = j * width * numComps;
+          const rowOffset = j * width * numberOfComponents;
           const { start, end, value } = rle;
-          for (let i = start; i < end; i += numComps) {
-            for (let comp = 0; comp < numComps; comp++) {
+          for (let i = start; i < end; i += numberOfComponents) {
+            for (let comp = 0; comp < numberOfComponents; comp++) {
               pixelData[rowOffset + i + comp] = value[comp];
             }
           }
