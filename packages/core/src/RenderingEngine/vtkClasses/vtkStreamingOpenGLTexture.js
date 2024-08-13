@@ -85,9 +85,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     // Todo: the progressive iterator is messing around with the last
     // texture update, for now i have it like this to make it work
-    setTimeout(() => {
-      publicAPI.update3DFromRaw();
-    }, 40);
+    // setTimeout(() => {
+    //   publicAPI.update3DFromRaw();
+    // }, 40);
   };
 
   function updateTextureImagesUsingVoxelManager() {
@@ -101,8 +101,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         const image = cache.getImage(imageIds[i]);
 
         if (!image) {
-          debugger;
-          console.warn('image not found', i);
           continue;
         }
 

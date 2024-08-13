@@ -759,14 +759,25 @@ export default class VoxelManager<T> {
       // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
 
-      for (let i = 0; i < dataLength; i += numberOfComponents) {
-        const value = voxelManager._get(i / numberOfComponents);
-        if (numberOfComponents === 1) {
-          scalarData[i] = value as number;
-        } else {
-          const rgbValue = value as RGB;
-          for (let j = 0; j < numberOfComponents; j++) {
-            scalarData[i + j] = rgbValue[j];
+      const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
+
+      for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
+        const { pixelData } = getPixelInfo(
+          (sliceIndex * sliceSize) / numberOfComponents
+        );
+
+        if (pixelData) {
+          const sliceStart = sliceIndex * sliceSize;
+
+          if (numberOfComponents === 1) {
+            scalarData.set(pixelData, sliceStart);
+          } else {
+            // For RGB(A) data, we need to ensure correct component ordering
+            for (let i = 0; i < pixelData.length; i += numberOfComponents) {
+              for (let j = 0; j < numberOfComponents; j++) {
+                scalarData[sliceStart + i + j] = pixelData[i + j];
+              }
+            }
           }
         }
       }
@@ -775,18 +786,35 @@ export default class VoxelManager<T> {
     };
 
     voxelManager.setCompleteScalarDataArray = (scalarData) => {
-      for (let i = 0; i < scalarData.length; i += numberOfComponents) {
-        if (numberOfComponents === 1) {
-          voxelManager._set(i, scalarData[i]);
-        } else {
-          const rgbValue: RGB = [
-            scalarData[i],
-            scalarData[i + 1],
-            scalarData[i + 2],
-          ];
-          voxelManager._set(i / numberOfComponents, rgbValue);
+      const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
+      const SliceDataConstructor = voxelManager._getConstructor();
+
+      for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
+        const { pixelData } = getPixelInfo(
+          (sliceIndex * sliceSize) / numberOfComponents
+        );
+
+        if (pixelData && SliceDataConstructor) {
+          const sliceStart = sliceIndex * sliceSize;
+          const sliceEnd = sliceStart + sliceSize;
+          const sliceData = new SliceDataConstructor(sliceSize);
+
+          sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
+          pixelData.set(sliceData);
         }
       }
+
+      // Mark all slices as modified
+      for (let k = 0; k < dimensions[2]; k++) {
+        voxelManager.modifiedSlices.add(k);
+      }
+
+      // Update bounds
+      voxelManager.boundsIJK = [
+        [0, dimensions[0] - 1],
+        [0, dimensions[1] - 1],
+        [0, dimensions[2] - 1],
+      ];
     };
 
     return voxelManager;
@@ -847,26 +875,49 @@ export default class VoxelManager<T> {
     imageIdGroups,
     dimensions,
     timePoint = 0,
+    numberOfComponents = 1,
   }: {
     imageIdGroups: string[][];
     dimensions: Point3;
     timePoint: number;
-  }): VoxelManager<number> {
+    numberOfComponents?: number;
+  }): VoxelManager<number | RGB> {
+    if (!numberOfComponents) {
+      const firstImage = cache.getImage(imageIdGroups[0][0]);
+      if (!firstImage) {
+        throw new Error(
+          'Unable to determine number of components: No image found'
+        );
+      }
+      numberOfComponents =
+        firstImage.getPixelData().length / (dimensions[0] * dimensions[1]);
+      if (
+        numberOfComponents > 4 ||
+        numberOfComponents < 1 ||
+        numberOfComponents === 2
+      ) {
+        throw new Error(
+          `Number of components ${numberOfComponents} must be 1, 3 or 4`
+        );
+      }
+    }
+
     const voxelGroups = imageIdGroups.map((imageIds) => {
-      const voxels = VoxelManager.createImageVolumeVoxelManager({
+      return VoxelManager.createImageVolumeVoxelManager({
         dimensions,
         imageIds,
+        numberOfComponents,
       });
-
-      return voxels;
     });
 
     // Create a VoxelManager that will manage the active voxel group
-    const voxelManager = new VoxelManager<number>(
+    const voxelManager = new VoxelManager<number | RGB>(
       dimensions,
       (index) => voxelGroups[timePoint]._get(index),
       (index, v) => voxelGroups[timePoint]._set(index, v)
     );
+
+    voxelManager.numberOfComponents = numberOfComponents;
 
     voxelManager.getScalarDataLength = () => {
       return voxelGroups[timePoint].getScalarDataLength();
@@ -884,15 +935,22 @@ export default class VoxelManager<T> {
       return voxelGroups[timePoint].getMiddleSliceData();
     };
 
-    // @ts-ignore
-    voxelManager.setTimePoint = (timePoint) => {
+    voxelManager.setTimePoint = (newTimePoint: number) => {
+      timePoint = newTimePoint;
       voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
       voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
     };
 
-    // @ts-ignore
-    voxelManager.getAtIndexAndTimePoint = (index, timePoint) => {
-      return voxelGroups[timePoint]._get(index);
+    voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
+      return voxelGroups[tp]._get(index);
+    };
+
+    voxelManager.getTimePointScalarData = (tp: number) => {
+      return voxelGroups[tp].getCompleteScalarDataArray();
+    };
+
+    voxelManager.getCurrentTimePointScalarData = () => {
+      return voxelGroups[timePoint].getCompleteScalarDataArray();
     };
 
     return voxelManager;

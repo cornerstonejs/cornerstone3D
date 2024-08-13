@@ -287,17 +287,6 @@ export class ImageVolume implements IImageVolume {
     this.imageData.modified();
     this.vtkOpenGLTexture.modified();
 
-    if (this.isDynamicVolume()) {
-      throw new Error('Not implemented');
-    } else {
-      // if (this.scalarDataProp) {
-      //   this.scalarDataProp = this.imageData
-      //     .getPointData()
-      //     .getScalars()
-      //     .getData() as PixelDataTypedArray;
-      // }
-    }
-
     this.numFrames = this._getNumFrames();
   }
 

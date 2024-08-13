@@ -46,6 +46,8 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
     direction,
     sizeInBytes,
     origin,
+    numberOfComponents,
+    dataType,
   } = volumeProps;
 
   const scanAxisNormal = direction.slice(6, 9) as vec3;
@@ -66,6 +68,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       dimensions,
       imageIdGroups: sortedImageIdGroups,
       timePoint: 0,
+      numberOfComponents,
     });
 
   let streamingImageVolume = new StreamingDynamicImageVolume(
@@ -82,7 +85,8 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       imageIdGroups: sortedImageIdGroups,
       splittingTag,
       voxelManager,
-      dataType: null,
+      numberOfComponents,
+      dataType,
     },
     // Streaming properties
     {
