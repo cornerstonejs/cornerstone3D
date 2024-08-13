@@ -1,6 +1,11 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { ImageVolume, cache, utilities } from '@cornerstonejs/core';
+import {
+  ImageVolume,
+  cache,
+  volumeLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   getVerticalBarImages,
   getExactRegionImages,
@@ -156,6 +161,7 @@ const fakeVolumeLoader = (volumeId) => {
     utilities.VoxelManager.createImageVolumeVoxelManager({
       dimensions,
       imageIds,
+      numberOfComponents,
     });
 
   const imageVolume = new ImageVolume({
@@ -167,9 +173,11 @@ const fakeVolumeLoader = (volumeId) => {
     spacing: [1, 1, 1],
     origin: [0, 0, 0],
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    numberOfComponents: rgb ? 3 : 1,
+    numberOfComponents,
     imageIds,
   });
+
+  imageVolume.modified();
 
   return {
     promise: Promise.resolve(imageVolume),

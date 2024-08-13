@@ -381,8 +381,6 @@ export function createLocalVolume(
   };
   cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
-  // performCacheOptimizationForVolume(derivedVolume);
-
   return derivedVolume;
 }
 

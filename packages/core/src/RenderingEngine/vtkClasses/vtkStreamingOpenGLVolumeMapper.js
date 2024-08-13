@@ -264,7 +264,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dims[2],
           numIComps,
           dataType,
-          hasScalarVolume ? image.getPointData().getScalars().getData() : null
+          null
         );
       } else {
         model.scalarTexture.deactivate();

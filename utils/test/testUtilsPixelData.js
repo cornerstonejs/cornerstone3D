@@ -34,15 +34,14 @@ function getVerticalBarImages(width, height, numImages) {
     });
 }
 
-function getVerticalBarRGBImage(rows, columns, barStart, barWidth) {
+function getVerticalBarRGBImage(rows, columns, sliceIndex, barWidth) {
   const pixelData = createPixelData(columns, rows, 3);
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < columns; j++) {
       const index = (i * columns + j) * 3;
-      const colorIndex = Math.floor(j / barWidth) % colors.length;
-      pixelData[index] = colors[colorIndex][0];
-      pixelData[index + 1] = colors[colorIndex][1];
-      pixelData[index + 2] = colors[colorIndex][2];
+      pixelData[index] = colors[sliceIndex][0];
+      pixelData[index + 1] = colors[sliceIndex][1];
+      pixelData[index + 2] = colors[sliceIndex][2];
     }
   }
   return pixelData;
@@ -53,19 +52,13 @@ function getVerticalBarRGBImage(rows, columns, barStart, barWidth) {
  * @param {number} width - Width of each image
  * @param {number} height - Height of each image
  * @param {number} numImages - Number of images in the set
- * @param {number} barStart - Starting position of the bar
- * @param {number} barWidth - Width of the bar
  * @returns {Array<Uint8Array>} Array of RGB pixel data arrays
  */
 function getVerticalBarRGBImages(width, height, numImages) {
-  let barStart = 0;
   const barWidth = Math.floor(height / numImages);
   return Array(numImages)
     .fill()
-    .map((_, index) => {
-      const currentBarStart = (barStart + index * barWidth) % width;
-      return getVerticalBarRGBImage(height, width, currentBarStart, barWidth);
-    });
+    .map((_, z) => getVerticalBarRGBImage(height, width, z, barWidth));
 }
 
 /**

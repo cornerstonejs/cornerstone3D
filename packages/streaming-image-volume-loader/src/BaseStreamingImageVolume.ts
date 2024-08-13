@@ -198,6 +198,8 @@ export default class BaseStreamingImageVolume
       imageQualityStatus,
     });
 
+    this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
+
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
     }
@@ -414,6 +416,7 @@ export default class BaseStreamingImageVolume
       return;
     }
 
+    // Todo: check if this needs more work for when we have progressive loading
     const handleImageCacheAdded = (event) => {
       const { image } = event.detail;
       if (image.imageId === imageId) {

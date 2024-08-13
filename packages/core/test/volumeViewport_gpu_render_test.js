@@ -160,7 +160,7 @@ describe('Volume Viewport GPU -- ', () => {
       });
     });
 
-    it('should successfully load a volume: nearest', function (done) {
+    fit('should successfully load a volume: nearest', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.AXIAL
@@ -864,7 +864,7 @@ describe('Volume Viewport GPU -- ', () => {
       });
     });
 
-    fit('should successfully load a color volume: nearest', function (done) {
+    it('should successfully load a color volume: nearest', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.CORONAL

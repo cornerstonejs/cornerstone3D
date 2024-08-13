@@ -146,46 +146,9 @@ export class ImageVolume implements IImageVolume {
       numberOfComponents: numberOfComponents || 1,
     });
 
-    // imageData.getPointData = () => {
-    //   console.warn(
-    //     'Scalar data is not available, you need to use voxelManager to get scalar data'
-    //   );
-    //   return imageData.getPointData();
-    // };
-
-    // // make it impossible to get the scalar data from the imageData
-    // imageData.getPointData().getScalars = () => {
-    //   throw new Error(
-    //     'Scalar data is not available, you need to use voxelManager to get scalar data'
-    //   );
-    // };
-
     imageData.set({
       hasScalarVolume: false,
     });
-    // } else {
-    //   // IMPORTANT: We strongly discourage using this method to set
-    //   // scalar data as it will break the consistency of the volume data
-    //   // and the voxel manager, however for testing and debugging purposes
-    //   // we can provide the scalar data directly to the imageVolume
-    //   // and here we are setting the scalar data directly to the imageData
-    //   const dataArrayAttrs = {
-    //     numberOfComponents: this.voxelManager.numberOfComponents || 1,
-    //     dataType: this.dataType,
-    //   };
-
-    //   const scalarArray = vtkDataArray.newInstance({
-    //     name: `Pixels`,
-    //     values: scalarData,
-    //     ...dataArrayAttrs,
-    //   });
-
-    //   imageData.getPointData().setScalars(scalarArray);
-
-    //   imageData.set({
-    //     hasScalarVolume: true,
-    //   });
-    // }
 
     this.imageData = imageData;
 
@@ -207,6 +170,8 @@ export class ImageVolume implements IImageVolume {
     if (additionalDetails) {
       this.additionalDetails = additionalDetails;
     }
+
+    this.modified();
   }
 
   public get sizeInBytes(): number {
@@ -276,6 +241,14 @@ export class ImageVolume implements IImageVolume {
 
     this.vtkOpenGLTexture.releaseGraphicsResources();
     this.vtkOpenGLTexture.delete();
+  }
+
+  public invalidate() {
+    for (let i = 0; i < this.imageIds.length; i++) {
+      this.vtkOpenGLTexture.setUpdatedFrame(i);
+    }
+
+    this.imageData.modified();
   }
 
   /**

@@ -192,6 +192,10 @@ class Cache implements ICache {
   public purgeCache = (): void => {
     const imageIterator = this._imageCache.keys();
 
+    // need to purge volume cache first to avoid issues with image cache
+    // shared cache keys
+    this.purgeVolumeCache();
+
     /* eslint-disable no-constant-condition */
     while (true) {
       const { value: imageId, done } = imageIterator.next();
@@ -204,8 +208,6 @@ class Cache implements ICache {
 
       triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId });
     }
-
-    this.purgeVolumeCache();
   };
 
   /**
