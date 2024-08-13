@@ -185,8 +185,6 @@ export default class BaseStreamingImageVolume
       this.loadStatus.loading = false;
     }
 
-    this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
-
     this.callLoadStatusCallback({
       success: true,
       imageIdIndex,
@@ -416,6 +414,23 @@ export default class BaseStreamingImageVolume
       return;
     }
 
+    const handleImageCacheAdded = (event) => {
+      const { image } = event.detail;
+      if (image.imageId === imageId) {
+        this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
+        // Remove the event listener after it's been triggered
+        eventTarget.removeEventListener(
+          Enums.Events.IMAGE_CACHE_IMAGE_ADDED,
+          handleImageCacheAdded
+        );
+      }
+    };
+
+    eventTarget.addEventListener(
+      Enums.Events.IMAGE_CACHE_IMAGE_ADDED,
+      handleImageCacheAdded
+    );
+
     const uncompressedIterator = ProgressiveIterator.as(
       imageLoader.loadAndCacheImage(imageId, options)
     );
@@ -546,86 +561,6 @@ export default class BaseStreamingImageVolume
     });
   }
 
-  /**
-   * This function decides whether or not to scale the image based on the
-   * scalingParameters. If the image is already scaled, we should take that
-   * into account when scaling the image again, so if the rescaleSlope and/or
-   * rescaleIntercept are different from the ones that were used to scale the
-   * image, we should scale the image again according to the new parameters.
-   */
-  private _scaleIfNecessary(
-    image,
-    scalingParametersToUse: Types.ScalingParameters
-  ) {
-    if (!image.preScale?.enabled) {
-      return image.voxelManager.getScalarData().slice(0);
-    }
-
-    const imageIsAlreadyScaled = image.preScale?.scaled;
-    const noScalingParametersToUse =
-      !scalingParametersToUse ||
-      !scalingParametersToUse.rescaleIntercept ||
-      !scalingParametersToUse.rescaleSlope;
-
-    if (!imageIsAlreadyScaled && noScalingParametersToUse) {
-      // no need to scale the image
-      return image.voxelManager.getScalarData().slice(0);
-    }
-
-    if (
-      !imageIsAlreadyScaled &&
-      scalingParametersToUse &&
-      scalingParametersToUse.rescaleIntercept !== undefined &&
-      scalingParametersToUse.rescaleSlope !== undefined
-    ) {
-      // if not already scaled, just scale the image.
-      // copy so that it doesn't get modified
-      const pixelDataCopy = image.voxelManager.getScalarData().slice(0);
-      const scaledArray = scaleArray(pixelDataCopy, scalingParametersToUse);
-      return scaledArray;
-    }
-
-    // if the image is already scaled,
-    const {
-      rescaleSlope: rescaleSlopeToUse,
-      rescaleIntercept: rescaleInterceptToUse,
-      suvbw: suvbwToUse,
-    } = scalingParametersToUse;
-
-    const {
-      rescaleSlope: rescaleSlopeUsed,
-      rescaleIntercept: rescaleInterceptUsed,
-      suvbw: suvbwUsed,
-    } = image.preScale.scalingParameters;
-
-    const rescaleSlopeIsSame = rescaleSlopeToUse === rescaleSlopeUsed;
-    const rescaleInterceptIsSame =
-      rescaleInterceptToUse === rescaleInterceptUsed;
-    const suvbwIsSame = suvbwToUse === suvbwUsed;
-
-    if (rescaleSlopeIsSame && rescaleInterceptIsSame && suvbwIsSame) {
-      // if the scaling parameters are the same, we don't need to scale the image again
-      return image.voxelManager.getScalarData();
-    }
-
-    const pixelDataCopy = image.voxelManager.getScalarData().slice(0);
-    // the general formula for scaling is  scaledPixelValue = suvbw * (pixelValue * rescaleSlope) + rescaleIntercept
-    const newSuvbw = suvbwToUse / suvbwUsed;
-    const newRescaleSlope = rescaleSlopeToUse / rescaleSlopeUsed;
-    const newRescaleIntercept =
-      rescaleInterceptToUse - rescaleInterceptUsed * newRescaleSlope;
-
-    const newScalingParameters = {
-      ...scalingParametersToUse,
-      rescaleSlope: newRescaleSlope,
-      rescaleIntercept: newRescaleIntercept,
-      suvbw: newSuvbw,
-    };
-
-    const scaledArray = scaleArray(pixelDataCopy, newScalingParameters);
-    return scaledArray;
-  }
-
   private _addScalingToVolume(suvFactor) {
     // Todo: handle case where suvFactors are not the same for all frames
     if (this.scaling) {
@@ -650,26 +585,4 @@ export default class BaseStreamingImageVolume
 
     this.scaling = { PT: petScaling };
   }
-}
-
-function getScalarDataType(scalarData, numFrames) {
-  let type, byteSize;
-  if (scalarData instanceof Uint8Array) {
-    type = 'Uint8Array';
-    byteSize = 1;
-  } else if (scalarData instanceof Float32Array) {
-    type = 'Float32Array';
-    byteSize = 4;
-  } else if (scalarData instanceof Uint16Array) {
-    type = 'Uint16Array';
-    byteSize = 2;
-  } else if (scalarData instanceof Int16Array) {
-    type = 'Int16Array';
-    byteSize = 2;
-  } else {
-    throw new Error('Unsupported array type');
-  }
-  const length = scalarData.length / numFrames;
-  const lengthInBytes = length * byteSize;
-  return { type, byteSize, length, lengthInBytes };
 }

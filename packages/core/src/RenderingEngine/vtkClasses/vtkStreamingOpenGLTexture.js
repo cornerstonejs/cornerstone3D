@@ -77,29 +77,17 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    */
   const superModified = publicAPI.modified;
   publicAPI.setUpdatedFrame = (frameIndex) => {
-    superModified();
-
     model.updatedFrames[frameIndex] = true;
-
-    publicAPI.update3DFromRaw();
-
-    // Todo: the progressive iterator is messing around with the last
-    // texture update, for now i have it like this to make it work
-    // setTimeout(() => {
-    //   publicAPI.update3DFromRaw();
-    // }, 40);
+    superModified();
   };
 
   function updateTextureImagesUsingVoxelManager() {
     const volume = cache.getVolume(model.volumeId);
     const imageIds = volume.imageIds;
-    let unsuccessfulFrames = [];
-
     for (let i = 0; i < model.updatedFrames.length; i++) {
       if (model.updatedFrames[i]) {
         // find the updated frames
         const image = cache.getImage(imageIds[i]);
-
         if (!image) {
           continue;
         }
@@ -144,7 +132,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }
 
     publicAPI.deactivate();
-    return unsuccessfulFrames;
+    return true;
   }
 
   function updateDynamicVolumeTexture() {

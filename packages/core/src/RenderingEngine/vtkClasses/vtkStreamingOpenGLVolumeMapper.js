@@ -211,7 +211,11 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     publicAPI.updateLabelOutlineThicknessTexture(actor);
 
     // rebuild the scalarTexture if the data has changed
-    toString = `${image.getMTime()}`;
+    // IMPORTANT: this is the most important part of the streaming process.
+    // we need to take into account that sometimes the texture is updated (mtime)
+    // but the image is not updated since in the new model the image lives in the cpu
+    // while the texture lives in the gpu.
+    toString = `${image.getMTime()}-${model.scalarTexture.getMTime()}`;
 
     if (model.scalarTextureString !== toString) {
       // Build the textures
@@ -262,12 +266,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
           hasScalarVolume ? image.getPointData().getScalars().getData() : null
         );
-
-        // run the update as soon as possible if we have updated
-        // frames
-        // if (model.scalarTexture.hasUpdatedFrames) {
-        //   model.scalarTexture.update3DFromRaw();
-        // }
       } else {
         model.scalarTexture.deactivate();
         model.scalarTexture.update3DFromRaw();
