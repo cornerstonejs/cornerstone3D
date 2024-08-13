@@ -77,6 +77,12 @@ function loadImageFromImageLoader(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
+  // check cache first , we might have a cached image
+  const cachedImage = cache.getImageLoadObject(imageId);
+  if (cachedImage) {
+    return cachedImage;
+  }
+
   // Extract the image loader scheme: wadors:https://image1 => wadors
   const colonIndex = imageId.indexOf(':');
   const scheme = imageId.substring(0, colonIndex);
@@ -94,13 +100,13 @@ function loadImageFromImageLoader(
   imageLoadObject.promise
     .then((image: IImage) => {
       const scalarData = image.getPixelData();
-      const { width, height, numComps } = image;
+      const { width, height, numberOfComponents } = image;
 
       const voxelManager = VoxelManager.createImageVoxelManager({
         scalarData,
         width,
         height,
-        numComps,
+        numberOfComponents,
       });
 
       image.voxelManager = voxelManager;
@@ -322,7 +328,7 @@ export function createAndCacheLocalImage(
   const width = imagePlaneModule.columns;
   const height = imagePlaneModule.rows;
   const length = width * height;
-  const numComps = 1;
+  const numberOfComponents = 1;
 
   const image = {
     imageId: imageId,
@@ -330,7 +336,7 @@ export function createAndCacheLocalImage(
     windowCenter: 0,
     windowWidth: 0,
     color: false,
-    numComps: 1,
+    numberOfComponents: 1,
     dataType: options.targetBufferType,
     slope: 1,
     minPixelValue: 0,
@@ -380,7 +386,7 @@ export function createAndCacheLocalImage(
   const voxelManager = VoxelManager.createImageVoxelManager({
     height,
     width,
-    numComps,
+    numberOfComponents,
     scalarData: image.getPixelData(),
   });
 

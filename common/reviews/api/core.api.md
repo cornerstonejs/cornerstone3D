@@ -1433,7 +1433,7 @@ interface IImage {
     // (undocumented)
     modalityLUT?: CPUFallbackLUT;
     // (undocumented)
-    numComps: number;
+    numberOfComponents: number;
     // (undocumented)
     photometricInterpretation?: string;
     // (undocumented)
@@ -2936,7 +2936,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     protected kMultiple: number;
     // (undocumented)
-    protected numComps: number;
+    protected numberOfComponents: number;
     // (undocumented)
     pixelDataConstructor: Uint8ArrayConstructor;
     // (undocumented)
@@ -3088,12 +3088,12 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     clearDefaultProperties(imageId?: string): void;
     // (undocumented)
-    createVTKImageData({ origin, direction, dimensions, spacing, numComps, pixelArray, }: {
+    createVTKImageData({ origin, direction, dimensions, spacing, numberOfComponents, pixelArray, }: {
         origin: any;
         direction: any;
         dimensions: any;
         spacing: any;
-        numComps: any;
+        numberOfComponents: any;
         pixelArray: any;
     }): vtkImageData;
     // (undocumented)
@@ -3631,7 +3631,7 @@ export class VideoViewport extends Viewport implements VideoViewport {
     // (undocumented)
     getImageDataMetadata(image: IImage | string): {
         bitsAllocated: number;
-        numComps: number;
+        numberOfComponents: number;
         origin: any;
         rows: any;
         columns: any;
@@ -4347,7 +4347,7 @@ class VoxelManager<T> {
     // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
-    numComps: number;
+    numberOfComponents: number;
     // (undocumented)
     points: Set<number>;
     // (undocumented)
@@ -4405,7 +4405,7 @@ export class WSIViewport extends Viewport implements IWSIViewport {
     getImageData(): {
         dimensions: any;
         spacing: any;
-        numComps: number;
+        numberOfComponents: number;
         origin: any;
         direction: any;
         metadata: {

@@ -351,7 +351,7 @@ export function createLocalVolume(
   const voxelManager = VoxelManager.createImageVoxelManager({
     width: dimensions[0],
     height: dimensions[1],
-    numComps: 1,
+    numberOfComponents: 1,
     scalarData: scalarData,
   });
 

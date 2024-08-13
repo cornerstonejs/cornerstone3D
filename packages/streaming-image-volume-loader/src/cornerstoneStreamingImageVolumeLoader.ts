@@ -90,6 +90,7 @@ function cornerstoneStreamingImageVolumeLoader(
       metadata,
       imageIds,
       dataType,
+      numberOfComponents,
     } = volumeProps;
 
     const streamingImageVolume = new StreamingImageVolume(
@@ -103,6 +104,7 @@ function cornerstoneStreamingImageVolumeLoader(
         direction,
         imageIds,
         dataType,
+        numberOfComponents,
       },
       // Streaming properties
       {

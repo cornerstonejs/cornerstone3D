@@ -1,5 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
 import * as cpu_imageURI_64_64_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_64_20_5_1_1_0.png';
 import * as cpu_imageURI_64_33_20_5_1_1_0 from './groundTruth/cpu_imageURI_64_33_20_5_1_1_0.png';
@@ -90,8 +91,20 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 716, 646);
       this.DOMElements.push(element);
 
-      // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
-      const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       const vp = this.renderingEngine.getViewport(viewportId);
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -116,7 +129,20 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId = 'fakeImageLoader:imageURI_64_33_20_5_1_1_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 33,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -142,7 +168,20 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 30,
+        barWidth: 10,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -174,7 +213,20 @@ describe('StackViewport CPU -- ', () => {
       element.style.height = `256px`;
       document.body.appendChild(element);
 
-      const imageId = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 30,
+        barWidth: 10,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       this.renderingEngine.enableElement({
         viewportId: viewportId,
@@ -210,9 +262,50 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0';
-      const imageId2 = 'fakeImageLoader:imageURI_64_64_10_20_5_5_0';
-      const imageId3 = 'fakeImageLoader:imageURI_64_64_20_30_5_5_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 0,
+        barWidth: 10,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId1 = encodeImageIdInfo(imageInfo1);
+
+      const imageInfo2 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 20,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 1,
+      };
+      const imageId2 = encodeImageIdInfo(imageInfo2);
+
+      const imageInfo3 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 30,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 2,
+      };
+      const imageId3 = encodeImageIdInfo(imageInfo3);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -239,9 +332,50 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0';
-      const imageId2 = 'fakeImageLoader:imageURI_64_64_10_20_5_5_0';
-      const imageId3 = 'fakeImageLoader:imageURI_64_64_54_10_5_5_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 0,
+        barWidth: 10,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId1 = encodeImageIdInfo(imageInfo1);
+
+      const imageInfo2 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 20,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 1,
+      };
+      const imageId2 = encodeImageIdInfo(imageInfo2);
+
+      const imageInfo3 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 54,
+        barWidth: 10,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 2,
+      };
+      const imageId3 = encodeImageIdInfo(imageInfo3);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -291,7 +425,20 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 256,
+        columns: 256,
+        barStart: 100,
+        barWidth: 100,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -322,8 +469,35 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';
-      const imageId2 = 'fakeImageLoader:imageURI_64_64_30_10_5_5_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 256,
+        columns: 256,
+        barStart: 100,
+        barWidth: 100,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId1 = encodeImageIdInfo(imageInfo1);
+
+      const imageInfo2 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 30,
+        barWidth: 10,
+        xSpacing: 5,
+        ySpacing: 5,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId2 = encodeImageIdInfo(imageInfo2);
 
       const vp = this.renderingEngine.getViewport(viewportId);
 
@@ -350,8 +524,35 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_11_11_4_1_1_1_0';
-      const imageId2 = 'fakeImageLoader:imageURI_256_256_50_10_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 11,
+        columns: 11,
+        barStart: 4,
+        barWidth: 1,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId1 = encodeImageIdInfo(imageInfo1);
+
+      const imageInfo2 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 256,
+        columns: 256,
+        barStart: 50,
+        barWidth: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId2 = encodeImageIdInfo(imageInfo2);
 
       const vp = this.renderingEngine.getViewport(viewportId);
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -375,7 +576,20 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       const vp = this.renderingEngine.getViewport(viewportId);
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -388,7 +602,7 @@ describe('StackViewport CPU -- ', () => {
         ).then(done, done.fail);
       });
       try {
-        vp.setStack([imageId1], 0).then(() => {
+        vp.setStack([imageId], 0).then(() => {
           vp.setProperties({ invert: true });
           vp.render();
         });
@@ -401,7 +615,20 @@ describe('StackViewport CPU -- ', () => {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+      const imageId = encodeImageIdInfo(imageInfo);
 
       const vp = this.renderingEngine.getViewport(viewportId);
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -414,7 +641,7 @@ describe('StackViewport CPU -- ', () => {
         ).then(done, done.fail);
       });
       try {
-        vp.setStack([imageId1], 0).then(() => {
+        vp.setStack([imageId], 0).then(() => {
           vp.setViewPresentation({ rotation: 90 });
           vp.render();
         });
@@ -446,7 +673,7 @@ describe('StackViewport CPU -- ', () => {
   //     });
   //   });
 
-  //   fit('Should render one cpu stack viewport with presets correctly', function (done) {
+  //   it('Should render one cpu stack viewport with presets correctly', function (done) {
   //     const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
   //     this.DOMElements.push(element);
 

@@ -67,6 +67,8 @@ function generateVolumePropsFromImageIds(
     imageIds: sortedImageIds,
     volumeId,
     voxelManager: null,
+    numberOfComponents:
+      volumeMetadata.PhotometricInterpretation === 'MONOCHROME1' ? 1 : 3,
   };
 }
 

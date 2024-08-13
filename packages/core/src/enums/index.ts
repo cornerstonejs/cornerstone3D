@@ -13,6 +13,7 @@ import ViewportStatus from './ViewportStatus';
 import ImageQualityStatus from './ImageQualityStatus';
 import * as VideoEnums from './VideoEnums';
 import MetadataModules from './MetadataModules';
+import { GenerateImageType } from './GenerateImageType';
 
 export {
   Events,
@@ -30,4 +31,5 @@ export {
   VideoEnums,
   MetadataModules,
   ImageQualityStatus,
+  GenerateImageType,
 };

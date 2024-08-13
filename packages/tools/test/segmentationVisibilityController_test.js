@@ -114,11 +114,57 @@ describe('Segmentation Controller --', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const seg1VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6';
-      const seg2VolumeID =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
+
+      const seg1VolumeID = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURIExact',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+        startRow: 20,
+        startColumn: 20,
+        startSlice: 3,
+        endRow: 60,
+        endColumn: 60,
+        endSlice: 6,
+      });
+
+      const seg2VolumeID = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURIExact',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+        startRow: 35,
+        startColumn: 20,
+        startSlice: 2,
+        endRow: 80,
+        endColumn: 60,
+        endSlice: 7,
+      });
+
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
       const compareImageCallback = () => {
@@ -197,11 +243,56 @@ describe('Segmentation Controller --', () => {
     //   const element = createViewport(this.renderingEngine, Enums.OrientationAxis.AXIAL)
     //   this.DOMElements.push(element)
 
-    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-    //   const seg1VolumeID =
-    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
-    //   const seg2VolumeID =
-    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
+    //   const volumeId = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURI',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //   })
+
+    //   const seg1VolumeID = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURIExact',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //     startRow: 20,
+    //     startColumn: 20,
+    //     startSlice: 3,
+    //     endRow: 60,
+    //     endColumn: 60,
+    //     endSlice: 6,
+    //   })
+
+    //   const seg2VolumeID = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURIExact',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //     startRow: 35,
+    //     startColumn: 20,
+    //     startSlice: 2,
+    //     endRow: 80,
+    //     endColumn: 60,
+    //     endSlice: 7,
+    //   })
     //   const vp1 = this.renderingEngine.getViewport(viewportId1)
 
     //   const compareImageCallback = () => {
@@ -261,11 +352,56 @@ describe('Segmentation Controller --', () => {
     // it('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
     //   const element = createViewport(this.renderingEngine, Enums.OrientationAxis.AXIAL)
 
-    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0'
-    //   const seg1VolumeID =
-    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_60_60_6'
-    //   const seg2VolumeID =
-    //     'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_35_20_2_80_60_7_2'
+    //   const volumeId = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURI',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //   })
+
+    //   const seg1VolumeID = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURIExact',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //     startRow: 20,
+    //     startColumn: 20,
+    //     startSlice: 3,
+    //     endRow: 60,
+    //     endColumn: 60,
+    //     endSlice: 6,
+    //   })
+
+    //   const seg2VolumeID = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURIExact',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //     startRow: 35,
+    //     startColumn: 20,
+    //     startSlice: 2,
+    //     endRow: 80,
+    //     endColumn: 60,
+    //     endSlice: 7,
+    //   })
     //   const vp1 = this.renderingEngine.getViewport(viewportId1)
 
     //   const compareImageCallback = () => {

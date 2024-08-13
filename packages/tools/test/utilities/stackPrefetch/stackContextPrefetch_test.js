@@ -4,6 +4,7 @@ import {
   fakeImageLoader,
   fakeMetaDataProvider,
 } from '../../../../../utils/test/testUtils';
+import { encodeImageIdInfo } from '../../../../../utils/test/testUtils';
 
 const { cache, RenderingEngine, Enums, metaData, imageLoader } = cornerstone3D;
 
@@ -64,7 +65,19 @@ describe('stackContextPrefetch:', () => {
     this.DOMElements.push(element);
     const vp = this.renderingEngine.getViewport(viewportId);
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_0_10_5_5_0';
+    const imageId1 = encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 0,
+      barWidth: 10,
+      xSpacing: 5,
+      ySpacing: 5,
+      rgb: 0,
+      pt: 0,
+      sliceIndex: 0,
+    });
 
     try {
       vp.setStack([imageId1]).then(() => {

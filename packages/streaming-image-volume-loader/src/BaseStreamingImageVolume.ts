@@ -171,8 +171,6 @@ export default class BaseStreamingImageVolume
       this.framesProcessed++;
     }
 
-    this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
-
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
       imageVolume: this,
@@ -199,6 +197,7 @@ export default class BaseStreamingImageVolume
       complete,
       imageQualityStatus,
     });
+
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
     }
@@ -416,8 +415,15 @@ export default class BaseStreamingImageVolume
     }
 
     const uncompressedIterator = ProgressiveIterator.as(
-      imageLoader.loadAndCacheImage(imageId, options)
+      imageLoader.loadAndCacheImage(imageId, options).then(() => {
+        // IMPORTANT: this is the most important line of this entire project
+        // It tells the texture to update the frame only after the image has been loaded
+        // and cached, since otherwise it will not be able to render the image
+        // since we grab it from the cache to create a volume texture
+        this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
+      })
     );
+
     return uncompressedIterator.forEach((image) => {
       // scalarData is the volume container we are progressively loading into
       // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader

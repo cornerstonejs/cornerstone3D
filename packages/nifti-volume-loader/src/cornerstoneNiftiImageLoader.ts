@@ -193,7 +193,7 @@ function createImage(
   const voxelManager = utilities.VoxelManager.createImageVoxelManager({
     width: columns,
     height: rows,
-    numComps: 1,
+    numberOfComponents: 1,
     scalarData: pixelData,
   });
 
@@ -211,7 +211,7 @@ function createImage(
     width: imagePlaneModule.columns,
     getPixelData: () => voxelManager.getScalarData(),
     getCanvas: undefined,
-    numComps: undefined,
+    numberOfComponents: undefined,
     voxelManager,
   };
 }

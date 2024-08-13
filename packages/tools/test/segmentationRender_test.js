@@ -114,8 +114,32 @@ describe('Segmentation Render -- ', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
+
+      const segVolumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
+
       const vp = this.renderingEngine.getViewport(viewportId1);
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -189,8 +213,32 @@ describe('Segmentation Render -- ', () => {
       this.DOMElements.push(el2);
       this.DOMElements.push(el3);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
+
+      const segVolumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
+
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);
       const vp3 = this.renderingEngine.getViewport(viewportId3);
@@ -290,11 +338,57 @@ describe('Segmentation Render -- ', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-      const segVolumeId =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_20_20_3_50_50_6';
-      const segVolumeId2 =
-        'fakeVolumeLoader:volumeURIExact_100_100_10_1_1_1_0_60_60_2_80_80_7';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
+
+      const segVolumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURIExact',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+        startRow: 20,
+        startColumn: 20,
+        startSlice: 3,
+        endRow: 50,
+        endColumn: 50,
+        endSlice: 6,
+      });
+
+      const segVolumeId2 = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURIExact',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+        startRow: 60,
+        startColumn: 60,
+        startSlice: 2,
+        endRow: 80,
+        endColumn: 80,
+        endSlice: 7,
+      });
+
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
       eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
@@ -379,8 +473,32 @@ describe('Segmentation Render -- ', () => {
     //     },
     //   };
 
-    //   const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
-    //   const segVolumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+    //   const volumeId = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURI',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //   });
+
+    //   const segVolumeId = testUtils.encodeVolumeIdInfo({
+    //     loader: 'fakeVolumeLoader',
+    //     name: 'volumeURI',
+    //     rows: 100,
+    //     columns: 100,
+    //     slices: 10,
+    //     xSpacing: 1,
+    //     ySpacing: 1,
+    //     zSpacing: 1,
+    //     rgb: 0,
+    //     pt: 0,
+    //   });
+
     //   const vp1 = this.renderingEngine.getViewport(viewportId1);
 
     //   eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {

@@ -34,7 +34,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: VoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
-  public numComps = 1;
+  public numberOfComponents = 1;
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
 
@@ -593,16 +593,16 @@ export default class VoxelManager<T> {
   public static createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numComps,
+    numberOfComponents,
   }: {
     dimensions: Point3;
     scalarData;
-    numComps;
+    numberOfComponents;
   }): VoxelManager<RGB> {
     const voxels = new VoxelManager<RGB>(
       dimensions,
       (index) => {
-        index *= numComps;
+        index *= numberOfComponents;
         return [scalarData[index++], scalarData[index++], scalarData[index++]];
       },
       (index, v) => {
@@ -614,7 +614,7 @@ export default class VoxelManager<T> {
         return isChanged;
       }
     );
-    voxels.numComps = numComps;
+    voxels.numberOfComponents = numberOfComponents;
     voxels.scalarData = scalarData;
     return voxels;
   }
@@ -629,10 +629,12 @@ export default class VoxelManager<T> {
   public static createImageVolumeVoxelManager({
     dimensions,
     imageIds,
+    numberOfComponents = 1,
   }: {
     dimensions: Point3;
     imageIds: string[];
-  }): VoxelManager<number> {
+    numberOfComponents: number;
+  }): VoxelManager<number | RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
     function getPixelInfo(index) {
@@ -641,13 +643,12 @@ export default class VoxelManager<T> {
       const image = cache.getImage(imageId);
 
       if (!image) {
-        // Todo: better handle this case
         console.warn(`Image not found for imageId: ${imageId}`);
         return { pixelData: null, pixelIndex: null };
       }
 
       const pixelData = image.voxelManager.getScalarData();
-      const pixelIndex = index % pixelsPerSlice;
+      const pixelIndex = (index % pixelsPerSlice) * numberOfComponents;
 
       return { pixelData, pixelIndex };
     }
@@ -655,22 +656,46 @@ export default class VoxelManager<T> {
     function getVoxelValue(index) {
       const { pixelData, pixelIndex } = getPixelInfo(index);
 
-      if (!pixelData || !pixelIndex) {
+      if (!pixelData || pixelIndex === null) {
         return null;
       }
 
-      return pixelData[pixelIndex];
+      if (numberOfComponents === 1) {
+        return pixelData[pixelIndex];
+      } else {
+        return [
+          pixelData[pixelIndex],
+          pixelData[pixelIndex + 1],
+          pixelData[pixelIndex + 2],
+        ] as RGB;
+      }
     }
 
     function setVoxelValue(index, v) {
       const { pixelData, pixelIndex } = getPixelInfo(index);
 
-      if (pixelData[pixelIndex] === v) {
+      if (!pixelData || pixelIndex === null) {
         return false;
       }
 
-      pixelData[pixelIndex] = v;
-      return true;
+      let isChanged = false;
+
+      if (numberOfComponents === 1) {
+        if (pixelData[pixelIndex] !== v) {
+          pixelData[pixelIndex] = v as number;
+          isChanged = true;
+        }
+      } else {
+        const rgbValue = v as RGB;
+        for (let i = 0; i < numberOfComponents; i++) {
+          if (pixelData[pixelIndex + i] !== rgbValue[i]) {
+            pixelData[pixelIndex + i] = rgbValue[i];
+            isChanged = true;
+          }
+        }
+      }
+
+      return isChanged;
     }
 
     const voxelManager = new VoxelManager(
@@ -678,6 +703,8 @@ export default class VoxelManager<T> {
       (index) => getVoxelValue(index),
       (index, v) => setVoxelValue(index, v)
     );
+
+    voxelManager.numberOfComponents = numberOfComponents;
 
     // @ts-ignore
     voxelManager._getConstructor = () => {
@@ -732,16 +759,33 @@ export default class VoxelManager<T> {
       // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
 
-      for (let i = 0; i < dataLength; i++) {
-        scalarData[i] = voxelManager._get(i);
+      for (let i = 0; i < dataLength; i += numberOfComponents) {
+        const value = voxelManager._get(i / numberOfComponents);
+        if (numberOfComponents === 1) {
+          scalarData[i] = value as number;
+        } else {
+          const rgbValue = value as RGB;
+          for (let j = 0; j < numberOfComponents; j++) {
+            scalarData[i + j] = rgbValue[j];
+          }
+        }
       }
 
       return scalarData;
     };
 
     voxelManager.setCompleteScalarDataArray = (scalarData) => {
-      for (let i = 0; i < scalarData.length; i++) {
-        voxelManager._set(i, scalarData[i]);
+      for (let i = 0; i < scalarData.length; i += numberOfComponents) {
+        if (numberOfComponents === 1) {
+          voxelManager._set(i, scalarData[i]);
+        } else {
+          const rgbValue: RGB = [
+            scalarData[i],
+            scalarData[i + 1],
+            scalarData[i + 2],
+          ];
+          voxelManager._set(i / numberOfComponents, rgbValue);
+        }
       }
     };
 
@@ -759,11 +803,11 @@ export default class VoxelManager<T> {
   public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numComps = 0,
+    numberOfComponents = 0,
   }: {
     dimensions: Point3;
     scalarData;
-    numComps?: number;
+    numberOfComponents?: number;
   }): VoxelManager<number> | VoxelManager<RGB> {
     if (dimensions.length !== 3) {
       throw new Error(
@@ -771,20 +815,26 @@ export default class VoxelManager<T> {
       );
     }
 
-    if (!numComps) {
-      numComps =
+    if (!numberOfComponents) {
+      numberOfComponents =
         scalarData.length / dimensions[0] / dimensions[1] / dimensions[2];
       // We only support 1,3,4 component data, and sometimes the scalar data
       // doesn't match for some reason, so throw an exception
-      if (numComps > 4 || numComps < 1 || numComps === 2) {
-        throw new Error(`Number of components ${numComps} must be 1, 3 or 4`);
+      if (
+        numberOfComponents > 4 ||
+        numberOfComponents < 1 ||
+        numberOfComponents === 2
+      ) {
+        throw new Error(
+          `Number of components ${numberOfComponents} must be 1, 3 or 4`
+        );
       }
     }
-    if (numComps > 1) {
+    if (numberOfComponents > 1) {
       return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComps,
+        numberOfComponents,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({
@@ -852,25 +902,31 @@ export default class VoxelManager<T> {
     width,
     height,
     scalarData,
-    numComps = 1,
+    numberOfComponents = 1,
   }: {
     width: number;
     height: number;
     scalarData: PixelDataTypedArray;
-    numComps?: number;
+    numberOfComponents?: number;
   }): VoxelManager<number> | VoxelManager<RGB> {
     const dimensions = [width, height, 1] as Point3;
-    if (!numComps) {
-      numComps = scalarData.length / width / height;
-      if (numComps > 4 || numComps < 1 || numComps === 2) {
-        throw new Error(`Number of components ${numComps} must be 1, 3 or 4`);
+    if (!numberOfComponents) {
+      numberOfComponents = scalarData.length / width / height;
+      if (
+        numberOfComponents > 4 ||
+        numberOfComponents < 1 ||
+        numberOfComponents === 2
+      ) {
+        throw new Error(
+          `Number of components ${numberOfComponents} must be 1, 3 or 4`
+        );
       }
     }
-    if (numComps > 1) {
+    if (numberOfComponents > 1) {
       return VoxelManager.createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
-        numComps,
+        numberOfComponents,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({

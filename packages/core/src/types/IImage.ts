@@ -68,7 +68,7 @@ interface IImage {
   /** is image rgb and alpha */
   rgba: boolean;
   /** number of components in the image */
-  numComps: number;
+  numberOfComponents: number;
   /** CPU: custom render method for the image */
   render?: (
     enabledElement: CPUFallbackEnabledElement,

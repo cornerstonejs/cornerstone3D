@@ -2,6 +2,7 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -39,7 +40,16 @@ const renderingEngineId = utilities.uuidv4();
 
 const viewportId = 'VIEWPORT';
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+const volumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+  rgb: 1,
+});
 
 function createViewport(renderingEngine, viewportType, width, height) {
   const element = document.createElement('div');
@@ -112,7 +122,21 @@ describe('Probe Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationRendered = () => {
@@ -196,7 +220,21 @@ describe('Probe Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationRendered = () => {
@@ -326,7 +364,21 @@ describe('Probe Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_256_256_100_100_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 256,
+        columns: 256,
+        barStart: 100,
+        barWidth: 100,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationRendered = () => {
@@ -409,7 +461,21 @@ describe('Probe Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationRendered = () => {
@@ -582,7 +648,21 @@ describe('Probe Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId);
 
       let p2;
@@ -741,7 +821,21 @@ describe('Probe Tool: ', () => {
       );
       this.DOMElements.push(element);
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        rgb: 0,
+        pt: 0,
+        sliceIndex: 0,
+      };
+
+      const imageId1 = encodeImageIdInfo(imageInfo1);
       const vp = this.renderingEngine.getViewport(viewportId);
 
       let p2;

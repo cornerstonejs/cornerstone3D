@@ -66,6 +66,9 @@ interface VolumeProps {
 
   /** Optional ID of a referenced volume if this volume is derived from another */
   referencedVolumeId?: string;
+
+  /** Number of components for scalar data in the volume */
+  numberOfComponents?: number;
 }
 
 export { VolumeProps };

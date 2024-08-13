@@ -37,12 +37,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       return;
     }
 
-    // Since it is fine to not have scalar data in the new model
-    // const scalars = image.getPointData() && image.getPointData().getScalars();
-    // if (!scalars) {
-    //   return;
-    // }
-
     const vprop = actor.getProperty();
 
     if (!model.jitterTexture.getHandle()) {
@@ -227,7 +221,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // Set not to use half float initially since we don't know if the
       // streamed data is actually half float compatible or not yet, as
       // the data has not arrived due to streaming
-      model.scalarTexture.setUseHalfFloat(false);
+      model.scalarTexture.enableUseHalfFloat(false);
 
       const previousTextureParameters =
         model.scalarTexture.getTextureParameters();
@@ -256,7 +250,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           width: dims[0],
           height: dims[1],
           depth: dims[2],
-          numComps: numIComps,
+          numberOfComponents: numIComps,
           dataType,
         });
 

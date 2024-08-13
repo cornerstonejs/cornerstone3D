@@ -360,6 +360,7 @@ class Cache implements ICache {
     this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
 
     cachedImage.loaded = true;
+
     cachedImage.image = image;
     cachedImage.sizeInBytes = image.sizeInBytes;
     this.incrementImageCacheSize(cachedImage.sizeInBytes);

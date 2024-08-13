@@ -95,7 +95,7 @@ describe('VoxelManager', () => {
     const map = VoxelManager.createRGBScalarVolumeVoxelManager({
       dimensions,
       scalarData,
-      numComps: 3,
+      numberOfComponents: 3,
     });
     const rgbValue = [255, 128, 64];
     map.setAtIJKPoint(ijkPoint, rgbValue);

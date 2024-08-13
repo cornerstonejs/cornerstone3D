@@ -24,19 +24,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     width,
     height,
     depth,
-    numComps,
+    numberOfComponents,
     dataType,
     data,
     preferSizeOverAccuracy
   ) => {
     model.inputDataType = dataType;
-    model.inputNumComps = numComps;
+    model.inputNumComps = numberOfComponents;
 
     superCreate3DFilterableFromRaw(
       width,
       height,
       depth,
-      numComps,
+      numberOfComponents,
       dataType,
       data,
       preferSizeOverAccuracy
@@ -50,105 +50,54 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * @param {Float32Array|Uint8Array|Int16Array|Uint16Array} data The data array which has been updated.
    */
   publicAPI.update3DFromRaw = () => {
-    const { updatedFrames } = model;
+    const { volumeId } = model;
 
-    if (!model.volumeId) {
+    if (!volumeId) {
       return;
     }
 
-    const volume = cache.getVolume(model.volumeId);
-    const isDynamicVolume = volume.isDynamicVolume();
+    const volume = cache.getVolume(volumeId);
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
 
-    if (isDynamicVolume) {
+    if (volume.isDynamicVolume()) {
       updateDynamicVolumeTexture();
       return;
     }
 
-    // for dynamic volumes, we need to update the texture for the current time point
-    // so there is no need to take a look at the updatedFrames really
-    if (!updatedFrames.length) {
-      return;
-    }
-
-    return updateTextureImagesUsingVoxelManager(updatedFrames);
-  };
-
-  publicAPI.setVolumeId = (volumeId) => {
-    model.volumeId = volumeId;
-  };
-
-  publicAPI.getVolumeId = () => model.volumeId;
-
-  publicAPI.setTextureParameters = (params) => {
-    if (params.width) {
-      model.width = params.width;
-    }
-
-    if (params.height) {
-      model.height = params.height;
-    }
-
-    if (params.depth) {
-      model.depth = params.depth;
-    }
-
-    if (params.numComps) {
-      model.inputNumComps = params.numComps;
-    }
-
-    if (params.dataType) {
-      model.inputDataType = params.dataType;
-    }
-  };
-
-  publicAPI.getTextureParameters = () => {
-    return {
-      width: model.width,
-      height: model.height,
-      depth: model.depth,
-      numComps: model.inputNumComps,
-      dataType: model.inputDataType,
-    };
+    return (
+      publicAPI.hasUpdatedFrames() && updateTextureImagesUsingVoxelManager()
+    );
   };
 
   /**
    * Called when a frame is loaded so that on next render we know which data to load in.
    * @param {number} frameIndex The frame to load in.
    */
-  publicAPI.setUpdatedFrame = (frameIndex) => {
-    model.updatedFrames[frameIndex] = true;
-  };
-
   const superModified = publicAPI.modified;
-  publicAPI.modified = () => {
-    // Really important piece here that wasted a lot of time from me
-    // always make sure to call the super method first
+  publicAPI.setUpdatedFrame = (frameIndex) => {
     superModified();
-    const volume = cache.getVolume(model.volumeId);
-    const imageIds = volume.imageIds;
 
-    for (let i = 0; i < imageIds.length; i++) {
-      model.updatedFrames[i] = true;
-    }
+    model.updatedFrames[frameIndex] = true;
+
+    let unsuccessfulFrames = publicAPI.update3DFromRaw();
   };
 
-  publicAPI.hasUpdatedFrames = () => {
-    return model.updatedFrames.some((frame) => frame);
-  };
-
-  function updateTextureImagesUsingVoxelManager(updatedFrames) {
+  function updateTextureImagesUsingVoxelManager() {
     const volume = cache.getVolume(model.volumeId);
     const imageIds = volume.imageIds;
-    for (let i = 0; i < updatedFrames.length; i++) {
-      if (updatedFrames[i]) {
+    let unsuccessfulFrames = [];
+
+    for (let i = 0; i < model.updatedFrames.length; i++) {
+      if (model.updatedFrames[i]) {
         // find the updated frames
         const image = cache.getImage(imageIds[i]);
 
         if (!image) {
-          console.warn(`Image not found for imageId: ${imageIds[i]}`);
+          unsuccessfulFrames.push(i);
+
+          console.warn('image not found', i);
           continue;
         }
 
@@ -183,7 +132,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         // Unbind the texture
         publicAPI.deactivate();
         // Reset the updated flag
-        updatedFrames[i] = null;
+        model.updatedFrames[i] = null;
       }
     }
 
@@ -192,7 +141,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }
 
     publicAPI.deactivate();
-    return true;
+    return unsuccessfulFrames;
   }
 
   function updateDynamicVolumeTexture() {
@@ -249,6 +198,39 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     publicAPI.deactivate();
     return true;
   }
+
+  publicAPI.hasUpdatedFrames = () =>
+    !model.updatedFrames.length || model.updatedFrames.some((frame) => frame);
+
+  publicAPI.getUpdatedFrames = () => model.updatedFrames;
+
+  publicAPI.setVolumeId = (volumeId) => {
+    model.volumeId = volumeId;
+  };
+
+  publicAPI.getVolumeId = () => model.volumeId;
+
+  publicAPI.setTextureParameters = ({
+    width,
+    height,
+    depth,
+    numberOfComponents,
+    dataType,
+  }) => {
+    model.width ??= width;
+    model.height ??= height;
+    model.depth ??= depth;
+    model.inputNumComps ??= numberOfComponents;
+    model.inputDataType ??= dataType;
+  };
+
+  publicAPI.getTextureParameters = () => ({
+    width: model.width,
+    height: model.height,
+    depth: model.depth,
+    numberOfComponents: model.inputNumComps,
+    dataType: model.inputDataType,
+  });
 }
 
 // ----------------------------------------------------------------------------

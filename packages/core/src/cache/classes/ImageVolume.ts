@@ -82,13 +82,6 @@ export class ImageVolume implements IImageVolume {
 
   numTimePoints? = null as number;
 
-  /**
-   * To be deprecated scalarData and sizeInBytes
-   * which is the old model of allocating the volume data
-   * and caching it in the volume object
-   */
-  private scalarDataProp?: PixelDataTypedArray | PixelDataTypedArray[];
-
   constructor(props: ImageVolumeProps) {
     const {
       imageIds,
@@ -104,8 +97,14 @@ export class ImageVolume implements IImageVolume {
       referencedImageIds,
       additionalDetails,
       voxelManager,
-      scalarData,
+      numberOfComponents,
     } = props;
+
+    if (!dataType) {
+      throw new Error(
+        'Data type is required, please provide a data type as string such as "Uint8Array", "Float32Array", etc.'
+      );
+    }
 
     let { imageData } = props;
 
@@ -117,22 +116,16 @@ export class ImageVolume implements IImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
-    this.scalarDataProp = scalarData;
 
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
 
     this.voxelManager =
       voxelManager ??
-      (this.scalarDataProp
-        ? VoxelManager.createScalarVolumeVoxelManager({
-            dimensions,
-            scalarData: this.scalarDataProp,
-          })
-        : VoxelManager.createImageVolumeVoxelManager({
-            dimensions,
-            imageIds,
-          }));
+      VoxelManager.createImageVolumeVoxelManager({
+        dimensions,
+        imageIds,
+      });
 
     this.numVoxels =
       this.dimensions[0] * this.dimensions[1] * this.dimensions[2];
@@ -146,53 +139,53 @@ export class ImageVolume implements IImageVolume {
     }
 
     imageData.set({
-      dataType: scalarData ? scalarData.constructor.name : dataType,
+      dataType: dataType,
       voxelManager: this.voxelManager,
       id: volumeId,
-      numberOfComponents: this.voxelManager.numComps || 1,
+      numberOfComponents:
+        this.voxelManager.numberOfComponents || numberOfComponents || 1,
     });
 
-    if (!scalarData) {
-      imageData.getPointData = () => {
-        console.warn(
-          'Scalar data is not available, you need to use voxelManager to get scalar data'
-        );
-        return imageData.getPointData();
-      };
+    // imageData.getPointData = () => {
+    //   console.warn(
+    //     'Scalar data is not available, you need to use voxelManager to get scalar data'
+    //   );
+    //   return imageData.getPointData();
+    // };
 
-      // make it impossible to get the scalar data from the imageData
-      imageData.getPointData().getScalars = () => {
-        throw new Error(
-          'Scalar data is not available, you need to use voxelManager to get scalar data'
-        );
-      };
+    // // make it impossible to get the scalar data from the imageData
+    // imageData.getPointData().getScalars = () => {
+    //   throw new Error(
+    //     'Scalar data is not available, you need to use voxelManager to get scalar data'
+    //   );
+    // };
 
-      imageData.set({
-        hasScalarVolume: false,
-      });
-    } else {
-      // IMPORTANT: We strongly discourage using this method to set
-      // scalar data as it will break the consistency of the volume data
-      // and the voxel manager, however for testing and debugging purposes
-      // we can provide the scalar data directly to the imageVolume
-      // and here we are setting the scalar data directly to the imageData
-      const dataArrayAttrs = {
-        numberOfComponents: this.voxelManager.numComps || 1,
-        dataType: this.dataType,
-      };
+    imageData.set({
+      hasScalarVolume: false,
+    });
+    // } else {
+    //   // IMPORTANT: We strongly discourage using this method to set
+    //   // scalar data as it will break the consistency of the volume data
+    //   // and the voxel manager, however for testing and debugging purposes
+    //   // we can provide the scalar data directly to the imageVolume
+    //   // and here we are setting the scalar data directly to the imageData
+    //   const dataArrayAttrs = {
+    //     numberOfComponents: this.voxelManager.numberOfComponents || 1,
+    //     dataType: this.dataType,
+    //   };
 
-      const scalarArray = vtkDataArray.newInstance({
-        name: `Pixels`,
-        values: scalarData,
-        ...dataArrayAttrs,
-      });
+    //   const scalarArray = vtkDataArray.newInstance({
+    //     name: `Pixels`,
+    //     values: scalarData,
+    //     ...dataArrayAttrs,
+    //   });
 
-      imageData.getPointData().setScalars(scalarArray);
+    //   imageData.getPointData().setScalars(scalarArray);
 
-      imageData.set({
-        hasScalarVolume: true,
-      });
-    }
+    //   imageData.set({
+    //     hasScalarVolume: true,
+    //   });
+    // }
 
     this.imageData = imageData;
 
@@ -297,12 +290,12 @@ export class ImageVolume implements IImageVolume {
     if (this.isDynamicVolume()) {
       throw new Error('Not implemented');
     } else {
-      if (this.scalarDataProp) {
-        this.scalarDataProp = this.imageData
-          .getPointData()
-          .getScalars()
-          .getData() as PixelDataTypedArray;
-      }
+      // if (this.scalarDataProp) {
+      //   this.scalarDataProp = this.imageData
+      //     .getPointData()
+      //     .getScalars()
+      //     .getData() as PixelDataTypedArray;
+      // }
     }
 
     this.numFrames = this._getNumFrames();
