@@ -9,16 +9,16 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
 const {
-  LengthTool,
+  EllipticalROITool,
   ToolGroupManager,
   StackScrollMouseWheelTool,
   ZoomTool,
@@ -84,22 +84,21 @@ async function run() {
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(EllipticalROITool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(LengthTool.toolName, { volumeId });
+  toolGroup.addTool(EllipticalROITool.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(EllipticalROITool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -120,14 +119,23 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const ptImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+
+  const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
+  const imageIds = ptImageIds;
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -190,9 +198,9 @@ async function run() {
   });
 
   // Set the volume to load
-  volume.load();
+  await volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

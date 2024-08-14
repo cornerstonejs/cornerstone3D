@@ -119,7 +119,18 @@ describe('Segmentation Tools --', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
       const vp = this.renderingEngine.getViewport(viewportId1);
 
       eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
@@ -182,7 +193,18 @@ describe('Segmentation Tools --', () => {
       );
       this.DOMElements.push(element);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
       const vp = this.renderingEngine.getViewport(viewportId1);
 
       const drawRectangle = () => {
@@ -330,7 +352,18 @@ describe('Segmentation Tools --', () => {
       this.DOMElements.push(element1);
       this.DOMElements.push(element2);
 
-      const volumeId = 'fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0';
+      const volumeId = testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURI',
+        rows: 100,
+        columns: 100,
+        slices: 10,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        rgb: 0,
+        pt: 0,
+      });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);
 

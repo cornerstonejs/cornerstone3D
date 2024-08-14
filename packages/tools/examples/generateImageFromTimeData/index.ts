@@ -163,9 +163,9 @@ let computedVolume;
 
 async function createVolumeFromTimeData(dataInTime) {
   // Fill the scalar data of the computed volume with the operation data
-  const scalarData = computedVolume.getScalarData();
+  const computedVoxelManager = computedVolume.voxelManager;
   for (let i = 0; i < dataInTime.length; i++) {
-    scalarData[i] = dataInTime[i];
+    computedVoxelManager.setAtIndex(i, dataInTime[i]);
   }
 
   const { imageData, vtkOpenGLTexture } = computedVolume;
@@ -269,7 +269,6 @@ async function run() {
     element: element2,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
-      background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
 

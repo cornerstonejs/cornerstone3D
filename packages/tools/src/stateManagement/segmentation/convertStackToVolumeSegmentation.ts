@@ -22,18 +22,12 @@ async function computeVolumeSegmentationFromStack({
 }): Promise<{ volumeId: string }> {
   const segmentationImageIds = imageIds;
 
-  const additionalDetails = {
-    imageIds,
-  };
-
   const volumeId = options?.volumeId ?? csUtils.uuidv4();
 
+  // Todo: fix this
   await volumeLoader.createAndCacheVolumeFromImages(
     volumeId,
-    segmentationImageIds,
-    {
-      additionalDetails,
-    }
+    segmentationImageIds
   );
 
   return { volumeId };

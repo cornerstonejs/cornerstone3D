@@ -47,7 +47,8 @@ export async function convertSurfaceToVolumeLabelmap(
     });
   });
 
-  const { dimensions, direction, origin, spacing } = segmentationVolume;
+  const { dimensions, direction, origin, spacing, voxelManager } =
+    segmentationVolume;
 
   triggerWorkerProgress(eventTarget, 0);
 
@@ -72,11 +73,7 @@ export async function convertSurfaceToVolumeLabelmap(
 
   triggerWorkerProgress(eventTarget, 1);
 
-  segmentationVolume.imageData
-    .getPointData()
-    .getScalars()
-    .setData(newScalarData);
-  segmentationVolume.imageData.modified();
+  voxelManager.setCompleteScalarDataArray(newScalarData);
 
   // update the scalarData in the volume as well
   segmentationVolume.modified();

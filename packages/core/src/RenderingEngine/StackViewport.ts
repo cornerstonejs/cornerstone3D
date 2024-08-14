@@ -101,7 +101,7 @@ const EPSILON = 1; // Slice Thickness
 
 interface ImageDataMetaData {
   bitsAllocated: number;
-  numComps: number;
+  numberOfComponents: number;
   origin: Point3;
   direction: Mat3;
   dimensions: Point3;
@@ -172,12 +172,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
   // CPU fallback
   private useCPURendering: boolean;
-  // Since WebGL natively supports 8 bit int and Float32, we should check if
-  // extra configuration flags has been set to use native data type
-  // which would save a lot of memory and speed up rendering but it is not
-  // yet widely supported in all hardwares. This feature can be turned on
-  // by setting useNorm16Texture or preferSizeOverAccuracy in the configuration
-  private useNativeDataType = false;
   private cpuImagePixelData: PixelDataTypedArray;
   private cpuRenderingInvalidated: boolean;
   private csImage: IImage;
@@ -203,7 +197,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.scaling = {};
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
-    this.useNativeDataType = this._shouldUseNativeDataType();
     this._configureRenderingPipeline();
 
     this.useCPURendering
@@ -233,7 +226,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
-    this.useNativeDataType = this._shouldUseNativeDataType();
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const key in this.renderingPipelineFunctions) {
@@ -456,7 +448,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
-      scalarData: vtkImageData.getPointData().getScalars().getData(),
+      get scalarData() {
+        return this.csImage.voxelManager.getScalarData();
+      },
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: this.modality,
@@ -513,6 +507,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       preScale: {
         ...this.csImage.preScale,
       },
+      voxelManager: this.csImage.voxelManager,
     };
   }
 
@@ -552,7 +547,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       mapper.setPreferSizeOverAccuracy(true);
     }
 
-    if (imageData.getPointData().getNumberOfComponents() > 1) {
+    if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
     }
 
@@ -1558,15 +1553,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const zSpacing = EPSILON;
     const zVoxels = 1;
 
-    const numComps =
-      image.numComps ||
+    const numberOfComponents =
+      image.numberOfComponents ||
       this._getNumCompsFromPhotometricInterpretation(
         imagePixelModule.photometricInterpretation
       );
 
     return {
       bitsAllocated: imagePixelModule.bitsAllocated,
-      numComps,
+      numberOfComponents,
       origin,
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal] as Mat3,
       dimensions: [xVoxels, yVoxels, zVoxels],
@@ -1639,7 +1634,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     direction,
     dimensions,
     spacing,
-    numComps,
+    numberOfComponents,
     pixelArray,
   }) {
     const values = new pixelArray.constructor(pixelArray.length);
@@ -1647,7 +1642,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // Todo: I guess nothing should be done for use16bit?
     const scalarArray = vtkDataArray.newInstance({
       name: 'Pixels',
-      numberOfComponents: numComps,
+      numberOfComponents: numberOfComponents,
       values: values,
     });
 
@@ -1673,7 +1668,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     direction,
     dimensions,
     spacing,
-    numComps,
+    numberOfComponents,
     pixelArray,
   }): void {
     this._imageData = this.createVTKImageData({
@@ -1681,7 +1676,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction,
       dimensions,
       spacing,
-      numComps,
+      numberOfComponents,
       pixelArray,
     });
   }
@@ -1798,8 +1793,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       yVoxels === image.rows &&
       isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
       isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
-      (!this.useNativeDataType ||
-        dataType === image.getPixelData().constructor.name)
+      dataType === image.voxelManager.getScalarData().constructor.name
     );
   }
 
@@ -1859,7 +1853,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
           return;
         }
 
-        const pixelData = image.getPixelData();
+        const pixelData = image.voxelManager.getScalarData();
 
         // handle the case where the pixelData is a Float32Array
         // CPU path cannot handle it, it should be converted to Uint16Array
@@ -2058,25 +2052,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const imageIdIndex = this.imageIds.indexOf(imageId);
     const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
-    /**
-     * If use16bittexture is specified, the CSWIL will automatically choose the
-     * array type when no targetBuffer is provided. When CSWIL is initialized,
-     * the use16bit should match the settings of cornerstone3D (either preferSizeOverAccuracy
-     * or norm16 textures need to be enabled)
-     *
-     * If use16bittexture is not specified, we force the Float32Array for now
-     */
-    const additionalDetails = { imageId, imageIdIndex };
     const options = {
-      targetBuffer: {
-        type: this.useNativeDataType ? undefined : 'Float32Array',
-      },
       useRGBA: false,
       transferSyntaxUID,
-      useNativeDataType: this.useNativeDataType,
       priority: 5,
       requestType: RequestType.Interaction,
-      additionalDetails,
+      additionalDetails: { imageId, imageIdIndex },
     };
     return options;
   }
@@ -2176,7 +2157,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._cpuFallbackEnabledElement.metadata = {
       ...metadata,
     };
-    this.cpuImagePixelData = image.getPixelData();
+    this.cpuImagePixelData = image.voxelManager.getScalarData();
 
     const viewportSettingToUse = Object.assign(
       {},
@@ -2202,6 +2183,17 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     );
   }
 
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
+  }
+
   /**
    * This method is used to add images to the stack viewport.
    * It takes an array of stack inputs, each containing an imageId and an actor UID.
@@ -2217,7 +2209,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const { imageId } = stackInput;
       const image = cache.getImage(imageId);
 
-      const { origin, dimensions, direction, spacing, numComps } =
+      const { origin, dimensions, direction, spacing, numberOfComponents } =
         this.getImageDataMetadata(image);
 
       const imagedata = this.createVTKImageData({
@@ -2225,8 +2217,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         dimensions,
         direction,
         spacing,
-        numComps,
-        pixelArray: image.getPixelData(),
+        numberOfComponents,
+        pixelArray: image.voxelManager.getScalarData(),
       });
 
       const imageActor = this.createActorMapper(imagedata);
@@ -2329,20 +2321,20 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       direction,
       dimensions,
       spacing,
-      numComps,
+      numberOfComponents,
       imagePixelModule,
     } = this.getImageDataMetadata(image);
 
     // 3b. If we cannot reuse the vtkImageData object (either the first render
     // or the size has changed), create a new one
 
-    const pixelArray = image.getPixelData();
+    const pixelArray = image.voxelManager.getScalarData();
     this._createVTKImageData({
       origin,
       direction,
       dimensions,
       spacing,
-      numComps,
+      numberOfComponents,
       pixelArray,
     });
 
@@ -2878,6 +2870,27 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   public getSliceIndex = (): number => {
     return this.currentImageIdIndex;
   };
+
+  /**
+   * Returns information about the current slice view.
+   * @returns An object containing the slice index and slice axis.
+   * @throws Error if the view is oblique.
+   */
+  public getSliceInfo(): {
+    sliceIndex: number;
+    slicePlane: number;
+    width: number;
+    height: number;
+  } {
+    const sliceIndex = this.getSliceIndex();
+    const { dimensions } = this.getImageData();
+    return {
+      width: dimensions[0],
+      height: dimensions[1],
+      sliceIndex,
+      slicePlane: 2,
+    };
+  }
 
   /**
    * Checks to see if this target is or could be shown in this viewport

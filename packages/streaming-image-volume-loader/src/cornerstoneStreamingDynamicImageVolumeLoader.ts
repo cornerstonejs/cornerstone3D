@@ -1,18 +1,12 @@
-import { getVolumeInfo, splitImageIdsBy4DTags } from './helpers';
+import { utilities } from '@cornerstonejs/core';
+import { splitImageIdsBy4DTags } from './helpers';
 import StreamingDynamicImageVolume from './StreamingDynamicImageVolume';
+import type { vec3 } from 'gl-matrix';
 
 interface IVolumeLoader {
   promise: Promise<StreamingDynamicImageVolume>;
   cancel: () => void;
   decache: () => void;
-}
-
-function get4DVolumeInfo(imageIds: string[]) {
-  const { imageIdsGroups, splittingTag } = splitImageIdsBy4DTags(imageIds);
-  return {
-    volumesInfo: imageIdsGroups.map((imageIds) => getVolumeInfo(imageIds)),
-    splittingTag,
-  };
 }
 
 /**
@@ -40,26 +34,43 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   }
 
   const { imageIds } = options;
-  const { volumesInfo, splittingTag } = get4DVolumeInfo(imageIds);
-
+  const { splittingTag, imageIdGroups } = splitImageIdsBy4DTags(imageIds);
+  const volumeProps = utilities.generateVolumePropsFromImageIds(
+    imageIdGroups[0],
+    volumeId
+  );
   const {
     metadata: volumeMetadata,
     dimensions,
     spacing,
-    origin,
     direction,
     sizeInBytes,
-  } = volumesInfo[0];
+    origin,
+    numberOfComponents,
+    dataType,
+  } = volumeProps;
 
-  const sortedImageIdsArrays = [];
-  const scalarDataArrays = [];
+  const scanAxisNormal = direction.slice(6, 9) as vec3;
 
-  volumesInfo.forEach((volumeInfo) => {
-    sortedImageIdsArrays.push(volumeInfo.sortedImageIds);
-    scalarDataArrays.push(volumeInfo.scalarData);
+  const sortedImageIdGroups = imageIdGroups.map((imageIds) => {
+    const sortedImageIds = utilities.sortImageIdsAndGetSpacing(
+      imageIds,
+      scanAxisNormal
+    ).sortedImageIds;
+
+    return sortedImageIds;
   });
 
-  const sortedImageIds = sortedImageIdsArrays.flat();
+  const sortedFlatImageIds = sortedImageIdGroups.flat();
+
+  const voxelManager =
+    utilities.VoxelManager.createScalarDynamicVolumeVoxelManager({
+      dimensions,
+      imageIdGroups: sortedImageIdGroups,
+      timePoint: 0,
+      numberOfComponents,
+    });
+
   let streamingImageVolume = new StreamingDynamicImageVolume(
     // ImageVolume properties
     {
@@ -69,14 +80,17 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
       spacing,
       origin,
       direction,
-      scalarData: scalarDataArrays,
       sizeInBytes,
-      imageIds: sortedImageIds,
+      imageIds: sortedFlatImageIds,
+      imageIdGroups: sortedImageIdGroups,
       splittingTag,
+      voxelManager,
+      numberOfComponents,
+      dataType,
     },
     // Streaming properties
     {
-      imageIds: sortedImageIds,
+      imageIds: sortedFlatImageIds,
       loadStatus: {
         // todo: loading and loaded should be on ImageVolume
         loaded: false,

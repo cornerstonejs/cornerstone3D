@@ -4,6 +4,7 @@ import * as renderToCanvas_gpu_setStack from './groundTruth/renderToCanvas_gpu_s
 import * as renderToCanvas_gpu_canvas from './groundTruth/renderToCanvas_gpu_canvas.png';
 import * as renderToCanvas_gpu_setStack_color from './groundTruth/renderToCanvas_gpu_setStack_color.png';
 import * as renderToCanvas_gpu_canvas_color from './groundTruth/renderToCanvas_gpu_canvas_color.png';
+import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
 const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
   cornerstone3D;
@@ -78,7 +79,21 @@ describe('renderToCanvas -- GPU', () => {
     this.DOMElements.push(canvas);
 
     // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
-    const imageId = 'fakeImageLoader:imageURI_64_64_20_5_1_1_0';
+    const imageInfo = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 20,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      rgb: 0,
+      pt: 0,
+      sliceIndex: 0,
+    };
+
+    const imageId = encodeImageIdInfo(imageInfo);
 
     const vp = this.renderingEngine.getViewport(viewportId);
     element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -117,7 +132,7 @@ describe('renderToCanvas -- GPU', () => {
     }
   });
 
-  // fit('Should render exact pixel image with scale 1', function (done) {
+  // it('Should render exact pixel image with scale 1', function (done) {
   //   const width = 256;
   //   const height = 256;
   //   const element = createViewport(this.renderingEngine, AXIAL, width, height);
@@ -184,8 +199,19 @@ describe('renderToCanvas -- GPU', () => {
     document.body.appendChild(canvas);
     this.DOMElements.push(canvas);
 
-    // imageId : imageLoaderScheme: imageURI_rows_columns_barStart_barWidth_xSpacing_ySpacing_rgbFlag
-    const imageId = 'fakeImageLoader:imageURI_100_100_0_10_1_1_1';
+    const imageInfo = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 100,
+      columns: 100,
+      barStart: 0,
+      barWidth: 10,
+      xSpacing: 1,
+      ySpacing: 1,
+      rgb: 1,
+    };
+
+    const imageId = encodeImageIdInfo(imageInfo);
 
     const vp = this.renderingEngine.getViewport(viewportId);
     element.addEventListener(Events.IMAGE_RENDERED, () => {

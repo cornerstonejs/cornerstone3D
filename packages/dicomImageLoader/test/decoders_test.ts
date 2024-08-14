@@ -97,8 +97,8 @@ describe('Test lossless TransferSyntaxes decoding', function () {
           createImage(imageId, pixelData, curTransferSyntax, {})
             .then((image) => {
               const uncompressedImagePixelData =
-                uncompressedImage.getPixelData();
-              const curPixelData = image.getPixelData();
+                uncompressedimage.voxelManager.getScalarData();
+              const curPixelData = image.voxelManager.getScalarData();
 
               uncompressedImagePixelData.length.should.to.be.equals(
                 curPixelData.length

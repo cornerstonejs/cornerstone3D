@@ -6,6 +6,10 @@ import * as volumeURI_100_100_10_1_1_1_0_scrolled from './groundTruth/volumeURI_
 import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_64_0_20_1_1_0_scrolled.png';
 import * as imageURI_64_64_15_5_3_2_0 from './groundTruth/imageURI_64_64_15_5_3_2_0.png';
 import * as imageURI_64_64_10_5_3_2_0 from './groundTruth/imageURI_64_64_10_5_3_2_0.png';
+import {
+  encodeImageIdInfo,
+  encodeVolumeIdInfo,
+} from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -35,7 +39,18 @@ const toolGroupId = 'stackscrollmousetool';
 
 const viewportId = 'VIEWPORT22';
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+const volumeId = encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+  zSpacing: 1,
+  rgb: 0,
+  pt: 0,
+});
 
 function createViewport(renderingEngine, viewportType, width, height) {
   const element = document.createElement('div');
@@ -188,8 +203,32 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     );
     this.DOMElements.push(element);
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const imageId2 = 'fakeImageLoader:imageURI_64_64_0_20_1_1_0';
+    const imageId1 = encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      rgb: 0,
+      pt: 0,
+      sliceIndex: 0,
+    });
+    const imageId2 = encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      rgb: 0,
+      pt: 0,
+      sliceIndex: 0,
+    });
     const vp = this.renderingEngine.getViewport(viewportId);
 
     function renderEventHandler() {
@@ -268,8 +307,32 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     );
     this.DOMElements.push(element);
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_3_2_0';
-    const imageId2 = 'fakeImageLoader:imageURI_64_64_15_5_3_2_0';
+    const imageId1 = encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      rgb: 0,
+      pt: 0,
+      sliceIndex: 0,
+    });
+    const imageId2 = encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      rgb: 0,
+      pt: 0,
+      sliceIndex: 0,
+    });
     const vp = this.renderingEngine.getViewport(viewportId);
 
     let handlerRun = false;

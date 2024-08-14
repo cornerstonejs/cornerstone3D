@@ -18,7 +18,7 @@ const autoLoad = (volumeId: string): void => {
   const renderingEngineAndViewportIds =
     getRenderingEngineAndViewportsContainingVolume(volumeId);
 
-  if (!renderingEngineAndViewportIds || !renderingEngineAndViewportIds.length) {
+  if (!renderingEngineAndViewportIds?.length) {
     return;
   }
 
@@ -29,15 +29,20 @@ const autoLoad = (volumeId: string): void => {
   });
 };
 
+/**
+ * Retrieves rendering engines and their viewports that contain the specified volume.
+ *
+ * @param volumeId - The ID of the volume to search for.
+ * @returns An array of objects, each containing a rendering engine and the IDs of its viewports that contain the volume.
+ */
 function getRenderingEngineAndViewportsContainingVolume(
   volumeId: string
 ): Array<RenderingEngineAndViewportIds> {
   const renderingEnginesArray = getRenderingEngines();
+  const renderingEngineAndViewportIds: Array<RenderingEngineAndViewportIds> =
+    [];
 
-  const renderingEngineAndViewportIds = [];
-
-  for (let i = 0; i < renderingEnginesArray.length; i++) {
-    const renderingEngine = renderingEnginesArray[i];
+  renderingEnginesArray.forEach((renderingEngine) => {
     const viewports = utilities.getViewportsWithVolumeId(
       volumeId,
       renderingEngine.id
@@ -49,7 +54,7 @@ function getRenderingEngineAndViewportsContainingVolume(
         viewportIds: viewports.map((viewport) => viewport.id),
       });
     }
-  }
+  });
 
   return renderingEngineAndViewportIds;
 }

@@ -5,24 +5,22 @@ import {
 } from '../RenderingEngine/getRenderingEngine';
 
 /**
- * Similar to {@link getVolumeViewportsContainingSameVolumes}, but uses the volumeId
- * to filter viewports that contain the same volume.
+ * Retrieves viewports containing a specific volume ID.
  *
- * @returns VolumeViewport viewports array
+ * @param volumeId - The ID of the volume to search for within viewports.
+ * @param renderingEngineId - (Optional) The ID of a specific rendering engine to search in.
+ * @returns An array of volume viewports that contain the specified volume ID.
  */
 function getViewportsWithVolumeId(
   volumeId: string,
   renderingEngineId?: string
 ): Array<IVolumeViewport> {
   // If rendering engine is not provided, use all rendering engines
-  let renderingEngines;
-  if (renderingEngineId) {
-    renderingEngines = [getRenderingEngine(renderingEngineId)];
-  } else {
-    renderingEngines = getRenderingEngines();
-  }
+  const renderingEngines = renderingEngineId
+    ? [getRenderingEngine(renderingEngineId)]
+    : getRenderingEngines();
 
-  const targetViewports = [];
+  const targetViewports: IVolumeViewport[] = [];
 
   renderingEngines.forEach((renderingEngine) => {
     const viewports = renderingEngine.getVolumeViewports();

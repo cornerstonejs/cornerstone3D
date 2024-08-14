@@ -119,6 +119,5 @@
   "globals": {
     "context": true,
     "assert": true,
-    "SharedArrayBuffer": true
   }
 }

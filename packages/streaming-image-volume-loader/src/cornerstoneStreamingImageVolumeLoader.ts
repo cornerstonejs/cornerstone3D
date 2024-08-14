@@ -77,16 +77,21 @@ function cornerstoneStreamingImageVolumeLoader(
       ).catch(console.error);
     }
 
+    const volumeProps = csUtils.generateVolumePropsFromImageIds(
+      options.imageIds,
+      volumeId
+    );
+
     const {
       dimensions,
       spacing,
       origin,
-      scalarData,
       direction,
-      sizeInBytes,
       metadata,
       imageIds,
-    } = csUtils.generateVolumePropsFromImageIds(options.imageIds, volumeId);
+      dataType,
+      numberOfComponents,
+    } = volumeProps;
 
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
@@ -97,9 +102,9 @@ function cornerstoneStreamingImageVolumeLoader(
         spacing,
         origin,
         direction,
-        scalarData,
-        sizeInBytes,
         imageIds,
+        dataType,
+        numberOfComponents,
       },
       // Streaming properties
       {

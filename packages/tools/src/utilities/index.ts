@@ -21,12 +21,10 @@ import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderFor
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
 
-import pointInShapeCallback from './pointInShapeCallback';
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
 import {
   annotationHydration,
@@ -78,13 +76,11 @@ export {
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRenderForToolGroupIds,
   triggerAnnotationRender,
-  pointInShapeCallback,
   getSphereBoundsInfo,
   getAnnotationNearPoint,
   getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,
-  pointInSurroundingSphereCallback,
   viewport,
   cine,
   clip,

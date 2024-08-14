@@ -1,4 +1,4 @@
-import { IImageVolume, PixelDataTypedArray } from '../types';
+import { IImageVolume } from '../types';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -11,8 +11,8 @@ interface IDynamicImageVolume extends IImageVolume {
   set timePointIndex(newTimePointIndex: number);
   /** Returns the number of time points */
   get numTimePoints(): number;
-  /** return scalar data arrays (one per timepoint) */
-  getScalarDataArrays(): PixelDataTypedArray[];
+
+  scroll(delta: number): void;
 }
 
 export default IDynamicImageVolume;

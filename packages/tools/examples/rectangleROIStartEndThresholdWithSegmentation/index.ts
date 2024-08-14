@@ -169,12 +169,6 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
     const labelmapVolume = cache.getVolume(segmentationId);
-    const scalarData = labelmapVolume.getScalarData();
-
-    //We set the segmentation to 0
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
-    }
 
     annotations.map((annotation, i) => {
       // @ts-ignore
@@ -182,7 +176,10 @@ addButtonToToolbar({
       for (let i = 0; i < pointsInVolume.length; i++) {
         for (let j = 0; j < pointsInVolume[i].length; j++) {
           if (pointsInVolume[i][j].value > 2) {
-            scalarData[pointsInVolume[i][j].index] = 1;
+            labelmapVolume.voxelManager.setAtIndex(
+              pointsInVolume[i][j].index,
+              1
+            );
           }
         }
       }

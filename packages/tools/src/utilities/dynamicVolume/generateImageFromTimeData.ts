@@ -1,5 +1,43 @@
 import { Enums, Types } from '@cornerstonejs/core';
 
+const operationFunctions = {
+  [Enums.GenerateImageType.SUM]: (voxelManager, frames, arrayLength) => {
+    const finalArray = new Float32Array(arrayLength);
+    for (const timepoint of frames) {
+      for (let j = 0; j < arrayLength; j++) {
+        finalArray[j] += voxelManager.getAtIndexAndTimePoint(j, timepoint);
+      }
+    }
+    return finalArray;
+  },
+
+  [Enums.GenerateImageType.SUBTRACT]: (voxelManager, frames, arrayLength) => {
+    if (frames.length !== 2) {
+      throw new Error('Please provide only 2 time points for subtraction.');
+    }
+    const finalArray = new Float32Array(arrayLength);
+    for (let j = 0; j < arrayLength; j++) {
+      finalArray[j] =
+        voxelManager.getAtIndexAndTimePoint(j, frames[0]) -
+        voxelManager.getAtIndexAndTimePoint(j, frames[1]);
+    }
+    return finalArray;
+  },
+
+  [Enums.GenerateImageType.AVERAGE]: (voxelManager, frames, arrayLength) => {
+    const finalArray = new Float32Array(arrayLength);
+    for (const timepoint of frames) {
+      for (let j = 0; j < arrayLength; j++) {
+        finalArray[j] += voxelManager.getAtIndexAndTimePoint(j, timepoint);
+      }
+    }
+    for (let k = 0; k < arrayLength; k++) {
+      finalArray[k] /= frames.length;
+    }
+    return finalArray;
+  },
+};
+
 /**
  * Gets the scalar data for a series of time frames from a 4D volume, returns an
  * array of scalar data after performing AVERAGE, SUM or SUBTRACT to be used to
@@ -14,55 +52,25 @@ import { Enums, Types } from '@cornerstonejs/core';
  */
 function generateImageFromTimeData(
   dynamicVolume: Types.IDynamicImageVolume,
-  operation: string,
+  operation: Enums.GenerateImageType,
   frameNumbers?: number[]
 ) {
-  // If no time frames provided, use all time frames
   const frames = frameNumbers || [...Array(dynamicVolume.numTimePoints).keys()];
-  const numFrames = frames.length;
 
   if (frames.length <= 1) {
     throw new Error('Please provide two or more time points');
   }
 
-  // Gets scalar data for all time frames
-  const typedArrays = dynamicVolume.getScalarDataArrays();
+  const voxelManager = dynamicVolume.voxelManager;
+  const arrayLength = voxelManager.getScalarDataLength();
 
-  const arrayLength = typedArrays[0].length;
-  const finalArray = new Float32Array(arrayLength);
+  const operationFunction = operationFunctions[operation];
 
-  if (operation === Enums.DynamicOperatorType.SUM) {
-    for (let i = 0; i < numFrames; i++) {
-      const currentArray = typedArrays[frames[i]];
-      for (let j = 0; j < arrayLength; j++) {
-        finalArray[j] += currentArray[j];
-      }
-    }
-    return finalArray;
+  if (!operationFunction) {
+    throw new Error(`Unsupported operation: ${operation}`);
   }
 
-  if (operation === Enums.DynamicOperatorType.SUBTRACT) {
-    if (frames.length > 2) {
-      throw new Error('Please provide only 2 time points for subtraction.');
-    }
-    for (let j = 0; j < arrayLength; j++) {
-      finalArray[j] += typedArrays[frames[0]][j] - typedArrays[frames[1]][j];
-    }
-    return finalArray;
-  }
-
-  if (operation === Enums.DynamicOperatorType.AVERAGE) {
-    for (let i = 0; i < numFrames; i++) {
-      const currentArray = typedArrays[frames[i]];
-      for (let j = 0; j < arrayLength; j++) {
-        finalArray[j] += currentArray[j];
-      }
-    }
-    for (let k = 0; k < arrayLength; k++) {
-      finalArray[k] = finalArray[k] / numFrames;
-    }
-    return finalArray;
-  }
+  return operationFunction(voxelManager, frames, arrayLength);
 }
 
 export default generateImageFromTimeData;

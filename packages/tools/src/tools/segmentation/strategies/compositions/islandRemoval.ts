@@ -16,7 +16,7 @@ export default {
   ) => {
     const {
       previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,

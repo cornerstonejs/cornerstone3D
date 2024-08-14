@@ -13,8 +13,7 @@ export function fillVolumeLabelmapWithMockData({
   outerRadius = null,
 }) {
   const segmentationVolume = cornerstone.cache.getVolume(segVolumeId);
-  const scalarData = segmentationVolume.scalarData;
-  const { dimensions } = segmentationVolume;
+  const { dimensions, voxelManager } = segmentationVolume;
 
   innerRadius = innerRadius || dimensions[0] / 8;
   outerRadius = outerRadius || dimensions[0] / 4;
@@ -36,9 +35,9 @@ export function fillVolumeLabelmapWithMockData({
             (z - center[2]) * (z - center[2])
         );
         if (distanceFromCenter < innerRadius) {
-          scalarData[voxelIndex] = 1;
+          voxelManager.setAtIndex(voxelIndex, 1);
         } else if (distanceFromCenter < outerRadius) {
-          scalarData[voxelIndex] = 2;
+          voxelManager.setAtIndex(voxelIndex, 2);
         }
 
         voxelIndex++;

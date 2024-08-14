@@ -466,12 +466,12 @@ function getCurrentLabelmapImageIdForViewport(
   );
 }
 
-function updateSegmentationImageReferences(
+function updateLabelmapSegmentationImageReferences(
   viewportId: string,
   segmentationId: string
 ) {
   const segmentationStateManager = getDefaultSegmentationStateManager();
-  segmentationStateManager.updateSegmentationImageReferences(
+  segmentationStateManager.updateLabelmapSegmentationImageReferences(
     viewportId,
     segmentationId
   );
@@ -513,5 +513,5 @@ export {
   getActiveSegmentationRepresentation,
   setActiveSegmentationRepresentation,
   getCurrentLabelmapImageIdForViewport,
-  updateSegmentationImageReferences,
+  updateLabelmapSegmentationImageReferences,
 };

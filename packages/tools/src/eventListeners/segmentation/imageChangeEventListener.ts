@@ -84,10 +84,11 @@ function _imageChangeEventListener(evt) {
   // Update the maps
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
-    const labelmapImageId = SegmentationState.updateSegmentationImageReferences(
-      viewportId,
-      segmentationId
-    );
+    const labelmapImageId =
+      SegmentationState.updateLabelmapSegmentationImageReferences(
+        viewportId,
+        segmentationId
+      );
   });
 
   // const segmentationFound = actors.find((actor) => {
@@ -201,7 +202,8 @@ function _imageChangeEventListener(evt) {
       const scalarArray = vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: 1,
-        values: [...derivedImage.getPixelData()],
+        // @ts-ignore
+        values: [...derivedImage.voxelManager.getScalarData()],
       });
 
       const imageData = vtkImageData.newInstance();

@@ -26,12 +26,6 @@ function isVolumeSegmentation(
     return false;
   }
 
-  if (volumeId && imageIds && !viewport) {
-    throw new Error(
-      'isVolumeSegmentation: viewport is required when both volumeId and imageIds are provided'
-    );
-  }
-
   // we can get the viewport to decide
   return viewport instanceof VolumeViewport;
 }

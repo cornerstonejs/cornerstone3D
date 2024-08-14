@@ -24,6 +24,7 @@ export default interface IRenderingEngine {
   disableElement(viewportId: string): void;
   getStackViewports(): Array<IStackViewport>;
   getVolumeViewports(): Array<IVolumeViewport>;
+  getStackViewport(id: string): IStackViewport;
   destroy(): void;
   _debugRender(): void;
 }

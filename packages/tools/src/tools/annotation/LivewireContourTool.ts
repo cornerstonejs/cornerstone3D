@@ -153,11 +153,12 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { imageData: vtkImageData } = viewportImageData;
     let worldToSlice: (point: Types.Point3) => Types.Point2;
     let sliceToWorld: (point: Types.Point2) => Types.Point3;
-    let { scalarData } = viewportImageData;
     let width;
     let height;
+    let scalarData;
 
     if (!(viewport instanceof VolumeViewport) && scalarData) {
+      ({ scalarData } = viewportImageData);
       width = viewportImageData.dimensions[0];
       height = viewportImageData.dimensions[1];
 

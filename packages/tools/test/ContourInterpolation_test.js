@@ -6,6 +6,7 @@ import {
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import EventTypes from '../src/enums/Events';
+import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -196,7 +197,16 @@ function createViewport(renderingEngine, viewportType, width, height) {
   return element;
 }
 
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_4_1_1_1_0`;
+const volumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 4,
+  xSpacing: 1,
+  ySpacing: 1,
+  rgb: 1,
+});
 
 describe('Contours Interpolation: ', () => {
   beforeAll(() => {
@@ -290,10 +300,58 @@ describe('Contours Interpolation: ', () => {
       this.DOMElements.push(element);
 
       const imageIds = [
-        'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
-        'fakeImageLoader:imageURI_64_64_0_20_1_1_0',
-        'fakeImageLoader:imageURI_64_64_10_5_3_2_0',
-        'fakeImageLoader:imageURI_64_64_15_5_3_2_0',
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 10,
+          barWidth: 5,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 0,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 0,
+          barWidth: 20,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 1,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 10,
+          barWidth: 5,
+          xSpacing: 3,
+          ySpacing: 2,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 2,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 15,
+          barWidth: 5,
+          xSpacing: 3,
+          ySpacing: 2,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 3,
+        }),
       ];
       const vp = this.renderingEngine.getViewport(viewportId);
       let expectedContourCount = 0;
@@ -437,11 +495,71 @@ describe('Contours Interpolation: ', () => {
       this.DOMElements.push(element);
 
       const imageIds = [
-        'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
-        'fakeImageLoader:imageURI_64_64_0_20_1_1_0',
-        'fakeImageLoader:imageURI_64_64_20_35_1_1_0',
-        'fakeImageLoader:imageURI_64_64_5_25_1_1_0',
-        'fakeImageLoader:imageURI_64_64_15_30_1_1_0',
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 10,
+          barWidth: 5,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 0,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 0,
+          barWidth: 20,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 1,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 20,
+          barWidth: 35,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 2,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 5,
+          barWidth: 25,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 3,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 15,
+          barWidth: 30,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 4,
+        }),
       ];
 
       element.addEventListener(
@@ -531,10 +649,58 @@ describe('Contours Interpolation: ', () => {
       this.DOMElements.push(element);
 
       const imageIds = [
-        'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
-        'fakeImageLoader:imageURI_64_64_0_20_1_1_0',
-        'fakeImageLoader:imageURI_64_64_10_5_3_2_0',
-        'fakeImageLoader:imageURI_64_64_15_5_3_2_0',
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 10,
+          barWidth: 5,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 0,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 0,
+          barWidth: 20,
+          xSpacing: 1,
+          ySpacing: 1,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 1,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 10,
+          barWidth: 5,
+          xSpacing: 3,
+          ySpacing: 2,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 2,
+        }),
+        encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 15,
+          barWidth: 5,
+          xSpacing: 3,
+          ySpacing: 2,
+          rgb: 0,
+          pt: 0,
+          sliceIndex: 3,
+        }),
       ];
       const vp = this.renderingEngine.getViewport(viewportId);
       let expectedContourCount = 0;
@@ -684,11 +850,71 @@ describe('Contours Interpolation: ', () => {
     //   this.DOMElements.push(element);
 
     //   const imageIds = [
-    //     'fakeImageLoader:imageURI_64_64_10_5_1_1_0',
-    //     'fakeImageLoader:imageURI_64_64_0_20_1_1_0',
-    //     'fakeImageLoader:imageURI_64_64_20_35_1_1_0',
-    //     'fakeImageLoader:imageURI_64_64_5_25_1_1_0',
-    //     'fakeImageLoader:imageURI_64_64_15_30_1_1_0',
+    //     encodeImageIdInfo({
+    //       loader: 'fakeImageLoader',
+    //       name: 'imageURI',
+    //       rows: 64,
+    //       columns: 64,
+    //       barStart: 10,
+    //       barWidth: 5,
+    //       xSpacing: 1,
+    //       ySpacing: 1,
+    //       rgb: 0,
+    //       pt: 0,
+    //       sliceIndex: 0
+    //     }),
+    //     encodeImageIdInfo({
+    //       loader: 'fakeImageLoader',
+    //       name: 'imageURI',
+    //       rows: 64,
+    //       columns: 64,
+    //       barStart: 0,
+    //       barWidth: 20,
+    //       xSpacing: 1,
+    //       ySpacing: 1,
+    //       rgb: 0,
+    //       pt: 0,
+    //       sliceIndex: 1
+    //     }),
+    //     encodeImageIdInfo({
+    //       loader: 'fakeImageLoader',
+    //       name: 'imageURI',
+    //       rows: 64,
+    //       columns: 64,
+    //       barStart: 20,
+    //       barWidth: 35,
+    //       xSpacing: 1,
+    //       ySpacing: 1,
+    //       rgb: 0,
+    //       pt: 0,
+    //       sliceIndex: 2
+    //     }),
+    //     encodeImageIdInfo({
+    //       loader: 'fakeImageLoader',
+    //       name: 'imageURI',
+    //       rows: 64,
+    //       columns: 64,
+    //       barStart: 5,
+    //       barWidth: 25,
+    //       xSpacing: 1,
+    //       ySpacing: 1,
+    //       rgb: 0,
+    //       pt: 0,
+    //       sliceIndex: 3
+    //     }),
+    //     encodeImageIdInfo({
+    //       loader: 'fakeImageLoader',
+    //       name: 'imageURI',
+    //       rows: 64,
+    //       columns: 64,
+    //       barStart: 15,
+    //       barWidth: 30,
+    //       xSpacing: 1,
+    //       ySpacing: 1,
+    //       rgb: 0,
+    //       pt: 0,
+    //       sliceIndex: 4
+    //     })
     //   ];
 
     //   element.addEventListener(

@@ -89,7 +89,7 @@ addButtonToToolbar({
       segmentation.state.removeRepresentation(volumeToolGroupId);
 
       newViewport = await csUtils.convertStackToVolumeViewport({
-        viewport: viewport as Types.IStackViewport,
+        viewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
           volumeId: `cornerstoneStreamingImageVolume:myVolume`,
@@ -103,7 +103,6 @@ addButtonToToolbar({
       segmentation.convertStackToVolumeSegmentation({
         segmentationId,
         options: {
-          toolGroupId: volumeToolGroupId,
           volumeId: `cornerstoneStreamingImageVolume:segMyVolume`,
         },
       });
@@ -358,8 +357,10 @@ async function _startFromStack(
   imageIds: string[],
   renderingEngine: RenderingEngine
 ) {
-  const { imageIds: segmentationImageIds } =
+  const derivedImages =
     await cornerstone.imageLoader.createAndCacheDerivedImages(imageIds);
+
+  const segmentationImageIds = derivedImages.map((image) => image.imageId);
 
   // Instantiate a rendering engine
   // Create a stack viewport

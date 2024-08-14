@@ -4,7 +4,7 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import { vec2, vec3 } from 'gl-matrix';
-
+import type { mat4 } from 'gl-matrix';
 import cache from '../cache';
 import {
   MPR_CAMERA_VALUES,
@@ -22,7 +22,6 @@ import {
 import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
-import { loadVolume } from '../loaders/volumeLoader';
 import type {
   ActorEntry,
   ColormapPublic,
@@ -77,7 +76,6 @@ import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
  */
 abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
-  useNativeDataType = false;
   private _FrameOfReferenceUID: string;
 
   protected initialTransferFunctionNodes: any;
@@ -90,12 +88,12 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   // Camera properties
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
+  private volumeIds = new Set<string>();
 
   constructor(props: ViewportInput) {
     super(props);
 
     this.useCPURendering = getShouldUseCPURendering();
-    this.useNativeDataType = this._shouldUseNativeDataType();
 
     if (this.useCPURendering) {
       throw new Error(
@@ -127,6 +125,17 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  public getSliceViewInfo(): {
+    width: number;
+    height: number;
+    sliceIndex: number;
+    slicePlane: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    throw new Error('Method not implemented.');
   }
 
   protected applyViewOrientation(
@@ -1061,15 +1070,18 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
+        `imageVolume with id: ${firstImageVolume.volumeId} does not exist, you need to create/allocate the volume first`
       );
     }
 
     const FrameOfReferenceUID = firstImageVolume.metadata.FrameOfReferenceUID;
 
-    await this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID);
+    this._isValidVolumeInputArray(volumeInputArray, FrameOfReferenceUID);
 
     this._FrameOfReferenceUID = FrameOfReferenceUID;
+    volumeInputArray.forEach((volumeInput) => {
+      this._addVolumeId(volumeInput.volumeId);
+    });
 
     const volumeActors = [];
 
@@ -1081,8 +1093,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents,
-        this.useNativeDataType
+        suppressEvents
       );
 
       // We cannot use only volumeId since then we cannot have for instance more
@@ -1135,10 +1146,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     }
     const volumeActors = [];
 
-    await this._isValidVolumeInputArray(
-      volumeInputArray,
-      this._FrameOfReferenceUID
-    );
+    this._isValidVolumeInputArray(volumeInputArray, this._FrameOfReferenceUID);
+
+    volumeInputArray.forEach((volumeInput) => {
+      this._addVolumeId(volumeInput.volumeId);
+    });
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
@@ -1149,8 +1161,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         volumeInputArray[i],
         this.element,
         this.id,
-        suppressEvents,
-        this.useNativeDataType
+        suppressEvents
       );
 
       if (visibility === false) {
@@ -1272,15 +1283,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
 
     // Check all other volumes exist and have the same FrameOfReference
     for (let i = 1; i < numVolumes; i++) {
-      const volumeInput = volumeInputArray[i];
-
-      const imageVolume = await loadVolume(volumeInput.volumeId);
-
-      if (!imageVolume) {
-        throw new Error(
-          `imageVolume with id: ${imageVolume.volumeId} does not exist`
-        );
-      }
+      const imageVolume = cache.getVolume(volumeInputArray[i].volumeId);
 
       if (FrameOfReferenceUID !== imageVolume.metadata.FrameOfReferenceUID) {
         throw new Error(
@@ -1371,10 +1374,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   public hasVolumeId(volumeId: string): boolean {
     // Note: this assumes that the uid of the volume is the same as the volumeId
     // which is not guaranteed to be the case for SEG.
-    const actorEntries = this.getActors();
-    return actorEntries.some((actorEntry) => {
-      return actorEntry.uid === volumeId;
-    });
+    return this.volumeIds.has(volumeId);
   }
 
   /**
@@ -1407,21 +1407,23 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const volume = cache.getVolume(volumeId);
 
     const vtkImageData = actor.getMapper().getInputData();
+
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
-      scalarData: vtkImageData.getPointData().getScalars().isDeleted()
-        ? null
-        : vtkImageData.getPointData().getScalars().getData(),
       imageData: actor.getMapper().getInputData(),
       metadata: {
         Modality: volume?.metadata?.Modality,
         FrameOfReferenceUID: volume?.metadata?.FrameOfReferenceUID,
       },
+      get scalarData() {
+        return volume?.voxelManager.getScalarData();
+      },
       scaling: volume?.scaling,
       hasPixelSpacing: true,
+      voxelManager: volume?.voxelManager,
     };
   }
 
@@ -1657,16 +1659,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const imageData = actor.getMapper().getInputData();
 
     const volume = cache.getVolume(uid);
-    const { dimensions } = volume;
-
     const index = transformWorldToIndex(imageData, point);
 
-    const voxelIndex =
-      index[2] * dimensions[0] * dimensions[1] +
-      index[1] * dimensions[0] +
-      index[0];
-
-    return volume.getScalarData()[voxelIndex];
+    return volume.voxelManager.getAtIJKPoint(index) as number;
   }
 
   /**
@@ -1700,7 +1695,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
    * Gets the volumeId to use for references.
    * Returns undefined if the specified volume is NOT in this viewport.
    */
-  protected getVolumeId(specifier?: ViewReferenceSpecifier) {
+  public getVolumeId(specifier?: ViewReferenceSpecifier) {
     const actorEntries = this.getActors();
     if (!actorEntries) {
       return;
@@ -1750,6 +1745,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
       ','
     )}&focalPoint=${focalPoint.join(',')}`;
+  }
+
+  private _addVolumeId(volumeId: string): void {
+    this.volumeIds.add(volumeId);
   }
 
   abstract setBlendMode(
