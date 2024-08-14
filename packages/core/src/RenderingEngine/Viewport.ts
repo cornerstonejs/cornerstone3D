@@ -3,7 +3,7 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import type { mat4 } from 'gl-matrix';
+import type { mat4, ReadonlyVec3 } from 'gl-matrix';
 import { vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
@@ -44,6 +44,10 @@ import type {
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
 import { InterpolationType } from '../enums';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import type vtkProp from '@kitware/vtk.js/Rendering/Core/Prop';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -112,9 +116,9 @@ class Viewport implements IViewport {
   /** sHeight of viewport on the offscreen canvas */
   sHeight: number;
   /** a Map containing the actor uid and actors */
-  _actors: Map<string, any>;
+  _actors: Map<string, ActorEntry>;
   /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
-  readonly defaultOptions: Record<string, any>;
+  readonly defaultOptions: ViewportInputOptions;
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
   options: ViewportInputOptions;
   /** informs if a new actor was added before a resetCameraClippingRange phase */
@@ -175,6 +179,7 @@ class Viewport implements IViewport {
     return false;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private viewportWidgets = new Map() as Map<string, any>;
 
   public addWidget = (widgetId, widget) => {
@@ -235,7 +240,7 @@ class Viewport implements IViewport {
    *
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  public getRenderer(): any {
+  public getRenderer(): vtkRenderer {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -331,7 +336,7 @@ class Viewport implements IViewport {
     const dimensions = imageData.getDimensions();
     const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
-    const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+    const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
     const centeredFocalPoint = imageData.indexToWorld(idx, vec3.create());
 
     const resetFocalPoint = this._getFocalPointForResetCamera(
@@ -427,7 +432,7 @@ class Viewport implements IViewport {
     this.render();
   }
 
-  private getDefaultImageData(): any {
+  private getDefaultImageData(): vtkImageData {
     const actorEntry = this.getDefaultActor();
 
     if (actorEntry && isImageActor(actorEntry)) {
@@ -512,7 +517,7 @@ class Viewport implements IViewport {
       return;
     }
     const renderer = this.getRenderer();
-    renderer.removeViewProp(actorEntry.actor); // removeActor not implemented in vtk?
+    renderer.removeViewProp(actorEntry.actor as vtkProp); // removeActor not implemented in vtk?
     this._actors.delete(actorUID);
   }
 
@@ -532,10 +537,7 @@ class Viewport implements IViewport {
    *        default value is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(
-    actors: ActorEntry[],
-    resetCameraPanAndZoom = false
-  ): void {
+  public addActors(actors: ActorEntry[], resetCameraPanAndZoom = false): void {
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       console.warn(
@@ -544,7 +546,9 @@ class Viewport implements IViewport {
       return;
     }
 
-    actors.forEach((actor) => { this.addActor(actor); });
+    actors.forEach((actor) => {
+      this.addActor(actor);
+    });
 
     // set the clipping planes for the actors
     this.resetCamera({
@@ -582,7 +586,7 @@ class Viewport implements IViewport {
     }
 
     const renderer = this.getRenderer();
-    renderer?.addActor(actor);
+    renderer?.addActor(actor as vtkActor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
 
     // when we add an actor we should update the camera clipping range and
@@ -828,14 +832,16 @@ class Viewport implements IViewport {
     }
     const canvasWidth = this.sWidth / devicePixelRatio;
     const canvasHeight = this.sHeight / devicePixelRatio;
-    const dimensions = imageData.getDimensions();
-    const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+    const dimensions = imageData.getDimensions() as ReadonlyVec3;
+    const canvasZero = this.worldToCanvas(
+      imageData.indexToWorld([0, 0, 0]) as Point3
+    );
     const canvasEdge = this.worldToCanvas(
       imageData.indexToWorld([
         dimensions[0] - 1,
         dimensions[1] - 1,
         dimensions[2],
-      ])
+      ]) as Point3
     );
 
     const canvasImage = [
@@ -960,7 +966,7 @@ class Viewport implements IViewport {
       // const middleIJK = dimensions.map((d) => Math.floor((d-1) / 2));
       const middleIJK = dimensions.map((d) => Math.floor(d / 2));
 
-      const idx = [middleIJK[0], middleIJK[1], middleIJK[2]];
+      const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
@@ -1049,6 +1055,7 @@ class Viewport implements IViewport {
 
     // Here to let parallel/distributed compositing intercept
     // and do the right thing.
+    // @ts-expect-error
     renderer.invokeEvent(RESET_CAMERA_EVENT);
 
     this.triggerCameraModifiedEventIfNecessary(previousCamera, modifiedCamera);
@@ -1100,12 +1107,16 @@ class Viewport implements IViewport {
 
     const zero3 = this.canvasToWorld([0, 0]);
     const initialCanvasFocal = this.worldToCanvas(
-      (vec3.subtract([0, 0, 0], initialCamera.focalPoint, zero3) as Point3)
+      vec3.subtract([0, 0, 0], initialCamera.focalPoint, zero3) as Point3
     );
     const currentCanvasFocal = this.worldToCanvas(
-      (vec3.subtract([0, 0, 0], focalPoint, zero3) as Point3)
+      vec3.subtract([0, 0, 0], focalPoint, zero3) as Point3
     );
-    const result = vec2.subtract([0, 0], initialCanvasFocal, currentCanvasFocal) as Point2;
+    const result = vec2.subtract(
+      [0, 0],
+      initialCanvasFocal,
+      currentCanvasFocal
+    ) as Point2;
     return result;
   }
 
@@ -1117,6 +1128,7 @@ class Viewport implements IViewport {
     throw new Error('Not implemented');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public getImageData(): any {
     throw new Error('Not implemented');
   }
@@ -1148,7 +1160,7 @@ class Viewport implements IViewport {
     }
     const delta = vec3.subtract(
       vec3.create(),
-      this.canvasToWorld((delta2 as Point2)),
+      this.canvasToWorld(delta2 as Point2),
       zero3
     );
     const newFocal = vec3.subtract(vec3.create(), focalPoint, delta);

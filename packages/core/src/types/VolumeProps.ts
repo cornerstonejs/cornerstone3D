@@ -52,7 +52,7 @@ interface VolumeProps {
   sizeInBytes?: number;
 
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
 
   /** Scaling parameters if the volume contains scaled data (optional) */
   scaling?: {

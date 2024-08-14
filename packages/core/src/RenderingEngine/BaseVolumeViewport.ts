@@ -60,6 +60,7 @@ import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { findMatchingColormap } from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
+import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -99,7 +100,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const renderer = this.getRenderer();
 
     const camera = vtkSlabCamera.newInstance();
-    renderer.setActiveCamera(camera);
+    renderer.setActiveCamera(camera as unknown as vtkCamera);
 
     switch (this.type) {
       case ViewportType.ORTHOGRAPHIC:
@@ -615,8 +616,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       return target;
     }
     const { viewPlaneNormal } = target;
-    const delta =
-      (viewRefSpecifier.sliceIndex) - this.getSliceIndex();
+    const delta = viewRefSpecifier.sliceIndex - this.getSliceIndex();
     // Calculate a camera focal point and position
     const { sliceRangeInfo } = getVolumeViewportScrollInfo(
       this,
@@ -755,7 +755,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         // Need to update the orientation vectors correctly for this case
         // this.setCameraNoEvent({ viewPlaneNormal: refViewPlaneNormal, viewUp });
         this.setOrientation({ viewPlaneNormal: refViewPlaneNormal, viewUp });
-        this.setViewReference(viewRef); return;
+        this.setViewReference(viewRef);
+        return;
       }
       if (cameraFocalPoint) {
         const focalDelta = vec3.subtract(

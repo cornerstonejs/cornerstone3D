@@ -55,7 +55,9 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
@@ -76,7 +78,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Set a range to highlight bones
     viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
@@ -92,7 +96,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -115,7 +121,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -137,7 +145,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     const { flipHorizontal } = viewport.getCamera();
     viewport.setCamera({ flipHorizontal: !flipHorizontal });

@@ -55,7 +55,9 @@ async function convertVolumeToStackViewport({
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const stackViewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+  const stackViewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   await stackViewport.setStack(volume.imageIds);
 

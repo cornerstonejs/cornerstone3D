@@ -104,7 +104,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Set a range to highlight bones
     viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
@@ -120,7 +122,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -143,7 +147,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -183,7 +189,7 @@ addButtonToToolbar({
     // Move the camera in plane by some random number
     const viewRight = vec3.create(); // Get the X direction of the viewport
 
-    vec3.cross(viewRight, (viewUp as vec3), (viewPlaneNormal as vec3));
+    vec3.cross(viewRight, viewUp as vec3, viewPlaneNormal as vec3);
 
     const randomPanX = 50 * (2.0 * Math.random() - 1);
     const randomPanY = 50 * (2.0 * Math.random() - 1);
@@ -267,7 +273,9 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]];

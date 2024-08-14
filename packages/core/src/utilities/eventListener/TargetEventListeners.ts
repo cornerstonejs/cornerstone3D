@@ -269,8 +269,10 @@ class TargetEventListeners {
   private _unregisterAllEvents() {
     // Creates a copy with Array.from() because the map mutates every
     // time an event listener is removed
-    Array.from(this._eventListeners.entries()).forEach(([type, listenersMap]) =>
-      { this._unregisterAllListeners(type, listenersMap); }
+    Array.from(this._eventListeners.entries()).forEach(
+      ([type, listenersMap]) => {
+        this._unregisterAllListeners(type, listenersMap);
+      }
     );
   }
 }

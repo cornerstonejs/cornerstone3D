@@ -38,7 +38,9 @@ export default class ProgressiveIterator<T> {
           iterator.reject(e as Error);
         }
       },
-      (reason) => { iterator.reject(reason); }
+      (reason) => {
+        iterator.reject(reason);
+      }
     );
     return iterator;
   }

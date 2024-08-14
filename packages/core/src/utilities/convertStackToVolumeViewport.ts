@@ -73,7 +73,9 @@ async function convertStackToVolumeViewport({
 
   // we should get the new viewport from the renderingEngine since the stack viewport
   // was disabled and replaced with a volume viewport of the same id
-  const volumeViewport = renderingEngine.getViewport(viewportId) as IVolumeViewport;
+  const volumeViewport = renderingEngine.getViewport(
+    viewportId
+  ) as IVolumeViewport;
 
   await setVolumesForViewports(
     renderingEngine,

@@ -45,7 +45,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     // Set a range to highlight bones
     viewport.setProperties({ VOILUTFunction: Enums.VOILUTFunctionType.LINEAR });
@@ -61,7 +63,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     // Set a range to highlight bones
     viewport.setProperties({
@@ -134,7 +138,9 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a unique id for the volume
   const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix

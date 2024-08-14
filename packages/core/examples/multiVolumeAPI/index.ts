@@ -58,7 +58,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
     viewport.render();
@@ -72,7 +74,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     // Resets the viewport's camera
     viewport.resetCamera();
@@ -91,7 +95,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
     if (fused) {
       // Removes the PT actor from the scene
       viewport.removeVolumeActors([ptVolumeId], true);
@@ -132,7 +138,9 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     let viewUp;
     let viewPlaneNormal;
@@ -209,7 +217,9 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {

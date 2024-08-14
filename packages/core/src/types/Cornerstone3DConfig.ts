@@ -47,6 +47,7 @@ interface Cornerstone3DConfig {
    * It allows replacing broken packing system imports with external importers
    * that perform lazy imports.
    */
+  // eslint-disable-next-line
   peerImport?: (moduleId: string) => any;
 }
 

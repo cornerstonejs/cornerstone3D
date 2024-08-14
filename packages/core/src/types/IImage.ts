@@ -121,7 +121,7 @@ interface IImage {
     windowCenter?: number | number[];
     invert?: boolean;
     lutArray?: Uint8ClampedArray;
-    modalityLUT?: unknown;
+    modalityLUT?: CPUFallbackLUT;
     voiLUT?: CPUFallbackLUT;
   };
 

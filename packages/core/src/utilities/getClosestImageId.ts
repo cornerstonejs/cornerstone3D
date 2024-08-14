@@ -34,7 +34,7 @@ export default function getClosestImageId(
   const kVector = direction.slice(6, 9);
 
   // 2. Check if scanAxis is not parallel to camera viewPlaneNormal
-  const dotProducts = vec3.dot(kVector as Point3, (viewPlaneNormal as vec3));
+  const dotProducts = vec3.dot(kVector as Point3, viewPlaneNormal as vec3);
 
   // 2.a if imagePlane is not parallel to the camera: tool is not drawn on an
   // imaging plane, return

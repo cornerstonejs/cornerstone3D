@@ -222,10 +222,7 @@ function _loadImageIntoBuffer(
     loadImage(uri, imageId)
       .promise.then(
         (image) => {
-          if (
-            !options.targetBuffer.length ||
-            !options.targetBuffer.offset
-          ) {
+          if (!options.targetBuffer.length || !options.targetBuffer.offset) {
             resolve(image);
             return;
           }

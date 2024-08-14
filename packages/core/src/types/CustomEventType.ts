@@ -1,4 +1,4 @@
-interface CustomEvent<T = any> extends Event {
+interface CustomEvent<T = unknown> extends Event {
   /**
    * Returns any custom data event was created with. Typically used for synthetic events.
    */

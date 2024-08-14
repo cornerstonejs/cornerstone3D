@@ -57,7 +57,9 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a unique id for the volume
   const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix

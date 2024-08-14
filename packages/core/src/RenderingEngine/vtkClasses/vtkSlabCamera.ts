@@ -3,8 +3,7 @@ import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { vec3, mat4 } from 'gl-matrix';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
-
-// Copied from VTKCamera
+import type { Range } from '@kitware/vtk.js/types';
 
 /**
  *
@@ -51,7 +50,7 @@ export interface vtkSlabCamera extends vtkObject {
    *
    * @param bounds -
    */
-  computeClippingRange(bounds: number[]): number[];
+  computeClippingRange(bounds: number[]): Range;
 
   /**
    * This method must be called when the focal point or camera position changes
@@ -379,7 +378,7 @@ export interface vtkSlabCamera extends vtkObject {
    *
    * @param ori -
    */
-  physicalOrientationToWorldDirection(ori: number[]): any;
+  physicalOrientationToWorldDirection(ori: number[]): number[];
 
   /**
    * Rotate the focal point about the cross product of the view up vector and the direction of projection, using the camera's position as the center of rotation.
@@ -745,6 +744,8 @@ export interface vtkSlabCamera extends vtkObject {
    * @param status -
    */
   setIsPerformingCoordinateTransformation(status: boolean): void;
+
+  computeCameraLightTransform(): void;
 }
 
 const DEFAULT_VALUES = {
@@ -759,7 +760,9 @@ const DEFAULT_VALUES = {
  * @param initialValues -
  */
 function extend(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   publicAPI: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: any,
   initialValues: ICameraInitialValues = {}
 ): void {

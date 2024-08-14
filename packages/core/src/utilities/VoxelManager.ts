@@ -110,7 +110,9 @@ export default class VoxelManager<T> {
    * Records the z index modified.
    * Will record the index value if the VoxelManager is backed by a map.
    */
-  public setAtIJKPoint = ([i, j, k]: Point3, v) => { this.setAtIJK(i, j, k, v); };
+  public setAtIJKPoint = ([i, j, k]: Point3, v) => {
+    this.setAtIJK(i, j, k, v);
+  };
 
   /**
    * Gets the value at the given index.
@@ -300,7 +302,7 @@ export default class VoxelManager<T> {
       // Optimize this for only values in the map
       for (const index of this.map.keys()) {
         const pointIJK = this.toIJK(index);
-        if (!(isInObject(null, pointIJK))) {
+        if (!isInObject(null, pointIJK)) {
           continue;
         }
         const value = this._get(index);
@@ -1137,7 +1139,9 @@ export default class VoxelManager<T> {
     const voxelManager = new VoxelManager<T>(
       dimensions,
       (index) => map.get(index),
-      (index, v) => { map.set(index, v); }
+      (index, v) => {
+        map.set(index, v);
+      }
     );
     voxelManager.map = map;
     // @ts-ignore

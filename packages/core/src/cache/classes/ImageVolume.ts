@@ -12,6 +12,13 @@ import type {
   RGB,
 } from '../../types';
 import cache from '../cache';
+import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+
+interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
+  setUpdatedFrame: (frame: number) => void;
+  setVolumeId: (volumeId: string) => void;
+  releaseGraphicsResources: () => void;
+}
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
@@ -57,7 +64,7 @@ export class ImageVolume implements IImageVolume {
   /** volume image data */
   imageData?: vtkImageData;
   /** open gl texture for the volume */
-  vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
+  vtkOpenGLTexture: vtkStreamingOpenGLTexture;
   /** load status object for the volume */
   loadStatus?: Record<string, unknown>;
   /** optional reference volume id if the volume is derived from another volume */

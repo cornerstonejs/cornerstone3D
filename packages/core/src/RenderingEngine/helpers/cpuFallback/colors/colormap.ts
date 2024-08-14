@@ -191,7 +191,7 @@ export function getColormapsList() {
   const keys = Object.keys(CPU_COLORMAPS);
 
   keys.forEach(function (key) {
-    if (CPU_COLORMAPS.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(CPU_COLORMAPS, key)) {
       const colormap = CPU_COLORMAPS[key];
 
       colormaps.push({

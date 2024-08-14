@@ -55,9 +55,11 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
-    viewport.setOrientation((selectedValue as Enums.OrientationAxis));
+    viewport.setOrientation(selectedValue as Enums.OrientationAxis);
     viewport.render();
   },
 });
@@ -107,7 +109,9 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a unique id for the volume
   const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix

@@ -110,7 +110,9 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IWSIViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IWSIViewport;
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
   // Set the stack on the viewport

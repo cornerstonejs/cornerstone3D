@@ -224,11 +224,11 @@ function setConfiguration(c: Cornerstone3DConfig) {
  * @category Initialization
  */
 function _updateRenderingPipelinesForAllViewports(): void {
-  getRenderingEngines().forEach((engine) =>
-    { engine
-      .getViewports()
-      .forEach((viewport) => { viewport.updateRenderingPipeline(); }); }
-  );
+  getRenderingEngines().forEach((engine) => {
+    engine.getViewports().forEach((viewport) => {
+      viewport.updateRenderingPipeline();
+    });
+  });
 }
 
 function getWebWorkerManager() {

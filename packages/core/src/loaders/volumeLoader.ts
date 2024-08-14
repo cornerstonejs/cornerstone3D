@@ -20,6 +20,7 @@ import type {
   PixelDataTypedArray,
   IVolumeLoadObject,
   PixelDataTypedArrayString,
+  IVolume,
 } from '../types';
 import { imageLoader } from '..';
 
@@ -150,7 +151,7 @@ export function loadVolume(
 export async function createAndCacheVolume(
   volumeId: string,
   options?: VolumeLoaderOptions
-): Promise<Record<string, any>> {
+): Promise<IImageVolume> {
   if (volumeId === undefined) {
     throw new Error(
       'createAndCacheVolume: parameter volumeId must not be undefined'
@@ -165,9 +166,7 @@ export async function createAndCacheVolume(
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
-  cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch((err) => {
-    throw err;
-  });
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
 
   return volumeLoadObject.promise;
 }
@@ -493,8 +492,7 @@ function generateVolumeScalarData(
     throw new Error(Events.CACHE_SIZE_EXCEEDED);
   }
 
-  let volumeScalarData;
-  volumeScalarData = new TypedArrayConstructor(scalarLength);
+  const volumeScalarData = new TypedArrayConstructor(scalarLength);
 
   return { volumeScalarData, numBytes };
 }

@@ -58,7 +58,9 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
@@ -151,7 +153,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     const { flipHorizontal } = viewport.getCamera();
     viewport.setCamera({ flipHorizontal: !flipHorizontal });
@@ -167,7 +171,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     const { rotation } = viewport.getViewPresentation();
     viewport.setViewPresentation({ rotation: rotation + 30 });
@@ -183,7 +189,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Resets the viewport's camera
     viewport.resetCamera();

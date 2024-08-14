@@ -171,9 +171,7 @@ export function loadAndCacheImage(
 
   // if not inside cache, store it
   if (!cache.getImageLoadObject(imageId)) {
-    cache.putImageLoadObject(imageId, imageLoadObject).catch((err) => {
-      console.warn(err);
-    });
+    cache.putImageLoadObject(imageId, imageLoadObject);
   }
 
   return imageLoadObject.promise;
@@ -444,7 +442,9 @@ export function cancelLoadImage(imageId: string): void {
  *
  */
 export function cancelLoadImages(imageIds: string[]): void {
-  imageIds.forEach((imageId) => { cancelLoadImage(imageId); });
+  imageIds.forEach((imageId) => {
+    cancelLoadImage(imageId);
+  });
 }
 
 /**
@@ -460,7 +460,7 @@ export function cancelLoadAll(): void {
 
     Object.keys(requests).forEach((priority) => {
       const requestDetails = requests[priority].pop();
-      const additionalDetails = requestDetails.additionalDetails as any;
+      const additionalDetails = requestDetails.additionalDetails;
       const { imageId, volumeId } = additionalDetails;
 
       let loadObject;

@@ -64,8 +64,8 @@ export default function getOrCreateCanvas(
   const internalDiv =
     element.querySelector(viewportElement) || createViewportElement(element);
 
-  const canvas = (internalDiv.querySelector(canvasSelector) ||
-    createCanvas(internalDiv));
+  const canvas: HTMLCanvasElement =
+    internalDiv.querySelector(canvasSelector) || createCanvas(internalDiv);
   // Fit the canvas into the div
   const rect = internalDiv.getBoundingClientRect();
   const devicePixelRatio = window.devicePixelRatio || 1;

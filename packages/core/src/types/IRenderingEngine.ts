@@ -6,8 +6,9 @@ import type { IViewport } from './IViewport';
 export default interface IRenderingEngine {
   id: string;
   hasBeenDestroyed: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   offscreenMultiRenderWindow: any;
-  offScreenCanvasContainer: any;
+  offScreenCanvasContainer: HTMLDivElement;
   setViewports(viewports: PublicViewportInput[]): void;
   resize(immediate?: boolean, keepCamera?: boolean): void;
   getViewport(id: string): IViewport;

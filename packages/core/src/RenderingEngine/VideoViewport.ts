@@ -974,13 +974,15 @@ class VideoViewport extends Viewport implements IVideoViewport {
     transform.invert();
 
     return transform.transformPoint(
-      (canvasPos.map((it) => it * devicePixelRatio) as Point2)
+      canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
     const transform = this.getTransform();
-    return transform.transformPoint(indexPos).map((it) => it / devicePixelRatio) as Point2;
+    return transform
+      .transformPoint(indexPos)
+      .map((it) => it / devicePixelRatio) as Point2;
   };
 
   /**

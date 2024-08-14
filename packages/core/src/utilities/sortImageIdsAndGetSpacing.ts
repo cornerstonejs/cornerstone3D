@@ -122,6 +122,7 @@ export default function sortImageIdsAndGetSpacing(
       'imagePlaneModule',
       prefetchedImageIds[1]
     );
+
     if (!metadataForMiddleImage) {
       throw new Error('Incomplete metadata required for volume construction.');
     }

@@ -80,6 +80,15 @@
     //   }
     // ],
     "@typescript-eslint/consistent-type-exports": "error",
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports",
+        "disallowTypeAnnotations": true
+      }
+    ],
+    "@typescript-eslint/no-import-type-side-effects": "error",
+
     "import/extensions": [
       "error",
       "ignorePackages",

@@ -33,5 +33,6 @@ export interface ActorEntry {
   /** slab thickness for the actor */
   slabThickness?: number;
   /** clipping filter applied to actor surfaces*/
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clippingFilter?: any;
 }

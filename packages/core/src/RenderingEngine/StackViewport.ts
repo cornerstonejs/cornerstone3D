@@ -9,6 +9,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -97,6 +98,7 @@ import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { findMatchingColormap } from '../utilities/colormap';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -200,7 +202,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    this.useCPURendering
+    const result = this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
@@ -241,7 +243,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       }
     }
 
-    this.useCPURendering
+    const result = this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
   }
@@ -337,7 +339,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  public getRenderer: () => any;
+  public getRenderer: () => vtkRenderer;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -1139,9 +1141,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   protected setRotation = (rotation: number) => {
     const previousCamera = this.getCamera();
 
-    this.useCPURendering
-      ? this.setRotationCPU(rotation)
-      : this.setRotationGPU(rotation);
+    if (this.useCPURendering) {
+      this.setRotationCPU(rotation);
+    } else {
+      this.setRotationGPU(rotation);
+    }
 
     if (this._suppressCameraModifiedEvents) {
       return;
@@ -1595,7 +1599,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // Values are null, not undefined, so need to assign instead of defaulting
     rowCosines ||= [1, 0, 0];
     columnCosines ||= [0, 1, 0];
-    const viewPlaneNormal = vec3.cross([0, 0, 0], columnCosines, rowCosines) as Point3;
+    const viewPlaneNormal = vec3.cross(
+      [0, 0, 0],
+      columnCosines,
+      rowCosines
+    ) as Point3;
     return {
       FrameOfReferenceUID,
       viewPlaneNormal,
@@ -1790,8 +1798,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         (image.rowPixelSpacing === null && ySpacing === 1.0)) &&
       xVoxels === image.columns &&
       yVoxels === image.rows &&
-      isEqual(imagePlaneModule.rowCosines, (rowCosines as Point3)) &&
-      isEqual(imagePlaneModule.columnCosines, (columnCosines as Point3)) &&
+      isEqual(imagePlaneModule.rowCosines, rowCosines as Point3) &&
+      isEqual(imagePlaneModule.columnCosines, columnCosines as Point3) &&
       dataType === image.voxelManager.getScalarData().constructor.name
     );
   }
@@ -2664,6 +2672,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       renderer,
     };
 
+    // @ts-expect-error invokeEvent is not defined in vtkRenderer
     renderer.invokeEvent(RESET_CAMERA_EVENT);
   }
 
@@ -2846,11 +2855,17 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
   }
 
-  private _getValidVOILUTFunction(voiLUTFunction: any) {
-    if (!Object.values(VOILUTFunctionType).includes(voiLUTFunction)) {
-      voiLUTFunction = VOILUTFunctionType.LINEAR;
+  private _getValidVOILUTFunction(
+    voiLUTFunction: VOILUTFunctionType | unknown
+  ): VOILUTFunctionType {
+    if (
+      !Object.values(VOILUTFunctionType).includes(
+        voiLUTFunction as VOILUTFunctionType
+      )
+    ) {
+      return VOILUTFunctionType.LINEAR;
     }
-    return voiLUTFunction;
+    return voiLUTFunction as VOILUTFunctionType;
   }
 
   /**

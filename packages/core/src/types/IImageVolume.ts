@@ -6,6 +6,7 @@ import type { IImageLoadObject } from './ILoadObject';
 import type Mat3 from './Mat3';
 import type { PixelDataTypedArrayString } from './PixelDataTypedArray';
 import type RGB from './RGB';
+import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -40,7 +41,7 @@ interface IImageVolume {
   /** volume image data as vtkImageData */
   imageData?: vtkImageData;
   /** openGL texture for the volume */
-  vtkOpenGLTexture: unknown;
+  vtkOpenGLTexture: vtkOpenGLTexture;
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus?: Record<string, unknown>;
   /** imageIds of the volume (if it is built of separate imageIds) */
@@ -92,6 +93,9 @@ interface IImageVolume {
    *
    */
   modified(): void;
+
+  // this is a temporary method to make typescript happy
+  load?: () => void;
 }
 
 export type { IImageVolume as default };

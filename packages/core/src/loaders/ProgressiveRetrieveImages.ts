@@ -326,7 +326,9 @@ class ProgressiveRetrieveImagesInstance {
       const indices =
         stage.positions ||
         decimate(this.imageIds, stage.decimate || 1, stage.offset ?? 0);
-      indices.forEach((index) => { addStageInstance(stage, index); });
+      indices.forEach((index) => {
+        addStageInstance(stage, index);
+      });
     }
     return interleaved;
   }

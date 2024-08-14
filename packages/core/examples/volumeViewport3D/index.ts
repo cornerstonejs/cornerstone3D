@@ -71,7 +71,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     // Apply the rotation to the camera of the viewport
     viewport.setViewPresentation({ rotation: Math.random() * 360 });

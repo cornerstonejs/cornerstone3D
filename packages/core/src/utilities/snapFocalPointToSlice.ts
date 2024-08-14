@@ -29,7 +29,7 @@ export default function snapFocalPointToSlice(
   // Get the current offset off the camera position so we can add it on at the end.
   const posDiffFromFocalPoint = vec3.create();
 
-  vec3.sub(posDiffFromFocalPoint, (position as vec3), (focalPoint as vec3));
+  vec3.sub(posDiffFromFocalPoint, position as vec3, focalPoint as vec3);
 
   // Now we can see how many steps there are in this direction
   const steps = Math.round((max - min) / spacingInNormalDirection);

@@ -222,7 +222,9 @@ async function run() {
       }, 200);
     } else {
       // Get the stack viewport that was created
-      const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
       await viewport.setVolumes([{ volumeId }]);
       if (sliceIndex !== undefined) {
         await csTools.utilities.jumpToSlice(viewport.element, {

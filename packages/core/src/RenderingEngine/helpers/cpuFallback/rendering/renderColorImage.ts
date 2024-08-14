@@ -61,8 +61,7 @@ function getRenderCanvas(
   image: IImage,
   invalidated: boolean
 ): HTMLCanvasElement {
-  const canvasWasColor =
-    enabledElement.renderingTools.lastRenderedIsColor;
+  const canvasWasColor = enabledElement.renderingTools.lastRenderedIsColor;
 
   if (!enabledElement.renderingTools.renderCanvas || !canvasWasColor) {
     enabledElement.renderingTools.renderCanvas =
@@ -86,10 +85,7 @@ function getRenderCanvas(
   }
 
   // Apply the lut to the stored pixel data onto the render canvas
-  if (
-    !doesImageNeedToBeRendered(enabledElement, image) &&
-    !invalidated
-  ) {
+  if (!doesImageNeedToBeRendered(enabledElement, image) && !invalidated) {
     return renderCanvas;
   }
 

@@ -7,10 +7,7 @@ export default function createLinearRGBTransferFunction(
   const cfun = vtkColorTransferFunction.newInstance();
   let lower = 0;
   let upper = 1024;
-  if (
-    voiRange.lower !== undefined &&
-    voiRange.upper !== undefined
-  ) {
+  if (voiRange.lower !== undefined && voiRange.upper !== undefined) {
     lower = voiRange.lower;
     upper = voiRange.upper;
   }

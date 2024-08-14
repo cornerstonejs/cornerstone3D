@@ -196,7 +196,7 @@ class Cache implements ICache {
     // shared cache keys
     this.purgeVolumeCache();
 
-     
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { value: imageId, done } = imageIterator.next();
 
@@ -216,7 +216,7 @@ class Cache implements ICache {
   public purgeVolumeCache = (): void => {
     const volumeIterator = this._volumeCache.keys();
 
-     
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { value: volumeId, done } = volumeIterator.next();
 
@@ -398,7 +398,7 @@ class Cache implements ICache {
   public putImageLoadObject(
     imageId: string,
     imageLoadObject: IImageLoadObject
-  ): Promise<any> {
+  ): void {
     if (imageId === undefined) {
       console.error('putImageLoadObject: imageId must not be undefined');
       throw new Error('putImageLoadObject: imageId must not be undefined');
@@ -444,7 +444,7 @@ class Cache implements ICache {
     // For some reason we need to put it here after the rework of volumes
     this._imageCache.set(imageId, cachedImage);
 
-    return imageLoadObject.promise
+    imageLoadObject.promise
       .then((image: IImage) => {
         this._putImageCommon(imageId, image, cachedImage);
       })
@@ -684,7 +684,7 @@ class Cache implements ICache {
   public putVolumeLoadObject(
     volumeId: string,
     volumeLoadObject: IVolumeLoadObject
-  ): Promise<any> {
+  ): void {
     if (volumeId === undefined) {
       throw new Error('putVolumeLoadObject: volumeId must not be undefined');
     }
@@ -717,7 +717,7 @@ class Cache implements ICache {
 
     this._volumeCache.set(volumeId, cachedVolume);
 
-    return volumeLoadObject.promise
+    volumeLoadObject.promise
       .then((volume: IImageVolume) => {
         this._putVolumeCommon(volumeId, volume, cachedVolume);
       })
@@ -830,9 +830,7 @@ class Cache implements ICache {
    * @param volumeId - The ID of the reference volume.
    * @returns An array of image volumes that have the specified reference volume ID.
    */
-  public filterVolumesByReferenceId = (
-    volumeId: string
-  ): IImageVolume[] => {
+  public filterVolumesByReferenceId = (volumeId: string): IImageVolume[] => {
     const cachedVolumes = this.getVolumes();
 
     return cachedVolumes.filter((volume) => {

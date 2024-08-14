@@ -54,7 +54,9 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
@@ -75,7 +77,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVideoViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVideoViewport;
 
     // Set a range to highlight bones
     viewport.play();
@@ -89,7 +93,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId) as Types.IVideoViewport;
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVideoViewport;
 
     // Set a range to highlight bones
     viewport.pause();
@@ -112,8 +118,8 @@ async function run() {
   });
 
   // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.includes('2.25.179478223177027022014772769075050874231')
+  const videoId = imageIds.find((it) =>
+    it.includes('2.25.179478223177027022014772769075050874231')
   );
 
   // Instantiate a rendering engine
@@ -133,7 +139,9 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as Types.IVideoViewport;
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVideoViewport;
 
   // Set the stack on the viewport
   await viewport.setVideo(videoId);

@@ -1,5 +1,3 @@
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
@@ -76,8 +74,9 @@ class RenderingEngine implements IRenderingEngine {
   readonly id: string;
   /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: any;
-  readonly offScreenCanvasContainer: any;
+  readonly offScreenCanvasContainer: HTMLDivElement;
   private _viewports: Map<string, IViewport>;
   private _needsRender = new Set<string>();
   private _animationFrameSet = false;
@@ -276,9 +275,7 @@ class RenderingEngine implements IRenderingEngine {
    * @param viewportInputEntries - Array<PublicViewportInput>
    */
 
-  public setViewports(
-    publicViewportInputEntries: PublicViewportInput[]
-  ): void {
+  public setViewports(publicViewportInputEntries: PublicViewportInput[]): void {
     const viewportInputEntries = this._normalizeViewportInputEntries(
       publicViewportInputEntries
     );
@@ -868,6 +865,7 @@ class RenderingEngine implements IRenderingEngine {
     // 4. Create a proper viewport based on the type of the viewport
     const ViewportType = viewportTypeToViewportClass[type];
 
+    // @ts-expect-error
     const viewport = new ViewportType(viewportInput);
 
     // 5. Storing the viewports
@@ -890,7 +888,9 @@ class RenderingEngine implements IRenderingEngine {
    * objects used to construct and enable the viewports.
    */
   private setCustomViewports(viewportInputEntries: PublicViewportInput[]) {
-    viewportInputEntries.forEach((vpie) => { this.addCustomViewport(vpie); });
+    viewportInputEntries.forEach((vpie) => {
+      this.addCustomViewport(vpie);
+    });
   }
 
   /**
@@ -958,9 +958,10 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @param canvases - An array of HTML Canvas
    */
-  private _resizeOffScreenCanvas(
-    canvasesDrivenByVtkJs: HTMLCanvasElement[]
-  ): { offScreenCanvasWidth: number; offScreenCanvasHeight: number } {
+  private _resizeOffScreenCanvas(canvasesDrivenByVtkJs: HTMLCanvasElement[]): {
+    offScreenCanvasWidth: number;
+    offScreenCanvasHeight: number;
+  } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
     // 1. Calculated the height of the offScreen canvas to be the maximum height
@@ -976,7 +977,9 @@ class RenderingEngine implements IRenderingEngine {
       offScreenCanvasWidth += canvas.width;
     });
 
+    // @ts-expect-error
     offScreenCanvasContainer.width = offScreenCanvasWidth;
+    // @ts-expect-error
     offScreenCanvasContainer.height = offScreenCanvasHeight;
 
     // 3. Resize command
