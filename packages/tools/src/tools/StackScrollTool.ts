@@ -12,8 +12,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
  * stack of images by pressing the mouse click and dragging
  */
 class StackScrollTool extends BaseTool {
-  static toolName = 'StackScroll';
-
+  static toolName;
   deltaY: number;
   constructor(
     toolProps: PublicToolProps = {},
@@ -101,4 +100,5 @@ class StackScrollTool extends BaseTool {
   }
 }
 
+StackScrollTool.toolName = 'StackScroll';
 export default StackScrollTool;

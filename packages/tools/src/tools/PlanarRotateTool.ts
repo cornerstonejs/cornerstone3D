@@ -13,8 +13,7 @@ import { PublicToolProps, ToolProps, EventTypes } from '../types';
  * the image by pressing the mouse click and dragging
  */
 class PlanarRotateTool extends BaseTool {
-  static toolName = 'PlanarRotate';
-
+  static toolName;
   touchDragCallback: (evt: EventTypes.MouseDragEventType) => void;
   mouseDragCallback: (evt: EventTypes.MouseDragEventType) => void;
 
@@ -99,4 +98,5 @@ class PlanarRotateTool extends BaseTool {
   }
 }
 
+PlanarRotateTool.toolName = 'PlanarRotate';
 export default PlanarRotateTool;
