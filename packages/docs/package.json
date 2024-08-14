@@ -42,7 +42,7 @@
     "@docusaurus/module-type-aliases": "3.4.0",
     "@docusaurus/plugin-google-gtag": "3.4.0",
     "@docusaurus/preset-classic": "3.4.0",
-    "@kitware/vtk.js": "30.4.1",
+    "@kitware/vtk.js": "32.1.0",
     "@mdx-js/react": "^3.0.1",
     "@svgr/webpack": "^8.1.0",
     "clsx": "^1.1.1",

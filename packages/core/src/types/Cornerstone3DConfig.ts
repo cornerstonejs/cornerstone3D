@@ -1,4 +1,5 @@
 type Cornerstone3DConfig = {
+  gpuTier: { tier: number };
   /**
    * Whether the device is mobile or not.
    */
