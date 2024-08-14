@@ -26,15 +26,11 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import {
-  getCurrentLabelmapImageIdForViewport,
-  getSegmentation,
-} from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
-import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the

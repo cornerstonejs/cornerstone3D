@@ -2,11 +2,10 @@ import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VoxelManager } from '../utilities';
 import type Metadata from './Metadata';
 import type Point3 from './Point3';
-import type { IImageLoadObject } from './ILoadObject';
 import type Mat3 from './Mat3';
 import type { PixelDataTypedArrayString } from './PixelDataTypedArray';
 import type RGB from './RGB';
-import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import type { vtkStreamingOpenGLTexture } from '../cache/classes/ImageVolume';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -41,7 +40,7 @@ interface IImageVolume {
   /** volume image data as vtkImageData */
   imageData?: vtkImageData;
   /** openGL texture for the volume */
-  vtkOpenGLTexture: vtkOpenGLTexture;
+  vtkOpenGLTexture: vtkStreamingOpenGLTexture;
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus?: Record<string, unknown>;
   /** imageIds of the volume (if it is built of separate imageIds) */

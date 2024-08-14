@@ -21,7 +21,6 @@ import {
 } from '../../stateManagement/segmentation/segmentationState';
 import type { FloodFillResult, FloodFillGetter } from '../../types';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 const { transformWorldToIndex, isEqual } = csUtils;

@@ -15,4 +15,4 @@ type IPoints = {
   world: Types.Point3;
 };
 
-export default IPoints;
+export type { IPoints as default };

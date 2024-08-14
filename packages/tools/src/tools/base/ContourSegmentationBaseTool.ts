@@ -1,4 +1,4 @@
-import { Types, getEnabledElement, utilities } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import type {
   Annotation,
   EventTypes,

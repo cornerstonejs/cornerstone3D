@@ -10,4 +10,4 @@ type AnnotationRenderContext = {
   svgDrawingHelper: SVGDrawingHelper;
 };
 
-export default AnnotationRenderContext;
+export type { AnnotationRenderContext as default };

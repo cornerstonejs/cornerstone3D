@@ -11,6 +11,7 @@ import type { mat4 } from 'gl-matrix';
 import type IRenderingEngine from './IRenderingEngine';
 import type IImageData from './IImageData';
 import type CPUIImageData from './CPUIImageData';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 /**
  * Specifies what view to get a reference for.
@@ -317,7 +318,7 @@ interface IViewport {
   /** returns the renderingEngine instance the viewport belongs to */
   getRenderingEngine(): IRenderingEngine;
   /** returns the vtkRenderer (for GPU rendering) of the viewport */
-  getRenderer(): void;
+  getRenderer(): vtkRenderer;
   /** triggers render for all actors in the viewport */
   render(): void;
   /** set options for the viewport */

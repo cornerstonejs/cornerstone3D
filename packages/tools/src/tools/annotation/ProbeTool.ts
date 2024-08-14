@@ -43,10 +43,7 @@ import type {
 } from '../../types';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  pixelUnitsOptions,
-  getPixelValueUnits,
-} from '../../utilities/getPixelValueUnits';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;

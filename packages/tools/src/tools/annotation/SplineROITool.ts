@@ -85,9 +85,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
     annotation: SplineROIAnnotation;
     viewportIdsToRender: Array<string>;

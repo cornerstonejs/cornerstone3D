@@ -102,7 +102,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 const EPSILON = 1; // Slice Thickness
 
-interface ImageDataMetaData {
+export interface ImageDataMetaData {
   bitsAllocated: number;
   numberOfComponents: number;
   origin: Point3;

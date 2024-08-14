@@ -14,7 +14,7 @@ import type {
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 
-interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
+export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;

@@ -86,4 +86,4 @@ interface IAnnotationManager {
   getNumberOfAllAnnotations: () => number;
 }
 
-export default IAnnotationManager;
+export type { IAnnotationManager as default };

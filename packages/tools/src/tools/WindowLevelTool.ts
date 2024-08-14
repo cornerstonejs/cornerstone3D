@@ -3,7 +3,6 @@ import {
   getEnabledElement,
   VolumeViewport,
   cache,
-  Types,
   utilities,
 } from '@cornerstonejs/core';
 import type { EventTypes } from '../types';

@@ -5,4 +5,4 @@ type PlanarBoundingBox = {
   height: number;
 };
 
-export default PlanarBoundingBox;
+export type { PlanarBoundingBox as default };

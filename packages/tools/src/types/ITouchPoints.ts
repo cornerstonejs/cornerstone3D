@@ -11,4 +11,4 @@ type ITouchPoints = IPoints & {
   };
 };
 
-export default ITouchPoints;
+export type { ITouchPoints as default };

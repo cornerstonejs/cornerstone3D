@@ -47,7 +47,6 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/segmentationState';
 
@@ -80,6 +79,7 @@ class BrushTool extends BaseTool {
     referencedVolumeId?: string;
   } | null;
   private _hoverData?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brushCursor: any;
     segmentationId: string;
     segmentIndex: number;

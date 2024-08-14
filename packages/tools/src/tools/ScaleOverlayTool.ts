@@ -16,11 +16,9 @@ import {
   drawTextBox as drawTextBoxSvg,
 } from '../drawingSvg';
 import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
-import { EventTypes } from '../types';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getToolGroup } from '../store/ToolGroupManager';
 
-const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';
 const viewportsWithAnnotations = [];
 
 /**

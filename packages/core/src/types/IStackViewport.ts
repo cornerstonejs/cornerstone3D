@@ -14,6 +14,8 @@ import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
 } from '../types/IViewport';
+import type { ImageDataMetaData } from '../RenderingEngine/StackViewport';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 export default interface IStackViewport extends IViewport {
   /**
@@ -104,7 +106,7 @@ export default interface IStackViewport extends IViewport {
    * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  getRenderer(): unknown;
+  getRenderer(): vtkRenderer;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -198,7 +200,7 @@ export default interface IStackViewport extends IViewport {
    * @param image - stack image containing cornerstone image
    * @returns image metadata: bitsAllocated, number of components, origin, direction, dimensions, spacing, number of voxels.
    */
-  getImageDataMetadata(image: IImage): unknown;
+  getImageDataMetadata(image: IImage): ImageDataMetaData;
 
   /**
    * Resizes the viewport - only used in CPU fallback for StackViewport. The
