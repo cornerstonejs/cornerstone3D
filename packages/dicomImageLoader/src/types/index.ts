@@ -40,7 +40,7 @@ import {
   WebWorkerDeferredObject,
 } from './WebWorkerTypes';
 
-export {
+export type {
   ImageFrame,
   LoaderDecodeOptions,
   LoaderOptions,
