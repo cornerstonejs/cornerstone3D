@@ -83,11 +83,6 @@
     "pako": "^2.0.4",
     "uuid": "^9.0.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
     "src/**/*.{js,jsx,json,css}": [
       "eslint --fix",

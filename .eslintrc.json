@@ -115,9 +115,8 @@
       }
     }
   },
-
   "globals": {
     "context": true,
-    "assert": true,
+    "assert": true
   }
 }
