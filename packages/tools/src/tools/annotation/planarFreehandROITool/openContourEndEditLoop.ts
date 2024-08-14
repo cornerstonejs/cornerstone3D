@@ -8,7 +8,7 @@ import type {
   ToolHandle,
   TextBoxHandle,
 } from '../../../types';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { polyline } from '../../../utilities/math';
 
 const { getSubPixelSpacingAndXYDirections } = polyline;

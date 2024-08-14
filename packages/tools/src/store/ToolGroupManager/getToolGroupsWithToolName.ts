@@ -1,5 +1,5 @@
 import { state } from '../index';
-import { IToolGroup } from '../../types';
+import type { IToolGroup } from '../../types';
 import { ToolModes } from '../../enums';
 
 const MODES = [ToolModes.Active, ToolModes.Passive, ToolModes.Enabled];

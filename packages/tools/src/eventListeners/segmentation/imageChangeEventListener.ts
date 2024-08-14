@@ -1,5 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { Types } from '@cornerstonejs/core';
 import {
   BaseVolumeViewport,
   getEnabledElement,
@@ -7,7 +8,6 @@ import {
   getEnabledElementByIds,
   cache,
   utilities,
-  Types,
 } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';

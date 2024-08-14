@@ -1,5 +1,5 @@
 import { SegmentationRepresentations } from '../../../enums';
-import {
+import type {
   SegmentationPublicInput,
   Segmentation,
 } from '../../../types/SegmentationStateTypes';

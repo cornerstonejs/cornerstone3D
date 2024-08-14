@@ -1,11 +1,11 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getRenderingEngine,
   getEnabledElement,
   Enums,
-  Types,
 } from '@cornerstonejs/core';
 
-import { ISynchronizerEventHandler } from '../../types';
+import type { ISynchronizerEventHandler } from '../../types';
 
 /**
  * Synchronizer is a class that listens to a specific event on a specific source

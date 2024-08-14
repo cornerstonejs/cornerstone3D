@@ -1,6 +1,6 @@
 import { state } from '../index';
 import Synchronizer from './Synchronizer';
-import { ISynchronizerEventHandler } from '../../types';
+import type { ISynchronizerEventHandler } from '../../types';
 
 /**
  * Create a new synchronizer instance from Synchronizer class

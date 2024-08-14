@@ -1,6 +1,6 @@
 import { ToolGroupManager } from '../../store';
-import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import type { ToolModes } from '../../enums';
+import type { EventTypes } from '../../types';
 
 /**
  * Given the normalized mouse event and a filter of modes,

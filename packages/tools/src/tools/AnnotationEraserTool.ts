@@ -1,5 +1,5 @@
 import { BaseTool } from './base';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { ToolGroupManager } from '../store';
 import {
   getAnnotations,

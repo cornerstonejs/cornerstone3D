@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 type FloodFillResult = {
   flooded: Types.Point2[] | Types.Point3[];

@@ -10,10 +10,10 @@ import {
   Enums,
 } from '@cornerstonejs/core';
 
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState, getToolStateByViewportId } from './state';
-import { CINETypes } from '../../types';
+import type { CINETypes } from '../../types';
 import scroll from '../scroll';
 
 const { ViewportStatus } = Enums;

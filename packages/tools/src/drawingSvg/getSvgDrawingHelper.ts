@@ -1,6 +1,6 @@
 import { state } from '../store';
 import { getEnabledElement } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 

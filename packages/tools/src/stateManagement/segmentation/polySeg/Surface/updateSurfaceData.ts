@@ -1,4 +1,5 @@
-import { Types, cache } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import {
   getSegmentation,

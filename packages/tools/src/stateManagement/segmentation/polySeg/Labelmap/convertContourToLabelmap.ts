@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 import {
-  Types,
   cache,
   utilities,
   getWebWorkerManager,
@@ -11,7 +11,7 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
-import {
+import type {
   Annotation,
   ContourAnnotation,
   ContourSegmentationData,

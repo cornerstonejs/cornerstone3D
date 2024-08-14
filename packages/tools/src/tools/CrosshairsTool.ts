@@ -38,7 +38,7 @@ import {
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 
 import * as lineSegment from '../utilities/math/line';
-import {
+import type {
   Annotation,
   Annotations,
   EventTypes,

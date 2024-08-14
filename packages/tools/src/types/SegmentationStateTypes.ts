@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import * as Enums from '../enums';
-import {
+import type * as Enums from '../enums';
+import type {
   ContourConfig,
   ContourRenderingConfig,
   ContourSegmentationData,
@@ -10,7 +10,7 @@ import type {
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
 } from './LabelmapTypes';
-import {
+import type {
   SurfaceSegmentationData,
   SurfaceRenderingConfig,
 } from './SurfaceTypes';

@@ -18,14 +18,14 @@ import {
 } from '../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolProps,
   PublicToolProps,
   SVGDrawingHelper,
 } from '../types';
-import { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 
 import { windowLevel } from '../utilities/voi';
 

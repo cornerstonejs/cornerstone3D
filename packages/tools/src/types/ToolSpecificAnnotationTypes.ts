@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
-import { ISpline } from './';
-import { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
-import { ContourAnnotation } from './ContourAnnotation';
+import type { Annotation } from './AnnotationTypes';
+import type { ISpline } from './';
+import type { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
+import type { ContourAnnotation } from './ContourAnnotation';
 
 interface ROICachedStats {
   [targetId: string]: {

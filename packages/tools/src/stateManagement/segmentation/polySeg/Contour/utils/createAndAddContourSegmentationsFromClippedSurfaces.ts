@@ -1,6 +1,6 @@
 import { PlanarFreehandContourSegmentationTool } from '../../../../../tools';
 import { addAnnotation } from '../../../../annotation/annotationState';
-import { RawContourData } from '../contourComputationStrategies';
+import type { RawContourData } from '../contourComputationStrategies';
 import { utilities, type Types } from '@cornerstonejs/core';
 
 /**

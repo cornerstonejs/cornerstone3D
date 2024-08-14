@@ -2,7 +2,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { getAnnotations } from '../stateManagement';
-import {
+import type {
   EventTypes,
   PublicToolProps,
   ToolProps,
@@ -17,7 +17,7 @@ import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
 import CircleSculptCursor from './SculptorTool/CircleSculptCursor';

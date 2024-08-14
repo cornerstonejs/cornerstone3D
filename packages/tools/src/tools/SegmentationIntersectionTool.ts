@@ -8,9 +8,9 @@ import {
 import { drawPath } from '../drawingSvg';
 import { getToolGroup } from '../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
-import { Annotation } from '../types';
+import type { Annotation } from '../types';
 import { distanceToPoint } from '../utilities/math/point';
 import { pointToString } from '../utilities/pointToString';
 import { polyDataUtils } from '../utilities';

@@ -35,7 +35,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -44,8 +44,8 @@ import {
   InteractionTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName;

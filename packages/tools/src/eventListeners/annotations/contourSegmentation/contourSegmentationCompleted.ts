@@ -1,9 +1,6 @@
-import {
-  getEnabledElement,
-  utilities as csUtils,
-  Types,
-} from '@cornerstonejs/core';
-import { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
+import type { Types } from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
+import type { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
 import getViewportsForAnnotation from '../../../utilities/getViewportsForAnnotation';
 import {
   math,
@@ -18,7 +15,7 @@ import {
   addChildAnnotation,
   clearParentAnnotation,
 } from '../../../stateManagement/annotation/annotationState';
-import {
+import type {
   AnnotationCompletedEventType,
   ContourAnnotationCompletedEventDetail,
 } from '../../../types/EventTypes';

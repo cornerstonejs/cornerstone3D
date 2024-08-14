@@ -1,4 +1,5 @@
-import { Enums, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 
 const operationFunctions = {
   [Enums.GenerateImageType.SUM]: (voxelManager, frames, arrayLength) => {

@@ -6,7 +6,7 @@ import {
 import { Events, ToolModes } from '../../enums';
 import { draw as drawSvg } from '../../drawingSvg';
 import getToolsWithModesForElement from '../../utilities/getToolsWithModesForElement';
-import { AnnotationRenderedEventDetail } from '../../types/EventTypes';
+import type { AnnotationRenderedEventDetail } from '../../types/EventTypes';
 const { Active, Passive, Enabled } = ToolModes;
 
 /**

@@ -1,6 +1,6 @@
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-import { ContourSegmentationData } from '../../types/ContourTypes';
-import { SurfaceSegmentationData } from '../../types/SurfaceTypes';
+import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
+import type { ContourSegmentationData } from '../../types/ContourTypes';
+import type { SurfaceSegmentationData } from '../../types/SurfaceTypes';
 import { getSegmentation } from './segmentationState';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 

@@ -1,4 +1,4 @@
-import { SegmentationRepresentationModifiedEventType } from '../../types/EventTypes';
+import type { SegmentationRepresentationModifiedEventType } from '../../types/EventTypes';
 import { getSegmentationRepresentation } from '../../stateManagement/segmentation/segmentationState';
 import { triggerSegmentationRenderBySegmentationId } from '../../utilities/segmentation';
 

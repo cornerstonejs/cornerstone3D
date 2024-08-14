@@ -30,10 +30,10 @@ import {
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import { EventTypes, SVGDrawingHelper } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { EventTypes, SVGDrawingHelper } from '../../types';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
-import { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 class VideoRedactionTool extends AnnotationTool {
   _throttledCalculateCachedStats: any;

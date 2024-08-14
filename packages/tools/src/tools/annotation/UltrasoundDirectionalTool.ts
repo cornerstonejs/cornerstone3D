@@ -17,7 +17,7 @@ import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
-import { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
   drawHandle as drawHandleSvg,
@@ -35,7 +35,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -45,7 +45,7 @@ import {
   Annotation,
   InteractionTypes,
 } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 const { transformWorldToIndex } = csUtils;
 

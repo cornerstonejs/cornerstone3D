@@ -1,4 +1,4 @@
-import { SVGCursorDescriptor } from '../types';
+import type { SVGCursorDescriptor } from '../types';
 
 /*
  * Definitions

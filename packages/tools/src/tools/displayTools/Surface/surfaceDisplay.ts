@@ -1,13 +1,13 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
-  Types,
   VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
-import { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
+import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
 
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';

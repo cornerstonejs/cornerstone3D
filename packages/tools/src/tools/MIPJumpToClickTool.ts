@@ -3,7 +3,7 @@ import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
 import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import jumpToWorld from '../utilities/viewport/jumpToWorld';
-import { PublicToolProps, ToolProps } from '../types';
+import type { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 /**

@@ -1,11 +1,11 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   addVolumesToViewports,
   addImageSlicesToViewports,
-  Types,
   Enums,
 } from '@cornerstonejs/core';
-import { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
+import type { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import {
   getCurrentLabelmapImageIdForViewport,

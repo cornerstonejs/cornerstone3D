@@ -15,11 +15,11 @@ import type {
   AnnotationRenderContext,
 } from '../../types';
 import { drawPath as drawPathSvg } from '../../drawingSvg';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
 import { updateContourPolyline } from '../../utilities/contours/';
 import { getContourHolesDataCanvas } from '../../utilities/contours';
-import { ContourWindingDirection } from '../../types/ContourAnnotation';
+import type { ContourWindingDirection } from '../../types/ContourAnnotation';
 
 /**
  * A contour base class responsible for rendering contour instances such as

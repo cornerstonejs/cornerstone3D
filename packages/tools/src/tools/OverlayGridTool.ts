@@ -17,13 +17,13 @@ import { getToolGroup } from '../store/ToolGroupManager';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
   Annotation,
 } from '../types';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 
 const { EPSILON } = CONSTANTS;

@@ -1,6 +1,6 @@
-import { Types } from '@cornerstonejs/core';
-import { AnnotationTool } from '../tools';
-import { Annotation, Annotations } from './AnnotationTypes';
+import type { Types } from '@cornerstonejs/core';
+import type { AnnotationTool } from '../tools';
+import type { Annotation, Annotations } from './AnnotationTypes';
 
 type ToolAnnotationsPair = {
   tool: AnnotationTool;

@@ -1,5 +1,5 @@
-import { IToolGroup, IToolClassReference } from '../types';
-import Synchronizer from './SynchronizerManager/Synchronizer';
+import type { IToolGroup, IToolClassReference } from '../types';
+import type Synchronizer from './SynchronizerManager/Synchronizer';
 import svgNodeCache, { resetSvgNodeCache } from './svgNodeCache';
 
 interface ICornerstoneTools3dState {

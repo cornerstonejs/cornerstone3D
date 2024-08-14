@@ -1,6 +1,6 @@
 import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import { BaseTool } from './base';
-import { MouseWheelEventType } from '../types/EventTypes';
+import type { MouseWheelEventType } from '../types/EventTypes';
 import scroll from '../utilities/scroll';
 
 /**

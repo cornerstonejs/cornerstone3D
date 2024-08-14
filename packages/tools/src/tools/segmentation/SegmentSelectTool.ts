@@ -2,7 +2,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import type { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
@@ -15,7 +15,7 @@ import {
 } from '../../utilities/segmentation';
 import { state } from '../../store';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
+import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment

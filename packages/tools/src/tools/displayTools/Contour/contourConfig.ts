@@ -1,4 +1,4 @@
-import { ContourConfig } from '../../../types/ContourTypes';
+import type { ContourConfig } from '../../../types/ContourTypes';
 
 const defaultContourConfig: ContourConfig = {
   renderOutline: true,

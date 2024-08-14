@@ -2,7 +2,7 @@ import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { createSynchronizer } from '../../store/SynchronizerManager';
 import presentationViewSyncCallback from '../callbacks/presentationViewSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
 const { CAMERA_MODIFIED } = Enums.Events;
 

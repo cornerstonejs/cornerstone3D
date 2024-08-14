@@ -12,9 +12,9 @@ import {
 } from '../enums';
 import { ToolGroupManager, state } from '../store';
 import { debounce } from '../utilities';
-import { ToolModeChangedEventType } from '../types/EventTypes';
+import type { ToolModeChangedEventType } from '../types/EventTypes';
 import { segmentation } from '..';
-import { EventTypes, IToolGroup } from '../types';
+import type { EventTypes, IToolGroup } from '../types';
 import { AnnotationTool, AdvancedMagnifyTool } from './';
 import { distanceToPoint } from '../utilities/math/point';
 

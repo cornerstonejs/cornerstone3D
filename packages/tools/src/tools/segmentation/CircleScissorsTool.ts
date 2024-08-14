@@ -2,7 +2,7 @@ import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
@@ -26,7 +26,7 @@ import {
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import {
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';

@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   StackViewport,
-  Types,
   BaseVolumeViewport,
   utilities,
 } from '@cornerstonejs/core';

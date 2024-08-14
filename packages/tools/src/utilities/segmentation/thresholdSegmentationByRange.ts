@@ -1,10 +1,7 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import {
-  getVoxelOverlap,
-  processVolumes,
-  ThresholdInformation,
-} from './utilities';
+import type { ThresholdInformation } from './utilities';
+import { getVoxelOverlap, processVolumes } from './utilities';
 
 /**
  * It thresholds a segmentation volume based on a set of threshold values with

@@ -1,4 +1,4 @@
-import { SurfaceRenderingConfig } from '../../../types/SurfaceTypes';
+import type { SurfaceRenderingConfig } from '../../../types/SurfaceTypes';
 
 const defaultSurfaceConfig: SurfaceRenderingConfig = {
   renderFill: true,

@@ -1,5 +1,5 @@
 import { state } from '../index';
-import Synchronizer from './Synchronizer';
+import type Synchronizer from './Synchronizer';
 
 /**
  * Get the synchronizer with the given id from the state.

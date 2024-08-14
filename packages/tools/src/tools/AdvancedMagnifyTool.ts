@@ -23,17 +23,17 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../cursors/elementCursor';
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
 } from '../types';
-import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
 import AdvancedMagnifyViewportManager from './AdvancedMagnifyViewportManager';
 import type { AutoPanCallbackData } from './AdvancedMagnifyViewport';

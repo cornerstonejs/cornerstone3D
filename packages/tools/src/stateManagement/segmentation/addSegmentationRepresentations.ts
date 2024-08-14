@@ -1,4 +1,4 @@
-import {
+import type {
   SegmentationRepresentationConfig,
   RepresentationPublicInput,
 } from '../../types/SegmentationStateTypes';

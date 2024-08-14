@@ -13,7 +13,7 @@ import {
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
 import { drawLine } from '../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
-import {
+import type {
   EventTypes,
   PublicToolProps,
   ToolProps,
@@ -21,10 +21,10 @@ import {
   Annotation,
   Annotations,
 } from '../types';
-import { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
+import type { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { vec3 } from 'gl-matrix';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';

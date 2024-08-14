@@ -49,7 +49,7 @@ import type {
   AnnotationModifiedEventDetail,
   ContourAnnotationCompletedEventDetail,
 } from '../../types/EventTypes';
-import { ISpline } from '../../types/ISpline';
+import type { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';

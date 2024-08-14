@@ -5,12 +5,10 @@ import {
   getSegmentation,
   setSegmentationRepresentationConfig,
 } from '../../segmentationState';
-import { PolySegConversionOptions } from '../../../../types';
+import type { PolySegConversionOptions } from '../../../../types';
 import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies';
-import {
-  SurfaceClipResult,
-  clipAndCacheSurfacesForViewport,
-} from '../../helpers/clipAndCacheSurfacesForViewport';
+import type { SurfaceClipResult } from '../../helpers/clipAndCacheSurfacesForViewport';
+import { clipAndCacheSurfacesForViewport } from '../../helpers/clipAndCacheSurfacesForViewport';
 import { extractContourData } from './utils/extractContourData';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
 

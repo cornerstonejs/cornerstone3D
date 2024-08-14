@@ -1,17 +1,17 @@
-import {
+import type {
   Annotation,
   Annotations,
   AnnotationState,
   GroupSpecificAnnotations,
 } from '../../types/AnnotationTypes';
 
-import { AnnotationGroupSelector, IAnnotationManager } from '../../types';
+import type { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
   eventTarget,
   getEnabledElement,
-  Types,
   utilities,
 } from '@cornerstonejs/core';
 

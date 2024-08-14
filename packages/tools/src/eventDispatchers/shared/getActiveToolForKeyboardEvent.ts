@@ -1,7 +1,7 @@
 import { ToolGroupManager } from '../../store';
 import { ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 import { getMouseButton } from '../../eventListeners/mouse/mouseDownListener';
 
 const { Active } = ToolModes;

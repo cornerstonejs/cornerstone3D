@@ -4,7 +4,8 @@ import {
   StackViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { Types, utilities as coreUtils } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { utilities as coreUtils } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
@@ -35,15 +36,15 @@ import {
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
 
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { roundNumber } from '../../utilities/';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';

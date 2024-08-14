@@ -1,12 +1,12 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
-  Types,
   cache,
   eventTarget,
   getWebWorkerManager,
   triggerEvent,
 } from '@cornerstonejs/core';
-import { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
+import type { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();

@@ -1,6 +1,6 @@
 import { cache } from '@cornerstonejs/core';
-import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
-import {
+import type { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,

@@ -1,8 +1,8 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   eventTarget,
   VolumeViewport,
   StackViewport,
-  Types,
   Enums,
   utilities,
   getEnabledElement,

@@ -1,11 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import {
+import type {
   IToolBinding,
   SetToolBindingsType,
   ToolOptionsType,
 } from './ISetToolModeOptions';
-import { MouseBindings } from '../enums';
-import { ToolConfiguration } from '../types';
+import type { MouseBindings } from '../enums';
+import type { ToolConfiguration } from '../types';
 /**
  * ToolGroup interface
  * @deprecated - this is going away in favour of using the type import from the

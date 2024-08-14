@@ -20,15 +20,15 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 
 import { resetElementCursor } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { Annotation } from '../../types';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { Annotation } from '../../types';
 
 type Point2 = Types.Point2;
 

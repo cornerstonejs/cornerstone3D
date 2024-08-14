@@ -1,6 +1,6 @@
 import { SegmentationRepresentations } from '../../../enums';
 import { validateLabelmap } from '../../../tools/displayTools/Labelmap';
-import { SegmentationRepresentationData } from '../../../types';
+import type { SegmentationRepresentationData } from '../../../types';
 import {
   getSegmentationRepresentation,
   getSegmentation,

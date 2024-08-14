@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import { state } from '../../store';
 import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 
 // Util
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';

@@ -1,11 +1,12 @@
-import { Enums, Types, geometryLoader } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums, geometryLoader } from '@cornerstonejs/core';
 import { getSegmentIndexColor } from '../../config/segmentationColor';
 import {
   getSegmentationRepresentation,
   getSegmentation,
 } from '../../segmentationState';
-import { RawSurfacesData } from './surfaceComputationStrategies';
-import { PolySegConversionOptions } from '../../../../types';
+import type { RawSurfacesData } from './surfaceComputationStrategies';
+import type { PolySegConversionOptions } from '../../../../types';
 
 /**
  * Creates and caches surfaces from raw surface data.

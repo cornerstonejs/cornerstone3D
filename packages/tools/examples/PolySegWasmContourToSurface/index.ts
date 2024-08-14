@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -5,7 +6,6 @@ import {
   volumeLoader,
   CONSTANTS,
   utilities,
-  Types,
 } from '@cornerstonejs/core';
 import {
   initDemo,

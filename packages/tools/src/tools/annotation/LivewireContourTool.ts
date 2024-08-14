@@ -21,7 +21,7 @@ import type {
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
-import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import {
   triggerAnnotationModified,

@@ -1,9 +1,18 @@
 import type { IViewport } from '../types/IViewport';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import cache from '../cache';
 
-function getViewportModality(viewport: IViewport, volumeId?: string): string {
+function _getViewportModality(
+  viewport: IViewport,
+  volumeId?: string,
+  getVolume?: (
+    volumeId: string
+  ) => { metadata: { Modality: string } } | undefined
+): string {
+  if (!getVolume) {
+    throw new Error('getVolume is required, use the utilities export instead ');
+  }
+
   if ((viewport as IStackViewport).modality) {
     return (viewport as IStackViewport).modality;
   }
@@ -11,14 +20,15 @@ function getViewportModality(viewport: IViewport, volumeId?: string): string {
   if ((viewport as IVolumeViewport).setVolumes) {
     volumeId = volumeId ?? viewport.getDefaultActor()?.uid;
 
-    if (!volumeId) {
+    if (!volumeId || !getVolume) {
       return;
     }
 
-    return cache.getVolume(volumeId)?.metadata.Modality;
+    const volume = getVolume(volumeId);
+    return volume?.metadata.Modality;
   }
 
   throw new Error('Invalid viewport type');
 }
 
-export { getViewportModality as default, getViewportModality };
+export { _getViewportModality };

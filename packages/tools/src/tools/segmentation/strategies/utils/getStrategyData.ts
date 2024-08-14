@@ -1,6 +1,6 @@
 import { cache } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from './stackVolumeCheck';
-import { LabelmapToolOperationDataStack } from '../../../../types';
+import type { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 
 function getStrategyData({ operationData, viewport }) {

@@ -1,12 +1,7 @@
-import {
-  Types,
-  cache,
-  eventTarget,
-  triggerEvent,
-  Enums,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache, eventTarget, triggerEvent, Enums } from '@cornerstonejs/core';
 import { getWebWorkerManager } from '@cornerstonejs/core';
-import {
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
