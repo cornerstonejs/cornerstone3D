@@ -13,6 +13,7 @@ import {
 import type { Types, IImagesLoader } from '@cornerstonejs/core';
 
 import { autoLoad } from './helpers';
+import type ImageLoadRequests from './types/ImageLoadRequests';
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const {
@@ -169,7 +170,7 @@ export default class BaseStreamingImageVolume
 
     const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
       FrameOfReferenceUID,
-      imageVolume: this,
+      volumeId: this.volumeId,
       numberOfFrames: numFrames,
       framesProcessed: this.framesProcessed,
     };
@@ -493,7 +494,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(): unknown[] {
+  public getImageLoadRequests(priority: number): ImageLoadRequests[] {
     throw new Error('Abstract method');
   }
 

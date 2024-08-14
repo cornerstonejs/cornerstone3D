@@ -46,6 +46,8 @@ interface ImageFrame {
    */
   imageQualityStatus?: ImageQualityStatus;
   decodeLevel?: unknown;
+
+  transferSyntax?: string;
 }
 
 export type { ImageFrame as default };

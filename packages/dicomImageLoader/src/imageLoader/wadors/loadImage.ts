@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
-import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
+import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;

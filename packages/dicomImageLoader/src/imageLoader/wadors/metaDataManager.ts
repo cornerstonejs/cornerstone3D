@@ -1,4 +1,4 @@
-import { WADORSMetaData } from '../../types';
+import type { WADORSMetaData } from '../../types';
 import imageIdToURI from '../imageIdToURI';
 import { combineFrameInstance } from './combineFrameInstance';
 import multiframeMetadata from './retrieveMultiframeMetadata';

@@ -1,6 +1,6 @@
-import { Types } from '@cornerstonejs/core';
-import { LoadRequestFunction } from './LoadRequestFunction';
-import { StreamingData } from '../imageLoader/wadors/loadImage';
+import type { Types } from '@cornerstonejs/core';
+import type { LoadRequestFunction } from './LoadRequestFunction';
+import type { StreamingData } from '../imageLoader/wadors/loadImage';
 
 export interface DICOMLoaderImageOptions {
   useRGBA?: boolean;

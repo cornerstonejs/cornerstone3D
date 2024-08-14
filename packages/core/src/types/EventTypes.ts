@@ -132,8 +132,7 @@ interface ImageRenderedEventDetail {
  * IMAGE_VOLUME_MODIFIED Event's data
  */
 interface ImageVolumeModifiedEventDetail {
-  /** the modified volume */
-  imageVolume: IImageVolume;
+  volumeId: string;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
   /** number of frames */

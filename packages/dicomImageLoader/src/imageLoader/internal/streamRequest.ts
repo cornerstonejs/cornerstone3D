@@ -1,9 +1,10 @@
-import { Types, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import { getOptions } from './options';
-import { LoaderXhrRequestError } from '../../types';
+import type { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
-import {
+import type {
   CornerstoneWadoRsLoaderOptions,
   StreamingData,
 } from '../wadors/loadImage';
@@ -33,7 +34,7 @@ export default function streamRequest(
   } = options;
   const minChunkSize = retrieveOptions.chunkSize || 128 * 1024;
 
-  const errorInterceptor = (err: any) => {
+  const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
       globalOptions.errorInterceptor(error);

@@ -1,10 +1,13 @@
-import { Types, Enums } from '@cornerstonejs/core';
+import type { Types, Enums } from '@cornerstonejs/core';
 import { getOptions } from './options';
-import { LoaderXhrRequestError, LoaderXhrRequestPromise } from '../../types';
+import type {
+  LoaderXhrRequestError,
+  LoaderXhrRequestPromise,
+} from '../../types';
 import metaDataManager from '../wadors/metaDataManager';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
-import { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
+import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 
 type RangeRetrieveOptions = Types.RangeRetrieveOptions;
 
@@ -45,7 +48,7 @@ export default function rangeRequest(
     getValue(imageId, retrieveOptions, 'chunkSize') ||
     65536;
 
-  const errorInterceptor = (err: any) => {
+  const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
       globalOptions.errorInterceptor(error);
@@ -60,6 +63,7 @@ export default function rangeRequest(
     pixelData: Uint8Array;
     percentComplete: number;
     imageQualityStatus: Enums.ImageQualityStatus;
+    // eslint-disable-next-line no-async-promise-executor
   }>(async (resolve, reject) => {
     const headers = Object.assign(
       {},
@@ -109,7 +113,7 @@ export default function rangeRequest(
           ? 100
           : (chunkSize * 100) / totalBytes,
       });
-    } catch (err: any) {
+    } catch (err) {
       errorInterceptor(err);
       console.error(err);
       reject(err);
@@ -121,7 +125,7 @@ export default function rangeRequest(
 
 async function fetchRangeAndAppend(
   url: string,
-  headers: any,
+  headers: Record<string, string>,
   range: [number, number | ''],
   streamingData
 ) {

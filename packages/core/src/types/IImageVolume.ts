@@ -94,7 +94,7 @@ interface IImageVolume {
   modified(): void;
 
   // this is a temporary method to make typescript happy
-  load?: () => void;
+  load?: (callback?: (...args: unknown[]) => void) => void;
 }
 
 export type { IImageVolume as default };

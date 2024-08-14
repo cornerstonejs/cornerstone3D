@@ -1,5 +1,6 @@
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core/src';
+import type { WebWorkerDecodeConfig } from '../../types';
 
 const local = {
   jpeg: undefined,
@@ -24,9 +25,9 @@ export function initialize(
 }
 
 async function decodeJPEGLossless(
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   pixelData: ByteArray
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   await initialize();
 
   // check to make sure codec is loaded

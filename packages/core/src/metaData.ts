@@ -1,18 +1,27 @@
 // This module defines a way to access various metadata about an imageId.  This layer of abstraction exists
 // So metadata can be provided in different ways (e.g. by parsing DICOM P10 or by a WADO-RS document)
 
-const providers = [];
+// Define an interface for the metadata provider
+interface MetadataProvider {
+  type: string;
+  priority: number;
+  provider: (type: string, ...query: string[]) => unknown;
+}
+
+const providers: MetadataProvider[] = [];
 
 /**
- * Adds a metadata provider with the specified priority
+ * Adds a metadata provider with the specified priority and type
  * @param provider - Metadata provider function
  * @param priority - 0 is default/normal, > 0 is high, < 0 is low
+ * @param type - The type of the metadata provider
  *
  * @category MetaData
  */
 export function addProvider(
   provider: (type: string, ...query: string[]) => unknown,
-  priority = 0
+  priority = 0,
+  type = 'default'
 ): void {
   let i;
 
@@ -23,8 +32,9 @@ export function addProvider(
     }
   }
 
-  // Insert the decode task at position i
+  // Insert the provider at position i
   providers.splice(i, 0, {
+    type,
     priority,
     provider,
   });
@@ -34,16 +44,17 @@ export function addProvider(
  * Removes the specified provider
  *
  * @param provider - Metadata provider function
+ * @param type - The type of the metadata provider to remove
  *
  * @category MetaData
  */
 export function removeProvider(
-  provider: (type: string, query: unknown) => unknown
+  provider: (type: string, query: unknown) => unknown,
+  type = 'default'
 ): void {
   for (let i = 0; i < providers.length; i++) {
-    if (providers[i].provider === provider) {
+    if (providers[i].provider === provider && providers[i].type === type) {
       providers.splice(i, 1);
-
       break;
     }
   }
@@ -61,25 +72,30 @@ export function removeAllProviders(): void {
 }
 
 /**
- * Gets metadata from the registered metadata providers.  Will call each one from highest priority to lowest
- * until one responds
+ * Gets metadata from the registered metadata providers of a specific type.
+ * Will call each one from highest priority to lowest until one responds
  *
- * @param type -  The type of metadata requested from the metadata store
- * @param query - The query for the metadata store, often imageId
- *        Some metadata providers support multi-valued strings, which are interpretted
- *        as the provider chooses.
+ * @param type - The type of metadata requested from the metadata store
+ * @param providerType - The type of provider to query (default: 'default')
+ * @param queries - The queries for the metadata store, often imageId
  *
  * @returns The metadata retrieved from the metadata store
  * @category MetaData
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getMetaData(type: string, ...queries): any {
-  // Invoke each provider in priority order until one returns something
+function getMetaData(
+  type: string,
+  providerType = 'default',
+  ...queries: string[]
+): // eslint-disable-next-line @typescript-eslint/no-explicit-any
+any {
+  // Invoke each provider of the specified type in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, ...queries);
+    if (providers[i].type === providerType) {
+      const result = providers[i].provider(type, ...queries);
 
-    if (result !== undefined) {
-      return result;
+      if (result !== undefined) {
+        return result;
+      }
     }
   }
 }

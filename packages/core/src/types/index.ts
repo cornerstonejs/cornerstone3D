@@ -133,6 +133,16 @@ import type { BoundsLPS } from './BoundsLPS';
 // the type only here.
 import type PointsManager from '../utilities/PointsManager';
 import type IImageFrame from './IImageFrame';
+import type {
+  DicomDateObject,
+  DicomTimeObject,
+  GeneralSeriesModuleMetadata,
+  ImagePlaneModuleMetadata,
+  SopCommonModuleMetadata,
+  ImagePixelModuleMetadata,
+  PatientStudyModuleMetadata,
+  TransferSyntaxMetadata,
+} from './MetadataModuleTypes';
 
 export type {
   // config
@@ -260,4 +270,12 @@ export type {
   ColorLUT,
   VolumeProps,
   IImageFrame,
+  DicomDateObject,
+  DicomTimeObject,
+  GeneralSeriesModuleMetadata,
+  ImagePlaneModuleMetadata,
+  SopCommonModuleMetadata,
+  ImagePixelModuleMetadata,
+  PatientStudyModuleMetadata,
+  TransferSyntaxMetadata,
 };

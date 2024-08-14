@@ -18,7 +18,8 @@ const openjpegWasm = new URL(
   import.meta.url
 );
 
-import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+import type { Types } from '@cornerstonejs/core/src';
+import type { WebWorkerDecodeConfig } from '../../types';
 
 const local: {
   codec: OpenJpegModule;
@@ -62,7 +63,7 @@ export function initialize(
 async function decodeAsync(
   compressedImageFrame,
   imageInfo
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   await initialize();
   const decoder = local.decoder;
 

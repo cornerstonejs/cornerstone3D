@@ -147,7 +147,7 @@ class ViewportColorbar extends Colorbar {
   private _imageVolumeModifiedCallback = (
     evt: Types.EventTypes.ImageVolumeModifiedEvent
   ) => {
-    const { volumeId } = evt.detail.imageVolume;
+    const { volumeId } = evt.detail;
 
     if (volumeId !== this._volumeId) {
       return;

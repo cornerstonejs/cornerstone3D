@@ -1,11 +1,11 @@
-import { ImageFrame } from '../types';
+import type { Types } from '@cornerstonejs/core';
 
 function isJPEGBaseline8BitColor(
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   transferSyntax: string
 ): boolean {
   /** @todo check as any */
-  transferSyntax = transferSyntax || (imageFrame as any).transferSyntax;
+  transferSyntax = transferSyntax || imageFrame.transferSyntax;
 
   if (
     imageFrame.bitsAllocated === 8 &&

@@ -1,4 +1,4 @@
-import { LoaderOptions } from '../../types';
+import type { LoaderOptions } from '../../types';
 
 let options: LoaderOptions = {
   // callback to open the object

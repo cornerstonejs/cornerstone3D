@@ -3,17 +3,18 @@ import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame, LoaderDecodeOptions } from '../types';
+import type { ByteArray } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core';
 import external from '../externalModules';
+import type { LoaderDecodeOptions } from '../types';
 
 function processDecodeTask(
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   transferSyntax: string,
   pixelData: ByteArray,
   srcOptions,
   decodeConfig: LoaderDecodeOptions
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   const options = { ...srcOptions };
   // If a loader is specified, it can't be passed through because it is a function
   // and can't be safely cloned/copied externally.

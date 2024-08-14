@@ -1,6 +1,6 @@
 import external from '../../externalModules';
 import { getOptions } from './options';
-import {
+import type {
   LoaderXhrRequestError,
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,
@@ -74,7 +74,7 @@ function xhrRequest(
         };
 
         cornerstone.triggerEvent(
-          (cornerstone as any).events,
+          cornerstone.events,
           'cornerstoneimageloadstart',
           eventData
         );
@@ -94,7 +94,7 @@ function xhrRequest(
 
         // Event
         cornerstone.triggerEvent(
-          (cornerstone as any).events,
+          cornerstone.events,
           'cornerstoneimageloadend',
           eventData
         );

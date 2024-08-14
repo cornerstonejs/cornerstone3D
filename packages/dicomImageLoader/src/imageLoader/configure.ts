@@ -1,5 +1,5 @@
 import { setOptions } from './internal/index';
-import { LoaderOptions } from '../types';
+import type { LoaderOptions } from '../types';
 import external from '../externalModules';
 
 function configure(options: LoaderOptions): void {
