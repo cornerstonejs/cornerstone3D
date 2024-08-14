@@ -24,6 +24,10 @@ export async function peerImport(moduleId) {
       'dicomMicroscopyViewer'
     );
   }
+
+  if (moduleId === '@icr/polyseg-wasm') {
+    return import('@icr/polyseg-wasm');
+  }
 }
 
 async function importGlobal(path, globalName) {

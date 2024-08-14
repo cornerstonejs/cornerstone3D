@@ -180,6 +180,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         shadow: true,
         preventHandleOutsideImage: false,
         /**
@@ -948,6 +950,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           return result;
         },
         boundsIJK,
+        returnPoints: this.configuration.storePointData,
       }
     );
 

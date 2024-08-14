@@ -113,6 +113,8 @@ class RectangleROITool extends AnnotationTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
@@ -941,6 +943,7 @@ class RectangleROITool extends AnnotationTool {
           {
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
         const stats = this.configuration.statsCalculator.getStatistics();

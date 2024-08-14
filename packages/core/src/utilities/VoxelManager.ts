@@ -193,7 +193,7 @@ export default class VoxelManager<T> {
   ) => {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const isInObject = options.isInObject || this.isInObject || (() => true);
-    const returnPoints = options.returnPoints || true;
+    const returnPoints = options.returnPoints || false;
 
     const useLPSTransform = options?.imageData;
 

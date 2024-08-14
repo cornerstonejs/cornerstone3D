@@ -18,8 +18,8 @@ export default class BasicStatsCalculator extends Calculator {
   // Collect the points to be returned
   private static pointsInShape = PointsManager.create3(1024);
 
-  public static statsInit(options: { noPointsCollection: boolean }) {
-    if (options.noPointsCollection) {
+  public static statsInit(options: { storePointData: boolean }) {
+    if (!options.storePointData) {
       BasicStatsCalculator.pointsInShape = null;
     }
   }

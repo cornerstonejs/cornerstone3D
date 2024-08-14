@@ -129,6 +129,8 @@ class CircleROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        // Whether to store point data in the annotation
+        storePointData: false,
         // Radius of the circle to draw  at the center point of the circle.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
@@ -964,6 +966,7 @@ class CircleROITool extends AnnotationTool {
               pointInEllipse(ellipseObj, pointLPS, { fast: true }),
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
 

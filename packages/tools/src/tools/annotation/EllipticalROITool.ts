@@ -133,6 +133,8 @@ class EllipticalROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        // Whether to store point data in the annotation
+        storePointData: false,
         // Radius of the circle to draw  at the center point of the ellipse.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
@@ -1078,6 +1080,7 @@ class EllipticalROITool extends AnnotationTool {
           imageData,
           isInObject: (pointLPS) =>
             pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+          returnPoints: this.configuration.storePointData,
         }
       );
 

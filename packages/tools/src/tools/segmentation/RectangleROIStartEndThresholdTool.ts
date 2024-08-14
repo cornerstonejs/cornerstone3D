@@ -81,6 +81,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         numSlicesToPropagate: 10,
         computePointsInsideVolume: false,
         getTextLines: defaultGetTextLines,
@@ -445,6 +447,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           {
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
 

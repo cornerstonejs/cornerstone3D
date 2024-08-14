@@ -82,6 +82,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         numSlicesToPropagate: 10,
         calculatePointsInsideVolume: false,
         getTextLines: defaultGetTextLines,
@@ -732,6 +734,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
             isInObject: (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
 
