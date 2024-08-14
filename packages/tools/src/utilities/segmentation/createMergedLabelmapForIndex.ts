@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core';
+import type { PixelDataTypedArray } from '@cornerstonejs/core/src/types';
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions), and
@@ -30,6 +31,7 @@ function createMergedLabelmapForIndex(
 
   const labelmap = labelmaps[0];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const arrayType = labelmap.voxelManager.getConstructor() as any;
 
   const outputData = new arrayType(labelmap.voxelManager.getScalarDataLength());

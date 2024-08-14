@@ -14,7 +14,7 @@ type ModesFilter = Array<ToolModes>;
 export default function getToolsWithModesForMouseEvent(
   evt: EventTypes.MouseMoveEventType,
   modesFilter: ModesFilter,
-  evtButton?: any
+  evtButton?: number
 ) {
   const { renderingEngineId, viewportId } = evt.detail;
   const toolGroup = ToolGroupManager.getToolGroupForViewport(

@@ -12,8 +12,6 @@ import scroll from '../utilities/scroll';
 class StackScrollMouseWheelTool extends BaseTool {
   static toolName;
 
-  _configuration: any;
-
   constructor(
     toolProps = {},
     defaultToolProps = {

@@ -23,6 +23,7 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import type { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
@@ -36,9 +37,9 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
  */
 class RectangleROIThresholdTool extends RectangleROITool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     newAnnotation?: boolean;

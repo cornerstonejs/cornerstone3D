@@ -23,6 +23,7 @@ import type {
   ToolProps,
   PublicToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../types';
 import type { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
@@ -43,7 +44,7 @@ class WindowLevelRegionTool extends AnnotationTool {
   static toolName;
 
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
   } | null;
   isDrawing: boolean;
@@ -69,7 +70,7 @@ class WindowLevelRegionTool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (evt: EventTypes.InteractionEventType): any => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;

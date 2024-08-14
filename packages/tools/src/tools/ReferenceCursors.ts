@@ -47,9 +47,6 @@ import { getToolGroup } from '../store/ToolGroupManager';
  */
 class ReferenceCursors extends AnnotationDisplayTool {
   static toolName;
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
   isDrawing = false;
   isHandleOutsideImage = false;
   _elementWithCursor: null | HTMLDivElement = null;
@@ -254,7 +251,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
   }
 
   //checks if we need to update the annotation position due to camera changes
-  onCameraModified = (evt: any): void => {
+  onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     const eventDetail = evt.detail;
     const { element, previousCamera, camera } = eventDetail;
     const enabledElement = getEnabledElement(element);

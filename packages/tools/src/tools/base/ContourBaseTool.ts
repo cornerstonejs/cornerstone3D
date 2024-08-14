@@ -241,6 +241,7 @@ abstract class ContourBaseTool extends AnnotationTool {
   protected getPolylinePoints(annotation: ContourAnnotation): Types.Point3[] {
     // Attention: `contour.polyline` is the new way to store a polyline but it
     // may be undefined because it was `data.polyline` before (fallback)
+    // @ts-expect-error
     return annotation.data.contour?.polyline ?? annotation.data.polyline;
   }
 
@@ -276,11 +277,11 @@ abstract class ContourBaseTool extends AnnotationTool {
       'contourPolyline',
       allContours,
       {
-        color,
-        lineDash,
-        lineWidth: Math.max(0.1, lineWidth),
-        fillColor: fillColor,
-        fillOpacity,
+        color: color as string,
+        lineDash: lineDash as string,
+        lineWidth: Math.max(0.1, lineWidth as number),
+        fillColor: fillColor as string,
+        fillOpacity: fillOpacity as number,
       }
     );
 

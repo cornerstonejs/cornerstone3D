@@ -253,11 +253,11 @@ export function createPolylineHole(
 
 function getContourHolesData(
   viewport: Types.IViewport,
-  annotation: ContourAnnotation
+  annotation: ContourSegmentationAnnotation
 ) {
   return getChildAnnotations(annotation).map((holeAnnotation) => {
     const polyline = convertContourPolylineToCanvasSpace(
-      holeAnnotation.data.contour.polyline,
+      (holeAnnotation as ContourSegmentationAnnotation).data.contour.polyline,
       viewport
     );
 

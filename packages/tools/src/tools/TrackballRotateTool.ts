@@ -17,6 +17,7 @@ class TrackballRotateTool extends BaseTool {
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
   _resizeObservers = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _viewportAddedListener: (evt: any) => void;
   _hasResolutionChanged = false;
 

@@ -57,7 +57,8 @@ function generateContourSetsFromLabelmap({ segmentations }) {
       numberOfComponents: 1,
       size: pixelsPerSlice * numSlices,
       dataType: 'Uint8Array',
-    });
+    }) as vtkDataArray;
+
     const { containedSegmentIndices } = segment;
     for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
       // Check if the slice is empty before running marching cube
@@ -73,9 +74,11 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         for (let i = 0; i < pixelsPerSlice; i++) {
           const value = segData[i + frameStart];
           if (value === segIndex || containedSegmentIndices?.has(value)) {
-            (scalars as any).setValue(i + frameStart, 1);
+            // @ts-expect-error vtk has wrong types
+            scalars.setValue(i + frameStart, 1);
           } else {
-            (scalars as any).setValue(i, 0);
+            // @ts-expect-error vtk has wrong types
+            scalars.setValue(i, 0);
           }
         }
 

@@ -243,7 +243,7 @@ function _getAnnotationMapFromSegmentation(
     ? options.segmentIndices
     : Array.from(annotationMap.keys());
 
-  const annotationUIDsInSegmentMap = new Map<number, any>();
+  const annotationUIDsInSegmentMap = new Map<number, unknown>();
   segmentIndices.forEach((index) => {
     const annotationUIDsInSegment = annotationMap.get(index);
 

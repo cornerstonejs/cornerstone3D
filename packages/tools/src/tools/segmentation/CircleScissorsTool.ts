@@ -7,6 +7,8 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
+  ContourAnnotation,
 } from '../../types';
 
 import { fillInsideCircle } from './strategies/fillCircle';
@@ -42,14 +44,11 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 class CircleScissorsTool extends BaseTool {
   static toolName;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     segmentIndex: number;
-    // volume labelmap
+    segmentationId: string;
     volumeId: string;
     referencedVolumeId: string;
-    // stack labelmap
-    imageId: string;
-    //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
@@ -154,7 +153,12 @@ class CircleScissorsTool extends BaseTool {
       },
       data: {
         handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          points: [
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+          ] as Types.Point3[],
           activeHandleIndex: null,
         },
         isDrawing: true,
@@ -177,7 +181,9 @@ class CircleScissorsTool extends BaseTool {
       newAnnotation: true,
       hasMoved: false,
       segmentationRepresentationUID,
-    } as any;
+      volumeId: null,
+      referencedVolumeId: null,
+    };
 
     if (
       isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
@@ -361,6 +367,7 @@ class CircleScissorsTool extends BaseTool {
 
     const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
+    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

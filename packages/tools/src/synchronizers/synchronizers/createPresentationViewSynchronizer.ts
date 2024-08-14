@@ -1,5 +1,4 @@
-import { Enums } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { Enums, type Types } from '@cornerstonejs/core';
 import { createSynchronizer } from '../../store/SynchronizerManager';
 import presentationViewSyncCallback from '../callbacks/presentationViewSyncCallback';
 import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
@@ -22,7 +21,7 @@ export default function createPresentationViewSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
     presentationViewSyncCallback,
-    options
+    { viewPresentation: options }
   );
 
   return presentationView;

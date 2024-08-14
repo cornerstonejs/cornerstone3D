@@ -43,6 +43,7 @@ import type {
   ToolProps,
   InteractionTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -50,12 +51,10 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 class CobbAngleTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
   angleStartedNotYetCompleted: boolean;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;

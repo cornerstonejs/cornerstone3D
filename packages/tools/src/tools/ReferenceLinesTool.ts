@@ -24,14 +24,12 @@ const { EPSILON } = CONSTANTS;
 class ReferenceLines extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    renderingEngine: any;
+    renderingEngine: Types.IRenderingEngine;
     sourceViewportId: string;
     annotation: ReferenceLineAnnotation;
-  } | null = {} as any;
+  } | null = null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 

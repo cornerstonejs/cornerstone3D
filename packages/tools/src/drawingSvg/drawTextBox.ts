@@ -52,7 +52,8 @@ function _drawTextGroup(
   textUID: string,
   textLines: Array<string> = [''],
   position: Types.Point2,
-  options: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: Record<string, any>
 ): SVGRect {
   const { padding, color, fontFamily, fontSize, background } = options;
 
@@ -138,7 +139,8 @@ function _drawTextGroup(
 
 function _createTextElement(
   svgDrawingHelper: SVGDrawingHelper,
-  options: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: Record<string, any>
 ): SVGElement {
   const { color, fontFamily, fontSize } = options;
   const svgns = 'http://www.w3.org/2000/svg';

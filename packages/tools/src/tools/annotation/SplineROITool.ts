@@ -760,7 +760,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         canvasCoordinates,
         {
           color,
-          lineWidth: Math.max(1, lineWidth),
+          lineWidth,
           handleRadius: '3',
         }
       );
@@ -785,7 +785,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         previewPolylinePoints,
         {
           color: '#9EA0CA',
-          lineDash,
+          lineDash: lineDash as string,
           lineWidth: 1,
         }
       );

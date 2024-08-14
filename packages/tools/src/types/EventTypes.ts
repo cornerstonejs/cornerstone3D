@@ -426,7 +426,7 @@ type TouchPressEventDetail = NormalizedInteractionEventDetail &
 type MouseWheelEventDetail = NormalizedInteractionEventDetail &
   MouseCustomEventDetail & {
     /** wheel detail */
-    detail: Record<string, any>;
+    detail: Record<string, unknown>;
     /** wheel information */
     wheel: {
       spinX: number;

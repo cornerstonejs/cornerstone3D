@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import type { ThresholdInformation } from './utilities';
+import type { ThresholdInformation, VolumeInfo } from './utilities';
 import { getVoxelOverlap, processVolumes } from './utilities';
 
 /**
@@ -26,9 +26,8 @@ function thresholdSegmentationByRange(
     thresholdVolumeInformation
   );
 
-  const baseVolume = volumeInfoList[baseVolumeIdx];
-  const refImageData = baseVolume.imageData;
-  const refVoxelManager = baseVolume.volume.voxelManager;
+  const { voxelManager } = volumeInfoList[baseVolumeIdx];
+  const refVoxelManager = voxelManager;
 
   const scalarDataLength =
     segmentationVolume.voxelManager.getScalarDataLength();
@@ -76,8 +75,8 @@ function _handleDifferentSizeVolume(
   segVoxelManager,
   refVoxelManager,
   segmentationIndex: number,
-  volumeInfo: any,
-  volumeInfoList: any,
+  volumeInfo: VolumeInfo,
+  volumeInfoList: VolumeInfo[],
   baseVolumeIdx: number,
   overlapType: number
 ) {
@@ -125,7 +124,7 @@ function _handleSameSizeVolume(
   segVoxelManager,
   refVoxelManager,
   segmentationIndex: number,
-  volumeInfo: any
+  volumeInfo: VolumeInfo
 ) {
   const { lower, upper } = volumeInfo;
   const scalarDataLength = segVoxelManager.getScalarDataLength();

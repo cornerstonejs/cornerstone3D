@@ -49,6 +49,7 @@ const viewportIds = [
   viewportId4,
   viewportId5,
 ];
+
 let viewport;
 const viewports = [];
 const renderingEngineId = 'myRenderingEngine';

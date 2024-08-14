@@ -115,9 +115,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
 class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   private commonData?: PlanarFreehandROICommonData;
   isDrawing = false;
   isEditingClosed = false;

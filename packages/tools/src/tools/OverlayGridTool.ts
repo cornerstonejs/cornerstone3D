@@ -41,9 +41,7 @@ export interface OverlayGridAnnotation extends Annotation {
 class OverlayGridTool extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -236,6 +234,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
       const { pointSet1, pointSet2 } = pointSets[i];
 
       const targetData =
+        // @ts-expect-error
         viewportData.get(targetViewport.id) ||
         this.initializeViewportData(viewportData, targetViewport.id);
 

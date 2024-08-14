@@ -19,7 +19,6 @@ const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
 class MagnifyTool extends BaseTool {
   static toolName;
-  _bounds: any;
   editData: {
     referencedImageId: string;
     viewportIdsToRender: string[];

@@ -29,6 +29,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../types';
 import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
@@ -47,10 +48,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
   static Actions = AdvancedMagnifyToolActions;
 
   magnifyViewportManager: AdvancedMagnifyViewportManager;
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -406,9 +405,13 @@ class AdvancedMagnifyTool extends AnnotationTool {
       newRadius
     );
 
+    // @ts-ignore
     points[0] = newCanvasHandlePoints[0];
+    // @ts-ignore
     points[1] = newCanvasHandlePoints[1];
+    // @ts-ignore
     points[2] = newCanvasHandlePoints[2];
+    // @ts-ignore
     points[3] = newCanvasHandlePoints[3];
   };
 

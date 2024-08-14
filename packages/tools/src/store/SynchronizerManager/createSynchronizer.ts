@@ -1,5 +1,5 @@
 import { state } from '../index';
-import Synchronizer from './Synchronizer';
+import Synchronizer, { type SynchronizerOptions } from './Synchronizer';
 import type { ISynchronizerEventHandler } from '../../types';
 
 /**
@@ -16,7 +16,7 @@ function createSynchronizer(
   synchronizerId: string,
   eventName: string,
   eventHandler: ISynchronizerEventHandler,
-  options?: any
+  options?: SynchronizerOptions
 ): Synchronizer {
   const synchronizerWithSameIdExists = state.synchronizers.some(
     (sync) => sync.id === synchronizerId

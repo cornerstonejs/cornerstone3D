@@ -217,7 +217,7 @@ export interface ViewPresentation {
  * share particular sets for different uses.
  */
 export interface ViewPresentationSelector {
-  slabThickness?: boolean;
+  slabThickness?: number;
   // Camera relative parameters
   rotation?: boolean;
   displayArea?: boolean;

@@ -7,6 +7,7 @@ type SharedToolProp = {
   configuration?: ToolConfiguration;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ToolConfiguration = Record<string, any> & {
   statsCalculator?: Calculator;
 };

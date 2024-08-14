@@ -70,9 +70,9 @@ type Annotation = {
           bottomRight: Types.Point3;
         };
       };
-      [key: string]: any;
+      [key: string]: unknown;
     };
-    [key: string]: any;
+    [key: string]: unknown;
     /** Cached Annotation statistics which is specific to the tool */
     cachedStats?: unknown;
   };

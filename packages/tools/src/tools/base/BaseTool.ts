@@ -14,7 +14,7 @@ export interface IBaseTool {
   /** Tool Configuration */
   configuration: {
     preventHandleOutsideImage?: boolean;
-    strategies?: Record<string, any>;
+    strategies?: Record<string, unknown>;
     defaultStrategy?: string;
     activeStrategy?: string;
     strategyOptions?: Record<string, unknown>;
@@ -30,6 +30,7 @@ abstract class BaseTool implements IBaseTool {
   static toolName;
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public configuration: Record<string, any>;
   /** ToolGroup ID the tool instance belongs to */
   public toolGroupId: string;
@@ -78,6 +79,7 @@ abstract class BaseTool implements IBaseTool {
   public applyActiveStrategy(
     enabledElement: Types.IEnabledElement,
     operationData: unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): any {
     const { strategies, activeStrategy } = this.configuration;
     return strategies[activeStrategy]?.call(
@@ -102,6 +104,7 @@ abstract class BaseTool implements IBaseTool {
     enabledElement: Types.IEnabledElement,
     operationData: unknown,
     callbackType: StrategyCallbacks | string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): any {
     const { strategies, activeStrategy } = this.configuration;
 
@@ -122,6 +125,7 @@ abstract class BaseTool implements IBaseTool {
    * merges the new configuration with the tool configuration
    * @param configuration - toolConfiguration
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public setConfiguration(newConfiguration: Record<string, any>): void {
     this.configuration = utilities.deepMerge(
       this.configuration,

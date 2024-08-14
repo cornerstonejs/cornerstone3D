@@ -165,6 +165,7 @@ class AdvancedMagnifyViewportManager {
       return;
     }
 
+    // @ts-ignore
     this.destroyViewport(annotation.data.magnifyViewportId);
   };
 

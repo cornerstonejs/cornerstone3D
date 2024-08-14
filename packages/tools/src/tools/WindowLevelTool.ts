@@ -62,7 +62,7 @@ class WindowLevelTool extends BaseTool {
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (properties.voiRange) {
-      modality = (viewport as any).modality;
+      modality = (viewport as unknown as { modality: string }).modality;
       ({ lower, upper } = properties.voiRange);
       const { preScale = { scaled: false } } = viewport.getImageData?.() || {};
       isPreScaled =

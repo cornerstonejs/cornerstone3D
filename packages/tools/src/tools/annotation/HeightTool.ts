@@ -41,6 +41,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -85,11 +86,9 @@ const { transformWorldToIndex } = csUtils;
 class HeightTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -100,8 +99,6 @@ class HeightTool extends AnnotationTool {
   isHandleOutsideImage: boolean;
 
   //Lines to generate height
-  endfirstLine: Types.Point2;
-  endsecondLine: Types.Point2;
   //Middle lines:
   midX: number;
 
@@ -831,9 +828,8 @@ class HeightTool extends AnnotationTool {
 
       const height = this._calculateHeight(worldPos1, worldPos2) / scale;
 
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      const outside = this._isInsideVolume(index1, index2, dimensions);
+      this.isHandleOutsideImage = outside;
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either

@@ -32,6 +32,7 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import type { AnnotationStyle } from '../../types/AnnotationStyle';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -41,8 +42,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   /** The scissors from the next handle, used for editing */
   protected scissorsNext: LivewireScissors;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
@@ -869,7 +868,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     enabledElement: Types.IEnabledElement;
     targetId: string;
     annotation: LivewireContourAnnotation;
-    annotationStyle: Record<string, any>;
+    annotationStyle: AnnotationStyle;
     svgDrawingHelper: SVGDrawingHelper;
   }): boolean {
     const { annotation, enabledElement, svgDrawingHelper, annotationStyle } =

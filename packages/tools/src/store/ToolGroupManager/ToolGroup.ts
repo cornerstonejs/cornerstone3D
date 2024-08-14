@@ -96,7 +96,7 @@ export default class ToolGroup implements IToolGroup {
    *
    * @returns A record containing the tool instances, where the keys are the tool names and the values are the tool instances.
    */
-  public getToolInstances(): Record<string, any> {
+  public getToolInstances(): Record<string, unknown> {
     return this._toolInstances;
   }
 
@@ -750,7 +750,7 @@ export default class ToolGroup implements IToolGroup {
    * getToolConfiguration('LengthTool', 'firstLevel.secondLevel')
    * // get from LengthTool instance the configuration value as being LengthToolInstance[configuration][firstLevel][secondLevel]
    */
-  getToolConfiguration(toolName: string, configurationPath?: string): any {
+  getToolConfiguration(toolName: string, configurationPath?: string): unknown {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
         `Tool ${toolName} not present, can't set tool configuration.`

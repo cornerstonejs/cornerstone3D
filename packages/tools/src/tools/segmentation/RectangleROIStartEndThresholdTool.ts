@@ -41,8 +41,12 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import type { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  RectangleROIStartEndThresholdAnnotation,
+  ROICachedStats,
+} from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { roundNumber } from '../../utilities/';
@@ -67,9 +71,9 @@ const { transformWorldToIndex } = csUtils;
  */
 class RectangleROIStartEndThresholdTool extends RectangleROITool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -176,7 +180,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           pointsInVolume: [],
           projectionPoints: [],
           projectionPointsImageIds: [referencedImageId],
-          statistics: [],
+          statistics: [] as unknown as ROICachedStats,
         },
         handles: {
           textBox: {

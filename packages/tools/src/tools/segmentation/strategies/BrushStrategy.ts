@@ -30,6 +30,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   configuration?: Record<string, any>;
 };
 
@@ -320,6 +321,7 @@ export default class BrushStrategy {
   /**
    * Over-written by the strategy composition.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public createIsInThreshold: (operationData: InitializedOperationData) => any;
 }
 

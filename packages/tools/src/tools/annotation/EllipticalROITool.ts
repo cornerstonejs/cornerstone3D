@@ -47,6 +47,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
@@ -108,11 +109,9 @@ const { transformWorldToIndex } = csUtils;
 class EllipticalROITool extends AnnotationTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     movingTextBox?: boolean;

@@ -32,14 +32,12 @@ const viewportsWithAnnotations = [];
 class ScaleOverlayTool extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    renderingEngine: any;
-    viewport: any;
+    renderingEngine: Types.IRenderingEngine;
+    viewport: Types.IViewport;
     annotation: ScaleOverlayAnnotation;
-  } | null = {} as any;
+  } | null = null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -334,8 +332,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       scaleSize,
       location,
       annotationUID,
-      scaleTicks.endTick1,
-      scaleTicks.endTick2
+      scaleTicks.endTick1 as Types.Point2[],
+      scaleTicks.endTick2 as Types.Point2[]
     );
 
     // draws inner ticks for scale
@@ -400,7 +398,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
   computeScaleSize = (
     worldWidthViewport: number,
     worldHeightViewport: number,
-    location: any
+    location: string
   ) => {
     const scaleSizes = [
       16000, 8000, 4000, 2000, 1000, 500, 250, 100, 50, 25, 10, 5, 2,
@@ -479,8 +477,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     scaleSize: number,
     location: string,
     annotationUID: string,
-    leftTick: any[][],
-    rightTick: any[][]
+    leftTick: Types.Point2[],
+    rightTick: Types.Point2[]
   ) => {
     let canvasScaleSize;
     if (location == 'bottom' || location == 'top') {

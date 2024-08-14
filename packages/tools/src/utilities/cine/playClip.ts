@@ -22,6 +22,11 @@ const { triggerEvent } = csUtils;
 const debounced = true;
 const dynamicVolumesPlayingMap = new Map();
 
+type StopClipOptions = {
+  stopDynamicCine: boolean;
+  viewportId?: string;
+};
+
 /**
  * Starts playing a clip or adjusts the frame rate of an already playing clip.  framesPerSecond is
  * optional and defaults to 30 if not specified.  A negative framesPerSecond will play the clip in reverse.
@@ -211,7 +216,10 @@ function playClip(
  * Stops an already playing clip.
  * @param element - HTML Element
  */
-function stopClip(element: HTMLDivElement, options = {} as any): void {
+function stopClip(
+  element: HTMLDivElement,
+  options = {} as StopClipOptions
+): void {
   _stopClip(element, {
     stopDynamicCine: true,
     ...options,
@@ -220,7 +228,7 @@ function stopClip(element: HTMLDivElement, options = {} as any): void {
 
 function _stopClip(
   element: HTMLDivElement,
-  options = { stopDynamicCine: true, viewportId: undefined }
+  options: StopClipOptions = { stopDynamicCine: true, viewportId: undefined }
 ) {
   const { stopDynamicCine, viewportId } = options;
   const enabledElement = getEnabledElement(element);

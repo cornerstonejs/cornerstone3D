@@ -34,7 +34,7 @@ export type SculptData = {
 
 type CommonData = {
   activeAnnotationUID: string | null;
-  viewportIdsToRender: any[];
+  viewportIdsToRender: string[];
   isEditingOpenContour: boolean;
   canvasLocation: Types.Point2 | undefined;
 };
@@ -123,6 +123,7 @@ class SculptorTool extends BaseTool {
    * @param eventData - Data object associated with the event.
    * @param points - Array of points
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected sculpt(eventData: any, points: Array<Types.Point3>): void {
     const config = this.configuration;
     const element = eventData.element;
@@ -326,6 +327,7 @@ class SculptorTool extends BaseTool {
    *
    * @param eventData - Data object associated with the event.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private selectFreehandTool(eventData: any): void {
     const closestAnnotationUID =
       this.getClosestFreehandToolOnElement(eventData);
@@ -343,6 +345,7 @@ class SculptorTool extends BaseTool {
    *
    * @param eventData - Data object associated with the event.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getClosestFreehandToolOnElement(eventData: any): string {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);

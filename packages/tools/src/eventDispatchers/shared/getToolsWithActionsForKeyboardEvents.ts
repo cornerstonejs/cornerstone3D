@@ -40,6 +40,7 @@ export default function getToolsWithModesForKeyboardEvent(
       continue;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const action = actions.find((action: any) =>
       action.bindings.some((binding) => binding.key === key)
     );

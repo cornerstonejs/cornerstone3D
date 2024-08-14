@@ -7,6 +7,7 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import { fillInsideRectangle } from './strategies/fillRectangle';
 import { eraseInsideRectangle } from './strategies/eraseRectangle';
@@ -41,7 +42,7 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
  */
 class RectangleScissorsTool extends BaseTool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
     // volume labelmap
     volumeId: string;
@@ -49,10 +50,11 @@ class RectangleScissorsTool extends BaseTool {
     // stack labelmap
     imageId: string;
     //
-    annotation: any;
+    annotation: Annotation;
     segmentationId: string;
     segmentIndex: number;
     segmentsLocked: number[];
+    segmentationRepresentationUID: string;
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     handleIndex?: number;
@@ -116,7 +118,7 @@ class RectangleScissorsTool extends BaseTool {
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
+    const { segmentationRepresentationUID, segmentationId } =
       activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
@@ -174,7 +176,10 @@ class RectangleScissorsTool extends BaseTool {
       newAnnotation: true,
       hasMoved: false,
       segmentationRepresentationUID,
-    } as any;
+      volumeId: null,
+      referencedVolumeId: null,
+      imageId: null,
+    };
 
     if (
       isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
@@ -366,6 +371,7 @@ class RectangleScissorsTool extends BaseTool {
     const data = annotation.data;
     const { points } = data.handles;
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

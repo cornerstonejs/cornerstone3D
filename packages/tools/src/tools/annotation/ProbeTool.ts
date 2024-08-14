@@ -40,6 +40,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -94,10 +95,8 @@ const { transformWorldToIndex } = csUtils;
 class ProbeTool extends AnnotationTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     newAnnotation?: boolean;
   } | null;
@@ -308,7 +307,7 @@ class ProbeTool extends AnnotationTool {
     const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
-    data.handles.points[0] = [...worldPos];
+    data.handles.points[0] = [...worldPos] as Types.Point3;
     annotation.invalidated = true;
 
     const enabledElement = getEnabledElement(element);

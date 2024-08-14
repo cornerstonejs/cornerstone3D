@@ -37,7 +37,7 @@ class CircleSculptCursor implements ISculptToolShape {
   renderShape(
     svgDrawingHelper: SVGDrawingHelper,
     canvasLocation: Types.Point2,
-    options: any
+    options: unknown
   ): void {
     const circleUID = '0';
     drawCircleSvg(

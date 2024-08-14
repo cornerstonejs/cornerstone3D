@@ -22,7 +22,10 @@ import type {
   PublicToolProps,
 } from '../../types';
 import { addAnnotation } from '../../stateManagement/annotation/annotationState';
-import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import type {
+  AnnotationStyle,
+  StyleSpecifier,
+} from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 
 /**
@@ -415,7 +418,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       fillOpacity: 0,
       shadow,
       textbox: textboxStyle,
-    };
+    } as AnnotationStyle;
   }
 
   /**

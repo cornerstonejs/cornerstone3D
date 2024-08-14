@@ -34,7 +34,7 @@ function wheelListener(evt: WheelEvent) {
     viewportId,
     element,
     camera: {},
-    detail: evt,
+    detail: evt as unknown as Record<string, unknown>,
     wheel: {
       spinX,
       spinY,

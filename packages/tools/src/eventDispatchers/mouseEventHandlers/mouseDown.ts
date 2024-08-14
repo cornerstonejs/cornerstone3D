@@ -72,7 +72,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
   const activeToolsWithEventBinding = getToolsWithModesForMouseEvent(
     evt,
     [Active],
-    evt.detail.event.buttons
+    evt.detail.event.buttons as number
   );
   const passiveToolsIfEventWasPrimaryMouseButton = isPrimaryClick
     ? getToolsWithModesForMouseEvent(evt, [Passive])

@@ -9,6 +9,7 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import type {
+  Annotation,
   EventTypes,
   PublicToolProps,
   SVGDrawingHelper,
@@ -18,15 +19,12 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import ProbeTool from './ProbeTool';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 class DragProbeTool extends ProbeTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     newAnnotation?: boolean;
   } | null;

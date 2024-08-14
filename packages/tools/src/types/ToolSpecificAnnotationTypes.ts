@@ -4,7 +4,7 @@ import type { ISpline } from './';
 import type { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
 import type { ContourAnnotation } from './ContourAnnotation';
 
-interface ROICachedStats {
+export interface ROICachedStats {
   [targetId: string]: {
     Modality: string;
     area: number;
@@ -234,7 +234,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
     toolName: string;
-    enabledElement: any; // Todo: how to remove this from the annotation??
+    enabledElement: Types.IEnabledElement; // Todo: how to remove this from the annotation??
     volumeId: string;
     spacingInNormal: number;
   };
@@ -246,7 +246,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
       pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
-      statistics?: ROICachedStats | any[];
+      statistics?: ROICachedStats;
     };
     handles: {
       points: Types.Point3[];
@@ -275,7 +275,7 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
     toolName: string;
-    enabledElement: any; // Todo: how to remove this from the annotation??
+    enabledElement: Types.IEnabledElement; // Todo: how to remove this from the annotation??
     volumeId: string;
     spacingInNormal: number;
   };
@@ -286,7 +286,7 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
     cachedStats?: {
       pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][];
-      statistics?: ROICachedStats | any[];
+      statistics?: ROICachedStats;
     };
     handles: {
       points: [Types.Point3, Types.Point3]; // [center, end]
@@ -497,7 +497,7 @@ export interface VideoRedactionAnnotation extends Annotation {
       activeHandleIndex: number | null;
     };
     cachedStats: {
-      [key: string]: any; // Can be more specific if the structure is known
+      [key: string]: unknown; // Can be more specific if the structure is known
     };
     active: boolean;
   };

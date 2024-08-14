@@ -15,8 +15,6 @@ import { getToolGroupForViewport } from '../store/ToolGroupManager';
 class MIPJumpToClickTool extends BaseTool {
   static toolName;
 
-  _bounds: any;
-
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {

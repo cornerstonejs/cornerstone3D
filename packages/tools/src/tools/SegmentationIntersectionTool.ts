@@ -126,6 +126,7 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       if (!actorEntry?.clippingFilter) {
         return;
       }
+      // @ts-expect-error
       const actorWorldPointMap = actorsWorldPointsMap.get(actorEntry.uid);
       if (!actorWorldPointMap) {
         return;
