@@ -4,6 +4,7 @@ import {
 } from '../src';
 import * as cornerstone from '@cornerstonejs/core';
 import * as testUtils from '../../../utils/test/testUtils';
+// import globals for describe, it, expect, beforeAll in karma
 
 const { cache, metaData, imageLoader, volumeLoader } = cornerstone;
 

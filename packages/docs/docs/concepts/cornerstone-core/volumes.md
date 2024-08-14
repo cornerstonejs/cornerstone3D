@@ -51,10 +51,5 @@ interface IImageVolume {
   imageIds?: Array<string>
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string // if volume is derived from another volume
-  /** method to convert the volume data in the volume cache, to separate images in the image cache */
-  convertToCornerstoneImage?: (
-    imageId: string,
-    imageIdIndex: number
-  ) => IImageLoadObject
 }
 ```

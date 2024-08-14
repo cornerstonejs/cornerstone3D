@@ -51,31 +51,33 @@
     "project": "./tsconfig.json",
     "tsconfigRootDir": "./"
   },
-  "ignorePatterns": ["packages/docs"],
+  "ignorePatterns": ["packages/docs", "dist", "**/*_test.js", "**/*_jest.js", "**/*babel*"],
   "rules": {
     "import/no-cycle": ["error", { "maxDepth": 1 }],
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
-    "tsdoc/syntax": "warn",
+    "tsdoc/syntax": "off",
     "@typescript-eslint/ban-ts-comment": "off",
-    "no-console": [
-      "warn",
-      {
-        "allow": ["warn", "error"]
-      }
-    ],
+    // "no-console": [
+    //   "warn",
+    //   {
+    //     "allow": ["warn", "error"]
+    //   }
+    // ],
+    "no-console": "off",
     // note you must disable the base rule
     // as it can report incorrect errors
     "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "off",
     // Allow skipping unused variables in params calls by using _Name
-    "@typescript-eslint/no-unused-vars": [
-      "warn", // or "error"
-      {
-        "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-        "caughtErrorsIgnorePattern": "^_"
-      }
-    ],
+    // "@typescript-eslint/no-unused-vars": [
+    //   "warn", // or "error"
+    //   {
+    //     "argsIgnorePattern": "^_",
+    //     "varsIgnorePattern": "^_",
+    //     "caughtErrorsIgnorePattern": "^_"
+    //   }
+    // ],
     "import/extensions": [
       "error",
       "ignorePackages",
@@ -117,6 +119,18 @@
   },
   "globals": {
     "context": true,
+    "jasmine": true,
+    "es6": true,
+    "browser": true,
+    "node": true,
+    "afterEach": true,
+    "beforeEach": true,
+    "done": true,
+    "describe": "readonly",
+    "beforeAll": "readonly",
+    "it": "readonly",
+    "jest": "readonly",
+    "expect": "readonly",
     "assert": true
   }
 }

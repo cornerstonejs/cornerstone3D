@@ -68,23 +68,9 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * Scroll properly to enable looping
-   * @param delta
-   */
-  public scroll(delta: number): void {
-    const newIndex = this._timePointIndex + delta;
-
-    if (newIndex < 0) {
-      this.timePointIndex = this.numTimePoints - 1;
-    } else if (newIndex >= this.numTimePoints) {
-      this.timePointIndex = 0;
-    } else {
-      this.timePointIndex = newIndex;
-    }
-  }
-
-  /**
    * Set the active imageIdGroup index which also updates the active scalar data
+   *
+   * @param index - The index of the imageIdGroup to set as active
    * @returns current imageIdGroup index
    */
   public set timePointIndex(index: number) {
@@ -109,6 +95,22 @@ export default class StreamingDynamicImageVolume
         splittingTag: this.splittingTag,
       }
     );
+  }
+
+  /**
+   * Scroll properly to enable looping
+   * @param delta - The amount to scroll
+   */
+  public scroll(delta: number): void {
+    const newIndex = this._timePointIndex + delta;
+
+    if (newIndex < 0) {
+      this.timePointIndex = this.numTimePoints - 1;
+    } else if (newIndex >= this.numTimePoints) {
+      this.timePointIndex = 0;
+    } else {
+      this.timePointIndex = newIndex;
+    }
   }
 
   public getCurrentTimePointImageIds(): string[] {

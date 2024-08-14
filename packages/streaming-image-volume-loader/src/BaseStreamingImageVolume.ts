@@ -10,13 +10,9 @@ import {
   ProgressiveRetrieveImages,
   canRenderFloatTextures,
 } from '@cornerstonejs/core';
-import type {
-  Types,
-  IImagesLoader,
-  ImageLoadListener,
-} from '@cornerstonejs/core';
+import type { Types, IImagesLoader } from '@cornerstonejs/core';
 
-import { scaleArray, autoLoad } from './helpers';
+import { autoLoad } from './helpers';
 
 const requestTypeDefault = Enums.RequestType.Prefetch;
 const {
@@ -497,7 +493,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(_priority: number): any[] {
+  public getImageLoadRequests(_priority: number): unknown[] {
     throw new Error('Abstract method');
   }
 
@@ -510,7 +506,7 @@ export default class BaseStreamingImageVolume
    * to setup all the requests.  Ensures compatibility with the custom image
    * loaders.
    */
-  public loadImages(imageIds: string[], listener: ImageLoadListener) {
+  public loadImages() {
     this.loadStatus.loading = true;
 
     const requests = this.getImageLoadRequests(5);

@@ -4,7 +4,7 @@ export default interface ImageLoadRequests {
   callLoadImage: (
     imageId: string,
     imageIdIndex: number,
-    options: any
+    options: unknown
   ) => Promise<void>;
   imageId: string;
   imageIdIndex: number;

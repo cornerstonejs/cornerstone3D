@@ -1,5 +1,5 @@
-import { Enums } from '@cornerstonejs/core';
-import PixelDataTypedArray from './PixelDataTypedArray';
+import type { Enums } from '@cornerstonejs/core';
+import type PixelDataTypedArray from './PixelDataTypedArray';
 
 interface ImageFrame {
   samplesPerPixel: number;
@@ -45,7 +45,7 @@ interface ImageFrame {
    * loss image can be replaced by a lower loss one.
    */
   imageQualityStatus?: Enums.ImageQualityStatus;
-  decodeLevel?: any;
+  decodeLevel?: unknown;
 }
 
 export default ImageFrame;
