@@ -18,14 +18,14 @@ function _getViewportModality(
   }
 
   if ((viewport as IVolumeViewport).setVolumes) {
-    volumeId = volumeId ?? viewport.getDefaultActor()?.uid;
+    volumeId = volumeId ?? viewport.getDefaultActor().uid;
 
     if (!volumeId || !getVolume) {
       return;
     }
 
     const volume = getVolume(volumeId);
-    return volume?.metadata.Modality;
+    return volume.metadata.Modality;
   }
 
   throw new Error('Invalid viewport type');

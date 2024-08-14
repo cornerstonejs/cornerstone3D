@@ -6,7 +6,7 @@ import type RGB from './RGB';
 import type { VoxelManager } from '../utilities';
 import type IImageCalibration from './IImageCalibration';
 
-type CPUImageData = {
+interface CPUImageData {
   worldToIndex?: (point: Point3) => Point3;
   indexToWorld?: (point: Point3) => Point3;
   getWorldToIndex?: () => Point3;
@@ -18,9 +18,9 @@ type CPUImageData = {
   /** Last index is always 1 */
   getDimensions?: () => Point3;
   getRange?: () => [number, number];
-};
+}
 
-type CPUIImageData = {
+interface CPUIImageData {
   dimensions: Point3;
   direction: Mat3;
   spacing: Point3;
@@ -50,7 +50,7 @@ type CPUIImageData = {
       suvbw?: number;
     };
   };
-};
+}
 
 export type { CPUIImageData as default };
 

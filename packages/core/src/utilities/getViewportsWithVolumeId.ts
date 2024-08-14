@@ -14,7 +14,7 @@ import {
 function getViewportsWithVolumeId(
   volumeId: string,
   renderingEngineId?: string
-): Array<IVolumeViewport> {
+): IVolumeViewport[] {
   // If rendering engine is not provided, use all rendering engines
   const renderingEngines = renderingEngineId
     ? [getRenderingEngine(renderingEngineId)]

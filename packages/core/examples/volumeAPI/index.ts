@@ -56,9 +56,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
     viewport.render();
@@ -71,9 +69,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     // Flip the viewport horizontally
     const { flipHorizontal } = viewport.getCamera();
@@ -90,9 +86,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     // Flip the viewport vertically
     const { flipVertical } = viewport.getCamera();
@@ -110,9 +104,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     const { invert } = viewport.getProperties();
 
@@ -129,9 +121,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
@@ -145,8 +135,8 @@ addButtonToToolbar({
 
     viewport.setCamera({
       parallelScale,
-      position: <Types.Point3>position,
-      focalPoint: <Types.Point3>focalPoint,
+      position: position as Types.Point3,
+      focalPoint: focalPoint as Types.Point3,
     });
     viewport.render();
   },
@@ -159,9 +149,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     // Apply the rotation to the camera of the viewport
     viewport.getViewPresentation({ rotation: Math.random() * 360 });
@@ -176,9 +164,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     // Apply the colormap to the viewport
     viewport.setProperties({ colormap: { name: 'hsv' } });
@@ -194,9 +180,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     // TODO reset the viewport properties, we don't have API for this.
     viewport.resetProperties(volumeId);
@@ -221,9 +205,7 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     let viewUp;
     let viewPlaneNormal;
@@ -273,9 +255,7 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
     viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
     viewport.setProperties({ slabThickness: valueAsNumber });
@@ -311,16 +291,14 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

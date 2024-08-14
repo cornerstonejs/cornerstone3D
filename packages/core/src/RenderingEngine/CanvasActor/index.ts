@@ -119,7 +119,7 @@ export default class CanvasActor implements ICanvasActor {
     const { voxelManager } = image;
     if (voxelManager) {
       if (voxelManager.map.getRun) {
-        return this.renderRLE(viewport, context, voxelManager);
+        this.renderRLE(viewport, context, voxelManager); return;
       }
     }
     let { canvas } = this;

@@ -103,9 +103,7 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
     viewport.setImageIdIndex(valueAsNumber);
     viewport.render();

@@ -1,19 +1,19 @@
 import type RGB from './RGB';
 
-type ColormapRegistration = {
+interface ColormapRegistration {
   ColorSpace: string;
   Name: string;
   RGBPoints: RGB[] | number[];
-};
+}
 
-type OpacityMapping = {
+interface OpacityMapping {
   /** value to map to opacity */
   value: number;
   /** opacity value */
   opacity: number;
-};
+}
 
-type ColormapPublic = {
+interface ColormapPublic {
   /** name of the colormap */
   name?: string;
   opacity?: OpacityMapping[] | number;
@@ -26,6 +26,6 @@ type ColormapPublic = {
    * the points in the middle to be mapped to different opacities
    * instead of a linear mapping from 0 to 1.
    */
-};
+}
 
 export type { ColormapRegistration, ColormapPublic, OpacityMapping };

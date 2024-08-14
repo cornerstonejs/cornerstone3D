@@ -10,10 +10,10 @@ import type {
 import { createContourSet } from './utils/contourSet/createContourSet';
 import { createSurface } from './utils/surface/createSurface';
 
-type GeometryOptions = {
+interface GeometryOptions {
   type: GeometryType;
   geometryData: PublicContourSetData | PublicSurfaceData;
-};
+}
 
 /**
  * Todo: currently we are not targeting loading geometry from a file.

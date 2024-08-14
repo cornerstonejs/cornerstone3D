@@ -223,8 +223,6 @@ function _loadImageIntoBuffer(
       .promise.then(
         (image) => {
           if (
-            !options ||
-            !options.targetBuffer ||
             !options.targetBuffer.length ||
             !options.targetBuffer.offset
           ) {

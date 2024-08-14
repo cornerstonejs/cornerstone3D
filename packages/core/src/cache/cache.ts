@@ -196,7 +196,7 @@ class Cache implements ICache {
     // shared cache keys
     this.purgeVolumeCache();
 
-    /* eslint-disable no-constant-condition */
+     
     while (true) {
       const { value: imageId, done } = imageIterator.next();
 
@@ -216,7 +216,7 @@ class Cache implements ICache {
   public purgeVolumeCache = (): void => {
     const volumeIterator = this._volumeCache.keys();
 
-    /* eslint-disable no-constant-condition */
+     
     while (true) {
       const { value: volumeId, done } = volumeIterator.next();
 
@@ -257,7 +257,7 @@ class Cache implements ICache {
    */
   public decacheIfNecessaryUntilBytesAvailable(
     numBytes: number,
-    volumeImageIds?: Array<string>
+    volumeImageIds?: string[]
   ): number | undefined {
     let bytesAvailable = this.getBytesAvailable();
 
@@ -556,7 +556,7 @@ class Cache implements ICache {
 
       const { volume } = cachedVolume;
 
-      if (!volume?.imageIds?.length) {
+      if (!volume.imageIds.length) {
         return;
       }
 
@@ -616,7 +616,7 @@ class Cache implements ICache {
 
     // If the volume has image IDs, we need to make sure that they are not getting
     // deleted automatically.  Mark the imageIds somehow so that they are discernable from the others.
-    volume.imageIds?.forEach((imageId) => {
+    volume.imageIds.forEach((imageId) => {
       const image = this._imageCache.get(imageId);
       if (image) {
         image.sharedCacheKey = volumeId;
@@ -819,7 +819,7 @@ class Cache implements ICache {
    * Retrieves an array of image volumes from the cache.
    * @returns An array of image volumes.
    */
-  public getVolumes = (): Array<IImageVolume> => {
+  public getVolumes = (): IImageVolume[] => {
     const cachedVolumes = Array.from(this._volumeCache.values());
 
     return cachedVolumes.map((cachedVolume) => cachedVolume.volume);
@@ -832,7 +832,7 @@ class Cache implements ICache {
    */
   public filterVolumesByReferenceId = (
     volumeId: string
-  ): Array<IImageVolume> => {
+  ): IImageVolume[] => {
     const cachedVolumes = this.getVolumes();
 
     return cachedVolumes.filter((volume) => {

@@ -146,8 +146,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {
-      rowCosines = <Point3>[1, 0, 0];
-      columnCosines = <Point3>[0, 1, 0];
+      rowCosines = [1, 0, 0] as Point3;
+      columnCosines = [0, 1, 0] as Point3;
     }
 
     const rowCosineVec = vec3.fromValues(

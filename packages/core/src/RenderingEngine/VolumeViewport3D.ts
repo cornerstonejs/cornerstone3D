@@ -49,7 +49,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
   setSlabThickness(
     slabThickness: number,
-    filterActorUIDs?: Array<string>
+    filterActorUIDs?: string[]
   ): void {
     return null;
   }

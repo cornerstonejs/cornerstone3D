@@ -26,7 +26,7 @@ export default function (
     lutMatches(image.cachedLut.modalityLUT, viewport.modalityLUT) &&
     lutMatches(image.cachedLut.voiLUT, viewport.voiLUT) &&
     image.cachedLut.invert === viewport.invert &&
-    invalidated !== true
+    !invalidated
   ) {
     return image.cachedLut.lutArray;
   }

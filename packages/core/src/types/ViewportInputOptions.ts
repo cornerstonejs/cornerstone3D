@@ -6,7 +6,7 @@ import type RGB from './RGB';
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.
  */
-type ViewportInputOptions = {
+interface ViewportInputOptions {
   /** background color */
   background?: RGB;
   /** orientation of the viewport which can be either an Enum for axis Enums.OrientationAxis.[AXIAL|SAGITTAL|CORONAL|DEFAULT] or an object with viewPlaneNormal and viewUp */
@@ -20,6 +20,6 @@ type ViewportInputOptions = {
    * parallel projection of a stack viewport or volume viewport using viewport input options.
    */
   parallelProjection?: boolean;
-};
+}
 
 export type { ViewportInputOptions as default };

@@ -44,11 +44,11 @@ interface IImageVolume {
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus?: Record<string, unknown>;
   /** imageIds of the volume (if it is built of separate imageIds) */
-  imageIds: Array<string>;
+  imageIds: string[];
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
   /** volume referencedImageIds (if it is derived from set of images in the image cache) */
-  referencedImageIds?: Array<string>;
+  referencedImageIds?: string[];
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** Property to store additional information */

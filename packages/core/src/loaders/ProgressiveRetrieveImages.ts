@@ -24,7 +24,7 @@ export {
   singleRetrieveStages,
 };
 
-type StageStatus = {
+interface StageStatus {
   stageId: string;
   // startTime is the overall start of loading a given image id
   startTime?: number;
@@ -33,21 +33,21 @@ type StageStatus = {
   totalImageCount: number;
   imageLoadFailedCount: number;
   imageLoadPendingCount: number;
-};
+}
 
 /**
  * A nearby request is a request that can be fulfilled by copying another image
  */
-export type NearbyRequest = {
+export interface NearbyRequest {
   // The item id to fill
   itemId: string;
   linearId?: string;
   // The new status of the filled image (will only fill if the existing status
   // is less than this one)
   imageQualityStatus: ImageQualityStatus;
-};
+}
 
-export type ProgressiveRequest = {
+export interface ProgressiveRequest {
   imageId: string;
   stage: RetrieveStage;
   next?: ProgressiveRequest;
@@ -57,7 +57,7 @@ export type ProgressiveRequest = {
    * nearby data as a low-resolution alternative image.
    */
   nearbyRequests?: NearbyRequest[];
-};
+}
 
 /**
  * A progressive loader is given some number of images to load,
@@ -326,7 +326,7 @@ class ProgressiveRetrieveImagesInstance {
       const indices =
         stage.positions ||
         decimate(this.imageIds, stage.decimate || 1, stage.offset ?? 0);
-      indices.forEach((index) => addStageInstance(stage, index));
+      indices.forEach((index) => { addStageInstance(stage, index); });
     }
     return interleaved;
   }

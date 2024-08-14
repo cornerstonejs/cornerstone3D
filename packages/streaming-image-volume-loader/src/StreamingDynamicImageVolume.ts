@@ -80,7 +80,7 @@ export default class StreamingDynamicImageVolume
     }
 
     this._timePointIndex = index;
-    // @ts-ignore
+    // @ts-expect-error since we need to override the type for now
     this.voxelManager.setTimePoint(index);
 
     this.invalidateVolume(true);

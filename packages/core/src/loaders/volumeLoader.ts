@@ -24,7 +24,7 @@ import type {
 import { imageLoader } from '..';
 
 interface VolumeLoaderOptions {
-  imageIds: Array<string>;
+  imageIds: string[];
 }
 
 interface DerivedVolumeOptions {
@@ -38,8 +38,8 @@ interface LocalVolumeOptions {
   origin: Point3;
   direction: Mat3;
   scalarData?: PixelDataTypedArray;
-  imageIds?: Array<string>;
-  referencedImageIds?: Array<string>;
+  imageIds?: string[];
+  referencedImageIds?: string[];
   referencedVolumeId?: string;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
@@ -301,7 +301,7 @@ export function createLocalVolume(
   // Check if scalarData is provided and is of a valid type
   if (!scalarData || !validDataTypes.includes(scalarData.constructor.name)) {
     // Check if targetBuffer is provided and has a valid type
-    if (!targetBuffer?.type || !validDataTypes.includes(targetBuffer.type)) {
+    if (!targetBuffer.type || !validDataTypes.includes(targetBuffer.type)) {
       throw new Error(
         'createLocalVolume: parameter scalarData must be provided and must be either Uint8Array, Float32Array, Uint16Array or Int16Array'
       );
@@ -322,7 +322,7 @@ export function createLocalVolume(
   const cachedVolume = cache.getVolume(volumeId);
 
   if (cachedVolume) {
-    return cachedVolume as IImageVolume;
+    return cachedVolume;
   }
 
   const numBytes = scalarData ? scalarData.buffer.byteLength : scalarLength * 4;
@@ -481,7 +481,7 @@ function generateVolumeScalarData(
   scalarLength: number
 ) {
   const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
-    targetBuffer?.type,
+    targetBuffer.type,
     scalarLength,
     {
       isVolumeBuffer: true,

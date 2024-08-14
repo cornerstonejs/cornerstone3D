@@ -23,7 +23,7 @@ export interface ICanvasActor {
  * slabThickness for the actor. ActorEntry is the object that
  * is retrieved from viewport when calling viewport.getActor(s)
  */
-export type ActorEntry = {
+export interface ActorEntry {
   /** actor UID */
   uid: string;
   /** actual actor object */
@@ -34,4 +34,4 @@ export type ActorEntry = {
   slabThickness?: number;
   /** clipping filter applied to actor surfaces*/
   clippingFilter?: any;
-};
+}

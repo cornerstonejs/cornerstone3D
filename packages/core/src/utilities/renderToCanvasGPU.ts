@@ -50,7 +50,7 @@ export default function renderToCanvasGPU(
   const isVolume = !(imageOrVolume as IImage).imageId;
   const image = !isVolume && (imageOrVolume as IImage);
   const volume = isVolume && (imageOrVolume as IVolume);
-  const imageIdToPrint = image?.imageId || volume?.volumeId;
+  const imageIdToPrint = image.imageId || volume.volumeId;
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
   const element = document.createElement('div');
   const devicePixelRatio = window.devicePixelRatio || 1;

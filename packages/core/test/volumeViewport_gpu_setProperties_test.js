@@ -133,7 +133,7 @@ describe('Volume Viewport SetProperties -- ', () => {
               vp.render();
             });
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }

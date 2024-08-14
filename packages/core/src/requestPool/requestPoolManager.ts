@@ -2,19 +2,19 @@ import RequestType from '../enums/RequestType';
 import type { IImage } from '../types';
 import { uuidv4 } from '../utilities';
 
-type AdditionalDetails = {
+interface AdditionalDetails {
   imageId?: string;
   volumeId?: string;
-};
+}
 
-type RequestDetailsInterface = {
+interface RequestDetailsInterface {
   requestFn: () => Promise<IImage | void>;
   type: RequestType;
   additionalDetails: AdditionalDetails;
-};
+}
 
 type RequestPool = {
-  [name in RequestType]: { [key: number]: RequestDetailsInterface[] };
+  [name in RequestType]: Record<number, RequestDetailsInterface[]>;
 };
 
 /**
@@ -322,7 +322,7 @@ class RequestPoolManager {
     }
   }
 
-  protected getSortedPriorityGroups(type: string): Array<number> {
+  protected getSortedPriorityGroups(type: string): number[] {
     const priorities = Object.keys(this.requestPool[type])
       .map(Number)
       .filter((priority) => this.requestPool[type][priority].length)

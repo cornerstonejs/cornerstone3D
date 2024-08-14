@@ -47,7 +47,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   const { viewPlaneNormal } = camera;
   const volumeActors = viewport.getActors();
 
-  if (!volumeActors || !volumeActors.length) {
+  if (!volumeActors.length) {
     return {
       spacingInNormalDirection: null,
       imageVolume: null,
@@ -139,7 +139,7 @@ function getSpacingInNormal(
 ): number {
   const { slabThickness } = viewport.getProperties();
   let spacingInNormalDirection = slabThickness;
-  if (!slabThickness || useSlabThickness === false) {
+  if (!slabThickness || !useSlabThickness) {
     spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal

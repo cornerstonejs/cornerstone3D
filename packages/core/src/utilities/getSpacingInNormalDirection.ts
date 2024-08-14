@@ -25,9 +25,9 @@ export default function getSpacingInNormalDirection(
   const kVector = direction.slice(6, 9) as Point3;
 
   const dotProducts = [
-    vec3.dot(iVector, <vec3>viewPlaneNormal),
-    vec3.dot(jVector, <vec3>viewPlaneNormal),
-    vec3.dot(kVector, <vec3>viewPlaneNormal),
+    vec3.dot(iVector, (viewPlaneNormal as vec3)),
+    vec3.dot(jVector, (viewPlaneNormal as vec3)),
+    vec3.dot(kVector, (viewPlaneNormal as vec3)),
   ];
 
   const projectedSpacing = vec3.create();

@@ -38,7 +38,7 @@ export default function generateColorLUT(
     voiLUT
   );
 
-  if (invert === true) {
+  if (invert) {
     for (
       let storedValue = minPixelValue;
       storedValue <= maxPixelValue;

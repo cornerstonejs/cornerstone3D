@@ -1,4 +1,4 @@
-type ScalingParameters = {
+interface ScalingParameters {
   /** m in m*p+b which specifies the linear transformation from stored pixels to memory value  */
   rescaleSlope: number;
   /** b in m*p+b which specifies the offset of the transformation */
@@ -11,9 +11,9 @@ type ScalingParameters = {
   suvlbm?: number;
   /** SUV body surface area */
   suvbsa?: number;
-};
+}
 
-type PTScaling = {
+interface PTScaling {
   /** suv body weight to suv lean body mass */
   suvbwToSuvlbm?: number;
   /** suv body weight to suv body surface area */
@@ -24,10 +24,10 @@ type PTScaling = {
   suvlbm?: number;
   /** SUV body surface area */
   suvbsa?: number;
-};
+}
 
-type Scaling = {
+interface Scaling {
   PT?: PTScaling;
-};
+}
 
 export type { PTScaling, Scaling, ScalingParameters };

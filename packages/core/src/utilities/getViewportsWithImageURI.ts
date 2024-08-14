@@ -15,7 +15,7 @@ type Viewport = IStackViewport | IVolumeViewport;
 export default function getViewportsWithImageURI(
   imageURI: string,
   renderingEngineId?: string
-): Array<Viewport> {
+): Viewport[] {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines;
   if (renderingEngineId) {

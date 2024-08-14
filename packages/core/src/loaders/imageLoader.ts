@@ -30,7 +30,7 @@ export interface ImageLoaderOptions {
   ignoreCache?: boolean;
 }
 
-type LocalImageOptions = {
+interface LocalImageOptions {
   scalarData?: PixelDataTypedArray;
   targetBufferType?: PixelDataTypedArrayString;
   dimensions?: Point2;
@@ -50,7 +50,7 @@ type LocalImageOptions = {
    * such as a VoxelManager.
    */
   onCacheAdd?: (image: IImage) => void;
-};
+}
 
 type DerivedImageOptions = LocalImageOptions & {
   imageId?: string;
@@ -187,7 +187,7 @@ export function loadAndCacheImage(
  *
  */
 export function loadAndCacheImages(
-  imageIds: Array<string>,
+  imageIds: string[],
   options: ImageLoaderOptions = { priority: 0, requestType: 'prefetch' }
 ): Promise<IImage>[] {
   if (!imageIds || imageIds.length === 0) {
@@ -293,13 +293,13 @@ export function createAndCacheDerivedImage(
  * @param options.skipBufferCreate - avoid creating the buffer
  */
 export function createAndCacheDerivedImages(
-  referencedImageIds: Array<string>,
+  referencedImageIds: string[],
   options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
     targetBufferType?: PixelDataTypedArrayString;
   } = {}
 ): IImage[] {
-  if (referencedImageIds?.length === 0) {
+  if (referencedImageIds.length === 0) {
     throw new Error(
       'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
     );
@@ -309,7 +309,7 @@ export function createAndCacheDerivedImages(
   const images = referencedImageIds.map((referencedImageId) => {
     const newOptions: DerivedImageOptions = {
       imageId:
-        options.getDerivedImageId?.(referencedImageId) || `derived:${uuidv4()}`,
+        options.getDerivedImageId(referencedImageId) || `derived:${uuidv4()}`,
       ...options,
     };
     derivedImageIds.push(newOptions.imageId);
@@ -371,7 +371,7 @@ export function createAndCacheLocalImage(
 
     image.sizeInBytes = imageScalarData.byteLength;
     image.getPixelData = () => imageScalarData;
-  } else if (options.skipCreateBuffer !== true) {
+  } else if (!options.skipCreateBuffer) {
     const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
       options.targetBufferType,
       length
@@ -397,7 +397,7 @@ export function createAndCacheLocalImage(
   // The onCacheAdd may modify the size in bytes for this image, which is ok,
   // as this is used after resolution for cache storage.  It may also do
   // thinks like adding alternative representations such as VoxelManager
-  options.onCacheAdd?.(image);
+  options.onCacheAdd(image);
 
   cache.putImageSync(image.imageId, image);
 
@@ -443,8 +443,8 @@ export function cancelLoadImage(imageId: string): void {
  * @param imageIds - Array of Cornerstone Image Object's imageIds
  *
  */
-export function cancelLoadImages(imageIds: Array<string>): void {
-  imageIds.forEach((imageId) => cancelLoadImage(imageId));
+export function cancelLoadImages(imageIds: string[]): void {
+  imageIds.forEach((imageId) => { cancelLoadImage(imageId); });
 }
 
 /**
@@ -530,7 +530,7 @@ export function unregisterAllImageLoaders(): void {
  * @returns The derived images.
  */
 export function createAndCacheDerivedSegmentationImages(
-  referencedImageIds: Array<string>,
+  referencedImageIds: string[],
   options = {} as DerivedImageOptions
 ): IImage[] {
   return createAndCacheDerivedImages(referencedImageIds, {

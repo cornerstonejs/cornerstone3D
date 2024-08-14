@@ -64,7 +64,7 @@ export default interface IStackViewport extends IViewport {
    * Returns the list of image Ids for the current viewport
    * @returns list of strings for image Ids
    */
-  getImageIds(): Array<string>;
+  getImageIds(): string[];
 
   /**
    * Sets the imageIds to be visualized inside the stack viewport. It accepts
@@ -117,7 +117,7 @@ export default interface IStackViewport extends IViewport {
    * If the renderer is CPU based, throw an error. Otherwise, return the actors in the viewport
    * @returns An array of ActorEntry objects.
    */
-  getActors(): Array<ActorEntry>;
+  getActors(): ActorEntry[];
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, it returns the actor entry for the given actor UID.
@@ -131,13 +131,13 @@ export default interface IStackViewport extends IViewport {
    * actors in the viewport.
    * @param actors - An array of ActorEntry objects.
    */
-  setActors(actors: Array<ActorEntry>): void;
+  setActors(actors: ActorEntry[]): void;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, add a list of actors to the viewport
    * @param actors - An array of ActorEntry objects.
    */
-  addActors(actors: Array<ActorEntry>): void;
+  addActors(actors: ActorEntry[]): void;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, add the
@@ -165,7 +165,7 @@ export default interface IStackViewport extends IViewport {
    * @param suppressEvents - Optional boolean to suppress events.
    */
   addImages(
-    images: Array<IStackInput>,
+    images: IStackInput[],
     immediateRender?: boolean,
     suppressEvents?: boolean
   ): void;

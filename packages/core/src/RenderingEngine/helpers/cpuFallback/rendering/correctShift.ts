@@ -1,9 +1,9 @@
 import type { CPUFallbackViewport } from '../../../../types';
 
-type Shift = {
+interface Shift {
   x: number;
   y: number;
-};
+}
 /**
  * Corrects the shift by accounting for viewport rotation and flips.
  *

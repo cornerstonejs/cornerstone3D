@@ -1,12 +1,12 @@
 import type { Point3, ContourData, IContour } from '../../types';
 import type { ContourType } from '../../enums';
 
-type ContourProps = {
+interface ContourProps {
   id: string;
   data: ContourData;
   color: Point3;
   segmentIndex: number;
-};
+}
 
 /**
  * The `Contour` class implements the `IContour` interface and represents a contour in 3D space.

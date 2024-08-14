@@ -493,7 +493,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(_priority: number): unknown[] {
+  public getImageLoadRequests(): unknown[] {
     throw new Error('Abstract method');
   }
 

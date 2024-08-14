@@ -7,9 +7,9 @@ import type { VolumeProps } from './VolumeProps';
  */
 interface ImageVolumeProps extends VolumeProps {
   /** imageIds of the volume (if it is built of separate imageIds) */
-  imageIds: Array<string>;
+  imageIds: string[];
   /** if the volume is created from a stack, the imageIds of the stack */
-  referencedImageIds?: Array<string>;
+  referencedImageIds?: string[];
 }
 
 export type { ImageVolumeProps };

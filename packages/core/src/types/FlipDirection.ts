@@ -1,9 +1,9 @@
 /**
  * Flip direction which can be horizontal or vertical.
  */
-type FlipDirection = {
+interface FlipDirection {
   flipHorizontal?: boolean;
   flipVertical?: boolean;
-};
+}
 
 export type { FlipDirection as default };

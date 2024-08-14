@@ -87,7 +87,7 @@ export default class Settings {
       : Settings.getRuntimeSettings();
   }
 
-  static getDefaultSettings(subfield = null): Settings | any {
+  static getDefaultSettings(subfield = null): Settings | unknown {
     let defaultSettings = Settings[DEFAULT_SETTINGS];
     if (!(defaultSettings instanceof Settings)) {
       defaultSettings = new Settings();

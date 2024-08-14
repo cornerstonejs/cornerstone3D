@@ -26,11 +26,11 @@ import type { Point3 } from './Point3';
  *  }]);
  * ```
  */
-type OrientationVectors = {
+interface OrientationVectors {
   /** Slice Normal for the viewport - the normal that points in the opposite direction of the slice normal out of screen and is negative of direction of projection */
   viewPlaneNormal: Point3;
   /** viewUp direction for the viewport - the vector that points from bottom to top of the viewport */
   viewUp: Point3;
-};
+}
 
 export type { OrientationVectors as default };

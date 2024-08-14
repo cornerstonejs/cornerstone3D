@@ -8,7 +8,6 @@ export default function createLinearRGBTransferFunction(
   let lower = 0;
   let upper = 1024;
   if (
-    voiRange &&
     voiRange.lower !== undefined &&
     voiRange.upper !== undefined
   ) {

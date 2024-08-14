@@ -88,8 +88,7 @@ class CornerstoneEventTarget implements EventTarget {
    */
   public removeEventListenerDebounced(type, callback) {
     if (
-      this.debouncedListeners[type] &&
-      this.debouncedListeners[type][callback]
+      this.debouncedListeners[type]?.[callback]
     ) {
       const debounced = this.debouncedListeners[type][callback];
       this.removeEventListener(type, debounced.handle);

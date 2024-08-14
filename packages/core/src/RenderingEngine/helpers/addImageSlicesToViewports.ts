@@ -18,8 +18,8 @@ import type {
  */
 async function addImageSlicesToViewports(
   renderingEngine: IRenderingEngine,
-  stackInputs: Array<IStackInput>,
-  viewportIds: Array<string>
+  stackInputs: IStackInput[],
+  viewportIds: string[]
 ): Promise<void> {
   // Check if all viewports are volumeViewports
   for (const viewportId of viewportIds) {
@@ -30,7 +30,7 @@ async function addImageSlicesToViewports(
     }
 
     // if not instance of BaseVolumeViewport, throw
-    if (!(viewport as IStackViewport).addImages) {
+    if (!(viewport).addImages) {
       console.warn(
         `Viewport with Id ${viewportId} does not have addImages. Cannot add image segmentation to this viewport.`
       );
@@ -42,7 +42,7 @@ async function addImageSlicesToViewports(
   const addStackPromises = viewportIds.map(async (viewportId) => {
     const viewport = renderingEngine.getStackViewport(viewportId);
 
-    return viewport.addImages(stackInputs);
+    viewport.addImages(stackInputs);
   });
 
   await Promise.all(addStackPromises);

@@ -2,14 +2,14 @@ import type Point2 from '../types/Point2';
 import type Point3 from '../types/Point3';
 import type { PointsXYZ } from '../types/Point3';
 
-export type PolyDataPointConfiguration = {
+export interface PolyDataPointConfiguration {
   /** The dimensionality of the points */
   dimensions?: number;
   /** The initial size of the backing array, not containing any data initially */
   initialSize?: number;
   /** The incremental size to grow by when required */
   growSize?: number;
-};
+}
 
 /**
  * PointsManager handles Point type data contained in a TypedArray representation

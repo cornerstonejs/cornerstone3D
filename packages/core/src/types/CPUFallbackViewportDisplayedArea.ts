@@ -1,4 +1,4 @@
-type CPUFallbackViewportDisplayedArea = {
+interface CPUFallbackViewportDisplayedArea {
   tlhc: {
     x: number;
     y: number;
@@ -10,6 +10,6 @@ type CPUFallbackViewportDisplayedArea = {
   rowPixelSpacing: number;
   columnPixelSpacing: number;
   presentationSizeMode: string;
-};
+}
 
 export type { CPUFallbackViewportDisplayedArea as default };

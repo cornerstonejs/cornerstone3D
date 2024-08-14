@@ -22,7 +22,7 @@ import type InterpolationType from '../enums/InterpolationType';
  * set to 1 and [0,0] respectively for the initially displayed position, as well
  * as having the reset camera reset to the specified display area.
  */
-type DisplayArea = {
+interface DisplayArea {
   type?: 'SCALE' | 'FIT';
   scale?: number;
   interpolationType?: InterpolationType;
@@ -37,6 +37,6 @@ type DisplayArea = {
   };
   /** Make this display area the default and reset/navigate will reapply this */
   storeAsInitialCamera?: boolean;
-};
+}
 
 export type { DisplayArea as default };

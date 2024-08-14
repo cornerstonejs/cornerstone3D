@@ -62,7 +62,7 @@ function getRenderCanvas(
   invalidated: boolean
 ): HTMLCanvasElement {
   const canvasWasColor =
-    enabledElement.renderingTools.lastRenderedIsColor === true;
+    enabledElement.renderingTools.lastRenderedIsColor;
 
   if (!enabledElement.renderingTools.renderCanvas || !canvasWasColor) {
     enabledElement.renderingTools.renderCanvas =
@@ -78,7 +78,7 @@ function getRenderCanvas(
   if (
     (windowWidth === 256 || windowWidth === 255) &&
     (windowCenter === 128 || windowCenter === 127) &&
-    enabledElement.viewport.invert === false &&
+    !enabledElement.viewport.invert &&
     image.getCanvas &&
     image.getCanvas()
   ) {
@@ -87,8 +87,8 @@ function getRenderCanvas(
 
   // Apply the lut to the stored pixel data onto the render canvas
   if (
-    doesImageNeedToBeRendered(enabledElement, image) === false &&
-    invalidated !== true
+    !doesImageNeedToBeRendered(enabledElement, image) &&
+    !invalidated
   ) {
     return renderCanvas;
   }

@@ -145,7 +145,7 @@ describe('StreamingImageVolume', () => {
       this.imageLoader = imageLoader;
     });
 
-    it('load: correctly streams pixel data from Images into Volume ', async function () {
+    it('load: correctly streams pixel data from Images into Volume', async function () {
       const volumeId = 'fakeVolumeLoader:VOLUME';
 
       await volumeLoader.createAndCacheVolume(volumeId, {
@@ -399,7 +399,7 @@ describe('StreamingImageVolume', () => {
   // })
   // });
 
-  describe('CornerstoneVolumeStreaming Streaming --- ', function () {
+  describe('CornerstoneVolumeStreaming Streaming ---', function () {
     beforeEach(function () {
       cache.purgeCache();
       metaData.addProvider(testUtils.fakeMetaDataProvider, 10000);

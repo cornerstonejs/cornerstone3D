@@ -110,7 +110,7 @@ export default class VoxelManager<T> {
    * Records the z index modified.
    * Will record the index value if the VoxelManager is backed by a map.
    */
-  public setAtIJKPoint = ([i, j, k]: Point3, v) => this.setAtIJK(i, j, k, v);
+  public setAtIJKPoint = ([i, j, k]: Point3, v) => { this.setAtIJK(i, j, k, v); };
 
   /**
    * Gets the value at the given index.
@@ -191,11 +191,11 @@ export default class VoxelManager<T> {
       imageData?: vtkImageData | CPUImageData;
     }
   ) => {
-    const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
+    const boundsIJK = options.boundsIJK || this.getBoundsIJK();
     const isInObject = options.isInObject || this.isInObject || (() => true);
     const returnPoints = options.returnPoints || false;
 
-    const useLPSTransform = options?.imageData;
+    const useLPSTransform = options.imageData;
 
     const iMin = boundsIJK[0][0];
     const iMax = boundsIJK[0][1];
@@ -300,7 +300,7 @@ export default class VoxelManager<T> {
       // Optimize this for only values in the map
       for (const index of this.map.keys()) {
         const pointIJK = this.toIJK(index);
-        if (isInObject?.(null, pointIJK) === false) {
+        if (!(isInObject(null, pointIJK))) {
           continue;
         }
         const value = this._get(index);
@@ -327,7 +327,7 @@ export default class VoxelManager<T> {
             const value = this.getAtIndex(index);
             const pointIJK = [i, j, k];
 
-            if (isInObject(null, pointIJK) === false) {
+            if (!isInObject(null, pointIJK)) {
               continue;
             }
 
@@ -414,7 +414,7 @@ export default class VoxelManager<T> {
       bound[1] = -Infinity;
     });
     this.modifiedSlices.clear();
-    this.points?.clear();
+    this.points.clear();
   }
 
   public getConstructor() {
@@ -709,7 +709,7 @@ export default class VoxelManager<T> {
     // @ts-ignore
     voxelManager._getConstructor = () => {
       const { pixelData } = getPixelInfo(0);
-      return pixelData?.constructor;
+      return pixelData.constructor;
     };
 
     voxelManager.getMiddleSliceData = () => {
@@ -993,12 +993,12 @@ export default class VoxelManager<T> {
         dimensions,
         scalarData,
         numberOfComponents,
-      }) as VoxelManager<RGB>;
+      });
     }
     return VoxelManager._createNumberVolumeVoxelManager({
       dimensions,
       scalarData,
-    }) as VoxelManager<number>;
+    });
   }
 
   /**
@@ -1107,7 +1107,7 @@ export default class VoxelManager<T> {
 
     const voxelManager = new VoxelManager(
       dimensions,
-      (index) => map.get(Math.floor(index / planeSize))?.[index % planeSize],
+      (index) => map.get(Math.floor(index / planeSize))[index % planeSize],
       (index, v) => {
         const k = Math.floor(index / planeSize);
         let layer = map.get(k);
@@ -1137,7 +1137,7 @@ export default class VoxelManager<T> {
     const voxelManager = new VoxelManager<T>(
       dimensions,
       (index) => map.get(index),
-      (index, v) => map.set(index, v)
+      (index, v) => { map.set(index, v); }
     );
     voxelManager.map = map;
     // @ts-ignore
@@ -1156,7 +1156,7 @@ export default class VoxelManager<T> {
     const scalarData = image.voxelManager.getScalarData();
     // This test works for single images, or single representations of images
     // from a volume representation, for grayscale, indexed and RGB or RGBA images.
-    if (scalarData?.length >= width * height) {
+    if (scalarData.length >= width * height) {
       // This case means there is enough scalar data for at least one image,
       // with 1 or more components, and creates a volume voxel manager
       // that can lookup the data

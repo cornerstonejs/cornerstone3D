@@ -77,7 +77,7 @@ function isIOS() {
     return (
       navigator.maxTouchPoints &&
       navigator.maxTouchPoints > 2 &&
-      /MacIntel/.test(navigator.platform)
+      navigator.platform.includes('MacIntel')
     );
   }
 }
@@ -111,7 +111,7 @@ async function init(configuration = config): Promise<boolean> {
     config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
 
     if (!config.rendering.useNorm16Texture) {
-      if (configuration.rendering?.preferSizeOverAccuracy) {
+      if (configuration.rendering.preferSizeOverAccuracy) {
         config.rendering.preferSizeOverAccuracy = true;
       } else {
         console.log(
@@ -225,9 +225,9 @@ function setConfiguration(c: Cornerstone3DConfig) {
  */
 function _updateRenderingPipelinesForAllViewports(): void {
   getRenderingEngines().forEach((engine) =>
-    engine
+    { engine
       .getViewports()
-      .forEach((viewport) => viewport.updateRenderingPipeline?.())
+      .forEach((viewport) => { viewport.updateRenderingPipeline(); }); }
   );
 }
 

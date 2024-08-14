@@ -53,7 +53,7 @@ const viewportInput = {
   type: ViewportType.ORTHOGRAPHIC,
   element: element1,
   defaultOptions: {
-    background: <Types.Point3>[0.2, 0, 0.2],
+    background: [0.2, 0, 0.2] as Types.Point3,
   },
 };
 
@@ -74,7 +74,7 @@ viewportTypes.set('Axial', {
       ...viewportInput,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0.2, 0],
+        background: [0.2, 0.2, 0] as Types.Point3,
       },
     },
   ],
@@ -85,7 +85,7 @@ viewportTypes.set('Sagittal', {
       ...viewportInput,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
   ],
@@ -98,7 +98,7 @@ viewportTypes.set('Sagittal 2', {
       viewportId: 'Axial',
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0.2],
+        background: [0, 0, 0.2] as Types.Point3,
         sliceIndex: 200,
       },
     },
@@ -111,7 +111,7 @@ viewportTypes.set('Coronal', {
       viewportId: 'Axial',
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0.2, 0],
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
   ],
@@ -222,9 +222,7 @@ async function run() {
       }, 200);
     } else {
       // Get the stack viewport that was created
-      const viewport = <Types.IVolumeViewport>(
-        renderingEngine.getViewport(viewportId)
-      );
+      const viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
       await viewport.setVolumes([{ volumeId }]);
       if (sliceIndex !== undefined) {
         await csTools.utilities.jumpToSlice(viewport.element, {

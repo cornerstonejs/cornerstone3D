@@ -2,13 +2,13 @@ import type vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import type { Point3, IContourSet, IContour, ContourData } from '../../types';
 import Contour from './Contour';
 
-type ContourSetProps = {
+interface ContourSetProps {
   id: string;
   data: ContourData[];
   frameOfReferenceUID: string;
   segmentIndex: number;
   color?: Point3;
-};
+}
 
 /**
  * This class represents a set of contours in 3d space.

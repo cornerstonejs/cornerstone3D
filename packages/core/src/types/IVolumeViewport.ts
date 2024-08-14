@@ -99,7 +99,7 @@ export default interface IVolumeViewport extends IViewport {
    * `VolumeMapper`.
    */
   setVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate?: boolean,
     suppressEvents?: boolean
   ): Promise<void>;
@@ -108,7 +108,7 @@ export default interface IVolumeViewport extends IViewport {
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
    */
   addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate?: boolean,
     suppressEvents?: boolean
   ): Promise<void>;
@@ -116,7 +116,7 @@ export default interface IVolumeViewport extends IViewport {
    * It removes the volume actor from the Viewport. If the volume actor is not in
    * the viewport, it does nothing.
    */
-  removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
+  removeVolumeActors(actorUIDs: string[], immediate?: boolean): void;
 
   /**
    * Given a point in world coordinates, return the intensity at that point
@@ -155,7 +155,7 @@ export default interface IVolumeViewport extends IViewport {
    */
   setBlendMode(
     blendMode: BlendModes,
-    filterActorUIDs?: Array<string>,
+    filterActorUIDs?: string[],
     immediate?: boolean
   ): void;
   /**
@@ -163,7 +163,7 @@ export default interface IVolumeViewport extends IViewport {
    */
   setSlabThickness(
     slabThickness: number,
-    filterActorUIDs?: Array<string>
+    filterActorUIDs?: string[]
   ): void;
   /**
    * Gets the slab thickness option in the `Viewport`'s `options`.

@@ -3,7 +3,6 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -56,9 +55,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
   if (!viewport) {
     return;
@@ -79,9 +76,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
     // Set a range to highlight bones
     viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
@@ -97,9 +92,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -122,9 +115,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -146,9 +137,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
     const { flipHorizontal } = viewport.getCamera();
     viewport.setCamera({ flipHorizontal: !flipHorizontal });
@@ -232,7 +221,6 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport(viewportId);
 
     const { invert } = viewport.getProperties();
-
     viewport.setProperties({ invert: !invert });
 
     viewport.render();
@@ -262,8 +250,8 @@ addButtonToToolbar({
 
     const newCamera = {
       parallelScale,
-      position: <Types.Point3>position,
-      focalPoint: <Types.Point3>focalPoint,
+      position: position as Types.Point3,
+      focalPoint: focalPoint as Types.Point3,
     };
 
     viewport.setCamera(newCamera);
@@ -330,7 +318,7 @@ async function run() {
     type: ViewportType.STACK,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 

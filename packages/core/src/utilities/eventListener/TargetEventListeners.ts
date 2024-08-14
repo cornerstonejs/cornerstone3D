@@ -166,7 +166,7 @@ class TargetEventListeners {
       this._eventListeners.set(type, listenersMap);
     }
 
-    const useCapture = options?.capture ?? false;
+    const useCapture = options.capture ?? false;
     const listenerPhase = useCapture
       ? EventListenerPhases.Capture
       : EventListenerPhases.Bubble;
@@ -193,7 +193,7 @@ class TargetEventListeners {
     callback?: EventListener,
     options?: EventListenerOptions
   ): void {
-    const useCapture = options?.capture ?? false;
+    const useCapture = options.capture ?? false;
     const listenerPhase = useCapture
       ? EventListenerPhases.Capture
       : EventListenerPhases.Bubble;
@@ -270,7 +270,7 @@ class TargetEventListeners {
     // Creates a copy with Array.from() because the map mutates every
     // time an event listener is removed
     Array.from(this._eventListeners.entries()).forEach(([type, listenersMap]) =>
-      this._unregisterAllListeners(type, listenersMap)
+      { this._unregisterAllListeners(type, listenersMap); }
     );
   }
 }

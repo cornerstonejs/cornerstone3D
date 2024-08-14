@@ -17,7 +17,7 @@ import cache from '../cache';
  * and the volume data along with the loading status.
  */
 export class ImageVolume implements IImageVolume {
-  private _imageIds: Array<string>;
+  private _imageIds: string[];
   private _imageIdsIndexMap = new Map();
   private _imageURIsIndexMap = new Map();
   /** volume scalar data 3D or 4D */
@@ -63,7 +63,7 @@ export class ImageVolume implements IImageVolume {
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** optional reference image ids if the volume is derived from a set of images in the image cache */
-  referencedImageIds?: Array<string>;
+  referencedImageIds?: string[];
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** Property to store additional information */
@@ -173,12 +173,12 @@ export class ImageVolume implements IImageVolume {
   }
 
   /** return the image ids for the volume if it is made of separated images */
-  public get imageIds(): Array<string> {
+  public get imageIds(): string[] {
     return this._imageIds;
   }
 
   /** updates the image ids */
-  public set imageIds(newImageIds: Array<string>) {
+  public set imageIds(newImageIds: string[]) {
     this._imageIds = newImageIds;
     this._reprocessImageIds();
   }

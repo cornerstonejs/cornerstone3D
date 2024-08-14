@@ -8,7 +8,7 @@ import type { Metadata } from '../types';
  * @param imageIds - array of imageIds
  * @returns The volume metadata
  */
-export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
+export default function makeVolumeMetadata(imageIds: string[]): Metadata {
   const imageId0 = imageIds[0];
 
   const {

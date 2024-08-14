@@ -27,7 +27,7 @@ function getRenderCanvas(
   useAlphaChannel = true
 ): HTMLCanvasElement {
   const canvasWasColor =
-    enabledElement.renderingTools.lastRenderedIsColor === true;
+    enabledElement.renderingTools.lastRenderedIsColor;
 
   if (!enabledElement.renderingTools.renderCanvas || canvasWasColor) {
     enabledElement.renderingTools.renderCanvas =
@@ -38,8 +38,8 @@ function getRenderCanvas(
   const renderCanvas = enabledElement.renderingTools.renderCanvas;
 
   if (
-    doesImageNeedToBeRendered(enabledElement, image) === false &&
-    invalidated !== true
+    !doesImageNeedToBeRendered(enabledElement, image) &&
+    !invalidated
   ) {
     return renderCanvas;
   }

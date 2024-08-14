@@ -1,4 +1,4 @@
-type Cornerstone3DConfig = {
+interface Cornerstone3DConfig {
   gpuTier: { tier: number };
   /**
    * Whether the device is mobile or not.
@@ -48,6 +48,6 @@ type Cornerstone3DConfig = {
    * that perform lazy imports.
    */
   peerImport?: (moduleId: string) => any;
-};
+}
 
 export type { Cornerstone3DConfig as default };

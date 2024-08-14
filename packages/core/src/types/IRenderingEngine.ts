@@ -8,12 +8,12 @@ export default interface IRenderingEngine {
   hasBeenDestroyed: boolean;
   offscreenMultiRenderWindow: any;
   offScreenCanvasContainer: any;
-  setViewports(viewports: Array<PublicViewportInput>): void;
+  setViewports(viewports: PublicViewportInput[]): void;
   resize(immediate?: boolean, keepCamera?: boolean): void;
   getViewport(id: string): IViewport;
-  getViewports(): Array<IViewport>;
+  getViewports(): IViewport[];
   render(): void;
-  renderViewports(viewportIds: Array<string>): void;
+  renderViewports(viewportIds: string[]): void;
   renderViewport(viewportId: string): void;
   renderFrameOfReference(FrameOfReferenceUID: string): void;
   fillCanvasWithBackgroundColor(
@@ -22,8 +22,8 @@ export default interface IRenderingEngine {
   ): void;
   enableElement(viewportInputEntry: PublicViewportInput): void;
   disableElement(viewportId: string): void;
-  getStackViewports(): Array<IStackViewport>;
-  getVolumeViewports(): Array<IVolumeViewport>;
+  getStackViewports(): IStackViewport[];
+  getVolumeViewports(): IVolumeViewport[];
   getStackViewport(id: string): IStackViewport;
   destroy(): void;
   _debugRender(): void;

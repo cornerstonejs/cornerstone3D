@@ -5,7 +5,7 @@ import type { ColormapPublic } from './Colormap';
 /**
  * Shared Viewport Properties between Stack and Volume Viewports
  */
-export type ViewportProperties = {
+export interface ViewportProperties {
   /** voi range (upper, lower) for the viewport */
   voiRange?: VOIRange;
   /** VOILUTFunction type which is LINEAR or SAMPLED_SIGMOID */
@@ -16,4 +16,4 @@ export type ViewportProperties = {
   colormap?: ColormapPublic;
   /** interpolation type */
   interpolationType?: InterpolationType;
-};
+}
