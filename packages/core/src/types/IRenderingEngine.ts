@@ -1,7 +1,7 @@
-import IStackViewport from './IStackViewport';
-import { PublicViewportInput } from './IViewport';
-import IVolumeViewport from './IVolumeViewport';
-import { IViewport } from './IViewport';
+import type IStackViewport from './IStackViewport';
+import type { PublicViewportInput } from './IViewport';
+import type IVolumeViewport from './IVolumeViewport';
+import type { IViewport } from './IViewport';
 
 export default interface IRenderingEngine {
   id: string;

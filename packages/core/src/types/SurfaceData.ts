@@ -1,4 +1,4 @@
-import Point3 from './Point3';
+import type Point3 from './Point3';
 
 type PublicSurfaceData = {
   id: string;

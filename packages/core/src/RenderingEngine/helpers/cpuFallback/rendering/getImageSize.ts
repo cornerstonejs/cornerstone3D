@@ -1,5 +1,5 @@
 import { validateParameterUndefinedOrNull } from './validator';
-import { IImage } from '../../../../types';
+import type { IImage } from '../../../../types';
 
 /**
  * Check if the angle is rotated

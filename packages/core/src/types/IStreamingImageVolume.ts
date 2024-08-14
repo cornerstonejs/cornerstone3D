@@ -1,4 +1,4 @@
-import { ImageVolume } from './../cache/classes/ImageVolume';
+import type { ImageVolume } from './../cache/classes/ImageVolume';
 
 /**
  * Cornerstone StreamingImageVolume which extends ImageVolume

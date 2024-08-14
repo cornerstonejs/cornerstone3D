@@ -1,15 +1,15 @@
-import CPUIImageData from './CPUIImageData';
-import { ActorEntry } from './IActor';
-import ICamera from './ICamera';
-import IImage from './IImage';
-import IImageData from './IImageData';
-import { IStackInput } from './IStackInput';
-import { IViewport } from './IViewport';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { Scaling } from './ScalingParameters';
-import StackViewportProperties from './StackViewportProperties';
-import {
+import type CPUIImageData from './CPUIImageData';
+import type { ActorEntry } from './IActor';
+import type ICamera from './ICamera';
+import type IImage from './IImage';
+import type IImageData from './IImageData';
+import type { IStackInput } from './IStackInput';
+import type { IViewport } from './IViewport';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type { Scaling } from './ScalingParameters';
+import type StackViewportProperties from './StackViewportProperties';
+import type {
   ViewReference,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,

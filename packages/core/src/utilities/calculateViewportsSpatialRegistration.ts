@@ -1,5 +1,5 @@
 import { vec3, mat4 } from 'gl-matrix';
-import { IStackViewport, IVolumeViewport } from '../types';
+import type { IStackViewport, IVolumeViewport } from '../types';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import { metaData } from '..';
 

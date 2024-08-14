@@ -1,6 +1,6 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
-import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
+import type { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 import { getVolumeId } from './getVolumeId';

@@ -1,7 +1,7 @@
-import { OrientationAxis } from '../enums';
-import OrientationVectors from './OrientationVectors';
-import DisplayArea from './displayArea';
-import RGB from './RGB';
+import type { OrientationAxis } from '../enums';
+import type OrientationVectors from './OrientationVectors';
+import type DisplayArea from './displayArea';
+import type RGB from './RGB';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.

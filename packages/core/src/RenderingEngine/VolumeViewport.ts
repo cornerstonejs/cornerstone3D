@@ -1,9 +1,10 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis, Events } from '../enums';
+import type { BlendModes } from '../enums';
+import { OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
   IImageVolume,
@@ -27,7 +28,7 @@ import {
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import { ImageActor } from '../types/IActor';
+import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 import { glMatrix, mat4, vec3 } from 'gl-matrix';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';

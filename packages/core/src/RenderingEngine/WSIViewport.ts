@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { Events as EVENTS, MetadataModules } from '../enums';
-import {
+import type {
   IWSIViewport,
   WSIViewportProperties,
   Point3,

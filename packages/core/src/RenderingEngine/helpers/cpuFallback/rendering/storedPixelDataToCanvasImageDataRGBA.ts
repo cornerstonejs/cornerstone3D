@@ -1,5 +1,5 @@
 import now from './now';
-import { IImage } from '../../../../types';
+import type { IImage } from '../../../../types';
 
 /**
  * This function transforms stored pixel values into a canvas image data buffer

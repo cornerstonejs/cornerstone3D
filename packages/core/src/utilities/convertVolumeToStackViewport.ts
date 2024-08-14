@@ -1,4 +1,4 @@
-import * as Types from '../types';
+import type * as Types from '../types';
 import cache, { ImageVolume } from '../cache';
 import { ViewportType } from '../enums';
 

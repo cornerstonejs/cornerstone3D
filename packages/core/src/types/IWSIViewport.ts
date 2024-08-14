@@ -1,5 +1,5 @@
-import { IViewport } from './IViewport';
-import WSIViewportProperties from './WSIViewportProperties';
+import type { IViewport } from './IViewport';
+import type WSIViewportProperties from './WSIViewportProperties';
 
 /**
  * Interface for Stack Viewport

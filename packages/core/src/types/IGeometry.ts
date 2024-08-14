@@ -1,6 +1,6 @@
-import { GeometryType } from '../enums';
-import { IContourSet } from './IContourSet';
-import { ISurface } from './ISurface';
+import type { GeometryType } from '../enums';
+import type { IContourSet } from './IContourSet';
+import type { ISurface } from './ISurface';
 
 // interface IGeometry can be array of IContourSet
 interface IGeometry {

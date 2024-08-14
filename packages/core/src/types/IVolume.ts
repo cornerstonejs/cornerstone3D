@@ -1,4 +1,4 @@
-import { ImageVolumeProps } from './ImageVolumeProps';
+import type { ImageVolumeProps } from './ImageVolumeProps';
 
 /**
  * Backwards compatibility for IVolume

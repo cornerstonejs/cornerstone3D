@@ -1,5 +1,5 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 export type Actor = vtkActor;

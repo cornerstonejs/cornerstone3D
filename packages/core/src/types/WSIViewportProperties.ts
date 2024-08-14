@@ -1,4 +1,4 @@
-import { ViewportProperties } from './ViewportProperties';
+import type { ViewportProperties } from './ViewportProperties';
 
 /**
  * WSI Viewport Properties

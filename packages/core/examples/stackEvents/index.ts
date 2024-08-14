@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   getRenderingEngine,
   Enums,
 } from '@cornerstonejs/core';

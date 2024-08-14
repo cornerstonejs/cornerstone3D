@@ -7,11 +7,11 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import VOILUTFunctionType from '../enums/VOILUTFunctionType';
-import ViewportStatus from '../enums/ViewportStatus';
+import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
-import IImageCalibration from './IImageCalibration';
-import { ColormapPublic } from './Colormap';
+import type IImageCalibration from './IImageCalibration';
+import type { ColormapPublic } from './Colormap';
 
 /**
  * CAMERA_MODIFIED Event's data

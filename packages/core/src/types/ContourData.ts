@@ -1,5 +1,5 @@
-import { ContourType } from '../enums';
-import Point3 from './Point3';
+import type { ContourType } from '../enums';
+import type Point3 from './Point3';
 
 type PublicContourSetData = ContourSetData;
 

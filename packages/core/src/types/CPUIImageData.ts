@@ -3,8 +3,8 @@ import type { Scaling } from './ScalingParameters';
 import type Mat3 from './Mat3';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type RGB from './RGB';
-import { VoxelManager } from '../utilities';
-import IImageCalibration from './IImageCalibration';
+import type { VoxelManager } from '../utilities';
+import type IImageCalibration from './IImageCalibration';
 
 type CPUImageData = {
   worldToIndex?: (point: Point3) => Point3;

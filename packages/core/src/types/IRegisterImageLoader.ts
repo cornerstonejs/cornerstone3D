@@ -1,4 +1,4 @@
-import ImageLoaderFn from './ImageLoaderFn';
+import type ImageLoaderFn from './ImageLoaderFn';
 
 /**
  * Register image loader interface

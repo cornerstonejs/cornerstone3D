@@ -1,5 +1,5 @@
-import { ViewportProperties } from './ViewportProperties';
-import { OrientationAxis } from '../enums';
+import type { ViewportProperties } from './ViewportProperties';
+import type { OrientationAxis } from '../enums';
 
 /**
  * Stack Viewport Properties

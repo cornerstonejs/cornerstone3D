@@ -6,9 +6,9 @@ import type {
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
 import type VoxelManager from '../utilities/VoxelManager';
-import { ImageQualityStatus } from '../enums';
-import IImageCalibration from './IImageCalibration';
-import RGB from './RGB';
+import type { ImageQualityStatus } from '../enums';
+import type IImageCalibration from './IImageCalibration';
+import type RGB from './RGB';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering

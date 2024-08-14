@@ -1,5 +1,5 @@
-import Point3 from './Point3';
-import Point2 from './Point2';
+import type Point3 from './Point3';
+import type Point2 from './Point2';
 
 /**
  * Camera Interface. See {@link https://kitware.github.io/vtk-examples/site/VTKBook/03Chapter3/#35-cameras} if you

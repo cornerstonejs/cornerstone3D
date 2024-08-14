@@ -4,8 +4,8 @@ import type { Scaling } from './ScalingParameters';
 import type Mat3 from './Mat3';
 import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type RGB from './RGB';
-import IImageCalibration from './IImageCalibration';
-import { VoxelManager } from '../utilities';
+import type IImageCalibration from './IImageCalibration';
+import type { VoxelManager } from '../utilities';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.

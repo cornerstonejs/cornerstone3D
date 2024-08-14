@@ -1,10 +1,10 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { IViewport } from './IViewport';
-import { IVolumeInput } from './IVolumeInput';
-import FlipDirection from './FlipDirection';
-import IImageData from './IImageData';
-import { BlendModes, OrientationAxis } from '../enums';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type { IViewport } from './IViewport';
+import type { IVolumeInput } from './IVolumeInput';
+import type FlipDirection from './FlipDirection';
+import type IImageData from './IImageData';
+import type { BlendModes, OrientationAxis } from '../enums';
 import type VolumeViewportProperties from './VolumeViewportProperties';
 
 /**

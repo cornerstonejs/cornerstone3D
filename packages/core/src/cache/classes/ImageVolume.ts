@@ -2,17 +2,17 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { imageIdToURI, VoxelManager } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
-import {
+import type {
   Metadata,
   Point3,
   IImageVolume,
   Mat3,
-  PixelDataTypedArray,
   ImageVolumeProps,
   IImage,
   PixelDataTypedArrayString,
   RGB,
 } from '../../types';
+import { PixelDataTypedArray } from '../../types';
 import cache from '../cache';
 
 /** The base class for volume data. It includes the volume metadata

@@ -1,5 +1,5 @@
 import { metaData } from '../';
-import { Metadata } from '../types';
+import type { Metadata } from '../types';
 
 /**
  * It creates a metadata object for a volume given the imageIds that compose it.

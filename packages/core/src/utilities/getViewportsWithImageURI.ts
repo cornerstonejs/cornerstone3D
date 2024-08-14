@@ -1,6 +1,6 @@
 import { getRenderingEngine } from '../RenderingEngine';
 import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
-import { IStackViewport, IVolumeViewport } from '../types';
+import type { IStackViewport, IVolumeViewport } from '../types';
 
 type Viewport = IStackViewport | IVolumeViewport;
 

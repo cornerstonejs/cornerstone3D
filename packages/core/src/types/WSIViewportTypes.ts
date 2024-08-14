@@ -1,4 +1,4 @@
-import { ViewportType } from '../enums';
+import type { ViewportType } from '../enums';
 
 export type WSIViewportInput = {
   id: string;

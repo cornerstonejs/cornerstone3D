@@ -1,4 +1,5 @@
-import { BlendModes, OrientationAxis } from '../enums';
+import type { BlendModes } from '../enums';
+import { OrientationAxis } from '../enums';
 import type { ViewportInput } from '../types/IViewport';
 import BaseVolumeViewport from './BaseVolumeViewport';
 

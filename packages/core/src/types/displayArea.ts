@@ -1,4 +1,4 @@
-import InterpolationType from '../enums/InterpolationType';
+import type InterpolationType from '../enums/InterpolationType';
 
 /**
  * The display area type allows specifying or updating the image position and

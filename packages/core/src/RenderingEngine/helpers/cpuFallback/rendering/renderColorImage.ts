@@ -6,7 +6,7 @@ import setToPixelCoordinateSystem from './setToPixelCoordinateSystem';
 import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import initializeRenderCanvas from './initializeRenderCanvas';
 import saveLastRendered from './saveLastRendered';
-import {
+import type {
   IImage,
   CPUFallbackViewport,
   CPUFallbackEnabledElement,

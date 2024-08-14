@@ -96,7 +96,7 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
-import { ColormapPublic, ColormapRegistration } from './Colormap';
+import type { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
 import type {
   PixelDataTypedArray,
@@ -123,8 +123,8 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
-import { WSIViewportInput } from './WSIViewportTypes';
-import { ISurface } from './ISurface';
+import type { WSIViewportInput } from './WSIViewportTypes';
+import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';

@@ -1,5 +1,5 @@
 import now from './now';
-import { IImage } from '../../../../types';
+import type { IImage } from '../../../../types';
 
 /**
  * Converts stored color pixel values to display pixel values using a LUT.

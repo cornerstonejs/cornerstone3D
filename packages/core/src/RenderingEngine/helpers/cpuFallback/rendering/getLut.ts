@@ -1,7 +1,7 @@
 import computeAutoVoi from './computeAutoVoi';
 import lutMatches from './lutMatches';
 import generateLut from './generateLut';
-import { IImage, CPUFallbackViewport } from '../../../../types';
+import type { IImage, CPUFallbackViewport } from '../../../../types';
 
 /**
  * Retrieve or generate a LUT Array for an Image and Viewport

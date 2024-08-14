@@ -11,7 +11,7 @@ import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 
 import { getBufferConfiguration, uuidv4, VoxelManager } from '../utilities';
-import {
+import type {
   Point3,
   Metadata,
   EventTypes,

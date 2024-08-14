@@ -1,13 +1,13 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
-import Mat3 from './Mat3';
-import { VoxelManager } from '../utilities';
-import {
+import type Mat3 from './Mat3';
+import type { VoxelManager } from '../utilities';
+import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
-import RGB from './RGB';
+import type RGB from './RGB';
 
 /**
  * Properties required to instantiate a Volume object.

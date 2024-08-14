@@ -1,4 +1,4 @@
-import { IVolumeViewport } from '../types';
+import type { IVolumeViewport } from '../types';
 import {
   getRenderingEngines,
   getRenderingEngine,

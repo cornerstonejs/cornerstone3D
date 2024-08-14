@@ -2,7 +2,7 @@ import getOrCreateCanvas, {
   EPSILON,
 } from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
-import {
+import type {
   IImage,
   IStackViewport,
   IVolume,
@@ -13,7 +13,7 @@ import {
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
-import { CanvasLoadPosition } from './loadImageToCanvas';
+import type { CanvasLoadPosition } from './loadImageToCanvas';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation

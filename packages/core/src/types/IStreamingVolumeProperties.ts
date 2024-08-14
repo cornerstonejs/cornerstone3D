@@ -1,4 +1,4 @@
-import { ImageQualityStatus } from '../enums';
+import type { ImageQualityStatus } from '../enums';
 
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */

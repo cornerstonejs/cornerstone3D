@@ -1,7 +1,7 @@
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import { deepMerge } from './utilities';
-import { Cornerstone3DConfig } from './types';
+import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
 // TODO: change config into a class with methods to better control get/set

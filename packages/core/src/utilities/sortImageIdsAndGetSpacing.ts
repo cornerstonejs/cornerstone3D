@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { metaData, getConfiguration } from '../';
-import { Point3 } from '../types';
+import type { Point3 } from '../types';
 
 type SortedImageIdsItem = {
   zSpacing: number;

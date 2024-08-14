@@ -1,4 +1,4 @@
-import { IGeometry, PublicContourSetData } from '../../../types';
+import type { IGeometry, PublicContourSetData } from '../../../types';
 import { GeometryType } from '../../../enums';
 import { validateContourSet } from './validateContourSet';
 import { ContourSet } from '../../../cache/classes/ContourSet';

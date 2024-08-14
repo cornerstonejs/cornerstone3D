@@ -1,7 +1,7 @@
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import { ViewportPreset } from '../types';
-import { VolumeActor } from '../types/IActor';
+import type { ViewportPreset } from '../types';
+import type { VolumeActor } from '../types/IActor';
 
 /**
  * Applies a preset to a volume actor.

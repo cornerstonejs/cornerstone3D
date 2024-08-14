@@ -35,7 +35,7 @@ import type {
   ViewReference,
   VolumeActor,
 } from '../types';
-import {
+import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewportInput,
@@ -65,7 +65,8 @@ import {
   VOILUTFunctionType,
   ViewportStatus,
 } from '../enums';
-import { ImageLoaderOptions, loadAndCacheImage } from '../loaders/imageLoader';
+import type { ImageLoaderOptions } from '../loaders/imageLoader';
+import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -76,17 +77,17 @@ import resize from './helpers/cpuFallback/rendering/resize';
 import cache from '../cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
-import {
+import type {
   ImagePixelModule,
   ImagePlaneModule,
   PixelDataTypedArray,
 } from '../types';
-import {
+import type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import { ImageActor } from '../types/IActor';
+import type { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import {
   getTransferFunctionNodes,

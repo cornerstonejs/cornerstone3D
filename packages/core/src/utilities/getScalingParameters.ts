@@ -1,5 +1,5 @@
 import { get as metaDataGet } from '../metaData';
-import { ScalingParameters } from '../types';
+import type { ScalingParameters } from '../types';
 
 /**
  * It returns the scaling parameters for the image with the given imageId. This can be

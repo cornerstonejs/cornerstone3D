@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
-import {
+import type {
   ImageVolumeProps,
   Mat3,
   PixelDataTypedArrayString,

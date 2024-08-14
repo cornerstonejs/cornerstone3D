@@ -1,4 +1,4 @@
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
@@ -11,14 +11,8 @@ import {
   RENDERING_DEFAULTS,
   VIEWPORT_PRESETS,
 } from '../constants';
-import {
-  BlendModes,
-  Events,
-  InterpolationType,
-  OrientationAxis,
-  ViewportStatus,
-  VOILUTFunctionType,
-} from '../enums';
+import type { BlendModes, InterpolationType, OrientationAxis } from '../enums';
+import { Events, ViewportStatus, VOILUTFunctionType } from '../enums';
 import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
@@ -39,7 +33,7 @@ import type {
   ViewReference,
   IVolumeViewport,
 } from '../types';
-import { VoiModifiedEventDetail } from '../types/EventTypes';
+import type { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
 import {
   actorIsA,

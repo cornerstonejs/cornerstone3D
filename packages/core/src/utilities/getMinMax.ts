@@ -1,4 +1,4 @@
-import { PixelDataTypedArray } from '../types/PixelDataTypedArray';
+import type { PixelDataTypedArray } from '../types/PixelDataTypedArray';
 
 /**
  * Calculate the minimum and maximum values in an Array

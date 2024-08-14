@@ -9,7 +9,7 @@ import {
   uuidv4,
   VoxelManager,
 } from '../utilities';
-import {
+import type {
   IImage,
   ImageLoaderFn,
   IImageLoadObject,

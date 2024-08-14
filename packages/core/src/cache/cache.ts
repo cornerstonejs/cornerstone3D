@@ -1,4 +1,4 @@
-import {
+import type {
   ICache,
   IImage,
   IGeometry,
@@ -266,7 +266,7 @@ class Cache implements ICache {
       return bytesAvailable;
     }
 
-    let cachedImages = Array.from(this._imageCache.values()).filter(
+    const cachedImages = Array.from(this._imageCache.values()).filter(
       (cachedImage) => !cachedImage.sharedCacheKey
     );
 
@@ -284,7 +284,7 @@ class Cache implements ICache {
     }
 
     cachedImages.sort(compare);
-    let cachedImageIds = cachedImages.map((im) => im.imageId);
+    const cachedImageIds = cachedImages.map((im) => im.imageId);
 
     let imageIdsToPurge = cachedImageIds;
 

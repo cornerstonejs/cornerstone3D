@@ -3,7 +3,8 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import { mat4, vec2, vec3 } from 'gl-matrix';
+import type { mat4 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
@@ -41,7 +42,7 @@ import type {
   DataSetOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
-import IImageCalibration from '../types/IImageCalibration';
+import type IImageCalibration from '../types/IImageCalibration';
 import { InterpolationType } from '../enums';
 
 /**
