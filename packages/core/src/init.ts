@@ -1,4 +1,3 @@
-import { getGPUTier } from 'detect-gpu';
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import { deepMerge } from './utilities';
@@ -7,8 +6,7 @@ import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
-  gpuTier: undefined,
-  detectGPUConfig: {},
+  gpuTier: { tier: 2 }, // Assume medium tier by default
   isMobile: false, // is mobile device
   rendering: {
     useCPURendering: false,
@@ -85,12 +83,18 @@ function isIOS() {
 }
 
 /**
- * Initialize the cornerstone-core. If the browser has a webgl context and
- * the detected gpu (by detect-gpu library) indicates the GPU is not low end we
- * will use webgl GPU rendering. Otherwise we will use cpu rendering.
+ * Initialize the cornerstone-core. This function checks for WebGL context availability
+ * to determine if GPU rendering is possible. By default, it assumes a medium GPU tier.
  *
- * @param configuration - A configuration object
- * @returns A promise that resolves to true cornerstone has been initialized successfully.
+ * It's the responsibility of the consumer application to provide accurate GPU tier information
+ * if needed. Libraries like 'detect-gpu' can be used for this purpose, and the result can be
+ * passed in the configuration object.
+ *
+ * If a WebGL context is available, GPU rendering will be used. Otherwise, it will fall back
+ * to CPU rendering for supported operations.
+ *
+ * @param configuration - A configuration object, which can include GPU tier information
+ * @returns A promise that resolves to true if cornerstone has been initialized successfully.
  * @category Initialization
  */
 async function init(configuration = config): Promise<boolean> {
@@ -117,26 +121,12 @@ async function init(configuration = config): Promise<boolean> {
     }
   }
 
-  // gpuTier
   const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    config.gpuTier =
-      config.gpuTier || (await getGPUTier(config.detectGPUConfig));
-    console.log(
-      'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
-      config.gpuTier
-    );
-    if (config.gpuTier?.tier < 1) {
-      console.log(
-        'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
-      );
-      config.rendering.useCPURendering = true;
-    } else {
-      console.log('CornerstoneRender: using GPU rendering');
-    }
+    console.log('CornerstoneRender: using GPU rendering');
   }
 
   csRenderInitialized = true;

@@ -34,16 +34,6 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: true,
     },
-    externals: [
-      {
-        'detect-gpu': {
-          root: 'window',
-          commonjs: 'detect-gpu',
-          commonjs2: 'detect-gpu',
-          amd: 'detect-gpu',
-        },
-      },
-    ],
     // plugins: [new webpackBundleAnalyzer.BundleAnalyzerPlugin()],
   });
 };
