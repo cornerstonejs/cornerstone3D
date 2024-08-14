@@ -15,6 +15,6 @@ export type VideoViewportInput = {
   sy: number;
   sWidth: number;
   sHeight: number;
-  defaultOptions: any;
+  defaultOptions: unknown;
   canvas: HTMLCanvasElement;
 };

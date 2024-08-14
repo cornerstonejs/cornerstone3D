@@ -8,6 +8,8 @@ import type {
   ICamera,
   WSIViewportInput,
   VOIRange,
+  IImageData,
+  CPUIImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -215,10 +217,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return null;
   }
 
-  public getImageData() {
+  public getImageData(): CPUIImageData {
     const { metadata } = this;
     if (!metadata) {
-      return;
+      return null;
     }
 
     const { spacing } = metadata;
@@ -229,8 +231,10 @@ class WSIViewport extends Viewport implements IWSIViewport {
       numberOfComponents: 3,
       origin: metadata.origin,
       direction: metadata.direction,
-      metadata: { Modality: this.modality },
-      getScalarData: () => this.getScalarData(),
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: this.frameOfReferenceUID,
+      },
       imageData: {
         getDirection: () => metadata.direction,
         getDimensions: () => metadata.dimensions,
@@ -240,7 +244,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvas(point);
           const pixelCoord = this.canvasToIndex(canvasPoint);
-          return [pixelCoord[0], pixelCoord[1], 0];
+          return [pixelCoord[0], pixelCoord[1], 0] as Point3;
         },
         indexToWorld: (point: Point3) => {
           const canvasPoint = this.indexToCanvas([point[0], point[1]]);
@@ -252,6 +256,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
       preScale: {
         scaled: false,
       },
+      scalarData: this.getScalarData(),
     };
   }
 
@@ -645,8 +650,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
   /**
    * The transform here is from index to canvas points, so this takes
    * into account the scaling applied and the center location, but nothing to do
-   * with world coordinate transforms.
-   *  Note that the 'index' values are often negative values with respect to the overall
+   * with world coordinate transforms.  Note that the 'index' values are often negative values with respect to the overall
    * image area, as that is what is used internally for the view.
    *
    * @returns A transform from index to canvas points

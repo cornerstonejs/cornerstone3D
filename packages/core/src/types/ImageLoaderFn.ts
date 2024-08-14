@@ -5,10 +5,10 @@
  */
 type ImageLoaderFn = (
   imageId: string,
-  options?: Record<string, any>
+  options?: Record<string, unknown>
 ) => {
   /** Promise that resolves to the image object */
-  promise: Promise<Record<string, any>>;
+  promise: Promise<Record<string, unknown>>;
   cancelFn?: () => void | undefined;
   decache?: () => void | undefined;
 };

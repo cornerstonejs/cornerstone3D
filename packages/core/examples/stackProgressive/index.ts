@@ -4,6 +4,9 @@ import {
   ProgressiveRetrieveImages,
   utilities,
   RenderingEngine,
+  metaData,
+  type Types,
+  setUseCPURendering,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -14,7 +17,7 @@ import {
 
 const { imageRetrieveMetadataProvider } = utilities;
 const { sequentialRetrieveStages } = ProgressiveRetrieveImages;
-
+const { Events } = Enums;
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -89,10 +92,7 @@ async function newImageFunction(evt) {
   } = image;
   const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
-    element.removeEventListener(
-      cornerstone.EVENTS.STACK_NEW_IMAGE,
-      newImageFunction
-    );
+    element.removeEventListener(Events.STACK_NEW_IMAGE, newImageFunction);
   }
   const completeText = statusNames[status] || `other ${status}`;
   const totalTime = Date.now() - startTime;
@@ -112,10 +112,7 @@ async function showStack(
   }
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   startTime = Date.now();
-  element.addEventListener(
-    cornerstone.EVENTS.STACK_NEW_IMAGE,
-    newImageFunction
-  );
+  element.addEventListener(Events.STACK_NEW_IMAGE, newImageFunction);
   const start = Date.now();
   // Set the stack on the viewport
   await viewport.setStack(stack, 0, retrieveConfiguration);
@@ -123,10 +120,7 @@ async function showStack(
   // Render the image
   viewport.render();
   const end = Date.now();
-  const { transferSyntaxUID } = cornerstone.metaData.get(
-    'transferSyntax',
-    stack[0]
-  );
+  const { transferSyntaxUID } = metaData.get('transferSyntax', stack[0]);
   document.getElementById('loading').innerText = `Stack render took ${
     end - start
   } using ${transferSyntaxUID}`;

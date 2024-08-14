@@ -9,6 +9,7 @@ import type VoxelManager from '../utilities/VoxelManager';
 import type { ImageQualityStatus } from '../enums';
 import type IImageCalibration from './IImageCalibration';
 import type RGB from './RGB';
+import type IImageFrame from './IImageFrame';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -126,7 +127,7 @@ interface IImage {
 
   imageQualityStatus?: ImageQualityStatus;
   calibration?: IImageCalibration;
-  imageFrame?: any;
+  imageFrame?: IImageFrame;
 
   FrameOfReferenceUID?: string;
   dataType: PixelDataTypedArrayString;

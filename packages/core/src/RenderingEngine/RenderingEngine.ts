@@ -686,7 +686,7 @@ class RenderingEngine implements IRenderingEngine {
     // 2.d Re-position previous viewports on the offScreen Canvas based on the new
     // offScreen canvas size
     const xOffset = this._resize(
-      viewportsDrivenByVtkJs,
+      viewportsDrivenByVtkJs as Array<IStackViewport | IVolumeViewport>,
       offScreenCanvasWidth,
       offScreenCanvasHeight
     );
@@ -993,7 +993,7 @@ class RenderingEngine implements IRenderingEngine {
    * @returns _xOffset the final offset which will be used for the next viewport
    */
   private _resize(
-    viewportsDrivenByVtkJs: Array<IViewport>,
+    viewportsDrivenByVtkJs: Array<IStackViewport | IVolumeViewport>,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number
   ): number {
@@ -1012,7 +1012,7 @@ class RenderingEngine implements IRenderingEngine {
         sWidth,
         sHeight,
       } = this._getViewportCoordsOnOffScreenCanvas(
-        viewport,
+        viewport as IViewport,
         offScreenCanvasWidth,
         offScreenCanvasHeight,
         _xOffset

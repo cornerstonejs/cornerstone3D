@@ -195,7 +195,7 @@ async function run() {
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     }
     const { viewportInputArray, sliceIndex } = viewportType;
-    renderingEngine.setViewports(viewportInputArray as any);
+    renderingEngine.setViewports(viewportInputArray);
 
     const [viewportInputData] = viewportInputArray;
     const { viewportId, type } = viewportInputData;

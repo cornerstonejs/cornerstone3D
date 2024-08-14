@@ -30,8 +30,6 @@ export class ImageVolume implements IImageVolume {
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
 
-  imageCacheOffsetMap = new Map();
-
   isPreScaled = false;
 
   /** Dimensions of the volume */

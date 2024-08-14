@@ -9,6 +9,6 @@ export type WSIViewportInput = {
   sy: number;
   sWidth: number;
   sHeight: number;
-  defaultOptions: any;
+  defaultOptions: Record<string, unknown>;
   canvas: HTMLCanvasElement;
 };

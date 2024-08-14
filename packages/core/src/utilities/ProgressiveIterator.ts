@@ -141,7 +141,7 @@ export default class ProgressiveIterator<T> {
   public generate(
     processFunction,
     errorCallback?: ErrorCallback
-  ): Promise<any> {
+  ): Promise<unknown> {
     return processFunction(this, this.reject.bind(this)).then(
       () => {
         if (!this.done) {

@@ -179,7 +179,7 @@ export default class VoxelManager<T> {
    */
   public forEach = (
     callback: (args: {
-      value: any;
+      value: unknown;
       index: number;
       pointIJK: Point3;
       pointLPS: Point3;
@@ -509,7 +509,7 @@ export default class VoxelManager<T> {
     const SliceDataConstructor = this.getConstructor();
 
     function isValidConstructor(
-      ctor: any
+      ctor: unknown
     ): ctor is new (length: number) => PixelDataTypedArray {
       return typeof ctor === 'function';
     }

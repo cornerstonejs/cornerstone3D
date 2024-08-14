@@ -82,7 +82,7 @@ export default interface IStackViewport extends IViewport {
    * @param options - Optional settings to specify reset behavior.
    * @returns A boolean indicating whether the camera was reset successfully.
    */
-  resetCamera(options?: any): boolean;
+  resetCamera(options?: unknown): boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -104,7 +104,7 @@ export default interface IStackViewport extends IViewport {
    * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  getRenderer(): any;
+  getRenderer(): unknown;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -174,7 +174,7 @@ export default interface IStackViewport extends IViewport {
    * Renders the given Cornerstone image object in the viewport.
    * @param image - The Cornerstone image object to render.
    */
-  renderImageObject(image: any): void;
+  renderImageObject(image: unknown): void;
 
   /**
    * Sets the properties for the viewport on the default actor. Properties include
@@ -198,7 +198,7 @@ export default interface IStackViewport extends IViewport {
    * @param image - stack image containing cornerstone image
    * @returns image metadata: bitsAllocated, number of components, origin, direction, dimensions, spacing, number of voxels.
    */
-  getImageDataMetadata(image: IImage): any;
+  getImageDataMetadata(image: IImage): unknown;
 
   /**
    * Resizes the viewport - only used in CPU fallback for StackViewport. The

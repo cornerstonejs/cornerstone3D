@@ -20,6 +20,9 @@ import type {
   ViewReference,
   ReferenceCompatibleOptions,
   ImageSetOptions,
+  IViewport,
+  IStackInput,
+  ImageActor,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -1071,7 +1074,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     // No-op
   }
 
-  public addImages(stackInputs: Array<any>) {
+  public addImages(stackInputs: Array<IStackInput>) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const image = cache.getImage(stackInput.imageId);
@@ -1080,7 +1083,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       if (imageActor) {
         actors.push({ uid: stackInput.actorUID, actor: imageActor });
         if (stackInput.callback) {
-          stackInput.callback({ imageActor, imageId: stackInput.imageId });
+          stackInput.callback({
+            imageActor: imageActor as unknown as ImageActor,
+            imageId: stackInput.imageId,
+          });
         }
       }
     });
@@ -1088,7 +1094,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
   }
 
   protected createActorMapper(image) {
-    return new CanvasActor(this, image);
+    return new CanvasActor(this as unknown as IViewport, image);
   }
 
   /**

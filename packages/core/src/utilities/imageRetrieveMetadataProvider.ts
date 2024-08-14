@@ -1,6 +1,6 @@
 import { addProvider } from '../metaData';
 
-const retrieveConfigurationState = new Map<string, any>();
+const retrieveConfigurationState = new Map<string, unknown>();
 
 const IMAGE_RETRIEVE_CONFIGURATION = 'imageRetrieveConfiguration';
 

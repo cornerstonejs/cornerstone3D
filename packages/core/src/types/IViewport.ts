@@ -8,6 +8,9 @@ import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import type BoundsLPS from './BoundsLPS';
 import type { mat4 } from 'gl-matrix';
+import type IRenderingEngine from './IRenderingEngine';
+import type IImageData from './IImageData';
+import type CPUIImageData from './CPUIImageData';
 
 /**
  * Specifies what view to get a reference for.
@@ -243,13 +246,13 @@ interface IViewport {
   /** unique identifier of the viewport */
   id: string;
 
-  getImageData: () => any;
+  getImageData: () => IImageData | CPUIImageData;
 
-  getWidget: (id: string) => any;
+  getWidget: (id: string) => unknown;
 
-  addWidget: (id: string, widget: any) => void;
+  addWidget: (id: string, widget: unknown) => void;
 
-  getWidgets: () => any;
+  getWidgets: () => unknown;
 
   removeWidgets: () => void;
 
@@ -270,9 +273,9 @@ interface IViewport {
   /** height of the viewport on the offscreen canvas (if rendering using GPU) */
   sHeight: number;
   /** actors rendered in the viewport*/
-  _actors: Map<string, any>;
+  _actors: Map<string, unknown>;
   /** viewport default options including the axis, and background color  */
-  defaultOptions: any;
+  defaultOptions: unknown;
   /** viewport options */
   options: ViewportInputOptions;
   /** Suppress events */
@@ -312,7 +315,7 @@ interface IViewport {
   /** remove array of uids */
   removeActors(actorUIDs: Array<string>): void;
   /** returns the renderingEngine instance the viewport belongs to */
-  getRenderingEngine(): any;
+  getRenderingEngine(): IRenderingEngine;
   /** returns the vtkRenderer (for GPU rendering) of the viewport */
   getRenderer(): void;
   /** triggers render for all actors in the viewport */

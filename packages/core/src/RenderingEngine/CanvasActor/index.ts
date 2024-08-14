@@ -1,5 +1,6 @@
 import type { IViewport } from '../../types/IViewport';
 import type { ICanvasActor } from '../../types/IActor';
+
 import CanvasProperties from './CanvasProperties';
 import CanvasMapper from './CanvasMapper';
 

@@ -17,17 +17,19 @@ type CPUImageData = {
   getScalarData?: () => PixelDataTypedArray;
   /** Last index is always 1 */
   getDimensions?: () => Point3;
+  getRange?: () => [number, number];
 };
 
 type CPUIImageData = {
   dimensions: Point3;
   direction: Mat3;
   spacing: Point3;
+  numberOfComponents?: number;
   origin: Point3;
   imageData: CPUImageData;
   metadata: { Modality: string; FrameOfReferenceUID: string };
   scalarData: PixelDataTypedArray;
-  scaling: Scaling;
+  scaling?: Scaling;
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
   calibration?: IImageCalibration;

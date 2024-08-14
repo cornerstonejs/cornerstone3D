@@ -40,9 +40,9 @@ interface IImageVolume {
   /** volume image data as vtkImageData */
   imageData?: vtkImageData;
   /** openGL texture for the volume */
-  vtkOpenGLTexture: any;
+  vtkOpenGLTexture: unknown;
   /** loading status object for the volume containing loaded/loading statuses */
-  loadStatus?: Record<string, any>;
+  loadStatus?: Record<string, unknown>;
   /** imageIds of the volume (if it is built of separate imageIds) */
   imageIds: Array<string>;
   /** volume referencedVolumeId (if it is derived from another volume) */
@@ -52,14 +52,9 @@ interface IImageVolume {
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
   /** return true if it is a 4D volume or false if it is 3D volume */
   isDynamicVolume(): boolean;
-  /** method to convert the volume data in the volume cache, to separate images in the image cache */
-  convertToCornerstoneImage?: (
-    imageId: string,
-    imageIdIndex: number
-  ) => IImageLoadObject;
 
   //cancel load
   cancelLoading?: () => void;
@@ -89,9 +84,6 @@ interface IImageVolume {
 
   /** decache */
   decache?: (completelyRemove?: boolean) => void;
-
-  /** */
-  get imageCacheOffsetMap(): Map<string, any>;
 
   /**
    * Mark the volume as having had the pixel data changed externally

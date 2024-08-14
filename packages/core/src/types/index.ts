@@ -132,6 +132,7 @@ import type BoundsLPS from './BoundsLPS';
 // Sometimes the type is needed rather than the class, so import
 // the type only here.
 import type PointsManager from '../utilities/PointsManager';
+import type IImageFrame from './IImageFrame';
 
 export type {
   // config
@@ -258,4 +259,5 @@ export type {
   Color,
   ColorLUT,
   VolumeProps,
+  IImageFrame,
 };

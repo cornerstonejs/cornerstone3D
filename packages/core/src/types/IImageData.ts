@@ -18,6 +18,8 @@ interface IImageData {
   direction: Mat3;
   /** image spacing */
   spacing: Point3;
+  /** number of components */
+  numberOfComponents?: number;
   /** image origin */
   origin: Point3;
   /** image scalarData which stores the array of pixelData */
