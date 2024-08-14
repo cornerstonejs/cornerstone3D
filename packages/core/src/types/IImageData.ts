@@ -55,4 +55,4 @@ interface IImageData {
   };
 }
 
-export default IImageData;
+export type { IImageData as default };

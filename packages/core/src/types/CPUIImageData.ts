@@ -52,6 +52,6 @@ type CPUIImageData = {
   };
 };
 
-export default CPUIImageData;
+export type { CPUIImageData as default };
 
-export { CPUImageData };
+export type { CPUImageData };

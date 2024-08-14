@@ -6,7 +6,7 @@ import type { ActorEntry } from './IActor';
 import type ViewportType from '../enums/ViewportType';
 import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
-import type BoundsLPS from './BoundsLPS';
+import type { BoundsLPS } from './BoundsLPS';
 import type { mat4 } from 'gl-matrix';
 import type IRenderingEngine from './IRenderingEngine';
 import type IImageData from './IImageData';

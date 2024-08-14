@@ -14,4 +14,4 @@ type ActorSliceRange = {
   current: number;
 };
 
-export default ActorSliceRange;
+export type { ActorSliceRange as default };

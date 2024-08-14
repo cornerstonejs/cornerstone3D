@@ -39,7 +39,7 @@ type LabelmapToolOperationDataAny =
   | LabelmapToolOperationDataVolume
   | LabelmapToolOperationDataStack;
 
-export {
+export type {
   LabelmapToolOperationData,
   LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,

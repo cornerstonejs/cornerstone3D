@@ -5,4 +5,4 @@ import type { ViewportProperties } from './ViewportProperties';
  */
 export type WSIViewportProperties = ViewportProperties;
 
-export default WSIViewportProperties;
+export type { WSIViewportProperties as default };

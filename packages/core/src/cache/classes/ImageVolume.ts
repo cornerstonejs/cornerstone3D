@@ -1,5 +1,4 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { imageIdToURI, VoxelManager } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
@@ -12,7 +11,6 @@ import type {
   PixelDataTypedArrayString,
   RGB,
 } from '../../types';
-import { PixelDataTypedArray } from '../../types';
 import cache from '../cache';
 
 /** The base class for volume data. It includes the volume metadata
@@ -61,7 +59,7 @@ export class ImageVolume implements IImageVolume {
   /** open gl texture for the volume */
   vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
   /** load status object for the volume */
-  loadStatus?: Record<string, any>;
+  loadStatus?: Record<string, unknown>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** optional reference image ids if the volume is derived from a set of images in the image cache */
@@ -69,7 +67,7 @@ export class ImageVolume implements IImageVolume {
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
 
   /**
    * The new volume model which solely relies on the separate image data

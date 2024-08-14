@@ -39,4 +39,4 @@ type DisplayArea = {
   storeAsInitialCamera?: boolean;
 };
 
-export default DisplayArea;
+export type { DisplayArea as default };

@@ -22,4 +22,4 @@ type CPUFallbackRenderingTools = {
   renderCanvasData?: ImageData;
 };
 
-export default CPUFallbackRenderingTools;
+export type { CPUFallbackRenderingTools as default };

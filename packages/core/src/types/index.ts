@@ -73,7 +73,7 @@ import type CPUFallbackViewport from './CPUFallbackViewport';
 import type CPUFallbackTransform from './CPUFallbackTransform';
 import type CPUFallbackColormapData from './CPUFallbackColormapData';
 import type CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
-import type CPUFallbackColormapsData from './CPUFallbackColormapsData';
+import type { CPUFallbackColormapsData } from './CPUFallbackColormapsData';
 import type CPUFallbackColormap from './CPUFallbackColormap';
 import type TransformMatrix2D from './TransformMatrix2D';
 import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
@@ -128,7 +128,7 @@ import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';
-import type BoundsLPS from './BoundsLPS';
+import type { BoundsLPS } from './BoundsLPS';
 // Sometimes the type is needed rather than the class, so import
 // the type only here.
 import type PointsManager from '../utilities/PointsManager';

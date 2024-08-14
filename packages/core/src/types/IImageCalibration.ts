@@ -38,4 +38,4 @@ export interface IImageCalibration {
   sequenceOfUltrasoundRegions?: Record<string, unknown>[];
 }
 
-export default IImageCalibration;
+export type { IImageCalibration as default };

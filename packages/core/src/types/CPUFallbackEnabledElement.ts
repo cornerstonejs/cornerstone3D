@@ -41,4 +41,4 @@ interface CPUFallbackEnabledElement {
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 }
 
-export default CPUFallbackEnabledElement;
+export type { CPUFallbackEnabledElement as default };

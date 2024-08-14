@@ -12,4 +12,4 @@ interface ImageVolumeProps extends VolumeProps {
   referencedImageIds?: Array<string>;
 }
 
-export { ImageVolumeProps };
+export type { ImageVolumeProps };

@@ -4,4 +4,4 @@ type CPUFallbackColormapsData = {
   [key: string]: CPUFallbackColormapData;
 };
 
-export default CPUFallbackColormapsData;
+export type { CPUFallbackColormapsData };

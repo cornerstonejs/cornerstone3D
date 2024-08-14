@@ -15,4 +15,4 @@ interface IDynamicImageVolume extends IImageVolume {
   scroll(delta: number): void;
 }
 
-export default IDynamicImageVolume;
+export type { IDynamicImageVolume as default };

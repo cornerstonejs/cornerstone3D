@@ -59,6 +59,7 @@ import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import { findMatchingColormap } from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -72,7 +73,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
 
-  protected initialTransferFunctionNodes: any;
+  protected initialTransferFunctionNodes: TransferFunctionNodes;
   // Viewport Properties
   private globalDefaultProperties: VolumeViewportProperties;
   private perVolumeIdDefaultProperties = new Map<

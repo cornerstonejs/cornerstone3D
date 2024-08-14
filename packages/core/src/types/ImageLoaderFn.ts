@@ -13,4 +13,4 @@ type ImageLoaderFn = (
   decache?: () => void | undefined;
 };
 
-export default ImageLoaderFn;
+export type { ImageLoaderFn as default };

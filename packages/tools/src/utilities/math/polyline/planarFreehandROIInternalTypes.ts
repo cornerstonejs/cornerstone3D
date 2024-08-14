@@ -31,7 +31,7 @@ type PlanarFreehandROICommonData = {
   movingTextBox?: boolean;
 };
 
-export {
+export type {
   PlanarFreehandROIDrawData,
   PlanarFreehandROIEditData,
   PlanarFreehandROICommonData,

@@ -13,4 +13,4 @@ type VolumeViewportProperties = ViewportProperties & {
   orientation?: OrientationAxis;
 };
 
-export default VolumeViewportProperties;
+export type { VolumeViewportProperties as default };

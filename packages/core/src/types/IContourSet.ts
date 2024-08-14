@@ -1,6 +1,7 @@
 import type { ContourData } from './ContourData';
 import type { IContour } from './IContour';
 import type { Point3 } from './Point3';
+import type RGB from './RGB';
 
 /**
  * This class represents a set of contours in 3d space.
@@ -15,7 +16,7 @@ export interface IContourSet {
   getSizeInBytes(): number;
   getSegmentIndex(): number;
   getCentroid(): Point3;
-  getColor(): any;
+  getColor(): RGB;
   /**
    * This function returns the contours of the image
    * @returns The contours of the image.

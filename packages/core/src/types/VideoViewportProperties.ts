@@ -12,4 +12,4 @@ type VideoViewportProperties = ViewportProperties & {
   scrollSpeed?: number;
 };
 
-export default VideoViewportProperties;
+export type { VideoViewportProperties as default };

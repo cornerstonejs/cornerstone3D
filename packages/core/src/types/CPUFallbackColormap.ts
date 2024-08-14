@@ -20,4 +20,4 @@ interface CPUFallbackColormap {
   isValidIndex: (index: number) => boolean;
 }
 
-export default CPUFallbackColormap;
+export type { CPUFallbackColormap as default };

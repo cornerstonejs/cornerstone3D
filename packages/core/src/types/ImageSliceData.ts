@@ -3,4 +3,4 @@ type ImageSliceData = {
   imageIndex: number;
 };
 
-export default ImageSliceData;
+export type { ImageSliceData as default };

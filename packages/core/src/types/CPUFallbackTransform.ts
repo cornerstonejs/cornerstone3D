@@ -13,4 +13,4 @@ interface CPUFallbackTransform {
   transformPoint: (point: Point2) => Point2;
 }
 
-export default CPUFallbackTransform;
+export type { CPUFallbackTransform as default };

@@ -10,4 +10,4 @@ interface ICachedGeometry {
   geometry?: IGeometry;
 }
 
-export default ICachedGeometry;
+export type { ICachedGeometry as default };

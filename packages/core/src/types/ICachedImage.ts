@@ -11,4 +11,4 @@ interface ICachedImage {
   sizeInBytes: number;
 }
 
-export default ICachedImage;
+export type { ICachedImage as default };

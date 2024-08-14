@@ -48,4 +48,4 @@ interface ImageFrame {
   decodeLevel?: unknown;
 }
 
-export default ImageFrame;
+export type { ImageFrame as default };

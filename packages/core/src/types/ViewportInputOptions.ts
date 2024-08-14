@@ -22,4 +22,4 @@ type ViewportInputOptions = {
   parallelProjection?: boolean;
 };
 
-export default ViewportInputOptions;
+export type { ViewportInputOptions as default };

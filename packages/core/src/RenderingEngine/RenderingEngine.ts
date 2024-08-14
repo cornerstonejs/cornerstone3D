@@ -1,3 +1,5 @@
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
@@ -75,7 +77,7 @@ class RenderingEngine implements IRenderingEngine {
   /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
   public offscreenMultiRenderWindow: any;
-  readonly offScreenCanvasContainer: any; // WebGL
+  readonly offScreenCanvasContainer: any;
   private _viewports: Map<string, IViewport>;
   private _needsRender: Set<string> = new Set();
   private _animationFrameSet = false;

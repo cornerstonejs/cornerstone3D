@@ -56,4 +56,5 @@ function _handlePTModality(
   return 'unknown';
 }
 
-export { getPixelValueUnits, pixelUnitsOptions };
+export type { pixelUnitsOptions };
+export { getPixelValueUnits };

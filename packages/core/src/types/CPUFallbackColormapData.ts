@@ -9,4 +9,4 @@ type CPUFallbackColormapData = {
   gamma?: number;
 };
 
-export default CPUFallbackColormapData;
+export type { CPUFallbackColormapData as default };

@@ -140,4 +140,4 @@ interface IImage {
   };
 }
 
-export default IImage;
+export type { IImage as default };

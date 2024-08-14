@@ -94,4 +94,4 @@ interface IImageVolume {
   modified(): void;
 }
 
-export default IImageVolume;
+export type { IImageVolume as default };

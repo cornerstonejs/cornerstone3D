@@ -35,4 +35,4 @@ interface ICamera {
   clippingRange?: Point2;
 }
 
-export default ICamera;
+export type { ICamera as default };

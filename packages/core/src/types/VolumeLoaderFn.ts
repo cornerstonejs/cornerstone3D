@@ -15,4 +15,4 @@ type VolumeLoaderFn = (
   decache?: () => void | undefined;
 };
 
-export default VolumeLoaderFn;
+export type { VolumeLoaderFn as default };

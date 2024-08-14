@@ -21,4 +21,4 @@ interface IEnabledElement {
   FrameOfReferenceUID: string;
 }
 
-export default IEnabledElement;
+export type { IEnabledElement as default };

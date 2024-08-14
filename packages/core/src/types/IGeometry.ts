@@ -10,4 +10,4 @@ interface IGeometry {
   sizeInBytes: number;
 }
 
-export default IGeometry;
+export type { IGeometry as default };

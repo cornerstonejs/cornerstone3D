@@ -71,4 +71,4 @@ interface VolumeProps {
   numberOfComponents?: number;
 }
 
-export { VolumeProps };
+export type { VolumeProps };

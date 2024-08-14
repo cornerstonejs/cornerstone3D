@@ -50,4 +50,4 @@ type Cornerstone3DConfig = {
   peerImport?: (moduleId: string) => any;
 };
 
-export default Cornerstone3DConfig;
+export type { Cornerstone3DConfig as default };

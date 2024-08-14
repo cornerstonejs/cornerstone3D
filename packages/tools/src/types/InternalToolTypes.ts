@@ -16,4 +16,8 @@ type ToolsWithMoveableHandles = ToolAnnotationPair & {
   handle: Types.Point3;
 };
 
-export { ToolsWithMoveableHandles, ToolAnnotationsPair, ToolAnnotationPair };
+export type {
+  ToolsWithMoveableHandles,
+  ToolAnnotationsPair,
+  ToolAnnotationPair,
+};

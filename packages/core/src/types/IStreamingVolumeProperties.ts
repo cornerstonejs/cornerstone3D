@@ -14,4 +14,4 @@ interface IStreamingVolumeProperties {
   };
 }
 
-export default IStreamingVolumeProperties;
+export type { IStreamingVolumeProperties as default };

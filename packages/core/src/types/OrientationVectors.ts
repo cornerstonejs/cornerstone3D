@@ -33,4 +33,4 @@ type OrientationVectors = {
   viewUp: Point3;
 };
 
-export default OrientationVectors;
+export type { OrientationVectors as default };

@@ -26,4 +26,4 @@ interface ICache {
   purgeCache: () => void;
 }
 
-export default ICache;
+export type { ICache as default };

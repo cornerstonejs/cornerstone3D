@@ -1,5 +1,4 @@
 import type { SurfaceData, Point3, ISurface, RGB } from '../../types';
-import { Color } from '../../types';
 
 type SurfaceProps = {
   id: string;

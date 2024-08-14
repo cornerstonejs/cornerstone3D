@@ -2,4 +2,4 @@ type CPUFallbackLUT = {
   lut: number[];
 };
 
-export default CPUFallbackLUT;
+export type { CPUFallbackLUT as default };

@@ -26,4 +26,4 @@ type CPUFallbackViewport = {
   modality?: string;
 };
 
-export default CPUFallbackViewport;
+export type { CPUFallbackViewport as default };

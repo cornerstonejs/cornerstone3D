@@ -125,7 +125,7 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * getBounds gets the visible bounds of the viewport
    */
-  getBounds(): any;
+  getBounds(): number[];
   /**
    * Flip the viewport along the desired axis
    */

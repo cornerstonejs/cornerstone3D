@@ -686,7 +686,7 @@ type MouseWheelEventType = Types.CustomEventType<MouseWheelEventDetail>;
 type VolumeScrollOutOfBoundsEventType =
   Types.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
-export {
+export type {
   InteractionStartType,
   InteractionEndType,
   InteractionEventType,

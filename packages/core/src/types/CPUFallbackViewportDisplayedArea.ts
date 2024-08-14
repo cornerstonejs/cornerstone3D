@@ -12,4 +12,4 @@ type CPUFallbackViewportDisplayedArea = {
   presentationSizeMode: string;
 };
 
-export default CPUFallbackViewportDisplayedArea;
+export type { CPUFallbackViewportDisplayedArea as default };

@@ -7,4 +7,4 @@ interface IRegisterImageLoader {
   registerImageLoader: (scheme: string, imageLoader: ImageLoaderFn) => void;
 }
 
-export default IRegisterImageLoader;
+export type { IRegisterImageLoader as default };

@@ -13,4 +13,4 @@ type StackViewportProperties = ViewportProperties & {
   isComputedVOI?: boolean;
 };
 
-export default StackViewportProperties;
+export type { StackViewportProperties as default };

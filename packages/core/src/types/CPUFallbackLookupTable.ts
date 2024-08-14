@@ -14,4 +14,4 @@ interface CPUFallbackLookupTable {
   setTableValue(index: number, rgba: Point4);
 }
 
-export default CPUFallbackLookupTable;
+export type { CPUFallbackLookupTable as default };

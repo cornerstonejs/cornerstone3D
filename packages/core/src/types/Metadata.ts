@@ -36,4 +36,4 @@ type Metadata = {
   VOILUTFunction: string;
 };
 
-export default Metadata;
+export type { Metadata as default };

@@ -6,4 +6,4 @@ type FlipDirection = {
   flipVertical?: boolean;
 };
 
-export default FlipDirection;
+export type { FlipDirection as default };

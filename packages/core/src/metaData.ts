@@ -11,7 +11,7 @@ const providers = [];
  * @category MetaData
  */
 export function addProvider(
-  provider: (type: string, ...query: string[]) => any,
+  provider: (type: string, ...query: string[]) => unknown,
   priority = 0
 ): void {
   let i;

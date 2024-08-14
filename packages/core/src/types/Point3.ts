@@ -12,4 +12,4 @@ export type PointsXYZ = {
   z: number[];
 };
 
-export default Point3;
+export type { Point3 as default };

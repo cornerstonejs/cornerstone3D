@@ -16,4 +16,4 @@ type FloodFillOptions = {
   diagonals?: boolean; // Whether to flood fill across diagonals. Default false.
 };
 
-export { FloodFillResult, FloodFillGetter, FloodFillOptions };
+export type { FloodFillResult, FloodFillGetter, FloodFillOptions };

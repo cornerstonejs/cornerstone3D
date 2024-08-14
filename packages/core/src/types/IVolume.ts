@@ -5,4 +5,4 @@ import type { ImageVolumeProps } from './ImageVolumeProps';
  */
 type IVolume = ImageVolumeProps;
 
-export { IVolume };
+export type { IVolume };

@@ -12,4 +12,4 @@ interface CustomEvent<T = any> extends Event {
   ): void;
 }
 
-export default CustomEvent;
+export type { CustomEvent as default };

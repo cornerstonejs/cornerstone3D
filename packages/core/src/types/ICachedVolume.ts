@@ -10,4 +10,4 @@ interface ICachedVolume {
   sizeInBytes: number;
 }
 
-export default ICachedVolume;
+export type { ICachedVolume as default };

@@ -26,4 +26,4 @@ type ToolOptionsType = {
   mode: ToolModes;
 };
 
-export { IToolBinding, SetToolBindingsType, ToolOptionsType };
+export type { IToolBinding, SetToolBindingsType, ToolOptionsType };
