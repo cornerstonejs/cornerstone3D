@@ -3,6 +3,7 @@ interface CustomEvent<T = any> extends Event {
    * Returns any custom data event was created with. Typically used for synthetic events.
    */
   readonly detail: T;
+  /** An over-ride for the buttons value to allow setting this internally. */
   initCustomEvent(
     typeArg: string,
     canBubbleArg: boolean,

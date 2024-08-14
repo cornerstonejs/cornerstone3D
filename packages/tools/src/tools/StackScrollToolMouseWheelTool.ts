@@ -6,6 +6,8 @@ import scroll from '../utilities/scroll';
 /**
  * The StackScrollMouseWheelTool is a tool that allows the user to scroll through a
  * stack of images using the mouse wheel
+ *
+ * @deprecated - this tool is going away in favour of binding StackScrollTool directly.
  */
 class StackScrollMouseWheelTool extends BaseTool {
   static toolName;

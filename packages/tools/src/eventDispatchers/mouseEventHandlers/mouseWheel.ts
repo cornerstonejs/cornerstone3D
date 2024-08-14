@@ -1,13 +1,27 @@
-import customCallbackHandler from '../shared/customCallbackHandler';
+import { state } from '../../store';
+import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
+import { EventTypes } from '../../types';
+import { MouseBindings } from '../../enums/ToolBindings';
 
 /**
- * Event handler for mouse wheel events. Uses `customCallbackHandler` to fire
- * the `mouseWheelCallback` function on active tools.
+ * Event handler for mouse wheel events.
+ * This finds the active tool
  */
-const mouseWheel = customCallbackHandler.bind(
-  null,
-  'MouseWheel',
-  'mouseWheelCallback'
-);
+function mouseWheel(evt: EventTypes.MouseWheelEventType) {
+  if (state.isInteractingWithTool) {
+    return;
+  }
+
+  evt.detail.buttons =
+    MouseBindings.Wheel | ((evt.detail.event.buttons as number) || 0);
+
+  const activeTool = getActiveToolForMouseEvent(evt);
+
+  if (!activeTool) {
+    return;
+  }
+
+  return activeTool.mouseWheelCallback(evt);
+}
 
 export default mouseWheel;

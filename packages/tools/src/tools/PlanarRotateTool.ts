@@ -29,6 +29,20 @@ class PlanarRotateTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
+  /**
+   * The planar rotate can be bound to the mouse wheel events to allow
+   * rotating with the mouse wheel.
+   */
+  public mouseWheelCallback = (evt: EventTypes.MouseWheelEventType) => {
+    const { element, wheel } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const { invert } = this.configuration;
+
+    const angle = wheel.direction * 10 * (invert ? -1 : 1);
+    this.setAngle(viewport, angle);
+  };
+
   _dragCallback(evt: EventTypes.MouseDragEventType) {
     const { element, currentPoints, startPoints } = evt.detail;
     const currentPointWorld = currentPoints.world;
@@ -47,7 +61,7 @@ class PlanarRotateTool extends BaseTool {
       [centerWorld, currentPointWorld]
     );
 
-    const { viewPlaneNormal, viewUp } = camera;
+    const { viewPlaneNormal } = camera;
 
     const v1 = vec3.sub(vec3.create(), centerWorld, startPointWorld);
     const v2 = vec3.sub(vec3.create(), centerWorld, currentPointWorld);
@@ -60,8 +74,13 @@ class PlanarRotateTool extends BaseTool {
       return;
     }
 
+    this.setAngle(viewport, angle);
+  }
+
+  setAngle(viewport, angle) {
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
     if (viewport instanceof BaseVolumeViewport) {
-      const rotAngle = (angle * Math.PI) / 180;
+      const rotAngle = (((angle + 360) % 360) * Math.PI) / 180;
       const rotMat = mat4.identity(new Float32Array(16));
       mat4.rotate(rotMat, rotMat, rotAngle, viewPlaneNormal);
       const rotatedViewUp = vec3.transformMat4(vec3.create(), viewUp, rotMat);
@@ -70,7 +89,9 @@ class PlanarRotateTool extends BaseTool {
       const { rotation } = (
         viewport as Types.IStackViewport
       ).getViewPresentation();
-      viewport.setViewPresentation({ rotation: rotation + angle });
+      viewport.setViewPresentation({
+        rotation: (rotation + angle + 360) % 360,
+      });
     }
 
     viewport.render();
