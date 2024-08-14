@@ -1,14 +1,11 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VoxelManager } from '../utilities';
-import {
-  Metadata,
-  Point3,
-  IImageLoadObject,
-  Mat3,
-  PixelDataTypedArrayString,
-  PixelDataTypedArray,
-  RGB,
-} from '../types';
+import type Metadata from './Metadata';
+import type Point3 from './Point3';
+import type { IImageLoadObject } from './ILoadObject';
+import type Mat3 from './Mat3';
+import type { PixelDataTypedArrayString } from './PixelDataTypedArray';
+import type RGB from './RGB';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class

@@ -1,4 +1,4 @@
-import type { IRenderingEngine } from '../types';
+import type IRenderingEngine from './IRenderingEngine';
 import type IStackViewport from './IStackViewport';
 import type IVolumeViewport from './IVolumeViewport';
 

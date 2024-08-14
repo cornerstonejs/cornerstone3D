@@ -1,4 +1,6 @@
-import type { Point2, Point3, PointsXYZ } from '../types';
+import type Point2 from '../types/Point2';
+import type Point3 from '../types/Point3';
+import type { PointsXYZ } from '../types/Point3';
 
 export type PolyDataPointConfiguration = {
   /** The dimensionality of the points */

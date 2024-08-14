@@ -1,4 +1,4 @@
-import { Point3 } from '.';
+import type { Point3 } from './Point3';
 import { ContourType } from '../enums';
 
 export interface IContour {

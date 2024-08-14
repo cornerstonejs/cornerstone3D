@@ -1,4 +1,5 @@
-import { IImageVolume, IVolumeLoadObject } from '../types';
+import type IImageVolume from './IImageVolume';
+import type { IVolumeLoadObject } from './ILoadObject';
 
 interface ICachedVolume {
   volume?: IImageVolume;

@@ -5,7 +5,7 @@ import { IVolumeInput } from './IVolumeInput';
 import FlipDirection from './FlipDirection';
 import IImageData from './IImageData';
 import { BlendModes, OrientationAxis } from '../enums';
-import { VolumeViewportProperties } from '.';
+import type VolumeViewportProperties from './VolumeViewportProperties';
 
 /**
  * Interface for the Volume Viewport

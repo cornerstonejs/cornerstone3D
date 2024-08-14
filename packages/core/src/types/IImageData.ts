@@ -1,5 +1,9 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling, Mat3, PixelDataTypedArray, RGB } from '../types';
+import type { Point3 } from './Point3';
+import type { Scaling } from './ScalingParameters';
+import type Mat3 from './Mat3';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type RGB from './RGB';
 import IImageCalibration from './IImageCalibration';
 import { VoxelManager } from '../utilities';
 

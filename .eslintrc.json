@@ -13,7 +13,6 @@
   // - @typescript-eslint
   //
   //
-  // eslint-plugin-import
   // - import
   "plugins": [
     "@typescript-eslint/eslint-plugin",
@@ -54,11 +53,11 @@
   },
   "ignorePatterns": ["packages/docs"],
   "rules": {
+    "import/no-cycle": ["error", { "maxDepth": 1 }],
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
     "tsdoc/syntax": "warn",
     "@typescript-eslint/ban-ts-comment": "off",
-    "import/no-cycle": "error",
     "no-console": [
       "warn",
       {
@@ -88,6 +87,7 @@
       }
     ],
     "import/prefer-default-export": "off",
+    "@typescript-eslint/consistent-type-imports": "error",
     // eslint-plugin-prettier
     "prettier/prettier": [
       "error",

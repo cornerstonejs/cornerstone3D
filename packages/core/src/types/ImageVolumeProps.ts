@@ -1,4 +1,4 @@
-import { VolumeProps } from '.';
+import type { VolumeProps } from './VolumeProps';
 
 /**
  * ImageVolume which is considered a special case of a Volume, which is
