@@ -2,13 +2,10 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
 import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
+import { getTransferFunctionHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
-
-function computeFnToString(pwfun, useIComps, numberOfComponents) {
-  return pwfun ? `${pwfun.getMTime()}-${useIComps}-${numberOfComponents}` : '0';
-}
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -32,6 +29,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
    * @param {*} actor The actor to build the buffer objects for.
    */
   publicAPI.buildBufferObjects = (ren, actor) => {
+    debugger;
     const image = model.currentInput;
     if (!image) {
       return;
@@ -61,7 +59,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     const scalarOpacityFunc = vprop.getScalarOpacity();
     const opTex =
       model._openGLRenderWindow.getGraphicsResourceForObject(scalarOpacityFunc);
-    let toString = computeFnToString(
+    let toString = getTransferFunctionHash(
       scalarOpacityFunc,
       useIndependentComps,
       numIComps
@@ -149,7 +147,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     // rebuild color tfun?
     const colorTransferFunc = vprop.getRGBTransferFunction();
-    toString = computeFnToString(
+    toString = getTransferFunctionHash(
       colorTransferFunc,
       useIndependentComps,
       numIComps
@@ -265,7 +263,15 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
           null
         );
+
+        // do an initial update since some data may be already
+        // available and we can avoid a re-render to trigger
+        // the update
+        model.scalarTexture.update3DFromRaw();
+
+        // since we don't have scalars we don't need to set graphics resource for the scalar texture
       } else {
+        console.debug('updating scalar texture');
         model.scalarTexture.deactivate();
         model.scalarTexture.update3DFromRaw();
       }
@@ -330,33 +336,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     return false;
   };
-
-  publicAPI.getRenderTargetSize = () => {
-    if (model._useSmallViewport) {
-      return [model._smallViewportWidth, model._smallViewportHeight];
-    }
-
-    const { usize, vsize } = model._openGLRenderer.getTiledSizeAndOrigin();
-
-    return [usize, vsize];
-  };
-
-  publicAPI.getRenderTargetOffset = () => {
-    const { lowerLeftU, lowerLeftV } =
-      model._openGLRenderer.getTiledSizeAndOrigin();
-
-    return [lowerLeftU, lowerLeftV];
-  };
-
-  // TODO: it seems like this may be needed to reset the GPU memory associated
-  // with a volume
-  // publicAPI.hardReset = () => {
-  //   model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //
-  //   model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.scalarTexture.resetFormatAndType();
-  // };
 }
 
 // ----------------------------------------------------------------------------
