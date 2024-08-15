@@ -609,14 +609,14 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   ): ViewReference {
     const target = super.getViewReference(viewRefSpecifier);
     const volumeId = this.getVolumeId(viewRefSpecifier);
-    if (viewRefSpecifier.forFrameOfReference) {
+    if (viewRefSpecifier?.forFrameOfReference !== false) {
       target.volumeId = volumeId;
     }
-    if (typeof viewRefSpecifier.sliceIndex !== 'number') {
+    if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
       return target;
     }
     const { viewPlaneNormal } = target;
-    const delta = viewRefSpecifier.sliceIndex - this.getSliceIndex();
+    const delta = viewRefSpecifier?.sliceIndex - this.getSliceIndex();
     // Calculate a camera focal point and position
     const { sliceRangeInfo } = getVolumeViewportScrollInfo(
       this,
@@ -656,7 +656,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
-    if (options.withNavigation) {
+    if (options?.withNavigation) {
       return true;
     }
     const currentSliceIndex = this.getSliceIndex();
@@ -823,10 +823,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     // Note: colormap should always be done first, since we can then
     // modify the voiRange
 
-    if (colormap.name) {
+    if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
     }
-    if (colormap.opacity != null) {
+    if (colormap?.opacity != null) {
       this.setOpacity(colormap, volumeId);
     }
 
@@ -863,10 +863,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   public resetToDefaultProperties(volumeId: string): void {
     const properties = this.globalDefaultProperties;
 
-    if (properties.colormap.name) {
+    if (properties.colormap?.name) {
       this.setColormap(properties.colormap, volumeId);
     }
-    if (properties.colormap.opacity != null) {
+    if (properties.colormap?.opacity != null) {
       this.setOpacity(properties.colormap, volumeId);
     }
 
@@ -989,7 +989,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
         }
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
-          this.viewportProperties.VOILUTFunction === 'SIGMOID'
+          this.viewportProperties?.VOILUTFunction === 'SIGMOID'
             ? getVoiFromSigmoidRGBTransferFunction(cfun)
             : cfun.getRange();
         return { volumeId, voiRange: { lower, upper } };
@@ -997,7 +997,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       .filter(Boolean);
 
     const voiRange = volumeId
-      ? voiRanges.find((range) => range.volumeId === volumeId).voiRange
+      ? voiRanges.find((range) => range.volumeId === volumeId)?.voiRange
       : voiRanges[0]?.voiRange;
 
     const volumeColormap = this.getColormap(volumeId);
@@ -1412,15 +1412,15 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       direction: vtkImageData.getDirection(),
       imageData: actor.getMapper().getInputData(),
       metadata: {
-        Modality: volume.metadata.Modality,
-        FrameOfReferenceUID: volume.metadata.FrameOfReferenceUID,
+        Modality: volume?.metadata?.Modality,
+        FrameOfReferenceUID: volume?.metadata?.FrameOfReferenceUID,
       },
       get scalarData() {
-        return volume.voxelManager.getScalarData();
+        return volume?.voxelManager?.getScalarData();
       },
-      scaling: volume.scaling,
+      scaling: volume?.scaling,
       hasPixelSpacing: true,
-      voxelManager: volume.voxelManager,
+      voxelManager: volume?.voxelManager,
     };
   }
 
@@ -1473,7 +1473,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      * isPerformingCoordinateTransformation is set to true.
      */
 
-    vtkCamera.setIsPerformingCoordinateTransformation(true);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
@@ -1501,7 +1501,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       renderer
     );
 
-    vtkCamera.setIsPerformingCoordinateTransformation(false);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
 
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
@@ -1539,7 +1539,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
      * isPerformingCoordinateTransformation is set to true.
      */
 
-    vtkCamera.setIsPerformingCoordinateTransformation(true);
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
@@ -1589,7 +1589,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return volumeActors.some(({ uid }) => {
       const volume = cache.getVolume(uid);
 
-      if (!volume.imageIds) {
+      if (!volume?.imageIds) {
         return false;
       }
 
@@ -1697,11 +1697,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     if (!actorEntries) {
       return;
     }
-    if (!specifier.volumeId) {
+    if (!specifier?.volumeId) {
       // find the first image actor of instance type vtkVolume
       return actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      ).uid;
+      )?.uid;
     }
 
     // See if this volumeId can be found in one of the actors for this
@@ -1710,8 +1710,8 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return actorEntries.find(
       (actorEntry) =>
         actorEntry.actor.getClassName() === 'vtkVolume' &&
-        actorEntry.uid === specifier.volumeId
-    ).uid;
+        actorEntry.uid === specifier?.volumeId
+    )?.uid;
   }
 
   /**
@@ -1732,7 +1732,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       // find the first image actor of instance type vtkVolume
       volumeId = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      ).uid;
+      )?.uid;
     }
 
     const currentIndex = this.getSliceIndex();

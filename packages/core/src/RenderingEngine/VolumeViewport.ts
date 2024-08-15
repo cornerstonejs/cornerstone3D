@@ -30,7 +30,7 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import { glMatrix, mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 
@@ -277,7 +277,7 @@ class VolumeViewport extends BaseVolumeViewport {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      if (vtkPlanes.length === 0 && !actorEntry.clippingFilter) {
+      if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {
         const clipPlane1 = vtkPlane.newInstance();
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];
@@ -617,7 +617,7 @@ class VolumeViewport extends BaseVolumeViewport {
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
     const viewRef = super.getViewReference(viewRefSpecifier);
-    if (!viewRef.volumeId) {
+    if (!viewRef?.volumeId) {
       return;
     }
     const volume = cache.getVolume(viewRef.volumeId);
@@ -745,7 +745,7 @@ class VolumeViewport extends BaseVolumeViewport {
   }[] => {
     const actorEntry = this.getDefaultActor();
 
-    if (!actorEntry.actor) {
+    if (!actorEntry?.actor) {
       console.warn('No image data found for calculating vtkPlanes.');
       return [];
     }

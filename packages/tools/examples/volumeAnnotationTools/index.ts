@@ -135,7 +135,7 @@ async function run() {
     wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
-  const imageIds = ctImageIds;
+  const imageIds = ptImageIds;
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
