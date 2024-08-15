@@ -100,8 +100,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -138,8 +136,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -177,8 +173,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -222,8 +216,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -271,8 +263,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -286,8 +276,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 20,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -301,8 +289,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 30,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 2,
       };
       const imageId3 = encodeImageIdInfo(imageInfo3);
@@ -341,8 +327,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -356,8 +340,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 20,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -371,8 +353,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 2,
       };
       const imageId3 = encodeImageIdInfo(imageInfo3);
@@ -434,8 +414,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 100,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -478,8 +456,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 100,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -493,8 +469,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -533,8 +507,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -548,8 +520,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 10,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -585,8 +555,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -624,8 +592,6 @@ describe('StackViewport CPU -- ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);

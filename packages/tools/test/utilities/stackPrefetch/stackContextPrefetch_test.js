@@ -74,8 +74,6 @@ describe('stackContextPrefetch:', () => {
       barWidth: 10,
       xSpacing: 5,
       ySpacing: 5,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
 

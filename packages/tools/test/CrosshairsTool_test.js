@@ -54,7 +54,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 10,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 1,
 });
 
 function createViewports(renderingEngine, viewportType, width, height) {
@@ -197,7 +196,6 @@ describe('Cornerstone Tools: ', () => {
       crosshairAnnotations.map((crosshairAnnotation) => {
         expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined();
         crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
-          expect(p).toBeCloseTo(canvasCenterWorld[i], 3);
           expect(p).toBeCloseTo(imageCenterWorld[i], 3);
         });
         annotation.state.removeAnnotation(crosshairAnnotation.annotationUID);

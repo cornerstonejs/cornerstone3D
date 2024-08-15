@@ -51,8 +51,6 @@ const ctVolumeId = testUtils.encodeVolumeIdInfo({
   xSpacing: 1,
   ySpacing: 1,
   zSpacing: 1,
-  rgb: 0,
-  pt: 0,
 });
 
 const ptVolumeId = testUtils.encodeVolumeIdInfo({
@@ -64,8 +62,6 @@ const ptVolumeId = testUtils.encodeVolumeIdInfo({
   xSpacing: 1,
   ySpacing: 1,
   zSpacing: 1,
-  rgb: 0,
-  pt: 0,
 });
 
 let synchronizerId;

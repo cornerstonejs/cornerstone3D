@@ -29,8 +29,8 @@ const viewportId = 'VIEWPORT';
 function createViewport(
   renderingEngine,
   orientation,
-  width = 1000,
-  height = 1000,
+  width = 500,
+  height = 500,
   type = ViewportType.ORTHOGRAPHIC
 ) {
   const element = document.createElement('div');
@@ -105,11 +105,11 @@ describe('Volume Viewport SetProperties -- ', () => {
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
-        // compareImages(
-        //   image,
-        //   volumeURI_32_32_10_1_1_1_0,
-        //   'volumeURI_32_32_10_1_1_1_0'
-        // ).then(done, done.fail);
+        compareImages(
+          image,
+          volumeURI_32_32_10_1_1_1_0,
+          'volumeURI_32_32_10_1_1_1_0'
+        ).then(done, done.fail);
       });
 
       try {
@@ -133,7 +133,9 @@ describe('Volume Viewport SetProperties -- ', () => {
               vp.render();
             });
           })
-          .catch((e) => { done(e); });
+          .catch((e) => {
+            done(e);
+          });
       } catch (e) {
         done.fail(e);
       }

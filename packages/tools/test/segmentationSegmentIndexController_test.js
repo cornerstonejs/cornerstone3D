@@ -130,8 +130,6 @@ describe('Segmentation Index Controller --', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
@@ -281,8 +279,6 @@ describe('Segmentation Index Controller --', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 
@@ -460,8 +456,6 @@ describe('Segmentation Index Controller --', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
 

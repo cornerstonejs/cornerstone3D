@@ -68,7 +68,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 4,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 1,
 });
 
 describe('Sculptor Tool: ', () => {
@@ -134,8 +133,6 @@ describe('Sculptor Tool: ', () => {
             barWidth: 5,
             xSpacing: 1,
             ySpacing: 1,
-            rgb: 0,
-            pt: 0,
             sliceIndex: 0,
           }),
           toolName: 'PlanarFreehandROI',
@@ -198,8 +195,6 @@ describe('Sculptor Tool: ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       });
       const vp = this.renderingEngine.getViewport(viewportId);

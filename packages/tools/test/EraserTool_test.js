@@ -67,7 +67,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 10,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 1,
 });
 
 describe('EraserTool:', () => {
@@ -134,8 +133,6 @@ describe('EraserTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 

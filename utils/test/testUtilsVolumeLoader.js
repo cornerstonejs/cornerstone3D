@@ -7,9 +7,9 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import {
-  getVerticalBarImages,
-  getExactRegionImages,
-  getVerticalBarRGBImages,
+  getVerticalBarVolume,
+  getExactRegionVolume,
+  getVerticalBarRGBVolume,
 } from './testUtilsPixelData';
 import { decodeVolumeIdInfo, colors, encodeImageIdInfo } from './testUtils';
 
@@ -46,7 +46,7 @@ const fakeVolumeLoader = (volumeId) => {
   const volumeInfo = decodeVolumeIdInfo(volumeId);
 
   const {
-    name: uriName,
+    name,
     rows,
     columns,
     slices,
@@ -55,14 +55,8 @@ const fakeVolumeLoader = (volumeId) => {
     zSpacing: z_spacing,
     rgb = 0,
     PT = false,
+    exactRegion = {},
   } = volumeInfo;
-
-  // If uri name is volumeURIExact, it means that the metadata provided
-  // has the start and end indices of the region of interest.
-  let useExactRegion = false;
-  if (uriName === 'volumeURIExact') {
-    useExactRegion = true;
-  }
 
   const dimensions = [rows, columns, slices];
 
@@ -74,12 +68,9 @@ const fakeVolumeLoader = (volumeId) => {
       name: 'myImage',
       rows,
       columns,
-      startX: 0,
-      endX: columns,
       xSpacing: x_spacing,
       ySpacing: y_spacing,
       rgb: rgb ? 1 : 0,
-      pt: 0,
       sliceIndex: i,
     })
   );
@@ -98,38 +89,17 @@ const fakeVolumeLoader = (volumeId) => {
     Rows: rows,
   };
 
-  let pixelDataArray;
-  if (rgb) {
-    pixelDataArray = getVerticalBarRGBImages(rows, columns, slices);
-  } else if (useExactRegion) {
-    pixelDataArray = getExactRegionImages(
-      rows,
-      columns,
-      slices,
-      pt.startX,
-      pt.startY,
-      pt.startZ,
-      pt.endX,
-      pt.endY,
-      pt.endZ,
-      pt.valueForSegmentIndex
-    );
-  } else {
-    pixelDataArray = getVerticalBarImages(rows, columns, slices);
-  }
-
   const numberOfComponents = rgb ? 3 : 1;
   // cache the images with their metadata so that when the image is requested, it can be returned
   // from the cache instead of being created again
-  pixelDataArray.forEach((pixelData, i) => {
+  imageIds.forEach((imageId, i) => {
     const voxelManager = utilities.VoxelManager.createImageVoxelManager({
       width: columns,
       height: rows,
-      scalarData: pixelData,
+      scalarData: new Uint8Array(rows * columns * numberOfComponents),
       numberOfComponents,
     });
 
-    const imageId = imageIds[i];
     const image = {
       rows,
       columns,
@@ -164,6 +134,21 @@ const fakeVolumeLoader = (volumeId) => {
       numberOfComponents,
     });
 
+  if (rgb) {
+    getVerticalBarRGBVolume(volumeVoxelManager, rows, columns, slices);
+  } else if (Object.keys(exactRegion).length > 0) {
+    getExactRegionVolume(
+      volumeVoxelManager,
+      rows,
+      columns,
+      slices,
+      exactRegion
+    );
+  } else {
+    getVerticalBarVolume(volumeVoxelManager, rows, columns, slices);
+  }
+
+  const imageCache = cache._imageCache;
   const imageVolume = new ImageVolume({
     dataType: 'Uint8Array',
     volumeId,

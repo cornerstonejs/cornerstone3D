@@ -205,7 +205,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 4,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 1,
 });
 
 describe('Contours Interpolation: ', () => {
@@ -247,23 +246,7 @@ describe('Contours Interpolation: ', () => {
       volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
       metaData.addProvider(fakeMetaDataProvider, 10000);
       // Add a segmentation that will contains the contour annotations
-      segmentation.addSegmentations([
-        {
-          segmentationId,
-          representation: {
-            type: csToolsEnums.SegmentationRepresentations.Contour,
-          },
-        },
-      ]);
-      [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(viewportId, [
-          {
-            segmentationId,
-            type: csToolsEnums.SegmentationRepresentations.Contour,
-          },
-        ]);
-      dataSegmentation.segmentationRepresentationUID =
-        segmentationRepresentationUID;
+
       console.warn('beforeEach.2 ContourInterpolation');
     });
 
@@ -298,6 +281,25 @@ describe('Contours Interpolation: ', () => {
         128
       );
       this.DOMElements.push(element);
+      debugger;
+      segmentation.addSegmentations([
+        {
+          segmentationId,
+          representation: {
+            type: csToolsEnums.SegmentationRepresentations.Contour,
+          },
+        },
+      ]);
+      [segmentationRepresentationUID] =
+        segmentation.addSegmentationRepresentations(viewportId, [
+          {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Contour,
+          },
+        ]);
+
+      dataSegmentation.segmentationRepresentationUID =
+        segmentationRepresentationUID;
 
       const imageIds = [
         encodeImageIdInfo({
@@ -309,8 +311,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 0,
         }),
         encodeImageIdInfo({
@@ -322,8 +322,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 20,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 1,
         }),
         encodeImageIdInfo({
@@ -335,8 +333,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 3,
           ySpacing: 2,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 2,
         }),
         encodeImageIdInfo({
@@ -348,8 +344,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 3,
           ySpacing: 2,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 3,
         }),
       ];
@@ -504,8 +498,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 0,
         }),
         encodeImageIdInfo({
@@ -517,8 +509,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 20,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 1,
         }),
         encodeImageIdInfo({
@@ -530,8 +520,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 35,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 2,
         }),
         encodeImageIdInfo({
@@ -543,8 +531,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 25,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 3,
         }),
         encodeImageIdInfo({
@@ -556,8 +542,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 30,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 4,
         }),
       ];
@@ -658,8 +642,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 0,
         }),
         encodeImageIdInfo({
@@ -671,8 +653,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 20,
           xSpacing: 1,
           ySpacing: 1,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 1,
         }),
         encodeImageIdInfo({
@@ -684,8 +664,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 3,
           ySpacing: 2,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 2,
         }),
         encodeImageIdInfo({
@@ -697,8 +675,6 @@ describe('Contours Interpolation: ', () => {
           barWidth: 5,
           xSpacing: 3,
           ySpacing: 2,
-          rgb: 0,
-          pt: 0,
           sliceIndex: 3,
         }),
       ];
@@ -859,8 +835,6 @@ describe('Contours Interpolation: ', () => {
     //       barWidth: 5,
     //       xSpacing: 1,
     //       ySpacing: 1,
-    //       rgb: 0,
-    //       pt: 0,
     //       sliceIndex: 0
     //     }),
     //     encodeImageIdInfo({
@@ -872,8 +846,6 @@ describe('Contours Interpolation: ', () => {
     //       barWidth: 20,
     //       xSpacing: 1,
     //       ySpacing: 1,
-    //       rgb: 0,
-    //       pt: 0,
     //       sliceIndex: 1
     //     }),
     //     encodeImageIdInfo({
@@ -885,8 +857,6 @@ describe('Contours Interpolation: ', () => {
     //       barWidth: 35,
     //       xSpacing: 1,
     //       ySpacing: 1,
-    //       rgb: 0,
-    //       pt: 0,
     //       sliceIndex: 2
     //     }),
     //     encodeImageIdInfo({
@@ -898,8 +868,6 @@ describe('Contours Interpolation: ', () => {
     //       barWidth: 25,
     //       xSpacing: 1,
     //       ySpacing: 1,
-    //       rgb: 0,
-    //       pt: 0,
     //       sliceIndex: 3
     //     }),
     //     encodeImageIdInfo({
@@ -911,8 +879,6 @@ describe('Contours Interpolation: ', () => {
     //       barWidth: 30,
     //       xSpacing: 1,
     //       ySpacing: 1,
-    //       rgb: 0,
-    //       pt: 0,
     //       sliceIndex: 4
     //     })
     //   ];

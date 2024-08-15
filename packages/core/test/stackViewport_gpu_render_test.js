@@ -40,6 +40,8 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 
 const AXIAL = 'AXIAL';
+const SAGITTAL = 'SAGITTAL';
+const CORONAL = 'CORONAL';
 
 function createViewport(renderingEngine, orientation, width, height) {
   const element = document.createElement('div');
@@ -102,9 +104,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
-        sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
 
@@ -142,8 +141,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -183,8 +180,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -229,8 +224,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -280,8 +273,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -295,8 +286,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 20,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -310,8 +299,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 30,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 2,
       };
       const imageId3 = encodeImageIdInfo(imageInfo3);
@@ -352,8 +339,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -367,8 +352,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 20,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -382,8 +365,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 2,
       };
       const imageId3 = encodeImageIdInfo(imageInfo3);
@@ -424,8 +405,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 100,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -470,8 +449,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 100,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -485,8 +462,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -527,8 +502,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 100,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -542,8 +515,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 5,
         ySpacing: 5,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -606,8 +577,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -645,8 +614,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId1 = encodeImageIdInfo(imageInfo1);
@@ -660,8 +627,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 10,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId2 = encodeImageIdInfo(imageInfo2);
@@ -709,7 +674,7 @@ describe('renderingCore -- Stack', () => {
     });
 
     it('Should render color images: linear', function (done) {
-      const element = createViewport(this.renderingEngine, AXIAL, 512, 512);
+      const element = createViewport(this.renderingEngine, SAGITTAL, 512, 512);
       this.DOMElements.push(element);
 
       // color image generation with 10 strips of different colors
@@ -831,7 +796,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
         PT: 1,
         sliceIndex: 0,
       };
@@ -866,8 +830,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -952,8 +914,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -1009,8 +969,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -1117,8 +1075,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 1,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 1,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -1170,8 +1126,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 46,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
@@ -1252,7 +1206,6 @@ describe('renderingCore -- Stack', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
       };
       const imageId = encodeImageIdInfo(imageInfo);
 
@@ -1316,10 +1269,8 @@ describe('renderingCore -- Stack', () => {
           });
 
           vp.setRotation(90);
-
-          vp.render();
-
           vp.setCamera({ flipVertical: true });
+          vp.render();
         });
       } catch (e) {
         done.fail(e);

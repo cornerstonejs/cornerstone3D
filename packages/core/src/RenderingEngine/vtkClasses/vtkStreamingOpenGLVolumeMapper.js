@@ -29,7 +29,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
    * @param {*} actor The actor to build the buffer objects for.
    */
   publicAPI.buildBufferObjects = (ren, actor) => {
-    debugger;
     const image = model.currentInput;
     if (!image) {
       return;
@@ -271,7 +270,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
         // since we don't have scalars we don't need to set graphics resource for the scalar texture
       } else {
-        console.debug('updating scalar texture');
         model.scalarTexture.deactivate();
         model.scalarTexture.update3DFromRaw();
       }

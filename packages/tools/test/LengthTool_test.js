@@ -80,7 +80,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 10,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 1,
 });
 
 describe('LengthTool:', () => {
@@ -145,8 +144,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -157,26 +154,30 @@ describe('LengthTool:', () => {
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+          setTimeout(() => {
+            const lengthAnnotations = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
+            // Can successfully add Length tool to annotationManager
+            expect(lengthAnnotations).toBeDefined();
+            expect(lengthAnnotations.length).toBe(1);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
+            const lengthAnnotation = lengthAnnotations[0];
+            expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+            expect(lengthAnnotation.metadata.toolName).toBe(
+              LengthTool.toolName
+            );
+            expect(lengthAnnotation.invalidated).toBe(false);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+            const data = lengthAnnotation.data.cachedStats;
+            const targets = Array.from(Object.keys(data));
+            expect(targets.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
+            expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+            annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+            done();
+          }, 500);
         });
       };
 
@@ -260,27 +261,31 @@ describe('LengthTool:', () => {
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+          setTimeout(() => {
+            const lengthAnnotations = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
+            // Can successfully add Length tool to annotationManager
+            expect(lengthAnnotations).toBeDefined();
+            expect(lengthAnnotations.length).toBe(1);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.highlighted).toBe(true);
+            const lengthAnnotation = lengthAnnotations[0];
+            expect(lengthAnnotation.metadata.toolName).toBe(
+              LengthTool.toolName
+            );
+            expect(lengthAnnotation.invalidated).toBe(false);
+            expect(lengthAnnotation.highlighted).toBe(true);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+            const data = lengthAnnotation.data.cachedStats;
+            const targets = Array.from(Object.keys(data));
+            expect(targets.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+            expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
+            annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+            done();
+          }, 500);
         });
       };
 
@@ -372,8 +377,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -384,28 +387,32 @@ describe('LengthTool:', () => {
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+          setTimeout(() => {
+            const lengthAnnotations = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
+            // Can successfully add Length tool to annotationManager
+            expect(lengthAnnotations).toBeDefined();
+            expect(lengthAnnotations.length).toBe(1);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.highlighted).toBe(true);
+            const lengthAnnotation = lengthAnnotations[0];
+            expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+            expect(lengthAnnotation.metadata.toolName).toBe(
+              LengthTool.toolName
+            );
+            expect(lengthAnnotation.invalidated).toBe(false);
+            expect(lengthAnnotation.highlighted).toBe(true);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+            const data = lengthAnnotation.data.cachedStats;
+            const targets = Array.from(Object.keys(data));
+            expect(targets.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
+            expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
+            annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+            done();
+          }, 500);
         });
       };
       element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -524,8 +531,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -536,28 +541,32 @@ describe('LengthTool:', () => {
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+          setTimeout(() => {
+            const lengthAnnotations = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
+            // Can successfully add Length tool to annotationManager
+            expect(lengthAnnotations).toBeDefined();
+            expect(lengthAnnotations.length).toBe(1);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.highlighted).toBe(true);
+            const lengthAnnotation = lengthAnnotations[0];
+            expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+            expect(lengthAnnotation.metadata.toolName).toBe(
+              LengthTool.toolName
+            );
+            expect(lengthAnnotation.invalidated).toBe(false);
+            expect(lengthAnnotation.highlighted).toBe(true);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+            const data = lengthAnnotation.data.cachedStats;
+            const targets = Array.from(Object.keys(data));
+            expect(targets.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+            expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
+            annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+            done();
+          }, 500);
         });
       };
 
@@ -672,8 +681,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -684,67 +691,71 @@ describe('LengthTool:', () => {
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+          setTimeout(() => {
+            const lengthAnnotations = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
+            // Can successfully add Length tool to annotationManager
+            expect(lengthAnnotations).toBeDefined();
+            expect(lengthAnnotations.length).toBe(1);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
+            const lengthAnnotation = lengthAnnotations[0];
+            expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+            expect(lengthAnnotation.metadata.toolName).toBe(
+              LengthTool.toolName
+            );
+            expect(lengthAnnotation.invalidated).toBe(false);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+            const data = lengthAnnotation.data.cachedStats;
+            const targets = Array.from(Object.keys(data));
+            expect(targets.length).toBe(1);
 
-          // We don't expect the length to change on tool move
-          expect(data[targets[0]].length).toBeCloseTo(
-            calculateLength(p1, p2),
-            6
-          );
+            // We don't expect the length to change on tool move
+            expect(data[targets[0]].length).toBeCloseTo(
+              calculateLength(p1, p2),
+              6
+            );
 
-          const handles = lengthAnnotation.data.handles.points;
+            const handles = lengthAnnotation.data.handles.points;
 
-          const preMoveFirstHandle = p1;
-          const preMoveSecondHandle = p2;
-          const preMoveCenter = p3;
+            const preMoveFirstHandle = p1;
+            const preMoveSecondHandle = p2;
+            const preMoveCenter = p3;
 
-          const centerToHandle1 = [
-            preMoveCenter[0] - preMoveFirstHandle[0],
-            preMoveCenter[1] - preMoveFirstHandle[1],
-            preMoveCenter[2] - preMoveFirstHandle[2],
-          ];
+            const centerToHandle1 = [
+              preMoveCenter[0] - preMoveFirstHandle[0],
+              preMoveCenter[1] - preMoveFirstHandle[1],
+              preMoveCenter[2] - preMoveFirstHandle[2],
+            ];
 
-          const centerToHandle2 = [
-            preMoveCenter[0] - preMoveSecondHandle[0],
-            preMoveCenter[1] - preMoveSecondHandle[1],
-            preMoveCenter[2] - preMoveSecondHandle[2],
-          ];
+            const centerToHandle2 = [
+              preMoveCenter[0] - preMoveSecondHandle[0],
+              preMoveCenter[1] - preMoveSecondHandle[1],
+              preMoveCenter[2] - preMoveSecondHandle[2],
+            ];
 
-          const afterMoveCenter = p4;
+            const afterMoveCenter = p4;
 
-          const afterMoveFirstHandle = [
-            afterMoveCenter[0] - centerToHandle1[0],
-            afterMoveCenter[1] - centerToHandle1[1],
-            afterMoveCenter[2] - centerToHandle1[2],
-          ];
+            const afterMoveFirstHandle = [
+              afterMoveCenter[0] - centerToHandle1[0],
+              afterMoveCenter[1] - centerToHandle1[1],
+              afterMoveCenter[2] - centerToHandle1[2],
+            ];
 
-          const afterMoveSecondHandle = [
-            afterMoveCenter[0] - centerToHandle2[0],
-            afterMoveCenter[1] - centerToHandle2[1],
-            afterMoveCenter[2] - centerToHandle2[2],
-          ];
+            const afterMoveSecondHandle = [
+              afterMoveCenter[0] - centerToHandle2[0],
+              afterMoveCenter[1] - centerToHandle2[1],
+              afterMoveCenter[2] - centerToHandle2[2],
+            ];
 
-          // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle);
-          expect(handles[1]).toEqual(afterMoveSecondHandle);
+            // Expect handles are moved accordingly
+            expect(handles[0]).toEqual(afterMoveFirstHandle);
+            expect(handles[1]).toEqual(afterMoveSecondHandle);
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
+            annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+            done();
+          }, 500);
         });
       };
 
@@ -879,8 +890,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -891,35 +900,39 @@ describe('LengthTool:', () => {
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+          setTimeout(() => {
+            const lengthAnnotations = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
+            // Can successfully add Length tool to annotationManager
+            expect(lengthAnnotations).toBeDefined();
+            expect(lengthAnnotations.length).toBe(1);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
+            const lengthAnnotation = lengthAnnotations[0];
+            expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+            expect(lengthAnnotation.metadata.toolName).toBe(
+              LengthTool.toolName
+            );
+            expect(lengthAnnotation.invalidated).toBe(false);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+            const data = lengthAnnotation.data.cachedStats;
+            const targets = Array.from(Object.keys(data));
+            expect(targets.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+            expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+            annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
 
-          const annotationsAfterRemove = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
+            const annotationsAfterRemove = annotation.state.getAnnotations(
+              LengthTool.toolName,
+              element
+            );
 
-          expect(annotationsAfterRemove).toBeDefined();
-          expect(annotationsAfterRemove.length).toBe(0);
+            expect(annotationsAfterRemove).toBeDefined();
+            expect(annotationsAfterRemove.length).toBe(0);
 
-          done();
+            done();
+          }, 500);
         });
       };
 
@@ -1044,8 +1057,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -1229,8 +1240,6 @@ describe('LengthTool:', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -1242,31 +1251,33 @@ describe('LengthTool:', () => {
       const index2 = [10, 1, 0];
 
       const secondCallback = () => {
-        const lengthAnnotations = annotation.state.getAnnotations(
-          LengthTool.toolName,
-          element
-        );
-        //  Can successfully add Length tool to annotationManager
-        expect(lengthAnnotations).toBeDefined();
-        expect(lengthAnnotations.length).toBe(1);
+        // Add a small delay before checking the annotation
+        setTimeout(() => {
+          const lengthAnnotations = annotation.state.getAnnotations(
+            LengthTool.toolName,
+            element
+          );
+          //  Can successfully add Length tool to annotationManager
+          expect(lengthAnnotations).toBeDefined();
+          expect(lengthAnnotations.length).toBe(1);
 
-        const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-        expect(lengthAnnotation.invalidated).toBe(false);
-        expect(lengthAnnotation.highlighted).toBe(true);
+          const lengthAnnotation = lengthAnnotations[0];
+          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+          expect(lengthAnnotation.invalidated).toBe(false);
+          expect(lengthAnnotation.highlighted).toBe(true);
 
-        const data = lengthAnnotation.data.cachedStats;
-        const targets = Array.from(Object.keys(data));
-        expect(targets.length).toBe(1);
+          const data = lengthAnnotation.data.cachedStats;
+          const targets = Array.from(Object.keys(data));
+          expect(targets.length).toBe(1);
 
-        console.log('data', data, targets[0]);
-        expect(data[targets[0]].length).toBeCloseTo(
-          calculateLength(index1, index2) / scale,
-          0.05
-        );
+          expect(data[targets[0]].length).toBeCloseTo(
+            calculateLength(index1, index2) / scale,
+            0.05
+          );
 
-        annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-        done();
+          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+          done();
+        }, 100); // Add a 100ms delay
       };
 
       const firstCallback = () => {
@@ -1320,12 +1331,10 @@ describe('LengthTool:', () => {
           .getViewport(viewportId)
           .getCurrentImageId();
 
-        console.log('Starting image calibration');
         calibrateImageSpacing(imageId, this.renderingEngine, {
           type: CalibrationTypes.USER,
           scale,
         });
-        console.log('Done image calibration');
       };
 
       element.addEventListener(Events.IMAGE_RENDERED, firstCallback);

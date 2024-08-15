@@ -141,8 +141,6 @@ describe('Segmentation Tools --', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
       const vp1 = this.renderingEngine.getViewport(viewportId1);
       const vp2 = this.renderingEngine.getViewport(viewportId2);

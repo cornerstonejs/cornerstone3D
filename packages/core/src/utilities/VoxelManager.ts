@@ -592,7 +592,7 @@ export default class VoxelManager<T> {
    * Note that the number of components can be larger than three, in case data
    * is stored in additional pixels.  However, the return type is still RGB.
    */
-  public static createRGBScalarVolumeVoxelManager({
+  private static _createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
     numberOfComponents = 3,
@@ -862,7 +862,7 @@ export default class VoxelManager<T> {
       }
     }
     if (numberOfComponents > 1) {
-      return VoxelManager.createRGBScalarVolumeVoxelManager({
+      return VoxelManager._createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
         numberOfComponents,
@@ -991,7 +991,7 @@ export default class VoxelManager<T> {
       }
     }
     if (numberOfComponents > 1) {
-      return VoxelManager.createRGBScalarVolumeVoxelManager({
+      return VoxelManager._createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
         numberOfComponents,

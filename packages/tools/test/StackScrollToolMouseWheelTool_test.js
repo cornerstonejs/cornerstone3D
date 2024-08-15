@@ -48,8 +48,6 @@ const volumeId = encodeVolumeIdInfo({
   xSpacing: 1,
   ySpacing: 1,
   zSpacing: 1,
-  rgb: 0,
-  pt: 0,
 });
 
 function createViewport(renderingEngine, viewportType, width, height) {
@@ -212,8 +210,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
     const imageId2 = encodeImageIdInfo({
@@ -225,8 +221,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
     const vp = this.renderingEngine.getViewport(viewportId);
@@ -316,8 +310,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
     const imageId2 = encodeImageIdInfo({
@@ -329,8 +321,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
     const vp = this.renderingEngine.getViewport(viewportId);

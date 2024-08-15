@@ -102,17 +102,18 @@ function loadImageFromImageLoader(
       const scalarData = image.getPixelData();
       const { width, height, numberOfComponents } = image;
 
-      const voxelManager = VoxelManager.createImageVoxelManager({
-        scalarData,
-        width,
-        height,
-        numberOfComponents,
-      });
+      if (!image.voxelManager) {
+        const voxelManager = VoxelManager.createImageVoxelManager({
+          scalarData,
+          width,
+          height,
+          numberOfComponents,
+        });
 
-      image.voxelManager = voxelManager;
-
-      image.getPixelData = () => voxelManager.getScalarData();
-      delete image.imageFrame.pixelData;
+        image.voxelManager = voxelManager;
+        image.getPixelData = () => voxelManager.getScalarData();
+        delete image.imageFrame.pixelData;
+      }
 
       triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
     })
@@ -307,7 +308,8 @@ export function createAndCacheDerivedImages(
   const images = referencedImageIds.map((referencedImageId) => {
     const newOptions: DerivedImageOptions = {
       imageId:
-        options.getDerivedImageId(referencedImageId) || `derived:${uuidv4()}`,
+        options?.getDerivedImageId?.(referencedImageId) ||
+        `derived:${uuidv4()}`,
       ...options,
     };
     derivedImageIds.push(newOptions.imageId);
@@ -395,7 +397,7 @@ export function createAndCacheLocalImage(
   // The onCacheAdd may modify the size in bytes for this image, which is ok,
   // as this is used after resolution for cache storage.  It may also do
   // thinks like adding alternative representations such as VoxelManager
-  options.onCacheAdd(image);
+  options?.onCacheAdd?.(image);
 
   cache.putImageSync(image.imageId, image);
 

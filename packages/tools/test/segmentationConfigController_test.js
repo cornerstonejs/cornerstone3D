@@ -135,8 +135,6 @@ describe('Segmentation Controller --', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const seg1VolumeID = testUtils.encodeVolumeIdInfo({
@@ -148,8 +146,6 @@ describe('Segmentation Controller --', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
         startRow: 20,
         startColumn: 20,
         startSlice: 3,
@@ -254,8 +250,6 @@ describe('Segmentation Controller --', () => {
     //     xSpacing: 1,
     //     ySpacing: 1,
     //     zSpacing: 1,
-    //     rgb: 0,
-    //     pt: 0,
     //   });
     //   const seg1VolumeID = testUtils.encodeVolumeIdInfo({
     //     loader: 'fakeVolumeLoader',
@@ -266,8 +260,6 @@ describe('Segmentation Controller --', () => {
     //     xSpacing: 1,
     //     ySpacing: 1,
     //     zSpacing: 1,
-    //     rgb: 0,
-    //     pt: 0,
     //     startRow: 30,
     //     startColumn: 30,
     //     startSlice: 3,
@@ -373,8 +365,6 @@ describe('Segmentation Controller --', () => {
     //     xSpacing: 1,
     //     ySpacing: 1,
     //     zSpacing: 1,
-    //     rgb: 0,
-    //     pt: 0,
     //   });
     //   const seg1VolumeID = testUtils.encodeVolumeIdInfo({
     //     loader: 'fakeVolumeLoader',
@@ -385,8 +375,6 @@ describe('Segmentation Controller --', () => {
     //     xSpacing: 1,
     //     ySpacing: 1,
     //     zSpacing: 1,
-    //     rgb: 0,
-    //     pt: 0,
     //     startRow: 70,
     //     startColumn: 30,
     //     startSlice: 3,

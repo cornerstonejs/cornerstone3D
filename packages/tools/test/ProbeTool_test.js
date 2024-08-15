@@ -48,7 +48,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 10,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 1,
 });
 
 function createViewport(renderingEngine, viewportType, width, height) {
@@ -131,8 +130,6 @@ describe('Probe Tool: ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -229,8 +226,6 @@ describe('Probe Tool: ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -373,8 +368,6 @@ describe('Probe Tool: ', () => {
         barWidth: 100,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -470,8 +463,6 @@ describe('Probe Tool: ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -657,8 +648,6 @@ describe('Probe Tool: ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 
@@ -830,8 +819,6 @@ describe('Probe Tool: ', () => {
         barWidth: 5,
         xSpacing: 1,
         ySpacing: 1,
-        rgb: 0,
-        pt: 0,
         sliceIndex: 0,
       };
 

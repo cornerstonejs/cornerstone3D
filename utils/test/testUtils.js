@@ -79,7 +79,7 @@ function encodeImageIdInfo(info) {
 function decodeImageIdInfo(imageId) {
   const [scheme, encodedInfo] = imageId.split(':');
   if (scheme !== 'fakeImageLoader') {
-    throw new Error('Invalid imageId scheme');
+    return null;
   }
   return JSON.parse(decodeURIComponent(encodedInfo));
 }
@@ -91,7 +91,7 @@ function encodeVolumeIdInfo(info) {
 function decodeVolumeIdInfo(volumeId) {
   const [scheme, encodedInfo] = volumeId.split(':');
   if (scheme !== 'fakeVolumeLoader') {
-    throw new Error('Invalid volumeId scheme');
+    return null;
   }
   return JSON.parse(decodeURIComponent(encodedInfo));
 }

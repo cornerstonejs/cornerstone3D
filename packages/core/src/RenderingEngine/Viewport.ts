@@ -270,8 +270,8 @@ class Viewport implements IViewport {
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
-    if (this.options.displayArea) {
-      this.setDisplayArea(this.options.displayArea);
+    if (this.options?.displayArea) {
+      this.setDisplayArea(this.options?.displayArea);
     }
     if (immediate) {
       this.render();
@@ -713,7 +713,7 @@ class Viewport implements IViewport {
       this.setDisplayAreaScale(displayArea);
     } else {
       this.setInterpolationType(
-        this.getProperties().interpolationType || InterpolationType.LINEAR
+        this.getProperties()?.interpolationType || InterpolationType.LINEAR
       );
       this.setDisplayAreaFit(displayArea);
     }
@@ -825,7 +825,7 @@ class Viewport implements IViewport {
   protected setDisplayAreaFit(displayArea: DisplayArea) {
     const { imageArea, imageCanvasPoint } = displayArea;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = window?.devicePixelRatio || 1;
     const imageData = this.getDefaultImageData();
     if (!imageData) {
       return;
@@ -889,7 +889,7 @@ class Viewport implements IViewport {
   }
 
   public getDisplayArea(): DisplayArea | undefined {
-    return this.options.displayArea;
+    return this.options?.displayArea;
   }
 
   /**
@@ -1413,7 +1413,7 @@ class Viewport implements IViewport {
       // or a new actor is added and we need to update the clipping planes
       if (cameraModifiedOutOfPlane || viewUpHasChanged) {
         const actorEntry = this.getDefaultActor();
-        if (!actorEntry?.actor) {
+        if (!actorEntry.actor) {
           return;
         }
 
@@ -1493,11 +1493,11 @@ class Viewport implements IViewport {
       }
 
       const mapper = actorEntry.actor.getMapper();
-      let vtkPlanes = actorEntry.clippingFilter
-        ? actorEntry.clippingFilter.getClippingPlanes()
+      let vtkPlanes = actorEntry?.clippingFilter
+        ? actorEntry?.clippingFilter.getClippingPlanes()
         : mapper.getClippingPlanes();
 
-      if (vtkPlanes.length === 0 && actorEntry.clippingFilter) {
+      if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
         vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
       }
 
@@ -1570,11 +1570,11 @@ class Viewport implements IViewport {
     }
 
     const mapper = actorEntry.actor.getMapper();
-    let vtkPlanes = actorEntry.clippingFilter
-      ? actorEntry.clippingFilter.getClippingPlanes()
+    let vtkPlanes = actorEntry?.clippingFilter
+      ? actorEntry?.clippingFilter.getClippingPlanes()
       : mapper.getClippingPlanes();
 
-    if (vtkPlanes.length === 0 && actorEntry.clippingFilter) {
+    if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
       vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
     }
 
@@ -1689,7 +1689,7 @@ class Viewport implements IViewport {
       )
     ) {
       // Could navigate as a volume to the reference with an orientation change
-      return options.withOrientation;
+      return options?.withOrientation;
     }
     return true;
   }

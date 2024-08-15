@@ -113,8 +113,6 @@ describe('Segmentation State -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const segVolumeId = testUtils.encodeVolumeIdInfo({
@@ -126,8 +124,6 @@ describe('Segmentation State -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const vp = this.renderingEngine.getViewport(viewportId);
@@ -227,8 +223,6 @@ describe('Segmentation State -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const segVolumeId = testUtils.encodeVolumeIdInfo({
@@ -240,8 +234,6 @@ describe('Segmentation State -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const vp = this.renderingEngine.getViewport(viewportId);

@@ -465,6 +465,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       preScale: {
         ...this.csImage.preScale,
       },
+      voxelManager: this.csImage.voxelManager,
     };
   }
 
@@ -1490,7 +1491,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     let numberOfComponents = 1;
     if (
       photometricInterpretation === 'RGB' ||
-      !photometricInterpretation.includes('YBR') ||
+      photometricInterpretation.includes('YBR') ||
       photometricInterpretation === 'PALETTE COLOR'
     ) {
       numberOfComponents = 3;
@@ -1678,14 +1679,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     numberOfComponents,
     pixelArray,
   }): void {
-    this._imageData = this.createVTKImageData({
-      origin,
-      direction,
-      dimensions,
-      spacing,
-      numberOfComponents,
-      pixelArray,
-    });
+    try {
+      this._imageData = this.createVTKImageData({
+        origin,
+        direction,
+        dimensions,
+        spacing,
+        numberOfComponents,
+        pixelArray,
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   /**

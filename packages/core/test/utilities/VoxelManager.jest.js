@@ -88,20 +88,6 @@ describe('VoxelManager', () => {
     expect(sliceData[ijkPoint[0] + ijkPoint[1] * dimensions[0]]).toBe(255);
   });
 
-  it('createRGBScalarVolumeVoxelManager', () => {
-    const scalarData = new Uint8Array(
-      dimensions[0] * dimensions[1] * dimensions[2] * 3
-    );
-    const map = VoxelManager.createRGBScalarVolumeVoxelManager({
-      dimensions,
-      scalarData,
-      numberOfComponents: 3,
-    });
-    const rgbValue = [255, 128, 64];
-    map.setAtIJKPoint(ijkPoint, rgbValue);
-    expect(map.getAtIJKPoint(ijkPoint)).toEqual(rgbValue);
-  });
-
   it('createImageVolumeVoxelManager', () => {
     const imageIds = ['image1', 'image2', 'image3', 'image4'];
     const mockCache = {

@@ -88,8 +88,6 @@ describe('renderToCanvas -- GPU', () => {
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     };
 

@@ -123,8 +123,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const segVolumeId = testUtils.encodeVolumeIdInfo({
@@ -136,8 +134,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const vp = this.renderingEngine.getViewport(viewportId1);
@@ -222,8 +218,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const segVolumeId = testUtils.encodeVolumeIdInfo({
@@ -235,8 +229,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const vp1 = this.renderingEngine.getViewport(viewportId1);
@@ -347,8 +339,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
       });
 
       const segVolumeId = testUtils.encodeVolumeIdInfo({
@@ -360,8 +350,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
         startRow: 20,
         startColumn: 20,
         startSlice: 3,
@@ -379,8 +367,6 @@ describe('Segmentation Render -- ', () => {
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        rgb: 0,
-        pt: 0,
         startRow: 60,
         startColumn: 60,
         startSlice: 2,
@@ -482,8 +468,6 @@ describe('Segmentation Render -- ', () => {
     //     xSpacing: 1,
     //     ySpacing: 1,
     //     zSpacing: 1,
-    //     rgb: 0,
-    //     pt: 0,
     //   });
 
     //   const segVolumeId = testUtils.encodeVolumeIdInfo({
@@ -495,8 +479,6 @@ describe('Segmentation Render -- ', () => {
     //     xSpacing: 1,
     //     ySpacing: 1,
     //     zSpacing: 1,
-    //     rgb: 0,
-    //     pt: 0,
     //   });
 
     //   const vp1 = this.renderingEngine.getViewport(viewportId1);

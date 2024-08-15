@@ -17,6 +17,7 @@ import {
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { encodeVolumeIdInfo } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -45,10 +46,18 @@ const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const volumeId = encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+  zSpacing: 1,
+});
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -356,11 +365,8 @@ async function run() {
     wadoRsRoot:
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
-
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
+  const volume = await volumeLoader.createAndCacheVolume(volumeId);
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
@@ -411,7 +417,7 @@ async function run() {
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
-  volume.load();
+  // volume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
