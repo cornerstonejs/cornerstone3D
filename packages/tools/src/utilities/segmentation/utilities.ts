@@ -1,13 +1,24 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import BrushTool from '../../tools/segmentation/BrushTool';
 import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 export type ThresholdInformation = {
   volume: Types.IImageVolume;
   lower: number;
   upper: number;
+};
+
+export type VolumeInfo = {
+  imageData: vtkImageData;
+  lower: number;
+  upper: number;
+  spacing: Types.Point3;
+  dimensions: Types.Point3;
+  volumeSize: number;
+  voxelManager: csUtils.VoxelManager<number> | csUtils.VoxelManager<Types.RGB>;
 };
 
 export function getBrushToolInstances(toolGroupId: string, toolName?: string) {
@@ -84,10 +95,10 @@ export function processVolumes(
     segmentationVolume.voxelManager.getScalarDataLength();
 
   // prepare a list of volume information objects for callback functions
-  const volumeInfoList = [];
+  const volumeInfoList: VolumeInfo[] = [];
   let baseVolumeIdx = 0;
   for (let i = 0; i < thresholdVolumeInformation.length; i++) {
-    const { imageData, spacing, dimensions } =
+    const { imageData, spacing, dimensions, voxelManager } =
       thresholdVolumeInformation[i].volume;
 
     const volumeSize =
@@ -111,6 +122,7 @@ export function processVolumes(
       spacing,
       dimensions,
       volumeSize,
+      voxelManager,
     });
   }
 

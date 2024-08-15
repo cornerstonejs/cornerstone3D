@@ -1,6 +1,9 @@
 import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import Events from '../../enums/Events';
-import { KeyDownEventDetail, KeyUpEventDetail } from '../../types/EventTypes';
+import type {
+  KeyDownEventDetail,
+  KeyUpEventDetail,
+} from '../../types/EventTypes';
 
 interface IKeyDownListenerState {
   renderingEngineId: string;

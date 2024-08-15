@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import * as Enums from '../enums';
-import {
+import type * as Enums from '../enums';
+import type {
   ContourConfig,
   ContourRenderingConfig,
   ContourSegmentationData,
@@ -10,7 +10,7 @@ import type {
   LabelmapRenderingConfig,
   LabelmapSegmentationData,
 } from './LabelmapTypes';
-import {
+import type {
   SurfaceSegmentationData,
   SurfaceRenderingConfig,
 } from './SurfaceTypes';
@@ -19,13 +19,15 @@ export type SegmentRepresentationConfig = {
   [key: number | string]: RepresentationConfig;
 };
 
+export type SurfaceConfig = {};
+
 export type RepresentationConfig = {
   /** labelmap configuration */
   LABELMAP?: LabelmapConfig;
   /** contour configuration */
   CONTOUR?: ContourConfig;
   /** surface configuration */
-  SURFACE?: any;
+  SURFACE?: SurfaceConfig;
 };
 
 export type SegmentationRepresentationConfig = {
@@ -104,7 +106,7 @@ export type BaseSegmentationRepresentation = {
    */
   polySeg?: {
     enabled: boolean;
-    options?: any;
+    options?: unknown;
   };
   /** rendering config for display of this representation */
   config: {
@@ -297,6 +299,6 @@ export type RepresentationPublicInputOptions = {
   // from other representations to this representation
   polySeg?: {
     enabled: boolean;
-    options?: any;
+    options?: unknown;
   };
 };

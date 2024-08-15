@@ -51,8 +51,8 @@ function getRenderCanvas(
   const colormapId = colormap.getId();
 
   if (
-    doesImageNeedToBeRendered(enabledElement, image) === false &&
-    invalidated !== true &&
+    !doesImageNeedToBeRendered(enabledElement, image) &&
+    !invalidated &&
     enabledElement.renderingTools.colormapId === colormapId
   ) {
     return renderCanvas;

@@ -1,5 +1,5 @@
-import InterpolationType from '../enums/InterpolationType';
-import { ViewportProperties } from './ViewportProperties';
+import type InterpolationType from '../enums/InterpolationType';
+import type { ViewportProperties } from './ViewportProperties';
 
 /**
  * Stack Viewport Properties
@@ -13,4 +13,4 @@ type StackViewportProperties = ViewportProperties & {
   isComputedVOI?: boolean;
 };
 
-export default StackViewportProperties;
+export type { StackViewportProperties as default };

@@ -28,6 +28,7 @@ const external = {
   },
   get cornerstone() {
     if (!cornerstone) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cornerstone = window && (window as any).cornerstone;
 
       if (!cornerstone) {
@@ -46,7 +47,9 @@ const external = {
   },
   get dicomParser() {
     if (!dicomParser) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (window && (window as any).dicomParser) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dicomParser = (window as any).dicomParser;
       } else {
         throw new Error(

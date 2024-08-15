@@ -1,13 +1,17 @@
-import ICamera from './ICamera';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import ViewportInputOptions from './ViewportInputOptions';
-import { ActorEntry } from './IActor';
-import ViewportType from '../enums/ViewportType';
-import ViewportStatus from '../enums/ViewportStatus';
-import DisplayArea from './displayArea';
-import BoundsLPS from './BoundsLPS';
+import type ICamera from './ICamera';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type ViewportInputOptions from './ViewportInputOptions';
+import type { ActorEntry } from './IActor';
+import type ViewportType from '../enums/ViewportType';
+import type ViewportStatus from '../enums/ViewportStatus';
+import type DisplayArea from './displayArea';
+import type { BoundsLPS } from './BoundsLPS';
 import type { mat4 } from 'gl-matrix';
+import type IRenderingEngine from './IRenderingEngine';
+import type IImageData from './IImageData';
+import type CPUIImageData from './CPUIImageData';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 /**
  * Specifies what view to get a reference for.
@@ -15,7 +19,7 @@ import type { mat4 } from 'gl-matrix';
  * not currently in view, such as for a different slice, or containing a given
  * set of points.
  */
-export type ViewReferenceSpecifier = {
+export interface ViewReferenceSpecifier {
   /**
    * The slice index within the current viewport camera to get a reference for.
    * Note that slice indexes are dependent on the particular view being shown
@@ -34,7 +38,7 @@ export type ViewReferenceSpecifier = {
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
-};
+}
 
 /**
  * It is often important to decide if a given view can display a specific
@@ -44,7 +48,7 @@ export type ViewReferenceSpecifier = {
  * allows specifying what changes are permitted in order to determine if the
  * view could show the image.
  */
-export type ReferenceCompatibleOptions = {
+export interface ReferenceCompatibleOptions {
   /**
    * Test whether the view could be shown if the viewport were navigated.
    * That is, test is just changing the slice position and zoom/pan would
@@ -76,7 +80,7 @@ export type ReferenceCompatibleOptions = {
    * To see if the reference could be overladed (labelmap, fusion) on the viewport, set this to true.
    */
   asOverlay?: boolean;
-};
+}
 
 /**
  * A view reference references the image/location of an image.  Typical use
@@ -84,7 +88,7 @@ export type ReferenceCompatibleOptions = {
  * to it later, as well as determining whether specific views should show annotations
  * or other overlay information.
  */
-export type ViewReference = {
+export interface ViewReference {
   /**
    * The FrameOfReferenceUID
    */
@@ -146,7 +150,7 @@ export type ViewReference = {
    * particular bounds or not.  This will be in world coordinates.
    */
   bounds?: BoundsLPS;
-};
+}
 
 /**
  * A view presentation stores information about how the view is presented to the
@@ -156,7 +160,7 @@ export type ViewReference = {
  * remember or synchronizing values in a much wider variety of places than
  * using the raw/underlying view data such as camera position.
  */
-export type ViewPresentation = {
+export interface ViewPresentation {
   /**
    * The slice thickness - in frames(true/default) it will be 1 for a frame distance of
    * 1 pixel thickness, while for mm will be in mm distance.
@@ -190,7 +194,7 @@ export type ViewPresentation = {
    * in zoom relative units.
    */
   pan?: Point2;
-};
+}
 
 /**
  * A view presentation selector allows choosing what view attributes should be
@@ -212,8 +216,8 @@ export type ViewPresentation = {
  * which call the particular get/set functions, but that makes it more work to
  * share particular sets for different uses.
  */
-export type ViewPresentationSelector = {
-  slabThickness?: boolean;
+export interface ViewPresentationSelector {
+  slabThickness?: number;
   // Camera relative parameters
   rotation?: boolean;
   displayArea?: boolean;
@@ -222,9 +226,9 @@ export type ViewPresentationSelector = {
   // Transfer function relative parameters
   windowLevel?: boolean;
   paletteLut?: boolean;
-};
+}
 
-export type DataSetOptions = {
+export interface DataSetOptions {
   /**
    * The group id is a volume, display set or other identification for the
    * overall set of data.  If set, then two sets of images can be compared for
@@ -234,7 +238,7 @@ export type DataSetOptions = {
   groupId?: string;
   viewSelector?: ViewPresentationSelector;
   viewReference?: ViewReferenceSpecifier;
-};
+}
 
 /**
  * Viewport interface for cornerstone viewports
@@ -243,13 +247,13 @@ interface IViewport {
   /** unique identifier of the viewport */
   id: string;
 
-  getImageData: () => any;
+  getImageData: () => IImageData | CPUIImageData;
 
-  getWidget: (id: string) => any;
+  getWidget: (id: string) => unknown;
 
-  addWidget: (id: string, widget: any) => void;
+  addWidget: (id: string, widget: unknown) => void;
 
-  getWidgets: () => any;
+  getWidgets: () => unknown;
 
   removeWidgets: () => void;
 
@@ -270,9 +274,9 @@ interface IViewport {
   /** height of the viewport on the offscreen canvas (if rendering using GPU) */
   sHeight: number;
   /** actors rendered in the viewport*/
-  _actors: Map<string, any>;
+  _actors: Map<string, unknown>;
   /** viewport default options including the axis, and background color  */
-  defaultOptions: any;
+  defaultOptions: unknown;
   /** viewport options */
   options: ViewportInputOptions;
   /** Suppress events */
@@ -292,7 +296,7 @@ interface IViewport {
   /** get the first actor */
   getDefaultActor(): ActorEntry;
   /** returns all the actor entires for a viewport which is an object containing actor and its uid */
-  getActors(): Array<ActorEntry>;
+  getActors(): ActorEntry[];
   /** returns specific actor by its uid */
   getActor(actorUID: string): ActorEntry;
   /** returns specific actor uid by array index */
@@ -300,21 +304,21 @@ interface IViewport {
   /** returns specific actor by array index */
   getActorByIndex(index: number): ActorEntry;
   /** set and overwrite actors in a viewport */
-  setActors(actors: Array<ActorEntry>): void;
+  setActors(actors: ActorEntry[]): void;
   /** add actors to the list of actors */
-  addActors(actors: Array<ActorEntry>): void;
+  addActors(actors: ActorEntry[]): void;
   /** add one actor */
   addActor(actorEntry: ActorEntry): void;
   /** get actor UIDs */
-  getActorUIDs(): Array<string>;
+  getActorUIDs(): string[];
   /** remove all actors from the viewport */
   removeAllActors(): void;
   /** remove array of uids */
-  removeActors(actorUIDs: Array<string>): void;
+  removeActors(actorUIDs: string[]): void;
   /** returns the renderingEngine instance the viewport belongs to */
-  getRenderingEngine(): any;
+  getRenderingEngine(): IRenderingEngine;
   /** returns the vtkRenderer (for GPU rendering) of the viewport */
-  getRenderer(): void;
+  getRenderer(): vtkRenderer;
   /** triggers render for all actors in the viewport */
   render(): void;
   /** set options for the viewport */
@@ -455,7 +459,7 @@ interface IViewport {
   /** whether the viewport has custom rendering */
   customRenderViewportToCanvas: () => unknown;
 
-  _getCorners(bounds: Array<number>): Array<number>[];
+  _getCorners(bounds: number[]): number[][];
   updateRenderingPipeline: () => void;
   getTargetId?: () => string;
 
@@ -470,7 +474,7 @@ interface IViewport {
 /**
  * Public Interface for viewport input to get enabled/disabled or set
  */
-type PublicViewportInput = {
+interface PublicViewportInput {
   /** HTML element in the DOM */
   element: HTMLDivElement;
   /** unique id for the viewport in the renderingEngine */
@@ -479,9 +483,9 @@ type PublicViewportInput = {
   type: ViewportType;
   /** options for the viewport */
   defaultOptions?: ViewportInputOptions;
-};
+}
 
-type NormalizedViewportInput = {
+interface NormalizedViewportInput {
   /** HTML element in the DOM */
   element: HTMLDivElement;
   /** unique id for the viewport in the renderingEngine */
@@ -490,17 +494,17 @@ type NormalizedViewportInput = {
   type: ViewportType;
   /** options for the viewport */
   defaultOptions: ViewportInputOptions;
-};
+}
 
-type InternalViewportInput = {
+interface InternalViewportInput {
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   viewportId: string;
   type: ViewportType;
   defaultOptions: ViewportInputOptions;
-};
+}
 
-type ViewportInput = {
+interface ViewportInput {
   id: string;
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
@@ -511,7 +515,7 @@ type ViewportInput = {
   sWidth: number;
   sHeight: number;
   defaultOptions: ViewportInputOptions;
-};
+}
 
 export type {
   IViewport,

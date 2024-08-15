@@ -1,7 +1,7 @@
 import { state } from '../../store';
 import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
-import {
+import type { EventTypes } from '../../types';
+import type {
   ToolAnnotationPair,
   ToolsWithMoveableHandles,
 } from '../../types/InternalToolTypes';
@@ -72,7 +72,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
   const activeToolsWithEventBinding = getToolsWithModesForMouseEvent(
     evt,
     [Active],
-    evt.detail.event.buttons
+    evt.detail.event.buttons as number
   );
   const passiveToolsIfEventWasPrimaryMouseButton = isPrimaryClick
     ? getToolsWithModesForMouseEvent(evt, [Passive])

@@ -53,7 +53,7 @@ import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
 import type * as Types from './types';
-import {
+import type {
   IRetrieveConfiguration,
   IImagesLoader,
   RetrieveOptions,

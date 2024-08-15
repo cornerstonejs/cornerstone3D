@@ -6,7 +6,7 @@ import {
   cache,
   getConfiguration as getCoreConfiguration,
 } from '@cornerstonejs/core';
-import { addToolState, getToolState } from './state';
+import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
   getStackData,
   requestType,
@@ -38,7 +38,7 @@ function prefetch(element) {
     return;
   }
 
-  const stackPrefetch = stackPrefetchData || {};
+  const stackPrefetch = (stackPrefetchData || {}) as StackPrefetchData;
   const stack = getStackData(element);
 
   if (!stack?.imageIds?.length) {
@@ -49,7 +49,8 @@ function prefetch(element) {
   const { currentImageIdIndex } = stack;
 
   // If all the requests are complete, disable the stackPrefetch tool
-  stackPrefetch.enabled &&= stackPrefetch.indicesToRequest?.length;
+  stackPrefetch.enabled =
+    stackPrefetch.enabled && (stackPrefetch.indicesToRequest?.length ?? 0) > 0;
 
   // Make sure the tool is still enabled
   if (stackPrefetch.enabled === false) {

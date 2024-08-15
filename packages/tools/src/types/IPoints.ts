@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Points in page, client, canvas and world
@@ -15,4 +15,4 @@ type IPoints = {
   world: Types.Point3;
 };
 
-export default IPoints;
+export type { IPoints as default };

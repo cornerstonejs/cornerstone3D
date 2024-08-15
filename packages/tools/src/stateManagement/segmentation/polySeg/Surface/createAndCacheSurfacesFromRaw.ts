@@ -1,11 +1,13 @@
-import { Enums, Types, geometryLoader } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums, geometryLoader } from '@cornerstonejs/core';
 import { getSegmentIndexColor } from '../../config/segmentationColor';
 import {
   getSegmentationRepresentation,
   getSegmentation,
 } from '../../segmentationState';
-import { RawSurfacesData } from './surfaceComputationStrategies';
-import { PolySegConversionOptions } from '../../../../types';
+import type { RawSurfacesData } from './surfaceComputationStrategies';
+import type { PolySegConversionOptions } from '../../../../types';
+import type { SegmentationRepresentation } from '../../../../types/SegmentationStateTypes';
 
 /**
  * Creates and caches surfaces from raw surface data.
@@ -23,7 +25,7 @@ export async function createAndCacheSurfacesFromRaw(
   options: PolySegConversionOptions = {}
 ) {
   // Initialize segmentationRepresentation and toolGroupId if a representation UID is provided
-  let segmentationRepresentation: any;
+  let segmentationRepresentation: SegmentationRepresentation;
   if (options.segmentationRepresentationUID) {
     segmentationRepresentation = getSegmentationRepresentation(
       options.segmentationRepresentationUID
@@ -67,7 +69,7 @@ export async function createAndCacheSurfacesFromRaw(
 
     return geometryLoader.createAndCacheGeometry(geometryId, {
       type: Enums.GeometryType.SURFACE,
-      geometryData: closedSurface as Types.PublicSurfaceData,
+      geometryData: closedSurface as unknown as Types.PublicSurfaceData,
     });
   });
 

@@ -1,5 +1,5 @@
-import { PolyDataClipCacheType } from '../../../helpers/clipAndCacheSurfacesForViewport';
-import { RawContourData } from '../contourComputationStrategies';
+import type { PolyDataClipCacheType } from '../../../helpers/clipAndCacheSurfacesForViewport';
+import type { RawContourData } from '../contourComputationStrategies';
 
 /**
  * Extracts contour data from the given polyDataCache.

@@ -5,11 +5,9 @@ import {
   getSegmentationRepresentationsForSegmentation,
   getCurrentLabelmapImageIdForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 type Options = {
   viewport?: Types.IViewport;
@@ -147,7 +145,7 @@ function isSegmentOnEdge(
 function isSegmentOnEdgeIJK(
   indexIJK: Types.Point3,
   dimensions: Types.Point3,
-  voxelManager: any,
+  voxelManager: utilities.VoxelManager<number>,
   segmentIndex: number,
   searchRadius?: number
 ): boolean {
@@ -158,7 +156,11 @@ function isSegmentOnEdgeIJK(
       indexIJK[2] + deltaK,
     ];
 
-    return voxelManager.getAtIJK(...neighborIJK);
+    return voxelManager.getAtIJK(
+      neighborIJK[0],
+      neighborIJK[1],
+      neighborIJK[2]
+    );
   };
 
   return isSegmentOnEdge(getNeighborIndex, segmentIndex, searchRadius);
@@ -168,7 +170,7 @@ function isSegmentOnEdgeCanvas(
   canvasPoint: Types.Point2,
   segmentIndex: number,
   viewport: Types.IViewport,
-  imageData: any,
+  imageData: vtkImageData,
   searchRadius?: number
 ): boolean {
   const getNeighborIndex = (deltaI: number, deltaJ: number) => {

@@ -1,5 +1,5 @@
 import { SegmentationRepresentations } from '../../../../enums';
-import { PolySegConversionOptions } from '../../../../types';
+import type { PolySegConversionOptions } from '../../../../types';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
 import { computeContourData } from './contourComputationStrategies';
 /**

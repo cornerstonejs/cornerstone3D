@@ -49,7 +49,7 @@ import type {
   AnnotationModifiedEventDetail,
   ContourAnnotationCompletedEventDetail,
 } from '../../types/EventTypes';
-import { ISpline } from '../../types/ISpline';
+import type { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
@@ -85,9 +85,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
     annotation: SplineROIAnnotation;
     viewportIdsToRender: Array<string>;
@@ -762,7 +760,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         canvasCoordinates,
         {
           color,
-          lineWidth: Math.max(1, lineWidth),
+          lineWidth,
           handleRadius: '3',
         }
       );
@@ -787,7 +785,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         previewPolylinePoints,
         {
           color: '#9EA0CA',
-          lineDash,
+          lineDash: lineDash as string,
           lineWidth: 1,
         }
       );

@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -12,7 +12,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { Statistics } from '../../src/types';
+import type { Statistics } from '../../src/types';
 import { Calculator } from '../../src/utilities/math/basic';
 
 // This is for debugging purposes

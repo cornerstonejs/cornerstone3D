@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   StackViewport,
-  Types,
   cache,
   getEnabledElement,
   utilities as csUtils,
@@ -33,15 +33,19 @@ import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { CircleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  CircleROIStartEndThresholdAnnotation,
+  ROICachedStats,
+} from '../../types/ToolSpecificAnnotationTypes';
 import CircleROITool from '../annotation/CircleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
@@ -64,11 +68,9 @@ const { transformWorldToIndex } = csUtils;
 class CircleROIStartEndThresholdTool extends CircleROITool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -82,6 +84,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         numSlicesToPropagate: 10,
         calculatePointsInsideVolume: false,
         getTextLines: defaultGetTextLines,
@@ -196,7 +200,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         cachedStats: {
           pointsInVolume: [],
           projectionPoints: [],
-          statistics: [],
+          statistics: [] as unknown as ROICachedStats,
         },
         labelmapUID: null,
       },
@@ -732,6 +736,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
             isInObject: (pointLPS) => pointInEllipse(ellipseObj, pointLPS),
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
 

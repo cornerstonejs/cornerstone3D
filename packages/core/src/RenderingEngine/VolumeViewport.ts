@@ -1,9 +1,10 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis, Events } from '../enums';
+import type { BlendModes } from '../enums';
+import { OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
   IImageVolume,
@@ -27,7 +28,7 @@ import {
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import { ImageActor } from '../types/IActor';
+import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 import { glMatrix, mat4, vec3 } from 'gl-matrix';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
@@ -68,7 +69,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async setVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
@@ -102,7 +103,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
@@ -262,8 +263,8 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetVolumeViewportClippingRange();
 
     const activeCamera = this.getVtkActiveCamera();
-    const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
-    const focalPoint = <Point3>activeCamera.getFocalPoint();
+    const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
+    const focalPoint = activeCamera.getFocalPoint() as Point3;
 
     // always add clipping planes for the volume viewport. If a use case
     // arises where we don't want clipping planes, you should use the volume_3d
@@ -276,7 +277,7 @@ class VolumeViewport extends BaseVolumeViewport {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {
+      if (vtkPlanes.length === 0 && !actorEntry.clippingFilter) {
         const clipPlane1 = vtkPlane.newInstance();
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];
@@ -616,7 +617,7 @@ class VolumeViewport extends BaseVolumeViewport {
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
     const viewRef = super.getViewReference(viewRefSpecifier);
-    if (!viewRef?.volumeId) {
+    if (!viewRef.volumeId) {
       return;
     }
     const volume = cache.getVolume(viewRef.volumeId);
@@ -698,13 +699,13 @@ class VolumeViewport extends BaseVolumeViewport {
    * Retrieves the clipping planes for the slices in the volume viewport.
    * @returns An array of vtkPlane objects representing the clipping planes, or an array of objects with normal and origin properties if raw is true.
    */
-  getSlicesClippingPlanes(): Array<{
+  getSlicesClippingPlanes(): {
     sliceIndex: number;
-    planes: Array<{
+    planes: {
       normal: Point3;
       origin: Point3;
-    }>;
-  }> {
+    }[];
+  }[] {
     const focalPoints = this.getSlicePlaneCoordinates();
     const { viewPlaneNormal } = this.getCamera();
     const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
@@ -738,13 +739,13 @@ class VolumeViewport extends BaseVolumeViewport {
    *
    * @returns An array of Point3 representing the slice plane coordinates.
    */
-  public getSlicePlaneCoordinates = (): Array<{
+  public getSlicePlaneCoordinates = (): {
     sliceIndex: number;
     point: Point3;
-  }> => {
+  }[] => {
     const actorEntry = this.getDefaultActor();
 
-    if (!actorEntry?.actor) {
+    if (!actorEntry.actor) {
       console.warn('No image data found for calculating vtkPlanes.');
       return [];
     }

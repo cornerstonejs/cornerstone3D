@@ -1,12 +1,12 @@
 import { vec3 } from 'gl-matrix';
 import { metaData, getConfiguration } from '../';
-import { Point3 } from '../types';
+import type { Point3 } from '../types';
 
-type SortedImageIdsItem = {
+interface SortedImageIdsItem {
   zSpacing: number;
   origin: Point3;
-  sortedImageIds: Array<string>;
-};
+  sortedImageIds: string[];
+}
 /**
  * Given an array of imageIds, sort them based on their imagePositionPatient, and
  * also returns the spacing between images and the origin of the reference image
@@ -17,7 +17,7 @@ type SortedImageIdsItem = {
  * @returns The sortedImageIds, zSpacing, and origin of the first image in the series.
  */
 export default function sortImageIdsAndGetSpacing(
-  imageIds: Array<string>,
+  imageIds: string[],
   scanAxisNormal?: vec3
 ): SortedImageIdsItem {
   const {
@@ -122,6 +122,7 @@ export default function sortImageIdsAndGetSpacing(
       'imagePlaneModule',
       prefetchedImageIds[1]
     );
+
     if (!metadataForMiddleImage) {
       throw new Error('Incomplete metadata required for volume construction.');
     }

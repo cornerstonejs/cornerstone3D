@@ -9,6 +9,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -35,7 +36,7 @@ import type {
   ViewReference,
   VolumeActor,
 } from '../types';
-import {
+import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewportInput,
@@ -65,7 +66,8 @@ import {
   VOILUTFunctionType,
   ViewportStatus,
 } from '../enums';
-import { ImageLoaderOptions, loadAndCacheImage } from '../loaders/imageLoader';
+import type { ImageLoaderOptions } from '../loaders/imageLoader';
+import { loadAndCacheImage } from '../loaders/imageLoader';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import calculateTransform from './helpers/cpuFallback/rendering/calculateTransform';
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
@@ -76,17 +78,17 @@ import resize from './helpers/cpuFallback/rendering/resize';
 import cache from '../cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
-import {
+import type {
   ImagePixelModule,
   ImagePlaneModule,
   PixelDataTypedArray,
 } from '../types';
-import {
+import type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
-import { ImageActor } from '../types/IActor';
+import type { ImageActor } from '../types/IActor';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import {
   getTransferFunctionNodes,
@@ -96,10 +98,11 @@ import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { findMatchingColormap } from '../utilities/colormap';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 const EPSILON = 1; // Slice Thickness
 
-interface ImageDataMetaData {
+export interface ImageDataMetaData {
   bitsAllocated: number;
   numberOfComponents: number;
   origin: Point3;
@@ -111,18 +114,18 @@ interface ImageDataMetaData {
   imagePixelModule: ImagePixelModule;
 }
 // TODO This needs to be exposed as its published to consumers.
-type CalibrationEvent = {
+interface CalibrationEvent {
   rowScale?: number;
   columnScale?: number;
   scale: number;
   calibration: IImageCalibration;
-};
+}
 
-type SetVOIOptions = {
+interface SetVOIOptions {
   suppressEvents?: boolean;
   forceRecreateLUTFunction?: boolean;
   voiUpdatedWithSetProperties?: boolean;
-};
+}
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -133,7 +136,7 @@ type SetVOIOptions = {
  * the documentation section of this website.
  */
 class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
-  private imageIds: Array<string>;
+  private imageIds: string[];
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex: number;
   // the imageIdIndex that is targeted to be loaded with scrolling but has not initiated loading yet
@@ -199,7 +202,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    this.useCPURendering
+    const result = this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
@@ -240,7 +243,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       }
     }
 
-    this.useCPURendering
+    const result = this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
   }
@@ -259,8 +262,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const camera = vtkCamera.newInstance();
     renderer.setActiveCamera(camera);
 
-    const viewPlaneNormal = <Point3>[0, 0, -1];
-    this.initialViewUp = <Point3>[0, -1, 0];
+    const viewPlaneNormal = [0, 0, -1] as Point3;
+    this.initialViewUp = [0, -1, 0] as Point3;
 
     camera.setDirectionOfProjection(
       -viewPlaneNormal[0],
@@ -336,7 +339,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  public getRenderer: () => any;
+  public getRenderer: () => vtkRenderer;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -349,7 +352,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * If the renderer is CPU based, throw an error. Otherwise, return the actors in the viewport
    * @returns An array of ActorEntry objects.
    */
-  public getActors: () => Array<ActorEntry>;
+  public getActors: () => ActorEntry[];
   /**
    * If the renderer is CPU based, throw an error. Otherwise, it returns the actor entry for the given actor UID.
    * @param actorUID - The unique ID of the actor you want to get.
@@ -362,13 +365,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * actors in the viewport.
    * @param actors - An array of ActorEntry objects.
    */
-  public setActors: (actors: Array<ActorEntry>) => void;
+  public setActors: (actors: ActorEntry[]) => void;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, add a list of actors to the viewport
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors: (actors: Array<ActorEntry>) => void;
+  public addActors: (actors: ActorEntry[]) => void;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, add the
@@ -517,7 +520,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
   public getFrameOfReferenceUID = (sliceIndex?: number): string =>
-    this.getImagePlaneReferenceData(sliceIndex)?.FrameOfReferenceUID;
+    this.getImagePlaneReferenceData(sliceIndex).FrameOfReferenceUID;
 
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
@@ -641,10 +644,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     this.calibration = calibration;
     this._publishCalibratedEvent = true;
-    this._calibrationEvent = <CalibrationEvent>{
+    this._calibrationEvent = {
       scale,
       calibration,
-    };
+    } as CalibrationEvent;
 
     return imagePlaneModule;
   }
@@ -865,7 +868,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       this.perImageIdDefaultProperties.get(currentImageId) ||
       this.globalDefaultProperties;
 
-    if (properties.colormap?.name) {
+    if (properties.colormap.name) {
       this.setColormap(properties.colormap);
     }
 
@@ -1138,9 +1141,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   protected setRotation = (rotation: number) => {
     const previousCamera = this.getCamera();
 
-    this.useCPURendering
-      ? this.setRotationCPU(rotation)
-      : this.setRotationGPU(rotation);
+    if (this.useCPURendering) {
+      this.setRotationCPU(rotation);
+    } else {
+      this.setRotationGPU(rotation);
+    }
 
     if (this._suppressCameraModifiedEvents) {
       return;
@@ -1458,7 +1463,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // These ratios are constant across all frames, so only need one.
     const { suvbw, suvlbm, suvbsa } = imageIdScalingFactor;
 
-    const ptScaling = <PTScaling>{};
+    const ptScaling = {} as PTScaling;
 
     if (suvlbm) {
       ptScaling.suvbwToSuvlbm = suvlbm / suvbw;
@@ -1485,7 +1490,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     let numberOfComponents = 1;
     if (
       photometricInterpretation === 'RGB' ||
-      photometricInterpretation.indexOf('YBR') !== -1 ||
+      photometricInterpretation.includes('YBR') ||
       photometricInterpretation === 'PALETTE COLOR'
     ) {
       numberOfComponents = 3;
@@ -1512,13 +1517,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     let rowCosines, columnCosines;
 
-    rowCosines = <Point3>imagePlaneModule.rowCosines;
-    columnCosines = <Point3>imagePlaneModule.columnCosines;
+    rowCosines = imagePlaneModule.rowCosines;
+    columnCosines = imagePlaneModule.columnCosines;
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {
-      rowCosines = <Point3>[1, 0, 0];
-      columnCosines = <Point3>[0, 1, 0];
+      rowCosines = [1, 0, 0] as Point3;
+      columnCosines = [0, 1, 0] as Point3;
     }
 
     const rowCosineVec = vec3.fromValues(
@@ -1594,13 +1599,15 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // Values are null, not undefined, so need to assign instead of defaulting
     rowCosines ||= [1, 0, 0];
     columnCosines ||= [0, 1, 0];
-    const viewPlaneNormal = <Point3>(
-      vec3.cross([0, 0, 0], columnCosines, rowCosines)
-    );
+    const viewPlaneNormal = vec3.cross(
+      [0, 0, 0],
+      columnCosines,
+      rowCosines
+    ) as Point3;
     return {
       FrameOfReferenceUID,
       viewPlaneNormal,
-      cameraFocalPoint: <Point3>imagePositionPatient,
+      cameraFocalPoint: imagePositionPatient as Point3,
       referencedImageId: imageId,
       sliceIndex,
     };
@@ -1692,7 +1699,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @param currentImageIdIndex - number representing the index of the initial image to be displayed
    */
   public async setStack(
-    imageIds: Array<string>,
+    imageIds: string[],
     currentImageIdIndex = 0
   ): Promise<string> {
     this._throwIfDestroyed();
@@ -1791,8 +1798,8 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         (image.rowPixelSpacing === null && ySpacing === 1.0)) &&
       xVoxels === image.columns &&
       yVoxels === image.rows &&
-      isEqual(imagePlaneModule.rowCosines, <Point3>rowCosines) &&
-      isEqual(imagePlaneModule.columnCosines, <Point3>columnCosines) &&
+      isEqual(imagePlaneModule.rowCosines, rowCosines as Point3) &&
+      isEqual(imagePlaneModule.columnCosines, columnCosines as Point3) &&
       dataType === image.voxelManager.getScalarData().constructor.name
     );
   }
@@ -1859,11 +1866,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         // CPU path cannot handle it, it should be converted to Uint16Array
         // and via the Modality LUT we can display it properly
         const preScale = image.preScale;
-        const scalingParams = preScale?.scalingParameters;
+        const scalingParams = preScale.scalingParameters;
 
         const scaledWithNonIntegers =
-          (preScale?.scaled && scalingParams?.rescaleIntercept % 1 !== 0) ||
-          scalingParams?.rescaleSlope % 1 !== 0;
+          (preScale.scaled && scalingParams.rescaleIntercept % 1 !== 0) ||
+          scalingParams.rescaleSlope % 1 !== 0;
 
         if (pixelData instanceof Float32Array && scaledWithNonIntegers) {
           const floatMinMax = {
@@ -2001,11 +2008,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // the base csImage if imageFrame isn't defined, which happens when the images
     // come from the volume
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const csImgFrame = (<any>this.csImage)?.imageFrame;
+    const csImgFrame = (this.csImage as any)?.imageFrame;
     const imgFrame = image?.imageFrame;
     const photometricInterpretation =
       csImgFrame?.photometricInterpretation ||
-      this.csImage?.photometricInterpretation;
+      this.csImage.photometricInterpretation;
     const newPhotometricInterpretation =
       imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
@@ -2141,7 +2148,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   };
 
   private _updateToDisplayImageCPU(image: IImage) {
-    const metadata = this.getImageDataMetadata(image) as ImageDataMetaData;
+    const metadata = this.getImageDataMetadata(image);
 
     const viewport = getDefaultViewport(
       this.canvas,
@@ -2203,7 +2210,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    *
    * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
    */
-  public addImages(stackInputs: Array<IStackInput>) {
+  public addImages(stackInputs: IStackInput[]) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
       const { imageId } = stackInput;
@@ -2426,7 +2433,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       return false;
     }
 
-    if (!this.csImage.preScale?.scalingParameters?.suvbw) {
+    if (!this.csImage.preScale.scalingParameters.suvbw) {
       return false;
     }
 
@@ -2665,6 +2672,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       renderer,
     };
 
+    // @ts-expect-error invokeEvent is not defined in vtkRenderer
     renderer.invokeEvent(RESET_CAMERA_EVENT);
   }
 
@@ -2824,19 +2832,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     // The y axis display coordinates are inverted with respect to canvas coords
     displayCoord[1] = size[1] - displayCoord[1];
 
-    const canvasCoord = <Point2>[
+    const canvasCoord = [
       displayCoord[0] - this.sx,
       displayCoord[1] - this.sy,
-    ];
+    ] as Point2;
 
     // set clipping range back to original to be able
     vtkCamera.setClippingRange(crange[0], crange[1]);
 
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const canvasCoordWithDPR = <Point2>[
+    const canvasCoordWithDPR = [
       canvasCoord[0] / devicePixelRatio,
       canvasCoord[1] / devicePixelRatio,
-    ];
+    ] as Point2;
 
     return canvasCoordWithDPR;
   };
@@ -2847,11 +2855,17 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
   }
 
-  private _getValidVOILUTFunction(voiLUTFunction: any) {
-    if (Object.values(VOILUTFunctionType).indexOf(voiLUTFunction) === -1) {
-      voiLUTFunction = VOILUTFunctionType.LINEAR;
+  private _getValidVOILUTFunction(
+    voiLUTFunction: VOILUTFunctionType | unknown
+  ): VOILUTFunctionType {
+    if (
+      !Object.values(VOILUTFunctionType).includes(
+        voiLUTFunction as VOILUTFunctionType
+      )
+    ) {
+      return VOILUTFunctionType.LINEAR;
     }
-    return voiLUTFunction;
+    return voiLUTFunction as VOILUTFunctionType;
   }
 
   /**
@@ -2906,7 +2920,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const { referencedImageId, sliceIndex } = viewRef;
 
     if (viewRef.volumeId && !referencedImageId) {
-      return options.asVolume === true;
+      return options.asVolume;
     }
 
     let testIndex = this.getCurrentImageIdIndex();
@@ -3007,7 +3021,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const colonIndex = currentImageId.indexOf(':');
       imageURI = currentImageId.substring(colonIndex + 1);
     }
-    return referencedImageId?.endsWith(imageURI);
+    return referencedImageId.endsWith(imageURI);
   }
 
   /**
@@ -3093,7 +3107,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Returns the list of image Ids for the current viewport
    * @returns list of strings for image Ids
    */
-  public getImageIds = (): Array<string> => {
+  public getImageIds = (): string[] => {
     return this.imageIds;
   };
 
@@ -3256,12 +3270,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
-      this.hasPixelSpacing = this.calibration?.scale > 0;
+      this.hasPixelSpacing = this.calibration.scale > 0;
     }
 
     if (!newImagePlaneModule.rowPixelSpacing) {
       newImagePlaneModule.rowPixelSpacing = 1;
-      this.hasPixelSpacing = this.calibration?.scale > 0;
+      this.hasPixelSpacing = this.calibration.scale > 0;
     }
 
     if (!newImagePlaneModule.columnCosines) {

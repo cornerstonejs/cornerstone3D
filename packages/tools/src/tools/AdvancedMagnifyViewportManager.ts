@@ -7,13 +7,11 @@ import {
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { AnnotationRemovedEventType } from '../types/EventTypes';
+import type { AnnotationRemovedEventType } from '../types/EventTypes';
 import { Events as cstEvents } from '../enums';
-import {
-  AdvancedMagnifyViewport,
-  AutoPanCallback,
-} from './AdvancedMagnifyViewport';
-import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { AutoPanCallback } from './AdvancedMagnifyViewport';
+import { AdvancedMagnifyViewport } from './AdvancedMagnifyViewport';
+import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 // Defined the tool name internally instead of importing
 // AdvancedMagnifyTool due to cyclic dependency
@@ -167,6 +165,7 @@ class AdvancedMagnifyViewportManager {
       return;
     }
 
+    // @ts-ignore
     this.destroyViewport(annotation.data.magnifyViewportId);
   };
 

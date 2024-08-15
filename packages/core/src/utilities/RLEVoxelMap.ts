@@ -1,15 +1,15 @@
-import { PixelDataTypedArray } from '../types';
+import type { PixelDataTypedArray } from '../types';
 
 /**
  * The RLERun specifies a contigous run of values for a row,
  * where all indices (i only) from `[start,end)` have the specified
  * value.
  */
-export type RLERun<T> = {
+export interface RLERun<T> {
   value: T;
   start: number;
   end: number;
-};
+}
 
 /**
  * RLE based implementation of a voxel map.
@@ -79,7 +79,7 @@ export default class RLEVoxelMap<T> {
     const i = index % this.jMultiple;
     const j = (index - i) / this.jMultiple;
     const rle = this.getRLE(i, j);
-    return rle?.value || this.defaultValue;
+    return rle.value || this.defaultValue;
   };
 
   /**
@@ -94,7 +94,7 @@ export default class RLEVoxelMap<T> {
     }
     const index = this.findIndex(row, i);
     const rle = row[index];
-    return i >= rle?.start ? rle : undefined;
+    return i >= rle.start ? rle : undefined;
   }
 
   /**
@@ -171,19 +171,19 @@ export default class RLEVoxelMap<T> {
     let rleNext = isAfter ? row[rleIndex + 1] : rle1;
 
     // Can merge with previous value, so no insert
-    if (rlePrev?.value === value && rlePrev?.end === i) {
+    if (rlePrev.value === value && rlePrev.end === i) {
       rlePrev.end++;
-      if (rleNext?.value === value && rleNext.start === i + 1) {
+      if (rleNext.value === value && rleNext.start === i + 1) {
         rlePrev.end = rleNext.end;
         row.splice(rleIndex, 1);
         // validateRow(row, i, rleIndex, value);
-      } else if (rleNext?.start === i) {
+      } else if (rleNext.start === i) {
         rleNext.start++;
         if (rleNext.start === rleNext.end) {
           row.splice(rleIndex, 1);
           rleNext = row[rleIndex];
           // Check if we can merge twice
-          if (rleNext?.start === i + 1 && rleNext.value === value) {
+          if (rleNext.start === i + 1 && rleNext.value === value) {
             rlePrev.end = rleNext.end;
             row.splice(rleIndex, 1);
           }
@@ -194,9 +194,9 @@ export default class RLEVoxelMap<T> {
     }
 
     // Can merge with next, so no insert
-    if (rleNext?.value === value && rleNext.start === i + 1) {
+    if (rleNext.value === value && rleNext.start === i + 1) {
       rleNext.start--;
-      if (rlePrev?.end > i) {
+      if (rlePrev.end > i) {
         rlePrev.end = i;
         if (rlePrev.end === rlePrev.start) {
           row.splice(rleIndex, 1);
@@ -207,10 +207,10 @@ export default class RLEVoxelMap<T> {
     }
 
     // Can't merge, need to see if we can replace
-    if (rleNext?.start === i && rleNext.end === i + 1) {
+    if (rleNext.start === i && rleNext.end === i + 1) {
       rleNext.value = value;
       const nextnext = row[rleIndex + 1];
-      if (nextnext?.start == i + 1 && nextnext.value === value) {
+      if (nextnext.start == i + 1 && nextnext.value === value) {
         row.splice(rleIndex + 1, 1);
         rleNext.end = nextnext.end;
       }
@@ -219,7 +219,7 @@ export default class RLEVoxelMap<T> {
     }
 
     // Need to fix the next start value
-    if (i === rleNext?.start) {
+    if (i === rleNext.start) {
       rleNext.start++;
     }
     if (isAfter && end > i + 1) {
@@ -232,7 +232,7 @@ export default class RLEVoxelMap<T> {
     } else {
       row.splice(insertIndex, 0, rleInsert);
     }
-    if (rlePrev?.end > i) {
+    if (rlePrev.end > i) {
       rlePrev.end = i;
     }
     // validateRow(row, i, rleIndex, value, insertIndex);

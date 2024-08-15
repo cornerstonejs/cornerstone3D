@@ -6,7 +6,7 @@ import {
   getBoundingBoxAroundShapeWorld,
 } from '../../../utilities/boundingBox';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { LabelmapToolOperationData } from '../../../types';
+import type { LabelmapToolOperationData } from '../../../types';
 import { getStrategyData } from './utils/getStrategyData';
 import { isAxisAlignedRectangle } from '../../../utilities/rectangleROITool/isAxisAlignedRectangle';
 

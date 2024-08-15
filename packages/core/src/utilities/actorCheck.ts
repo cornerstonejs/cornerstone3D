@@ -1,4 +1,4 @@
-import { Types } from '..';
+import type { Types } from '..';
 
 type actorTypes = 'vtkActor' | 'vtkVolume' | 'vtkImageSlice';
 

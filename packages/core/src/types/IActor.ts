@@ -1,5 +1,5 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 export type Actor = vtkActor;
@@ -23,7 +23,7 @@ export interface ICanvasActor {
  * slabThickness for the actor. ActorEntry is the object that
  * is retrieved from viewport when calling viewport.getActor(s)
  */
-export type ActorEntry = {
+export interface ActorEntry {
   /** actor UID */
   uid: string;
   /** actual actor object */
@@ -33,5 +33,6 @@ export type ActorEntry = {
   /** slab thickness for the actor */
   slabThickness?: number;
   /** clipping filter applied to actor surfaces*/
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clippingFilter?: any;
-};
+}

@@ -5,7 +5,7 @@ import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
 import { getImageQualityStatus } from './getImageQualityStatus';
-import { CornerstoneWadoRsLoaderOptions } from './loadImage';
+import type { CornerstoneWadoRsLoaderOptions } from './loadImage';
 
 function getPixelData(
   uri: string,

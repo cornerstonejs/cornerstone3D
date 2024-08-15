@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { metaData } from '..';
-import { Point2, Point3 } from '../types';
+import type { Point2, Point3 } from '../types';
 
 /**
  * Given the imageId, and 3d coordinates on the world space, it returns the continuos

@@ -4,9 +4,9 @@
 // So, we just fetch the entire volume by streaming.
 // We create images one by one when their corresponding slice is ready.
 // We then create the image and let Cornerstone handle the texture upload and rendering.
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
-  Types,
   eventTarget,
   metaData,
   triggerEvent,
@@ -113,7 +113,7 @@ export default function cornerstoneNiftiImageLoader(
   });
 
   return {
-    promise: promise as Promise<any>,
+    promise: promise as Promise<Types.IImage>,
     cancelFn: undefined,
   };
 }

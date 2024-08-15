@@ -1,6 +1,6 @@
-import { ViewportType } from '../enums';
+import type { ViewportType } from '../enums';
 
-export type WSIViewportInput = {
+export interface WSIViewportInput {
   id: string;
   renderingEngineId: string;
   type: ViewportType;
@@ -9,6 +9,6 @@ export type WSIViewportInput = {
   sy: number;
   sWidth: number;
   sHeight: number;
-  defaultOptions: any;
+  defaultOptions: Record<string, unknown>;
   canvas: HTMLCanvasElement;
-};
+}

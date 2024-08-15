@@ -5,7 +5,7 @@
  *
  * @returns True if the object is a TypedArray.
  */
-export default function isTypedArray(obj: any): boolean {
+export default function isTypedArray(obj: unknown): boolean {
   return (
     obj instanceof Int8Array ||
     obj instanceof Uint8Array ||

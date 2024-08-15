@@ -1,4 +1,4 @@
-import * as Types from '../types';
+import type * as Types from '../types';
 import cache, { ImageVolume } from '../cache';
 import { ViewportType } from '../enums';
 
@@ -33,7 +33,7 @@ async function convertVolumeToStackViewport({
 
   const actorEntry = volumeViewport.getDefaultActor();
   const { uid: volumeId } = actorEntry;
-  const volume = cache.getVolume(volumeId) as Types.IImageVolume;
+  const volume = cache.getVolume(volumeId);
 
   if (!(volume instanceof ImageVolume)) {
     throw new Error(
@@ -55,9 +55,9 @@ async function convertVolumeToStackViewport({
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const stackViewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   await stackViewport.setStack(volume.imageIds);
 

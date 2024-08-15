@@ -1,6 +1,6 @@
 import { isValidLabelmapConfig } from '../../tools/displayTools/Labelmap/labelmapConfig';
 import SegmentationRepresentation from '../../enums/SegmentationRepresentations';
-import { RepresentationConfig } from '../../types/SegmentationStateTypes';
+import type { RepresentationConfig } from '../../types/SegmentationStateTypes';
 
 /**
  * Given a representation type and a configuration, return true if the

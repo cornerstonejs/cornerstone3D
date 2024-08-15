@@ -1,5 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
 import {
-  Types,
   Enums,
   getWebWorkerManager,
   eventTarget,

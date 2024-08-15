@@ -1,4 +1,5 @@
-import { Types, cache } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { SegmentationRepresentations } from '../../enums';

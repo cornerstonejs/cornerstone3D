@@ -1,6 +1,6 @@
-import IGeometry from './IGeometry';
-import IImage from './IImage';
-import IImageVolume from './IImageVolume';
+import type IGeometry from './IGeometry';
+import type IImage from './IImage';
+import type IImageVolume from './IImageVolume';
 
 /**
  * ImageLoadObject interface which any imageLoader should return

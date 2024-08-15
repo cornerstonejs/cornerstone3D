@@ -1,8 +1,8 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   triggerEvent,
   eventTarget,
   Enums,
-  Types,
   getRenderingEngines,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
@@ -11,10 +11,10 @@ import {
   Events as csToolsEvents,
 } from '../../enums';
 
-import { SegmentationRenderedEventDetail } from '../../types/EventTypes';
+import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
-import { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
+import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import { surfaceDisplay } from '../../tools/displayTools/Surface';
 import { contourDisplay } from '../../tools/displayTools/Contour';
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap';

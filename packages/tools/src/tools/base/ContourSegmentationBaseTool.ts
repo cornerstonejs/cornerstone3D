@@ -1,4 +1,4 @@
-import { Types, getEnabledElement, utilities } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import type {
   Annotation,
   EventTypes,
@@ -199,7 +199,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   private _getContourSegmentationStyle(context: {
     annotation: Annotation;
     styleSpecifier: StyleSpecifier;
-  }): Record<string, any> {
+  }): Record<string, unknown> {
     const annotation = context.annotation as ContourSegmentationAnnotation;
     const { segmentationId, segmentIndex } = annotation.data.segmentation;
     const segmentation = segmentationState.getSegmentation(segmentationId);

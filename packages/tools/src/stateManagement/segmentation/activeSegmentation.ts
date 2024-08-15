@@ -1,4 +1,4 @@
-import {
+import type {
   SegmentationRepresentation,
   Segmentation,
 } from '../../types/SegmentationStateTypes';

@@ -1,11 +1,11 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { IViewport } from './IViewport';
-import { IVolumeInput } from './IVolumeInput';
-import FlipDirection from './FlipDirection';
-import IImageData from './IImageData';
-import { BlendModes, OrientationAxis } from '../enums';
-import { VolumeViewportProperties } from '.';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type { IViewport } from './IViewport';
+import type { IVolumeInput } from './IVolumeInput';
+import type FlipDirection from './FlipDirection';
+import type IImageData from './IImageData';
+import type { BlendModes, OrientationAxis } from '../enums';
+import type VolumeViewportProperties from './VolumeViewportProperties';
 
 /**
  * Interface for the Volume Viewport
@@ -99,7 +99,7 @@ export default interface IVolumeViewport extends IViewport {
    * `VolumeMapper`.
    */
   setVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate?: boolean,
     suppressEvents?: boolean
   ): Promise<void>;
@@ -108,7 +108,7 @@ export default interface IVolumeViewport extends IViewport {
    * For each entry, if a `callback` is supplied, it will be called with the new volume actor as input.
    */
   addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate?: boolean,
     suppressEvents?: boolean
   ): Promise<void>;
@@ -116,7 +116,7 @@ export default interface IVolumeViewport extends IViewport {
    * It removes the volume actor from the Viewport. If the volume actor is not in
    * the viewport, it does nothing.
    */
-  removeVolumeActors(actorUIDs: Array<string>, immediate?: boolean): void;
+  removeVolumeActors(actorUIDs: string[], immediate?: boolean): void;
 
   /**
    * Given a point in world coordinates, return the intensity at that point
@@ -125,7 +125,7 @@ export default interface IVolumeViewport extends IViewport {
   /**
    * getBounds gets the visible bounds of the viewport
    */
-  getBounds(): any;
+  getBounds(): number[];
   /**
    * Flip the viewport along the desired axis
    */
@@ -155,16 +155,13 @@ export default interface IVolumeViewport extends IViewport {
    */
   setBlendMode(
     blendMode: BlendModes,
-    filterActorUIDs?: Array<string>,
+    filterActorUIDs?: string[],
     immediate?: boolean
   ): void;
   /**
    * Sets the slab thickness for actors of the viewport.
    */
-  setSlabThickness(
-    slabThickness: number,
-    filterActorUIDs?: Array<string>
-  ): void;
+  setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void;
   /**
    * Gets the slab thickness option in the `Viewport`'s `options`.
    */

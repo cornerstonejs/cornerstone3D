@@ -1,6 +1,6 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes';
+import type { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes';
 import { getAnnotation } from './annotationState';
 
 /*

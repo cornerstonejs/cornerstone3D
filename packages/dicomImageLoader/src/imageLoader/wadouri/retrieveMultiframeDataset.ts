@@ -55,6 +55,7 @@ function generateMultiframeWADOURIs(uri) {
   const dataSet = _get(uri);
 
   if (_isMultiframeDataset(dataSet)) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const numberOfFrames = (dataSet as any).intString('x00280008');
 
     for (let i = 1; i <= numberOfFrames; i++) {

@@ -6,9 +6,10 @@ import type {
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
 import type VoxelManager from '../utilities/VoxelManager';
-import { ImageQualityStatus } from '../enums';
-import IImageCalibration from './IImageCalibration';
-import RGB from './RGB';
+import type { ImageQualityStatus } from '../enums';
+import type IImageCalibration from './IImageCalibration';
+import type RGB from './RGB';
+import type IImageFrame from './IImageFrame';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -120,13 +121,13 @@ interface IImage {
     windowCenter?: number | number[];
     invert?: boolean;
     lutArray?: Uint8ClampedArray;
-    modalityLUT?: unknown;
+    modalityLUT?: CPUFallbackLUT;
     voiLUT?: CPUFallbackLUT;
   };
 
   imageQualityStatus?: ImageQualityStatus;
   calibration?: IImageCalibration;
-  imageFrame?: any;
+  imageFrame?: IImageFrame;
 
   FrameOfReferenceUID?: string;
   dataType: PixelDataTypedArrayString;
@@ -139,4 +140,4 @@ interface IImage {
   };
 }
 
-export default IImage;
+export type { IImage as default };

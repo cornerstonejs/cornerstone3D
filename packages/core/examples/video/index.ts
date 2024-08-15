@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -54,9 +54,9 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
@@ -77,9 +77,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVideoViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVideoViewport;
 
     // Set a range to highlight bones
     viewport.play();
@@ -93,9 +93,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVideoViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVideoViewport;
 
     // Set a range to highlight bones
     viewport.pause();
@@ -118,8 +118,8 @@ async function run() {
   });
 
   // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
+  const videoId = imageIds.find((it) =>
+    it.includes('2.25.179478223177027022014772769075050874231')
   );
 
   // Instantiate a rendering engine
@@ -132,16 +132,16 @@ async function run() {
     type: ViewportType.VIDEO,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVideoViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVideoViewport;
 
   // Set the stack on the viewport
   await viewport.setVideo(videoId);

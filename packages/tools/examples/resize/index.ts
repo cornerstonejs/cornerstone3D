@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -49,6 +49,7 @@ const viewportIds = [
   viewportId4,
   viewportId5,
 ];
+
 let viewport;
 const viewports = [];
 const renderingEngineId = 'myRenderingEngine';

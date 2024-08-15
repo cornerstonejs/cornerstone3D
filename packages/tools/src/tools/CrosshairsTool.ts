@@ -38,7 +38,7 @@ import {
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 
 import * as lineSegment from '../utilities/math/line';
-import {
+import type {
   Annotation,
   Annotations,
   EventTypes,
@@ -57,8 +57,8 @@ const { RENDERING_DEFAULTS } = CONSTANTS;
 interface CrosshairsAnnotation extends Annotation {
   data: {
     handles: {
-      rotationPoints: any[]; // rotation handles, used for rotation interactions
-      slabThicknessPoints: any[]; // slab thickness handles, used for setting the slab thickness
+      rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
+      slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
       activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3;
     };
@@ -110,7 +110,7 @@ class CrosshairsTool extends AnnotationTool {
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
   editData: {
-    annotation: any;
+    annotation: Annotation;
   } | null;
 
   constructor(
@@ -1473,7 +1473,7 @@ class CrosshairsTool extends AnnotationTool {
     return toolGroupAnnotations;
   };
 
-  _onNewVolume = (e: any) => {
+  _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     this.computeToolCenter(viewportsInfo);
   };
@@ -2247,6 +2247,7 @@ class CrosshairsTool extends AnnotationTool {
             if (!viewportDraggableRotatable) {
               const { rotationPoints } = this.editData.annotation.data.handles;
               // Todo: what is a point uid?
+              // @ts-expect-error
               const otherViewportRotationPoints = rotationPoints.filter(
                 (point) => point[1].uid === otherViewport.id
               );

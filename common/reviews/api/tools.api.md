@@ -124,7 +124,7 @@ export class AdvancedMagnifyTool extends AnnotationTool {
     _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         newAnnotation?: boolean;
@@ -195,7 +195,7 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     angleStartedNotYetCompleted: boolean;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: Annotation, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -206,7 +206,7 @@ export class AngleTool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -543,7 +543,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
 class AnnotationToPointData {
     constructor();
     // (undocumented)
-    static convert(annotation: any, index: any, metadataProvider: any): {
+    static convert(annotation: Annotation, index: any, metadataProvider: any): {
         ReferencedROINumber: any;
         ROIDisplayColor: number[];
         ContourSequence: any;
@@ -586,14 +586,14 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
+    _doneChangingTextCallback(element: any, annotation: Annotation, updatedText: any): void;
     // (undocumented)
     doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
     // (undocumented)
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -758,7 +758,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation(evt: EventTypes_2.InteractionEventType): BidirectionalAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: Annotation, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     _calculateLength(pos1: any, pos2: any): number;
     // (undocumented)
@@ -775,7 +775,7 @@ export class BidirectionalTool extends AnnotationTool {
     _dragModifyHandle: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox: boolean;
@@ -1140,14 +1140,14 @@ export class CircleROIStartEndThresholdTool extends CircleROITool {
         };
     };
     // (undocumented)
-    _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
+    _calculateCachedStatsTool(annotation: Annotation, enabledElement: any): any;
     // (undocumented)
-    _computePointsInsideVolume(annotation: any, imageVolume: any, targetId: any, enabledElement: any): void;
+    _computePointsInsideVolume(annotation: Annotation, imageVolume: any, targetId: any, enabledElement: any): void;
     // (undocumented)
     _computeProjectionPoints(annotation: CircleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         newAnnotation?: boolean;
@@ -1189,7 +1189,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => CircleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: Annotation, viewport: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1204,7 +1204,7 @@ export class CircleROITool extends AnnotationTool {
     _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -1248,7 +1248,7 @@ export class CircleScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         segmentIndex: number;
         volumeId: string;
         referencedVolumeId: string;
@@ -1361,7 +1361,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     angleStartedNotYetCompleted: boolean;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: Annotation, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -1382,7 +1382,7 @@ export class CobbAngleTool extends AnnotationTool {
     };
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -1813,7 +1813,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _applyDeltaShiftToSelectedViewportCameras(renderingEngine: any, viewportsAnnotationsToUpdate: any, delta: any): void;
     // (undocumented)
-    _applyDeltaShiftToViewportCamera(renderingEngine: Types_2.IRenderingEngine, annotation: any, delta: any): void;
+    _applyDeltaShiftToViewportCamera(renderingEngine: Types_2.IRenderingEngine, annotation: Annotation, delta: any): void;
     // (undocumented)
     _areViewportIdArraysEqual: (viewportIdArrayOne: any, viewportIdArrayTwo: any) => boolean;
     // (undocumented)
@@ -1830,7 +1830,7 @@ export class CrosshairsTool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -1855,9 +1855,9 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
     // (undocumented)
-    _getRotationHandleNearImagePoint(viewport: any, annotation: any, canvasCoords: any, proximity: any): any;
+    _getRotationHandleNearImagePoint(viewport: any, annotation: Annotation, canvasCoords: any, proximity: any): any;
     // (undocumented)
-    _getSlabThicknessHandleNearImagePoint(viewport: any, annotation: any, canvasCoords: any, proximity: any): any;
+    _getSlabThicknessHandleNearImagePoint(viewport: any, annotation: Annotation, canvasCoords: any, proximity: any): any;
     // (undocumented)
     _getViewportsInfo: () => any[];
     // (undocumented)
@@ -1890,9 +1890,9 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     onSetToolPassive(): void;
     // (undocumented)
-    _pointNearReferenceLine: (annotation: any, canvasCoords: any, proximity: any, lineViewport: any) => boolean;
+    _pointNearReferenceLine: (annotation: Annotation, canvasCoords: any, proximity: any, lineViewport: any) => boolean;
     // (undocumented)
-    _pointNearTool(element: any, annotation: any, canvasCoords: any, proximity: any): boolean;
+    _pointNearTool(element: any, annotation: Annotation, canvasCoords: any, proximity: any): boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -2017,7 +2017,7 @@ export class DragProbeTool extends ProbeTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         newAnnotation?: boolean;
     } | null;
@@ -2196,7 +2196,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => EllipticalROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewport: any, renderingEngine: any) => any;
+    _calculateCachedStats: (annotation: Annotation, viewport: any, renderingEngine: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -2211,7 +2211,7 @@ export class EllipticalROITool extends AnnotationTool {
     _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -2920,7 +2920,7 @@ export class HeightTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LengthAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: Annotation, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     _calculateHeight(pos1: any, pos2: any): number;
     // (undocumented)
@@ -2933,7 +2933,7 @@ export class HeightTool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -3304,12 +3304,12 @@ export class KeyImageTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: HTMLDivElement) => void;
     // (undocumented)
-    _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
+    _doneChangingTextCallback(element: any, annotation: Annotation, updatedText: any): void;
     // (undocumented)
     doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -3458,7 +3458,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LengthAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: Annotation, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     _calculateLength(pos1: any, pos2: any): number;
     // (undocumented)
@@ -3471,7 +3471,7 @@ export class LengthTool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -3591,7 +3591,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected scissorsNext: LivewireScissors;
     // (undocumented)
-    protected setupBaseEditData(worldPos: any, element: any, annotation: any, nextPos?: any, contourHoleProcessingEnabled?: any): void;
+    protected setupBaseEditData(worldPos: any, element: any, annotation: Annotation, nextPos?: any, contourHoleProcessingEnabled?: any): void;
     // (undocumented)
     static toolName: string;
     // (undocumented)
@@ -4246,7 +4246,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: Annotation, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4255,7 +4255,7 @@ export class ProbeTool extends AnnotationTool {
     _dragCallback: (evt: any) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         newAnnotation?: boolean;
     } | null;
@@ -4421,14 +4421,14 @@ export class RectangleROIStartEndThresholdTool extends RectangleROITool {
         };
     };
     // (undocumented)
-    _calculateCachedStatsTool(annotation: any, enabledElement: any): any;
+    _calculateCachedStatsTool(annotation: Annotation, enabledElement: any): any;
     // (undocumented)
-    _computePointsInsideVolume(annotation: any, targetId: any, imageVolume: any, enabledElement: any): void;
+    _computePointsInsideVolume(annotation: Annotation, targetId: any, imageVolume: any, enabledElement: any): void;
     // (undocumented)
     _computeProjectionPoints(annotation: RectangleROIStartEndThresholdAnnotation, imageVolume: Types_2.IImageVolume): void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
@@ -4513,7 +4513,7 @@ export class RectangleROIThresholdTool extends RectangleROITool {
     };
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
@@ -4544,7 +4544,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => RectangleROIAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: Annotation, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -4555,7 +4555,7 @@ export class RectangleROITool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -4612,7 +4612,7 @@ export class RectangleScissorsTool extends BaseTool {
         imageIdReferenceMap: Map<string, string>;
         volumeId: string;
         referencedVolumeId: string;
-        annotation: any;
+        annotation: Annotation;
         segmentationId: string;
         segmentIndex: number;
         segmentsLocked: number[];
@@ -5260,7 +5260,7 @@ export class SphereScissorsTool extends BaseTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         segmentIndex: number;
         segmentsLocked: number[];
         segmentationRepresentationUID: string;
@@ -5367,7 +5367,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
-    protected createInterpolatedSplineControl(annotation: any): void;
+    protected createInterpolatedSplineControl(annotation: Annotation): void;
     // (undocumented)
     deleteControlPointCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
@@ -6204,7 +6204,7 @@ export class UltrasoundDirectionalTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => UltrasoundDirectionalAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: Annotation, renderingEngine: any, enabledElement: any): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => any;
     // (undocumented)
@@ -6215,7 +6215,7 @@ export class UltrasoundDirectionalTool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
         handleIndex?: number;
         movingTextBox?: boolean;
@@ -6357,7 +6357,7 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => VideoRedactionAnnotation;
     // (undocumented)
-    _calculateCachedStats: (annotation: any, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
+    _calculateCachedStats: (annotation: Annotation, viewPlaneNormal: any, viewUp: any, renderingEngine: any, enabledElement: any) => any;
     // (undocumented)
     cancel(element: any): any;
     // (undocumented)
@@ -6368,14 +6368,14 @@ export class VideoRedactionTool extends AnnotationTool {
     _deactivateModify: (element: any) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportUIDsToRender: string[];
         handleIndex?: number;
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
     // (undocumented)
-    getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
+    getHandleNearImagePoint: (element: any, annotation: Annotation, canvasCoords: any, proximity: any) => any;
     // (undocumented)
     _getImageVolumeFromTargetUID(targetUID: any, renderingEngine: any): {
         imageVolume: any;
@@ -6393,7 +6393,7 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     _getTargetVolumeUID: (scene: any) => any;
     // (undocumented)
-    handleSelectedCallback: (evt: any, annotation: any, handle: any, interactionType?: string) => void;
+    handleSelectedCallback: (evt: any, annotation: Annotation, handle: any, interactionType?: string) => void;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -6401,7 +6401,7 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
     // (undocumented)
-    isPointNearTool: (element: any, annotation: any, canvasCoords: any, proximity: any) => boolean;
+    isPointNearTool: (element: any, annotation: Annotation, canvasCoords: any, proximity: any) => boolean;
     // (undocumented)
     _mouseDragCallback: (evt: any) => void;
     // (undocumented)
@@ -6411,7 +6411,7 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: any;
     // (undocumented)
-    toolSelectedCallback: (evt: any, annotation: any, interactionType?: string) => void;
+    toolSelectedCallback: (evt: any, annotation: Annotation, interactionType?: string) => void;
 }
 
 declare namespace viewport {
@@ -6520,7 +6520,7 @@ export class WindowLevelRegionTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => any;
     // (undocumented)
-    applyWindowLevelRegion: (annotation: any, element: any) => void;
+    applyWindowLevelRegion: (annotation: Annotation, element: any) => void;
     // (undocumented)
     cancel: () => void;
     // (undocumented)
@@ -6531,7 +6531,7 @@ export class WindowLevelRegionTool extends AnnotationTool {
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: string[];
     } | null;
     // (undocumented)

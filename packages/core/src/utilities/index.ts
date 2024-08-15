@@ -13,7 +13,6 @@ import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMeta
 import clamp from './clamp';
 import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
-import getViewportModality from './getViewportModality';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
@@ -74,6 +73,15 @@ import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as color from './color';
+
+import type { IViewport } from '../types/IViewport';
+
+// solving the circular dependency issue
+import { _getViewportModality } from './getViewportModality';
+import cache from '../cache';
+
+const getViewportModality = (viewport: IViewport, volumeId?: string) =>
+  _getViewportModality(viewport, volumeId, cache.getVolume);
 
 export {
   eventListener,

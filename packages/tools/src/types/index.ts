@@ -49,7 +49,7 @@ import type {
   SegmentationState,
   RepresentationPublicInput,
 } from './SegmentationStateTypes';
-import { ISculptToolShape } from './ISculptToolShape';
+import type { ISculptToolShape } from './ISculptToolShape';
 import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
 import type {
   FloodFillGetter,
@@ -63,7 +63,7 @@ import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type AnnotationRenderContext from './AnnotationRenderContext';
 import type { Statistics, NamedStatistics } from './CalculatorTypes';
 import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
-import {
+import type {
   LabelmapToolOperationData,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,

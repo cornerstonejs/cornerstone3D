@@ -1,7 +1,11 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { Point3, Scaling, Mat3, PixelDataTypedArray, RGB } from '../types';
-import IImageCalibration from './IImageCalibration';
-import { VoxelManager } from '../utilities';
+import type { Point3 } from './Point3';
+import type { Scaling } from './ScalingParameters';
+import type Mat3 from './Mat3';
+import type { PixelDataTypedArray } from './PixelDataTypedArray';
+import type RGB from './RGB';
+import type IImageCalibration from './IImageCalibration';
+import type { VoxelManager } from '../utilities';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.
@@ -14,6 +18,8 @@ interface IImageData {
   direction: Mat3;
   /** image spacing */
   spacing: Point3;
+  /** number of components */
+  numberOfComponents?: number;
   /** image origin */
   origin: Point3;
   /** image scalarData which stores the array of pixelData */
@@ -49,4 +55,4 @@ interface IImageData {
   };
 }
 
-export default IImageData;
+export type { IImageData as default };

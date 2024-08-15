@@ -1,19 +1,20 @@
-import IStackViewport from './IStackViewport';
-import { PublicViewportInput } from './IViewport';
-import IVolumeViewport from './IVolumeViewport';
-import { IViewport } from './IViewport';
+import type IStackViewport from './IStackViewport';
+import type { PublicViewportInput } from './IViewport';
+import type IVolumeViewport from './IVolumeViewport';
+import type { IViewport } from './IViewport';
 
 export default interface IRenderingEngine {
   id: string;
   hasBeenDestroyed: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   offscreenMultiRenderWindow: any;
-  offScreenCanvasContainer: any;
-  setViewports(viewports: Array<PublicViewportInput>): void;
+  offScreenCanvasContainer: HTMLDivElement;
+  setViewports(viewports: PublicViewportInput[]): void;
   resize(immediate?: boolean, keepCamera?: boolean): void;
   getViewport(id: string): IViewport;
-  getViewports(): Array<IViewport>;
+  getViewports(): IViewport[];
   render(): void;
-  renderViewports(viewportIds: Array<string>): void;
+  renderViewports(viewportIds: string[]): void;
   renderViewport(viewportId: string): void;
   renderFrameOfReference(FrameOfReferenceUID: string): void;
   fillCanvasWithBackgroundColor(
@@ -22,8 +23,8 @@ export default interface IRenderingEngine {
   ): void;
   enableElement(viewportInputEntry: PublicViewportInput): void;
   disableElement(viewportId: string): void;
-  getStackViewports(): Array<IStackViewport>;
-  getVolumeViewports(): Array<IVolumeViewport>;
+  getStackViewports(): IStackViewport[];
+  getVolumeViewports(): IVolumeViewport[];
   getStackViewport(id: string): IStackViewport;
   destroy(): void;
   _debugRender(): void;

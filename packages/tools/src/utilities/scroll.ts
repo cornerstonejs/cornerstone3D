@@ -1,13 +1,13 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   StackViewport,
-  Types,
   VolumeViewport,
   eventTarget,
   EVENTS,
   utilities as csUtils,
   getEnabledElement,
 } from '@cornerstonejs/core';
-import { ScrollOptions, EventTypes } from '../types';
+import type { ScrollOptions, EventTypes } from '../types';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -19,7 +19,7 @@ import { ScrollOptions, EventTypes } from '../types';
  * @returns
  */
 export default function scroll(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IVideoViewport,
   options: ScrollOptions
 ): void {
   // check if viewport is disabled then throw error

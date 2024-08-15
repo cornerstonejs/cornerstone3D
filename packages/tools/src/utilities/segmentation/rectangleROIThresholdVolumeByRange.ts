@@ -7,7 +7,7 @@ import {
 
 import thresholdVolumeByRange from './thresholdVolumeByRange';
 import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations';
-import { ThresholdInformation } from './utilities';
+import type { ThresholdInformation } from './utilities';
 
 export type ThresholdOptions = {
   numSlicesToProject?: number; // number of slices to project before and after current slice

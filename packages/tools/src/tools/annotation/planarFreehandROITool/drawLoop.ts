@@ -1,10 +1,10 @@
-import { getEnabledElement, utilities } from '@cornerstonejs/core';
+import { getEnabledElement, utilities, type Types } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
-import { EventTypes } from '../../../types';
+import type { EventTypes } from '../../../types';
 import { state } from '../../../store';
 import { vec3 } from 'gl-matrix';
 import {
@@ -14,7 +14,7 @@ import {
 import getMouseModifierKey from '../../../eventDispatchers/shared/getMouseModifier';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
@@ -470,7 +470,7 @@ function cancelDrawing(element: HTMLElement) {
  * Tell whether a drawing should be halted or not. It will be true when canvas points is less than the minimum required.
  */
 function shouldHaltDrawing(
-  canvasPoints: any,
+  canvasPoints: Types.Point2[],
   subPixelResolution: number
 ): boolean {
   const minPoints = Math.max(
@@ -489,9 +489,12 @@ function shouldHaltDrawing(
 }
 
 /**
- * Check and halt a drawing for a given event. It returns true in case drawing is halted, otherswise false.
+ * Check and halt a drawing for a given event. It returns true in case drawing is halted, otherwise false.
  */
-function haltDrawing(element: HTMLDivElement, canvasPoints: any): boolean {
+function haltDrawing(
+  element: HTMLDivElement,
+  canvasPoints: Types.Point2[]
+): boolean {
   const { subPixelResolution } = this.configuration;
 
   if (shouldHaltDrawing(canvasPoints, subPixelResolution)) {

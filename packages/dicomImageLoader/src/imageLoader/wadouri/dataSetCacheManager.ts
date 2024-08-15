@@ -1,8 +1,8 @@
-import { DataSet } from 'dicom-parser';
+import type { DataSet } from 'dicom-parser';
 import external from '../../externalModules';
 import { xhrRequest } from '../internal/index';
 import dataSetFromPartialContent from './dataset-from-partial-content';
-import {
+import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
@@ -66,7 +66,7 @@ function update(uri: string, dataSet: DataSet) {
   cacheSizeInBytes += dataSet.byteArray.length;
 
   external.cornerstone.triggerEvent(
-    (external.cornerstone as any).events,
+    external.cornerstone.events,
     'datasetscachechanged',
     {
       uri,
@@ -79,7 +79,7 @@ function update(uri: string, dataSet: DataSet) {
 // loads the dicom dataset from the wadouri sp
 function load(
   uri: string,
-  loadRequest: LoadRequestFunction = xhrRequest,
+  loadRequest: LoadRequestFunction = xhrRequest as LoadRequestFunction,
   imageId: string
 ): CornerstoneWadoLoaderCachedPromise {
   const { cornerstone, dicomParser } = external;
@@ -108,6 +108,7 @@ function load(
   const promise: CornerstoneWadoLoaderCachedPromise = new Promise(
     (resolve, reject) => {
       loadDICOMPromise
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then(async function (dicomPart10AsArrayBuffer: any /* , xhr*/) {
           const partialContent = {
             isPartialContent: false,
@@ -162,15 +163,11 @@ function load(
           cacheSizeInBytes += dataSet.byteArray.length;
           resolve(dataSet);
 
-          cornerstone.triggerEvent(
-            (cornerstone as any).events,
-            'datasetscachechanged',
-            {
-              uri,
-              action: 'loaded',
-              cacheInfo: getInfo(),
-            }
-          );
+          cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+            uri,
+            action: 'loaded',
+            cacheInfo: getInfo(),
+          });
         }, reject)
         .then(
           () => {
@@ -204,15 +201,11 @@ function unload(uri: string): void {
       cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
 
-      cornerstone.triggerEvent(
-        (cornerstone as any).events,
-        'datasetscachechanged',
-        {
-          uri,
-          action: 'unloaded',
-          cacheInfo: getInfo(),
-        }
-      );
+      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+        uri,
+        action: 'unloaded',
+        cacheInfo: getInfo(),
+      });
     }
   }
 }

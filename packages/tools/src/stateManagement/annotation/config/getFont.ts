@@ -1,6 +1,6 @@
-import { ToolModes, AnnotationStyleStates } from '../../../enums';
+import type { ToolModes, AnnotationStyleStates } from '../../../enums';
 import { getStyleProperty } from './helpers';
-import { StyleSpecifier } from '../../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../../types/AnnotationStyle';
 
 /**
  * getFont - Returns a font string of the form "{fontSize}px fontName" used by `canvas`.

@@ -1,11 +1,8 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import { BoundsIJK } from '../../types';
-import {
-  getVoxelOverlap,
-  processVolumes,
-  ThresholdInformation,
-} from './utilities';
+import type { BoundsIJK } from '../../types';
+import type { ThresholdInformation } from './utilities';
+import { getVoxelOverlap, processVolumes } from './utilities';
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;

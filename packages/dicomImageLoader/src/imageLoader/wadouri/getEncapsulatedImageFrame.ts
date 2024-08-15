@@ -1,4 +1,5 @@
-import { ByteArray, DataSet, ByteStream, readSequenceItem } from 'dicom-parser';
+import type { ByteArray, DataSet } from 'dicom-parser';
+import { ByteStream, readSequenceItem } from 'dicom-parser';
 import external from '../../externalModules';
 
 /**

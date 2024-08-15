@@ -1,4 +1,4 @@
-import {
+import type {
   VolumeActor,
   IImageVolume,
   VOIRange,
@@ -28,15 +28,15 @@ async function setDefaultVolumeVOI(
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
 
-  if (!voi && imageVolume?.imageIds?.length) {
+  if (!voi && imageVolume.imageIds.length) {
     voi = await getVOIFromMiddleSliceMinMax(imageVolume);
     voi = handlePreScaledVolume(imageVolume, voi);
   }
 
   if (
-    (voi?.lower === 0 && voi?.upper === 0) ||
-    voi?.lower === undefined ||
-    voi?.upper === undefined
+    (voi.lower === 0 && voi.upper === 0) ||
+    voi.lower === undefined ||
+    voi.upper === undefined
   ) {
     return;
   }
@@ -85,7 +85,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
     const imageIdIndex = Math.floor(imageIds.length / 2);
     const imageId = imageIds[imageIdIndex];
     const voiLutModule = metaData.get('voiLutModule', imageId);
-    if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
+    if (voiLutModule?.windowWidth && voiLutModule.windowCenter) {
       const { windowWidth, windowCenter } = voiLutModule;
       voi = {
         windowWidth: Array.isArray(windowWidth) ? windowWidth[0] : windowWidth,
@@ -95,7 +95,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
       };
     }
   } else {
-    voi = metadata?.voiLut?.[0];
+    voi = metadata.voiLut[0];
   }
   if (voi) {
     const { lower, upper } = windowLevel.toLowHighRange(
@@ -168,14 +168,14 @@ async function getVOIFromMiddleSliceMinMax(
   // know how to do it better.
   let image = cache.getImage(imageId);
 
-  if (!imageVolume.referencedImageIds?.length) {
+  if (!imageVolume.referencedImageIds.length) {
     // we should ignore the cache here,
     // since we want to load the image from with the most
     // recent preScale settings
     image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
 
-  const imageScalarData = image?.getPixelData();
+  const imageScalarData = image.getPixelData();
 
   // Get the min and max pixel values of the middle slice
   const { min, max } = getMinMax(imageScalarData);

@@ -6,11 +6,8 @@ import {
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
-import {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../../types/LabelmapTypes';
+import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
+import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.

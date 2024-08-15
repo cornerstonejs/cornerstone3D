@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setConfiguration,
@@ -73,13 +73,13 @@ async function loadImage32Float() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
   setTimeout(async () => {
     const volume = cache.getVolume(volumeId);
@@ -104,13 +104,13 @@ async function loadImage16Float() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0, 0, 0.2],
+      background: [0, 0, 0.2] as Types.Point3,
     },
   };
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
   setTimeout(async () => {
     cache.setMaxCacheSize(LargeCacheSize);
@@ -168,14 +168,14 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

@@ -1,25 +1,10 @@
-import type { TierResult, GetGPUTier } from 'detect-gpu';
-
-type Cornerstone3DConfig = {
-  /**
-   * It is used to store the device information,
-   * we use it if provided if not a network call is performed.
-   * Its type is the `TierResult` in the `detect-gpu` library.
-   * https://github.com/pmndrs/detect-gpu/blob/master/src/index.ts#L82
-   */
-  gpuTier?: TierResult;
-
+interface Cornerstone3DConfig {
+  gpuTier: { tier: number };
   /**
    * Whether the device is mobile or not.
    */
   isMobile: boolean;
-  /**
-   * When the `gpuTier` is not provided, the `detectGPUConfig` is passed as
-   * an argument to the `getGPUTier` method.
-   * Its type is the `GetGPUTier` in the `detect-gpu` library.
-   * https://github.com/pmndrs/detect-gpu/blob/master/src/index.ts#L20
-   */
-  detectGPUConfig: GetGPUTier;
+
   rendering: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting
@@ -56,12 +41,14 @@ type Cornerstone3DConfig = {
      */
     strictZSpacingForVolumeViewport: boolean;
   };
+
   /**
    * This function returns an imported module for the given module id.
    * It allows replacing broken packing system imports with external importers
    * that perform lazy imports.
    */
+  // eslint-disable-next-line
   peerImport?: (moduleId: string) => any;
-};
+}
 
-export default Cornerstone3DConfig;
+export type { Cornerstone3DConfig as default };

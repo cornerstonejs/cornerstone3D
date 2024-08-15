@@ -1,4 +1,4 @@
-import CanvasActor from '.';
+import type CanvasActor from '.';
 
 /**
  * Properties for rendering on a labelmap canvas actor.

@@ -1,6 +1,6 @@
 import { VolumeViewport } from '../RenderingEngine';
 import cache from '../cache';
-import { IViewport, IStackViewport } from '../types';
+import type { IViewport, IStackViewport } from '../types';
 
 /**
  * Retrieves the image IDs from the given viewport.

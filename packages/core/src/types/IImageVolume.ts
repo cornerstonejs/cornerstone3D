@@ -1,14 +1,11 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { VoxelManager } from '../utilities';
-import {
-  Metadata,
-  Point3,
-  IImageLoadObject,
-  Mat3,
-  PixelDataTypedArrayString,
-  PixelDataTypedArray,
-  RGB,
-} from '../types';
+import type Metadata from './Metadata';
+import type Point3 from './Point3';
+import type Mat3 from './Mat3';
+import type { PixelDataTypedArrayString } from './PixelDataTypedArray';
+import type RGB from './RGB';
+import type { vtkStreamingOpenGLTexture } from '../cache/classes/ImageVolume';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -43,26 +40,21 @@ interface IImageVolume {
   /** volume image data as vtkImageData */
   imageData?: vtkImageData;
   /** openGL texture for the volume */
-  vtkOpenGLTexture: any;
+  vtkOpenGLTexture: vtkStreamingOpenGLTexture;
   /** loading status object for the volume containing loaded/loading statuses */
-  loadStatus?: Record<string, any>;
+  loadStatus?: Record<string, unknown>;
   /** imageIds of the volume (if it is built of separate imageIds) */
-  imageIds: Array<string>;
+  imageIds: string[];
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string; // if volume is derived from another volume
   /** volume referencedImageIds (if it is derived from set of images in the image cache) */
-  referencedImageIds?: Array<string>;
+  referencedImageIds?: string[];
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
   /** return true if it is a 4D volume or false if it is 3D volume */
   isDynamicVolume(): boolean;
-  /** method to convert the volume data in the volume cache, to separate images in the image cache */
-  convertToCornerstoneImage?: (
-    imageId: string,
-    imageIdIndex: number
-  ) => IImageLoadObject;
 
   //cancel load
   cancelLoading?: () => void;
@@ -93,9 +85,6 @@ interface IImageVolume {
   /** decache */
   decache?: (completelyRemove?: boolean) => void;
 
-  /** */
-  get imageCacheOffsetMap(): Map<string, any>;
-
   /**
    * Mark the volume as having had the pixel data changed externally
    * which in background will re-configure the volume to use the new
@@ -103,6 +92,9 @@ interface IImageVolume {
    *
    */
   modified(): void;
+
+  // this is a temporary method to make typescript happy
+  load?: (callback?: (...args: unknown[]) => void) => void;
 }
 
-export default IImageVolume;
+export type { IImageVolume as default };

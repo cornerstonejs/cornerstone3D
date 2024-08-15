@@ -1,7 +1,7 @@
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
 import { computeLabelmapData } from './labelmapComputationStrategies';
-import { PolySegConversionOptions } from '../../../../types';
+import type { PolySegConversionOptions } from '../../../../types';
 
 /**
  * Computes and adds the labelmap representation for a given segmentation.

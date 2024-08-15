@@ -1,6 +1,6 @@
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
+import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
 import { triggerSegmentationRenderBySegmentationId } from '../../utilities/segmentation';
 import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
 

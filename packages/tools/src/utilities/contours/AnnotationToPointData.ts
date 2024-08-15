@@ -11,7 +11,7 @@ function validateAnnotation(annotation) {
 }
 
 class AnnotationToPointData {
-  static TOOL_NAMES: Record<string, any> = {};
+  static TOOL_NAMES: Record<string, unknown> = {};
 
   constructor() {
     // empty
@@ -32,6 +32,7 @@ class AnnotationToPointData {
     // Each toolData should become a list of contours, ContourSequence
     // contains a list of contours with their pointData, their geometry
     // type and their length.
+    // @ts-expect-error
     const ContourSequence = toolClass.getContourSequence(
       annotation,
       metadataProvider

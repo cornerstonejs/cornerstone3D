@@ -1,9 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
   geometryLoader,
   RenderingEngine,
   setVolumesForViewports,
-  Types,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';

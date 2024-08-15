@@ -20,26 +20,24 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 
 import { resetElementCursor } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { Annotation } from '../../types';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { Annotation } from '../../types';
 
 type Point2 = Types.Point2;
 
 class KeyImageTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;

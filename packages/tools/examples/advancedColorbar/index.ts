@@ -1,7 +1,7 @@
 import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   cache,
   volumeLoader,
@@ -176,7 +176,7 @@ function setViewportColormap(viewportId, volumeId, colormapName) {
 }
 
 async function createAndCacheVolume(volumeId, imageIds) {
-  let volume = cache.getVolume(volumeId) as any;
+  let volume = cache.getVolume(volumeId);
 
   if (!volume) {
     volume = await volumeLoader.createAndCacheVolume(volumeId, {

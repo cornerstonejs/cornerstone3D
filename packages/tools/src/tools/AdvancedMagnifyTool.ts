@@ -23,17 +23,18 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../cursors/elementCursor';
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../types';
-import { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
 import AdvancedMagnifyViewportManager from './AdvancedMagnifyViewportManager';
 import type { AutoPanCallbackData } from './AdvancedMagnifyViewport';
@@ -47,10 +48,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
   static Actions = AdvancedMagnifyToolActions;
 
   magnifyViewportManager: AdvancedMagnifyViewportManager;
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -406,9 +405,13 @@ class AdvancedMagnifyTool extends AnnotationTool {
       newRadius
     );
 
+    // @ts-ignore
     points[0] = newCanvasHandlePoints[0];
+    // @ts-ignore
     points[1] = newCanvasHandlePoints[1];
+    // @ts-ignore
     points[2] = newCanvasHandlePoints[2];
+    // @ts-ignore
     points[3] = newCanvasHandlePoints[3];
   };
 

@@ -7,4 +7,4 @@ type ScrollOptions = {
   scrollSlabs?: boolean;
 };
 
-export default ScrollOptions;
+export type { ScrollOptions as default };

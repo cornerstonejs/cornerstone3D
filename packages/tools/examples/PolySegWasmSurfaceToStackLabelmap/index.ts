@@ -1,8 +1,8 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   CONSTANTS,
-  Types,
   geometryLoader,
 } from '@cornerstonejs/core';
 import {

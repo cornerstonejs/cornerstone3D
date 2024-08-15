@@ -11,9 +11,9 @@ import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
-import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import type { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 
 const { EPSILON } = CONSTANTS;
@@ -24,14 +24,12 @@ const { EPSILON } = CONSTANTS;
 class ReferenceLines extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    renderingEngine: any;
+    renderingEngine: Types.IRenderingEngine;
     sourceViewportId: string;
     annotation: ReferenceLineAnnotation;
-  } | null = {} as any;
+  } | null = null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 

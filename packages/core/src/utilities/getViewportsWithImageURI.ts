@@ -1,6 +1,6 @@
 import { getRenderingEngine } from '../RenderingEngine';
 import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
-import { IStackViewport, IVolumeViewport } from '../types';
+import type { IStackViewport, IVolumeViewport } from '../types';
 
 type Viewport = IStackViewport | IVolumeViewport;
 
@@ -15,7 +15,7 @@ type Viewport = IStackViewport | IVolumeViewport;
 export default function getViewportsWithImageURI(
   imageURI: string,
   renderingEngineId?: string
-): Array<Viewport> {
+): Viewport[] {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines;
   if (renderingEngineId) {

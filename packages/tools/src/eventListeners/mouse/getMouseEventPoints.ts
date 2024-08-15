@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { IPoints } from '../../types';
+import type { IPoints } from '../../types';
 
 /**
  * Given a native mouse event, get the associated cornerstone3D enabled element

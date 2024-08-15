@@ -1,7 +1,7 @@
-import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import type SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 
-import {
+import type {
   RepresentationConfig,
   SegmentationRepresentationConfig,
   SegmentRepresentationConfig,

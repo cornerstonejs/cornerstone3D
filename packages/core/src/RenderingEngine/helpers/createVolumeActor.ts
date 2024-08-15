@@ -1,13 +1,14 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import { VolumeActor } from './../../types/IActor';
-import { VoiModifiedEventDetail } from './../../types/EventTypes';
+import type { VolumeActor } from './../../types/IActor';
+import type { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
-import BlendModes from '../../enums/BlendModes';
+import type BlendModes from '../../enums/BlendModes';
 import { triggerEvent } from '../../utilities';
 import { Events } from '../../enums';
 import setDefaultVolumeVOI from './setDefaultVolumeVOI';
+import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
 interface createVolumeActorInterface {
   volumeId: string;
@@ -50,14 +51,16 @@ async function createVolumeActor(
   const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture);
 
   if (blendMode) {
-    volumeMapper.setBlendMode(blendMode);
+    volumeMapper.setBlendMode(blendMode as unknown as BlendMode);
   }
 
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
   // Todo: fix this for 3D RGB
-  const { numberOfComponents } = imageData.get('numberOfComponents') as any;
+  const { numberOfComponents } = imageData.get('numberOfComponents') as {
+    numberOfComponents: number;
+  };
 
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);

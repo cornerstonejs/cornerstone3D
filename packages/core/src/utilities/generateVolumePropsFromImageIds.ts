@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
-import {
+import type {
   ImageVolumeProps,
   Mat3,
   PixelDataTypedArrayString,
@@ -49,8 +49,8 @@ function generateVolumePropsFromImageIds(
   const numFrames = imageIds.length;
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = <Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing];
-  const dimensions = <Point3>[Columns, Rows, numFrames];
+  const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
+  const dimensions = [Columns, Rows, numFrames] as Point3;
   const direction = [
     ...rowCosineVec,
     ...colCosineVec,

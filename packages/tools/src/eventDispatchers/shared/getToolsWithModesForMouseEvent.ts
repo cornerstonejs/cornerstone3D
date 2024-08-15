@@ -1,6 +1,6 @@
 import { ToolGroupManager } from '../../store';
-import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import type { ToolModes } from '../../enums';
+import type { EventTypes } from '../../types';
 
 type ModesFilter = Array<ToolModes>;
 
@@ -14,7 +14,7 @@ type ModesFilter = Array<ToolModes>;
 export default function getToolsWithModesForMouseEvent(
   evt: EventTypes.MouseMoveEventType,
   modesFilter: ModesFilter,
-  evtButton?: any
+  evtButton?: number
 ) {
   const { renderingEngineId, viewportId } = evt.detail;
   const toolGroup = ToolGroupManager.getToolGroupForViewport(

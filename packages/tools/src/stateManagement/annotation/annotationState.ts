@@ -1,7 +1,7 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
-import { Annotations, Annotation } from '../../types/AnnotationTypes';
-import { AnnotationGroupSelector } from '../../types';
+import type { Annotations, Annotation } from '../../types/AnnotationTypes';
+import type { AnnotationGroupSelector } from '../../types';
 
 import {
   triggerAnnotationAddedForElement,

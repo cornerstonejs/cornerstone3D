@@ -1,5 +1,6 @@
 import type { IViewport } from '../../types/IViewport';
 import type { ICanvasActor } from '../../types/IActor';
+
 import CanvasProperties from './CanvasProperties';
 import CanvasMapper from './CanvasMapper';
 
@@ -118,7 +119,8 @@ export default class CanvasActor implements ICanvasActor {
     const { voxelManager } = image;
     if (voxelManager) {
       if (voxelManager.map.getRun) {
-        return this.renderRLE(viewport, context, voxelManager);
+        this.renderRLE(viewport, context, voxelManager);
+        return;
       }
     }
     let { canvas } = this;

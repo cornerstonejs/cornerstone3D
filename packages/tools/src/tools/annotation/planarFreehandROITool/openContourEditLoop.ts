@@ -8,7 +8,7 @@ import {
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import type { EventTypes } from '../../../types';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { polyline } from '../../../utilities/math';
 import {
   shouldSmooth,

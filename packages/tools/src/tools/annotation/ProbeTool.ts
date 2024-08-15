@@ -34,19 +34,17 @@ import {
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  pixelUnitsOptions,
-  getPixelValueUnits,
-} from '../../utilities/getPixelValueUnits';
+import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -97,10 +95,8 @@ const { transformWorldToIndex } = csUtils;
 class ProbeTool extends AnnotationTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     newAnnotation?: boolean;
   } | null;
@@ -311,7 +307,7 @@ class ProbeTool extends AnnotationTool {
     const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
-    data.handles.points[0] = [...worldPos];
+    data.handles.points[0] = [...worldPos] as Types.Point3;
     annotation.invalidated = true;
 
     const enabledElement = getEnabledElement(element);

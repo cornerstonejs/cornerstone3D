@@ -2,11 +2,12 @@ import { cache, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 
 import { fillInsideSphere } from './strategies/fillSphere';
@@ -26,14 +27,10 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import {
-  getCurrentLabelmapImageIdForViewport,
-  getSegmentation,
-} from '../../stateManagement/segmentation/segmentationState';
-import {
+import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataVolume,
-  LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 /**
@@ -47,10 +44,11 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 class SphereScissorsTool extends BaseTool {
   static toolName;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     segmentIndex: number;
     segmentsLocked: number[];
     segmentationRepresentationUID: string;
+    segmentationId: string;
     // volume labelmap
     volumeId: string;
     referencedVolumeId: string;
@@ -150,7 +148,12 @@ class SphereScissorsTool extends BaseTool {
       data: {
         invalidated: true,
         handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          points: [
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+          ] as Types.Point3[],
           activeHandleIndex: null,
         },
         cachedStats: {},
@@ -174,7 +177,10 @@ class SphereScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-    } as any;
+      volumeId: null,
+      referencedVolumeId: null,
+      imageId: null,
+    };
 
     const { representationData } = getSegmentation(segmentationId);
     const labelmapData =
@@ -369,6 +375,7 @@ class SphereScissorsTool extends BaseTool {
 
     const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
+    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

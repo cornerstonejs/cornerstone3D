@@ -4,9 +4,8 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
-  getConfiguration as getCoreConfiguration,
 } from '@cornerstonejs/core';
-import { addToolState, getToolState } from './state';
+import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
   getStackData,
   requestType,
@@ -14,7 +13,6 @@ import {
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
-import { roundNumber } from '../../utilities';
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -108,10 +106,11 @@ function prefetch(element) {
     return;
   }
 
-  const stackPrefetch = stackPrefetchData || {};
+  const stackPrefetch = (stackPrefetchData || {}) as StackPrefetchData;
 
   // If all the requests are complete, disable the stackPrefetch tool
-  stackPrefetch.enabled &&= stackPrefetch.indicesToRequest?.length;
+  stackPrefetch.enabled =
+    stackPrefetch.enabled && (stackPrefetch.indicesToRequest?.length ?? 0) > 0;
 
   // Make sure the tool is still enabled
   if (stackPrefetch.enabled === false) {
@@ -280,20 +279,22 @@ const updateToolState = (element, usage?: number) => {
   let { maxAfter = 2, minBefore = 2 } = configuration;
   const { directionExtraImages = 10 } = configuration;
   // Use the currentImageIdIndex from the stack as the initialImageIdIndex
-  const stackPrefetchData = getToolState(element) || {
-    indicesToRequest: [],
-    currentImageIdIndex,
-    stackCount: 0,
-    enabled: true,
-    direction: 1,
-    stats: {
-      start: Date.now(),
-      imageIds: new Map(),
-      decodeTimeInMS: 0,
-      loadTimeInMS: 0,
-      totalBytes: 0,
-    },
-  };
+  const stackPrefetchData =
+    getToolState(element) ||
+    ({
+      indicesToRequest: [],
+      currentImageIdIndex,
+      stackCount: 0,
+      enabled: true,
+      direction: 1,
+      stats: {
+        start: Date.now(),
+        imageIds: new Map(),
+        decodeTimeInMS: 0,
+        loadTimeInMS: 0,
+        totalBytes: 0,
+      },
+    } as StackPrefetchData);
   const delta = currentImageIdIndex - stackPrefetchData.currentImageIdIndex;
   stackPrefetchData.direction = signum(delta);
   stackPrefetchData.currentImageIdIndex = currentImageIdIndex;

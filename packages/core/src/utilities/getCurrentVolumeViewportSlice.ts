@@ -1,5 +1,5 @@
 import { glMatrix, vec3 } from 'gl-matrix';
-import { IVolumeViewport } from '../types';
+import type { IVolumeViewport } from '../types';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
 
 /**

@@ -1,4 +1,5 @@
-import { BlendModes, OrientationAxis } from '../enums';
+import type { BlendModes } from '../enums';
+import { OrientationAxis } from '../enums';
 import type { ViewportInput } from '../types/IViewport';
 import BaseVolumeViewport from './BaseVolumeViewport';
 
@@ -46,10 +47,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return null;
   };
 
-  setSlabThickness(
-    slabThickness: number,
-    filterActorUIDs?: Array<string>
-  ): void {
+  setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void {
     return null;
   }
 

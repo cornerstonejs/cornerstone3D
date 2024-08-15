@@ -48,6 +48,7 @@ export default {
     const threshold = oldThreshold || [Infinity, -Infinity];
     // TODO - threshold on all three values separately
     const callback = ({ value }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const gray = Array.isArray(value) ? vec3.len(value as any) : value;
       threshold[0] = Math.min(gray, threshold[0]);
       threshold[1] = Math.max(gray, threshold[1]);

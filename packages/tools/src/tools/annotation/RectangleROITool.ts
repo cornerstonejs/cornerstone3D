@@ -38,16 +38,17 @@ import {
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   ToolProps,
   PublicToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
@@ -96,9 +97,9 @@ const { transformWorldToIndex } = csUtils;
 class RectangleROITool extends AnnotationTool {
   static toolName;
 
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -113,6 +114,8 @@ class RectangleROITool extends AnnotationTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         shadow: true,
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
@@ -941,6 +944,7 @@ class RectangleROITool extends AnnotationTool {
           {
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
         const stats = this.configuration.statsCalculator.getStatistics();

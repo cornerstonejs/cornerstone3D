@@ -1,11 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import {
+import type {
   IToolBinding,
   SetToolBindingsType,
   ToolOptionsType,
 } from './ISetToolModeOptions';
-import { MouseBindings } from '../enums';
-import { ToolConfiguration } from '../types';
+import type { MouseBindings } from '../enums';
+import type { ToolConfiguration } from '../types';
 /**
  * ToolGroup interface
  * @deprecated - this is going away in favour of using the type import from the
@@ -13,19 +13,19 @@ import { ToolConfiguration } from '../types';
  */
 export default interface IToolGroup {
   /** Unserializable instantiated tool classes, keyed by name */
-  _toolInstances: Record<string, any>;
+  _toolInstances: Record<string, unknown>;
   /** ToolGroup ID */
   id: string;
   /** Viewports Info inside the ToolGroup - including viewportId and renderingEngineId */
   viewportsInfo: Array<Types.IViewportId>;
   /** Options for each tool including bindings and mode */
-  toolOptions: Record<string, any>;
+  toolOptions: Record<string, unknown>;
   /** Get viewportIds in the toolGroup*/
   getViewportIds: () => string[];
   /** Get viewports info in the toolGroup*/
   getViewportsInfo: () => Array<Types.IViewportId>;
   /** Get the toolInstance of the toolName */
-  getToolInstance: { (toolName: string): any };
+  getToolInstance: { (toolName: string): unknown };
   /** Check if a tool is already added to the tool group */
   hasTool(toolName: string): boolean;
   /** Add a tool to toolGroup with its configuration and custom calculator if wanted */
@@ -34,7 +34,7 @@ export default interface IToolGroup {
   };
   /** Add tool instance, if you want to create more than one instance from the same tool e.g., brush/eraser tool */
   addToolInstance: {
-    (toolName: string, parentClassName: string, configuration?: any): void;
+    (toolName: string, parentClassName: string, configuration?: unknown): void;
   };
   /** Add viewports to share the tools for the ToolGroup */
   addViewport: {
@@ -81,7 +81,7 @@ export default interface IToolGroup {
     ): void;
   };
   getToolConfiguration: {
-    (toolName: string, configurationPath?: string): any;
+    (toolName: string, configurationPath?: string): unknown;
   };
   getDefaultMousePrimary: {
     (): MouseBindings;

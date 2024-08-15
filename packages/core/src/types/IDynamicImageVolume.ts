@@ -1,4 +1,4 @@
-import { IImageVolume } from '../types';
+import type IImageVolume from './IImageVolume';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -15,4 +15,4 @@ interface IDynamicImageVolume extends IImageVolume {
   scroll(delta: number): void;
 }
 
-export default IDynamicImageVolume;
+export type { IDynamicImageVolume as default };

@@ -1,12 +1,12 @@
+import type { Types } from '@cornerstonejs/core';
 import {
-  Types,
   utilities,
   BaseVolumeViewport,
   StackViewport,
   cache,
   metaData,
 } from '@cornerstonejs/core';
-import { Annotation } from '../types';
+import type { Annotation } from '../types';
 import { addAnnotation } from '../stateManagement';
 import { vec3 } from 'gl-matrix';
 

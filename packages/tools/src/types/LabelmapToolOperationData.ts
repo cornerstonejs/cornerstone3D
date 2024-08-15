@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-import {
+import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from './LabelmapTypes';
@@ -15,6 +15,7 @@ type LabelmapToolOperationData = {
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   strategySpecificConfiguration: any;
   // constraintFn: (pointIJK: number) => boolean;
   segmentationRepresentationUID: string;
@@ -25,6 +26,7 @@ type LabelmapToolOperationData = {
    * a tool, and needs to be maintained by the tool side in order to be able
    * to accept/reject/update the preview information.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   preview: any;
   toolGroupId: string;
 };
@@ -39,7 +41,7 @@ type LabelmapToolOperationDataAny =
   | LabelmapToolOperationDataVolume
   | LabelmapToolOperationDataStack;
 
-export {
+export type {
   LabelmapToolOperationData,
   LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,

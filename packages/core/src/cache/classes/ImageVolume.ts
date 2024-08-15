@@ -1,25 +1,30 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { imageIdToURI, VoxelManager } from '../../utilities';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
-import {
+import type {
   Metadata,
   Point3,
   IImageVolume,
   Mat3,
-  PixelDataTypedArray,
   ImageVolumeProps,
   IImage,
   PixelDataTypedArrayString,
   RGB,
 } from '../../types';
 import cache from '../cache';
+import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+
+export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
+  setUpdatedFrame: (frame: number) => void;
+  setVolumeId: (volumeId: string) => void;
+  releaseGraphicsResources: () => void;
+}
 
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
  */
 export class ImageVolume implements IImageVolume {
-  private _imageIds: Array<string>;
+  private _imageIds: string[];
   private _imageIdsIndexMap = new Map();
   private _imageURIsIndexMap = new Map();
   /** volume scalar data 3D or 4D */
@@ -29,8 +34,6 @@ export class ImageVolume implements IImageVolume {
 
   /** Read-only unique identifier for the volume */
   readonly volumeId: string;
-
-  imageCacheOffsetMap = new Map();
 
   isPreScaled = false;
 
@@ -61,17 +64,17 @@ export class ImageVolume implements IImageVolume {
   /** volume image data */
   imageData?: vtkImageData;
   /** open gl texture for the volume */
-  vtkOpenGLTexture: any; // No good way of referencing vtk classes as they aren't classes.
+  vtkOpenGLTexture: vtkStreamingOpenGLTexture;
   /** load status object for the volume */
-  loadStatus?: Record<string, any>;
+  loadStatus?: Record<string, unknown>;
   /** optional reference volume id if the volume is derived from another volume */
   referencedVolumeId?: string;
   /** optional reference image ids if the volume is derived from a set of images in the image cache */
-  referencedImageIds?: Array<string>;
+  referencedImageIds?: string[];
   /** whether the metadata for the pixel spacing is not undefined  */
   hasPixelSpacing: boolean;
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
 
   /**
    * The new volume model which solely relies on the separate image data
@@ -177,12 +180,12 @@ export class ImageVolume implements IImageVolume {
   }
 
   /** return the image ids for the volume if it is made of separated images */
-  public get imageIds(): Array<string> {
+  public get imageIds(): string[] {
     return this._imageIds;
   }
 
   /** updates the image ids */
-  public set imageIds(newImageIds: Array<string>) {
+  public set imageIds(newImageIds: string[]) {
     this._imageIds = newImageIds;
     this._reprocessImageIds();
   }

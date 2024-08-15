@@ -7,7 +7,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
-import {
+import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
@@ -17,7 +17,7 @@ import {
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
-import { PolySegConversionOptions } from '../../../../types';
+import type { PolySegConversionOptions } from '../../../../types';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume

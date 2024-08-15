@@ -5,14 +5,14 @@
  */
 type VolumeLoaderFn = (
   volumeId: string,
-  options?: Record<string, any>
+  options?: Record<string, unknown>
 ) => {
   /** promise that resolves to the volume object */
-  promise: Promise<Record<string, any>>;
+  promise: Promise<Record<string, unknown>>;
   /** cancel function */
   cancelFn?: () => void | undefined;
   /** decache function */
   decache?: () => void | undefined;
 };
 
-export default VolumeLoaderFn;
+export type { VolumeLoaderFn as default };

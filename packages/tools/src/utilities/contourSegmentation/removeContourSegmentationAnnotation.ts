@@ -1,5 +1,5 @@
 import { state } from '../../stateManagement/segmentation';
-import { ContourSegmentationAnnotation } from '../../types';
+import type { ContourSegmentationAnnotation } from '../../types';
 
 /**
  * Removes a contour segmentation annotation from the given annotation.

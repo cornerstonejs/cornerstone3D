@@ -1,11 +1,12 @@
-import { Point3 } from '.';
-import { ContourType } from '../enums';
+import type { Point3 } from './Point3';
+import type { ContourType } from '../enums';
+import type RGB from './RGB';
 
 export interface IContour {
   readonly id: string;
   readonly sizeInBytes: number;
   points: Point3[];
-  color: any;
+  color: RGB;
   _getSizeInBytes(): number;
   /**
    * It returns the value of the points property of the data object

@@ -1,4 +1,4 @@
-import { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
+import type { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
 
 /**
  * Creates a target buffer based on the provided options.

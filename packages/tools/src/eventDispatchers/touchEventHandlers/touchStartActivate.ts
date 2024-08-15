@@ -1,5 +1,5 @@
 import { state } from '../../store';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 
 import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';

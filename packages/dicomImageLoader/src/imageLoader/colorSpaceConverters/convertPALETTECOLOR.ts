@@ -1,5 +1,5 @@
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core';
 import external from '../../externalModules';
 
 function convertLUTto8Bit(lut: number[], shift: number) {
@@ -43,7 +43,7 @@ function fetchPaletteData(imageFrame, color, fallback) {
  * @returns
  */
 export default function (
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   colorBuffer: ByteArray,
   useRGBA: boolean
 ): void {

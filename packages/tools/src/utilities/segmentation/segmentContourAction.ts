@@ -15,8 +15,7 @@ export type Segment = {
   segmentationId: string;
   segmentIndex: number;
   label: string;
-
-  style?: any;
+  style?: Record<string, unknown>;
   containedSegmentIndices?: (number) => boolean;
 };
 
@@ -58,9 +57,11 @@ export default function segmentContourAction(
   let hasExistingActiveSegment = false;
   const existingLargestBidirectionals = bidirectionals.filter(
     (existingBidirectionalItem) => {
-      const { segment } = existingBidirectionalItem.data;
+      const segment = existingBidirectionalItem.data.segment as
+        | Segment
+        | undefined;
       if (!segment) {
-        return;
+        return false;
       }
       if (
         segment.segmentationId === segmentationId &&
@@ -69,7 +70,7 @@ export default function segmentContourAction(
         hasExistingActiveSegment = true;
         existingBidirectionalItem.data.segment = segment;
       }
-      return !!segment;
+      return true;
     }
   );
   if (!hasExistingActiveSegment) {
@@ -82,8 +83,8 @@ export default function segmentContourAction(
 
   let newBidirectional;
   existingLargestBidirectionals.forEach((existingLargestBidirectional) => {
-    const segments = [];
-    const { segment: updateSegment } = existingLargestBidirectional.data;
+    const segments: Segment[] = [];
+    const updateSegment = existingLargestBidirectional.data.segment as Segment;
     const { segmentIndex, segmentationId } = updateSegment;
     segments[segmentIndex] = updateSegment;
     annotationState.removeAnnotation(

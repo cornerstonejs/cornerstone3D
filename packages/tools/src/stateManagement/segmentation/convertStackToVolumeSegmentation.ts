@@ -8,7 +8,7 @@ import { Events, SegmentationRepresentations } from '../../enums';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
-import { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 async function computeVolumeSegmentationFromStack({

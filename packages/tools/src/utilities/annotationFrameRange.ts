@@ -1,6 +1,6 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 import Events from '../enums/Events';
-import { Annotation } from '../types';
+import type { Annotation } from '../types';
 
 export type FramesRange = [number, number] | number;
 

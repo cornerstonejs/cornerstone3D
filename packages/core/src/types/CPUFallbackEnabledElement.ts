@@ -1,15 +1,15 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
-import Mat3 from './Mat3';
-import IImage from './IImage';
-import CPUFallbackViewport from './CPUFallbackViewport';
-import CPUFallbackTransform from './CPUFallbackTransform';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
-import { ImagePlaneModule } from './ImagePlaneModule';
-import { ImagePixelModule } from './ImagePixelModule';
-import RGB from './RGB';
-import { VoxelManager } from '../utilities';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type Mat3 from './Mat3';
+import type IImage from './IImage';
+import type CPUFallbackViewport from './CPUFallbackViewport';
+import type CPUFallbackTransform from './CPUFallbackTransform';
+import type CPUFallbackColormap from './CPUFallbackColormap';
+import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
+import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { ImagePixelModule } from './ImagePixelModule';
+import type RGB from './RGB';
+import type { VoxelManager } from '../utilities';
 
 interface CPUFallbackEnabledElement {
   scale?: number;
@@ -41,4 +41,4 @@ interface CPUFallbackEnabledElement {
   voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
 }
 
-export default CPUFallbackEnabledElement;
+export type { CPUFallbackEnabledElement as default };

@@ -4,4 +4,4 @@ type JumpToSliceOptions = {
   volumeId?: string;
 };
 
-export default JumpToSliceOptions;
+export type { JumpToSliceOptions as default };

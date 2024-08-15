@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
+import type {
   ContourSegmentationData,
   PolySegConversionOptions,
 } from '../../../../types';
@@ -7,7 +7,7 @@ import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
 import { getSegmentation } from '../../segmentationState';
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
-import {
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,

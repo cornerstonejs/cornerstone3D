@@ -1,10 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   imageLoader,
   metaData,
   getRenderingEngine,
-  Types,
   setVolumesForViewports,
   volumeLoader,
 } from '@cornerstonejs/core';
@@ -103,9 +103,9 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     viewport.setImageIdIndex(valueAsNumber);
     viewport.render();

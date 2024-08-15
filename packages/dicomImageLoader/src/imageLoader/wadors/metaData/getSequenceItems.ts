@@ -1,5 +1,6 @@
-import { WADORSMetaDataElement } from '../../../types';
+import type { WADORSMetaDataElement } from '../../../types';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getSequenceItems(element: any): WADORSMetaDataElement[] {
   // Value is not present if the attribute has a zero length value
   if (!element?.Value?.length) {

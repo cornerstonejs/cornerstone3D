@@ -4,7 +4,8 @@ import {
   StackViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { Types, utilities as coreUtils } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { utilities as coreUtils } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
@@ -35,15 +36,19 @@ import {
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
 
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  RectangleROIStartEndThresholdAnnotation,
+  ROICachedStats,
+} from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { roundNumber } from '../../utilities/';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
@@ -66,9 +71,9 @@ const { transformWorldToIndex } = csUtils;
  */
 class RectangleROIStartEndThresholdTool extends RectangleROITool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -81,6 +86,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         numSlicesToPropagate: 10,
         computePointsInsideVolume: false,
         getTextLines: defaultGetTextLines,
@@ -173,7 +180,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           pointsInVolume: [],
           projectionPoints: [],
           projectionPointsImageIds: [referencedImageId],
-          statistics: [],
+          statistics: [] as unknown as ROICachedStats,
         },
         handles: {
           textBox: {
@@ -445,6 +452,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           {
             boundsIJK,
             imageData,
+            returnPoints: this.configuration.storePointData,
           }
         );
 

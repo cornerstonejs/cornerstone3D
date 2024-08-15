@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import * as math from '../../../utilities/math';
 import type {
   ISpline,

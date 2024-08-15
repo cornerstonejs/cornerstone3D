@@ -1,13 +1,13 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
-import Mat3 from './Mat3';
-import { VoxelManager } from '../utilities';
-import {
+import type Mat3 from './Mat3';
+import type { VoxelManager } from '../utilities';
+import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
-import RGB from './RGB';
+import type RGB from './RGB';
 
 /**
  * Properties required to instantiate a Volume object.
@@ -52,7 +52,7 @@ interface VolumeProps {
   sizeInBytes?: number;
 
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
 
   /** Scaling parameters if the volume contains scaled data (optional) */
   scaling?: {
@@ -71,4 +71,4 @@ interface VolumeProps {
   numberOfComponents?: number;
 }
 
-export { VolumeProps };
+export type { VolumeProps };

@@ -1,5 +1,5 @@
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { ContourSegmentationAnnotation } from '../../types';
+import type { ContourSegmentationAnnotation } from '../../types';
 
 /**
  * Adds a contour segmentation annotation to the specified segmentation.

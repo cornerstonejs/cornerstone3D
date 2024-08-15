@@ -1,6 +1,6 @@
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
 import SegmentationRepresentation from '../../enums/SegmentationRepresentations';
-import { Segmentation } from '../../types/SegmentationStateTypes';
+import type { Segmentation } from '../../types/SegmentationStateTypes';
 
 /**
  * It returns a configuration object for the given representation type.

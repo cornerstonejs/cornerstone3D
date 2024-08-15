@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -10,6 +10,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import type { Types as CSToolsTypes } from '@cornerstonejs/tools';
 import {
   LengthTool,
   HeightTool,
@@ -18,7 +19,6 @@ import {
   Enums as csToolsEnums,
   annotation,
   addTool,
-  Types as CSToolsTypes,
 } from '@cornerstonejs/tools';
 
 // This is for debugging purposes

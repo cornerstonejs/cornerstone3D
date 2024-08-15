@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 export default function drawLine(
   svgDrawingHelper: SVGDrawingHelper,

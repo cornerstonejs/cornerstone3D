@@ -1,11 +1,11 @@
-import { SurfaceData, Point3, ISurface, Color, RGB } from '../../types';
+import type { SurfaceData, Point3, ISurface, RGB } from '../../types';
 
-type SurfaceProps = {
+interface SurfaceProps {
   id: string;
   data: SurfaceData;
   frameOfReferenceUID: string;
   color?: Point3;
-};
+}
 
 /**
  * Surface class for storing surface data

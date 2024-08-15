@@ -1,4 +1,4 @@
-import { IViewport, Point2 } from '../types';
+import type { IViewport, Point2 } from '../types';
 import transformWorldToIndex from './transformWorldToIndex';
 
 /**

@@ -1,4 +1,5 @@
-import { cache, Enums, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache, Enums } from '@cornerstonejs/core';
 import * as NIFTICONSTANTS from './niftiConstants';
 /**
  * Given a pixel array, rescale the pixel values using the rescale slope and

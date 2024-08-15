@@ -1,7 +1,7 @@
 import { ToolGroupManager } from '../../store';
 import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
 import getToolsWithActionsForKeyboardEvent from '../shared/getToolsWithActionsForKeyboardEvents';
-import { KeyDownEventType } from '../../types/EventTypes';
+import type { KeyDownEventType } from '../../types/EventTypes';
 import ToolModes from '../../enums/ToolModes';
 
 /**

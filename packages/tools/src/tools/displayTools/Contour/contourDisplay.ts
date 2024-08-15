@@ -1,13 +1,12 @@
+import type { StackViewport, Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElementByViewportId,
-  StackViewport,
-  Types,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { ContourRepresentation } from '../../../types/SegmentationStateTypes';
+import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './contourHandler/contourConfigCache';
 import { polySeg } from '../../../stateManagement/segmentation';

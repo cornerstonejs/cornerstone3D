@@ -1,12 +1,3 @@
-export type MetaDataTypes =
-  | 'generalSeriesModule'
-  | 'patientStudyModule'
-  | 'imagePlaneModule'
-  | 'imagePixelModule'
-  | 'transferSyntax'
-  | 'sopCommonModule'
-  | string;
-
 export interface DicomDateObject {
   year: number;
   month: number;
@@ -20,7 +11,7 @@ export interface DicomTimeObject {
   fractionalSeconds?: number;
 }
 
-export interface MetadataGeneralSeriesModule {
+export interface GeneralSeriesModuleMetadata {
   modality: string;
   seriesInstanceUID: string;
   seriesNumber: number;
@@ -29,13 +20,13 @@ export interface MetadataGeneralSeriesModule {
   seriesTime: DicomTimeObject;
 }
 
-export interface MetadataPatientStudyModule {
+export interface PatientStudyModuleMetadata {
   patientAge: number;
   patientSize: number;
   patientWeight: number;
 }
 
-export interface MetadataImagePlaneModule {
+export interface ImagePlaneModuleMetadata {
   frameOfReferenceUID: string;
   rows: string;
   columns: string;
@@ -50,7 +41,7 @@ export interface MetadataImagePlaneModule {
   columnPixelSpacing: number | null;
 }
 
-export interface MetadataImagePixelModule {
+export interface ImagePixelModuleMetadata {
   samplesPerPixel: number;
   photometricInterpretation: string;
   rows: number;
@@ -71,11 +62,11 @@ export interface MetadataImagePixelModule {
   largestPixelValue?: number;
 }
 
-export interface MetadataSopCommonModule {
+export interface SopCommonModuleMetadata {
   sopClassUID: string;
   sopInstanceUID: string;
 }
 
-export interface MetadataTransferSyntax {
+export interface TransferSyntaxMetadata {
   transferSyntaxUID: string;
 }

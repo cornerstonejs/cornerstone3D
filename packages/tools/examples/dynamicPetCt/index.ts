@@ -1,7 +1,7 @@
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,

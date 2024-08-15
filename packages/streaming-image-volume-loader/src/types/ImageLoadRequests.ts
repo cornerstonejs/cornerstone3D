@@ -1,10 +1,10 @@
-import { Types, Enums } from '@cornerstonejs/core';
+import type { Types, Enums } from '@cornerstonejs/core';
 
 export default interface ImageLoadRequests {
   callLoadImage: (
     imageId: string,
     imageIdIndex: number,
-    options: any
+    options: unknown
   ) => Promise<void>;
   imageId: string;
   imageIdIndex: number;

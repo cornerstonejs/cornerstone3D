@@ -1,4 +1,4 @@
-import { WADORSMetaDataElement } from '../../../types';
+import type { WADORSMetaDataElement } from '../../../types';
 
 /**
  * Returns the raw value
@@ -22,11 +22,11 @@ function getValue<ReturnType = unknown>(
     return defaultValue;
   }
   // make sure we have the specified index
-  if ((element.Value as any).length <= index) {
+  if (Array.isArray(element.Value) && element.Value.length <= index) {
     return defaultValue;
   }
 
-  return element.Value[index];
+  return element.Value[index] as ReturnType;
 }
 
 export default getValue;

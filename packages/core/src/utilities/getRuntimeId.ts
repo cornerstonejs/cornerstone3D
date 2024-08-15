@@ -30,10 +30,10 @@ export default function getRuntimeId(
  */
 
 function getNextRuntimeId(
-  context: Record<symbol, Array<number>>,
+  context: Record<symbol, number[]>,
   symbol: symbol,
   max: number
-): Array<number> {
+): number[] {
   let idComponents = context[symbol];
   if (!(idComponents instanceof Array)) {
     idComponents = [0];

@@ -2,14 +2,15 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { addAnnotation } from '../../../../stateManagement';
-import { cache, Types, utilities, StackViewport } from '@cornerstonejs/core';
+import type { Types, StackViewport } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import { getConfigCache, setConfigCache } from './contourConfigCache';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
-import { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
+import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import {
   getGlobalConfig,
   getPerSegmentConfig,

@@ -1,10 +1,11 @@
-import { IStackViewport, IVolumeViewport, Point3 } from '../types';
+import type { IStackViewport, IVolumeViewport, Point3 } from '../types';
 import { setVolumesForViewports } from '../RenderingEngine/helpers';
 import {
   createAndCacheVolume,
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
-import { Events, OrientationAxis, ViewportType } from '../enums';
+import type { OrientationAxis } from '../enums';
+import { Events, ViewportType } from '../enums';
 
 /**
  * Converts a stack viewport to a volume viewport.
@@ -72,9 +73,9 @@ async function convertStackToVolumeViewport({
 
   // we should get the new viewport from the renderingEngine since the stack viewport
   // was disabled and replaced with a volume viewport of the same id
-  const volumeViewport = <IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const volumeViewport = renderingEngine.getViewport(
+    viewportId
+  ) as IVolumeViewport;
 
   await setVolumesForViewports(
     renderingEngine,

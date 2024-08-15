@@ -19,7 +19,7 @@ import type {
   SegmentationRepresentationData,
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
-import {
+import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';

@@ -203,7 +203,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -324,7 +324,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -372,7 +372,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -451,7 +451,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -499,7 +499,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -574,7 +574,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -627,7 +627,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             this.renderingEngine.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -679,7 +679,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -730,7 +730,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -779,7 +779,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -833,7 +833,7 @@ describe('Volume Viewport GPU -- ', () => {
               );
             });
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -911,7 +911,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }
@@ -961,7 +961,7 @@ describe('Volume Viewport GPU -- ', () => {
             );
             vp.render();
           })
-          .catch((e) => done(e));
+          .catch((e) => { done(e); });
       } catch (e) {
         done.fail(e);
       }

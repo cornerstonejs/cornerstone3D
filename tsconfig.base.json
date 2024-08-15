@@ -4,7 +4,8 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": "./",
     "checkJs": false,
-
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
     // Ensure that .d.ts files are created by tsc, but not .js files
     "declaration": true,
     "emitDeclarationOnly": false,
@@ -24,16 +25,18 @@
     "removeComments": true,
     "skipLibCheck": true,
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "strictNullChecks": false,
     "target": "ES2022",
     "downlevelIteration": true,
     "resolveJsonModule": true,
 
     //
-    "module": "esnext", // esnext | commonjs
-    "moduleResolution": "node",
+    "module": "ES2022", // esnext | commonjs
+    "moduleResolution": "Node",
     "outDir": "dist",
     "sourceMap": false,
+    //
 
   },
   "exclude": [

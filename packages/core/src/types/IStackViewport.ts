@@ -1,19 +1,21 @@
-import CPUIImageData from './CPUIImageData';
-import { ActorEntry } from './IActor';
-import ICamera from './ICamera';
-import IImage from './IImage';
-import IImageData from './IImageData';
-import { IStackInput } from './IStackInput';
-import { IViewport } from './IViewport';
-import Point2 from './Point2';
-import Point3 from './Point3';
-import { Scaling } from './ScalingParameters';
-import StackViewportProperties from './StackViewportProperties';
-import {
+import type CPUIImageData from './CPUIImageData';
+import type { ActorEntry } from './IActor';
+import type ICamera from './ICamera';
+import type IImage from './IImage';
+import type IImageData from './IImageData';
+import type { IStackInput } from './IStackInput';
+import type { IViewport } from './IViewport';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type { Scaling } from './ScalingParameters';
+import type StackViewportProperties from './StackViewportProperties';
+import type {
   ViewReference,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
 } from '../types/IViewport';
+import type { ImageDataMetaData } from '../RenderingEngine/StackViewport';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 export default interface IStackViewport extends IViewport {
   /**
@@ -64,7 +66,7 @@ export default interface IStackViewport extends IViewport {
    * Returns the list of image Ids for the current viewport
    * @returns list of strings for image Ids
    */
-  getImageIds(): Array<string>;
+  getImageIds(): string[];
 
   /**
    * Sets the imageIds to be visualized inside the stack viewport. It accepts
@@ -82,7 +84,7 @@ export default interface IStackViewport extends IViewport {
    * @param options - Optional settings to specify reset behavior.
    * @returns A boolean indicating whether the camera was reset successfully.
    */
-  resetCamera(options?: any): boolean;
+  resetCamera(options?: unknown): boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -104,7 +106,7 @@ export default interface IStackViewport extends IViewport {
    * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  getRenderer(): any;
+  getRenderer(): vtkRenderer;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -117,7 +119,7 @@ export default interface IStackViewport extends IViewport {
    * If the renderer is CPU based, throw an error. Otherwise, return the actors in the viewport
    * @returns An array of ActorEntry objects.
    */
-  getActors(): Array<ActorEntry>;
+  getActors(): ActorEntry[];
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, it returns the actor entry for the given actor UID.
@@ -131,13 +133,13 @@ export default interface IStackViewport extends IViewport {
    * actors in the viewport.
    * @param actors - An array of ActorEntry objects.
    */
-  setActors(actors: Array<ActorEntry>): void;
+  setActors(actors: ActorEntry[]): void;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, add a list of actors to the viewport
    * @param actors - An array of ActorEntry objects.
    */
-  addActors(actors: Array<ActorEntry>): void;
+  addActors(actors: ActorEntry[]): void;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, add the
@@ -165,7 +167,7 @@ export default interface IStackViewport extends IViewport {
    * @param suppressEvents - Optional boolean to suppress events.
    */
   addImages(
-    images: Array<IStackInput>,
+    images: IStackInput[],
     immediateRender?: boolean,
     suppressEvents?: boolean
   ): void;
@@ -174,7 +176,7 @@ export default interface IStackViewport extends IViewport {
    * Renders the given Cornerstone image object in the viewport.
    * @param image - The Cornerstone image object to render.
    */
-  renderImageObject(image: any): void;
+  renderImageObject(image: unknown): void;
 
   /**
    * Sets the properties for the viewport on the default actor. Properties include
@@ -198,7 +200,7 @@ export default interface IStackViewport extends IViewport {
    * @param image - stack image containing cornerstone image
    * @returns image metadata: bitsAllocated, number of components, origin, direction, dimensions, spacing, number of voxels.
    */
-  getImageDataMetadata(image: IImage): any;
+  getImageDataMetadata(image: IImage): ImageDataMetaData;
 
   /**
    * Resizes the viewport - only used in CPU fallback for StackViewport. The

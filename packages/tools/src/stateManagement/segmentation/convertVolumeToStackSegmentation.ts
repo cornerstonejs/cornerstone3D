@@ -1,9 +1,10 @@
-import { Types, cache, eventTarget } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache, eventTarget } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
 import { triggerSegmentationRender } from '../../utilities/segmentation';
 import { getSegmentation } from './segmentationState';
-import { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 
 // This function is responsible for the conversion calculations

@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import * as mathLine from '../line';
 
 // ATTENTION: this is an internal function and it should not be added to "polyline" namespace

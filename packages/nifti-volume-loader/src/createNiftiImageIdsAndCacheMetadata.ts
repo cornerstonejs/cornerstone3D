@@ -60,6 +60,8 @@ export async function fetchArrayBuffer({
 
     if (isCompressed) {
       const decompressedStream = decompressionStream.readable.getReader();
+
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await decompressedStream.read();
         if (done) {
@@ -124,6 +126,7 @@ async function readStream(
   processChunk,
   controller
 ) {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
@@ -156,8 +159,8 @@ function handleNiftiHeader(data): {
   version: number;
   orientation: number[];
   spacing: number[];
-  header: any;
-  arrayConstructor: any;
+  header: unknown;
+  arrayConstructor: unknown;
 } {
   if (data.length < HEADER_CHECK_SIZE) {
     // @ts-ignore
@@ -232,8 +235,8 @@ async function fetchAndAllocateNiftiVolume(volumeId) {
     version: number;
     orientation: number[];
     spacing: number[];
-    header: any;
-    arrayConstructor: any;
+    header: unknown;
+    arrayConstructor: unknown;
   };
 
   const {
@@ -309,8 +312,11 @@ async function fetchAndAllocateNiftiVolume(volumeId) {
       photometricInterpretation: 'MONOCHROME2',
       rows: dimensions[1],
       columns: dimensions[0],
+      // @ts-expect-error
       bitsAllocated: arrayConstructor.BYTES_PER_ELEMENT * 8,
+      // @ts-expect-error
       bitsStored: arrayConstructor.BYTES_PER_ELEMENT * 8,
+      // @ts-expect-error
       highBit: arrayConstructor.BYTES_PER_ELEMENT * 8 - 1,
       pixelRepresentation: 1,
       planarConfiguration: 0,

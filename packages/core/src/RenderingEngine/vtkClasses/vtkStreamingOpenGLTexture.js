@@ -1,6 +1,5 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
-import { getConfiguration } from '../../init';
 import cache from '../../cache';
 
 /**
