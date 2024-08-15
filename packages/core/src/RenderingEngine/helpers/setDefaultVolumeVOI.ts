@@ -168,7 +168,7 @@ async function getVOIFromMiddleSliceMinMax(
   // know how to do it better.
   let image = cache.getImage(imageId);
 
-  if (!imageVolume.referencedImageIds.length) {
+  if (!imageVolume.referencedImageIds?.length) {
     // we should ignore the cache here,
     // since we want to load the image from with the most
     // recent preScale settings
