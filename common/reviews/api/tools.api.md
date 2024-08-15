@@ -3533,6 +3533,7 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
         annotation: LivewireContourAnnotation;
         viewportIdsToRender: Array<string>;
         handleIndex?: number;
+        movingTextBox?: boolean;
         newAnnotation?: boolean;
         hasMoved?: boolean;
         lastCanvasPoint?: Types_2.Point2;
@@ -3578,11 +3579,15 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     protected setupBaseEditData(worldPos: any, element: any, annotation: any, nextPos?: any, contourHoleProcessingEnabled?: any): void;
     // (undocumented)
+    _throttledCalculateCachedStats: any;
+    // (undocumented)
     static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LivewireContourAnnotation) => void;
     // (undocumented)
     touchDragCallback: any;
+    // (undocumented)
+    triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
     // (undocumented)
     triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourHoleProcessingEnabled?: boolean) => void;
     // (undocumented)
