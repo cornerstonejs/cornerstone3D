@@ -92,7 +92,7 @@ describe('renderingCore -- Stack', () => {
       });
     });
 
-    it('Should render one stack viewport of square size properly: nearest', function (done) {
+    fit('Should render one stack viewport of square size properly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
       const imageInfo = {

@@ -333,6 +333,7 @@ describe('Segmentation Render -- ', () => {
       const volumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
         name: 'volumeURI',
+        id: 'baseVolumeId',
         rows: 100,
         columns: 100,
         slices: 10,
@@ -343,36 +344,40 @@ describe('Segmentation Render -- ', () => {
 
       const segVolumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURIExact',
+        id: 'segVolumeId',
         rows: 100,
         columns: 100,
         slices: 10,
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        startRow: 20,
-        startColumn: 20,
-        startSlice: 3,
-        endRow: 50,
-        endColumn: 50,
-        endSlice: 6,
+        exactRegion: {
+          startRow: 20,
+          startColumn: 20,
+          startSlice: 3,
+          endRow: 50,
+          endColumn: 50,
+          endSlice: 6,
+        },
       });
 
       const segVolumeId2 = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURIExact',
+        id: 'segVolumeId2',
         rows: 100,
         columns: 100,
         slices: 10,
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
-        startRow: 60,
-        startColumn: 60,
-        startSlice: 2,
-        endRow: 80,
-        endColumn: 80,
-        endSlice: 7,
+        exactRegion: {
+          startRow: 60,
+          startColumn: 60,
+          startSlice: 2,
+          endRow: 80,
+          endColumn: 80,
+          endSlice: 7,
+        },
       });
 
       const vp1 = this.renderingEngine.getViewport(viewportId1);
@@ -441,124 +446,5 @@ describe('Segmentation Render -- ', () => {
         done.fail(e);
       }
     });
-
-    // it('should successfully render a segmentation with toolGroup specific config', function (done) {
-    //   const element = createViewport(
-    //     this.renderingEngine,
-    //     Enums.OrientationAxis.AXIAL,
-    //     viewportId1
-    //   );
-    //   this.DOMElements.push(element);
-
-    //   const customToolGroupSegConfig = {
-    //     representations: {
-    //       [SegmentationRepresentations.Labelmap]: {
-    //         renderOutline: false,
-    //         fillAlpha: 0.99,
-    //       },
-    //     },
-    //   };
-
-    //   const volumeId = testUtils.encodeVolumeIdInfo({
-    //     loader: 'fakeVolumeLoader',
-    //     name: 'volumeURI',
-    //     rows: 100,
-    //     columns: 100,
-    //     slices: 10,
-    //     xSpacing: 1,
-    //     ySpacing: 1,
-    //     zSpacing: 1,
-    //   });
-
-    //   const segVolumeId = testUtils.encodeVolumeIdInfo({
-    //     loader: 'fakeVolumeLoader',
-    //     name: 'volumeURI',
-    //     rows: 100,
-    //     columns: 100,
-    //     slices: 10,
-    //     xSpacing: 1,
-    //     ySpacing: 1,
-    //     zSpacing: 1,
-    //   });
-
-    //   const vp1 = this.renderingEngine.getViewport(viewportId1);
-
-    //   eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
-    //     const canvas1 = vp1.getCanvas();
-    //     const image1 = canvas1.toDataURL('image/png');
-
-    //     compareImages(
-    //       image1,
-    //       volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom,
-    //       'volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom'
-    //     ).then(done, done.fail);
-    //   });
-
-    //   eventTarget.addEventListener(
-    //     Events.SEGMENTATION_REPRESENTATION_MODIFIED,
-    //     (evt) => {
-    //       const toolGroupState = segmentation.state.getAllSegmentationRepresentations(
-    //         this.segToolGroup.id
-    //       );
-
-    //       expect(toolGroupState).toBeDefined();
-
-    //       const toolGroupConfig =
-    //         segmentation.config.getSegmentationRepresentationConfig(
-    //           this.segToolGroup.id
-    //         );
-
-    //       expect(toolGroupConfig).toBeDefined();
-    //       expect(toolGroupConfig.renderInactiveRepresentations).toBe(true);
-    //       expect(toolGroupConfig.representations[LABELMAP]).toEqual(
-    //         customToolGroupSegConfig.representations[LABELMAP]
-    //       );
-    //     }
-    //   );
-
-    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id);
-
-    //   const callback = ({ volumeActor }) =>
-    //     volumeActor.getProperty().setInterpolationTypeToNearest();
-
-    //   try {
-    //     createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-    //       setVolumesForViewports(
-    //         this.renderingEngine,
-    //         [{ volumeId: volumeId, callback }],
-    //         [viewportId1]
-    //       );
-    //       this.renderingEngine.render();
-    //       createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
-    //         addSegmentations([
-    //           {
-    //             segmentationId: segVolumeId,
-    //             representation: {
-    //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    //               data: {
-    //                 volumeId: segVolumeId,
-    //               },
-    //             },
-    //           },
-    //         ]);
-
-    //         addSegmentationRepresentations(
-    //           this.segToolGroup.id,
-    //           [
-    //             {
-    //               segmentationId: segVolumeId,
-    //               type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    //             },
-    //           ],
-    //           {
-    //             ...customToolGroupSegConfig,
-    //           }
-    //         );
-    //       });
-    //     });
-    //   } catch (e) {
-    //     done.fail(e);
-    //   }
-    // });
   });
 });

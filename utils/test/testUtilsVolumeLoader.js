@@ -56,6 +56,7 @@ const fakeVolumeLoader = (volumeId) => {
     rgb = 0,
     PT = false,
     exactRegion = {},
+    id,
   } = volumeInfo;
 
   const dimensions = [rows, columns, slices];
@@ -65,7 +66,7 @@ const fakeVolumeLoader = (volumeId) => {
   const imageIds = new Array(slices).fill().map((_, i) =>
     encodeImageIdInfo({
       loader: 'fakeImageLoader',
-      name: 'myImage',
+      name: id,
       rows,
       columns,
       xSpacing: x_spacing,

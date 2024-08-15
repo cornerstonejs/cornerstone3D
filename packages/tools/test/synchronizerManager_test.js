@@ -44,7 +44,7 @@ const viewportId2 = 'VIEWPORT2';
 
 const ctVolumeId = testUtils.encodeVolumeIdInfo({
   loader: 'fakeVolumeLoader',
-  name: 'volumeURI',
+  id: 'ctVolumeId',
   rows: 100,
   columns: 100,
   slices: 10,
@@ -55,7 +55,7 @@ const ctVolumeId = testUtils.encodeVolumeIdInfo({
 
 const ptVolumeId = testUtils.encodeVolumeIdInfo({
   loader: 'fakeVolumeLoader',
-  name: 'volumeURI',
+  id: 'ptVolumeId',
   rows: 100,
   columns: 100,
   slices: 15,

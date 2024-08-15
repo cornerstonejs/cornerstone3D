@@ -139,36 +139,33 @@ describe('Stack Segmentation Rendering -- ', () => {
 
       try {
         vp.setStack([imageId1], 0).then(() => {
-          imageLoader
-            .createAndCacheDerivedSegmentationImage(imageId1)
-            .then(({ imageId: newSegImageId }) => {
-              segmentation.addSegmentations([
-                {
-                  segmentationId,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      imageIds: newSegImageId,
-                    },
-                  },
+          imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          segmentation.addSegmentations([
+            {
+              segmentationId,
+              representation: {
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                data: {
+                  imageIds: [imageId1],
                 },
-              ]);
+              },
+            },
+          ]);
 
-              testUtils.fillStackSegmentationWithMockData({
-                imageIds: [imageId1],
-                segmentationImageIds: [newSegImageId],
-                cornerstone: cornerstone3D,
-              });
+          testUtils.fillStackSegmentationWithMockData({
+            imageIds: [imageId1],
+            segmentationImageIds: [imageId1],
+            cornerstone: cornerstone3D,
+          });
 
-              addSegmentationRepresentations(viewportId1, [
-                {
-                  segmentationId,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-              ]);
+          addSegmentationRepresentations(viewportId1, [
+            {
+              segmentationId,
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+            },
+          ]);
 
-              this.renderingEngine.render();
-            });
+          this.renderingEngine.render();
         });
       } catch (e) {
         done.fail(e);
@@ -213,69 +210,62 @@ describe('Stack Segmentation Rendering -- ', () => {
 
       try {
         vp.setStack([imageId1], 0).then(() => {
-          imageLoader
-            .createAndCacheDerivedSegmentationImage(imageId1)
-            .then(({ imageId: newSegImageId }) => {
-              imageLoader
-                .createAndCacheDerivedSegmentationImage(imageId1)
-                .then(({ imageId: newSegImageId2 }) => {
-                  segmentation.addSegmentations([
-                    {
-                      segmentationId,
-                      representation: {
-                        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                        data: {
-                          imageIdReferenceMap: new Map([
-                            [imageId1, newSegImageId],
-                          ]),
-                        },
-                      },
-                    },
-                  ]);
-                  segmentation.addSegmentations([
-                    {
-                      segmentationId: 'seg2',
-                      representation: {
-                        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                        data: {
-                          imageIdReferenceMap: new Map([
-                            [imageId1, newSegImageId2],
-                          ]),
-                        },
-                      },
-                    },
-                  ]);
+          const segImage1 =
+            imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          const segImage2 =
+            imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
 
-                  testUtils.fillStackSegmentationWithMockData({
-                    imageIds: [imageId1],
-                    segmentationImageIds: [newSegImageId],
-                    cornerstone: cornerstone3D,
-                  });
-                  testUtils.fillStackSegmentationWithMockData({
-                    imageIds: [imageId1],
-                    segmentationImageIds: [newSegImageId2],
-                    centerOffset: [30, 30, 0],
-                    innerValue: 4,
-                    outerValue: 5,
-                    cornerstone: cornerstone3D,
-                  });
+          segmentation.addSegmentations([
+            {
+              segmentationId,
+              representation: {
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                data: {
+                  imageIds: [segImage1.imageId],
+                },
+              },
+            },
+          ]);
+          segmentation.addSegmentations([
+            {
+              segmentationId: 'seg2',
+              representation: {
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                data: {
+                  imageIds: [segImage2.imageId],
+                },
+              },
+            },
+          ]);
 
-                  addSegmentationRepresentations(viewportId1, [
-                    {
-                      segmentationId,
-                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    },
-                  ]);
-                  addSegmentationRepresentations(viewportId1, [
-                    {
-                      segmentationId: 'seg2',
-                      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    },
-                  ]);
+          testUtils.fillStackSegmentationWithMockData({
+            imageIds: [imageId1],
+            segmentationImageIds: [segImage1.imageId],
+            cornerstone: cornerstone3D,
+          });
+          testUtils.fillStackSegmentationWithMockData({
+            imageIds: [imageId1],
+            segmentationImageIds: [segImage2.imageId],
+            centerOffset: [30, 30, 0],
+            innerValue: 4,
+            outerValue: 5,
+            cornerstone: cornerstone3D,
+          });
 
-                  this.renderingEngine.render();
-                });
-            });
+          addSegmentationRepresentations(viewportId1, [
+            {
+              segmentationId,
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+            },
+          ]);
+          addSegmentationRepresentations(viewportId1, [
+            {
+              segmentationId: 'seg2',
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+            },
+          ]);
+
+          this.renderingEngine.render();
         });
       } catch (e) {
         done.fail(e);
@@ -307,6 +297,7 @@ describe('Stack Segmentation Rendering -- ', () => {
         setTimeout(() => {
           const canvas = vp.getCanvas();
           const image = canvas.toDataURL('image/png');
+
           compareImages(
             image,
             imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed,
@@ -402,41 +393,36 @@ describe('Stack Segmentation Rendering -- ', () => {
 
       try {
         vp.setStack([imageId1], 0).then(() => {
-          imageLoader
-            .createAndCacheDerivedSegmentationImage(imageId1)
-            .then(({ imageId: newSegImageId }) => {
-              segmentation.addSegmentations([
-                {
-                  segmentationId,
-                  representation: {
-                    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                    data: {
-                      imageIdReferenceMap: new Map([[imageId1, newSegImageId]]),
-                    },
-                  },
+          const segImage1 =
+            imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          segmentation.addSegmentations([
+            {
+              segmentationId,
+              representation: {
+                type: csToolsEnums.SegmentationRepresentations.Labelmap,
+                data: {
+                  imageIds: [segImage1.imageId],
                 },
-              ]);
+              },
+            },
+          ]);
 
-              testUtils.fillStackSegmentationWithMockData({
-                imageIds: [imageId1],
-                segmentationImageIds: [newSegImageId],
-                cornerstone: cornerstone3D,
-              });
+          testUtils.fillStackSegmentationWithMockData({
+            imageIds: [imageId1],
+            segmentationImageIds: [segImage1.imageId],
+            cornerstone: cornerstone3D,
+          });
 
-              addSegmentationRepresentations(viewportId1, [
-                {
-                  segmentationId,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-              ]);
+          addSegmentationRepresentations(viewportId1, [
+            {
+              segmentationId,
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+            },
+          ]);
 
-              segmentation.segmentIndex.setActiveSegmentIndex(
-                segmentationId,
-                2
-              );
+          segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 2);
 
-              this.renderingEngine.render();
-            });
+          this.renderingEngine.render();
         });
       } catch (e) {
         done.fail(e);

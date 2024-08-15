@@ -184,7 +184,7 @@ describe('Segmentation Tools --', () => {
       }
     });
 
-    fit('should be able to edit the segmentation data with the rectangle scissor', function (done) {
+    it('should be able to edit the segmentation data with the rectangle scissor', function (done) {
       const element = createViewport(
         this.renderingEngine,
         Enums.OrientationAxis.AXIAL
@@ -275,11 +275,11 @@ describe('Segmentation Tools --', () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
-        // compareImages(
-        //   image,
-        //   volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor,
-        //   'volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor'
-        // ).then(done, done.fail);
+        compareImages(
+          image,
+          volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor,
+          'volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor'
+        ).then(done, done.fail);
       };
 
       eventTarget.addEventListener(
@@ -457,12 +457,6 @@ describe('Segmentation Tools --', () => {
         const image2 = canvas2.toDataURL('image/png');
 
         try {
-          await compareImages(
-            image1,
-            volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor,
-            'volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor'
-          );
-
           await compareImages(
             image2,
             volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor,

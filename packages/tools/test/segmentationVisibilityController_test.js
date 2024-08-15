@@ -116,7 +116,7 @@ describe('Segmentation Controller --', () => {
 
       const volumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURI',
+        id: 'volumeURI',
         rows: 100,
         columns: 100,
         slices: 10,
@@ -127,7 +127,7 @@ describe('Segmentation Controller --', () => {
 
       const seg1VolumeID = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURIExact',
+        id: 'volumeURIExact',
         rows: 100,
         columns: 100,
         slices: 10,
@@ -144,7 +144,7 @@ describe('Segmentation Controller --', () => {
 
       const seg2VolumeID = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURIExact',
+        id: 'seg2VolumeID',
         rows: 100,
         columns: 100,
         slices: 10,
@@ -336,122 +336,5 @@ describe('Segmentation Controller --', () => {
     //     done.fail(e)
     //   }
     // })
-
-    // it('should be able to load two segmentations on the toolGroup and make one invisible', function (done) {
-    //   const element = createViewport(this.renderingEngine, Enums.OrientationAxis.AXIAL)
-
-    //   const volumeId = testUtils.encodeVolumeIdInfo({
-    //     loader: 'fakeVolumeLoader',
-    //     name: 'volumeURI',
-    //     rows: 100,
-    //     columns: 100,
-    //     slices: 10,
-    //     xSpacing: 1,
-    //     ySpacing: 1,
-    //     zSpacing: 1,
-    //   })
-
-    //   const seg1VolumeID = testUtils.encodeVolumeIdInfo({
-    //     loader: 'fakeVolumeLoader',
-    //     name: 'volumeURIExact',
-    //     rows: 100,
-    //     columns: 100,
-    //     slices: 10,
-    //     xSpacing: 1,
-    //     ySpacing: 1,
-    //     zSpacing: 1,
-    //     startRow: 20,
-    //     startColumn: 20,
-    //     startSlice: 3,
-    //     endRow: 60,
-    //     endColumn: 60,
-    //     endSlice: 6,
-    //   })
-
-    //   const seg2VolumeID = testUtils.encodeVolumeIdInfo({
-    //     loader: 'fakeVolumeLoader',
-    //     name: 'volumeURIExact',
-    //     rows: 100,
-    //     columns: 100,
-    //     slices: 10,
-    //     xSpacing: 1,
-    //     ySpacing: 1,
-    //     zSpacing: 1,
-    //     startRow: 35,
-    //     startColumn: 20,
-    //     startSlice: 2,
-    //     endRow: 80,
-    //     endColumn: 60,
-    //     endSlice: 7,
-    //   })
-    //   const vp1 = this.renderingEngine.getViewport(viewportId1)
-
-    //   const compareImageCallback = () => {
-    //     console.log('calling compare ************')
-    //     const canvas1 = vp1.getCanvas()
-    //     const image1 = canvas1.toDataURL('image/png')
-
-    //     compareImages(
-    //       image1,
-    //       volumeURI_100_100_10_1_1_1_0_SEG_visiblity,
-    //       'volumeURI_100_100_10_1_1_1_0_SEG_visiblity'
-    //     )
-
-    //     const segmentationState =
-    //       csTools3d.segmentation.state.getAllSegmentationRepresentations(toolGroupId)
-
-    //     // expect(segmentationState.length).toBe(2)
-    //     // expect(segmentationState[0].active).toBe(true)
-    //     // expect(segmentationState[1].active).toBe(false)
-
-    //     // done()
-    //   }
-
-    //   eventTarget.addEventListener(
-    //     Events.SEGMENTATION_RENDERED,
-    //     compareImageCallback
-    //   )
-
-    //   this.segToolGroup.addViewport(vp1.id, this.renderingEngine.id)
-
-    //   try {
-    //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-    //       createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
-    //         createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-    //           setVolumesForViewports(
-    //             this.renderingEngine,
-    //             [{ volumeId: volumeId }],
-    //             [viewportId1]
-    //           ).then(() => {
-    //             vp1.render()
-
-    //             // add two volumes on the segmentation
-    //             addSegmentationRepresentations(toolGroupId, [
-    //               {
-    //                 volumeId: seg1VolumeID,
-    //               },
-    //               {
-    //                 volumeId: seg2VolumeID,
-    //               },
-    //             ]).then(() => {
-    //               const segmentationData =
-    //                 segmentation.activeSegmentation.getActiveSegmentationRepresentation(
-    //                   toolGroupId
-    //                 )
-
-    //               segmentation.config.visibility.setSegmentationRepresentationVisibility(
-    //                 toolGroupId,
-    //                 segmentationData.segmentationRepresentationUID,
-    //                 false
-    //               )
-    //             })
-    //           })
-    //         })
-    //       })
-    //     })
-    //   } catch (e) {
-    //     done.fail(e)
-    //   }
-    // }, )
   });
 });
