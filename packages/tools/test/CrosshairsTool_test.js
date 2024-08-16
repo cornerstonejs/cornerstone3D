@@ -100,7 +100,7 @@ describe('Cornerstone Tools: ', () => {
     metaData.addProvider(fakeMetaDataProvider, 10000);
   });
 
-  afterEach(function () {
+  afterEach(function (done) {
     csTools3d.destroy();
 
     cache.purgeCache();
@@ -114,6 +114,10 @@ describe('Cornerstone Tools: ', () => {
         el.parentNode.removeChild(el);
       }
     });
+
+    setTimeout(() => {
+      done();
+    }, 1000);
   });
 
   it('Should successfully initialize the crosshairs to the middle of the image and canvas', function (done) {
@@ -173,7 +177,7 @@ describe('Cornerstone Tools: ', () => {
 
       const indexMiddle = imageData
         .getDimensions()
-        .map((s) => Math.floor(s / 2));
+        .map((s) => Math.floor((s - 1) / 2));
 
       const imageCenterWorld = imageData.indexToWorld(indexMiddle);
 
@@ -795,7 +799,7 @@ describe('Crosshairs with synchronizers: ', () => {
           done();
         }, 1000);
 
-        // done();
+        done();
       }, 500);
     };
 
@@ -986,7 +990,7 @@ describe('Crosshairs with synchronizers: ', () => {
           done();
         }, 500);
 
-        // done();
+        done();
       }, 500);
     };
 

@@ -270,8 +270,8 @@ describe('Rectangle ROI Tool: ', () => {
         // Inside the strip which is from 50-75 in slice 2
         // volumeURI_100_100_4_1_1_1_0
         // The strip is from
-        const index1 = [55, 10, 2];
-        const index2 = [65, 20, 2];
+        const index1 = [40, 10, 2];
+        const index2 = [42, 20, 2];
 
         const { imageData } = vp.getImageData();
 

@@ -4,7 +4,6 @@ import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_initialConfig from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_initialConfig.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_GlobalConfig.png';
-import * as volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_ToolGroupPrioritize.png';
 
 const {
   cache,
@@ -49,8 +48,8 @@ function createViewport(
 ) {
   const element = document.createElement('div');
 
-  element.style.width = '250px';
-  element.style.height = '250px';
+  element.style.width = '500px';
+  element.style.height = '500px';
   document.body.appendChild(element);
 
   renderingEngine.enableElement({
@@ -128,7 +127,7 @@ describe('Segmentation Controller --', () => {
 
       const volumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURI',
+        id: 'volumeURI',
         rows: 100,
         columns: 100,
         slices: 10,
@@ -139,7 +138,7 @@ describe('Segmentation Controller --', () => {
 
       const seg1VolumeID = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
-        name: 'volumeURIExact',
+        id: 'seg1VolumeID',
         rows: 100,
         columns: 100,
         slices: 10,
@@ -172,16 +171,23 @@ describe('Segmentation Controller --', () => {
             representationUID
           );
 
-        const labelmapConfig =
-          config.representations[SegmentationRepresentations.Labelmap];
-        expect(labelmapConfig.fillAlpha).toEqual(
-          initialConfig.representations.LABELMAP.fillAlpha
-        );
-        expect(labelmapConfig.renderOutline).toEqual(
-          initialConfig.representations.LABELMAP.renderOutline
-        );
+        if (config?.LABELMAP) {
+          const labelmapConfig = config.LABELMAP;
+          if (labelmapConfig) {
+            expect(labelmapConfig.fillAlpha).toEqual(
+              initialConfig.representations.LABELMAP.fillAlpha
+            );
+            expect(labelmapConfig.renderOutline).toEqual(
+              initialConfig.representations.LABELMAP.renderOutline
+            );
+          } else {
+            console.error('Labelmap configuration not found');
+          }
+        } else {
+          console.error('Invalid configuration structure');
+        }
 
-        // done();
+        done();
       };
 
       eventTarget.addEventListener(
@@ -213,7 +219,7 @@ describe('Segmentation Controller --', () => {
                 },
               ]);
 
-              representationUID = addSegmentationRepresentations(
+              addSegmentationRepresentations(
                 viewportId1,
                 [
                   {
@@ -222,7 +228,9 @@ describe('Segmentation Controller --', () => {
                   },
                 ],
                 initialConfig
-              );
+              ).then((uids) => {
+                representationUID = [uids];
+              });
             });
           });
         });

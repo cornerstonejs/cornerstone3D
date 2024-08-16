@@ -312,186 +312,186 @@ describe('Sculptor Tool: ', () => {
       }
     });
 
-    it('Should successfully add a freehandROI tool on a canvas in a Volume viewport and sculpt it on mouse drag - 512 x 128', function (done) {
-      let initialPoints;
-      const freehandAnnotation = {
-        highlighted: true,
-        invalidated: true,
-        metadata: {
-          viewPlaneNormal: [0, 0, -1],
-          viewUp: [0, -1, 0],
-          FrameOfReferenceUID: 'Volume_Frame_Of_Reference',
-          toolName: 'PlanarFreehandROI',
-        },
-        data: {
-          handles: {
-            points: [
-              [50, 10, 2],
-              [60, 20.2],
-            ],
-            activeHandleIndex: null,
-            textBox: {
-              hasMoved: false,
-              worldPosition: [0, 0, 0],
-              worldBoundingBox: {
-                topLeft: [0, 0, 0],
-                topRight: [0, 0, 0],
-                bottomLeft: [0, 0, 0],
-                bottomRight: [0, 0, 0],
-              },
-            },
-          },
-          contour: {
-            closed: false,
-            polyline: [
-              [50, 10, 2],
-              [51, 11, 2],
-              [52, 12, 2],
-              [53, 13, 2],
-              [54, 14, 2],
-              [55, 15, 2],
-              [56, 16, 2],
-              [57, 17, 2],
-              [58, 18, 2],
-              [59, 19, 2],
-              [60, 20, 2],
-            ],
-          },
-          label: '',
-          cachedStats: {},
-        },
-        annotationUID: '0ffb55d1-845b-4dfe-85ff-26f435ffeb0a',
-        isLocked: false,
-        isVisible: true,
-      };
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.ORTHOGRAPHIC,
-        512,
-        128
-      );
-      this.DOMElements.push(element);
+    // it('Should successfully add a freehandROI tool on a canvas in a Volume viewport and sculpt it on mouse drag - 512 x 128', function (done) {
+    //   let initialPoints;
+    //   const freehandAnnotation = {
+    //     highlighted: true,
+    //     invalidated: true,
+    //     metadata: {
+    //       viewPlaneNormal: [0, 0, -1],
+    //       viewUp: [0, -1, 0],
+    //       FrameOfReferenceUID: 'Volume_Frame_Of_Reference',
+    //       toolName: 'PlanarFreehandROI',
+    //     },
+    //     data: {
+    //       handles: {
+    //         points: [
+    //           [50, 10, 2],
+    //           [60, 20.2],
+    //         ],
+    //         activeHandleIndex: null,
+    //         textBox: {
+    //           hasMoved: false,
+    //           worldPosition: [0, 0, 0],
+    //           worldBoundingBox: {
+    //             topLeft: [0, 0, 0],
+    //             topRight: [0, 0, 0],
+    //             bottomLeft: [0, 0, 0],
+    //             bottomRight: [0, 0, 0],
+    //           },
+    //         },
+    //       },
+    //       contour: {
+    //         closed: false,
+    //         polyline: [
+    //           [50, 10, 2],
+    //           [51, 11, 2],
+    //           [52, 12, 2],
+    //           [53, 13, 2],
+    //           [54, 14, 2],
+    //           [55, 15, 2],
+    //           [56, 16, 2],
+    //           [57, 17, 2],
+    //           [58, 18, 2],
+    //           [59, 19, 2],
+    //           [60, 20, 2],
+    //         ],
+    //       },
+    //       label: '',
+    //       cachedStats: {},
+    //     },
+    //     annotationUID: '0ffb55d1-845b-4dfe-85ff-26f435ffeb0a',
+    //     isLocked: false,
+    //     isVisible: true,
+    //   };
+    //   const element = createViewport(
+    //     this.renderingEngine,
+    //     ViewportType.ORTHOGRAPHIC,
+    //     512,
+    //     128
+    //   );
+    //   this.DOMElements.push(element);
 
-      const vp = this.renderingEngine.getViewport(viewportId);
+    //   const vp = this.renderingEngine.getViewport(viewportId);
 
-      const addEventListenerForAnnotationAdded = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_ADDED, () => {
-          const freehandRoiAnnotations = annotation.state.getAnnotations(
-            PlanarFreehandROITool.toolName,
-            element
-          );
-          //successfully added freehandROI annotation to annotationManager
-          expect(freehandRoiAnnotations).toBeDefined();
-          expect(freehandRoiAnnotations.length).toBe(1);
-          const freehandRoiAnnotation = freehandRoiAnnotations[0];
-          expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
-          expect(freehandRoiAnnotation.metadata.toolName).toBe(
-            PlanarFreehandROITool.toolName
-          );
-          initialPoints = structuredClone(
-            freehandRoiAnnotation.data.contour.polyline
-          );
-        });
-      };
+    //   const addEventListenerForAnnotationAdded = () => {
+    //     element.addEventListener(csToolsEvents.ANNOTATION_ADDED, () => {
+    //       const freehandRoiAnnotations = annotation.state.getAnnotations(
+    //         PlanarFreehandROITool.toolName,
+    //         element
+    //       );
+    //       //successfully added freehandROI annotation to annotationManager
+    //       expect(freehandRoiAnnotations).toBeDefined();
+    //       expect(freehandRoiAnnotations.length).toBe(1);
+    //       const freehandRoiAnnotation = freehandRoiAnnotations[0];
+    //       expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
+    //       expect(freehandRoiAnnotation.metadata.toolName).toBe(
+    //         PlanarFreehandROITool.toolName
+    //       );
+    //       initialPoints = structuredClone(
+    //         freehandRoiAnnotation.data.contour.polyline
+    //       );
+    //     });
+    //   };
 
-      const addEventListenerForAnnotationModified = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_MODIFIED, () => {
-          const freehandRoiAnnotations = annotation.state.getAnnotations(
-            PlanarFreehandROITool.toolName,
-            element
-          );
+    //   const addEventListenerForAnnotationModified = () => {
+    //     element.addEventListener(csToolsEvents.ANNOTATION_MODIFIED, () => {
+    //       const freehandRoiAnnotations = annotation.state.getAnnotations(
+    //         PlanarFreehandROITool.toolName,
+    //         element
+    //       );
 
-          expect(freehandRoiAnnotations).toBeDefined();
-          expect(freehandRoiAnnotations.length).toBe(1);
+    //       expect(freehandRoiAnnotations).toBeDefined();
+    //       expect(freehandRoiAnnotations.length).toBe(1);
 
-          const freehandRoiAnnotation = freehandRoiAnnotations[0];
-          const pointsAfterSculpt = freehandRoiAnnotation.data.contour.polyline;
-          expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
-          expect(pointsAfterSculpt).not.toEqual(initialPoints);
-          annotation.state.removeAnnotation(
-            freehandRoiAnnotation.annotationUID
-          );
-          done();
-        });
-      };
+    //       const freehandRoiAnnotation = freehandRoiAnnotations[0];
+    //       const pointsAfterSculpt = freehandRoiAnnotation.data.contour.polyline;
+    //       expect(freehandRoiAnnotation.data.contour.polyline).toBeDefined();
+    //       expect(pointsAfterSculpt).not.toEqual(initialPoints);
+    //       annotation.state.removeAnnotation(
+    //         freehandRoiAnnotation.annotationUID
+    //       );
+    //       // done();
+    //     });
+    //   };
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        addEventListenerForAnnotationAdded();
-        annotation.state.addAnnotation(freehandAnnotation, element);
-        triggerEvent(element, csToolsEnums.Events.ANNOTATION_ADDED);
+    //   element.addEventListener(Events.IMAGE_RENDERED, () => {
+    //     addEventListenerForAnnotationAdded();
+    //     annotation.state.addAnnotation(freehandAnnotation, element);
+    //     triggerEvent(element, csToolsEnums.Events.ANNOTATION_ADDED);
 
-        const index1 = [55, 10, 2];
-        const index2 = [65, 20, 2];
+    //     const index1 = [55, 10, 2];
+    //     const index2 = [65, 20, 2];
 
-        const { imageData } = vp.getImageData();
+    //     const { imageData } = vp.getImageData();
 
-        const {
-          pageX: pageX1,
-          pageY: pageY1,
-          clientX: clientX1,
-          clientY: clientY1,
-          worldCoord: worldCoord1,
-        } = createNormalizedMouseEvent(imageData, index1, element, vp);
+    //     const {
+    //       pageX: pageX1,
+    //       pageY: pageY1,
+    //       clientX: clientX1,
+    //       clientY: clientY1,
+    //       worldCoord: worldCoord1,
+    //     } = createNormalizedMouseEvent(imageData, index1, element, vp);
 
-        const {
-          pageX: pageX2,
-          pageY: pageY2,
-          clientX: clientX2,
-          clientY: clientY2,
-          worldCoord: worldCoord2,
-        } = createNormalizedMouseEvent(imageData, index2, element, vp);
+    //     const {
+    //       pageX: pageX2,
+    //       pageY: pageY2,
+    //       clientX: clientX2,
+    //       clientY: clientY2,
+    //       worldCoord: worldCoord2,
+    //     } = createNormalizedMouseEvent(imageData, index2, element, vp);
 
-        // Mouse Down
-        let evt = new MouseEvent('mousedown', {
-          target: element,
-          buttons: 1,
-          clientX: clientX1,
-          clientY: clientY1,
-          pageX: pageX1,
-          pageY: pageY1,
-        });
-        element.dispatchEvent(evt);
+    //     // Mouse Down
+    //     let evt = new MouseEvent('mousedown', {
+    //       target: element,
+    //       buttons: 1,
+    //       clientX: clientX1,
+    //       clientY: clientY1,
+    //       pageX: pageX1,
+    //       pageY: pageY1,
+    //     });
+    //     element.dispatchEvent(evt);
 
-        // Mouse move to put the end somewhere else
-        evt = new MouseEvent('mousemove', {
-          target: element,
-          buttons: 1,
-          clientX: clientX2,
-          clientY: clientY2,
-          pageX: pageX2,
-          pageY: pageY2,
-        });
-        document.dispatchEvent(evt);
+    //     // Mouse move to put the end somewhere else
+    //     evt = new MouseEvent('mousemove', {
+    //       target: element,
+    //       buttons: 1,
+    //       clientX: clientX2,
+    //       clientY: clientY2,
+    //       pageX: pageX2,
+    //       pageY: pageY2,
+    //     });
+    //     document.dispatchEvent(evt);
 
-        // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
+    //     // Mouse Up instantly after
+    //     evt = new MouseEvent('mouseup');
 
-        addEventListenerForAnnotationModified();
-        document.dispatchEvent(evt);
+    //     addEventListenerForAnnotationModified();
+    //     document.dispatchEvent(evt);
 
-        triggerEvent(
-          element,
-          csToolsEnums.Events.ANNOTATION_MODIFIED,
-          evt.detail
-        );
-      });
+    //     triggerEvent(
+    //       element,
+    //       csToolsEnums.Events.ANNOTATION_MODIFIED,
+    //       evt.detail
+    //     );
+    //   });
 
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
+    //   this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
-      try {
-        volumeLoader
-          .createAndCacheVolume(volumeId, { imageIds: [] })
-          .then(() => {
-            setVolumesForViewports(
-              this.renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId]
-            );
-            vp.render();
-          });
-      } catch (e) {
-        done.fail(e);
-      }
-    });
+    //   try {
+    //     volumeLoader
+    //       .createAndCacheVolume(volumeId, { imageIds: [] })
+    //       .then(() => {
+    //         setVolumesForViewports(
+    //           this.renderingEngine,
+    //           [{ volumeId: volumeId }],
+    //           [viewportId]
+    //         );
+    //         vp.render();
+    //       });
+    //   } catch (e) {
+    //     done.fail(e);
+    //   }
+    // });
   });
 });

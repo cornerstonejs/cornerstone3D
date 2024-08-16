@@ -6,7 +6,6 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_AX from './groundTruth/volumeURI_10
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SAG from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SAG.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_COR from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_COR.png';
 import * as volumeURI_100_100_10_1_1_1_0_2SEGs_AX from './groundTruth/volumeURI_100_100_10_1_1_1_0_2SEGs_AX.png';
-import * as volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_AX_Custom.png';
 
 const {
   cache,
@@ -53,8 +52,8 @@ function createViewport(
 ) {
   const element = document.createElement('div');
 
-  element.style.width = '250px';
-  element.style.height = '250px';
+  element.style.width = '500px';
+  element.style.height = '500px';
   document.body.appendChild(element);
 
   renderingEngine.enableElement({

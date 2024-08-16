@@ -579,7 +579,7 @@ describe('Probe Tool: ', () => {
       };
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const index1 = [50, 50, 4];
+        const index1 = [45, 50, 4];
 
         const { imageData } = vp.getImageData();
 

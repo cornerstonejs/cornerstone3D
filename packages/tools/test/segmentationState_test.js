@@ -43,8 +43,8 @@ const LABELMAP = SegmentationRepresentations.Labelmap;
 function createViewport(renderingEngine, orientation) {
   const element = document.createElement('div');
 
-  element.style.width = '250px';
-  element.style.height = '250px';
+  element.style.width = '500px';
+  element.style.height = '500px';
   document.body.appendChild(element);
 
   renderingEngine.setViewports([

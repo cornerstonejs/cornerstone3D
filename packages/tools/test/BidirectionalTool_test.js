@@ -103,7 +103,7 @@ describe('Cornerstone Tools: ', () => {
     metaData.addProvider(fakeMetaDataProvider, 10000);
   });
 
-  afterEach(function () {
+  afterEach(function (done) {
     csTools3d.destroy();
     cache.purgeCache();
     eventTarget.reset();
@@ -117,6 +117,10 @@ describe('Cornerstone Tools: ', () => {
         el.parentNode.removeChild(el);
       }
     });
+
+    setTimeout(() => {
+      done();
+    }, 500);
   });
 
   it('Should successfully create a Bidirectional tool on a canvas with mouse drag - 512 x 128', function (done) {

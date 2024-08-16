@@ -1135,9 +1135,9 @@ describe('CobbAngleTool:', () => {
 
       element.addEventListener(Events.IMAGE_RENDERED, async () => {
         const index1 = [32, 32, 0];
-        const index2 = [32, 88, 0];
-        const index3 = [167, 9, 0];
-        const index4 = [123, 9, 0];
+        const index2 = [88, 32, 0];
+        const index3 = [9, 167, 0];
+        const index4 = [9, 123, 0];
 
         const { imageData } = vp.getImageData();
 

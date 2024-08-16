@@ -26,14 +26,25 @@ const colors = [
 Object.freeze(colors);
 
 /**
- * It compares the image to a baseline, and if it is different by 1% it will
- * throw an error. Otherwise, it will return success.
- * @param {string} imageDataURL - The rendered imageDataURL - can be grabbed by calling canvas.toDataURL()
+ * Compares images or signals to update baselines based on the updateBaselines parameter.
+ * @param {string} imageDataURL - The rendered imageDataURL
  * @param {string} baseline - Baseline imageDataURL - imported png in the test files
- * @param outputName - The name of the image for logging
+ * @param {string} outputName - The name of the image for logging
+ * @param {boolean} updateBaselines - Whether to update baselines instead of comparing
  * @returns A promise.
  */
-function compareImages(imageDataURL, baseline, outputName) {
+function compareImages(
+  imageDataURL,
+  baseline,
+  outputName,
+  updateBaselines = false
+) {
+  if (updateBaselines) {
+    console.debug(`[Update Baseline]`);
+    console.debug(`${outputName}: ${imageDataURL}`);
+    return Promise.resolve();
+  }
+
   return new Promise((resolve, reject) => {
     resemble.outputSettings({
       useCrossOrigin: false,

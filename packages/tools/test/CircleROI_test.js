@@ -70,7 +70,7 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   slices: 4,
   xSpacing: 1,
   ySpacing: 1,
-  rgb: 0,
+  zSpacing: 1,
 });
 
 describe('Circle Tool: ', () => {
@@ -271,8 +271,8 @@ describe('Circle Tool: ', () => {
       };
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const index1 = [60, 50, 2];
-        const index2 = [65, 55, 2];
+        const index1 = [40, 50, 2];
+        const index2 = [40, 55, 2];
 
         const { imageData } = vp.getImageData();
 

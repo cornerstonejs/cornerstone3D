@@ -10,6 +10,7 @@ import {
   encodeImageIdInfo,
   encodeVolumeIdInfo,
 } from '../../../utils/test/testUtils';
+import { MouseBindings } from '../src/enums';
 
 const {
   cache,
@@ -24,7 +25,7 @@ const {
 const { Events, ViewportType, InterpolationType } = Enums;
 
 const { registerVolumeLoader } = volumeLoader;
-const { StackScrollMouseWheelTool, ZoomTool, ToolGroupManager } = csTools3d;
+const { StackScrollTool, ZoomTool, ToolGroupManager } = csTools3d;
 
 const {
   fakeImageLoader,
@@ -79,17 +80,23 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
   beforeEach(function () {
     csTools3d.init();
-    csTools3d.addTool(StackScrollMouseWheelTool);
+    csTools3d.addTool(StackScrollTool);
     csTools3d.addTool(ZoomTool);
 
     cache.purgeCache();
     this.DOMElements = [];
 
     this.stackToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-    this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
+    this.stackToolGroup.addTool(StackScrollTool.toolName, {
       debounceIfNotLoaded: false,
     });
-    this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    this.stackToolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Wheel,
+        },
+      ],
+    });
 
     this.renderingEngine = new RenderingEngine(renderingEngineId);
     imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
@@ -98,6 +105,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   });
 
   afterEach(function () {
+    console.debug('afterEach');
     csTools3d.destroy();
     cache.purgeCache();
     this.renderingEngine.destroy();
@@ -160,11 +168,11 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
         Events.IMAGE_RENDERED,
         function secondImageRendered() {
           const image = canvas.toDataURL('image/png');
-          // compareImages(
-          //   image,
-          //   volumeURI_100_100_10_1_1_1_0_scrolled,
-          //   'volumeURI_100_100_10_1_1_1_0_scrolled'
-          // ).then(done, done.fail);
+          compareImages(
+            image,
+            volumeURI_100_100_10_1_1_1_0_scrolled,
+            'volumeURI_100_100_10_1_1_1_0_scrolled'
+          ).then(done, done.fail);
 
           element.removeEventListener(
             Events.IMAGE_RENDERED,
@@ -203,7 +211,7 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     const imageId1 = encodeImageIdInfo({
       loader: 'fakeImageLoader',
-      name: 'imageURI',
+      id: 'imageId1',
       rows: 64,
       columns: 64,
       barStart: 10,
@@ -214,11 +222,11 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     });
     const imageId2 = encodeImageIdInfo({
       loader: 'fakeImageLoader',
-      name: 'imageURI',
+      id: 'imageId2',
       rows: 64,
       columns: 64,
-      barStart: 10,
-      barWidth: 5,
+      barStart: 0,
+      barWidth: 20,
       xSpacing: 1,
       ySpacing: 1,
       sliceIndex: 0,
@@ -317,8 +325,8 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       name: 'imageURI',
       rows: 64,
       columns: 64,
-      barStart: 10,
-      barWidth: 5,
+      barStart: 0,
+      barWidth: 20,
       xSpacing: 1,
       ySpacing: 1,
       sliceIndex: 0,

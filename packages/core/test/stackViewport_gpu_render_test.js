@@ -92,7 +92,7 @@ describe('renderingCore -- Stack', () => {
       });
     });
 
-    fit('Should render one stack viewport of square size properly: nearest', function (done) {
+    it('Should render one stack viewport of square size properly: nearest', function (done) {
       const element = createViewport(this.renderingEngine, AXIAL, 256, 256);
       this.DOMElements.push(element);
       const imageInfo = {
@@ -1213,11 +1213,11 @@ describe('renderingCore -- Stack', () => {
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
-        // compareImages(
-        //   image,
-        //   imageURI_64_64_20_5_1_1_0_nearestFlipH,
-        //   'imageURI_64_64_20_5_1_1_0_nearestFlipH'
-        // ).then(done, done.fail);
+        compareImages(
+          image,
+          imageURI_64_64_20_5_1_1_0_nearestFlipH,
+          'imageURI_64_64_20_5_1_1_0_nearestFlipH'
+        ).then(done, done.fail);
       });
 
       try {

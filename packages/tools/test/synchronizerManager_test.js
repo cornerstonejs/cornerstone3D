@@ -296,7 +296,7 @@ describe('Synchronizer Manager: ', () => {
 
     let canvasesRendered = 0;
     const [pageX1, pageY1] = [16, 125];
-    const [pageX2, pageY2] = [16, -500];
+    const [pageX2, pageY2] = [16, 100];
 
     const addEventListenerForVOI = () => {
       element2.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -304,10 +304,13 @@ describe('Synchronizer Manager: ', () => {
         const canvas2 = vp2.getCanvas();
         const image2 = canvas2.toDataURL('image/png');
 
-        compareImages(image2, windowLevel_canvas2, 'windowLevel_canvas2').then(
-          done,
-          done.fail
-        );
+        setTimeout(() => {
+          compareImages(
+            image2,
+            windowLevel_canvas2,
+            'windowLevel_canvas2'
+          ).then(done, done.fail);
+        }, 500);
       });
     };
 
