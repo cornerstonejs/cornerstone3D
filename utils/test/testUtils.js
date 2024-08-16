@@ -37,14 +37,8 @@ function compareImages(
   imageDataURL,
   baseline,
   outputName,
-  updateBaselines = false
+  updateBaselines = true
 ) {
-  if (updateBaselines) {
-    console.debug(`[Update Baseline]`);
-    console.debug(`${outputName}: ${imageDataURL}`);
-    return Promise.resolve();
-  }
-
   return new Promise((resolve, reject) => {
     resemble.outputSettings({
       useCrossOrigin: false,
@@ -65,7 +59,7 @@ function compareImages(
         // If the error is greater than 1%, fail the test
         // and download the difference image
         // Todo: this should be a configurable threshold
-        if (mismatch > 1) {
+        if (mismatch > 1 && !updateBaselines) {
           console.warn('mismatch of', mismatch, '% to image', imageDataURL);
           const diff = data.getImageDataUrl();
           // Todo: we should store the diff image somewhere
@@ -77,6 +71,8 @@ function compareImages(
           );
           // reject(new Error(`mismatch between images for ${outputName}\n mismatch: ${mismatch}\n ${baseline.default}\n ${imageDataURL}\n ${diff}`));
         } else {
+          console.debug(`[Baseline Match]`);
+          console.debug(`${outputName}: ${imageDataURL}`);
           resolve();
         }
       });

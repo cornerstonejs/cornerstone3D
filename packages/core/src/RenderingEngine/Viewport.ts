@@ -960,11 +960,7 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-
-      // This is the center of the volume correctly, adjusted for the voxel based
-      // grid, previously it was d / 2 which had the wrong offset.
-      const middleIJK = dimensions.map((d) => Math.floor((d - 1) / 2));
-
+      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
