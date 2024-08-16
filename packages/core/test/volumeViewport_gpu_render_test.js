@@ -183,11 +183,11 @@ describe('Volume Viewport GPU -- ', () => {
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
-        // compareImages(
-        //   image,
-        //   volumeURI_100_100_10_1_1_1_0_axial_nearest,
-        //   'volumeURI_100_100_10_1_1_1_0_axial_nearest'
-        // ).then(done, done.fail);
+        compareImages(
+          image,
+          volumeURI_100_100_10_1_1_1_0_axial_nearest,
+          'volumeURI_100_100_10_1_1_1_0_axial_nearest'
+        ).then(done, done.fail);
       });
 
       const callback = ({ volumeActor }) =>
