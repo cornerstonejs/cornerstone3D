@@ -33,15 +33,19 @@ function saveAsPNG(name, base64Data) {
 function processLogFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
   const lines = content.split('\n');
+  let savedCount = 0;
 
   lines.forEach((line) => {
     if (line.includes('data:image/png;base64,')) {
       const imageData = extractBase64Image(line);
       if (imageData) {
         saveAsPNG(imageData.name, imageData.data);
+        savedCount++;
       }
     }
   });
+
+  console.debug(`Total images saved: ${savedCount}`);
 }
 
 // Check if a file path is provided as a command-line argument
