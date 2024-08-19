@@ -5832,6 +5832,7 @@ class ToolGroup implements ToolGroup {
     // (undocumented)
     setToolPassive(toolName: string, options?: {
         removeAllBindings?: boolean | IToolBinding[];
+        bindings?: IToolBinding[]
     }): void;
     // (undocumented)
     setViewportsCursorByToolName(toolName: string, strategyName?: string): void;

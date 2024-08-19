@@ -52,7 +52,10 @@ export default interface IToolGroup {
   setToolPassive: {
     (
       toolName: string,
-      options?: { removeAllBindings?: boolean | IToolBinding[] }
+      options?: {
+        removeAllBindings?: boolean | IToolBinding[];
+        bindings?: IToolBinding[];
+      }
     ): void;
   };
   /** Setting the tool to be Enabled by its name*/
