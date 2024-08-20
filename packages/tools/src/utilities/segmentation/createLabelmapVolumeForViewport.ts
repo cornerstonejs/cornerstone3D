@@ -21,18 +21,7 @@ export default async function createLabelmapVolumeForViewport(input: {
   viewportId: string;
   renderingEngineId: string;
   segmentationId?: string;
-  options?: {
-    volumeId: string;
-    scalarData: Types.PixelDataTypedArray;
-    targetBuffer: {
-      type: Types.PixelDataTypedArrayString;
-    };
-    metadata: Types.Metadata;
-    dimensions: Types.Point3;
-    spacing: Types.Point3;
-    origin: Types.Point3;
-    direction: Types.Mat3;
-  };
+  options?: Types.LocalVolumeOptions & { volumeId?: string };
 }): Promise<string> {
   const { viewportId, renderingEngineId, options } = input;
   let { segmentationId } = input;
@@ -60,7 +49,7 @@ export default async function createLabelmapVolumeForViewport(input: {
     // create a new labelmap with its own properties
     // This allows creation of a higher resolution labelmap vs reference volume
     const properties = structuredClone(options);
-    await volumeLoader.createLocalVolume(properties, segmentationId);
+    await volumeLoader.createLocalVolume(segmentationId, properties);
   } else {
     // create a labelmap from a reference volume
     const { uid: volumeId } = viewport.getDefaultActor();

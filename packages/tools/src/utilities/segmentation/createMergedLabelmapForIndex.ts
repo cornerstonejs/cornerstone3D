@@ -55,14 +55,8 @@ function createMergedLabelmapForIndex(
     dimensions: labelmap.dimensions,
   };
 
-  const preventCache = true;
-
   // Todo: make the local volume also use the new volume model
-  const mergedVolume = volumeLoader.createLocalVolume(
-    options,
-    volumeId,
-    preventCache
-  );
+  const mergedVolume = volumeLoader.createLocalVolume(volumeId, options);
 
   return mergedVolume;
 }

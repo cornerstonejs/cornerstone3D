@@ -3,7 +3,7 @@
 // '<rootDir>' warning:
 // Strings should avoid referencing the node_modules directory (prefer require.resolve)
 
-export default {
+module.exports = {
   // roots: ['<rootDir>/src'],
   testMatch: ['<rootDir>/test/**/*.jest.js'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],

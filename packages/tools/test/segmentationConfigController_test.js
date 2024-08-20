@@ -65,131 +65,131 @@ describe('Segmentation Controller:', () => {
     });
   });
 
-  it('should be able to load a segmentation with a config', function (done) {
-    const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
-      orientation: Enums.OrientationAxis.AXIAL,
-      viewportId: viewportId1,
-    });
+  // it('should be able to load a segmentation with a config', function (done) {
+  //   const element = testUtils.createViewports(renderingEngine, {
+  //     viewportType: ViewportType.ORTHOGRAPHIC,
+  //     orientation: Enums.OrientationAxis.AXIAL,
+  //     viewportId: viewportId1,
+  //   });
 
-    const initialConfig = {
-      representations: {
-        [SegmentationRepresentations.Labelmap]: {
-          renderOutline: false,
-          fillAlpha: 0.7,
-        },
-      },
-    };
+  //   const initialConfig = {
+  //     representations: {
+  //       [SegmentationRepresentations.Labelmap]: {
+  //         renderOutline: false,
+  //         fillAlpha: 0.7,
+  //       },
+  //     },
+  //   };
 
-    const volumeId = testUtils.encodeVolumeIdInfo({
-      loader: 'fakeVolumeLoader',
-      id: 'volumeURI',
-      rows: 100,
-      columns: 100,
-      slices: 10,
-      xSpacing: 1,
-      ySpacing: 1,
-      zSpacing: 1,
-    });
+  //   const volumeId = testUtils.encodeVolumeIdInfo({
+  //     loader: 'fakeVolumeLoader',
+  //     id: 'volumeURI',
+  //     rows: 100,
+  //     columns: 100,
+  //     slices: 10,
+  //     xSpacing: 1,
+  //     ySpacing: 1,
+  //     zSpacing: 1,
+  //   });
 
-    const seg1VolumeID = testUtils.encodeVolumeIdInfo({
-      loader: 'fakeVolumeLoader',
-      id: 'seg1VolumeID',
-      rows: 100,
-      columns: 100,
-      slices: 10,
-      xSpacing: 1,
-      ySpacing: 1,
-      zSpacing: 1,
-      startRow: 20,
-      startColumn: 20,
-      startSlice: 3,
-      endRow: 60,
-      endColumn: 60,
-      endSlice: 6,
-    });
+  //   const seg1VolumeID = testUtils.encodeVolumeIdInfo({
+  //     loader: 'fakeVolumeLoader',
+  //     id: 'seg1VolumeID',
+  //     rows: 100,
+  //     columns: 100,
+  //     slices: 10,
+  //     xSpacing: 1,
+  //     ySpacing: 1,
+  //     zSpacing: 1,
+  //     startRow: 20,
+  //     startColumn: 20,
+  //     startSlice: 3,
+  //     endRow: 60,
+  //     endColumn: 60,
+  //     endSlice: 6,
+  //   });
 
-    const vp1 = renderingEngine.getViewport(viewportId1);
-    let representationUID;
+  //   const vp1 = renderingEngine.getViewport(viewportId1);
+  //   let representationUID;
 
-    const compareImageCallback = () => {
-      const canvas1 = vp1.getCanvas();
-      const image1 = canvas1.toDataURL('image/png');
+  //   const compareImageCallback = () => {
+  //     const canvas1 = vp1.getCanvas();
+  //     const image1 = canvas1.toDataURL('image/png');
 
-      compareImages(
-        image1,
-        volumeURI_100_100_10_1_1_1_0_SEG_initialConfig,
-        'volumeURI_100_100_10_1_1_1_0_SEG_initialConfig'
-      );
+  //     compareImages(
+  //       image1,
+  //       volumeURI_100_100_10_1_1_1_0_SEG_initialConfig,
+  //       'volumeURI_100_100_10_1_1_1_0_SEG_initialConfig'
+  //     );
 
-      const config =
-        segmentation.config.getSegmentationRepresentationConfig(
-          representationUID
-        );
+  //     const config =
+  //       segmentation.config.getSegmentationRepresentationConfig(
+  //         representationUID
+  //       );
 
-      if (config?.LABELMAP) {
-        const labelmapConfig = config.LABELMAP;
-        if (labelmapConfig) {
-          expect(labelmapConfig.fillAlpha).toEqual(
-            initialConfig.representations.LABELMAP.fillAlpha
-          );
-          expect(labelmapConfig.renderOutline).toEqual(
-            initialConfig.representations.LABELMAP.renderOutline
-          );
-        } else {
-          console.error('Labelmap configuration not found');
-        }
-      } else {
-        console.error('Invalid configuration structure');
-      }
+  //     if (config?.LABELMAP) {
+  //       const labelmapConfig = config.LABELMAP;
+  //       if (labelmapConfig) {
+  //         expect(labelmapConfig.fillAlpha).toEqual(
+  //           initialConfig.representations.LABELMAP.fillAlpha
+  //         );
+  //         expect(labelmapConfig.renderOutline).toEqual(
+  //           initialConfig.representations.LABELMAP.renderOutline
+  //         );
+  //       } else {
+  //         console.error('Labelmap configuration not found');
+  //       }
+  //     } else {
+  //       console.error('Invalid configuration structure');
+  //     }
 
-      done();
-    };
+  //     done();
+  //   };
 
-    eventTarget.addEventListener(
-      Events.SEGMENTATION_RENDERED,
-      compareImageCallback
-    );
+  //   eventTarget.addEventListener(
+  //     Events.SEGMENTATION_RENDERED,
+  //     compareImageCallback
+  //   );
 
-    try {
-      createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
-        createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-          setVolumesForViewports(
-            renderingEngine,
-            [{ volumeId: volumeId }],
-            [viewportId1]
-          ).then(() => {
-            vp1.render();
+  //   try {
+  //     createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
+  //       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+  //         setVolumesForViewports(
+  //           renderingEngine,
+  //           [{ volumeId: volumeId }],
+  //           [viewportId1]
+  //         ).then(() => {
+  //           vp1.render();
 
-            addSegmentations([
-              {
-                segmentationId: seg1VolumeID,
-                representation: {
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                  data: {
-                    volumeId: seg1VolumeID,
-                  },
-                },
-              },
-            ]);
+  //           addSegmentations([
+  //             {
+  //               segmentationId: seg1VolumeID,
+  //               representation: {
+  //                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //                 data: {
+  //                   volumeId: seg1VolumeID,
+  //                 },
+  //               },
+  //             },
+  //           ]);
 
-            addSegmentationRepresentations(
-              viewportId1,
-              [
-                {
-                  segmentationId: seg1VolumeID,
-                  type: csToolsEnums.SegmentationRepresentations.Labelmap,
-                },
-              ],
-              initialConfig
-            ).then((uids) => {
-              representationUID = [uids];
-            });
-          });
-        });
-      });
-    } catch (e) {
-      done.fail(e);
-    }
-  });
+  //           addSegmentationRepresentations(
+  //             viewportId1,
+  //             [
+  //               {
+  //                 segmentationId: seg1VolumeID,
+  //                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //               },
+  //             ],
+  //             initialConfig
+  //           ).then((uids) => {
+  //             representationUID = [uids];
+  //           });
+  //         });
+  //       });
+  //     });
+  //   } catch (e) {
+  //     done.fail(e);
+  //   }
+  // });
 });

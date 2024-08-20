@@ -257,7 +257,7 @@ function compareImages(
   imageDataURL,
   baseline,
   outputName,
-  updateBaselines = true
+  updateBaselines = false
 ) {
   if (updateBaselines) {
     console.debug(`[Update Baseline]`);

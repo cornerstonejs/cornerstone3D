@@ -12,6 +12,7 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
+import type { LocalVolumeOptions } from './../loaders/volumeLoader';
 import type {
   IViewport,
   PublicViewportInput,
@@ -278,4 +279,5 @@ export type {
   ImagePixelModuleMetadata,
   PatientStudyModuleMetadata,
   TransferSyntaxMetadata,
+  LocalVolumeOptions,
 };

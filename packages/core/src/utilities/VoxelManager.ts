@@ -416,7 +416,7 @@ export default class VoxelManager<T> {
       bound[1] = -Infinity;
     });
     this.modifiedSlices.clear();
-    this.points.clear();
+    this.points?.clear();
   }
 
   public getConstructor() {

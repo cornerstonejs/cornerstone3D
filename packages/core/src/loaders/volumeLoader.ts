@@ -33,7 +33,8 @@ interface DerivedVolumeOptions {
   volumeId: string;
   targetBufferType?: PixelDataTypedArrayString;
 }
-interface LocalVolumeOptions {
+
+export interface LocalVolumeOptions {
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;
@@ -44,7 +45,7 @@ interface LocalVolumeOptions {
   referencedImageIds?: string[];
   referencedVolumeId?: string;
   preventCache?: boolean;
-  targetBufferType: PixelDataTypedArrayString;
+  targetBufferType?: PixelDataTypedArrayString;
 }
 
 /**
