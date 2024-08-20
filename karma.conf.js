@@ -7,7 +7,7 @@ module.exports = function (config) {
     reporters: ['junit', 'coverage', 'spec'],
     client: {
       jasmine: {
-        // random: false, // don't randomize the order of tests
+        random: false, // don't randomize the order of tests
         stopOnFailure: false,
         failFast: false,
       },
@@ -16,6 +16,7 @@ module.exports = function (config) {
       captureConsole: true,
       clearContext: false,
     },
+    concurrency: 1,
     // Uncomment this out to capture all logging
     // browserConsoleLogOptions: {
     //   terminal: true,

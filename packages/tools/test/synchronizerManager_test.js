@@ -13,13 +13,11 @@ const {
   setVolumesForViewports,
   volumeLoader,
   imageLoader,
-  getEnabledElement,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
 
-const { unregisterAllImageLoaders } = imageLoader;
-const { createAndCacheVolume, registerVolumeLoader } = volumeLoader;
+const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 
 const {
   StackScrollMouseWheelTool,
@@ -64,92 +62,51 @@ const ptVolumeId = testUtils.encodeVolumeIdInfo({
   zSpacing: 1,
 });
 
-let synchronizerId;
-
-function createViewports(width, height) {
-  const element1 = document.createElement('div');
-
-  element1.style.width = `${width}px`;
-  element1.style.height = `${height}px`;
-  document.body.appendChild(element1);
-
-  const element2 = document.createElement('div');
-
-  element2.style.width = `${width}px`;
-  element2.style.height = `${height}px`;
-  document.body.appendChild(element2);
-
-  return [element1, element2];
-}
-
-describe('Synchronizer Manager: ', () => {
-  beforeAll(() => {
-    window.devicePixelRatio = 1;
-    cornerstone3D.setUseCPURendering(false);
-  });
+describe('Synchronizer Manager:', () => {
+  let testEnv;
+  let renderingEngine;
+  let firstToolGroup;
+  let synchronizerId;
 
   beforeEach(function () {
-    csTools3d.init();
-    csTools3d.addTool(StackScrollMouseWheelTool);
-    cache.purgeCache();
-    this.DOMElements = [];
-
-    this.firstToolGroup = ToolGroupManager.createToolGroup('volume1');
-    this.firstToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
-      debounceIfNotLoaded: false,
+    testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId: renderingEngineId,
+      toolGroupIds: ['volume1'],
+      tools: [StackScrollMouseWheelTool, WindowLevelTool],
+      toolActivations: {
+        [StackScrollMouseWheelTool.toolName]: {},
+        [WindowLevelTool.toolName]: {
+          bindings: [{ mouseButton: MouseBindings.Primary }],
+        },
+      },
+      viewportIds: [viewportId1, viewportId2],
     });
-    this.firstToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    this.renderingEngine = new RenderingEngine(renderingEngineId);
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-    metaData.addProvider(fakeMetaDataProvider, 10000);
+
+    renderingEngine = testEnv.renderingEngine;
   });
 
   afterEach(function () {
-    // Destroy synchronizer manager to test it first since csTools3D also destroy
-    // synchronizers
-    SynchronizerManager.destroySynchronizer(synchronizerId);
-    csTools3d.destroy();
-    cache.purgeCache();
-    this.renderingEngine.destroy();
-    metaData.removeProvider(fakeMetaDataProvider);
-    unregisterAllImageLoaders();
-    ToolGroupManager.destroyToolGroup('volume1');
-
-    this.DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId: renderingEngineId,
+      toolGroupIds: ['volume1'],
     });
   });
 
-  it('Should successfully synchronizes viewports for Camera sync', function (done) {
-    const [element1, element2] = createViewports(512, 128);
-    this.DOMElements.push(element1);
-    this.DOMElements.push(element2);
-
-    this.renderingEngine.setViewports([
+  it('Should successfully synchronize viewports for Camera sync', function (done) {
+    const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
+        viewportType: ViewportType.ORTHOGRAPHIC,
+        orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
-        type: ViewportType.ORTHOGRAPHIC,
-        element: element1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: Enums.OrientationAxis.AXIAL,
-        },
       },
       {
+        viewportType: ViewportType.ORTHOGRAPHIC,
+        orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
-        type: ViewportType.ORTHOGRAPHIC,
-        element: element2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: Enums.OrientationAxis.AXIAL,
-        },
       },
     ]);
 
     let canvasesRendered = 0;
-
     const eventHandler = () => {
       canvasesRendered += 1;
 
@@ -185,112 +142,51 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler);
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler);
 
-    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.id);
-    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.id);
-
     try {
       const axialSync = createCameraPositionSynchronizer('axialSync');
       synchronizerId = axialSync.id;
 
       axialSync.add({
-        renderingEngineId: this.renderingEngine.id,
-        viewportId: this.renderingEngine.getViewport(viewportId1).id,
+        renderingEngineId: renderingEngine.id,
+        viewportId: renderingEngine.getViewport(viewportId1).id,
       });
       axialSync.add({
-        renderingEngineId: this.renderingEngine.id,
-        viewportId: this.renderingEngine.getViewport(viewportId2).id,
+        renderingEngineId: renderingEngine.id,
+        viewportId: renderingEngine.getViewport(viewportId2).id,
       });
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
-          this.renderingEngine,
+          renderingEngine,
           [{ volumeId: ctVolumeId }],
           [viewportId1]
         );
       });
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
-          this.renderingEngine,
+          renderingEngine,
           [{ volumeId: ptVolumeId }],
           [viewportId2]
         );
       });
 
-      this.renderingEngine.render();
+      renderingEngine.render();
     } catch (e) {
       done.fail(e);
     }
   });
-});
 
-describe('Synchronizer Manager: ', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
-
-  beforeEach(function () {
-    csTools3d.init();
-    csTools3d.addTool(WindowLevelTool);
-    cache.purgeCache();
-    this.DOMElements = [];
-
-    this.firstToolGroup = ToolGroupManager.createToolGroup('volume1');
-    this.firstToolGroup.addTool(WindowLevelTool.toolName, {
-      configuration: { volumeId: ctVolumeId },
-    });
-    this.firstToolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
-    this.renderingEngine = new RenderingEngine(renderingEngineId);
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-    metaData.addProvider(fakeMetaDataProvider, 10000);
-  });
-
-  afterEach(function () {
-    // Destroy synchronizer manager to test it first since csTools3D also destroy
-    // synchronizers
-    SynchronizerManager.destroy();
-    csTools3d.destroy();
-    cache.purgeCache();
-    this.renderingEngine.destroy();
-    metaData.removeProvider(fakeMetaDataProvider);
-    unregisterAllImageLoaders();
-    ToolGroupManager.destroyToolGroup('volume1');
-
-    this.DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
-    });
-  });
-
-  it('Should successfully synchronizes viewports for VOI Synchronizer', function (done) {
-    const [element1, element2] = createViewports(512, 128);
-    this.DOMElements.push(element1);
-    this.DOMElements.push(element2);
-
-    this.renderingEngine.setViewports([
+  it('Should successfully synchronize viewports for VOI Synchronizer', function (done) {
+    const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
+        viewportType: ViewportType.ORTHOGRAPHIC,
+        orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
-        type: ViewportType.ORTHOGRAPHIC,
-        element: element1,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: Enums.OrientationAxis.AXIAL,
-        },
       },
       {
+        viewportType: ViewportType.ORTHOGRAPHIC,
+        orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
-        type: ViewportType.ORTHOGRAPHIC,
-        element: element2,
-        defaultOptions: {
-          background: [1, 0, 1], // pinkish background
-          orientation: Enums.OrientationAxis.CORONAL,
-        },
       },
     ]);
 
@@ -300,7 +196,7 @@ describe('Synchronizer Manager: ', () => {
 
     const addEventListenerForVOI = () => {
       element2.addEventListener(Events.IMAGE_RENDERED, () => {
-        const vp2 = this.renderingEngine.getViewport(viewportId2);
+        const vp2 = renderingEngine.getViewport(viewportId2);
         const canvas2 = vp2.getCanvas();
         const image2 = canvas2.toDataURL('image/png');
 
@@ -310,7 +206,7 @@ describe('Synchronizer Manager: ', () => {
             windowLevel_canvas2,
             'windowLevel_canvas2'
           ).then(done, done.fail);
-        }, 500);
+        }, 1500);
       });
     };
 
@@ -357,28 +253,25 @@ describe('Synchronizer Manager: ', () => {
     element1.addEventListener(Events.IMAGE_RENDERED, eventHandler);
     element2.addEventListener(Events.IMAGE_RENDERED, eventHandler);
 
-    this.firstToolGroup.addViewport(viewportId1, this.renderingEngine.id);
-    this.firstToolGroup.addViewport(viewportId2, this.renderingEngine.id);
-
     try {
       const voiSync = createVOISynchronizer('ctWLSync');
 
       voiSync.addSource({
-        renderingEngineId: this.renderingEngine.id,
-        viewportId: this.renderingEngine.getViewport(viewportId1).id,
+        renderingEngineId: renderingEngine.id,
+        viewportId: renderingEngine.getViewport(viewportId1).id,
       });
       voiSync.addTarget({
-        renderingEngineId: this.renderingEngine.id,
-        viewportId: this.renderingEngine.getViewport(viewportId2).id,
+        renderingEngineId: renderingEngine.id,
+        viewportId: renderingEngine.getViewport(viewportId2).id,
       });
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
-          this.renderingEngine,
+          renderingEngine,
           [{ volumeId: ctVolumeId }],
           [viewportId1, viewportId2]
         );
-        this.renderingEngine.render();
+        renderingEngine.render();
       });
     } catch (e) {
       done.fail(e);

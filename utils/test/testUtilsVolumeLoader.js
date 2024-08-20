@@ -67,6 +67,7 @@ const fakeVolumeLoader = (volumeId) => {
     encodeImageIdInfo({
       loader: 'fakeImageLoader',
       name: id,
+      id: id,
       rows,
       columns,
       xSpacing: x_spacing,

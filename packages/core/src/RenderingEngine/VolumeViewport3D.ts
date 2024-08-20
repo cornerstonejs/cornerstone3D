@@ -1,3 +1,4 @@
+import { RENDERING_DEFAULTS } from '../constants';
 import type { BlendModes } from '../enums';
 import { OrientationAxis } from '../enums';
 import type { ViewportInput } from '../types/IViewport';
@@ -33,8 +34,20 @@ class VolumeViewport3D extends BaseVolumeViewport {
     resetToCenter = true
   ): boolean {
     super.resetCamera({ resetPan, resetZoom, resetToCenter });
-    this.resetVolumeViewportClippingRange();
-    return;
+    const activeCamera = this.getVtkActiveCamera();
+
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+    return true;
   }
 
   getRotation = (): number => 0;

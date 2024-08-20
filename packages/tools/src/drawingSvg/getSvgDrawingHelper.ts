@@ -41,7 +41,7 @@ function _getSvgLayer(element) {
 
   // Using :scope to make sure the right svg layer is selected otherwise it
   // may select one from a nested viewport (eg: AdvancedMagnifyTool).
-  const svgLayer = internalDivElement.querySelector(':scope > .svg-layer');
+  const svgLayer = internalDivElement?.querySelector(':scope > .svg-layer');
 
   return svgLayer;
 }

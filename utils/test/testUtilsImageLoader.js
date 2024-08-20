@@ -26,7 +26,7 @@ import {
  */
 const fakeImageLoader = (imageId) => {
   const imageInfo = decodeImageIdInfo(imageId);
-  const { rows, columns, barStart, barWidth, xSpacing, ySpacing, rgb } =
+  const { rows, columns, barStart, barWidth, xSpacing, ySpacing, rgb, id } =
     imageInfo;
 
   const numberOfComponents = rgb ? 3 : 1;
@@ -126,8 +126,10 @@ function fakeMetaDataProvider(type, imageId) {
     barWidth,
     xSpacing,
     ySpacing,
+    sliceIndex = 0,
     rgb,
     PT = false,
+    id,
   } = imageInfo;
 
   const modality = PT ? 'PT' : 'MR';
@@ -167,7 +169,7 @@ function fakeMetaDataProvider(type, imageId) {
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
-      imagePositionPatient: [0, 0, 0],
+      imagePositionPatient: [0, 0, sliceIndex],
       pixelSpacing: [xSpacing, ySpacing],
       rowPixelSpacing: ySpacing,
       columnPixelSpacing: xSpacing,

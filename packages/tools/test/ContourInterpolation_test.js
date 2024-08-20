@@ -176,27 +176,6 @@
 
 // const lastSliceAnnotation = structuredClone(firstSliceAnnotation);
 
-// function createViewport(renderingEngine, viewportType, width, height) {
-//   const element = document.createElement('div');
-
-//   element.style.width = `${width}px`;
-//   element.style.height = `${height}px`;
-//   document.body.appendChild(element);
-
-//   renderingEngine.setViewports([
-//     {
-//       viewportId: viewportId,
-//       type: viewportType,
-//       element,
-//       defaultOptions: {
-//         background: [1, 0, 1], // pinkish background
-//         orientation: Enums.OrientationAxis.AXIAL,
-//       },
-//     },
-//   ]);
-//   return element;
-// }
-
 // const volumeId = testUtils.encodeVolumeIdInfo({
 //   loader: 'fakeVolumeLoader',
 //   name: 'volumeURI',
@@ -274,7 +253,7 @@
 //     });
 
 //     it('Should successfully create a interpolated annotations on slices', function (done) {
-//       const element = createViewport(
+//       const element =  createViewports(
 //         this.renderingEngine,
 //         ViewportType.STACK,
 //         512,
@@ -479,7 +458,7 @@
 //     });
 
 //     it('Should successfully create interpolated annotations with expected points', function (done) {
-//       const element = createViewport(
+//       const element =  createViewports(
 //         this.renderingEngine,
 //         ViewportType.STACK,
 //         512,
@@ -623,7 +602,7 @@
 //     });
 
 //     it('Should successfully delete all the auto generated contour annotations', function (done) {
-//       const element = createViewport(
+//       const element =  createViewports(
 //         this.renderingEngine,
 //         ViewportType.STACK,
 //         512,
@@ -816,7 +795,7 @@
 
 //     // it('Should successfully edit auto generated contour annotation', function (done) {
 //     //   console.warn('edit auto generated contour');
-//     //   const element = createViewport(
+//     //   const element =  createViewports(
 //     //     this.renderingEngine,
 //     //     ViewportType.STACK,
 //     //     512,

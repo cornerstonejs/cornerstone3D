@@ -19,6 +19,8 @@ import type {
   Mat3,
   PixelDataTypedArrayString,
   PixelDataTypedArray,
+  ImagePlaneModuleMetadata,
+  ImagePixelModuleMetadata,
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { metaData } from '../';
@@ -34,7 +36,7 @@ interface LocalImageOptions {
   scalarData?: PixelDataTypedArray;
   targetBufferType?: PixelDataTypedArrayString;
   dimensions?: Point2;
-  spacing?: Point3;
+  spacing?: Point2;
   origin?: Point3;
   direction?: Mat3;
   /**
@@ -242,15 +244,27 @@ export function createAndCacheDerivedImage(
     skipCreateBuffer ? 1 : length
   );
   const derivedImageId = imageId;
-  ['imagePlaneModule', 'generalSeriesModule'].forEach((type) => {
-    genericMetadataProvider.add(derivedImageId, {
-      type,
-      metadata: metaData.get(type, referencedImageId),
-    });
+  const referencedImagePlaneMetadata = metaData.get(
+    'imagePlaneModule',
+    referencedImageId
+  );
+
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'imagePlaneModule',
+    metadata: referencedImagePlaneMetadata,
+  });
+
+  const referencedImageGeneralSeriesMetadata = metaData.get(
+    'generalSeriesModule',
+    referencedImageId
+  );
+
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'generalSeriesModule',
+    metadata: referencedImageGeneralSeriesMetadata,
   });
 
   const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
-  // TODO - add a general way to specify this
   genericMetadataProvider.add(derivedImageId, {
     type: 'imagePixelModule',
     metadata: {
@@ -263,16 +277,20 @@ export function createAndCacheDerivedImage(
     },
   });
 
-  const localImage = createAndCacheLocalImage(
-    {
-      scalarData: imageScalarData,
-      onCacheAdd,
-      skipCreateBuffer,
-      targetBufferType: imageScalarData.constructor
-        .name as PixelDataTypedArrayString,
-    },
-    imageId
-  );
+  const localImage = createAndCacheLocalImage(imageId, {
+    scalarData: imageScalarData,
+    onCacheAdd,
+    skipCreateBuffer,
+    targetBufferType: imageScalarData.constructor
+      .name as PixelDataTypedArrayString,
+    dimensions: [imagePlaneModule.columns, imagePlaneModule.rows],
+    spacing: [
+      imagePlaneModule.columnPixelSpacing,
+      imagePlaneModule.rowPixelSpacing,
+    ],
+    origin: imagePlaneModule.imagePositionPatient,
+    direction: imagePlaneModule.imageOrientationPatient,
+  });
 
   // 3. Caching the image
   if (!cache.getImageLoadObject(imageId)) {
@@ -320,84 +338,158 @@ export function createAndCacheDerivedImages(
 }
 
 export function createAndCacheLocalImage(
-  options: LocalImageOptions,
-  imageId: string
+  imageId: string,
+  options: LocalImageOptions
 ): IImage {
-  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+  const {
+    scalarData,
+    origin,
+    direction,
+    targetBufferType,
+    skipCreateBuffer,
+    onCacheAdd,
+  } = options;
 
-  const width = imagePlaneModule.columns;
-  const height = imagePlaneModule.rows;
+  const dimensions = options.dimensions;
+  const spacing = options.spacing;
+
+  if (!dimensions || !spacing) {
+    throw new Error(
+      'createAndCacheLocalImage: dimensions and spacing are required'
+    );
+  }
+
+  const width = dimensions[0];
+  const height = dimensions[1];
+  const columnPixelSpacing = spacing[0];
+  const rowPixelSpacing = spacing[1];
+
+  const imagePlaneModule = {
+    rows: height.toString(),
+    columns: width.toString(),
+    imageOrientationPatient: direction ?? [1, 0, 0, 0, 1, 0],
+    rowCosines: direction ? direction.slice(0, 3) : [1, 0, 0],
+    columnCosines: direction ? direction.slice(3, 6) : [0, 1, 0],
+    imagePositionPatient: origin ?? [0, 0, 0],
+    pixelSpacing: [rowPixelSpacing, columnPixelSpacing],
+    rowPixelSpacing: rowPixelSpacing,
+    columnPixelSpacing: columnPixelSpacing,
+  } as ImagePlaneModuleMetadata;
+
   const length = width * height;
-  const numberOfComponents = 1;
+  const numberOfComponents = scalarData.length / length;
+
+  let scalarDataToUse;
+  if (scalarData) {
+    if (
+      !(
+        scalarData instanceof Uint8Array ||
+        scalarData instanceof Float32Array ||
+        scalarData instanceof Uint16Array ||
+        scalarData instanceof Int16Array
+      )
+    ) {
+      throw new Error(
+        'createAndCacheLocalImage: scalarData must be of type Uint8Array, Uint16Array, Int16Array or Float32Array'
+      );
+    }
+
+    scalarDataToUse = scalarData;
+  } else if (!skipCreateBuffer) {
+    // Todo: need to handle numberOfComponents > 1
+    const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
+      targetBufferType,
+      length
+    );
+
+    const imageScalarData = new TypedArrayConstructor(length);
+
+    scalarDataToUse = imageScalarData;
+  }
+
+  // Determine bit depth based on scalarData type
+  let bitsAllocated, bitsStored, highBit;
+  if (scalarDataToUse instanceof Uint8Array) {
+    bitsAllocated = 8;
+    bitsStored = 8;
+    highBit = 7;
+  } else if (scalarDataToUse instanceof Uint16Array) {
+    bitsAllocated = 16;
+    bitsStored = 16;
+    highBit = 15;
+  } else if (scalarDataToUse instanceof Int16Array) {
+    bitsAllocated = 16;
+    bitsStored = 16;
+    highBit = 15;
+  } else if (scalarDataToUse instanceof Float32Array) {
+    bitsAllocated = 32;
+    bitsStored = 32;
+    highBit = 31;
+  } else {
+    throw new Error('Unsupported scalarData type');
+  }
+
+  // Prepare ImagePixelModuleMetadata
+  const imagePixelModule = {
+    samplesPerPixel: 1,
+    photometricInterpretation:
+      scalarDataToUse.length > dimensions[0] * dimensions[1]
+        ? 'RGB'
+        : 'MONOCHROME2', // or 1
+    rows: height,
+    columns: width,
+    bitsAllocated,
+    bitsStored,
+    highBit,
+  } as ImagePixelModuleMetadata;
+
+  const metadata = {
+    imagePlaneModule,
+    imagePixelModule,
+  };
+
+  // Add metadata to genericMetadataProvider
+  ['imagePlaneModule', 'imagePixelModule'].forEach((type) => {
+    genericMetadataProvider.add(imageId, {
+      type,
+      metadata: metadata[type] || {},
+    });
+  });
+
+  const voxelManager = VoxelManager.createImageVoxelManager({
+    height,
+    width,
+    numberOfComponents,
+    scalarData: scalarDataToUse,
+  });
 
   const image = {
     imageId: imageId,
     intercept: 0,
     windowCenter: 0,
     windowWidth: 0,
-    color: false,
-    numberOfComponents: 1,
-    dataType: options.targetBufferType,
+    color: imagePixelModule.photometricInterpretation === 'RGB',
+    numberOfComponents: imagePixelModule.samplesPerPixel,
+    dataType: targetBufferType,
     slope: 1,
     minPixelValue: 0,
-    maxPixelValue: 255,
-    rows: height,
-    columns: width,
-    getCanvas: undefined, // todo: which canvas?
-    height,
-    width,
-    rgba: undefined, // todo: how
+    maxPixelValue: Math.pow(2, imagePixelModule.bitsStored) - 1,
+    rows: imagePixelModule.rows,
+    columns: imagePixelModule.columns,
+    getCanvas: undefined,
+    height: imagePixelModule.rows,
+    width: imagePixelModule.columns,
+    rgba: undefined,
     columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
     rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
-    FrameOfReferenceUID: imagePlaneModule.FrameOfReferenceUID,
+    FrameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
     invert: false,
+    getPixelData: () => voxelManager.getScalarData(),
+    voxelManager,
+    sizeInBytes: scalarData.byteLength,
   } as IImage;
 
-  if (options.scalarData) {
-    const imageScalarData = options.scalarData;
-
-    if (
-      !(
-        imageScalarData instanceof Uint8Array ||
-        imageScalarData instanceof Float32Array ||
-        imageScalarData instanceof Uint16Array ||
-        imageScalarData instanceof Int16Array
-      )
-    ) {
-      throw new Error(
-        'To use createLocalVolume you should pass scalarData of type Uint8Array, Uint16Array, Int16Array or Float32Array'
-      );
-    }
-
-    image.sizeInBytes = imageScalarData.byteLength;
-    image.getPixelData = () => imageScalarData;
-  } else if (!options.skipCreateBuffer) {
-    const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
-      options.targetBufferType,
-      length
-    );
-
-    const imageScalarData = new TypedArrayConstructor(length);
-
-    image.sizeInBytes = numBytes;
-    image.getPixelData = () => imageScalarData;
-  }
-
-  const voxelManager = VoxelManager.createImageVoxelManager({
-    height,
-    width,
-    numberOfComponents,
-    scalarData: image.getPixelData(),
-  });
-
-  image.getPixelData = () => voxelManager.getScalarData();
-
-  image.voxelManager = voxelManager;
-
-  // The onCacheAdd may modify the size in bytes for this image, which is ok,
-  // as this is used after resolution for cache storage.  It may also do
-  // thinks like adding alternative representations such as VoxelManager
-  options?.onCacheAdd?.(image);
+  onCacheAdd?.(image);
 
   cache.putImageSync(image.imageId, image);
 

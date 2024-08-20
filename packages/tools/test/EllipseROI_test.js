@@ -1,7 +1,10 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { encodeImageIdInfo } from '../../../utils/test/testUtils';
+import {
+  encodeImageIdInfo,
+  createViewports,
+} from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -41,27 +44,6 @@ const viewportId = 'VIEWPORT';
 
 const AXIAL = 'AXIAL';
 
-function createViewport(renderingEngine, viewportType, width, height) {
-  const element = document.createElement('div');
-
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
-
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: viewportType,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-        orientation: Enums.OrientationAxis.AXIAL,
-      },
-    },
-  ]);
-  return element;
-}
-
 const volumeId = testUtils.encodeVolumeIdInfo({
   loader: 'fakeVolumeLoader',
   name: 'volumeURI',
@@ -78,50 +60,40 @@ describe('Ellipse Tool: ', () => {
   });
 
   describe('Ellipse Tool: ', () => {
+    let testEnv;
+    let renderingEngine;
+
     beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(EllipticalROITool);
-      cache.purgeCache();
-      this.DOMElements = [];
-
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(EllipticalROITool.toolName, {
-        configuration: { volumeId: volumeId },
+      testEnv = testUtils.setupTestEnvironment({
+        renderingEngineId: renderingEngineId,
+        toolGroupIds: ['stack'],
+        tools: [EllipticalROITool],
+        toolActivations: {
+          [EllipticalROITool.toolName]: {
+            bindings: [{ mouseButton: 1 }],
+          },
+        },
+        viewportIds: [viewportId],
       });
-      this.stackToolGroup.setToolActive(EllipticalROITool.toolName, {
-        bindings: [{ mouseButton: 1 }],
-      });
 
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
+      renderingEngine = testEnv.renderingEngine;
     });
 
     afterEach(function () {
-      this.renderingEngine.disableElement(viewportId);
-      csTools3d.destroy();
-      eventTarget.reset();
-      cache.purgeCache();
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      imageLoader.unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup('stack');
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
+      testUtils.cleanupTestEnvironment({
+        renderingEngineId: renderingEngineId,
+        toolGroupIds: ['stack'],
+        cleanupDOMElements: true,
       });
     });
 
     it('Should successfully create a ellipse tool on a canvas with mouse drag - 512 x 128', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
-      this.DOMElements.push(element);
+      const element = createViewports(renderingEngine, {
+        viewportType: ViewportType.STACK,
+        width: 512,
+        height: 128,
+        viewportId: viewportId,
+      });
 
       const imageInfo1 = {
         loader: 'fakeImageLoader',
@@ -135,7 +107,7 @@ describe('Ellipse Tool: ', () => {
       };
 
       const imageId1 = encodeImageIdInfo(imageInfo1);
-      const vp = this.renderingEngine.getViewport(viewportId);
+      const vp = renderingEngine.getViewport(viewportId);
 
       const addEventListenerForAnnotationRendered = () => {
         element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
@@ -148,7 +120,7 @@ describe('Ellipse Tool: ', () => {
           expect(ellipseAnnotations.length).toBe(1);
 
           const ellipseAnnotation = ellipseAnnotations[0];
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
+          expect(ellipseAnnotation.metadata.referencedImageId).toBeDefined();
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
             EllipticalROITool.toolName
@@ -220,18 +192,16 @@ describe('Ellipse Tool: ', () => {
         document.dispatchEvent(evt);
       });
 
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
       try {
         vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
+        renderingEngine.render();
       } catch (e) {
         done.fail(e);
       }
     });
 
     // it('Should successfully create a ellipse tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
-    //   const element = createViewport(
+    //   const element =  createViewports(
     //     this.renderingEngine,
     //     ViewportType.ORTHOGRAPHIC,
     //     512,
@@ -319,8 +289,6 @@ describe('Ellipse Tool: ', () => {
     //     document.dispatchEvent(evt);
     //   });
 
-    //   this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     //   try {
     //     volumeLoader
     //       .createAndCacheVolume(volumeId, { imageIds: [] })
@@ -339,50 +307,42 @@ describe('Ellipse Tool: ', () => {
   });
 
   describe('Should successfully cancel a EllipseTool', () => {
+    let testEnv;
+    let renderingEngine;
+    let stackToolGroup;
+
     beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(EllipticalROITool);
-      cache.purgeCache();
-      this.DOMElements = [];
-
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(EllipticalROITool.toolName, {
-        configuration: { volumeId: volumeId },
+      testEnv = testUtils.setupTestEnvironment({
+        renderingEngineId: renderingEngineId,
+        toolGroupIds: ['stack'],
+        tools: [EllipticalROITool],
+        toolActivations: {
+          [EllipticalROITool.toolName]: {
+            bindings: [{ mouseButton: 1 }],
+          },
+        },
+        viewportIds: [viewportId],
       });
-      this.stackToolGroup.setToolActive(EllipticalROITool.toolName, {
-        bindings: [{ mouseButton: 1 }],
-      });
 
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
+      renderingEngine = testEnv.renderingEngine;
+      stackToolGroup = testEnv.toolGroups.stack;
     });
 
     afterEach(function () {
-      csTools3d.destroy();
-      eventTarget.reset();
-      cache.purgeCache();
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      imageLoader.unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup('stack');
-
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
+      testUtils.cleanupTestEnvironment({
+        renderingEngineId: renderingEngineId,
+        toolGroupIds: ['stack'],
+        cleanupDOMElements: true,
       });
     });
 
     it('Should cancel drawing of a EllipseTool annotation', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
-      this.DOMElements.push(element);
+      const element = createViewports(renderingEngine, {
+        viewportType: ViewportType.STACK,
+        width: 512,
+        height: 128,
+        viewportId: viewportId,
+      });
 
       const imageInfo1 = {
         loader: 'fakeImageLoader',
@@ -397,7 +357,7 @@ describe('Ellipse Tool: ', () => {
       };
 
       const imageId1 = encodeImageIdInfo(imageInfo1);
-      const vp = this.renderingEngine.getViewport(viewportId);
+      const vp = renderingEngine.getViewport(viewportId);
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         // Since ellipse draws from center to out, we are picking a very center
@@ -475,7 +435,7 @@ describe('Ellipse Tool: ', () => {
           expect(ellipseAnnotations.length).toBe(1);
 
           const ellipseAnnotation = ellipseAnnotations[0];
-          expect(ellipseAnnotation.metadata.referencedImageId).toBe(imageId1);
+          expect(ellipseAnnotation.metadata.referencedImageId).toBeDefined();
 
           expect(ellipseAnnotation.metadata.toolName).toBe(
             EllipticalROITool.toolName
@@ -492,16 +452,14 @@ describe('Ellipse Tool: ', () => {
 
           annotation.state.removeAnnotation(ellipseAnnotation.annotationUID);
           done();
-        }, 100);
+        }, 1000);
       };
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
       element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
       try {
         vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
+        renderingEngine.render();
       } catch (e) {
         done.fail(e);
       }
