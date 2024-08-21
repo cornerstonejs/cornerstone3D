@@ -13,6 +13,7 @@ import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
+import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -79,12 +80,9 @@ async function render(
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await polySeg.computeAndAddSurfaceRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID,
-      }
-    );
+    SurfaceData = await computeAndAddSurfaceRepresentation(segmentationId, {
+      segmentationRepresentationUID,
+    });
 
     if (!SurfaceData) {
       throw new Error(

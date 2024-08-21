@@ -8,6 +8,7 @@ import {
   triggerAnnotationAddedForFOR,
   triggerAnnotationRemoved,
 } from './helpers/state';
+import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
 // our default annotation manager
 let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
@@ -154,6 +155,8 @@ function addAnnotation(
   if (!annotation.annotationUID) {
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
+
+  checkAndDefineIsVisibleProperty(annotation);
 
   const manager = getAnnotationManager();
 

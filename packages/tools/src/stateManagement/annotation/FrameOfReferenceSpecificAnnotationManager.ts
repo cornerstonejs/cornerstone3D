@@ -16,7 +16,6 @@ import {
 } from '@cornerstonejs/core';
 
 import { checkAndDefineIsLockedProperty } from './annotationLocking';
-import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
 import {
   checkAndDefineTextBoxProperty,
@@ -239,7 +238,6 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
     toolSpecificAnnotations.push(annotation);
     checkAndDefineIsLockedProperty(annotation);
-    checkAndDefineIsVisibleProperty(annotation);
     checkAndDefineTextBoxProperty(annotation);
     checkAndDefineCachedStatsProperty(annotation);
   };

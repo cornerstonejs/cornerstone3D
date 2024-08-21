@@ -4248,7 +4248,8 @@ declare namespace Types {
         LocalVolumeOptions,
         IVoxelManager,
         IRLEVoxelMap,
-        RLERun
+        RLERun,
+        ViewportInput
     }
 }
 export { Types }
@@ -4749,6 +4750,30 @@ export class Viewport implements IViewport {
     viewportStatus: ViewportStatus;
     // (undocumented)
     worldToCanvas: (worldPos: Point3) => Point2;
+}
+
+// @public (undocumented)
+interface ViewportInput {
+    // (undocumented)
+    canvas: HTMLCanvasElement;
+    // (undocumented)
+    defaultOptions: ViewportInputOptions;
+    // (undocumented)
+    element: HTMLDivElement;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    renderingEngineId: string;
+    // (undocumented)
+    sHeight: number;
+    // (undocumented)
+    sWidth: number;
+    // (undocumented)
+    sx: number;
+    // (undocumented)
+    sy: number;
+    // (undocumented)
+    type: ViewportType;
 }
 
 // @public (undocumented)

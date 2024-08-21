@@ -1222,7 +1222,7 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
+      : `Area: ${utilities.roundNumber(area)} ${areaUnits}`;
 
     textLines.push(areaLine);
   }

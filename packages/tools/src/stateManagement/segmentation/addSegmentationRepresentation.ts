@@ -16,7 +16,7 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import { setSegmentationRepresentationConfig } from './setSegmentationRepresentationConfig';
-
+import { addSegmentationRepresentationState } from './addSegmentationRepresentationState';
 function getLabelmapSegmentationRepresentationRenderingConfig() {
   const cfun = vtkColorTransferFunction.newInstance();
   const ofun = vtkPiecewiseFunction.newInstance();
@@ -63,7 +63,7 @@ async function addSegmentationRepresentation(
     },
   };
 
-  addSegmentationRepresentation(viewportId, representation);
+  addSegmentationRepresentationState(viewportId, representation);
 
   // Update the toolGroup specific configuration
   if (initialConfig) {
