@@ -6,12 +6,16 @@ import type {
   RepresentationPublicInputOptions,
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
-import * as SegmentationState from './segmentationState';
 import { getSegmentationRepresentationRenderingConfig } from './helpers/getSegmentationRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import {
+  addColorLUT,
+  getNextColorLUTIndex,
+  setSegmentationRepresentationConfig,
+} from './segmentationState';
 
 async function addSegmentationRepresentation(
   viewportId: string,
@@ -41,7 +45,7 @@ async function addSegmentationRepresentation(
     },
   };
 
-  SegmentationState.addSegmentationRepresentation(viewportId, representation);
+  addSegmentationRepresentation(viewportId, representation);
 
   // Update the toolGroup specific configuration
   if (initialConfig) {
@@ -57,7 +61,7 @@ async function addSegmentationRepresentation(
     //   });
     // }
 
-    SegmentationState.setSegmentationRepresentationConfig(
+    setSegmentationRepresentationConfig(
       segmentationRepresentationUID,
       initialConfig.representations
     );
@@ -79,11 +83,11 @@ function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
   if (typeof colorLUTOrIndexInput === 'number') {
     colorLUTIndexToUse = colorLUTOrIndexInput;
   } else {
-    const nextIndex = SegmentationState.getNextColorLUTIndex();
+    const nextIndex = getNextColorLUTIndex();
     const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
       ? colorLUTOrIndexInput
       : CORNERSTONE_COLOR_LUT;
-    SegmentationState.addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
     colorLUTIndexToUse = nextIndex;
   }
   return colorLUTIndexToUse;

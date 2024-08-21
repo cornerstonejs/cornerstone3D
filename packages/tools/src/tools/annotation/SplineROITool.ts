@@ -15,7 +15,7 @@ import {
   drawPolyline as drawPolylineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import {
   Events,
   MouseBindings,

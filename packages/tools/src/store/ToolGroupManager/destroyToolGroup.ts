@@ -1,5 +1,4 @@
-import { state } from '../index';
-import { removeSegmentationRepresentations } from '../../stateManagement/segmentation';
+import { state } from '../state';
 // ToolGroups function entirely by their "state" being queried and leveraged
 // removing a ToolGroup from state is equivalent to killing it
 

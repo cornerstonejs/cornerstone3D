@@ -1,10 +1,10 @@
-import { ToolGroupManager } from '../../store';
 import type { ToolModes } from '../../enums';
 import type { ToolAction, EventTypes } from '../../types';
 
 import { keyEventListener } from '../../eventListeners';
 import getMouseModifier from './getMouseModifier';
 import type { BaseTool } from '../../tools';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 /**
  * Given the mouse event and a list of tool modes, find all tool instances
@@ -21,10 +21,7 @@ export default function getToolsWithActionsForMouseEvent(
 ): Map<BaseTool, ToolAction> {
   const toolsWithActions = new Map();
   const { renderingEngineId, viewportId } = evt.detail;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return toolsWithActions;

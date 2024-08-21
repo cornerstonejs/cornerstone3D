@@ -4,12 +4,11 @@ import {
   eventTarget,
   cache,
 } from '@cornerstonejs/core';
-import { Events, SegmentationRepresentations } from '../../enums';
-import addSegmentationRepresentations from './addSegmentationRepresentations';
-import { triggerSegmentationRender } from '../../utilities/segmentation';
+import { Events } from '../../enums';
 import { getSegmentation } from './segmentationState';
 import type { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
+import { segmentationRenderingEngine } from './SegmentationRenderingEngine';
 
 async function computeVolumeSegmentationFromStack({
   imageIds,
@@ -118,7 +117,7 @@ async function updateSegmentationState({
   //   },
   // ]);
 
-  triggerSegmentationRender(viewportId);
+  segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
   // Note: It is crucial to trigger the data modified event. This ensures that the
   // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>

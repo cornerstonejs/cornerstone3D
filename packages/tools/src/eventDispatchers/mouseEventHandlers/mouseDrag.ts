@@ -1,5 +1,5 @@
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import type { MouseDragEventType } from '../../types/EventTypes';
 
 /**

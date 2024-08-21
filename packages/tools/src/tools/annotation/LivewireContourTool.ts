@@ -8,7 +8,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
 import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import type {
@@ -19,7 +19,8 @@ import type {
   SVGDrawingHelper,
 } from '../../types';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
-import { math, triggerAnnotationRenderForViewportIds } from '../../utilities';
+import * as math from '../../utilities/math';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
 import type { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { ContourWindingDirection } from '../../types/ContourAnnotation';

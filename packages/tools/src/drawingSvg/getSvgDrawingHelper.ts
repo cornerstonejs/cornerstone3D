@@ -1,4 +1,4 @@
-import { state } from '../store';
+import { state } from '../store/state';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { SVGDrawingHelper } from '../types';
 

@@ -9,7 +9,7 @@ import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedCon
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../../types/AnnotationStyle';
 import type { SVGDrawingHelper } from '../../../types';
-import { getContourHolesDataCanvas } from '../../../utilities/contours';
+import getContourHolesDataCanvas from '../../../utilities/contours/getContourHolesDataCanvas';
 
 const { pointsAreWithinCloseContourProximity } = polyline;
 

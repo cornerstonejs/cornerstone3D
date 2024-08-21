@@ -16,7 +16,7 @@ import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
 } from '../drawingSvg';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Events, MouseBindings, KeyboardBindings } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {

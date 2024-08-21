@@ -1,4 +1,4 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { ToolModes } from '../../enums';
 import type { EventTypes } from '../../types';
 import type {

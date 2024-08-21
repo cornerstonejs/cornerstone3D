@@ -7,7 +7,7 @@ import {
   metaData,
 } from '@cornerstonejs/core';
 import type { Annotation } from '../types';
-import { addAnnotation } from '../stateManagement';
+import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
 
 function annotationHydration(

@@ -1,5 +1,5 @@
 import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import type { TouchDragEventType } from '../../types/EventTypes';
 
 /**

@@ -26,7 +26,7 @@ import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
 import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
 import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
-import { getBrushToolInstances } from './utilities';
+import { getBrushToolInstances } from './getBrushToolInstances';
 
 export {
   thresholdVolumeByRange,

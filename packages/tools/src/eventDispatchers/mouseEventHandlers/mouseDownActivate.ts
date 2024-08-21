@@ -1,4 +1,4 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import type { EventTypes } from '../../types';

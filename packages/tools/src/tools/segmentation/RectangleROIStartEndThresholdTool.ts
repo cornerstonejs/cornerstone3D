@@ -5,8 +5,6 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { utilities as coreUtils } from '@cornerstonejs/core';
-
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
 import {
@@ -562,14 +560,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         );
       }
 
-      const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
-      const roundedEndCoord = coreUtils.roundToPrecision(endCoord);
+      const roundedStartCoord = csUtils.roundToPrecision(startCoord);
+      const roundedEndCoord = csUtils.roundToPrecision(endCoord);
 
       const coord = this._getCoordinateForViewplaneNormal(
         focalPoint,
         viewplaneNormal
       );
-      const roundedCoord = coreUtils.roundToPrecision(coord);
+      const roundedCoord = csUtils.roundToPrecision(coord);
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCoord < Math.min(roundedStartCoord, roundedEndCoord) ||

@@ -10,13 +10,15 @@ import {
   ToolModes,
   Events as cstEvents,
 } from '../enums';
-import { ToolGroupManager, state } from '../store';
-import { debounce } from '../utilities';
+import { state } from '../store/state';
+import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import debounce from '../utilities/debounce';
 import type { ToolModeChangedEventType } from '../types/EventTypes';
-import { segmentation } from '..';
 import type { EventTypes, IToolGroup } from '../types';
-import { AnnotationTool, AdvancedMagnifyTool } from './';
+import AnnotationTool from './base/AnnotationTool';
+import AdvancedMagnifyTool from './AdvancedMagnifyTool';
 import { distanceToPoint } from '../utilities/math/point';
+import { addSegmentationRepresentations } from '../stateManagement';
 
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
@@ -260,7 +262,7 @@ class AdvancedMagnifyViewport {
   ) {
     const sourceActors = sourceViewport.getActors();
     const magnifyToolGroupId = `${magnifyViewport.id}-toolGroup`;
-    const sourceToolGroup = ToolGroupManager.getToolGroupForViewport(
+    const sourceToolGroup = getToolGroupForViewport(
       sourceViewport.id,
       sourceViewport.renderingEngineId
     );
@@ -283,7 +285,7 @@ class AdvancedMagnifyViewport {
     );
 
     sourceActors.filter(isSegmentation).forEach((actor) => {
-      segmentation.addSegmentationRepresentations(this.viewportId, [
+      addSegmentationRepresentations(this.viewportId, [
         {
           segmentationId: actor.referencedId,
           type: SegmentationRepresentations.Labelmap,

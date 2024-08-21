@@ -1,4 +1,4 @@
-import { state } from '../index';
+import { state } from '../state';
 import type Synchronizer from './Synchronizer';
 
 /**

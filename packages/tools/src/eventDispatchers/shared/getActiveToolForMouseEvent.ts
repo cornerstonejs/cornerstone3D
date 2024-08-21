@@ -1,6 +1,6 @@
-import { ToolGroupManager } from '../../store';
 import { ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { EventTypes } from '../../types';
 import getMouseModifier from './getMouseModifier';
 
@@ -32,10 +32,7 @@ export default function getActiveToolForMouseEvent(
   const modifierKey =
     getMouseModifier(mouseEvent) || keyEventListener.getModifierKey();
 
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return null;

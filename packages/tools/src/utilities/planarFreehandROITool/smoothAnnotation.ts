@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import { PlanarFreehandROITool } from '../../tools';
-import { ToolGroupManager } from '../../store';
+import { PlanarFreehandROITool } from '../../tools/annotation/PlanarFreehandROITool';
 import type { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 function shouldPreventInterpolation(
   enabledElement: Types.IEnabledElement,
@@ -18,10 +18,7 @@ function shouldPreventInterpolation(
   }
 
   const { renderingEngineId, viewportId, FrameOfReferenceUID } = enabledElement;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (annotation.metadata.FrameOfReferenceUID !== FrameOfReferenceUID) {
     return true;

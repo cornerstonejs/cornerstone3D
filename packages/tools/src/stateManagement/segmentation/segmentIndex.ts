@@ -1,5 +1,5 @@
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
-import { invalidateBrushCursor } from '../../utilities/segmentation/';
+import { invalidateBrushCursor } from '../../utilities/segmentation/invalidateBrushCursor';
 import {
   getSegmentation,
   getViewportIdsWithSegmentation,

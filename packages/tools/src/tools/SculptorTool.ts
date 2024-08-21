@@ -11,7 +11,6 @@ import type {
 } from '../types';
 import { point } from '../utilities/math';
 import { Events, ToolModes, AnnotationStyleStates } from '../enums';
-import { ToolGroupManager } from '../store';
 import { triggerAnnotationRenderForViewportIds } from '../utilities/triggerAnnotationRenderForViewportIds';
 import {
   hideElementCursor,
@@ -23,6 +22,7 @@ import { triggerAnnotationModified } from '../stateManagement/annotation/helpers
 import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
+import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 export type SculptData = {
   mousePoint: Types.Point3;
@@ -226,10 +226,7 @@ class SculptorTool extends BaseTool {
     const { renderingEngineId, viewportId } = enabledElement;
     const sculptableAnnotations = [];
 
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
     const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 
@@ -416,10 +413,7 @@ class SculptorTool extends BaseTool {
 
     const { renderingEngineId, viewportId } = enabledElement;
 
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
     const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 

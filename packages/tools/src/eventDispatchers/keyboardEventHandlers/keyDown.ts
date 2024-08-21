@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../../store';
 import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
 import getToolsWithActionsForKeyboardEvent from '../shared/getToolsWithActionsForKeyboardEvents';
 import type { KeyDownEventType } from '../../types/EventTypes';
 import ToolModes from '../../enums/ToolModes';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 /**
  * KeyDown event listener to handle viewport cursor icon changes
@@ -16,10 +16,7 @@ export default function keyDown(evt: KeyDownEventType): void {
   if (activeTool) {
     const { renderingEngineId, viewportId } = evt.detail;
 
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
     const toolName = activeTool.getToolName();
     if (Object.keys(toolGroup.toolOptions).includes(toolName)) {

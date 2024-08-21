@@ -1,11 +1,11 @@
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { ToolGroupManager } from '../store';
 import {
   getAnnotations,
   removeAnnotation,
 } from '../stateManagement/annotation/annotationState';
 import { setAnnotationSelected } from '../stateManagement/annotation/annotationSelection';
+import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 class AnnotationEraserTool extends BaseTool {
   static toolName;
@@ -31,10 +31,7 @@ class AnnotationEraserTool extends BaseTool {
     const { renderingEngineId, viewportId, element, currentPoints } =
       evt.detail;
 
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
     if (!toolGroup) {
       return false;

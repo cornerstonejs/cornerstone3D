@@ -28,7 +28,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
 } from '../drawingSvg';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {

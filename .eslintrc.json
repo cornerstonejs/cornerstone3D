@@ -106,6 +106,12 @@
       "rules": {
         "import/no-cycle": ["error", { "maxDepth": 10 }]
       }
+    },
+    {
+      "files": ["**/examples/**"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off" // Disable the rule for files in the examples directory
+      }
     }
   ],
   "env": {

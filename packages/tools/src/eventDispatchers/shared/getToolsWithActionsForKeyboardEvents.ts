@@ -1,5 +1,5 @@
-import { ToolGroupManager } from '../../store';
 import type { ToolModes } from '../../enums';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { EventTypes } from '../../types';
 
 /**
@@ -15,10 +15,7 @@ export default function getToolsWithModesForKeyboardEvent(
 ) {
   const toolsWithActions = new Map();
   const { renderingEngineId, viewportId } = evt.detail;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return toolsWithActions;

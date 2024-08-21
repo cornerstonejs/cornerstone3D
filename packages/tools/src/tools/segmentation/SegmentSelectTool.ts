@@ -13,7 +13,7 @@ import {
   getSegmentIndexAtLabelmapBorder,
   getSegmentIndexAtWorldPoint,
 } from '../../utilities/segmentation';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 

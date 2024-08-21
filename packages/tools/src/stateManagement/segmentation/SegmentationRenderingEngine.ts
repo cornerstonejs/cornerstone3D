@@ -18,7 +18,8 @@ import type { SegmentationRepresentation } from '../../types/SegmentationStateTy
 import { surfaceDisplay } from '../../tools/displayTools/Surface';
 import { contourDisplay } from '../../tools/displayTools/Contour';
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { addTool, state } from '../../store';
+import { addTool } from '../../store';
+import { state } from '../../store/state';
 import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 

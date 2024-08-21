@@ -1,7 +1,6 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 import { Events } from '../../enums';
-import { getSegmentations } from '../../stateManagement/segmentation/segmentationState';
 import type {
   SegmentationRepresentationModifiedEventDetail,
   SegmentationDataModifiedEventDetail,
@@ -10,6 +9,7 @@ import type {
   SegmentationRemovedEventDetail,
 } from '../../types/EventTypes';
 import { setSegmentationDirty } from '../../utilities/segmentation/getUniqueSegmentIndices';
+import { getDefaultSegmentationStateManager } from './segmentationState';
 
 /**
  * Trigger an event that a segmentation is removed
@@ -74,7 +74,10 @@ function triggerSegmentationModified(segmentationId?: string): void {
   if (segmentationId) {
     segmentationIds = [segmentationId];
   } else {
-    segmentationIds = getSegmentations().map(
+    const segmentationStateManager = getDefaultSegmentationStateManager();
+    const state = segmentationStateManager.getState();
+
+    segmentationIds = state.segmentations.map(
       ({ segmentationId }) => segmentationId
     );
   }

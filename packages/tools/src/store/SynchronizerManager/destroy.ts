@@ -1,4 +1,4 @@
-import { state } from '../index';
+import { state } from '../state';
 
 /**
  * "Destroy all synchronizers."

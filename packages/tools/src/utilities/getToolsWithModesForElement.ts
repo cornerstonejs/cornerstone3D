@@ -1,6 +1,6 @@
-import { ToolGroupManager } from '../store';
 import type { ToolModes } from '../enums';
 import { getEnabledElement } from '@cornerstonejs/core';
+import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 type ModesFilter = Array<ToolModes>;
 
@@ -20,10 +20,7 @@ export default function getToolsWithModesForElement(
   const enabledElement = getEnabledElement(element);
   const { renderingEngineId, viewportId } = enabledElement;
 
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return [];
