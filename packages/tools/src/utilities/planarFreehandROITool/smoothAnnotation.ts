@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { PlanarFreehandROITool } from '../../tools/annotation/PlanarFreehandROITool';
+import PlanarFreehandROITool from '../../tools/annotation/PlanarFreehandROITool';
 import type { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';

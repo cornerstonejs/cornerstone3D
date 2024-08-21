@@ -16,7 +16,7 @@ import ProgressiveIterator from '../utilities/ProgressiveIterator';
 import decimate from '../utilities/decimate';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { ImageQualityStatus, RequestType, Events } from '../enums';
-import cache from '../cache';
+import cache from '../cache/cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
 

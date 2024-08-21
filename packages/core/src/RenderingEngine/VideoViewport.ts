@@ -32,7 +32,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
-import cache from '../cache';
+import cache from '../cache/cache';
 
 /**
  * A data type for the scalar data for video data.

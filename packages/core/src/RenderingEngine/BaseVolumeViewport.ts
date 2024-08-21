@@ -5,7 +5,7 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
-import cache from '../cache';
+import cache from '../cache/cache';
 import {
   MPR_CAMERA_VALUES,
   RENDERING_DEFAULTS,
@@ -53,6 +53,12 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import { actorIsA } from '../utilities/actorCheck';
+import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
+import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
+import isEqual, { isEqualNegative } from '../utilities/isEqual';
+import applyPreset from '../utilities/applyPreset';
+import imageIdToURI from '../utilities/imageIdToURI';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports

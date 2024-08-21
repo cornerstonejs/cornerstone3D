@@ -78,7 +78,7 @@ import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewpo
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
-import cache from '../cache';
+import cache from '../cache/cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import type {

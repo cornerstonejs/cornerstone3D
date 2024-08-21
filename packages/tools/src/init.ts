@@ -1,6 +1,5 @@
 import { eventTarget, Enums } from '@cornerstonejs/core';
 import { getAnnotationManager } from './stateManagement/annotation/annotationState';
-import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState';
 import { Events as TOOLS_EVENTS } from './enums';
 import { addEnabledElement, removeEnabledElement } from './store';
 import { resetCornerstoneToolsState } from './store/state';
@@ -17,6 +16,7 @@ import {
 import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
+import { defaultSegmentationStateManager } from './stateManagement/segmentation/SegmentationStateManager';
 
 let csToolsInitialized = false;
 
@@ -55,8 +55,7 @@ export function destroy(): void {
 
   // remove all annotation.
   const annotationManager = getAnnotationManager();
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-
+  const segmentationStateManager = defaultSegmentationStateManager;
   annotationManager.restoreAnnotations({});
   segmentationStateManager.resetState();
   csToolsInitialized = false;

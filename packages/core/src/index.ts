@@ -17,7 +17,8 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume, Surface } from './cache';
+import { ImageVolume, Surface } from './cache';
+import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 

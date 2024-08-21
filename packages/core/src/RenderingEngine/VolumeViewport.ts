@@ -2,7 +2,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import cache from '../cache';
+import cache from '../cache/cache';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import type { BlendModes } from '../enums';
 import { OrientationAxis, Events } from '../enums';
