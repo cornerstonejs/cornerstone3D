@@ -175,8 +175,6 @@ describe('Segmentation Index Controller:', () => {
       expect(segmentationId.includes(volumeId)).toBe(true);
     });
 
-    segToolGroup.addViewport(vp1.id, renderingEngine.id);
-
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(

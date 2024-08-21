@@ -213,9 +213,12 @@ export default class ToolGroup implements IToolGroup {
 
     const renderingEngines = getRenderingEngines();
 
-    if (!renderingEngineId && renderingEngines.length > 1) {
+    if (renderingEngines?.length === 0) {
+      throw new Error('No rendering engines found.');
+    }
+    if (renderingEngines.length > 1) {
       throw new Error(
-        'You must specify a renderingEngineId when there are multiple rendering engines.'
+        'Multiple rendering engines found. You must specify a renderingEngineId.'
       );
     }
 

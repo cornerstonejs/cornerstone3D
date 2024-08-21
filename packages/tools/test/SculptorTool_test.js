@@ -270,8 +270,6 @@ describe('Sculptor Tool:', () => {
       );
     });
 
-    stackToolGroup.addViewport(vp.id, renderingEngine.id);
-
     try {
       vp.setStack([imageId1], 0);
       renderingEngine.render();

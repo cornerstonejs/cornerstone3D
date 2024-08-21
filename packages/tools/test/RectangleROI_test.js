@@ -189,8 +189,6 @@ describe('Rectangle ROI Tool:', () => {
       document.dispatchEvent(evt);
     });
 
-    stackToolGroup.addViewport(vp.id, renderingEngine.id);
-
     try {
       vp.setStack([imageId1], 0);
       renderingEngine.render();
@@ -290,8 +288,6 @@ describe('Rectangle ROI Tool:', () => {
       addEventListenerForAnnotationRendered();
       document.dispatchEvent(evt);
     });
-
-    stackToolGroup.addViewport(vp.id, renderingEngine.id);
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -445,8 +441,6 @@ describe('Rectangle ROI Tool:', () => {
       document.dispatchEvent(evt);
     });
 
-    stackToolGroup.addViewport(vp.id, renderingEngine.id);
-
     try {
       vp.setStack([imageId1], 0);
       renderingEngine.render();
@@ -588,8 +582,6 @@ describe('Rectangle ROI Tool:', () => {
         false
       );
     });
-
-    stackToolGroup.addViewport(vp.id, renderingEngine.id);
 
     try {
       vp.setStack([imageId1], 0);

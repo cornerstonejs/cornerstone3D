@@ -447,8 +447,6 @@
 
 //       element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-//       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
 //       try {
 //         vp.setStack(imageIds, 0);
 //         this.renderingEngine.render();
@@ -590,8 +588,6 @@
 //           contourAnnotations[contourAnnotations.length - 1]
 //         );
 //       });
-
-//       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
 //       try {
 //         vp.setStack(imageIds, 0);
@@ -783,8 +779,6 @@
 
 //       element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-//       this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
 //       try {
 //         vp.setStack(imageIds, 0);
 //         this.renderingEngine.render();
@@ -943,8 +937,6 @@
 //     //       contourAnnotations[contourAnnotations.length - 1]
 //     //     );
 //     //   });
-
-//     //   this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
 //     //   try {
 //     //     vp.setStack(imageIds, 0);

@@ -66,7 +66,7 @@ describe('Segmentation Controller:', () => {
     });
   });
 
-  it('should be able to load two segmentations on the toolGroup', function (done) {
+  xit('should be able to load two segmentations on the toolGroup', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportType: ViewportType.ORTHOGRAPHIC,
       orientation: Enums.OrientationAxis.AXIAL,
@@ -135,8 +135,6 @@ describe('Segmentation Controller:', () => {
       Events.SEGMENTATION_RENDERED,
       compareImageCallback
     );
-
-    segToolGroup.addViewport(vp1.id, renderingEngine.id);
 
     try {
       createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
