@@ -1670,7 +1670,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     return imageVolume.imageIds;
   };
 
-  abstract getCurrentImageId(): string;
+  abstract getCurrentImageId(): string | undefined;
 
   /**
    * Gets the volumeId to use for references.

@@ -146,7 +146,7 @@ export abstract class BaseVolumeViewport extends Viewport implements IVolumeView
     // (undocumented)
     getBounds(): number[];
     // (undocumented)
-    abstract getCurrentImageId(): string;
+    abstract getCurrentImageId(): string | undefined;
     // (undocumented)
     getDefaultProperties: (volumeId?: string) => VolumeViewportProperties;
     // (undocumented)
@@ -812,7 +812,7 @@ function createLocalSegmentationVolume(options: LocalVolumeOptions, volumeId: st
 function createLocalVolume(volumeId: string, options?: LocalVolumeOptions): IImageVolume;
 
 // @public (undocumented)
-function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): vtkColorTransferFunction;
+function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): unknown;
 
 // @public (undocumented)
 export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean): Promise<VolumeActor>;
@@ -2579,7 +2579,7 @@ interface IStreamingImageVolume extends IImageVolume {
     // (undocumented)
     clearLoadCallbacks(): void;
     // (undocumented)
-    decache(completelyRemove: boolean): void;
+    decache(completelyRemove?: boolean): void;
 }
 
 // @public (undocumented)
@@ -2737,7 +2737,7 @@ interface IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getImageData: () => IImageData | CPUIImageData;
+    getImageData: () => IImageData | CPUIImageData | undefined;
     // (undocumented)
     getNumberOfSlices(): number;
     // (undocumented)
@@ -2890,7 +2890,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getBounds(): number[];
     // (undocumented)
-    getCurrentImageId: () => string;
+    getCurrentImageId: () => string | undefined;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
@@ -2898,7 +2898,7 @@ interface IVolumeViewport extends IViewport {
     // (undocumented)
     getFrameOfReferenceUID: () => string;
     // (undocumented)
-    getImageData(volumeId?: string): IImageData | undefined;
+    getImageData: (volumeId?: string) => IImageData | undefined;
     // (undocumented)
     getImageIds: (volumeId?: string) => string[];
     // (undocumented)
@@ -5131,7 +5131,7 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageId: () => string;
     // (undocumented)
-    getCurrentImageIdIndex: () => number | undefined;
+    getCurrentImageIdIndex: () => number;
     // (undocumented)
     getRotation: () => number;
     // (undocumented)

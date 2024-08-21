@@ -64,7 +64,7 @@ export default interface IVolumeViewport extends IViewport {
    * If so, it uses the origin and focalPoint to find which imageId is
    * currently being viewed.
    */
-  getCurrentImageId: () => string;
+  getCurrentImageId: () => string | undefined;
   /**
    * Sets the default properties for the viewport. If no volumeId is provided
    * it applies the properties to the default volume actor (first volume)
@@ -174,7 +174,7 @@ export default interface IVolumeViewport extends IViewport {
    * image data for a specific volume, use the optional volumeId
    * argument.
    */
-  getImageData(volumeId?: string): IImageData | undefined;
+  getImageData: (volumeId?: string) => IImageData | undefined;
 
   setOrientation(orientation: OrientationAxis): void;
 

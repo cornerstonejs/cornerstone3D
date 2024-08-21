@@ -1414,7 +1414,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         ? createSigmoidRGBTransferFunction
         : createLinearRGBTransferFunction;
 
-      transferFunction = transferFunctionCreator(voiRangeToUse);
+      transferFunction = transferFunctionCreator(
+        voiRangeToUse
+      ) as vtkColorTransferFunction;
 
       if (this.invert) {
         invertRgbTransferFunction(transferFunction);

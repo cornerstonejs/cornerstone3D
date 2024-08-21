@@ -247,7 +247,7 @@ interface IViewport {
   /** unique identifier of the viewport */
   id: string;
 
-  getImageData: () => IImageData | CPUIImageData;
+  getImageData: () => IImageData | CPUIImageData | undefined;
 
   getWidget: (id: string) => unknown;
 

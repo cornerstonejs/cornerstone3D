@@ -52,8 +52,8 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
   getRotation = (): number => 0;
 
-  getCurrentImageIdIndex = (): number | undefined => {
-    return undefined;
+  getCurrentImageIdIndex = (): number => {
+    return 0;
   };
 
   getCurrentImageId = (): string => {

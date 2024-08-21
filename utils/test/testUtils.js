@@ -45,6 +45,11 @@ function setupTestEnvironment({
   initTools();
   tools.forEach((tool) => addTool(tool));
 
+  // remove all rendering engines
+  getRenderingEngines().forEach((renderingEngine) => {
+    renderingEngine.destroy();
+  });
+
   // Clear cache and reset metadata
   cache.purgeCache();
   metaData.removeAllProviders();
