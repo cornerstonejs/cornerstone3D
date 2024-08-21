@@ -2,13 +2,14 @@ import external from '../../../externalModules';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
-import metaDataManager from '../metaDataManager';
+import metaDataManager, {
+  retrieveMultiframeMetadata,
+} from '../metaDataManager';
 import getValue from './getValue';
 import {
   getMultiframeInformation,
   getFrameInformation,
 } from '../combineFrameInstance';
-import multiframeMetadata from '../retrieveMultiframeMetadata';
 import {
   extractOrientationFromMetadata,
   extractPositionFromMetadata,
@@ -27,8 +28,7 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
-    const { metadata, frame } =
-      multiframeMetadata.retrieveMultiframeMetadata(imageId);
+    const { metadata, frame } = retrieveMultiframeMetadata(imageId);
 
     if (!metadata) {
       return;
