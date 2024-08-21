@@ -8,6 +8,7 @@ import type {
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
 import type RGB from './RGB';
+import type { IVoxelManager } from './IVoxelManager';
 
 /**
  * Properties required to instantiate a Volume object.
@@ -40,7 +41,7 @@ interface VolumeProps {
    * The new volume model which solely relies on the separate image data
    * and do not cache the volume data at all
    */
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType: PixelDataTypedArrayString;
 
   /**

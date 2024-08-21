@@ -18,7 +18,7 @@ export type VolumeInfo = {
   spacing: Types.Point3;
   dimensions: Types.Point3;
   volumeSize: number;
-  voxelManager: csUtils.VoxelManager<number> | csUtils.VoxelManager<Types.RGB>;
+  voxelManager: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
 };
 
 export function getBrushToolInstances(toolGroupId: string, toolName?: string) {

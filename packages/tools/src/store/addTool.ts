@@ -22,10 +22,6 @@ export function addTool(ToolClass): void {
     throw new Error(`No Tool Found for the ToolClass ${ToolClass.name}`);
   }
 
-  if (toolAlreadyAdded) {
-    throw new Error(`${toolName} has already been added globally`);
-  }
-
   // Stores the toolNames and ToolClass to be instantiated in the toolGroup on toolGroup.addTool
   state.tools[toolName] = {
     toolClass: ToolClass,

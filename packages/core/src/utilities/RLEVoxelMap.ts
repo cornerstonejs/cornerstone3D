@@ -1,15 +1,4 @@
-import type { PixelDataTypedArray } from '../types';
-
-/**
- * The RLERun specifies a contigous run of values for a row,
- * where all indices (i only) from `[start,end)` have the specified
- * value.
- */
-export interface RLERun<T> {
-  value: T;
-  start: number;
-  end: number;
-}
+import type { IRLEVoxelMap, PixelDataTypedArray, RLERun } from '../types';
 
 /**
  * RLE based implementation of a voxel map.
@@ -17,7 +6,7 @@ export interface RLERun<T> {
  * mapped to rows and hte rows are indexed started at 0 and continuing
  * incrementing for all rows in the multi-plane voxel.
  */
-export default class RLEVoxelMap<T> {
+export default class RLEVoxelMap<T> implements IRLEVoxelMap<T> {
   /**
    * The rows for the voxel map is a map from the j index location (or for
    * volumes, `j + k*height`) to a list of RLE runs.  That is, each entry in

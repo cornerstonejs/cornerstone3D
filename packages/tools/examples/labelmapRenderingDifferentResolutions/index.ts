@@ -106,8 +106,8 @@ async function addSegmentations(viewportId1) {
   };
 
   const lowResSegmentationVolume = await volumeLoader.createLocalVolume(
-    localVolumeOptions,
-    lowResSegmentationId
+    lowResSegmentationId,
+    localVolumeOptions
   );
 
   // Add the segmentations to state

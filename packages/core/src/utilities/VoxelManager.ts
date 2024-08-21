@@ -7,6 +7,8 @@ import type {
   IImage,
   RGB,
   CPUImageData,
+  IVoxelManager,
+  IRLEVoxelMap,
 } from '../types';
 import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
@@ -22,7 +24,7 @@ const DEFAULT_RLE_SIZE = 5 * 1024;
 /**
  * This is a simple, standard interface to values associated with a voxel.
  */
-export default class VoxelManager<T> {
+export default class VoxelManager<T> implements IVoxelManager<T> {
   public modifiedSlices = new Set<number>();
   public boundsIJK = [
     [Infinity, -Infinity],
@@ -30,8 +32,8 @@ export default class VoxelManager<T> {
     [Infinity, -Infinity],
   ] as BoundsIJK;
 
-  public map: Map<number, T> | RLEVoxelMap<T>;
-  public sourceVoxelManager: VoxelManager<T>;
+  public map: Map<number, T> | IRLEVoxelMap<T>;
+  public sourceVoxelManager: IVoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
   public numberOfComponents = 1;
@@ -50,7 +52,7 @@ export default class VoxelManager<T> {
   frameSize: number;
   _get: (index: number) => T;
   _set: (index: number, v: T) => boolean | void;
-  _getConstructor?: () => PixelDataTypedArray;
+  _getConstructor?: () => new (length: number) => PixelDataTypedArray;
   _getScalarDataLength?: () => number;
   _getScalarData?: () => PixelDataTypedArray;
   _getSliceData: (args: {
@@ -416,23 +418,28 @@ export default class VoxelManager<T> {
       bound[1] = -Infinity;
     });
     this.modifiedSlices.clear();
-    this.points.clear();
+    this.points?.clear();
   }
 
-  public getConstructor() {
+  public getConstructor(): new (length: number) => PixelDataTypedArray {
     if (this.scalarData) {
-      return this.scalarData.constructor;
+      return this.scalarData.constructor as new (
+        length: number
+      ) => PixelDataTypedArray;
     }
 
     if (this._getConstructor) {
-      return this._getConstructor();
+      return this._getConstructor() as new (
+        length: number
+      ) => PixelDataTypedArray;
     }
 
     console.warn(
       'No scalar data available or can be used to get the constructor'
     );
 
-    return null;
+    // Return a default constructor (e.g., Float32Array) if no constructor is available
+    return Float32Array as new (length: number) => PixelDataTypedArray;
   }
 
   /**
@@ -592,7 +599,7 @@ export default class VoxelManager<T> {
    * Note that the number of components can be larger than three, in case data
    * is stored in additional pixels.  However, the return type is still RGB.
    */
-  public static createRGBScalarVolumeVoxelManager({
+  private static _createRGBScalarVolumeVoxelManager({
     dimensions,
     scalarData,
     numberOfComponents = 3,
@@ -636,7 +643,7 @@ export default class VoxelManager<T> {
     dimensions: Point3;
     imageIds: string[];
     numberOfComponents: number;
-  }): VoxelManager<number> | VoxelManager<RGB> {
+  }): IVoxelManager<number> | IVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
     function getPixelInfo(index) {
@@ -820,7 +827,7 @@ export default class VoxelManager<T> {
       ];
     };
 
-    return voxelManager as VoxelManager<number> | VoxelManager<RGB>;
+    return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;
   }
 
   /**
@@ -839,7 +846,7 @@ export default class VoxelManager<T> {
     dimensions: Point3;
     scalarData;
     numberOfComponents?: number;
-  }): VoxelManager<number> | VoxelManager<RGB> {
+  }): IVoxelManager<number> | IVoxelManager<RGB> {
     if (dimensions.length !== 3) {
       throw new Error(
         'Dimensions must be provided as [number, number, number] for [width, height, depth]'
@@ -862,7 +869,7 @@ export default class VoxelManager<T> {
       }
     }
     if (numberOfComponents > 1) {
-      return VoxelManager.createRGBScalarVolumeVoxelManager({
+      return VoxelManager._createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
         numberOfComponents,
@@ -884,7 +891,7 @@ export default class VoxelManager<T> {
     dimensions: Point3;
     timePoint: number;
     numberOfComponents?: number;
-  }): VoxelManager<number> | VoxelManager<RGB> {
+  }): IVoxelManager<number> | IVoxelManager<RGB> {
     if (!numberOfComponents) {
       const firstImage = cache.getImage(imageIdGroups[0][0]);
       if (!firstImage) {
@@ -919,7 +926,7 @@ export default class VoxelManager<T> {
       (index) => voxelGroups[timePoint]._get(index),
       // @ts-ignore
       (index, v) => voxelGroups[timePoint]._set(index, v)
-    ) as VoxelManager<number> | VoxelManager<RGB>;
+    ) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.numberOfComponents = numberOfComponents;
 
@@ -963,7 +970,7 @@ export default class VoxelManager<T> {
       return voxelGroups[timePoint].getCompleteScalarDataArray();
     };
 
-    return voxelManager;
+    return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;
   }
 
   public static createImageVoxelManager({
@@ -976,7 +983,7 @@ export default class VoxelManager<T> {
     height: number;
     scalarData: PixelDataTypedArray;
     numberOfComponents?: number;
-  }): VoxelManager<number> | VoxelManager<RGB> {
+  }): IVoxelManager<number> | IVoxelManager<RGB> {
     const dimensions = [width, height, 1] as Point3;
     if (!numberOfComponents) {
       numberOfComponents = scalarData.length / width / height;
@@ -991,7 +998,7 @@ export default class VoxelManager<T> {
       }
     }
     if (numberOfComponents > 1) {
-      return VoxelManager.createRGBScalarVolumeVoxelManager({
+      return VoxelManager._createRGBScalarVolumeVoxelManager({
         dimensions,
         scalarData,
         numberOfComponents,
@@ -1013,7 +1020,7 @@ export default class VoxelManager<T> {
   }: {
     dimensions: Point3;
     scalarData: PixelDataTypedArray;
-  }): VoxelManager<number> {
+  }): IVoxelManager<number> {
     const voxels = new VoxelManager<number>(
       dimensions,
       (index) => scalarData[index],
@@ -1045,7 +1052,7 @@ export default class VoxelManager<T> {
     dimension,
   }: {
     dimension: Point3;
-  }): VoxelManager<T> {
+  }): IVoxelManager<T> {
     const map = new Map<number, T>();
     const voxelManager = new VoxelManager(
       dimension,

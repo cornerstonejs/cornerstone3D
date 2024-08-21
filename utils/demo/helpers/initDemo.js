@@ -1,8 +1,18 @@
 import initProviders from './initProviders';
 import initCornerstoneDICOMImageLoader from './initCornerstoneDICOMImageLoader';
 import initVolumeLoader from './initVolumeLoader';
-import { init as csRenderInit } from '@cornerstonejs/core';
+import {
+  init as csRenderInit,
+  imageLoader,
+  volumeLoader,
+  metaData,
+} from '@cornerstonejs/core';
 import { init as csToolsInit } from '@cornerstonejs/tools';
+import { fakeVolumeLoader } from '../../test/testUtilsVolumeLoader';
+import {
+  fakeImageLoader,
+  fakeMetaDataProvider,
+} from '../../test/testUtilsImageLoader';
 
 export default async function initDemo() {
   initProviders();
@@ -10,6 +20,11 @@ export default async function initDemo() {
   initVolumeLoader();
   await csRenderInit({ peerImport });
   await csToolsInit();
+
+  // for testings, you don't need any of these
+  volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+  imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
+  metaData.addProvider(fakeMetaDataProvider, 10000);
 }
 
 /**

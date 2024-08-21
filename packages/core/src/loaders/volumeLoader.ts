@@ -1,8 +1,5 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
@@ -23,6 +20,7 @@ import type {
   IVolume,
 } from '../types';
 import { imageLoader } from '..';
+import { createAndCacheLocalImage } from './imageLoader';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -32,7 +30,8 @@ interface DerivedVolumeOptions {
   volumeId: string;
   targetBufferType?: PixelDataTypedArrayString;
 }
-interface LocalVolumeOptions {
+
+export interface LocalVolumeOptions {
   metadata: Metadata;
   dimensions: Point3;
   spacing: Point3;
@@ -42,9 +41,8 @@ interface LocalVolumeOptions {
   imageIds?: string[];
   referencedImageIds?: string[];
   referencedVolumeId?: string;
-  targetBuffer?: {
-    type: PixelDataTypedArrayString;
-  };
+  preventCache?: boolean;
+  targetBufferType?: PixelDataTypedArrayString;
 }
 
 /**
@@ -275,111 +273,80 @@ export async function createAndCacheVolumeFromImages(
  * @returns ImageVolume
  */
 export function createLocalVolume(
-  options: LocalVolumeOptions,
   volumeId: string,
-  preventCache = false
+  options = {} as LocalVolumeOptions
 ): IImageVolume {
-  // Todo: probably we need to deprecate this, or have it named like
-  // createMemoryIntensiveVolume or something like that so that it shows
-  // it is not recommended to use this function for large volumes
-  const { metadata, dimensions, spacing, origin, direction, targetBuffer } =
-    options;
+  const {
+    metadata,
+    dimensions,
+    spacing,
+    origin,
+    direction,
+    scalarData,
+    targetBufferType,
+    preventCache = false,
+  } = options;
 
-  let { scalarData } = options;
-
-  // Define the valid data types for scalarData
-  const validDataTypes = [
-    'Uint8Array',
-    'Float32Array',
-    'Uint16Array',
-    'Int16Array',
-  ];
-
-  const scalarLength = dimensions[0] * dimensions[1] * dimensions[2];
-
-  // Check if scalarData is provided and is of a valid type
-  if (!scalarData || !validDataTypes.includes(scalarData.constructor.name)) {
-    // Check if targetBuffer is provided and has a valid type
-    if (!targetBuffer.type || !validDataTypes.includes(targetBuffer.type)) {
-      throw new Error(
-        'createLocalVolume: parameter scalarData must be provided and must be either Uint8Array, Float32Array, Uint16Array or Int16Array'
-      );
-    }
-
-    // Generate volume scalar data if scalarData is not provided or invalid
-    ({ volumeScalarData: scalarData } = generateVolumeScalarData(
-      targetBuffer,
-      scalarLength
-    ));
-  }
-
-  // Todo: handle default values for spacing, origin, direction if not provided
-  if (volumeId === undefined) {
-    volumeId = uuidv4();
-  }
-
+  // Check if the volume already exists in the cache
   const cachedVolume = cache.getVolume(volumeId);
-
   if (cachedVolume) {
     return cachedVolume;
   }
 
-  const numBytes = scalarData ? scalarData.buffer.byteLength : scalarLength * 4;
+  const sliceLength = dimensions[0] * dimensions[1];
 
-  // check if there is enough space in unallocated + image Cache
-  const isCacheable = cache.isCacheable(numBytes);
-  if (!isCacheable) {
-    throw new Error(Events.CACHE_SIZE_EXCEEDED);
+  const dataType = scalarData
+    ? (scalarData.constructor.name as PixelDataTypedArrayString)
+    : targetBufferType;
+
+  // Create derived images
+  const imageIds = [];
+  const derivedImages = [];
+  for (let i = 0; i < dimensions[2]; i++) {
+    const imageId = `${volumeId}_slice_${i}`;
+    imageIds.push(imageId);
+
+    const sliceData = scalarData.subarray(
+      i * sliceLength,
+      (i + 1) * sliceLength
+    );
+
+    const derivedImage = createAndCacheLocalImage(imageId, {
+      scalarData: sliceData,
+      dimensions: [dimensions[0], dimensions[1]],
+      spacing: [spacing[0], spacing[1]],
+      origin,
+      direction,
+      targetBufferType: dataType,
+    });
+
+    derivedImages.push(derivedImage);
   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: 1,
-    values: scalarData,
-  });
-
-  const imageData = vtkImageData.newInstance();
-
-  imageData.setDimensions(dimensions);
-  imageData.setSpacing(spacing);
-  imageData.setDirection(direction);
-  imageData.setOrigin(origin);
-  imageData.getPointData().setScalars(scalarArray);
-
-  const voxelManager = VoxelManager.createImageVoxelManager({
-    width: dimensions[0],
-    height: dimensions[1],
-    numberOfComponents: 1,
-    scalarData: scalarData,
-  });
-
-  imageData.set({ voxelManager: voxelManager });
-
-  const derivedVolume = new ImageVolume({
+  // Create the image volume
+  const imageVolume = new ImageVolume({
     volumeId,
     metadata: structuredClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
     direction,
-    voxelManager,
-    imageData: imageData,
-    referencedImageIds: options.referencedImageIds || [],
-    referencedVolumeId: options.referencedVolumeId,
-    imageIds: options.imageIds || [],
-    dataType: scalarData.constructor.name as PixelDataTypedArrayString,
+    imageIds,
+    dataType,
   });
 
-  if (preventCache) {
-    return derivedVolume;
-  }
+  // Create and set voxel manager
+  const voxelManager = VoxelManager.createImageVolumeVoxelManager({
+    imageIds,
+    dimensions,
+    numberOfComponents: 1,
+  });
+  imageVolume.voxelManager = voxelManager;
 
-  const volumeLoadObject = {
-    promise: Promise.resolve(derivedVolume),
-  };
-  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+  // use sync
+  cache.putVolumeSync(volumeId, imageVolume);
 
-  return derivedVolume;
+  return imageVolume;
 }
 
 /**
@@ -459,40 +426,5 @@ export function createLocalSegmentationVolume(
     );
   }
 
-  return createLocalVolume(options, volumeId, preventCache);
-}
-
-/**
- * This function generates volume scalar data based on the provided target buffer and scalar length.
- * It checks if the cache can accommodate the data size and throws an error if it exceeds the cache size.
- * If a shared array buffer is available in the target buffer, it uses that to create the typed array.
- * Otherwise, it creates a typed array based on the scalar length.
- *
- * @param targetBuffer - The target buffer object which may contain a type and a shared array buffer.
- * @param scalarLength - The scalar length for creating the typed array.
- * @param useNorm16Texture - A flag to specify whether to use a 16-bit texture or not.
- * @returns The volume scalar data as a typed array.
- */
-function generateVolumeScalarData(
-  targetBuffer: {
-    type: PixelDataTypedArrayString;
-  },
-  scalarLength: number
-) {
-  const { TypedArrayConstructor, numBytes } = getBufferConfiguration(
-    targetBuffer.type,
-    scalarLength,
-    {
-      isVolumeBuffer: true,
-    }
-  );
-
-  const isCacheable = cache.isCacheable(numBytes);
-  if (!isCacheable) {
-    throw new Error(Events.CACHE_SIZE_EXCEEDED);
-  }
-
-  const volumeScalarData = new TypedArrayConstructor(scalarLength);
-
-  return { volumeScalarData, numBytes };
+  return createLocalVolume(volumeId, { ...options, preventCache });
 }

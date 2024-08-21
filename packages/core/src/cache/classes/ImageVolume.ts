@@ -10,6 +10,7 @@ import type {
   IImage,
   PixelDataTypedArrayString,
   RGB,
+  IVoxelManager,
 } from '../../types';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
@@ -80,7 +81,7 @@ export class ImageVolume implements IImageVolume {
    * The new volume model which solely relies on the separate image data
    * and do not cache the volume data at all
    */
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
   numTimePoints? = null as number;

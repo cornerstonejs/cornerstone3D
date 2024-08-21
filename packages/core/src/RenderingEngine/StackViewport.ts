@@ -465,6 +465,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       preScale: {
         ...this.csImage.preScale,
       },
+      voxelManager: this.csImage.voxelManager,
     };
   }
 
@@ -520,7 +521,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns frameOfReferenceUID : string representing frame of reference id
    */
   public getFrameOfReferenceUID = (sliceIndex?: number): string =>
-    this.getImagePlaneReferenceData(sliceIndex).FrameOfReferenceUID;
+    this.getImagePlaneReferenceData(sliceIndex)?.FrameOfReferenceUID;
 
   /**
    * Returns the raw/loaded image being shown inside the stack viewport.
@@ -868,7 +869,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       this.perImageIdDefaultProperties.get(currentImageId) ||
       this.globalDefaultProperties;
 
-    if (properties.colormap.name) {
+    if (properties.colormap?.name) {
       this.setColormap(properties.colormap);
     }
 
@@ -1413,7 +1414,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         ? createSigmoidRGBTransferFunction
         : createLinearRGBTransferFunction;
 
-      transferFunction = transferFunctionCreator(voiRangeToUse);
+      transferFunction = transferFunctionCreator(
+        voiRangeToUse
+      ) as vtkColorTransferFunction;
 
       if (this.invert) {
         invertRgbTransferFunction(transferFunction);
@@ -1678,14 +1681,18 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     numberOfComponents,
     pixelArray,
   }): void {
-    this._imageData = this.createVTKImageData({
-      origin,
-      direction,
-      dimensions,
-      spacing,
-      numberOfComponents,
-      pixelArray,
-    });
+    try {
+      this._imageData = this.createVTKImageData({
+        origin,
+        direction,
+        dimensions,
+        spacing,
+        numberOfComponents,
+        pixelArray,
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   /**
@@ -1866,11 +1873,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         // CPU path cannot handle it, it should be converted to Uint16Array
         // and via the Modality LUT we can display it properly
         const preScale = image.preScale;
-        const scalingParams = preScale.scalingParameters;
+        const scalingParams = preScale?.scalingParameters;
 
         const scaledWithNonIntegers =
-          (preScale.scaled && scalingParams.rescaleIntercept % 1 !== 0) ||
-          scalingParams.rescaleSlope % 1 !== 0;
+          (preScale?.scaled && scalingParams?.rescaleIntercept % 1 !== 0) ||
+          scalingParams?.rescaleSlope % 1 !== 0;
 
         if (pixelData instanceof Float32Array && scaledWithNonIntegers) {
           const floatMinMax = {
@@ -2012,7 +2019,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     const imgFrame = image?.imageFrame;
     const photometricInterpretation =
       csImgFrame?.photometricInterpretation ||
-      this.csImage.photometricInterpretation;
+      this.csImage?.photometricInterpretation;
     const newPhotometricInterpretation =
       imgFrame?.photometricInterpretation || image?.photometricInterpretation;
 
@@ -2433,7 +2440,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       return false;
     }
 
-    if (!this.csImage.preScale.scalingParameters.suvbw) {
+    if (!this.csImage.preScale?.scalingParameters.suvbw) {
       return false;
     }
 
@@ -3021,7 +3028,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const colonIndex = currentImageId.indexOf(':');
       imageURI = currentImageId.substring(colonIndex + 1);
     }
-    return referencedImageId.endsWith(imageURI);
+    return referencedImageId?.endsWith(imageURI);
   }
 
   /**
@@ -3270,12 +3277,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
-      this.hasPixelSpacing = this.calibration.scale > 0;
+      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.rowPixelSpacing) {
       newImagePlaneModule.rowPixelSpacing = 1;
-      this.hasPixelSpacing = this.calibration.scale > 0;
+      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.columnCosines) {

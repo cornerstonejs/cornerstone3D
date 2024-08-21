@@ -85,6 +85,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     // this is really not efficient, but it works for now
     const volume = cache.getVolume(model.volumeId);
+
+    if (!volume) {
+      return;
+    }
+
     const imageIds = volume.imageIds;
 
     for (let i = 0; i < imageIds.length; i++) {

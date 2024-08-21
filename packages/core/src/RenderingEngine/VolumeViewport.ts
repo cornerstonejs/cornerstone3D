@@ -30,7 +30,7 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import { glMatrix, mat4, vec3 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 
@@ -260,9 +260,8 @@ class VolumeViewport extends BaseVolumeViewport {
     }
     super.resetCamera({ resetPan, resetZoom, resetToCenter });
 
-    this.resetVolumeViewportClippingRange();
-
     const activeCamera = this.getVtkActiveCamera();
+    this.setCameraClippingRange();
     const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
@@ -277,7 +276,7 @@ class VolumeViewport extends BaseVolumeViewport {
       const mapper = actorEntry.actor.getMapper();
       const vtkPlanes = mapper.getClippingPlanes();
 
-      if (vtkPlanes.length === 0 && !actorEntry.clippingFilter) {
+      if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {
         const clipPlane1 = vtkPlane.newInstance();
         const clipPlane2 = vtkPlane.newInstance();
         const newVtkPlanes = [clipPlane1, clipPlane2];
@@ -356,6 +355,8 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
+    // reset camera clipping range as well
+    this.setCameraClippingRange();
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
     this.viewportProperties.slabThickness = slabThickness;
   }
@@ -617,7 +618,7 @@ class VolumeViewport extends BaseVolumeViewport {
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
     const viewRef = super.getViewReference(viewRefSpecifier);
-    if (!viewRef.volumeId) {
+    if (!viewRef?.volumeId) {
       return;
     }
     const volume = cache.getVolume(viewRef.volumeId);
@@ -695,6 +696,21 @@ class VolumeViewport extends BaseVolumeViewport {
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
 
+  private setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        activeCamera.getDistance(),
+        activeCamera.getDistance() + this.getSlabThickness()
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+  }
+
   /**
    * Retrieves the clipping planes for the slices in the volume viewport.
    * @returns An array of vtkPlane objects representing the clipping planes, or an array of objects with normal and origin properties if raw is true.
@@ -745,7 +761,7 @@ class VolumeViewport extends BaseVolumeViewport {
   }[] => {
     const actorEntry = this.getDefaultActor();
 
-    if (!actorEntry.actor) {
+    if (!actorEntry?.actor) {
       console.warn('No image data found for calculating vtkPlanes.');
       return [];
     }

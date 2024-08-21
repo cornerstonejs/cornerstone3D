@@ -247,7 +247,7 @@ class Viewport implements IViewport {
       throw new Error('Rendering engine has been destroyed');
     }
 
-    return renderingEngine.offscreenMultiRenderWindow.getRenderer(this.id);
+    return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
   }
 
   /**
@@ -270,8 +270,8 @@ class Viewport implements IViewport {
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
-    if (this.options.displayArea) {
-      this.setDisplayArea(this.options.displayArea);
+    if (this.options?.displayArea) {
+      this.setDisplayArea(this.options?.displayArea);
     }
     if (immediate) {
       this.render();
@@ -713,7 +713,7 @@ class Viewport implements IViewport {
       this.setDisplayAreaScale(displayArea);
     } else {
       this.setInterpolationType(
-        this.getProperties().interpolationType || InterpolationType.LINEAR
+        this.getProperties()?.interpolationType || InterpolationType.LINEAR
       );
       this.setDisplayAreaFit(displayArea);
     }
@@ -825,7 +825,7 @@ class Viewport implements IViewport {
   protected setDisplayAreaFit(displayArea: DisplayArea) {
     const { imageArea, imageCanvasPoint } = displayArea;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = window?.devicePixelRatio || 1;
     const imageData = this.getDefaultImageData();
     if (!imageData) {
       return;
@@ -889,7 +889,7 @@ class Viewport implements IViewport {
   }
 
   public getDisplayArea(): DisplayArea | undefined {
-    return this.options.displayArea;
+    return this.options?.displayArea;
   }
 
   /**
@@ -960,12 +960,7 @@ class Viewport implements IViewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      // TODO: This should be the line below, but that causes issues with existing
-      // tests.  Not doing that adds significant fuzziness on rendering, so at
-      // some point it should be fixed.
-      // const middleIJK = dimensions.map((d) => Math.floor((d-1) / 2));
       const middleIJK = dimensions.map((d) => Math.floor(d / 2));
-
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
@@ -1493,11 +1488,11 @@ class Viewport implements IViewport {
       }
 
       const mapper = actorEntry.actor.getMapper();
-      let vtkPlanes = actorEntry.clippingFilter
-        ? actorEntry.clippingFilter.getClippingPlanes()
+      let vtkPlanes = actorEntry?.clippingFilter
+        ? actorEntry?.clippingFilter.getClippingPlanes()
         : mapper.getClippingPlanes();
 
-      if (vtkPlanes.length === 0 && actorEntry.clippingFilter) {
+      if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
         vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
       }
 
@@ -1570,11 +1565,11 @@ class Viewport implements IViewport {
     }
 
     const mapper = actorEntry.actor.getMapper();
-    let vtkPlanes = actorEntry.clippingFilter
-      ? actorEntry.clippingFilter.getClippingPlanes()
+    let vtkPlanes = actorEntry?.clippingFilter
+      ? actorEntry?.clippingFilter.getClippingPlanes()
       : mapper.getClippingPlanes();
 
-    if (vtkPlanes.length === 0 && actorEntry.clippingFilter) {
+    if (vtkPlanes.length === 0 && actorEntry?.clippingFilter) {
       vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
     }
 
@@ -1689,7 +1684,7 @@ class Viewport implements IViewport {
       )
     ) {
       // Could navigate as a volume to the reference with an orientation change
-      return options.withOrientation;
+      return options?.withOrientation;
     }
     return true;
   }

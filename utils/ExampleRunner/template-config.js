@@ -98,7 +98,7 @@ module.exports = {
   devServer: {
     hot: true,
     open: false,
-    port: ${process.env.CS3D_PORT || 3000},
+    port: ${process.env.CS3D_PORT || 3001},
     historyApiFallback: true,
     allowedHosts: [
       '127.0.0.1',

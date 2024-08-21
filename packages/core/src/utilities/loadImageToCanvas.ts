@@ -112,7 +112,7 @@ export default function loadImageToCanvas(
     imageAspect = false,
     viewportOptions: baseViewportOptions,
   } = options;
-  const volumeId = viewReference.volumeId;
+  const volumeId = viewReference?.volumeId;
   const isVolume = volumeId && !imageId;
   const viewportOptions =
     viewReference && baseViewportOptions
@@ -128,7 +128,7 @@ export default function loadImageToCanvas(
       const image = !isVolume && (imageOrVolume as IImage);
       const volume = isVolume && (imageOrVolume as IVolume);
       if (image) {
-        image.isPreScaled = image.isPreScaled || image.preScale.scaled;
+        image.isPreScaled = image.isPreScaled || image.preScale?.scaled;
       }
 
       if (thumbnail) {

@@ -10,6 +10,7 @@ import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { ImagePixelModule } from './ImagePixelModule';
 import type RGB from './RGB';
 import type { VoxelManager } from '../utilities';
+import type { IVoxelManager } from './IVoxelManager';
 
 interface CPUFallbackEnabledElement {
   scale?: number;
@@ -38,7 +39,7 @@ interface CPUFallbackEnabledElement {
     imagePlaneModule?: ImagePlaneModule;
     imagePixelModule?: ImagePixelModule;
   };
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
 }
 
 export type { CPUFallbackEnabledElement as default };

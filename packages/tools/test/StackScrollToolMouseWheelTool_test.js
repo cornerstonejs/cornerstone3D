@@ -4,12 +4,8 @@ import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_scrolled from './groundTruth/volumeURI_100_100_10_1_1_1_0_scrolled.png';
 import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_64_0_20_1_1_0_scrolled.png';
-import * as imageURI_64_64_15_5_3_2_0 from './groundTruth/imageURI_64_64_15_5_3_2_0.png';
 import * as imageURI_64_64_10_5_3_2_0 from './groundTruth/imageURI_64_64_10_5_3_2_0.png';
-import {
-  encodeImageIdInfo,
-  encodeVolumeIdInfo,
-} from '../../../utils/test/testUtils';
+import { MouseBindings } from '../src/enums';
 
 const {
   cache,
@@ -24,7 +20,7 @@ const {
 const { Events, ViewportType, InterpolationType } = Enums;
 
 const { registerVolumeLoader } = volumeLoader;
-const { StackScrollMouseWheelTool, ZoomTool, ToolGroupManager } = csTools3d;
+const { StackScrollTool, ZoomTool, ToolGroupManager } = csTools3d;
 
 const {
   fakeImageLoader,
@@ -32,6 +28,7 @@ const {
   fakeVolumeLoader,
   createNormalizedMouseEvent,
   compareImages,
+  createViewports,
 } = testUtils;
 
 const renderingEngineId = 'RENDERING_ENGINE_UID22';
@@ -39,7 +36,7 @@ const toolGroupId = 'stackscrollmousetool';
 
 const viewportId = 'VIEWPORT22';
 
-const volumeId = encodeVolumeIdInfo({
+const volumeId = testUtils.encodeVolumeIdInfo({
   loader: 'fakeVolumeLoader',
   name: 'volumeURI',
   rows: 100,
@@ -48,82 +45,47 @@ const volumeId = encodeVolumeIdInfo({
   xSpacing: 1,
   ySpacing: 1,
   zSpacing: 1,
-  rgb: 0,
-  pt: 0,
 });
 
-function createViewport(renderingEngine, viewportType, width, height) {
-  const element = document.createElement('div');
-
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
-
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: viewportType,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-        orientation: Enums.OrientationAxis.AXIAL,
-      },
-    },
-  ]);
-  return element;
-}
-
-describe('Cornerstone Tools Scroll Wheel: ', () => {
-  beforeAll(() => {
-    window.devicePixelRatio = 1;
-    cornerstone3D.setUseCPURendering(false);
-  });
+describe('Cornerstone Tools Scroll Wheel:', () => {
+  let testEnv;
+  let renderingEngine;
+  let stackToolGroup;
 
   beforeEach(function () {
-    csTools3d.init();
-    csTools3d.addTool(StackScrollMouseWheelTool);
-    csTools3d.addTool(ZoomTool);
-
-    cache.purgeCache();
-    this.DOMElements = [];
-
-    this.stackToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-    this.stackToolGroup.addTool(StackScrollMouseWheelTool.toolName, {
-      debounceIfNotLoaded: false,
+    testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId: renderingEngineId,
+      toolGroupIds: [toolGroupId],
+      tools: [StackScrollTool, ZoomTool],
+      toolActivations: {
+        [StackScrollTool.toolName]: {
+          bindings: [{ mouseButton: MouseBindings.Wheel }],
+        },
+      },
+      viewportIds: [viewportId],
     });
-    this.stackToolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
-    this.renderingEngine = new RenderingEngine(renderingEngineId);
-    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-    registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-    metaData.addProvider(fakeMetaDataProvider, 10000);
+    renderingEngine = testEnv.renderingEngine;
+    stackToolGroup = testEnv.toolGroups[toolGroupId];
   });
 
   afterEach(function () {
-    csTools3d.destroy();
-    cache.purgeCache();
-    this.renderingEngine.destroy();
-    metaData.removeProvider(fakeMetaDataProvider);
-    imageLoader.unregisterAllImageLoaders();
-    ToolGroupManager.destroyToolGroup(toolGroupId);
-
-    this.DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId: renderingEngineId,
+      toolGroupIds: [toolGroupId],
+      cleanupDOMElements: true,
     });
   });
 
   it('Should successfully scroll through a volume', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.ORTHOGRAPHIC,
-      512,
-      128
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportId: viewportId,
+      width: 512,
+      height: 128,
+    });
 
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const vp = renderingEngine.getViewport(viewportId);
 
     function renderEventHandler() {
       const index1 = [50, 50, 4];
@@ -178,12 +140,10 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(
-          this.renderingEngine,
+          renderingEngine,
           [{ volumeId: volumeId }],
           [viewportId]
         );
@@ -195,41 +155,36 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   });
 
   it('Should successfully scroll through stack of images', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      256,
-      256
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      viewportId: viewportId,
+      width: 256,
+      height: 256,
+    });
 
-    const imageId1 = encodeImageIdInfo({
+    const imageId1 = testUtils.encodeImageIdInfo({
       loader: 'fakeImageLoader',
-      name: 'imageURI',
+      id: 'imageId1',
       rows: 64,
       columns: 64,
       barStart: 10,
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
-    const imageId2 = encodeImageIdInfo({
+    const imageId2 = testUtils.encodeImageIdInfo({
       loader: 'fakeImageLoader',
-      name: 'imageURI',
+      id: 'imageId2',
       rows: 64,
       columns: 64,
-      barStart: 10,
-      barWidth: 5,
+      barStart: 0,
+      barWidth: 20,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const vp = renderingEngine.getViewport(viewportId);
 
     function renderEventHandler() {
       // First render is the actual image render
@@ -286,8 +241,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
 
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     try {
       vp.setStack([imageId1, imageId2], 0).then(() => {
         vp.setProperties({ interpolationType: InterpolationType.NEAREST });
@@ -299,15 +252,14 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
   });
 
   it('Should successfully scroll through stack of images and then go back', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      256,
-      256
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      viewportId: viewportId,
+      width: 256,
+      height: 256,
+    });
 
-    const imageId1 = encodeImageIdInfo({
+    const imageId1 = testUtils.encodeImageIdInfo({
       loader: 'fakeImageLoader',
       name: 'imageURI',
       rows: 64,
@@ -316,24 +268,20 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
       barWidth: 5,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
-    const imageId2 = encodeImageIdInfo({
+    const imageId2 = testUtils.encodeImageIdInfo({
       loader: 'fakeImageLoader',
       name: 'imageURI',
       rows: 64,
       columns: 64,
-      barStart: 10,
-      barWidth: 5,
+      barStart: 0,
+      barWidth: 20,
       xSpacing: 1,
       ySpacing: 1,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const vp = renderingEngine.getViewport(viewportId);
 
     let handlerRun = false;
     let pageX1;
@@ -463,8 +411,6 @@ describe('Cornerstone Tools Scroll Wheel: ', () => {
     }
 
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
-
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
 
     try {
       vp.setStack([imageId1, imageId2], 0).then(() => {

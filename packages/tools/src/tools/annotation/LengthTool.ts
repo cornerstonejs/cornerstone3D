@@ -625,8 +625,6 @@ class LengthTool extends AnnotationTool {
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      let activeHandleCanvasCoords;
-
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -646,6 +644,14 @@ class LengthTool extends AnnotationTool {
           enabledElement
         );
       }
+
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed');
+        return renderStatus;
+      }
+
+      let activeHandleCanvasCoords;
 
       if (!isAnnotationVisible(annotationUID)) {
         continue;

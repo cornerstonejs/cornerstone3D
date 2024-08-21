@@ -1,3 +1,4 @@
+import { cache, utilities } from '@cornerstonejs/core';
 import { decodeImageIdInfo } from './testUtils';
 import {
   getVerticalBarImage,
@@ -25,18 +26,19 @@ import {
  */
 const fakeImageLoader = (imageId) => {
   const imageInfo = decodeImageIdInfo(imageId);
-  const { rows, columns, barStart, barWidth, xSpacing, ySpacing, rgb } =
+  const { rows, columns, barStart, barWidth, xSpacing, ySpacing, rgb, id } =
     imageInfo;
 
-  let pixelData;
+  const numberOfComponents = rgb ? 3 : 1;
+  const pixelData = new Uint8Array(rows * columns * numberOfComponents);
 
-  if (rgb) {
-    pixelData = getVerticalBarRGBImage(rows, columns, barStart, barWidth);
-  } else {
-    pixelData = getVerticalBarImage(rows, columns, barStart, barWidth);
-  }
+  const imageVoxelManager = utilities.VoxelManager.createImageVoxelManager({
+    height: rows,
+    width: columns,
+    numberOfComponents,
+    scalarData: pixelData,
+  });
 
-  // Todo: separated fakeImageLoader for cpu and gpu
   const image = {
     rows,
     columns,
@@ -45,6 +47,7 @@ const fakeImageLoader = (imageId) => {
     imageId,
     intercept: 0,
     slope: 1,
+    voxelManager: imageVoxelManager,
     invert: false,
     windowCenter: 40,
     windowWidth: 400,
@@ -52,13 +55,27 @@ const fakeImageLoader = (imageId) => {
     minPixelValue: 0,
     rowPixelSpacing: ySpacing,
     columnPixelSpacing: xSpacing,
-    getPixelData: () => pixelData,
+    getPixelData: () => imageVoxelManager.getScalarData(),
     sizeInBytes: rows * columns * 1, // 1 byte for now
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
     imageFrame: {
       photometricInterpretation: rgb ? 'RGB' : 'MONOCHROME2',
     },
   };
+
+  if (rgb) {
+    getVerticalBarRGBImage(
+      imageVoxelManager,
+      rows,
+      columns,
+      barStart,
+      barWidth
+    );
+  } else {
+    getVerticalBarImage(imageVoxelManager, rows, columns, barStart, barWidth);
+  }
+
+  // Todo: separated fakeImageLoader for cpu and gpu
 
   return {
     promise: Promise.resolve(image),
@@ -97,6 +114,11 @@ function fakeMetaDataProvider(type, imageId) {
   }
 
   const imageInfo = decodeImageIdInfo(imageId);
+
+  if (!imageInfo) {
+    return;
+  }
+
   const {
     rows,
     columns,
@@ -104,8 +126,10 @@ function fakeMetaDataProvider(type, imageId) {
     barWidth,
     xSpacing,
     ySpacing,
+    sliceIndex = 0,
     rgb,
     PT = false,
+    id,
   } = imageInfo;
 
   const modality = PT ? 'PT' : 'MR';
@@ -145,7 +169,7 @@ function fakeMetaDataProvider(type, imageId) {
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
-      imagePositionPatient: [0, 0, 0],
+      imagePositionPatient: [0, 0, sliceIndex],
       pixelSpacing: [xSpacing, ySpacing],
       rowPixelSpacing: ySpacing,
       columnPixelSpacing: xSpacing,

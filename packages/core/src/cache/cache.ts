@@ -56,26 +56,32 @@ class Cache implements ICache {
   };
 
   /**
-   * Checks if there is enough space in the cache for requested byte size
+   * Determines if the cache can accommodate the requested byte size.
    *
-   * It returns true if the available space (unallocated space minus shared cache size)
-   * is greater than the requested byteLength.
+   * This method calculates the available space by considering both unallocated space
+   * and the potential space that can be freed by purging non-shared images.
+   * It returns true if this available space exceeds the requested byteLength.
    *
-   * @param byteLength - byte length of requested byte size
-   *
-   * @returns boolean indicating if there is enough space in the cache
+   * @param byteLength - The number of bytes to be cached.
+   * @returns {boolean} True if the cache can accommodate the requested size, false otherwise.
    */
-  public isCacheable = (byteLength: number): boolean => {
-    const unallocatedSpace = this.getBytesAvailable();
+  public isCacheable = (byteLength) => {
+    const bytesAvailable = this.getBytesAvailable();
 
-    // Calculate the size of images with shared cache keys
-    const sharedCacheSize = Array.from(this._imageCache.values())
-      .filter((image) => image.sharedCacheKey)
-      .reduce((total, image) => total + (image.sizeInBytes || 0), 0);
+    const purgableImageBytes = Array.from(this._imageCache.values()).reduce(
+      (total, image) => {
+        if (!image.sharedCacheKey) {
+          return total + image.sizeInBytes;
+        }
+        return total;
+      },
+      0
+    );
 
-    const availableSpace = unallocatedSpace - sharedCacheSize;
+    const availableSpaceWithoutSharedCacheKey =
+      bytesAvailable + purgableImageBytes;
 
-    return availableSpace > byteLength;
+    return availableSpaceWithoutSharedCacheKey >= byteLength;
   };
 
   /**
@@ -395,10 +401,10 @@ class Cache implements ICache {
    * @param imageId - ImageId for the image
    * @param imageLoadObject - The object that is loading or loaded the image
    */
-  public putImageLoadObject(
+  public async putImageLoadObject(
     imageId: string,
     imageLoadObject: IImageLoadObject
-  ): void {
+  ): Promise<void> {
     if (imageId === undefined) {
       console.error('putImageLoadObject: imageId must not be undefined');
       throw new Error('putImageLoadObject: imageId must not be undefined');
@@ -444,14 +450,22 @@ class Cache implements ICache {
     // For some reason we need to put it here after the rework of volumes
     this._imageCache.set(imageId, cachedImage);
 
-    imageLoadObject.promise
+    return imageLoadObject.promise
       .then((image: IImage) => {
-        this._putImageCommon(imageId, image, cachedImage);
+        try {
+          this._putImageCommon(imageId, image, cachedImage);
+        } catch (error) {
+          console.debug(
+            `Error in _putImageCommon for image ${imageId}:`,
+            error
+          );
+          throw error; // Re-throw the error to be caught in the .catch block
+        }
       })
       .catch((error) => {
-        console.error(`Error caching image ${imageId}:`, error);
+        console.debug(`Error caching image ${imageId}:`, error);
         this._imageCache.delete(imageId);
-        throw error;
+        throw error; // Re-throw the error to be caught by the caller
       });
   }
 
@@ -616,7 +630,7 @@ class Cache implements ICache {
 
     // If the volume has image IDs, we need to make sure that they are not getting
     // deleted automatically.  Mark the imageIds somehow so that they are discernable from the others.
-    volume.imageIds.forEach((imageId) => {
+    volume.imageIds?.forEach((imageId) => {
       const image = this._imageCache.get(imageId);
       if (image) {
         image.sharedCacheKey = volumeId;
@@ -681,10 +695,10 @@ class Cache implements ICache {
    * @param volumeId - volumeId of the volume
    * @param volumeLoadObject - The object that is loading or loaded the volume
    */
-  public putVolumeLoadObject(
+  public async putVolumeLoadObject(
     volumeId: string,
     volumeLoadObject: IVolumeLoadObject
-  ): void {
+  ): Promise<void> {
     if (volumeId === undefined) {
       throw new Error('putVolumeLoadObject: volumeId must not be undefined');
     }
@@ -717,9 +731,18 @@ class Cache implements ICache {
 
     this._volumeCache.set(volumeId, cachedVolume);
 
-    volumeLoadObject.promise
+    return volumeLoadObject.promise
       .then((volume: IImageVolume) => {
-        this._putVolumeCommon(volumeId, volume, cachedVolume);
+        try {
+          this._putVolumeCommon(volumeId, volume, cachedVolume);
+        } catch (error) {
+          console.error(
+            `Error in _putVolumeCommon for volume ${volumeId}:`,
+            error
+          );
+          this._volumeCache.delete(volumeId); // Clean up the cache if an error occurs
+          throw error;
+        }
       })
       .catch((error) => {
         this._volumeCache.delete(volumeId);

@@ -12,6 +12,7 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
+import type { LocalVolumeOptions } from './../loaders/volumeLoader';
 import type {
   IViewport,
   PublicViewportInput,
@@ -118,7 +119,7 @@ import type { ImageLoadListener } from './ImageLoadListener';
 import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type WSIViewportProperties from './WSIViewportProperties';
-import type IVideoViewport from './IVideoViewport';
+import type { IVideoViewport } from './IVideoViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
@@ -131,7 +132,10 @@ import type { VolumeProps } from './VolumeProps';
 import type { BoundsLPS } from './BoundsLPS';
 // Sometimes the type is needed rather than the class, so import
 // the type only here.
-import type PointsManager from '../utilities/PointsManager';
+import type {
+  IPointsManager,
+  PolyDataPointConfiguration,
+} from './IPointsManager';
 import type IImageFrame from './IImageFrame';
 import type {
   DicomDateObject,
@@ -143,6 +147,8 @@ import type {
   PatientStudyModuleMetadata,
   TransferSyntaxMetadata,
 } from './MetadataModuleTypes';
+import type { IVoxelManager } from './IVoxelManager';
+import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 
 export type {
   // config
@@ -163,7 +169,8 @@ export type {
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
-  PointsManager,
+  IPointsManager,
+  PolyDataPointConfiguration,
   Scaling,
   IStreamingImageVolume,
   IImage,
@@ -278,4 +285,8 @@ export type {
   ImagePixelModuleMetadata,
   PatientStudyModuleMetadata,
   TransferSyntaxMetadata,
+  LocalVolumeOptions,
+  IVoxelManager,
+  IRLEVoxelMap,
+  RLERun,
 };

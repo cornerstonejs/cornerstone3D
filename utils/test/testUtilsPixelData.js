@@ -1,189 +1,122 @@
 import { colors } from './testUtils';
 
-function createPixelData(width, height, numberOfComponents = 1) {
-  return new Uint8Array(width * height * numberOfComponents);
-}
-
-function getVerticalBarImage(rows, columns, barStart, barWidth) {
-  const pixelData = createPixelData(columns, rows);
+function getVerticalBarImage(
+  imageVoxelManager,
+  rows,
+  columns,
+  barStart,
+  barWidth,
+  k = 0
+) {
   for (let i = 0; i < rows; i++) {
     for (let j = barStart; j < barStart + barWidth; j++) {
-      pixelData[i * columns + j] = 255;
+      // Since our screenshots are taken with the old method, i'm just swapping the i and j
+      // to match the new method of setting the pixel data and we don't have to change the
+      // screenshot, this is fine
+      imageVoxelManager.setAtIJK(j, i, k, 255);
     }
   }
-  return pixelData;
 }
 
-/**
- * Creates an array of pixel data arrays with a vertical bar pattern.
- * @param {number} width - Width of each image
- * @param {number} height - Height of each image
- * @param {number} numImages - Number of images in the set
- * @param {number} barStart - Starting position of the bar
- * @param {number} barWidth - Width of the bar
- * @returns {Array<Uint8Array>} Array of pixel data arrays
- */
-function getVerticalBarImages(width, height, numImages) {
-  let barStart = 0;
-  const barWidth = Math.floor(height / numImages);
-  return Array(numImages)
-    .fill()
-    .map((_, index) => {
-      const currentBarStart = (barStart + index * barWidth) % width;
-      return getVerticalBarImage(height, width, currentBarStart, barWidth);
-    });
-}
-
-function getVerticalBarRGBImage(rows, columns, sliceIndex, barWidth) {
-  const pixelData = createPixelData(columns, rows, 3);
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < columns; j++) {
-      const index = (i * columns + j) * 3;
-      pixelData[index] = colors[sliceIndex][0];
-      pixelData[index + 1] = colors[sliceIndex][1];
-      pixelData[index + 2] = colors[sliceIndex][2];
-    }
-  }
-  return pixelData;
-}
-
-/**
- * Creates an array of RGB pixel data arrays with a vertical bar pattern.
- * @param {number} width - Width of each image
- * @param {number} height - Height of each image
- * @param {number} numImages - Number of images in the set
- * @returns {Array<Uint8Array>} Array of RGB pixel data arrays
- */
-function getVerticalBarRGBImages(width, height, numImages) {
-  const barWidth = Math.floor(height / numImages);
-  return Array(numImages)
-    .fill()
-    .map((_, z) => getVerticalBarRGBImage(height, width, z, barWidth));
-}
-
-/**
- * Creates an array of pixel data arrays with an exact region pattern.
- * @param {number} width - Width of each image
- * @param {number} height - Height of each image
- * @param {number} numImages - Number of images in the set
- * @param {number} regionStart - Starting position of the region
- * @param {number} regionWidth - Width of the region
- * @returns {Array<Uint8Array>} Array of pixel data arrays
- */
-function getExactRegionImages(
-  width,
-  height,
-  numImages,
-  regionStart,
-  regionWidth
+function getVerticalBarRGBImage(
+  imageVoxelManager,
+  rows,
+  columns,
+  barStart,
+  barWidth
 ) {
-  return Array(numImages)
-    .fill()
-    .map(() => {
-      const pixelData = new Uint8Array(width * height);
-      for (let row = 0; row < height; row++) {
-        for (let col = 0; col < width; col++) {
-          if (
-            col >= regionStart &&
-            col < regionStart + regionWidth &&
-            row >= regionStart &&
-            row < regionStart + regionWidth
-          ) {
-            pixelData[row * width + col] = 255;
-          }
-        }
+  let start = barStart;
+
+  colors.forEach((color) => {
+    for (let i = 0; i < rows; i++) {
+      for (let j = start; j < start + barWidth; j++) {
+        // Since our screenshots are taken with the old method, i'm just swapping the i and j
+        // to match the new method of setting the pixel data and we don't have to change the
+        // screenshot, this is fine
+        imageVoxelManager.setAtIJK(j, i, 0, color);
       }
-      return pixelData;
-    });
+    }
+
+    start += barWidth;
+  });
 }
 
-// function getExactRegionVolume(
-//   rows,
-//   columns,
-//   slices,
-//   start_X,
-//   start_Y,
-//   start_Z,
-//   end_X,
-//   end_Y,
-//   end_Z,
-//   valueForSegmentIndex
-// ) {
-//   let value = valueForSegmentIndex;
+function getVerticalBarVolume(volumeVoxelManager, rows, columns, slices) {
+  const yMultiple = rows;
+  const zMultiple = rows * columns;
 
-//   if (!value) {
-//     value = 1;
-//   }
+  let barStart = 0;
+  const barWidth = Math.floor(rows / slices);
 
-//   const yMultiple = rows;
-//   const zMultiple = rows * columns;
+  for (let z = 0; z < slices; z++) {
+    for (let i = 0; i < rows; i++) {
+      for (let j = barStart; j < barStart + barWidth; j++) {
+        // Since our screenshots are taken with the old method, i'm just swapping the i and j
+        // to match the new method of setting the pixel data and we don't have to change the
+        // screenshot, this is fine
+        volumeVoxelManager.setAtIJK(j, i, z, 255);
+      }
+    }
+    barStart += barWidth;
+  }
+}
 
-//   // from [start_x, start_y, start_z] to [end_x, end_y, end_z]
-//   // create all the indices that are in the region of interest
-//   const indices = [];
-//   for (let z = start_Z; z < end_Z; z++) {
-//     for (let y = start_Y; y < end_Y; y++) {
-//       for (let x = start_X; x < end_X; x++) {
-//         indices.push([x, y, z]);
-//       }
-//     }
-//   }
+function getExactRegionVolume(
+  volumeVoxelManager,
+  rows,
+  columns,
+  slices,
+  exactRegion
+) {
+  const {
+    startRow,
+    startColumn,
+    startSlice,
+    endRow,
+    endColumn,
+    endSlice,
+    value = 1,
+  } = exactRegion;
 
-//   let pixelData;
-//   pixelData = new Uint8Array(rows * columns * slices);
+  const yMultiple = rows;
+  const zMultiple = rows * columns;
 
-//   for (const index of indices) {
-//     const [x, y, z] = index;
-//     pixelData[z * zMultiple + y * yMultiple + x] = value;
-//   }
+  const indices = [];
+  for (let z = startSlice; z < endSlice; z++) {
+    for (let y = startRow; y < endRow; y++) {
+      for (let x = startColumn; x < endColumn; x++) {
+        // Since our screenshots are taken with the old method, i'm just swapping the i and j
+        // to match the new method of setting the pixel data and we don't have to change the
+        // screenshot, this is fine
+        volumeVoxelManager.setAtIJK(x, y, z, value);
+      }
+    }
+  }
+}
 
-//   return pixelData;
-// }
+function getVerticalBarRGBVolume(volumeVoxelManager, rows, columns, slices) {
+  let index, pixelData;
+  const yMultiple = rows;
+  const zMultiple = rows * columns;
+  pixelData = new Uint8Array(rows * columns * slices * 3);
+  for (let z = 0; z < slices; z++) {
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < columns; j++) {
+        // Since our screenshots are taken with the old method, i'm just swapping the i and j
+        // to match the new method of setting the pixel data and we don't have to change the
+        // screenshot, this is fine
+        volumeVoxelManager.setAtIJK(j, i, z, colors[z]);
+      }
+    }
+  }
 
-// function getVerticalBarVolume(rows, columns, slices) {
-//   const yMultiple = rows;
-//   const zMultiple = rows * columns;
-
-//   let barStart = 0;
-//   const barWidth = Math.floor(rows / slices);
-
-//   let pixelData;
-//   pixelData = new Uint8Array(rows * columns * slices);
-//   for (let z = 0; z < slices; z++) {
-//     for (let i = 0; i < rows; i++) {
-//       for (let j = barStart; j < barStart + barWidth; j++) {
-//         pixelData[z * zMultiple + i * yMultiple + j] = 255;
-//       }
-//     }
-//     barStart += barWidth;
-//   }
-
-//   return pixelData;
-// }
-
-// function getVerticalBarRGBVolume(rows, columns, slices) {
-//   let index, pixelData;
-//   const yMultiple = rows;
-//   const zMultiple = rows * columns;
-//   pixelData = new Uint8Array(rows * columns * slices * 3);
-//   for (let z = 0; z < slices; z++) {
-//     for (let i = 0; i < rows; i++) {
-//       for (let j = 0; j < columns; j++) {
-//         index = z * zMultiple + i * yMultiple + j;
-//         pixelData[index * 3] = colors[z][0];
-//         pixelData[index * 3 + 1] = colors[z][1];
-//         pixelData[index * 3 + 2] = colors[z][2];
-//       }
-//     }
-//   }
-
-//   return pixelData;
-// }
+  return pixelData;
+}
 
 export {
   getVerticalBarImage,
-  getVerticalBarImages,
+  getVerticalBarVolume,
   getVerticalBarRGBImage,
-  getVerticalBarRGBImages,
-  getExactRegionImages,
+  getVerticalBarRGBVolume,
+  getExactRegionVolume,
 };

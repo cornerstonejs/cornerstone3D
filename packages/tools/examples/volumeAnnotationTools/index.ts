@@ -4,6 +4,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  imageLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,6 +13,11 @@ import {
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import {
+  encodeVolumeIdInfo,
+  fakeImageLoader,
+  fakeVolumeLoader,
+} from '../../../../utils/test/testUtils';
 
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -31,7 +37,7 @@ const { MouseBindings } = csToolsEnums;
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+// const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -74,12 +80,25 @@ instructions.innerText =
 content.append(instructions);
 // ============================= //
 
+const volumeId = encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+  zSpacing: 1,
+});
+
 /**
  * Runs the demo
  */
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+  volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
+  imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
 
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
@@ -119,23 +138,23 @@ async function run() {
   toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const ptImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-  });
+  // const ptImageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  // });
 
-  const ctImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-  });
+  // const ctImageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  // });
 
-  const imageIds = ptImageIds;
+  // const imageIds = ptImageIds;
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -193,9 +212,7 @@ async function run() {
   );
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
+  const volume = await volumeLoader.createAndCacheVolume(volumeId);
 
   // Set the volume to load
   await volume.load();

@@ -2,13 +2,10 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
 import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
+import { getTransferFunctionHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
-
-function computeFnToString(pwfun, useIComps, numberOfComponents) {
-  return pwfun ? `${pwfun.getMTime()}-${useIComps}-${numberOfComponents}` : '0';
-}
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -61,7 +58,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     const scalarOpacityFunc = vprop.getScalarOpacity();
     const opTex =
       model._openGLRenderWindow.getGraphicsResourceForObject(scalarOpacityFunc);
-    let toString = computeFnToString(
+    let toString = getTransferFunctionHash(
       scalarOpacityFunc,
       useIndependentComps,
       numIComps
@@ -149,7 +146,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     // rebuild color tfun?
     const colorTransferFunc = vprop.getRGBTransferFunction();
-    toString = computeFnToString(
+    toString = getTransferFunctionHash(
       colorTransferFunc,
       useIndependentComps,
       numIComps
@@ -265,6 +262,13 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
           null
         );
+
+        // do an initial update since some data may be already
+        // available and we can avoid a re-render to trigger
+        // the update
+        model.scalarTexture.update3DFromRaw();
+
+        // since we don't have scalars we don't need to set graphics resource for the scalar texture
       } else {
         model.scalarTexture.deactivate();
         model.scalarTexture.update3DFromRaw();
@@ -310,32 +314,26 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     model.VBOBuildTime.modified();
   };
 
-  publicAPI.getRenderTargetSize = () => {
-    if (model._useSmallViewport) {
-      return [model._smallViewportWidth, model._smallViewportHeight];
+  publicAPI.getNeedToRebuildBufferObjects = (ren, actor) => {
+    if (
+      model.VBOBuildTime.getMTime() < publicAPI.getMTime() ||
+      model.VBOBuildTime.getMTime() < actor.getMTime() ||
+      model.VBOBuildTime.getMTime() < model.renderable.getMTime() ||
+      model.VBOBuildTime.getMTime() < actor.getProperty().getMTime() ||
+      model.VBOBuildTime.getMTime() < model.currentInput.getMTime() ||
+      model.VBOBuildTime.getMTime() < model.scalarTexture?.getMTime() ||
+      model.VBOBuildTime.getMTime() < model.colorTexture?.getMTime() ||
+      model.VBOBuildTime.getMTime() <
+        model.labelOutlineThicknessTexture?.getMTime() ||
+      !model.scalarTexture?.getHandle() ||
+      !model.colorTexture?.getHandle() ||
+      !model.labelOutlineThicknessTexture?.getHandle()
+    ) {
+      return true;
     }
 
-    const { usize, vsize } = model._openGLRenderer.getTiledSizeAndOrigin();
-
-    return [usize, vsize];
+    return false;
   };
-
-  publicAPI.getRenderTargetOffset = () => {
-    const { lowerLeftU, lowerLeftV } =
-      model._openGLRenderer.getTiledSizeAndOrigin();
-
-    return [lowerLeftU, lowerLeftV];
-  };
-
-  // TODO: it seems like this may be needed to reset the GPU memory associated
-  // with a volume
-  // publicAPI.hardReset = () => {
-  //   model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //
-  //   model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.scalarTexture.resetFormatAndType();
-  // };
 }
 
 // ----------------------------------------------------------------------------

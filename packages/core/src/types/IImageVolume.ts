@@ -6,6 +6,7 @@ import type Mat3 from './Mat3';
 import type { PixelDataTypedArrayString } from './PixelDataTypedArray';
 import type RGB from './RGB';
 import type { vtkStreamingOpenGLTexture } from '../cache/classes/ImageVolume';
+import type { IVoxelManager } from './IVoxelManager';
 
 /**
  * Cornerstone ImageVolume interface. Todo: we should define new IVolume class
@@ -63,7 +64,7 @@ interface IImageVolume {
    * The new volume model which solely relies on the separate image data
    * and do not cache the volume data at all
    */
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
   /**

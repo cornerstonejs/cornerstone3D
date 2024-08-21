@@ -1,71 +1,43 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '@cornerstonejs/tools';
-import {
-  fakeImageLoader,
-  fakeMetaDataProvider,
-} from '../../../../../utils/test/testUtils';
-import { encodeImageIdInfo } from '../../../../../utils/test/testUtils';
+import * as testUtils from '../../../../../utils/test/testUtils';
 
 const { cache, RenderingEngine, Enums, metaData, imageLoader } = cornerstone3D;
 
+const { ViewportType } = Enums;
+
+const renderingEngineId = 'renderingEngineId-stackContextPrefetch_test';
 const viewportId = 'VIEWPORT';
 
-function createViewport(renderingEngine, viewportId, width, height) {
-  const element = document.createElement('div');
-
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
-
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: Enums.ViewportType.STACK,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-      },
-    },
-  ]);
-  return element;
-}
-
 describe('stackContextPrefetch:', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
+  let testEnv;
 
   beforeEach(function () {
-    cache.purgeCache();
-    this.DOMElements = [];
-    this.renderingEngine = new RenderingEngine();
-    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-    metaData.addProvider(fakeMetaDataProvider, 10000);
+    testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      viewportIds: [viewportId],
+    });
   });
 
   afterEach(function () {
-    this.DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        csTools3d.utilities.stackContextPrefetch.disable(el);
-      }
-    });
-    cache.purgeCache();
-    this.renderingEngine.destroy();
-    metaData.removeProvider(fakeMetaDataProvider);
-    imageLoader.unregisterAllImageLoaders();
-    this.DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      cleanupDOMElements: true,
     });
   });
 
   it('can be disabled without error', function (done) {
-    const element = createViewport(this.renderingEngine, viewportId, 128, 128);
-    this.DOMElements.push(element);
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const element = testUtils.createViewports(testEnv.renderingEngine, {
+      viewportType: ViewportType.STACK,
+      orientation: Enums.OrientationAxis.AXIAL,
+      viewportId: viewportId,
+      width: 128,
+      height: 128,
+    });
 
-    const imageId1 = encodeImageIdInfo({
+    const vp = testEnv.renderingEngine.getViewport(viewportId);
+
+    const imageId1 = testUtils.encodeImageIdInfo({
       loader: 'fakeImageLoader',
       name: 'imageURI',
       rows: 64,
@@ -74,8 +46,6 @@ describe('stackContextPrefetch:', () => {
       barWidth: 10,
       xSpacing: 5,
       ySpacing: 5,
-      rgb: 0,
-      pt: 0,
       sliceIndex: 0,
     });
 

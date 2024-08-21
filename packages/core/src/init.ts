@@ -97,7 +97,7 @@ function isIOS() {
  * @returns A promise that resolves to true if cornerstone has been initialized successfully.
  * @category Initialization
  */
-async function init(configuration = config): Promise<boolean> {
+function init(configuration = config): boolean {
   if (csRenderInitialized) {
     return csRenderInitialized;
   }
@@ -146,10 +146,12 @@ async function init(configuration = config): Promise<boolean> {
  * @category Initialization
  *
  */
-function setUseCPURendering(status: boolean): void {
+function setUseCPURendering(status: boolean, updateViewports = true): void {
   config.rendering.useCPURendering = status;
   csRenderInitialized = true;
-  _updateRenderingPipelinesForAllViewports();
+  if (updateViewports) {
+    _updateRenderingPipelinesForAllViewports();
+  }
 }
 
 function setPreferSizeOverAccuracy(status: boolean): void {

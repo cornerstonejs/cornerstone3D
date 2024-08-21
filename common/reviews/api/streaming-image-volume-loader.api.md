@@ -4,15 +4,13 @@
 
 ```ts
 
-import type { GetGPUTier } from 'detect-gpu';
-import { mat4 } from 'gl-matrix';
-import type { TierResult } from 'detect-gpu';
+import type { mat4 } from 'gl-matrix';
+import { RequestType as RequestType_2 } from 'packages/core/dist/esm/enums';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type { vtkObject } from '@kitware/vtk.js/interfaces';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
@@ -48,22 +46,56 @@ export const helpers: {
 export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements Types.IDynamicImageVolume {
     constructor(imageVolumeProperties: Types.ImageVolumeProps & {
         splittingTag: string;
+        imageIdGroups: string[][];
     }, streamingProperties: Types.IStreamingVolumeProperties);
+    // (undocumented)
+    flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
+    // (undocumented)
+    flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
+    // (undocumented)
+    getCurrentTimePointImageIds(): string[];
     // (undocumented)
     getImageIdsToLoad(): string[];
     // (undocumented)
-    getImageLoadRequests: (priority: number) => any[];
+    getImageLoadRequests: (priority: number) => {
+        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => any;
+        imageId: string;
+        imageIdIndex: number;
+        options: {
+            targetBuffer: {
+                type: Types.PixelDataTypedArrayString;
+                rows: any;
+                columns: any;
+            };
+            allowFloatRendering: boolean;
+            preScale: {
+                enabled: boolean;
+                scalingParameters: Types.ScalingParameters;
+            };
+            transferPixelData: boolean;
+            requestType: RequestType_2;
+            transferSyntaxUID: any;
+            additionalDetails: {
+                imageId: string;
+                imageIdIndex: number;
+                volumeId: string;
+            };
+        };
+        priority: number;
+        requestType: RequestType_2;
+        additionalDetails: {
+            volumeId: string;
+        };
+    }[];
     // (undocumented)
-    getScalarData(): Types.PixelDataTypedArray;
+    numTimePoints: number;
     // (undocumented)
-    isDynamicVolume(): boolean;
-    // (undocumented)
-    get numTimePoints(): number;
+    scroll(delta: number): void;
     // (undocumented)
     get splittingTag(): string;
     // (undocumented)
     get timePointIndex(): number;
-    set timePointIndex(newTimePointIndex: number);
+    set timePointIndex(index: number);
 }
 
 // @public (undocumented)

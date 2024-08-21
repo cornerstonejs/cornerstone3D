@@ -4,19 +4,21 @@
 
 ```ts
 
-import type { GetGPUTier } from 'detect-gpu';
-import { mat4 } from 'gl-matrix';
-import type { TierResult } from 'detect-gpu';
+import type { mat4 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type { vtkObject } from '@kitware/vtk.js/interfaces';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 // @public (undocumented)
-export function cornerstoneNiftiImageVolumeLoader(volumeId: string): IVolumeLoader;
+export function cornerstoneNiftiImageLoader(imageId: string): Types.IImageLoadObject;
+
+// @public (undocumented)
+export function createNiftiImageIdsAndCacheMetadata({ url }: {
+    url: any;
+}): Promise<any[]>;
 
 declare namespace Enums {
     export {
@@ -33,20 +35,16 @@ enum Events {
     NIFTI_VOLUME_PROGRESS = "CORNERSTONE_NIFTI_VOLUME_PROGRESS"
 }
 
-// @public (undocumented)
-function fetchAndAllocateNiftiVolume(volumeId: string): Promise<NiftiImageVolume>;
-
 declare namespace helpers {
     export {
         modalityScaleNifti,
-        makeVolumeMetadata,
-        fetchAndAllocateNiftiVolume
+        makeVolumeMetadata
     }
 }
 export { helpers }
 
 // @public (undocumented)
-function makeVolumeMetadata(niftiHeader: any, orientation: any, scalarData: any, pixelRepresentation: any): {
+function makeVolumeMetadata(niftiHeader: any, orientation: any, pixelRepresentation: any): {
     volumeMetadata: Types.Metadata;
     dimensions: Types.Point3;
     direction: Types.Mat3;
@@ -57,23 +55,6 @@ function modalityScaleNifti(niftiHeader: any, niftiImageBuffer: any): {
     scalarData: Types.PixelDataTypedArray;
     pixelRepresentation: number;
 };
-
-// @public (undocumented)
-export class NiftiImageVolume extends ImageVolume {
-    constructor(imageVolumeProperties: Types.ImageVolumeProps, streamingProperties: NiftiImageProperties);
-    // (undocumented)
-    cancelLoading: () => void;
-    // (undocumented)
-    clearLoadCallbacks(): void;
-    // (undocumented)
-    controller: AbortController;
-    // (undocumented)
-    decache(): void;
-    // (undocumented)
-    load: (callback: (...args: unknown[]) => void, priority?: number) => void;
-    // (undocumented)
-    loadStatus: LoadStatus;
-}
 
 // (No @packageDocumentation comment for this package)
 
