@@ -20,11 +20,11 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   centerWorld: Types.Point3;
   viewport: Types.IViewport;
   imageVoxelManager:
-    | csUtils.VoxelManager<number>
-    | csUtils.VoxelManager<Types.RGB>;
-  segmentationVoxelManager: csUtils.VoxelManager<number>;
+    | Types.IVoxelManager<number>
+    | Types.IVoxelManager<Types.RGB>;
+  segmentationVoxelManager: Types.IVoxelManager<number>;
   segmentationImageData: vtkImageData;
-  previewVoxelManager: csUtils.VoxelManager<number>;
+  previewVoxelManager: Types.IVoxelManager<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;

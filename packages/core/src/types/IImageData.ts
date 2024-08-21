@@ -6,6 +6,7 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type RGB from './RGB';
 import type IImageCalibration from './IImageCalibration';
 import type { VoxelManager } from '../utilities';
+import type { IVoxelManager } from './IVoxelManager';
 
 /**
  * IImageData of an image, which stores actual scalarData and metaData about the image.
@@ -33,7 +34,7 @@ interface IImageData {
   /** whether the image has pixel spacing and it is not undefined */
   hasPixelSpacing?: boolean;
 
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
 
   calibration?: IImageCalibration;
 

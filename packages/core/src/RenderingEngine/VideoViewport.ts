@@ -23,6 +23,8 @@ import type {
   IViewport,
   IStackInput,
   ImageActor,
+  CPUIImageData,
+  IImageData,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -557,7 +559,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     return scalarData;
   }
 
-  public getImageData() {
+  public getImageData(): IImageData | CPUIImageData {
     const { metadata } = this;
 
     const spacing = metadata.spacing;
@@ -567,22 +569,26 @@ class VideoViewport extends Viewport implements IVideoViewport {
       spacing,
       origin: metadata.origin,
       direction: metadata.direction,
-      metadata: { Modality: this.modality },
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: metadata.FrameOfReferenceUID,
+      },
       getScalarData: () => this.getScalarData(),
+      scalarData: this.getScalarData(),
       imageData: {
         getDirection: () => metadata.direction,
         getDimensions: () => metadata.dimensions,
-        getRange: () => [0, 255],
+        getRange: () => [0, 255] as Point2,
         getScalarData: () => this.getScalarData(),
         getSpacing: () => metadata.spacing,
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvas(point);
           const pixelCoord = this.canvasToIndex(canvasPoint);
-          return [pixelCoord[0], pixelCoord[1], 0];
+          return [pixelCoord[0], pixelCoord[1], 0] as Point3;
         },
-        indexToWorld: (point: Point2, destPoint?: Point3) => {
+        indexToWorld: (point: Point3, destPoint?: Point3) => {
           const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-          return this.canvasToWorld(canvasPoint, destPoint);
+          return this.canvasToWorld(canvasPoint, destPoint) as Point3;
         },
       },
       hasPixelSpacing: this.hasPixelSpacing,
@@ -597,6 +603,12 @@ class VideoViewport extends Viewport implements IVideoViewport {
     });
     return imageData;
   }
+
+  getMiddleSliceData = () => {
+    throw new Error('Method not implemented.');
+  };
+
+  useCustomRenderingPipeline = true;
 
   /**
    * Checks to see if the imageURI is currently being displayed.  The imageURI

@@ -88,7 +88,7 @@ export function getSegmentIndexAtLabelmapBorder(
     utilities.VoxelManager.createScalarVolumeVoxelManager({
       dimensions,
       scalarData: imageData.getPointData().getScalars().getData(),
-    })) as utilities.VoxelManager<number>;
+    })) as Types.IVoxelManager<number>;
 
   const segmentIndex = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
 
@@ -145,7 +145,7 @@ function isSegmentOnEdge(
 function isSegmentOnEdgeIJK(
   indexIJK: Types.Point3,
   dimensions: Types.Point3,
-  voxelManager: utilities.VoxelManager<number>,
+  voxelManager: Types.IVoxelManager<number>,
   segmentIndex: number,
   searchRadius?: number
 ): boolean {

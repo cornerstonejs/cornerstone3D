@@ -39,7 +39,8 @@ function thresholdVolumeByRange(
 
   const { overwrite, boundsIJK } = options;
   const overlapType = options?.overlapType || 0;
-  const segVoxelManager = segmentationVolume.voxelManager;
+  const segVoxelManager =
+    segmentationVolume.voxelManager as Types.IVoxelManager<number>;
   const scalarDataLength =
     segmentationVolume.voxelManager.getScalarDataLength();
 

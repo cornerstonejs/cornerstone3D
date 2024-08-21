@@ -28,7 +28,6 @@ const { SegmentationRepresentations } = csToolsEnums;
 
 const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
 
-const renderingEngineId = 'renderingEngineId-segmentationRender_test';
 const toolGroupId = 'toolGroupId-segmentationRender_test';
 
 const viewportId1 = 'AXIAL';
@@ -42,7 +41,6 @@ describe('Segmentation Render:', () => {
 
   beforeEach(function () {
     testEnv = testUtils.setupTestEnvironment({
-      renderingEngineId: renderingEngineId,
       toolGroupIds: [toolGroupId],
       viewportIds: [viewportId1, viewportId2, viewportId3],
     });
@@ -53,7 +51,7 @@ describe('Segmentation Render:', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({
-      renderingEngineId: renderingEngineId,
+      renderingEngineId: renderingEngine.id,
       toolGroupIds: [toolGroupId],
       cleanupDOMElements: true,
     });

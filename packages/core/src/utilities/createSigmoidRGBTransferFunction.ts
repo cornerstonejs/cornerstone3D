@@ -23,7 +23,7 @@ import * as windowLevelUtil from './windowLevel';
  */
 export default function createSigmoidRGBTransferFunction(
   voiRange: VOIRange,
-  approximationNodes = 1024 // humans can precieve no more than 900 shades of gray doi: 10.1007/s10278-006-1052-3
+  approximationNodes = 1024 // humans can perceive no more than 900 shades of gray doi: 10.1007/s10278-006-1052-3
 ): vtkColorTransferFunction {
   const { windowWidth, windowCenter } = windowLevelUtil.toWindowLevel(
     voiRange.lower,

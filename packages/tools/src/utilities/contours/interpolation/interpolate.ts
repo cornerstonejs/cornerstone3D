@@ -24,7 +24,7 @@ export type PointsXYZI = Types.PointsXYZ & {
   kIndex?: number;
 };
 
-export type PointsArray3 = Types.PointsManager<Types.Point3> & {
+export type PointsArray3 = Types.IPointsManager<Types.Point3> & {
   I?: boolean[];
 };
 

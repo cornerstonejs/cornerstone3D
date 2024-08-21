@@ -1,5 +1,4 @@
 import cache from '../cache/cache';
-import { ImageVolume } from '../cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import {

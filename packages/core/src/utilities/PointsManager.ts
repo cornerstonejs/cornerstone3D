@@ -1,15 +1,7 @@
+import type { IPointsManager, PolyDataPointConfiguration } from '../types';
 import type Point2 from '../types/Point2';
 import type Point3 from '../types/Point3';
 import type { PointsXYZ } from '../types/Point3';
-
-export interface PolyDataPointConfiguration {
-  /** The dimensionality of the points */
-  dimensions?: number;
-  /** The initial size of the backing array, not containing any data initially */
-  initialSize?: number;
-  /** The incremental size to grow by when required */
-  growSize?: number;
-}
 
 /**
  * PointsManager handles Point type data contained in a TypedArray representation
@@ -22,7 +14,7 @@ export interface PolyDataPointConfiguration {
  * transferring them amongst systems and is planned to have more methods added
  * for generic manipulation of data.
  */
-export default class PointsManager<T> {
+export default class PointsManager<T> implements IPointsManager<T> {
   /**
    *  Allow storage for an index value to indicate where this array is
    * contained in terms of the index location.
@@ -33,7 +25,7 @@ export default class PointsManager<T> {
    * Sources data for this array.  Just used for external access, not updated
    * here.
    */
-  public sources: PointsManager<T>[];
+  public sources: IPointsManager<T>[];
 
   data: Float32Array;
   _dimensions = 3;
@@ -217,7 +209,7 @@ export default class PointsManager<T> {
    * Create an PointsArray3 from the x,y,z individual arrays (see toXYZ)
    * Will create a Point3 array even if z is missing, with 0 as the value.
    */
-  public static fromXYZ({ x, y, z }: PointsXYZ): PointsManager<Point3> {
+  public static fromXYZ({ x, y, z }: PointsXYZ): IPointsManager<Point3> {
     const array = PointsManager.create3(x.length);
     let offset = 0;
     for (let i = 0; i < x.length; i++) {
@@ -233,7 +225,7 @@ export default class PointsManager<T> {
    * Select the given number of points from the array, evenly spaced at the
    * given offset (which must be between `(-count,count)`)
    */
-  public subselect(count = 10, offset = 0): PointsManager<T> {
+  public subselect(count = 10, offset = 0): IPointsManager<T> {
     const selected = new PointsManager<T>({
       initialSize: count,
       dimensions: this._dimensions,

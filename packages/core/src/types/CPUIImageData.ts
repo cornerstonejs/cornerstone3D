@@ -5,6 +5,7 @@ import type { PixelDataTypedArray } from './PixelDataTypedArray';
 import type RGB from './RGB';
 import type { VoxelManager } from '../utilities';
 import type IImageCalibration from './IImageCalibration';
+import type { IVoxelManager } from './IVoxelManager';
 
 interface CPUImageData {
   worldToIndex?: (point: Point3) => Point3;
@@ -34,7 +35,7 @@ interface CPUIImageData {
   hasPixelSpacing?: boolean;
   calibration?: IImageCalibration;
 
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   preScale?: {
     /** boolean flag to indicate whether the image has been scaled */
     scaled?: boolean;
