@@ -104,3 +104,37 @@ export function processVolumes(
     baseVolumeIdx,
   };
 }
+
+const segmentIndicesCache = new Map<
+  string,
+  { indices: number[]; isDirty: boolean }
+>();
+
+export const setSegmentationDirty = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached) {
+    cached.isDirty = true;
+  }
+};
+
+export const setSegmentationClean = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached) {
+    cached.isDirty = false;
+  }
+};
+
+export const getCachedSegmentIndices = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached && !cached.isDirty) {
+    return cached.indices;
+  }
+  return null;
+};
+
+export const setCachedSegmentIndices = (
+  segmentationId: string,
+  indices: number[]
+) => {
+  segmentIndicesCache.set(segmentationId, { indices, isDirty: false });
+};

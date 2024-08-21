@@ -8,8 +8,8 @@ import type {
   SegmentationRepresentationRemovedEventDetail,
   SegmentationRemovedEventDetail,
 } from '../../types/EventTypes';
-import { setSegmentationDirty } from '../../utilities/segmentation/getUniqueSegmentIndices';
-import { getDefaultSegmentationStateManager } from './segmentationState';
+import { setSegmentationDirty } from '../../utilities/segmentation/utilities';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
 /**
  * Trigger an event that a segmentation is removed
@@ -74,7 +74,7 @@ function triggerSegmentationModified(segmentationId?: string): void {
   if (segmentationId) {
     segmentationIds = [segmentationId];
   } else {
-    const segmentationStateManager = getDefaultSegmentationStateManager();
+    const segmentationStateManager = defaultSegmentationStateManager;
     const state = segmentationStateManager.getState();
 
     segmentationIds = state.segmentations.map(

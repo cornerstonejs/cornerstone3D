@@ -5,7 +5,7 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { getSegmentation } from './segmentationState';
+import { getSegmentation } from './getSegmentation';
 import type { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
 import { segmentationRenderingEngine } from './SegmentationRenderingEngine';

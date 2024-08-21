@@ -15,6 +15,8 @@ import {
   triggerSegmentationRepresentationRemoved,
 } from './triggerSegmentationEvents';
 
+import { getSegmentation } from './getSegmentation';
+
 import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
 
 /**
@@ -29,16 +31,6 @@ function getDefaultSegmentationStateManager() {
  * Segmentation State
  *
  **************************/
-
-/**
- * Get the segmentation for the given segmentationId
- * @param segmentationId - The Id of the segmentation
- * @returns A Segmentation object
- */
-function getSegmentation(segmentationId: string): Segmentation | undefined {
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-  return segmentationStateManager.getSegmentation(segmentationId);
-}
 
 /**
  * Get the segmentations inside the state
@@ -93,20 +85,6 @@ function getSegmentationRepresentation(
   const segmentationStateManager = getDefaultSegmentationStateManager();
   return segmentationStateManager.getSegmentationRepresentation(
     segmentationRepresentationUID
-  );
-}
-
-/**
- * Finds all segmentation representations with the given segmentationId.
- * @param segmentationId - The ID of the segmentation.
- * @returns An array of found segmentation representations.
- */
-function getSegmentationRepresentationsForSegmentation(
-  segmentationId: string
-): SegmentationRepresentation[] {
-  const allRepresentations = getAllSegmentationRepresentations();
-  return allRepresentations.filter(
-    (representation) => representation.segmentationId === segmentationId
   );
 }
 
