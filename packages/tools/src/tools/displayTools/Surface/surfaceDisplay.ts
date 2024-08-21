@@ -5,13 +5,14 @@ import {
   VolumeViewport3D,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
-
+import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { polySeg } from '../../../stateManagement/segmentation';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -36,7 +37,7 @@ function removeRepresentation(
   const { viewport } = enabledElement;
 
   removeSurfaceFromElement(viewport.element, segmentationRepresentationUID);
-  SegmentationState.removeRepresentation(segmentationRepresentationUID);
+  _removeRepresentation(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
@@ -58,7 +59,7 @@ async function render(
   const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
     representation;
 
-  const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
     return;
@@ -100,7 +101,7 @@ async function render(
     );
   }
 
-  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+  const colorLUT = getColorLUT(colorLUTIndex);
 
   const surfaces = [];
   geometryIds.forEach((geometryId, segmentIndex) => {

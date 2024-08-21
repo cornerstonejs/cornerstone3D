@@ -13,12 +13,12 @@ import {
 
 import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
-import { getSegmentationRepresentations } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentations } from './getSegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
-import { surfaceDisplay } from '../../tools/displayTools/Surface';
+import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
 import { contourDisplay } from '../../tools/displayTools/Contour';
 import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { addTool } from '../../store';
+import { addTool } from '../../store/addTool';
 import { state } from '../../store/state';
 import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
@@ -240,6 +240,25 @@ class SegmentationRenderingEngine {
   }
 }
 
-const segmentationRenderingEngine = new SegmentationRenderingEngine();
+/**
+ * It triggers segmentation render for the given viewportIds
+ */
+function triggerSegmentationRender(viewportId?: string): void {
+  segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
+}
 
-export { segmentationRenderingEngine };
+/**
+ * It triggers segmentation render for the given segmentationId
+ */
+function triggerSegmentationRenderBySegmentationId(
+  segmentationId?: string
+): void {
+  segmentationRenderingEngine.renderSegmentation(segmentationId);
+}
+
+const segmentationRenderingEngine = new SegmentationRenderingEngine();
+export {
+  triggerSegmentationRender,
+  triggerSegmentationRenderBySegmentationId,
+  segmentationRenderingEngine,
+};

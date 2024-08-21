@@ -1,7 +1,7 @@
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
 import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
-import { triggerSegmentationRenderBySegmentationId } from '../../utilities/segmentation';
+import { triggerSegmentationRenderBySegmentationId } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
 
 /** A callback function that is called when the segmentation data is modified which

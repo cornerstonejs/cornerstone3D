@@ -7,7 +7,7 @@ import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
 import {
   triggerSegmentationRender,
   triggerSegmentationRenderBySegmentationId,
-} from './triggerSegmentationRender';
+} from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import floodFill from './floodFill';
 import {
   getBrushSizeForToolGroup,

@@ -1,5 +1,5 @@
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
-import { getAllSegmentationRepresentations } from './segmentationState';
+import { getAllSegmentationRepresentations } from './getAllSegmentationRepresentations';
 
 /**
  * Finds all segmentation representations with the given segmentationId.

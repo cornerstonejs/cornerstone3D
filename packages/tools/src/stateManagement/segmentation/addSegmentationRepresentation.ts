@@ -8,7 +8,7 @@ import type {
 } from '../../types/SegmentationStateTypes';
 import { getSegmentationRepresentationRenderingConfig } from './helpers/getSegmentationRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
-import { triggerAnnotationRenderForViewportIds } from '../../utilities';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import {

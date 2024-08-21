@@ -10,8 +10,10 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import Representations from '../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { triggerSegmentationRender } from '../../utilities/segmentation/triggerSegmentationRender';
+import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentations';
+import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
+import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -65,7 +67,7 @@ function _imageChangeEventListener(evt) {
   ) as { viewport: Types.IStackViewport };
 
   const segmentationRepresentations =
-    SegmentationState.getSegmentationRepresentations(viewportId);
+    getSegmentationRepresentations(viewportId);
 
   if (!segmentationRepresentations?.length) {
     return;
@@ -84,11 +86,10 @@ function _imageChangeEventListener(evt) {
   // Update the maps
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
-    const labelmapImageId =
-      SegmentationState.updateLabelmapSegmentationImageReferences(
-        viewportId,
-        segmentationId
-      );
+    const labelmapImageId = updateLabelmapSegmentationImageReferences(
+      viewportId,
+      segmentationId
+    );
   });
 
   // const segmentationFound = actors.find((actor) => {
@@ -131,11 +132,10 @@ function _imageChangeEventListener(evt) {
     // if cannot find a representation for this actor means it has stuck around
     // form previous renderings and should be removed
     const validActor = labelmapRepresentations.find((representation) => {
-      const derivedImageId =
-        SegmentationState.getCurrentLabelmapImageIdForViewport(
-          viewportId,
-          representation.segmentationId
-        );
+      const derivedImageId = getCurrentLabelmapImageIdForViewport(
+        viewportId,
+        representation.segmentationId
+      );
 
       return derivedImageId === actor.referencedId;
     });
@@ -148,11 +148,10 @@ function _imageChangeEventListener(evt) {
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
     const currentImageId = viewport.getCurrentImageId();
-    const derivedImageId =
-      SegmentationState.getCurrentLabelmapImageIdForViewport(
-        viewportId,
-        segmentationId
-      );
+    const derivedImageId = getCurrentLabelmapImageIdForViewport(
+      viewportId,
+      segmentationId
+    );
 
     if (!derivedImageId) {
       return;

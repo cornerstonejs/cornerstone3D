@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { cache, eventTarget } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
 import addSegmentationRepresentations from './addSegmentationRepresentations';
-import { triggerSegmentationRender } from '../../utilities/segmentation';
+import { triggerSegmentationRender } from './SegmentationRenderingEngine';
 import { getSegmentation } from './segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './triggerSegmentationEvents';
