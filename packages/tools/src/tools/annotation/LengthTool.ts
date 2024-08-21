@@ -3,7 +3,6 @@ import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -844,7 +843,7 @@ function defaultGetTextLines(data, targetId): string[] {
     return;
   }
 
-  const textLines = [`${roundNumber(length)} ${lengthUnits}`];
+  const textLines = [`${csUtils.roundNumber(length)} ${lengthUnits}`];
 
   return textLines;
 }

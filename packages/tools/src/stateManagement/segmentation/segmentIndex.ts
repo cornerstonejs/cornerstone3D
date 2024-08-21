@@ -1,11 +1,9 @@
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { invalidateBrushCursor } from '../../utilities/segmentation/invalidateBrushCursor';
-import {
-  getSegmentation,
-  getViewportIdsWithSegmentation,
-} from './segmentationState';
+import { getSegmentation } from './getSegmentation';
+import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
-
+import { getActiveSegmentIndex } from './getActiveSegmentIndex';
 /**
  * Set the active segment index for a segmentation Id. It fires a global state
  * modified event. Also it invalidates the brush cursor for all toolGroups that
@@ -44,17 +42,4 @@ function setActiveSegmentIndex(
   });
 }
 
-/**
- * Get the active segment index for a segmentation in the global state
- * @param segmentationId - The id of the segmentation to get the active segment index from.
- * @returns The active segment index for the given segmentation.
- */
-function getActiveSegmentIndex(segmentationId: string): number | undefined {
-  const segmentation = getSegmentation(segmentationId);
-
-  if (segmentation) {
-    return segmentation.activeSegmentIndex;
-  }
-}
-
-export { getActiveSegmentIndex, setActiveSegmentIndex };
+export { setActiveSegmentIndex, getActiveSegmentIndex };

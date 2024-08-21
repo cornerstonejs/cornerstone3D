@@ -57,7 +57,7 @@
   },
   "ignorePatterns": ["packages/docs", "dist", "**/*_test.js", "**/*_jest.js", "**/*babel*", "**/*.d.ts", "**/*_types.ts"],
   "rules": {
-    "import/no-cycle": ["error", { "maxDepth": 10 }],
+    "import/no-cycle": ["error", { "maxDepth": 15 }],
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
     "tsdoc/syntax": "off",
@@ -104,7 +104,7 @@
     {
       "files": ["*.ts", "*.tsx"], // Apply the rules to TypeScript files
       "rules": {
-        "import/no-cycle": ["error", { "maxDepth": 10 }]
+        "import/no-cycle": ["error", { "maxDepth": 15 }]
       }
     },
     {

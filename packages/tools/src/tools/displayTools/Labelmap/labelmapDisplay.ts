@@ -1,6 +1,3 @@
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-
 import type { Types } from '@cornerstonejs/core';
 import {
   cache,
@@ -20,29 +17,18 @@ import type { LabelmapRepresentation } from '../../../types/SegmentationStateTyp
 import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
-import * as polySeg from '../../../stateManagement/segmentation/polySeg';
 import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
-import {
-  removeRepresentation as _removeRepresentation,
-  getActiveSegmentationRepresentation,
-  getColorLUT,
-  getCurrentLabelmapImageIdForViewport,
-  getGlobalConfig,
-  getSegmentation,
-} from '../../../stateManagement/segmentation/segmentationState';
+import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
+import { getActiveSegmentationRepresentation } from '../../../stateManagement/segmentation/getActiveSegmentationRepresentation';
+import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
+import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getGlobalConfig } from '../../../stateManagement/segmentation/getGlobalConfig';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
+import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
-
-function getSegmentationRepresentationRenderingConfig() {
-  const cfun = vtkColorTransferFunction.newInstance();
-  const ofun = vtkPiecewiseFunction.newInstance();
-  ofun.addPoint(0, 0);
-  return {
-    ofun,
-    cfun,
-  };
-}
 
 let polySegConversionInProgress = false;
 
@@ -138,7 +124,7 @@ async function render(
 
   if (
     !labelmapData &&
-    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID) &&
+    canComputeRequestedRepresentation(segmentationRepresentationUID) &&
     !polySegConversionInProgress
   ) {
     // meaning the requested segmentation representationUID does not have
@@ -148,13 +134,10 @@ async function render(
     // underlying representations to Surface
     polySegConversionInProgress = true;
 
-    labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID,
-        viewport,
-      }
-    );
+    labelmapData = await computeAndAddLabelmapRepresentation(segmentationId, {
+      segmentationRepresentationUID,
+      viewport,
+    });
 
     if (!labelmapData) {
       throw new Error(
@@ -508,13 +491,8 @@ async function _addLabelmapToViewport(
 }
 
 export default {
-  getSegmentationRepresentationRenderingConfig,
   render,
   removeRepresentation,
 };
 
-export {
-  getSegmentationRepresentationRenderingConfig,
-  render,
-  removeRepresentation,
-};
+export { render, removeRepresentation };

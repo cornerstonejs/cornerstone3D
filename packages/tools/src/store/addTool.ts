@@ -39,6 +39,10 @@ export function hasTool(ToolClass): boolean {
   return !!(toolName && state.tools[toolName]);
 }
 
+export function hasToolByName(toolName: string): boolean {
+  return !!(toolName && state.tools[toolName]);
+}
+
 /**
  * Removes the tool class from the cornerstoneTools.
  *

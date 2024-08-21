@@ -3,7 +3,6 @@ import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -1337,8 +1336,8 @@ function defaultGetTextLines(data, targetId): string[] {
   // spaceBetweenSlices & pixelSpacing &
   // magnitude in each direction? Otherwise, this is "px"?
   textLines.push(
-    `L: ${roundNumber(length)} ${lengthUnits || unit}`,
-    `W: ${roundNumber(width)} ${widthUnit || unit}`
+    `L: ${csUtils.roundNumber(length)} ${lengthUnits || unit}`,
+    `W: ${csUtils.roundNumber(width)} ${widthUnit || unit}`
   );
 
   return textLines;

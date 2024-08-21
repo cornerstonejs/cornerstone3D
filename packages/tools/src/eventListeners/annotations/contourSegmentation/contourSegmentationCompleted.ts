@@ -2,10 +2,6 @@ import type { Types } from '@cornerstonejs/core';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
 import getViewportsForAnnotation from '../../../utilities/getViewportsForAnnotation';
-// import {
-//   math,
-//   triggerAnnotationRenderForViewportIds,
-// } from '../../../utilities';
 import * as math from '../../../utilities/math';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters';
@@ -21,7 +17,6 @@ import type {
   AnnotationCompletedEventType,
   ContourAnnotationCompletedEventDetail,
 } from '../../../types/EventTypes';
-import PlanarFreehandContourSegmentationTool from '../../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import type { Annotation } from '../../../types';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
@@ -33,9 +28,9 @@ import {
   removeContourSegmentationAnnotation,
 } from '../../../utilities/contourSegmentation';
 import { getToolGroupForViewport } from '../../../store/ToolGroupManager';
-import { hasTool } from '../../../store';
+import { hasTool, hasToolByName } from '../../../store/addTool';
 
-const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
+const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
 
 export default async function contourSegmentationCompletedListener(
   evt: AnnotationCompletedEventType
@@ -100,7 +95,7 @@ function isFreehandContourSegToolRegisteredForViewport(
   viewport: Types.IViewport,
   silent = false
 ) {
-  const { toolName } = PlanarFreehandContourSegmentationTool;
+  const toolName = 'PlanarFreehandContourSegmentationTool';
 
   const toolGroup = getToolGroupForViewport(
     viewport.id,
@@ -244,7 +239,7 @@ export function createPolylineHole(
 
   // Updating a Spline contours, for example, should also update freehand contours
   const updatedToolNames = new Set([
-    DEFAULT_CONTOUR_SEG_TOOLNAME,
+    DEFAULT_CONTOUR_SEG_TOOL_NAME,
     targetAnnotation.metadata.toolName,
     holeAnnotation.metadata.toolName,
   ]);
@@ -279,9 +274,9 @@ function combinePolylines(
   sourceAnnotation: ContourSegmentationAnnotation,
   sourcePolyline: Types.Point2[]
 ) {
-  if (!hasTool(PlanarFreehandContourSegmentationTool)) {
+  if (!hasToolByName(DEFAULT_CONTOUR_SEG_TOOL_NAME)) {
     console.warn(
-      `${PlanarFreehandContourSegmentationTool.toolName} is not registered in cornerstone`
+      `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered in cornerstone`
     );
     return;
   }
@@ -374,7 +369,7 @@ function combinePolylines(
     const newAnnotation: ContourSegmentationAnnotation = {
       metadata: {
         ...metadata,
-        toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
+        toolName: DEFAULT_CONTOUR_SEG_TOOL_NAME,
         originalToolName: metadata.originalToolName || metadata.toolName,
       },
       data: {
@@ -434,7 +429,7 @@ function updateViewports(enabledElement, targetAnnotation, sourceAnnotation) {
   const { element } = viewport;
 
   const updatedTtoolNames = new Set([
-    DEFAULT_CONTOUR_SEG_TOOLNAME,
+    DEFAULT_CONTOUR_SEG_TOOL_NAME,
     targetAnnotation.metadata.toolName,
     sourceAnnotation.metadata.toolName,
   ]);

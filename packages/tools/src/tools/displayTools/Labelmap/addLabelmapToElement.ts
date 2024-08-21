@@ -7,10 +7,9 @@ import {
 } from '@cornerstonejs/core';
 import type { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
-import {
-  getCurrentLabelmapImageIdForViewport,
-  getSegmentationRepresentation,
-} from '../../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentation } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
+import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
  * NOTE: This function should not be called directly.

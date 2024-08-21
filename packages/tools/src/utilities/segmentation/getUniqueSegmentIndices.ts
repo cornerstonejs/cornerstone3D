@@ -3,7 +3,7 @@ import { cache } from '@cornerstonejs/core';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { SegmentationRepresentations } from '../../enums';
 import { getCachedSegmentIndices, setCachedSegmentIndices } from './utilities';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 
 /**
  * Retrieves the unique segment indices from a given segmentation.

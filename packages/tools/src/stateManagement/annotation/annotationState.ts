@@ -2,7 +2,7 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import type { Annotations, Annotation } from '../../types/AnnotationTypes';
 import type { AnnotationGroupSelector } from '../../types';
-
+import { getAnnotation } from './getAnnotation';
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
@@ -224,17 +224,6 @@ function removeAnnotation(annotationUID: string): void {
 }
 
 /**
- * Get the Annotation object by its UID
- * @param annotationUID - The unique identifier of the annotation.
- */
-function getAnnotation(annotationUID: string): Annotation {
-  const manager = getAnnotationManager();
-  const annotation = manager.getAnnotation(annotationUID);
-
-  return annotation;
-}
-
-/**
  * It removes all annotations from the default annotation manager
  */
 function removeAllAnnotations(): void {
@@ -296,7 +285,6 @@ export {
   addChildAnnotation,
   getNumberOfAnnotations,
   addAnnotation,
-  getAnnotation,
   removeAnnotation,
   removeAnnotations,
   removeAllAnnotations,
@@ -305,4 +293,5 @@ export {
   getAnnotationManager,
   resetAnnotationManager,
   invalidateAnnotation,
+  getAnnotation,
 };

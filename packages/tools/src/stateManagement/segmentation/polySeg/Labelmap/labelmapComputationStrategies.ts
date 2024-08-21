@@ -1,12 +1,7 @@
-import {
-  VolumeViewport,
-  volumeLoader,
-  utilities,
-  imageLoader,
-} from '@cornerstonejs/core';
+import { VolumeViewport, volumeLoader, imageLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import { getSegmentation } from '../../segmentationState';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
+import { getSegmentation } from '../../getSegmentation';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,

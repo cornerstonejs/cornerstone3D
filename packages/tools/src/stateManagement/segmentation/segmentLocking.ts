@@ -1,4 +1,4 @@
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 /**

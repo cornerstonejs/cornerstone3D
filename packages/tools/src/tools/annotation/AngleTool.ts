@@ -1,7 +1,6 @@
 import { Events } from '../../enums';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -12,7 +11,6 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
 import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
-import { roundNumber } from '../../utilities';
 
 import {
   drawHandles as drawHandlesSvg,
@@ -837,7 +835,9 @@ function defaultGetTextLines(data, targetId): string[] {
     return [`${angle}`];
   }
 
-  const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
+  const textLines = [
+    `${csUtils.roundNumber(angle)} ${String.fromCharCode(176)}`,
+  ];
 
   return textLines;
 }

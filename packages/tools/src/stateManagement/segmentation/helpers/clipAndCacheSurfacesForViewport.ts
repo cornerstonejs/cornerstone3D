@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 
 import { WorkerTypes } from '../../../enums';
-import { pointToString } from '../../../utilities';
+import { pointToString } from '../../../utilities/pointToString';
 import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
 const workerManager = getWebWorkerManager();
 

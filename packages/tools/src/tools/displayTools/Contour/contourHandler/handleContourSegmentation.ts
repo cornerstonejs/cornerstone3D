@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
-
-import { addAnnotation } from '../../../../stateManagement';
+import { addAnnotation } from '../../../../stateManagement/annotation/annotationState';
 import type { Types, StackViewport } from '@cornerstonejs/core';
 import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
@@ -11,12 +10,9 @@ import { addContourSegmentationAnnotation } from '../../../../utilities/contourS
 
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
-import {
-  getGlobalConfig,
-  getPerSegmentConfig,
-} from '../../../../stateManagement/segmentation/segmentationState';
+import { getGlobalConfig } from '../../../../stateManagement/segmentation/getGlobalConfig';
 import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
-import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config';
+import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config/segmentationConfig';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,

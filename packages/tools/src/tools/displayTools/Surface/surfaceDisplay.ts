@@ -10,9 +10,9 @@ import type { SegmentationRepresentation } from '../../../types/SegmentationStat
 import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
-import { polySeg } from '../../../stateManagement/segmentation';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
+import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -75,7 +75,7 @@ async function render(
 
   if (
     !SurfaceData &&
-    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID)
+    canComputeRequestedRepresentation(segmentationRepresentationUID)
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface

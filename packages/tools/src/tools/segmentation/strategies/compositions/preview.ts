@@ -1,8 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
-import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
+import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/events/triggerSegmentationDataModified';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import {
+  getSegmentIndexColor,
+  setSegmentIndexColor,
+} from '../../../../stateManagement/segmentation/config/segmentationColor';
 
 function lightenColor(r, g, b, a, factor = 0.4) {
   return [
@@ -72,7 +75,7 @@ export default {
     }
 
     const configColor = previewColors?.[segmentIndex];
-    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
+    const segmentColor = getSegmentIndexColor(
       segmentationRepresentationUID,
       segmentIndex
     );
@@ -81,7 +84,7 @@ export default {
     }
     const previewColor = configColor || lightenColor(...segmentColor);
 
-    segmentationConfig.color.setSegmentIndexColor(
+    setSegmentIndexColor(
       segmentationRepresentationUID,
       previewSegmentIndex,
       previewColor as Types.Color

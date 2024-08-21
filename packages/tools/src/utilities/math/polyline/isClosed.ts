@@ -1,6 +1,6 @@
 import { glMatrix } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import * as math from '..';
+import { distanceToPointSquared } from '../point';
 
 /**
  * A polyline is considered closed if the start and end points are at the same position
@@ -17,10 +17,7 @@ export default function isClosed(polyline: Types.Point2[]): boolean {
 
   const firstPoint = polyline[0];
   const lastPoint = polyline[numPolylinePoints - 1];
-  const distFirstToLastPoints = math.point.distanceToPointSquared(
-    firstPoint,
-    lastPoint
-  );
+  const distFirstToLastPoints = distanceToPointSquared(firstPoint, lastPoint);
 
   return glMatrix.equals(0, distFirstToLastPoints);
 }

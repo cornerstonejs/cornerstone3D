@@ -47,7 +47,6 @@ import type {
 } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { roundNumber } from '../../utilities/';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
@@ -794,10 +793,10 @@ function defaultGetTextLines(data): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${roundNumber(area)} ${areaUnits}`);
-  textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
-  textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
-  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
+  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnits}`);
+  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
+  textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
+  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`);
 
   return textLines;
 }

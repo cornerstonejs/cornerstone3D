@@ -8,7 +8,6 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -1168,20 +1167,22 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnits}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
+    textLines.push(
+      `Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`
+    );
   }
 
   return textLines;

@@ -11,7 +11,6 @@ import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
-import { viewport } from '../../../../utilities';
 
 export async function updateSurfaceData(segmentationId) {
   const surfacesObj = await computeSurfaceFromLabelmapSegmentation(

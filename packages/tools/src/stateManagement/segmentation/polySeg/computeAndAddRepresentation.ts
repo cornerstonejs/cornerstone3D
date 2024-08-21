@@ -3,7 +3,7 @@ import type { SegmentationRepresentations } from '../../../enums';
 import { Events } from '../../../enums';
 import addRepresentationData from '../addRepresentationData';
 import { triggerSegmentationModified } from '../triggerSegmentationEvents';
-import { debounce } from '../../../utilities';
+import debounce from '../../../utilities/debounce';
 import { registerPolySegWorker } from './registerPolySegWorker';
 
 const computedRepresentations = new Map<

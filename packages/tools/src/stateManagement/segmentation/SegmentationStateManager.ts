@@ -4,9 +4,11 @@ import {
   cache,
   utilities as csUtils,
   getEnabledElementByViewportId,
+  volumeLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 
-import { SegmentationRepresentations } from '../../enums';
+import { SegmentationRepresentations, Events } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
 import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
@@ -23,7 +25,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
-import { convertStackToVolumeSegmentation } from './convertStackToVolumeSegmentation';
+import { triggerSegmentationDataModified } from './events/triggerSegmentationDataModified';
 
 const newGlobalConfig: SegmentationRepresentationConfig = {
   renderInactiveRepresentations: true,
@@ -651,5 +653,118 @@ export default class SegmentationStateManager {
   }
 }
 
+async function computeVolumeSegmentationFromStack({
+  imageIds,
+  options,
+}: {
+  imageIds: string[];
+  options?: {
+    volumeId?: string;
+  };
+}): Promise<{ volumeId: string }> {
+  const segmentationImageIds = imageIds;
+
+  const volumeId = options?.volumeId ?? csUtils.uuidv4();
+
+  // Todo: fix this
+  await volumeLoader.createAndCacheVolumeFromImages(
+    volumeId,
+    segmentationImageIds
+  );
+
+  return { volumeId };
+}
+
+/**
+ * Converts a stack-based segmentation to a volume-based segmentation.
+ *
+ * @param params - The parameters for the conversion.
+ * @param params.segmentationId - The segmentationId to convert.
+ * @param [params.options] - The conversion options.
+ * @param params.options.viewportId - The new viewportId to use for the segmentation.
+ * @param [params.options.volumeId] - the new volumeId to use for the segmentation. If not provided, a new ID will be generated.
+ * @param [params.options.newSegmentationId] - the new segmentationId to use for the segmentation. If not provided, a new ID will be generated.
+ * @param [params.options.removeOriginal] - Whether or not to remove the original segmentation. Defaults to true.
+ *
+ * @returns A promise that resolves when the conversion is complete.
+ */
+async function convertStackToVolumeSegmentation({
+  segmentationId,
+  options,
+}: {
+  segmentationId: string;
+  options?: {
+    viewportId: string;
+    volumeId?: string;
+    removeOriginal?: boolean;
+  };
+}): Promise<void> {
+  const segmentation =
+    defaultSegmentationStateManager.getSegmentation(segmentationId);
+
+  const data = segmentation.representationData
+    .LABELMAP as LabelmapSegmentationDataStack;
+
+  const { volumeId } = await computeVolumeSegmentationFromStack({
+    imageIds: data.imageIds,
+    options,
+  });
+
+  await updateSegmentationState({
+    segmentationId,
+    viewportId: options.viewportId,
+    options,
+    volumeId,
+  });
+}
+
+// This function is responsible for updating the segmentation state
+async function updateSegmentationState({
+  segmentationId,
+  viewportId,
+  volumeId,
+  options,
+}: {
+  segmentationId: string;
+  viewportId: string;
+  volumeId: string;
+  options?: {
+    removeOriginal?: boolean;
+  };
+}): Promise<void> {
+  const segmentation =
+    defaultSegmentationStateManager.getSegmentation(segmentationId);
+
+  if (options?.removeOriginal) {
+    const data = segmentation.representationData
+      .LABELMAP as LabelmapSegmentationDataStack;
+
+    const { imageIds } = data;
+
+    imageIds.forEach((imageId) => {
+      cache.removeImageLoadObject(imageId);
+    });
+
+    segmentation.representationData.LABELMAP = {
+      volumeId,
+    };
+  } else {
+    segmentation.representationData.LABELMAP = {
+      ...segmentation.representationData.LABELMAP,
+      volumeId,
+    };
+  }
+
+  // Note: It is crucial to trigger the data modified event. This ensures that the
+  // old texture is updated to the GPU, especially in scenarios where it may not be getting updated.
+  eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
+    triggerSegmentationDataModified(segmentationId)
+  );
+}
+
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
-export { defaultSegmentationStateManager };
+export {
+  convertStackToVolumeSegmentation,
+  computeVolumeSegmentationFromStack,
+  defaultSegmentationStateManager,
+};

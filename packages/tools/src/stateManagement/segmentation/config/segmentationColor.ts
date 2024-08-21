@@ -1,11 +1,9 @@
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
-import {
-  addColorLUT as _addColorLUT,
-  getColorLUT as _getColorLUT,
-  getSegmentationRepresentation,
-} from '../segmentationState';
+import { addColorLUT as _addColorLUT } from '../addColorLUT';
+import { getColorLUT as _getColorLUT } from '../getColorLUT';
+import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.

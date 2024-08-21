@@ -3,8 +3,8 @@ import type {
   ContourSegmentationData,
   PolySegConversionOptions,
 } from '../../../../types';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import { getSegmentation } from '../../segmentationState';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
+import { getSegmentation } from '../../getSegmentation';
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 import type {
