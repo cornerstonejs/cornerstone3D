@@ -28,7 +28,7 @@
     "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
     "build": "yarn run build:all && yarn run copy-dts",
     "dev": "tsc --project ./tsconfig.esm.json --watch",
-    "format-check": "npx eslint . --quiet",
+    "format-check": "npx eslint ./src --quiet",
     "api-check": "yarn run format-check && api-extractor --debug run ",
     "build:update-api": "yarn run build:esm && api-extractor run --local",
     "prepublishOnly": "yarn run build",

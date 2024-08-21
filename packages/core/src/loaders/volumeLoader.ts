@@ -26,6 +26,7 @@ import {
 
 interface VolumeLoaderOptions {
   imageIds: string[];
+  progressiveRendering?: boolean;
 }
 
 interface DerivedVolumeOptions {

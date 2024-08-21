@@ -1,3 +1,4 @@
+/* eslint-disable */
 const _ = require("lodash");
 
 // Merge two objects

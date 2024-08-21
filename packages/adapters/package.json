@@ -30,7 +30,7 @@
         "clean:deep": "yarn run clean && shx rm -rf node_modules",
         "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
-        "format-check": "npx eslint . --quiet",
+        "format-check": "npx eslint ./src --quiet",
         "api-check": "yarn run format-check ",
         "build:update-api": "yarn run build && api-extractor run --local",
         "start": "rollup --watch -c rollup.config.mjs",

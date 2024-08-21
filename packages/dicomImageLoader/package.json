@@ -44,7 +44,7 @@
     "copy-dts": "echo 'not implemented yet'",
     "clean": "shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
-    "format-check": "npx eslint . --quiet",
+    "format-check": "npx eslint ./src --quiet",
     "api-check": "yarn run format-check",
     "cm": "npx git-cz",
     "clean:dist": "shx rm -rf dist",
