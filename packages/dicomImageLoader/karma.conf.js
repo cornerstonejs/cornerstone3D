@@ -1,4 +1,6 @@
+/* eslint-disable */
 // @ts-check
+
 const { tmpdir } = require('os');
 const { join } = require('path');
 const path = require('path');

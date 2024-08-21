@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setVolumesForViewports,
@@ -78,8 +78,11 @@ const getOrCreateTiming = (id) => {
   timingIds.push(id);
   timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
   const p = document.getElementById(id);
+  // @ts-ignore
   p.style.lineHeight = 1;
+  // @ts-ignore
   p.style.marginTop = 0;
+  // @ts-ignore
   p.style.marginBottom = 0;
   return p;
 };
