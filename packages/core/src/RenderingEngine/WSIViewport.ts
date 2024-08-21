@@ -8,7 +8,6 @@ import type {
   ICamera,
   WSIViewportInput,
   VOIRange,
-  IImageData,
   CPUIImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
@@ -17,7 +16,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
-import { triggerEvent } from '../utilities';
+import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
 
 const _map = Symbol.for('map');

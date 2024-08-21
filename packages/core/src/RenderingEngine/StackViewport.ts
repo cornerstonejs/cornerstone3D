@@ -35,27 +35,30 @@ import type {
   VOIRange,
   ViewReference,
   VolumeActor,
-} from '../types';
-import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewportInput,
-} from '../types/IViewport';
+  ImagePixelModule,
+  ImagePlaneModule,
+  PixelDataTypedArray,
+} from '../types';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import * as colormapUtils from '../utilities/colormap';
 import {
-  actorIsA,
-  colormap as colormapUtils,
-  createSigmoidRGBTransferFunction,
-  imageIdToURI,
-  imageRetrieveMetadataProvider,
-  invertRgbTransferFunction,
-  isEqual,
-  isImageActor,
-  triggerEvent,
-  updateVTKImageDataWithCornerstoneImage,
-  windowLevel as windowLevelUtil,
-} from '../utilities';
+  getTransferFunctionNodes,
+  setTransferFunctionNodes,
+} from '../utilities/transferFunctionUtils';
+import * as windowLevelUtil from '../utilities/windowLevel';
+import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
+import triggerEvent from '../utilities/triggerEvent';
+import { isEqual } from '../utilities/isEqual';
+import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
+import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataProvider';
+import imageIdToURI from '../utilities/imageIdToURI';
+
 import Viewport from './Viewport';
-import { getColormap } from './helpers/cpuFallback/colors/index';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 
 import {
@@ -79,25 +82,14 @@ import cache from '../cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import type {
-  ImagePixelModule,
-  ImagePlaneModule,
-  PixelDataTypedArray,
-} from '../types';
-import type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
 } from '../types/EventTypes';
 import type { ImageActor } from '../types/IActor';
-import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
-import {
-  getTransferFunctionNodes,
-  setTransferFunctionNodes,
-} from '../utilities/transferFunctionUtils';
 import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
-import { findMatchingColormap } from '../utilities/colormap';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 const EPSILON = 1; // Slice Thickness
@@ -849,7 +841,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }, []);
 
     const defaultActor = this.getDefaultActor();
-    const matchedColormap = findMatchingColormap(RGBPoints, defaultActor.actor);
+    const matchedColormap = colormapUtils.findMatchingColormap(
+      RGBPoints,
+      defaultActor.actor
+    );
 
     this.setColormap(matchedColormap);
   }
@@ -3208,7 +3203,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   private setColormapCPU(colormapData: CPUFallbackColormapData) {
     this.colormap = colormapData;
-    const colormap = getColormap(colormapData.name, colormapData);
+    const colormap = colormapUtils.getColormap(colormapData.name);
 
     this._cpuFallbackEnabledElement.viewport.colormap = colormap;
     this._cpuFallbackEnabledElement.renderingTools = {};

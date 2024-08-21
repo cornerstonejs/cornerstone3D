@@ -1,3 +1,4 @@
+import { mat4, vec3 } from 'gl-matrix';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
@@ -16,21 +17,18 @@ import type {
   ViewReferenceSpecifier,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import {
-  actorIsA,
-  getClosestImageId,
-  getSliceRange,
-  getSpacingInNormalDirection,
-  isImageActor,
-  snapFocalPointToSlice,
-  triggerEvent,
-} from '../utilities';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import getClosestImageId from '../utilities/getClosestImageId';
+import getSliceRange from '../utilities/getSliceRange';
+import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
+import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
+import triggerEvent from '../utilities/triggerEvent';
+
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import { mat4, vec3 } from 'gl-matrix';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 

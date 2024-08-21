@@ -35,32 +35,24 @@ import type {
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
-import {
-  actorIsA,
-  applyPreset,
-  createSigmoidRGBTransferFunction,
-  getVoiFromSigmoidRGBTransferFunction,
-  imageIdToURI,
-  invertRgbTransferFunction,
-  triggerEvent,
-  colormap as colormapUtils,
-  isEqualNegative,
-  getVolumeViewportScrollInfo,
-  snapFocalPointToSlice,
-  isEqual,
-} from '../utilities';
-import { createVolumeActor } from './helpers';
+import triggerEvent from '../utilities/triggerEvent';
+import * as colormapUtils from '../utilities/colormap';
+import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
+import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import transformWorldToIndex from '../utilities/transformWorldToIndex';
+import { findMatchingColormap } from '../utilities/colormap';
+import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
+import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+
+import createVolumeActor from './helpers/createVolumeActor';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
 import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import transformWorldToIndex from '../utilities/transformWorldToIndex';
-import { findMatchingColormap } from '../utilities/colormap';
-import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
-import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports

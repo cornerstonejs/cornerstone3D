@@ -1,5 +1,5 @@
 import type { Types } from '..';
-import { StackViewport } from '..';
+import StackViewport from '../RenderingEngine/StackViewport';
 import getEnabledElement from '../getEnabledElement';
 
 /**

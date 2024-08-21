@@ -15,7 +15,7 @@
   //
   // - import
   "plugins": [
-    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint",
     "import",
     "eslint-plugin-tsdoc",
     "prettier"
@@ -40,6 +40,9 @@
   // -
   "extends": [
     "eslint:recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
     "plugin:@typescript-eslint/recommended",
     // sets up the plugin AND eslint-config-prettier
     "plugin:prettier/recommended"
@@ -54,31 +57,14 @@
   },
   "ignorePatterns": ["packages/docs", "dist", "**/*_test.js", "**/*_jest.js", "**/*babel*", "**/*.d.ts", "**/*_types.ts"],
   "rules": {
-    "import/no-cycle": ["error", { "maxDepth": 1 }],
+    "import/no-cycle": ["error", { "maxDepth": 10 }],
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
     "tsdoc/syntax": "off",
     "@typescript-eslint/ban-ts-comment": "off",
-    // "no-console": [
-    //   "warn",
-    //   {
-    //     "allow": ["warn", "error"]
-    //   }
-    // ],
     "no-console": "off",
-    // note you must disable the base rule
-    // as it can report incorrect errors
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "off",
-    // Allow skipping unused variables in params calls by using _Name
-    // "@typescript-eslint/no-unused-vars": [
-    //   "warn", // or "error"
-    //   {
-    //     "argsIgnorePattern": "^_",
-    //     "varsIgnorePattern": "^_",
-    //     "caughtErrorsIgnorePattern": "^_"
-    //   }
-    // ],
     "@typescript-eslint/consistent-type-exports": "error",
     "@typescript-eslint/no-unsafe-function-type": "off",
     "@typescript-eslint/no-empty-object-type": "off",
@@ -110,20 +96,30 @@
         "printWidth": 80
       }
     ],
-    "no-undef": "warn"
+    "no-undef": "warn",
+    "import/no-named-as-default": "off",
+    "import/no-named-as-default-member": "off"
   },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"], // Apply the rules to TypeScript files
+      "rules": {
+        "import/no-cycle": ["error", { "maxDepth": 10 }]
+      }
+    }
+  ],
   "env": {
     "es6": true,
     "browser": true,
     "node": true
   },
   "settings": {
-    "react": {
-      "version": "detect"
-    },
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      },
+      "typescript": {
+        "project": "./tsconfig.json"
       }
     }
   },

@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import cache from '../cache';
+import cache from '../cache/cache';
 import type {
   BoundsIJK,
   Point3,

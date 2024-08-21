@@ -1,4 +1,4 @@
-import { metaData } from '../';
+import { get } from '../metaData';
 import type { Metadata } from '../types';
 
 /**
@@ -18,12 +18,12 @@ export default function makeVolumeMetadata(imageIds: string[]): Metadata {
     highBit,
     photometricInterpretation,
     samplesPerPixel,
-  } = metaData.get('imagePixelModule', imageId0);
+  } = get('imagePixelModule', imageId0);
 
   // Add list of VOIs stored on the DICOM.
   const voiLut = [];
 
-  const voiLutModule = metaData.get('voiLutModule', imageId0);
+  const voiLutModule = get('voiLutModule', imageId0);
 
   // voiLutModule is not always present
   let voiLUTFunction;
@@ -51,10 +51,7 @@ export default function makeVolumeMetadata(imageIds: string[]): Metadata {
     });
   }
 
-  const { modality, seriesInstanceUID } = metaData.get(
-    'generalSeriesModule',
-    imageId0
-  );
+  const { modality, seriesInstanceUID } = get('generalSeriesModule', imageId0);
 
   const {
     imageOrientationPatient,
@@ -62,7 +59,7 @@ export default function makeVolumeMetadata(imageIds: string[]): Metadata {
     frameOfReferenceUID,
     columns,
     rows,
-  } = metaData.get('imagePlaneModule', imageId0);
+  } = get('imagePlaneModule', imageId0);
 
   // Map to dcmjs-style keywords. This is becoming the standard and makes it
   // Easier to swap out cornerstoneDICOMImageLoader at a later date.

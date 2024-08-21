@@ -1,6 +1,6 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
-import cache from '../../cache';
+import cache from '../../cache/cache';
 
 /**
  * vtkStreamingOpenGLTexture - A derived class of the core vtkOpenGLTexture.

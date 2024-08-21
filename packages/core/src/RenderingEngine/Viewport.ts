@@ -10,13 +10,10 @@ import Events from '../enums/Events';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
-import {
-  triggerEvent,
-  planar,
-  isImageActor,
-  actorIsA,
-  isEqual,
-} from '../utilities';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import triggerEvent from '../utilities/triggerEvent';
+import * as planar from '../utilities/planar';
+import isEqual from '../utilities/isEqual';
 import hasNaNValues from '../utilities/hasNaNValues';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {

@@ -22,6 +22,7 @@ import type {
   ViewReference,
   ViewPresentation,
   ViewPresentationSelector,
+  ViewportInput,
 } from './IViewport';
 import type {
   VolumeActor,
@@ -289,4 +290,5 @@ export type {
   IVoxelManager,
   IRLEVoxelMap,
   RLERun,
+  ViewportInput,
 };

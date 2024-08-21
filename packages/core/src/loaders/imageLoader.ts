@@ -1,13 +1,11 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
-import {
-  genericMetadataProvider,
-  getBufferConfiguration,
-  triggerEvent,
-  uuidv4,
-  VoxelManager,
-} from '../utilities';
+import genericMetadataProvider from '../utilities/genericMetadataProvider';
+import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
+import triggerEvent from '../utilities/triggerEvent';
+import uuidv4 from '../utilities/uuidv4';
+import VoxelManager from '../utilities/VoxelManager';
 import type {
   IImage,
   ImageLoaderFn,
@@ -22,7 +20,7 @@ import type {
   ImagePixelModuleMetadata,
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import { metaData } from '../';
+import * as metaData from '../metaData';
 
 export interface ImageLoaderOptions {
   priority: number;

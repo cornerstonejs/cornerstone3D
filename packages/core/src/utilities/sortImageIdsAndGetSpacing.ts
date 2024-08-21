@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import { metaData, getConfiguration } from '../';
+import * as metaData from '../metaData';
+import { getConfiguration } from '../init';
 import type { Point3 } from '../types';
 
 interface SortedImageIdsItem {

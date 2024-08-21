@@ -1,13 +1,10 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
-//
-import {
-  createVolumeActor,
-  createVolumeMapper,
-  getOrCreateCanvas,
-} from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
+import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
+import createVolumeMapper from './RenderingEngine/helpers/createVolumeMapper';
+import getOrCreateCanvas from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';

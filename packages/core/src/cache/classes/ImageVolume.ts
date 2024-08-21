@@ -1,5 +1,6 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { imageIdToURI, VoxelManager } from '../../utilities';
+import imageIdToURI from '../../utilities/imageIdToURI';
+import VoxelManager from '../../utilities/VoxelManager';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
   Metadata,

@@ -1,6 +1,6 @@
 import RequestType from '../enums/RequestType';
 import type { IImage } from '../types';
-import { uuidv4 } from '../utilities';
+import uuidv4 from '../utilities/uuidv4';
 
 interface AdditionalDetails {
   imageId?: string;
