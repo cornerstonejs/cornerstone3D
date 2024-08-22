@@ -62,8 +62,8 @@ import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
-import { streamingImageVolumeLoader } from './loaders/streamingImageVolumeLoader';
-import { streamingDynamicImageVolumeLoader } from './loaders/streamingDynamicImageVolumeLoader';
+import { cornerstoneStreamingImageVolumeLoader } from './loaders/cornerstoneStreamingImageVolumeLoader';
+import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerstoneStreamingDynamicImageVolumeLoader';
 
 import {
   setVolumesForViewports,
@@ -147,6 +147,6 @@ export {
   // Geometry Loader
   geometryLoader,
   ProgressiveRetrieveImages,
-  streamingImageVolumeLoader,
-  streamingDynamicImageVolumeLoader,
+  cornerstoneStreamingImageVolumeLoader,
+  cornerstoneStreamingDynamicImageVolumeLoader,
 };

@@ -5,6 +5,7 @@ import type {
   PixelDataTypedArray,
 } from '../../types';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
+import { Enum } from '../../';
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.

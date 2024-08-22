@@ -467,6 +467,17 @@ interface Cornerstone3DConfig {
 }
 
 // @public (undocumented)
+export function cornerstoneStreamingDynamicImageVolumeLoader(volumeId: string, options: {
+    imageIds: string[];
+}): IVolumeLoader_2;
+
+// @public (undocumented)
+export function cornerstoneStreamingImageVolumeLoader(volumeId: string, options: {
+    imageIds: string[];
+    progressiveRendering?: boolean | IRetrieveConfiguration;
+}): IVolumeLoader;
+
+// @public (undocumented)
 interface CPUFallbackColormap {
     // (undocumented)
     addColor: (rgba: Point4) => void;
@@ -4071,17 +4082,6 @@ interface StackViewportScrollEventDetail {
     // (undocumented)
     newImageIdIndex: number;
 }
-
-// @public (undocumented)
-export function streamingDynamicImageVolumeLoader(volumeId: string, options: {
-    imageIds: string[];
-}): IVolumeLoader_2;
-
-// @public (undocumented)
-export function streamingImageVolumeLoader(volumeId: string, options: {
-    imageIds: string[];
-    progressiveRendering?: boolean | IRetrieveConfiguration;
-}): IVolumeLoader;
 
 // @public (undocumented)
 type StreamingRetrieveOptions = BaseRetrieveOptions & {

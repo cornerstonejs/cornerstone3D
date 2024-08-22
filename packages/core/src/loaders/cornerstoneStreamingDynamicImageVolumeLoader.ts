@@ -18,14 +18,14 @@ interface IVolumeLoader {
  * volume loader if the schema for the volumeID is `cornerstoneStreamingImageVolume`.
  * This function returns a promise that resolves to the StreamingDynamicImageVolume instance.
  *
- * In order to use the streamingDynamicImageVolumeLoader you should use
+ * In order to use the cornerstoneStreamingDynamicImageVolumeLoader you should use
  * createAndCacheVolume helper from the cornerstone-core volumeLoader module.
  *
  * @param volumeId - The ID of the volume
  * @param options - options for loading, imageIds
  * @returns a promise that resolves to a StreamingDynamicImageVolume
  */
-function streamingDynamicImageVolumeLoader(
+function cornerstoneStreamingDynamicImageVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
@@ -117,4 +117,4 @@ function streamingDynamicImageVolumeLoader(
   };
 }
 
-export { streamingDynamicImageVolumeLoader };
+export { cornerstoneStreamingDynamicImageVolumeLoader };
