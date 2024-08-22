@@ -1,4 +1,4 @@
-import { cache as cornerstoneCache } from '@cornerstonejs/core';
+import { cache as cornerstoneCache, type Types } from '@cornerstonejs/core';
 import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -24,14 +24,14 @@ function generateContourSetsFromLabelmap({ segmentations }) {
 
   // NOTE: Workaround for marching squares not finding closed contours at
   // boundary of image volume, clear pixels along x-y border of volume
-  const segData = vol.imageData.getPointData().getScalars().getData();
+  const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
   const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
 
   for (let z = 0; z < numSlices; z++) {
     for (let y = 0; y < vol.dimensions[1]; y++) {
       const index = y * vol.dimensions[0] + z * pixelsPerSlice;
-      segData[index] = 0;
-      segData[index + vol.dimensions[0] - 1] = 0;
+      voxelManager.setAtIndex(index, 0);
+      voxelManager.setAtIndex(index + vol.dimensions[0] - 1, 0);
     }
   }
 

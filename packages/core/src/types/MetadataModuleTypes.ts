@@ -39,6 +39,7 @@ export interface ImagePlaneModuleMetadata {
   pixelSpacing: number[];
   rowPixelSpacing: number | null;
   columnPixelSpacing: number | null;
+  usingDefaultValues: boolean;
 }
 
 export interface ImagePixelModuleMetadata {

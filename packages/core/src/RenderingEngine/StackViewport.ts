@@ -3265,6 +3265,9 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
     const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
+    this.hasPixelSpacing =
+      !imagePlaneModule.usingDefaultValues || this.calibration?.scale > 0;
+
     this.calibration ||= imagePlaneModule.calibration;
     const newImagePlaneModule: ImagePlaneModule = {
       ...imagePlaneModule,
@@ -3272,12 +3275,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
     if (!newImagePlaneModule.columnPixelSpacing) {
       newImagePlaneModule.columnPixelSpacing = 1;
-      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.rowPixelSpacing) {
       newImagePlaneModule.rowPixelSpacing = 1;
-      this.hasPixelSpacing = this.calibration?.scale > 0;
     }
 
     if (!newImagePlaneModule.columnCosines) {

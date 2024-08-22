@@ -25,7 +25,7 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   CrosshairsTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -293,7 +293,7 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
 function initCornerstoneTools() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 }
 
 function initCrosshairsTool(toolGroup) {
@@ -315,7 +315,7 @@ function initTools(toolGroup, options?) {
   // Add the tools to the tool group
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Auxiliary }],
@@ -325,7 +325,9 @@ function initTools(toolGroup, options?) {
     bindings: [{ mouseButton: MouseBindings.Secondary }],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   if ((options ?? {}).initCrosshairsTool === true) {
     initCrosshairsTool(toolGroup);

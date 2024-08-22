@@ -232,7 +232,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   });
 
   // Set the volume to load
-  volume.load();
+  await volume.load();
 
   // Set volumes on the viewports
   await cornerstone.setVolumesForViewports(

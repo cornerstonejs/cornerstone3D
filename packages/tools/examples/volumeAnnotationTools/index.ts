@@ -26,7 +26,7 @@ console.warn(
 const {
   EllipticalROITool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -113,7 +113,7 @@ async function run() {
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(EllipticalROITool.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -135,7 +135,7 @@ async function run() {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   // const ptImageIds = await createImageIdsAndCacheMetaData({

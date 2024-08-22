@@ -205,18 +205,19 @@ export function createAndCacheDerivedVolume(
 
   const referencedImageIds = referencedVolume.imageIds ?? [];
 
-  const byteLength = referencedImageIds.reduce((total, imageId) => {
-    const image = cache.getImage(imageId);
-    return total + image.sizeInBytes;
-  }, 0);
+  // Todo: fix later
+  // const byteLength = referencedImageIds.reduce((total, imageId) => {
+  //   const image = cache.getImage(imageId);
+  //   return total + image.sizeInBytes;
+  // }, 0);
 
-  const isCacheable = cache.isCacheable(byteLength);
+  // const isCacheable = cache.isCacheable(byteLength);
 
-  if (!isCacheable) {
-    throw new Error(
-      `Cannot created derived volume: Referenced volume with id ${referencedVolumeId} does not exist.`
-    );
-  }
+  // if (!isCacheable) {
+  //   throw new Error(
+  //     `Cannot created derived volume: Referenced volume with id ${referencedVolumeId} does not exist.`
+  //   );
+  // }
 
   // put the imageIds into the cache synchronously since they are just empty
   // images

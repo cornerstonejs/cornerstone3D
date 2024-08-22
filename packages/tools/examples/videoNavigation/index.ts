@@ -19,7 +19,6 @@ const {
   PanTool,
   ZoomTool,
   VideoRedactionTool,
-  StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -189,7 +188,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -201,8 +199,6 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
       {
@@ -236,7 +232,6 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 

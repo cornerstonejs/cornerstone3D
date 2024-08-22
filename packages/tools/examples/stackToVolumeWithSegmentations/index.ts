@@ -26,7 +26,7 @@ const {
 
   ToolGroupManager,
   BrushTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   segmentation,
   Enums: csToolsEnums,
   utilities,
@@ -132,7 +132,7 @@ addButtonToToolbar({
       segmentation.convertVolumeToStackSegmentation({
         segmentationId,
         options: {
-          toolGroupId: stackToolGroupId,
+          viewportId: newViewport.id,
         },
       });
 
@@ -214,7 +214,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(BrushTool);
@@ -226,7 +226,7 @@ async function run() {
 
   [stackToolGroup, volumeToolGroup].forEach((toolGroup) => {
     // Add the tools to the tool group
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
     toolGroup.addToolInstance('CircularBrush', BrushTool.toolName, {
@@ -251,7 +251,9 @@ async function run() {
         },
       ],
     });
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Wheel }],
+    });
 
     utilities.segmentation.setBrushSizeForToolGroup(
       toolGroup.id,

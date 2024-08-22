@@ -7,7 +7,6 @@ import {
   utilities,
   geometryLoader,
   CONSTANTS,
-  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -30,7 +29,7 @@ const {
   segmentation,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -123,7 +122,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);

@@ -143,22 +143,24 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.IMAGE_PLANE) {
     //metaData = fixNMMetadata(metaData);
-    const imageOrientationPatient = extractOrientationFromMetadata(metaData);
-    const imagePositionPatient = extractPositionFromMetadata(metaData);
+    let imageOrientationPatient = extractOrientationFromMetadata(metaData);
+    let imagePositionPatient = extractPositionFromMetadata(metaData);
     const pixelSpacing = getNumberValues(metaData['00280030'], 2);
 
     let columnPixelSpacing = null;
-
     let rowPixelSpacing = null;
+    let rowCosines = null;
+    let columnCosines = null;
 
+    let usingDefaultValues = false;
     if (pixelSpacing) {
       rowPixelSpacing = pixelSpacing[0];
       columnPixelSpacing = pixelSpacing[1];
+    } else {
+      usingDefaultValues = true;
+      rowPixelSpacing = 1;
+      columnPixelSpacing = 1;
     }
-
-    let rowCosines = null;
-
-    let columnCosines = null;
 
     if (imageOrientationPatient) {
       rowCosines = [
@@ -177,6 +179,16 @@ function metaDataProvider(type, imageId) {
         // @ts-expect-error
         parseFloat(imageOrientationPatient[5]),
       ];
+    } else {
+      rowCosines = [0, 1, 0];
+      columnCosines = [0, 0, -1];
+      usingDefaultValues = true;
+      imageOrientationPatient = [...rowCosines, ...columnCosines];
+    }
+
+    if (!imagePositionPatient) {
+      imagePositionPatient = [0, 0, 0];
+      usingDefaultValues = true;
     }
 
     return {
@@ -192,6 +204,7 @@ function metaDataProvider(type, imageId) {
       pixelSpacing,
       rowPixelSpacing,
       columnPixelSpacing,
+      usingDefaultValues,
     };
   }
 

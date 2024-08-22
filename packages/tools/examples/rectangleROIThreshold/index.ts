@@ -31,7 +31,7 @@ const {
   RectangleROIThresholdTool,
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   annotation,
   utilities: csToolsUtils,
 } = cornerstoneTools;
@@ -261,7 +261,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(RectangleROIThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -270,7 +270,7 @@ async function run() {
   // Manipulation Tools
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Segmentation Tools
   toolGroup.addTool(RectangleROIThresholdTool.toolName);
@@ -295,7 +295,9 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   const wadoRsRoot = 'https://domvja9iplmyu.cloudfront.net/dicomweb';
   const StudyInstanceUID =

@@ -31,7 +31,6 @@ const {
   PanTool,
   ZoomTool,
   VideoRedactionTool,
-  StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -352,7 +351,6 @@ async function run() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);

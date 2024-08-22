@@ -17,9 +17,7 @@ console.warn(
 
 const {
   LivewireContourTool,
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;

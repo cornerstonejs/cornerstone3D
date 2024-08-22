@@ -20,16 +20,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-
-  StackScrollMouseWheelTool,
-  ZoomTool,
-  StackScrollTool,
   Enums: csToolsEnums,
-  RectangleScissorsTool,
-  CircleScissorsTool,
-  BrushTool,
-  PaintFillTool,
-  PanTool,
   segmentation,
   utilities: cstUtils,
 } = cornerstoneTools;

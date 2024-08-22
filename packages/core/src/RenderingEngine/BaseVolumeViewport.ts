@@ -463,6 +463,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     let voiRangeToUse = voiRange;
     // Todo: not sure why this is needed, in the new model this will not work for sure
     if (typeof voiRangeToUse === 'undefined') {
+      throw new Error(
+        'voiRangeToUse is undefined, need to implement this in the new volume model'
+      );
       const imageData = volumeActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
       const maxVoiRange = { lower: range[0], upper: range[1] };

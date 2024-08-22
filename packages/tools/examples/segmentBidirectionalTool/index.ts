@@ -368,7 +368,6 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  // toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
   toolGroup.setToolActive(BidirectionalTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM

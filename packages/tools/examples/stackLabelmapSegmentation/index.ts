@@ -18,8 +18,6 @@ console.warn(
 
 const {
   ToolGroupManager,
-
-  StackScrollMouseWheelTool,
   ZoomTool,
   StackScrollTool,
   Enums: csToolsEnums,
@@ -263,7 +261,6 @@ function setupTools(toolGroupId) {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
   cornerstoneTools.addTool(PaintFillTool);
@@ -276,7 +273,6 @@ function setupTools(toolGroupId) {
   // Manipulation Tools
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
   // Segmentation Tools
@@ -353,9 +349,6 @@ function setupTools(toolGroupId) {
       },
     ],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   return toolGroup;
 }

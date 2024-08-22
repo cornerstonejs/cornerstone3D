@@ -21,7 +21,7 @@ const {
   utilities: csToolsUtilities,
   Enums: csToolsEnums,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
 } = cornerstoneTools;
 
@@ -195,15 +195,17 @@ async function run() {
   await initDemo();
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
   // Define tool groups to add the segmentation display tool to
   const toolGroup =
     cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
   toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
