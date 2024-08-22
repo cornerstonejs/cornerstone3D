@@ -36,7 +36,6 @@
     "@cornerstonejs/core": "^2.0.0-beta.22",
     "@cornerstonejs/dicom-image-loader": "^2.0.0-beta.22",
     "@cornerstonejs/nifti-volume-loader": "^2.0.0-beta.22",
-    "@cornerstonejs/streaming-image-volume-loader": "^2.0.0-beta.22",
     "@cornerstonejs/tools": "^2.0.0-beta.22",
     "@docusaurus/core": "3.4.0",
     "@docusaurus/module-type-aliases": "3.4.0",

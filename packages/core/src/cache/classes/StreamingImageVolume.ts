@@ -1,6 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  ImageLoadRequests,
+  ImageVolumeProps,
+  IStreamingVolumeProperties,
+  PixelDataTypedArray,
+} from '../../types';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
-import type ImageLoadRequests from './types/ImageLoadRequests';
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -8,8 +12,8 @@ import type ImageLoadRequests from './types/ImageLoadRequests';
  */
 export default class StreamingImageVolume extends BaseStreamingImageVolume {
   constructor(
-    imageVolumeProperties: Types.ImageVolumeProps,
-    streamingProperties: Types.IStreamingVolumeProperties
+    imageVolumeProperties: ImageVolumeProps,
+    streamingProperties: IStreamingVolumeProperties
   ) {
     // Just for fallback to the old API
     if (!imageVolumeProperties.imageIds) {
@@ -22,8 +26,8 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
    * Return the scalar data (buffer)
    * @returns volume scalar data
    */
-  public getScalarData(): Types.PixelDataTypedArray {
-    return <Types.PixelDataTypedArray>this.voxelManager.getScalarData();
+  public getScalarData(): PixelDataTypedArray {
+    return <PixelDataTypedArray>this.voxelManager.getScalarData();
   }
 
   /**

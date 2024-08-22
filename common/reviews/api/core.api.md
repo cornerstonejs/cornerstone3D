@@ -126,6 +126,9 @@ number
 function applyPreset(actor: VolumeActor, preset: ViewportPreset): void;
 
 // @public (undocumented)
+const autoLoad: (volumeId: string) => void;
+
+// @public (undocumented)
 const backgroundColors: {
     slicer3D: number[];
 };
@@ -983,6 +986,8 @@ export enum EVENTS {
     // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
+    DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED",
+    // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
@@ -1184,6 +1189,13 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport): {
     scalarData: PixelDataTypedArray;
     sliceToIndexMatrix: mat4;
     indexToSliceMatrix: mat4;
+};
+
+// @public (undocumented)
+function getDynamicVolumeInfo(imageIds: any): {
+    isDynamicVolume: boolean;
+    timePoints: string[][];
+    splittingTag: string;
 };
 
 // @public (undocumented)
@@ -1967,6 +1979,37 @@ export interface ImageLoadListener {
 const imageLoadPoolManager: RequestPoolManager;
 export { imageLoadPoolManager }
 export { imageLoadPoolManager as requestPoolManager }
+
+// @public (undocumented)
+interface ImageLoadRequests {
+    // (undocumented)
+    additionalDetails: {
+        volumeId: string;
+    };
+    // (undocumented)
+    callLoadImage: (imageId: string, imageIdIndex: number, options: unknown) => Promise<void>;
+    // (undocumented)
+    imageId: string;
+    // (undocumented)
+    imageIdIndex: number;
+    // (undocumented)
+    options: {
+        targetBuffer: {
+            type: string;
+            rows: number;
+            columns: number;
+        };
+        preScale: {
+            enabled: boolean;
+            scalingParameters: ScalingParameters;
+        };
+        transferPixelData: boolean;
+    };
+    // (undocumented)
+    priority: number;
+    // (undocumented)
+    requestType: RequestType;
+}
 
 // @public (undocumented)
 interface ImageLoadStageEventDetail {
@@ -3698,6 +3741,9 @@ function roundNumber(value: string | number | (string | number)[], precision?: n
 function roundToPrecision(value: any): number;
 
 // @public (undocumented)
+function scaleArray(array: Float32Array | Uint8Array | Uint16Array | Int16Array, scalingParameters: ScalingParameters): Float32Array | Uint8Array | Uint16Array | Int16Array;
+
+// @public (undocumented)
 function scaleRGBTransferFunction(rgbTransferFunction: ColorTransferFunction, scalingFactor: number): void;
 
 // @public (undocumented)
@@ -3796,6 +3842,12 @@ enum SpeedUnit {
     // (undocumented)
     SECOND = "s"
 }
+
+// @public (undocumented)
+function splitImageIdsBy4DTags(imageIds: string[]): {
+    imageIdGroups: string[][];
+    splittingTag: string | null;
+};
 
 // @public (undocumented)
 type StackInputCallback = (params: {
@@ -4019,6 +4071,17 @@ interface StackViewportScrollEventDetail {
     // (undocumented)
     newImageIdIndex: number;
 }
+
+// @public (undocumented)
+export function streamingDynamicImageVolumeLoader(volumeId: string, options: {
+    imageIds: string[];
+}): IVolumeLoader_2;
+
+// @public (undocumented)
+export function streamingImageVolumeLoader(volumeId: string, options: {
+    imageIds: string[];
+    progressiveRendering?: boolean | IRetrieveConfiguration;
+}): IVolumeLoader;
 
 // @public (undocumented)
 type StreamingRetrieveOptions = BaseRetrieveOptions & {
@@ -4249,7 +4312,8 @@ declare namespace Types {
         IVoxelManager,
         IRLEVoxelMap,
         RLERun,
-        ViewportInput
+        ViewportInput,
+        ImageLoadRequests
     }
 }
 export { Types }
@@ -4340,7 +4404,11 @@ declare namespace utilities {
         getRandomSampleFromArray,
         getVolumeId,
         color,
-        hasFloatScalingParameters
+        hasFloatScalingParameters,
+        getDynamicVolumeInfo,
+        autoLoad,
+        scaleArray,
+        splitImageIdsBy4DTags
     }
 }
 export { utilities }

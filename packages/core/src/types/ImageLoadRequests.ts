@@ -1,4 +1,5 @@
-import type { Types, Enums } from '@cornerstonejs/core';
+import type { RequestType } from '../enums';
+import type { ScalingParameters } from './ScalingParameters';
 
 export default interface ImageLoadRequests {
   callLoadImage: (
@@ -16,12 +17,12 @@ export default interface ImageLoadRequests {
     };
     preScale: {
       enabled: boolean;
-      scalingParameters: Types.ScalingParameters;
+      scalingParameters: ScalingParameters;
     };
     transferPixelData: boolean;
   };
   priority: number;
-  requestType: Enums.RequestType;
+  requestType: RequestType;
   additionalDetails: {
     volumeId: string;
   };

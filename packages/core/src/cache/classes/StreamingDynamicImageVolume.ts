@@ -1,6 +1,12 @@
-import { eventTarget, triggerEvent, type Types } from '@cornerstonejs/core';
+import { Events } from '../../enums';
+import eventTarget from '../../eventTarget';
+import type {
+  IDynamicImageVolume,
+  ImageVolumeProps,
+  IStreamingVolumeProperties,
+} from '../../types';
+import { triggerEvent } from '../../utilities';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
-import { Events as StreamingEvents } from './enums';
 
 /**
  * Streaming Image Volume Class that extends StreamingImageVolume base class.
@@ -8,7 +14,7 @@ import { Events as StreamingEvents } from './enums';
  */
 export default class StreamingDynamicImageVolume
   extends BaseStreamingImageVolume
-  implements Types.IDynamicImageVolume
+  implements IDynamicImageVolume
 {
   private _timePointIndex = 0;
   private _splittingTag: string;
@@ -17,11 +23,11 @@ export default class StreamingDynamicImageVolume
   public numTimePoints: number;
 
   constructor(
-    imageVolumeProperties: Types.ImageVolumeProps & {
+    imageVolumeProperties: ImageVolumeProps & {
       splittingTag: string;
       imageIdGroups: string[][];
     },
-    streamingProperties: Types.IStreamingVolumeProperties
+    streamingProperties: IStreamingVolumeProperties
   ) {
     super(imageVolumeProperties, streamingProperties);
     const { imageIdGroups, splittingTag } = imageVolumeProperties;
@@ -85,16 +91,12 @@ export default class StreamingDynamicImageVolume
 
     this.invalidateVolume(true);
 
-    triggerEvent(
-      eventTarget,
-      StreamingEvents.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED,
-      {
-        volumeId: this.volumeId,
-        imageIdGroupIndex: index,
-        numImageIdGroups: this.numTimePoints,
-        splittingTag: this.splittingTag,
-      }
-    );
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
+      volumeId: this.volumeId,
+      imageIdGroupIndex: index,
+      numImageIdGroups: this.numTimePoints,
+      splittingTag: this.splittingTag,
+    });
   }
 
   /**

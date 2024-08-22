@@ -1,7 +1,11 @@
-import { utilities } from '@cornerstonejs/core';
-import { splitImageIdsBy4DTags } from './helpers';
-import StreamingDynamicImageVolume from './StreamingDynamicImageVolume';
 import type { vec3 } from 'gl-matrix';
+import { StreamingDynamicImageVolume } from '../cache';
+import {
+  generateVolumePropsFromImageIds,
+  sortImageIdsAndGetSpacing,
+  splitImageIdsBy4DTags,
+  VoxelManager,
+} from '../utilities';
 
 interface IVolumeLoader {
   promise: Promise<StreamingDynamicImageVolume>;
@@ -14,14 +18,14 @@ interface IVolumeLoader {
  * volume loader if the schema for the volumeID is `cornerstoneStreamingImageVolume`.
  * This function returns a promise that resolves to the StreamingDynamicImageVolume instance.
  *
- * In order to use the cornerstoneStreamingDynamicImageVolumeLoader you should use
+ * In order to use the streamingDynamicImageVolumeLoader you should use
  * createAndCacheVolume helper from the cornerstone-core volumeLoader module.
  *
  * @param volumeId - The ID of the volume
  * @param options - options for loading, imageIds
  * @returns a promise that resolves to a StreamingDynamicImageVolume
  */
-function cornerstoneStreamingDynamicImageVolumeLoader(
+function streamingDynamicImageVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
@@ -35,7 +39,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
 
   const { imageIds } = options;
   const { splittingTag, imageIdGroups } = splitImageIdsBy4DTags(imageIds);
-  const volumeProps = utilities.generateVolumePropsFromImageIds(
+  const volumeProps = generateVolumePropsFromImageIds(
     imageIdGroups[0],
     volumeId
   );
@@ -53,7 +57,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   const scanAxisNormal = direction.slice(6, 9) as vec3;
 
   const sortedImageIdGroups = imageIdGroups.map((imageIds) => {
-    const sortedImageIds = utilities.sortImageIdsAndGetSpacing(
+    const sortedImageIds = sortImageIdsAndGetSpacing(
       imageIds,
       scanAxisNormal
     ).sortedImageIds;
@@ -63,13 +67,12 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
 
   const sortedFlatImageIds = sortedImageIdGroups.flat();
 
-  const voxelManager =
-    utilities.VoxelManager.createScalarDynamicVolumeVoxelManager({
-      dimensions,
-      imageIdGroups: sortedImageIdGroups,
-      timePoint: 0,
-      numberOfComponents,
-    });
+  const voxelManager = VoxelManager.createScalarDynamicVolumeVoxelManager({
+    dimensions,
+    imageIdGroups: sortedImageIdGroups,
+    timePoint: 0,
+    numberOfComponents,
+  });
 
   let streamingImageVolume = new StreamingDynamicImageVolume(
     // ImageVolume properties
@@ -114,4 +117,4 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   };
 }
 
-export default cornerstoneStreamingDynamicImageVolumeLoader;
+export { streamingDynamicImageVolumeLoader };

@@ -79,6 +79,10 @@ import type { IViewport } from '../types/IViewport';
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
 import cache from '../cache/cache';
+import getDynamicVolumeInfo from './getDynamicVolumeInfo';
+import autoLoad from './autoLoad';
+import scaleArray from './scaleArray';
+import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -163,4 +167,8 @@ export {
   getVolumeId,
   color,
   hasFloatScalingParameters,
+  getDynamicVolumeInfo,
+  autoLoad,
+  scaleArray,
+  splitImageIdsBy4DTags,
 };

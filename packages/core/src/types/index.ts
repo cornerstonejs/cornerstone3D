@@ -150,6 +150,7 @@ import type {
 } from './MetadataModuleTypes';
 import type { IVoxelManager } from './IVoxelManager';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
+import type ImageLoadRequests from './ImageLoadRequests';
 
 export type {
   // config
@@ -291,4 +292,5 @@ export type {
   IRLEVoxelMap,
   RLERun,
   ViewportInput,
+  ImageLoadRequests,
 };

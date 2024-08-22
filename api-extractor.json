@@ -46,7 +46,6 @@
   "bundledPackages": [
     "@cornerstonejs/core",
     "@cornerstonejs/tools",
-    "@cornerstonejs/streaming-image-volume-loader"
   ],
 
   /**

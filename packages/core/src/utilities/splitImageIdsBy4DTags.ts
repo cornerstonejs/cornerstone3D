@@ -1,4 +1,4 @@
-import { metaData } from '@cornerstonejs/core';
+import * as metaData from '../metaData';
 
 // TODO: Test remaining implemented tags
 // Supported 4D Tags

@@ -46,7 +46,6 @@ jobs:
           paths:
             - packages/core/dist
             - packages/tools/dist
-            - packages/streaming-image-volume-loader/dist
             - packages/adapters/dist
             - packages/dicomImageLoader/dist
             - packages/nifti-volume-loader/dist

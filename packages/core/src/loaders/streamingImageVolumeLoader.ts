@@ -1,11 +1,9 @@
-import {
-  Enums,
-  imageLoader,
-  imageLoadPoolManager,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-import StreamingImageVolume from './StreamingImageVolume';
+import StreamingImageVolume from '../cache/classes/StreamingImageVolume';
+import { RequestType } from '../enums';
+import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
+import type { IRetrieveConfiguration } from '../types';
+import { generateVolumePropsFromImageIds } from '../utilities';
+import { loadImage } from './imageLoader';
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -18,18 +16,18 @@ interface IVolumeLoader {
  * volume loader if the schema for the volumeID is `cornerstoneStreamingImageVolume`.
  * This function returns a promise that resolves to the StreamingImageVolume instance.
  *
- * In order to use the cornerstoneStreamingImageVolumeLoader you should use
+ * In order to use the streamingImageVolumeLoader you should use
  * createAndCacheVolume helper from the cornerstone-core volumeLoader module.
  *
  * @param volumeId - The ID of the volume
  * @param options - options for loading, imageIds
  * @returns a promise that resolves to a StreamingImageVolume
  */
-function cornerstoneStreamingImageVolumeLoader(
+function streamingImageVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
-    progressiveRendering?: boolean | Types.IRetrieveConfiguration;
+    progressiveRendering?: boolean | IRetrieveConfiguration;
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -58,8 +56,7 @@ function cornerstoneStreamingImageVolumeLoader(
             const imageId = options.imageIds[index];
             imageLoadPoolManager.addRequest(
               async () => {
-                imageLoader
-                  .loadImage(imageId)
+                loadImage(imageId)
                   .then(() => {
                     console.log(`Prefetched imageId: ${imageId}`);
                     resolve(true);
@@ -68,7 +65,7 @@ function cornerstoneStreamingImageVolumeLoader(
                     reject(err);
                   });
               },
-              Enums.RequestType.Prefetch,
+              RequestType.Prefetch,
               { volumeId },
               1 // priority
             );
@@ -77,7 +74,7 @@ function cornerstoneStreamingImageVolumeLoader(
       ).catch(console.error);
     }
 
-    const volumeProps = csUtils.generateVolumePropsFromImageIds(
+    const volumeProps = generateVolumePropsFromImageIds(
       options.imageIds,
       volumeId
     );
@@ -141,4 +138,4 @@ function cornerstoneStreamingImageVolumeLoader(
   };
 }
 
-export default cornerstoneStreamingImageVolumeLoader;
+export { streamingImageVolumeLoader };

@@ -1,10 +1,9 @@
-import { getRenderingEngines, utilities } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-
-//import type { Types } from '@cornerstonejs/core'
+import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
+import type { IRenderingEngine } from '../types';
+import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 
 type RenderingEngineAndViewportIds = {
-  renderingEngine: Types.IRenderingEngine | undefined; //Types.IRenderingEngine | undefined
+  renderingEngine: IRenderingEngine | undefined;
   viewportIds: Array<string>;
 };
 
@@ -43,10 +42,7 @@ function getRenderingEngineAndViewportsContainingVolume(
     [];
 
   renderingEnginesArray.forEach((renderingEngine) => {
-    const viewports = utilities.getViewportsWithVolumeId(
-      volumeId,
-      renderingEngine.id
-    );
+    const viewports = getViewportsWithVolumeId(volumeId, renderingEngine.id);
 
     if (viewports.length) {
       renderingEngineAndViewportIds.push({

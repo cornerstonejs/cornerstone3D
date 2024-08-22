@@ -64,12 +64,10 @@ module.exports = function (config) {
       },
     ],
     files: [
-      'packages/streaming-image-volume-loader/test/**/*_test.js',
       'packages/core/test/**/*_test.js',
       'packages/tools/test/**/*_test.js',
     ],
     preprocessors: {
-      'packages/streaming-image-volume-loader/test/**/*_test.js': ['webpack'],
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
     },
@@ -140,9 +138,6 @@ module.exports = function (config) {
         alias: {
           '@cornerstonejs/core': path.resolve('packages/core/src/index'),
           '@cornerstonejs/tools': path.resolve('packages/tools/src/index'),
-          '@cornerstonejs/streaming-image-volume-loader': path.resolve(
-            'packages/streaming-image-volume-loader/src/index'
-          ),
         },
       },
     },

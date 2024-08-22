@@ -4,7 +4,6 @@
     "packages/core",
     "packages/tools",
     "packages/adapters",
-    "packages/streaming-image-volume-loader",
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader"
   ],
