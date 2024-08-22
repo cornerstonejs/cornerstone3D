@@ -50,7 +50,9 @@ function generateVolumePropsFromImageIds(
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
   const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
-  const dimensions = [Columns, Rows, numFrames] as Point3;
+  const dimensions = [Columns, Rows, numFrames].map((it) =>
+    Math.floor(it)
+  ) as Point3;
   const direction = [
     ...rowCosineVec,
     ...colCosineVec,
@@ -85,8 +87,7 @@ function _determineDataType(
   imageIds,
   volumeMetadata
 ): PixelDataTypedArrayString {
-  const { BitsAllocated, PixelRepresentation, PhotometricInterpretation } =
-    volumeMetadata;
+  const { BitsAllocated, PixelRepresentation, x } = volumeMetadata;
 
   const signed = PixelRepresentation === 1;
 

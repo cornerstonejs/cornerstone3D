@@ -1,0 +1,13 @@
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
+
+/**
+ * Retrieves the labelmap image IDs for a specific viewport and segmentation representation.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId -  The ID of the segmentation.
+ * @returns An array of labelmap image IDs.
+ */
+export function getStackSegmentationImageIds(segmentationId: string) {
+  const segmentationStateManager = defaultSegmentationStateManager;
+  return segmentationStateManager.getStackSegmentationImageIds(segmentationId);
+}

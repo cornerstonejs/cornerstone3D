@@ -4,6 +4,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from './LabelmapTypes';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 type LabelmapToolOperationData = {
   segmentationId: string;
@@ -21,6 +22,10 @@ type LabelmapToolOperationData = {
   segmentationRepresentationUID: string;
   points: Types.Point3[];
   voxelManager;
+  override: {
+    voxelManager: Types.IVoxelManager<number>;
+    imageData: vtkImageData;
+  };
   /**
    * preview is used for sharing preview data between views/interactions with
    * a tool, and needs to be maintained by the tool side in order to be able

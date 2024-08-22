@@ -23,6 +23,7 @@ const {
   Enums: csToolsEnums,
   RectangleScissorsTool,
   CircleScissorsTool,
+  SphereScissorsTool,
   BrushTool,
   PaintFillTool,
   PanTool,
@@ -85,6 +86,7 @@ content.append(instructions);
 
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
+  SphereBrush: 'SphereBrush',
   CircularEraser: 'CircularEraser',
   ThresholdBrush: 'ThresholdBrush',
   DynamicThreshold: 'DynamicThreshold',
@@ -92,12 +94,14 @@ const brushInstanceNames = {
 
 const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
+  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
   [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
 
 const brushValues = [
+  brushInstanceNames.SphereBrush,
   brushInstanceNames.CircularBrush,
   brushInstanceNames.CircularEraser,
   brushInstanceNames.ThresholdBrush,
@@ -108,6 +112,7 @@ const optionsValues = [
   ...brushValues,
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
+  SphereScissorsTool.toolName,
   PaintFillTool.toolName,
 ];
 
@@ -263,6 +268,7 @@ function setupTools(toolGroupId) {
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
+  cornerstoneTools.addTool(SphereScissorsTool);
   cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
@@ -278,12 +284,21 @@ function setupTools(toolGroupId) {
   // Segmentation Tools
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
+  toolGroup.addTool(SphereScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
+    }
+  );
+
+  toolGroup.addToolInstance(
+    brushInstanceNames.SphereBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.SphereBrush,
     }
   );
   toolGroup.addToolInstance(
@@ -300,6 +315,7 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.ThresholdBrush,
     }
   );
+
   toolGroup.addToolInstance(
     brushInstanceNames.DynamicThreshold,
     BrushTool.toolName,
@@ -315,7 +331,7 @@ function setupTools(toolGroupId) {
     }
   );
 
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+  toolGroup.setToolActive(brushInstanceNames.SphereBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -344,8 +360,7 @@ function setupTools(toolGroupId) {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
@@ -401,7 +416,8 @@ async function run() {
   viewport = renderingEngine.getViewport(viewportId);
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
-  const imageIdsArray = [imageIds[0], imageIds[100], mgImageIds[0]];
+  // const imageIdsArray = [imageIds[0], imageIds[100], mgImageIds[0]];
+  const imageIdsArray = imageIds;
   const imageIdsArray2 = [imageIds[100]];
 
   const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
@@ -411,12 +427,15 @@ async function run() {
   await viewport.setStack(imageIdsArray, 0);
   await viewport2.setStack(imageIdsArray2, 0);
 
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
+
   const segmentationImageIds = segImages.map((it) => it.imageId);
-  fillStackSegmentationWithMockData({
-    imageIds: imageIdsArray.slice(0, 2),
-    segmentationImageIds,
-    cornerstone,
-  });
+  // fillStackSegmentationWithMockData({
+  //   imageIds: imageIdsArray.slice(0, 2),
+  //   segmentationImageIds,
+  //   cornerstone,
+  // });
 
   renderingEngine.renderViewports([viewportId]);
 
