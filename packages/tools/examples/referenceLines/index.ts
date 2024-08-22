@@ -22,7 +22,7 @@ console.warn(
 const {
   ReferenceLinesTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   PanTool,
   Enums: csToolsEnums,
@@ -169,7 +169,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(ReferenceLinesTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(PanTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -181,7 +181,7 @@ async function run() {
     sourceViewportId: selectedViewportId,
   });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(PanTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -208,7 +208,9 @@ async function run() {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   // Get Cornerstone imageIds and fetch metadata into RAM

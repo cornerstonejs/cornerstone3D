@@ -120,6 +120,9 @@ export default function addManipulationBindings(
         numTouchPoints: 1,
         modifierKey: KeyboardBindings.Alt,
       },
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
     ],
   });
   // Add a length tool binding to allow testing annotations on examples targetting

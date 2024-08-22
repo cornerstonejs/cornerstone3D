@@ -28,7 +28,7 @@ const { ViewportType } = csEnums;
 const {
   Enums: csToolsEnums,
   LengthTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ToolGroupManager,
   utilities: csToolsUtilities,
 } = cornerstoneTools;
@@ -168,7 +168,9 @@ async function run() {
 
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   imageIds = await createImageIdsAndCacheMetaData({

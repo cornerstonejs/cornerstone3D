@@ -151,6 +151,7 @@ import type {
 import type { IVoxelManager } from './IVoxelManager';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
+import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
 
 export type {
   // config
@@ -293,4 +294,5 @@ export type {
   RLERun,
   ViewportInput,
   ImageLoadRequests,
+  IBaseVolumeViewport,
 };

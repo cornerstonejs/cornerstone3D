@@ -141,8 +141,9 @@ export default class BrushStrategy {
         BrushStrategy.childFunctions[key](this, result[key]);
       }
     });
-    this.strategyFunction = (enabledElement, operationData) =>
-      this.fill(enabledElement, operationData);
+    this.strategyFunction = (enabledElement, operationData) => {
+      return this.fill(enabledElement, operationData);
+    };
 
     for (const key of Object.keys(BrushStrategy.childFunctions)) {
       this.strategyFunction[key] = this[key];
@@ -188,8 +189,12 @@ export default class BrushStrategy {
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfSlices()
+      segmentationVoxelManager.getArrayOfModifiedSlices()
     );
+
+    // reset the modified slices since we are done
+    segmentationVoxelManager.resetModifiedSlices();
+
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
     if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
@@ -217,10 +222,16 @@ export default class BrushStrategy {
       segmentationVoxelManager,
       segmentationImageData,
     } = data;
+
+    const segmentationVoxelManagerToUse =
+      operationData.override?.voxelManager || segmentationVoxelManager;
+    const segmentationImageDataToUse =
+      operationData.override?.imageData || segmentationImageData;
+
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createHistoryVoxelManager({
-        sourceVoxelManager: segmentationVoxelManager,
+        sourceVoxelManager: segmentationVoxelManagerToUse,
       });
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
@@ -231,8 +242,8 @@ export default class BrushStrategy {
       ...operationData,
       enabledElement,
       imageVoxelManager,
-      segmentationVoxelManager,
-      segmentationImageData,
+      segmentationVoxelManager: segmentationVoxelManagerToUse,
+      segmentationImageData: segmentationImageDataToUse,
       previewVoxelManager,
       viewport,
       centerWorld: null,

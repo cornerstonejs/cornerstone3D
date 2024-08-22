@@ -39,23 +39,18 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
-// import {
-//   config as segmentationConfig,
-//   segmentLocking,
-//   segmentIndex as segmentIndexController,
-//   state as segmentationState,
-//   activeSegmentation,
-// } from '../../stateManagement/segmentation';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import {
   getActiveSegmentationRepresentation,
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
+  getStackSegmentationImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -79,9 +74,14 @@ export type PreviewData = {
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
+    override: {
+      voxelManager: Types.IVoxelManager<number>;
+      imageData: vtkImageData;
+    };
     segmentsLocked: number[]; //
     segmentationRepresentationUID?: string;
     imageId?: string; // stack labelmap
+    imageIds?: string[]; // stack labelmap
     volumeId?: string; // volume labelmap
     referencedVolumeId?: string;
   } | null;
@@ -259,28 +259,70 @@ class BrushTool extends BaseTool {
         return;
       }
 
-      // here we should identify if we can perform sphere manipulation
-      // for these stack of images, if the metadata is not present
-      // to create a volume or if there are inconsistencies between
-      // the image metadata we should not allow the sphere manipulation
-      // and should throw an error or maybe simply just allow circle manipulation
-      // and not sphere manipulation
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        throw new Error(
-          'Sphere manipulation is not supported for stacks of image segmentations yet'
-        );
-        // Todo: add sphere (volumetric) manipulation support for stacks of images
-        // we should basically check if the stack constructs a valid volume
-        // meaning all the metadata is present and consistent
-        // then we use a VoxelManager mapping to map a volume like appearance
-        // for the stack data.
-        // csUtils.isValidVolume(referencedImageIds
-      }
+        const referencedImageIds = viewport.getImageIds();
+        // Todo: This should get down to the sphere tool to validate the data
+        // it needs to work on, not here, this is so ugly
+        const isValidVolumeForSphere =
+          csUtils.isValidVolume(referencedImageIds);
+        if (!isValidVolumeForSphere) {
+          throw new Error(
+            'Volume is not reconstructable for sphere manipulation'
+          );
+        }
 
-      return {
-        imageId: segmentationImageId,
-        segmentsLocked,
-      };
+        // for optimization we can create the voxel manager here and pass down once
+        const labelmapImageIds = getStackSegmentationImageIdsForViewport(
+          viewport.id,
+          segmentationId
+        );
+
+        if (!labelmapImageIds || labelmapImageIds.length === 1) {
+          return {
+            imageId: segmentationImageId,
+            segmentsLocked,
+          };
+        }
+
+        const tempVolumeId = 'tempVolumeId';
+        const {
+          dimensions,
+          direction,
+          origin,
+          spacing,
+          numberOfComponents,
+          imageIds: sortedLabelmapImageIds,
+        } = csUtils.generateVolumePropsFromImageIds(
+          labelmapImageIds,
+          tempVolumeId
+        );
+
+        const newVoxelManager =
+          csUtils.VoxelManager.createImageVolumeVoxelManager({
+            dimensions,
+            imageIds: sortedLabelmapImageIds,
+            numberOfComponents,
+          });
+
+        const newImageData = vtkImageData.newInstance();
+        newImageData.setDimensions(dimensions);
+        newImageData.setSpacing(spacing);
+        newImageData.setDirection(direction);
+        newImageData.setOrigin(origin);
+        return {
+          imageId: segmentationImageId,
+          segmentsLocked,
+          override: {
+            voxelManager: newVoxelManager,
+            imageData: newImageData,
+          },
+        };
+      } else {
+        return {
+          imageId: segmentationImageId,
+          segmentsLocked,
+        };
+      }
     }
   }
 
@@ -291,6 +333,7 @@ class BrushTool extends BaseTool {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
 
+    // @ts-expect-error
     this._editData = this.createEditData(element);
     this._activateDraw(element);
 
@@ -307,6 +350,7 @@ class BrushTool extends BaseTool {
     triggerAnnotationRenderForViewportUIDs(hoverData.viewportIdsToRender);
 
     const operationData = this.getOperationData(element);
+
     this.applyActiveStrategyCallback(
       enabledElement,
       operationData,
@@ -480,7 +524,6 @@ class BrushTool extends BaseTool {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     this.updateCursor(evt);
 
@@ -518,7 +561,6 @@ class BrushTool extends BaseTool {
 
   protected getOperationData(element?) {
     const editData = this._editData || this.createEditData(element);
-
     const {
       segmentIndex,
       segmentationId,

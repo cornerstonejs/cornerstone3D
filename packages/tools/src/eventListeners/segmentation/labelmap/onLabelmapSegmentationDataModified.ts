@@ -3,6 +3,7 @@ import {
   utilities as csUtils,
   VolumeViewport,
   getEnabledElementByViewportId,
+  StackViewport,
 } from '@cornerstonejs/core';
 
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
@@ -17,43 +18,57 @@ const onLabelmapSegmentationDataModified = function (
 ): void {
   const { segmentationId, modifiedSlicesToUse } = evt.detail;
 
-  let modifiedSlices = modifiedSlicesToUse;
-
   const { representationData, type } =
     SegmentationState.getSegmentation(segmentationId);
-
-  const labelmapRepresentationData = representationData[type];
-
-  if (
-    'stack' in labelmapRepresentationData &&
-    'volumeId' in labelmapRepresentationData
-  ) {
-    // we need to take away the modifiedSlicesToUse from the stack
-    // and update the volume for all the slices
-    modifiedSlices = [];
-  }
-
-  if ('volumeId' in labelmapRepresentationData) {
-    // get the volume from cache, we need the openGLTexture to be updated to GPU
-    performVolumeLabelmapUpdate({
-      modifiedSlicesToUse: modifiedSlices,
-      representationData,
-      type,
-    });
-  }
 
   const viewportIds =
     SegmentationState.getViewportIdsWithSegmentation(segmentationId);
 
-  if ('imageIds' in labelmapRepresentationData) {
-    // get the stack from cache, we need the imageData to be updated to GPU
-    performStackLabelmapUpdate({
-      viewportIds,
-      segmentationId,
-      representationData,
-      type,
-    });
-  }
+  const hasVolumeViewport = viewportIds.some((viewportId) => {
+    const { viewport } = getEnabledElementByViewportId(viewportId);
+    return viewport instanceof VolumeViewport;
+  });
+
+  const hasStackViewport = viewportIds.some((viewportId) => {
+    const { viewport } = getEnabledElementByViewportId(viewportId);
+    return viewport instanceof StackViewport;
+  });
+
+  const hasBothStackAndVolume = hasVolumeViewport && hasStackViewport;
+
+  viewportIds.forEach((viewportId) => {
+    const { viewport } = getEnabledElementByViewportId(viewportId);
+
+    if (viewport instanceof VolumeViewport) {
+      // For combined stack and volume scenarios in the rendering engine, updating only affected
+      // slices is not ideal. Stack indices (e.g., 0 for just one image) don't
+      // correspond to image indices in the volume. In this case, we update all slices.
+      // However, for volume-only scenarios, we update only affected slices.
+
+      performVolumeLabelmapUpdate({
+        modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
+        representationData,
+        type,
+      });
+    }
+
+    if (viewport instanceof StackViewport) {
+      performStackLabelmapUpdate({
+        viewportIds,
+        segmentationId,
+      });
+    }
+  });
+
+  // Todo: i don't think we need this anymore
+  // if (
+  //   'stack' in labelmapRepresentationData &&
+  //   'volumeId' in labelmapRepresentationData
+  // ) {
+  //   // we need to take away the modifiedSlicesToUse from the stack
+  //   // and update the volume for all the slices
+  //   modifiedSlices = [];
+  // }
 };
 
 function performVolumeLabelmapUpdate({
@@ -91,12 +106,7 @@ function performVolumeLabelmapUpdate({
   imageData.modified();
 }
 
-function performStackLabelmapUpdate({
-  viewportIds,
-  segmentationId,
-  representationData,
-  type,
-}) {
+function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
   viewportIds.forEach((viewportId) => {
     const viewportSegReps =
       SegmentationState.getSegmentationRepresentations(viewportId);

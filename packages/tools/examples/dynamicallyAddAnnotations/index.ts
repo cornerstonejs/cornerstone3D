@@ -364,9 +364,15 @@ function initializeToolGroup(toolGroupId) {
 
   // Add the tools to the tool group
   toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
-  toolGroup.addTool(cornerstoneTools.StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
   toolGroup.setToolPassive(cornerstoneTools.LengthTool.toolName);
-  toolGroup.setToolActive(cornerstoneTools.StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   return toolGroup;
 }
@@ -376,7 +382,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(cornerstoneTools.LengthTool);
-  cornerstoneTools.addTool(cornerstoneTools.StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
 
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:

@@ -19,7 +19,7 @@ const {
   ToolGroupManager,
   ScaleOverlayTool,
   LengthTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -100,7 +100,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(ScaleOverlayTool);
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Create a stack viewport
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -111,7 +111,7 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ScaleOverlayTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -133,7 +133,9 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   toolGroup.setToolEnabled(ScaleOverlayTool.toolName);
 

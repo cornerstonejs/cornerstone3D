@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, metaData } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  metaData,
+  setUseCPURendering,
+} from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import htmlSetup from '../local/htmlSetup';
@@ -8,12 +13,11 @@ import uids from '../local/uids';
 import initProviders from '../../../../utils/demo/helpers/initProviders';
 import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
 import initVolumeLoader from './../../../../utils/demo/helpers/initVolumeLoader';
-import { setUseCPURendering } from '@cornerstonejs/core';
 
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -71,7 +75,7 @@ async function run() {
 
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -82,7 +86,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
@@ -109,7 +113,9 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 

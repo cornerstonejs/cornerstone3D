@@ -20,7 +20,7 @@ console.warn(
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   utilities,
   ToolGroupManager,
@@ -125,7 +125,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -134,7 +134,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
+  toolGroup.addTool(StackScrollTool.toolName, { loop: false });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -166,7 +166,13 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName, {});
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

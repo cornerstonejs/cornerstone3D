@@ -6,11 +6,11 @@ import {
   getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
-  StackScrollMouseWheelTool,
   ToolGroupManager,
   addTool,
   Enums as csToolsEnums,
   ZoomTool,
+  StackScrollTool,
 } from '@cornerstonejs/tools';
 import {
   initDemo,
@@ -74,7 +74,7 @@ addDropdownToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-  addTool(StackScrollMouseWheelTool);
+  addTool(StackScrollTool);
   addTool(ZoomTool);
 
   // Using a oblique acquired image to demonstrate the orientation of the volume
@@ -89,10 +89,16 @@ async function run() {
 
   // create toolGroup
   const toolGroup = ToolGroupManager.createToolGroup('myToolGroup');
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {

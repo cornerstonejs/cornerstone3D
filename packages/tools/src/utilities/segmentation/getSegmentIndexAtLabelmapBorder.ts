@@ -33,7 +33,7 @@ export function getSegmentIndexAtLabelmapBorder(
 
   const labelmapData = segmentation.representationData.LABELMAP;
 
-  if (isVolumeSegmentation(labelmapData)) {
+  if (isVolumeSegmentation(labelmapData, viewport)) {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
     const segmentationVolume = cache.getVolume(volumeId);
 
@@ -41,9 +41,14 @@ export function getSegmentIndexAtLabelmapBorder(
       return;
     }
 
+    const voxelManager = segmentationVolume.voxelManager;
     const imageData = segmentationVolume.imageData;
-
-    const segmentIndex = imageData.getScalarValueFromWorld(worldPoint);
+    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+    const segmentIndex = voxelManager.getAtIJK(
+      indexIJK[0],
+      indexIJK[1],
+      indexIJK[2]
+    ) as number;
 
     const canvasPoint = viewport.worldToCanvas(worldPoint);
 
@@ -177,7 +182,13 @@ function isSegmentOnEdgeCanvas(
     const neighborCanvas = [canvasPoint[0] + deltaI, canvasPoint[1] + deltaJ];
 
     const worldPoint = viewport.canvasToWorld(neighborCanvas as Types.Point2);
-    return imageData.getScalarValueFromWorld(worldPoint);
+
+    // @ts-expect-error
+    const voxelManager = imageData.get('voxelManager').voxelManager;
+
+    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+
+    return voxelManager.getAtIJK(indexIJK[0], indexIJK[1], indexIJK[2]);
   };
 
   return isSegmentOnEdge(getNeighborIndex, segmentIndex, searchRadius);

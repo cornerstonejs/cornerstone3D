@@ -32,6 +32,7 @@ import type {
   ReferenceCompatibleOptions,
   ViewReference,
   IVolumeViewport,
+  IBaseVolumeViewport,
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -68,7 +69,10 @@ import imageIdToURI from '../utilities/imageIdToURI';
  * For setting volumes on viewports you need to use {@link addVolumesToViewports}
  * which will add volumes to the specified viewports.
  */
-abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
+abstract class BaseVolumeViewport
+  extends Viewport
+  implements IBaseVolumeViewport
+{
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
 
@@ -463,6 +467,9 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     let voiRangeToUse = voiRange;
     // Todo: not sure why this is needed, in the new model this will not work for sure
     if (typeof voiRangeToUse === 'undefined') {
+      throw new Error(
+        'voiRangeToUse is undefined, need to implement this in the new volume model'
+      );
       const imageData = volumeActor.getMapper().getInputData();
       const range = imageData.getPointData().getScalars().getRange();
       const maxVoiRange = { lower: range[0], upper: range[1] };
@@ -601,7 +608,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
     const delta = viewRefSpecifier?.sliceIndex - this.getSliceIndex();
     // Calculate a camera focal point and position
     const { sliceRangeInfo } = getVolumeViewportScrollInfo(
-      this,
+      this as unknown as IVolumeViewport,
       volumeId,
       true
     );
@@ -657,7 +664,7 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
   public scroll(delta = 1) {
     const volumeId = this.getVolumeId();
     const { sliceRangeInfo } = getVolumeViewportScrollInfo(
-      this,
+      this as unknown as IVolumeViewport,
       volumeId,
       true
     );
@@ -713,7 +720,11 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       (isNegativeNormal || isSameNormal)
     ) {
       const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
-        getVolumeViewportScrollInfo(this, volumeId, true);
+        getVolumeViewportScrollInfo(
+          this as unknown as IVolumeViewport,
+          volumeId,
+          true
+        );
 
       const { sliceRange, spacingInNormalDirection } = sliceRangeInfo;
       if (isNegativeNormal) {

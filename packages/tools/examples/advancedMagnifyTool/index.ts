@@ -23,7 +23,7 @@ console.warn(
 
 const {
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   LengthTool,
   HeightTool,
   ProbeTool,
@@ -293,7 +293,7 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
 
   // Add the tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
@@ -344,7 +344,13 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
@@ -369,7 +375,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);

@@ -251,7 +251,7 @@ function _stopClip(
   }
 
   if (viewport instanceof VideoViewport) {
-    viewport.pause();
+    (viewport as Types.IVideoViewport).pause();
   } else if (stopDynamicCine && viewport instanceof BaseVolumeViewport) {
     _stopDynamicVolumeCine(element);
   }

@@ -20,7 +20,7 @@ const {
   LengthTool,
   HeightTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   Enums: csToolsEnums,
   ProbeTool,
@@ -141,7 +141,7 @@ async function setup() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ZoomTool);
@@ -164,7 +164,7 @@ async function setup() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
@@ -202,7 +202,13 @@ async function setup() {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   toolGroup.setToolPassive(ProbeTool.toolName);
   toolGroup.setToolPassive(RectangleROITool.toolName);

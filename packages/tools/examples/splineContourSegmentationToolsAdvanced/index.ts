@@ -43,7 +43,7 @@ const {
   segmentation,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -541,7 +541,7 @@ async function run() {
   cornerstoneTools.addTool(SplineContourSegmentationTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -551,7 +551,7 @@ async function run() {
   [stackToolGroup, volumeToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
     toolGroup.addTool(SplineContourSegmentationTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
 
@@ -609,7 +609,9 @@ async function run() {
       ],
     });
 
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Wheel }],
+    });
     toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName);
   });
 

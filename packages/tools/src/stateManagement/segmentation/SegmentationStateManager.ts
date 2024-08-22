@@ -293,34 +293,18 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Updates the segmentation image references for a given viewport and segmentation representation.
-   * @param viewportId - The ID of the viewport.
-   * @param segmentationId - The Id of the segmentation representation.
-   * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
+   * Helper function to update labelmap segmentation image references.
+   * @param segmentationId - The ID of the segmentation representation.
+   * @param stackViewport - The stack viewport.
+   * @param labelmapImageIds - The labelmap image IDs.
+   * @param updateCallback - A callback to update the reference map.
    */
-  updateLabelmapSegmentationImageReferences(
-    viewportId,
-    segmentationId
-  ): string {
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation) {
-      return;
-    }
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
-    }
-
-    const { representationData } = segmentation;
-
-    if (!representationData.LABELMAP) {
-      return;
-    }
-
-    const labelmapImageIds = this.getLabelmapImageIds(representationData);
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
+  _updateLabelmapSegmentationReferences(
+    segmentationId,
+    stackViewport,
+    labelmapImageIds,
+    updateCallback
+  ) {
     const currentImageId = stackViewport.getCurrentImageId();
 
     for (const labelmapImageId of labelmapImageIds) {
@@ -336,9 +320,95 @@ export default class SegmentationStateManager {
       }
     }
 
+    if (updateCallback) {
+      updateCallback(stackViewport, segmentationId, labelmapImageIds);
+    }
+
     return this._stackLabelmapImageIdReferenceMap
       .get(segmentationId)
       .get(currentImageId);
+  }
+
+  /**
+   * Updates the segmentation image references for a given viewport and segmentation representation.
+   * @param viewportId - The ID of the viewport.
+   * @param segmentationId - The Id of the segmentation representation.
+   * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
+   */
+  updateLabelmapSegmentationImageReferences(viewportId, segmentationId) {
+    const segmentation = this.getSegmentation(segmentationId);
+    if (!segmentation) {
+      return;
+    }
+
+    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
+      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
+    }
+
+    const { representationData } = segmentation;
+    if (!representationData.LABELMAP) {
+      return;
+    }
+
+    const labelmapImageIds = this.getLabelmapImageIds(representationData);
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+    const stackViewport = enabledElement.viewport as Types.IStackViewport;
+
+    return this._updateLabelmapSegmentationReferences(
+      segmentationId,
+      stackViewport,
+      labelmapImageIds,
+      null
+    );
+  }
+
+  /**
+   * Updates all segmentation image references for a given viewport and segmentation representation.
+   * @param viewportId - The ID of the viewport.
+   * @param segmentationId - The Id of the segmentation representation.
+   * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
+   */
+  _updateAllLabelmapSegmentationImageReferences(viewportId, segmentationId) {
+    const segmentation = this.getSegmentation(segmentationId);
+    if (!segmentation) {
+      return;
+    }
+
+    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
+      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
+    }
+
+    const { representationData } = segmentation;
+    if (!representationData.LABELMAP) {
+      return;
+    }
+
+    const labelmapImageIds = this.getLabelmapImageIds(representationData);
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+    const stackViewport = enabledElement.viewport as Types.IStackViewport;
+
+    this._updateLabelmapSegmentationReferences(
+      segmentationId,
+      stackViewport,
+      labelmapImageIds,
+      (stackViewport, segmentationId, labelmapImageIds) => {
+        const imageIds = stackViewport.getImageIds();
+        imageIds.forEach((imageId, index) => {
+          for (const labelmapImageId of labelmapImageIds) {
+            const viewableImageId = stackViewport.isReferenceViewable(
+              { referencedImageId: labelmapImageId, sliceIndex: index },
+              { asOverlay: true, withNavigation: true }
+            );
+
+            if (viewableImageId) {
+              this._stackLabelmapImageIdReferenceMap
+                .get(segmentationId)
+                .set(imageId, labelmapImageId);
+            }
+          }
+        });
+      }
+    );
   }
 
   private getLabelmapImageIds(
@@ -395,6 +465,38 @@ export default class SegmentationStateManager {
       this._stackLabelmapImageIdReferenceMap.get(segmentationId);
 
     return imageIdReferenceMap.get(currentImageId);
+  }
+
+  /**
+   * Retrieves all labelmap image IDs associated with a segmentation for a given viewport.
+   *
+   * @param viewportId - The ID of the viewport.
+   * @param segmentationId - The ID of the segmentation.
+   * @returns An array of labelmap image IDs. Returns an empty array if the segmentation is not found.
+   */
+  getStackSegmentationImageIdsForViewport(
+    viewportId: string,
+    segmentationId: string
+  ): string[] {
+    const segmentation = this.getSegmentation(segmentationId);
+
+    if (!segmentation) {
+      return [];
+    }
+
+    this._updateAllLabelmapSegmentationImageReferences(
+      viewportId,
+      segmentationId
+    );
+    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const imageIds = viewport.getImageIds();
+
+    const associatedReferenceImageAndLabelmapImageIds =
+      this._stackLabelmapImageIdReferenceMap.get(segmentationId);
+
+    return imageIds.map((imageId) => {
+      return associatedReferenceImageAndLabelmapImageIds.get(imageId);
+    });
   }
 
   /**
