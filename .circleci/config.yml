@@ -60,6 +60,12 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run: yarn run api-check
+  FORMAT_CHECK:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: yarn run format-check
 
   # https://circleci.com/docs/2.0/collect-test-data/#karma
   TEST:
@@ -127,6 +133,9 @@ workflows:
                 - feature/*
                 - hotfix/*
       - BUILD:
+          requires:
+            - CHECKOUT
+      - FORMAT_CHECK:
           requires:
             - CHECKOUT
       - API_CHECK:

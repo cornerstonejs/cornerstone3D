@@ -15,6 +15,7 @@
   },
   "scripts": {
     "api-check": "npx lerna run api-check",
+    "format-check": "npx lerna run format-check",
     "build": "npx lerna run build --stream && npx lerna run build:loader",
     "build:esm": "npx lerna run build:esm --stream",
     "build:umd": "npx lerna run build:umd --stream",
