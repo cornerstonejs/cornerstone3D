@@ -137,7 +137,7 @@ workflows:
             - CHECKOUT
       - FORMAT_CHECK:
           requires:
-            - CHECKOUT
+            - BUILD
       - API_CHECK:
           requires:
             - BUILD
