@@ -45,7 +45,7 @@ import {
   getActiveSegmentationRepresentation,
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
-  getStackSegmentationImageIds,
+  getStackSegmentationImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
@@ -272,7 +272,18 @@ class BrushTool extends BaseTool {
         }
 
         // for optimization we can create the voxel manager here and pass down once
-        const labelmapImageIds = getStackSegmentationImageIds(segmentationId);
+        const labelmapImageIds = getStackSegmentationImageIdsForViewport(
+          viewport.id,
+          segmentationId
+        );
+
+        if (!labelmapImageIds || labelmapImageIds.length === 1) {
+          return {
+            imageId: segmentationImageId,
+            segmentsLocked,
+          };
+        }
+
         const tempVolumeId = 'tempVolumeId';
         const {
           dimensions,
@@ -298,7 +309,6 @@ class BrushTool extends BaseTool {
         newImageData.setSpacing(spacing);
         newImageData.setDirection(direction);
         newImageData.setOrigin(origin);
-
         return {
           imageId: segmentationImageId,
           segmentsLocked,

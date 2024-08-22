@@ -25,7 +25,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -161,23 +161,22 @@ async function run() {
         orientation: 'sagittal',
       },
     },
-    // {
-    //   viewportId: viewportId2,
-    //   type: ViewportType.STACK,
-    //   element: element2,
-    // },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.STACK,
+      element: element2,
+    },
   ];
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1);
-  // toolGroup.addViewport(viewportId2);
+  toolGroup.addViewport(viewportId2);
 
   viewport1 = renderingEngine.getViewport(viewportId1);
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
   const imageId = imageIds[80];
-  console.debug(imageId);
-  const imageIdsArray = [imageId];
+  const imageIdsArray = [imageId, imageIds[81]];
 
   const volumeId = 'VOLUME_ID';
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
@@ -186,7 +185,7 @@ async function run() {
 
   volume.load();
 
-  // await viewport2.setStack(imageIdsArray, 0);
+  await viewport2.setStack(imageIdsArray, 0);
 
   viewport1.setVolumes([{ volumeId }]);
 
@@ -222,17 +221,12 @@ async function run() {
   ]);
 
   // adding the same segmentation to the stack viewport
-  // await segmentation.addSegmentationRepresentations(viewportId2, [
-  //   {
-  //     segmentationId,
-  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  //   },
-  // ]);
-
-  // setTimeout(() => {
-  //   viewport1.setProperties({ interpolationType: 0 });
-  //   renderingEngine.render();
-  // }, 1000);
+  await segmentation.addSegmentationRepresentations(viewportId2, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 }
 
 run();

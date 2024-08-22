@@ -7,7 +7,13 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
  * @param segmentationId -  The ID of the segmentation.
  * @returns An array of labelmap image IDs.
  */
-export function getStackSegmentationImageIds(segmentationId: string) {
+export function getStackSegmentationImageIdsForViewport(
+  viewportId: string,
+  segmentationId: string
+) {
   const segmentationStateManager = defaultSegmentationStateManager;
-  return segmentationStateManager.getStackSegmentationImageIds(segmentationId);
+  return segmentationStateManager.getStackSegmentationImageIdsForViewport(
+    viewportId,
+    segmentationId
+  );
 }

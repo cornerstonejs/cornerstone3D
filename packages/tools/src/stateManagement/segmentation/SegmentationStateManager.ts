@@ -404,14 +404,25 @@ export default class SegmentationStateManager {
    * @param segmentationId - The ID of the segmentation.
    * @returns An array of labelmap image IDs. Returns an empty array if the segmentation is not found.
    */
-  getStackSegmentationImageIds(segmentationId: string): string[] {
+  getStackSegmentationImageIdsForViewport(
+    viewportId: string,
+    segmentationId: string
+  ): string[] {
     const segmentation = this.getSegmentation(segmentationId);
 
     if (!segmentation) {
       return [];
     }
 
-    return this.getLabelmapImageIds(segmentation.representationData);
+    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const imageIds = viewport.getImageIds();
+
+    const associatedReferenceImageAndLabelmapImageIds =
+      this._stackLabelmapImageIdReferenceMap.get(segmentationId);
+
+    return imageIds.map((imageId) => {
+      return associatedReferenceImageAndLabelmapImageIds.get(imageId);
+    });
   }
 
   /**
