@@ -1,5 +1,6 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -35,11 +36,12 @@ export default {
       return;
     }
 
+    let changed = false;
     // Correct for preview data getting into the image area and not accepted/rejected
     if (existingValue === previewSegmentIndex) {
       if (previewVoxelManager.getAtIndex(index) === undefined) {
         // Reset the value to ensure preview gets added to the indices
-        segmentationVoxelManager.setAtIndex(index, segmentIndex);
+        changed = segmentationVoxelManager.setAtIndex(index, segmentIndex);
       } else {
         return;
       }
@@ -47,6 +49,6 @@ export default {
 
     // Now, just update the displayed value
     const useSegmentIndex = previewSegmentIndex ?? segmentIndex;
-    previewVoxelManager.setAtIndex(index, useSegmentIndex);
+    changed = previewVoxelManager.setAtIndex(index, useSegmentIndex);
   },
 };

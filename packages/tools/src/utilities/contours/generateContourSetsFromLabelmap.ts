@@ -63,7 +63,12 @@ function generateContourSetsFromLabelmap({ segmentations }) {
     for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
       // Check if the slice is empty before running marching cube
       if (
-        isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex)
+        isSliceEmptyForSegment(
+          sliceIndex,
+          voxelManager,
+          pixelsPerSlice,
+          segIndex
+        )
       ) {
         continue;
       }
@@ -72,7 +77,7 @@ function generateContourSetsFromLabelmap({ segmentations }) {
       try {
         // Modify segData for this specific segment directly
         for (let i = 0; i < pixelsPerSlice; i++) {
-          const value = segData[i + frameStart];
+          const value = voxelManager.getAtIndex(i + frameStart);
           if (value === segIndex || containedSegmentIndices?.has(value)) {
             // @ts-expect-error vtk has wrong types
             scalars.setValue(i + frameStart, 1);
@@ -142,12 +147,17 @@ function generateContourSetsFromLabelmap({ segmentations }) {
   return ContourSets;
 }
 
-function isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex) {
+function isSliceEmptyForSegment(
+  sliceIndex,
+  voxelManager,
+  pixelsPerSlice,
+  segIndex
+) {
   const startIdx = sliceIndex * pixelsPerSlice;
   const endIdx = startIdx + pixelsPerSlice;
 
   for (let i = startIdx; i < endIdx; i++) {
-    if (segData[i] === segIndex) {
+    if (voxelManager.getAtIndex(i) === segIndex) {
       return false;
     }
   }

@@ -333,6 +333,7 @@ class BrushTool extends BaseTool {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
 
+    // @ts-expect-error
     this._editData = this.createEditData(element);
     this._activateDraw(element);
 
