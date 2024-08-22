@@ -158,7 +158,7 @@
     "stylelint-config-recommended": "^12.0.0",
     "ts-loader": "9.5.1",
     "typedoc": "^0.25.13",
-    "typescript": "5.5.3",
+    "typescript": "5.5.4",
     "unzipper": "^0.10.11",
     "url-loader": "^4.1.1",
     "webpack": "5.81.0",

@@ -641,7 +641,7 @@ class RectangleROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnits == null
+        data.cachedStats[targetId].areaUnit == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -649,7 +649,7 @@ class RectangleROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnits: null,
+          areaUnit: null,
         };
 
         this._calculateCachedStats(
@@ -915,7 +915,7 @@ class RectangleROITool extends AnnotationTool {
         );
 
         const handles = [pos1Index, pos2Index];
-        const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
           image,
           handles
         );
@@ -932,7 +932,7 @@ class RectangleROITool extends AnnotationTool {
           ),
         };
 
-        const pixelValueUnits = getPixelValueUnits(
+        const modalityUnit = getPixelValueUnits(
           metadata.Modality,
           annotation.metadata.referencedImageId,
           pixelUnitsOptions
@@ -956,8 +956,8 @@ class RectangleROITool extends AnnotationTool {
           max: stats.max?.value,
           statsArray: stats.array,
           pointsInShape: pointsInShape,
-          areaUnits,
-          pixelValueUnits,
+          areaUnit,
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -992,8 +992,7 @@ class RectangleROITool extends AnnotationTool {
  */
 function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnits, pixelValueUnits } =
-    cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -1001,10 +1000,10 @@ function defaultGetTextLines(data, targetId: string): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnits}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`);
+  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
 
   return textLines;
 }

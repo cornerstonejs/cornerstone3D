@@ -644,7 +644,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ),
     };
 
-    const pixelValueUnits = getPixelValueUnits(
+    const modalityUnit = getPixelValueUnits(
       metadata.Modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
@@ -752,8 +752,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       stdDev: stats.stdDev?.value,
       max: stats.max?.value,
       statsArray: stats.array,
-      areaUnits: measureInfo.areaUnits,
-      pixelValueUnits,
+      areaUnit: measureInfo.areaUnit,
+      modalityUnit,
     };
   }
 
@@ -866,8 +866,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 function defaultGetTextLines(data): string[] {
   const cachedVolumeStats = data.cachedStats.statistics;
 
-  const { area, mean, max, stdDev, areaUnits, pixelValueUnits } =
-    cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -875,10 +874,10 @@ function defaultGetTextLines(data): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnits}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`);
+  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
 
   return textLines;
 }

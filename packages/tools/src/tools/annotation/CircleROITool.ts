@@ -653,7 +653,7 @@ class CircleROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnits == null
+        data.cachedStats[targetId].areaUnit == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -661,7 +661,7 @@ class CircleROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnits: null,
+          areaUnit: null,
           radius: null,
           radiusUnit: null,
           perimeter: null,
@@ -936,8 +936,10 @@ class CircleROITool extends AnnotationTool {
         );
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
         const handles = [pos1Index, pos2Index];
-        const { scale, lengthUnits, areaUnits } =
-          getCalibratedLengthUnitsAndScale(image, handles);
+        const { scale, unit, areaUnit } = getCalibratedLengthUnitsAndScale(
+          image,
+          handles
+        );
         const aspect = getCalibratedAspect(image);
         const area = Math.abs(
           Math.PI *
@@ -954,7 +956,7 @@ class CircleROITool extends AnnotationTool {
           ),
         };
 
-        const pixelValueUnits = getPixelValueUnits(
+        const modalityUnit = getPixelValueUnits(
           metadata.Modality,
           annotation.metadata.referencedImageId,
           pixelUnitsOptions
@@ -982,11 +984,11 @@ class CircleROITool extends AnnotationTool {
           statsArray: stats.array,
           pointsInShape: pointsInShape,
           isEmptyArea,
-          areaUnits,
+          areaUnit,
           radius: worldWidth / 2 / scale,
-          radiusUnit: lengthUnits,
+          radiusUnit: unit,
           perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
-          pixelValueUnits,
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -1023,8 +1025,8 @@ function defaultGetTextLines(data, targetId): string[] {
     stdDev,
     max,
     isEmptyArea,
-    areaUnits,
-    pixelValueUnits,
+    areaUnit,
+    modalityUnit,
   } = cachedVolumeStats;
   const textLines: string[] = [];
 
@@ -1038,22 +1040,20 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
   if (stdDev) {
-    textLines.push(
-      `Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`
-    );
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
   return textLines;

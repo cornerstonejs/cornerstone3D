@@ -214,7 +214,7 @@ class DragProbeTool extends ProbeTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, pixelValueUnits } = cachedVolumeStats;
+  const { index, value, modalityUnit } = cachedVolumeStats;
 
   if (value === undefined) {
     return;
@@ -224,7 +224,7 @@ function defaultGetTextLines(data, targetId): string[] {
 
   textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-  textLines.push(`${value.toFixed(2)} ${pixelValueUnits}`);
+  textLines.push(`${value.toFixed(2)} ${modalityUnit}`);
 
   return textLines;
 }

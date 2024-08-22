@@ -765,7 +765,7 @@ class EllipticalROITool extends AnnotationTool {
       // force to recalculate the stats from the points
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnits == null
+        data.cachedStats[targetId].areaUnit == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -773,7 +773,7 @@ class EllipticalROITool extends AnnotationTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnits: null,
+          areaUnit: null,
         };
 
         this._calculateCachedStats(annotation, viewport, renderingEngine);
@@ -1045,7 +1045,7 @@ class EllipticalROITool extends AnnotationTool {
       const isEmptyArea = worldWidth === 0 && worldHeight === 0;
 
       const handles = [pos1Index, post2Index];
-      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
         image,
         handles
       );
@@ -1065,7 +1065,7 @@ class EllipticalROITool extends AnnotationTool {
         ),
       };
 
-      const pixelValueUnits = getPixelValueUnits(
+      const modalityUnit = getPixelValueUnits(
         metadata.Modality,
         annotation.metadata.referencedImageId,
         pixelUnitsOptions
@@ -1092,8 +1092,8 @@ class EllipticalROITool extends AnnotationTool {
         statsArray: stats.array,
         pointsInShape,
         isEmptyArea,
-        areaUnits,
-        pixelValueUnits,
+        areaUnit,
+        modalityUnit,
       };
     }
 
@@ -1159,7 +1159,7 @@ class EllipticalROITool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnits, pixelValueUnits } =
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
     cachedVolumeStats;
 
   const textLines: string[] = [];
@@ -1167,22 +1167,20 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
   if (stdDev) {
-    textLines.push(
-      `Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`
-    );
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
   return textLines;
