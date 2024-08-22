@@ -6,7 +6,8 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 
-import { getBufferConfiguration, uuidv4, VoxelManager } from '../utilities';
+import uuidv4 from '../utilities/uuidv4';
+import VoxelManager from '../utilities/VoxelManager';
 import type {
   Point3,
   Metadata,
@@ -17,13 +18,15 @@ import type {
   PixelDataTypedArray,
   IVolumeLoadObject,
   PixelDataTypedArrayString,
-  IVolume,
 } from '../types';
-import { imageLoader } from '..';
-import { createAndCacheLocalImage } from './imageLoader';
+import {
+  createAndCacheLocalImage,
+  createAndCacheDerivedImages,
+} from './imageLoader';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
+  progressiveRendering?: boolean;
 }
 
 interface DerivedVolumeOptions {
@@ -202,14 +205,24 @@ export function createAndCacheDerivedVolume(
 
   const referencedImageIds = referencedVolume.imageIds ?? [];
 
+  const byteLength = referencedImageIds.reduce((total, imageId) => {
+    const image = cache.getImage(imageId);
+    return total + image.sizeInBytes;
+  }, 0);
+
+  const isCacheable = cache.isCacheable(byteLength);
+
+  if (!isCacheable) {
+    throw new Error(
+      `Cannot created derived volume: Referenced volume with id ${referencedVolumeId} does not exist.`
+    );
+  }
+
   // put the imageIds into the cache synchronously since they are just empty
   // images
-  const derivedImages = imageLoader.createAndCacheDerivedImages(
-    referencedImageIds,
-    {
-      targetBufferType: options.targetBufferType,
-    }
-  );
+  const derivedImages = createAndCacheDerivedImages(referencedImageIds, {
+    targetBufferType: options.targetBufferType,
+  });
 
   const dataType = derivedImages[0].dataType;
 
@@ -299,6 +312,30 @@ export function createLocalVolume(
     ? (scalarData.constructor.name as PixelDataTypedArrayString)
     : targetBufferType;
 
+  const totalNumberOfVoxels = sliceLength * dimensions[2];
+  let byteLength;
+  switch (dataType) {
+    case 'Uint8Array':
+    case 'Int8Array':
+      byteLength = totalNumberOfVoxels;
+      break;
+    case 'Uint16Array':
+    case 'Int16Array':
+      byteLength = totalNumberOfVoxels * 2;
+      break;
+    case 'Float32Array':
+      byteLength = totalNumberOfVoxels * 4;
+      break;
+  }
+
+  const isCacheable = cache.isCacheable(byteLength);
+
+  if (!isCacheable) {
+    throw new Error(
+      `Cannot created derived volume: Volume with id ${volumeId} is not cacheable.`
+    );
+  }
+
   // Create derived images
   const imageIds = [];
   const derivedImages = [];
@@ -344,7 +381,9 @@ export function createLocalVolume(
   imageVolume.voxelManager = voxelManager;
 
   // use sync
-  cache.putVolumeSync(volumeId, imageVolume);
+  if (!preventCache) {
+    cache.putVolumeSync(volumeId, imageVolume);
+  }
 
   return imageVolume;
 }

@@ -1,4 +1,4 @@
-import { state } from '../../stateManagement/segmentation';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type { ContourSegmentationAnnotation } from '../../types';
 
 /**
@@ -18,7 +18,7 @@ export function removeContourSegmentationAnnotation(
   }
 
   const { segmentationId, segmentIndex } = annotation.data.segmentation;
-  const segmentation = state.getSegmentation(segmentationId);
+  const segmentation = getSegmentation(segmentationId);
   const { annotationUIDsMap } = segmentation?.representationData.CONTOUR || {};
   const annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
 

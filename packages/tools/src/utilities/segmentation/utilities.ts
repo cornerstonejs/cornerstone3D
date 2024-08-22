@@ -1,7 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
-import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
 import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
@@ -20,31 +18,6 @@ export type VolumeInfo = {
   volumeSize: number;
   voxelManager: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
 };
-
-export function getBrushToolInstances(toolGroupId: string, toolName?: string) {
-  const toolGroup = getToolGroup(toolGroupId);
-
-  if (toolGroup === undefined) {
-    return;
-  }
-
-  const toolInstances = toolGroup._toolInstances;
-
-  if (!Object.keys(toolInstances).length) {
-    return;
-  }
-
-  if (toolName && toolInstances[toolName]) {
-    return [toolInstances[toolName]];
-  }
-
-  // For each tool that has BrushTool as base class, set the brush size.
-  const brushBasedToolInstances = Object.values(toolInstances).filter(
-    (toolInstance) => toolInstance instanceof BrushTool
-  ) as BrushTool[];
-
-  return brushBasedToolInstances;
-}
 
 const equalsCheck = (a, b) => {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -131,3 +104,37 @@ export function processVolumes(
     baseVolumeIdx,
   };
 }
+
+const segmentIndicesCache = new Map<
+  string,
+  { indices: number[]; isDirty: boolean }
+>();
+
+export const setSegmentationDirty = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached) {
+    cached.isDirty = true;
+  }
+};
+
+export const setSegmentationClean = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached) {
+    cached.isDirty = false;
+  }
+};
+
+export const getCachedSegmentIndices = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached && !cached.isDirty) {
+    return cached.indices;
+  }
+  return null;
+};
+
+export const setCachedSegmentIndices = (
+  segmentationId: string,
+  indices: number[]
+) => {
+  segmentIndicesCache.set(segmentationId, { indices, isDirty: false });
+};

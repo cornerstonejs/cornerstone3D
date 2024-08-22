@@ -2,7 +2,6 @@
 import { expect } from 'chai';
 import { loadImage } from '../src/imageLoader/wadouri/loadImage.js';
 import configure from '../src/imageLoader/configure.js';
-import webWorkerManager from '../src/imageLoader/webWorkerManager.js';
 
 // See https://www.dicomlibrary.com/dicom/transfer-syntax/
 const transferSyntaxes = {
@@ -42,8 +41,6 @@ describe('loadImage', function () {
         },
       },
     };
-
-    webWorkerManager.initialize(config);
 
     configure({
       strict: false,

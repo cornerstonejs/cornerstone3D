@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import type * as cornerstoneImport from '@cornerstonejs/core';
 import { loadImage } from './loadImage';
 import { metaDataProvider } from './metaData/index';
-import type { Types } from '@cornerstonejs/core';
 
 export default function (cornerstone: typeof cornerstoneImport): void {
   // register dicomweb and wadouri image loader prefixes

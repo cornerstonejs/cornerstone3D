@@ -1,6 +1,5 @@
 import { utilities } from '@cornerstonejs/core';
-import type { PublicToolProps } from '../../types';
-import type { AnnotationRenderContext } from '../../types';
+import type { AnnotationRenderContext, PublicToolProps } from '../../types';
 import type { PlanarFreehandContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import PlanarFreehandROITool from './PlanarFreehandROITool';

@@ -1,6 +1,6 @@
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import { labelmapDisplay } from '../../tools/displayTools/Labelmap';
-import { contourDisplay } from '../../tools/displayTools/Contour';
+import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
+import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 
 import { getSegmentationRepresentation } from './segmentationState';
 

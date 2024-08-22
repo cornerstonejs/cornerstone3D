@@ -1,4 +1,4 @@
-import { state } from '../index';
+import { state } from '../state';
 import Synchronizer, { type SynchronizerOptions } from './Synchronizer';
 import type { ISynchronizerEventHandler } from '../../types';
 

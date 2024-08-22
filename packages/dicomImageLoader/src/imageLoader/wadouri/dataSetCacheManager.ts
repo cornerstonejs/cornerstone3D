@@ -8,6 +8,7 @@ import type {
 } from '../../types';
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
 import multiframeDataset from './retrieveMultiframeDataset';
+import { loadedDataSets, purgeLoadedDataSets } from './loadedDataSets';
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;
@@ -26,9 +27,6 @@ export interface CornerstoneWadoLoaderCachedPromise
  * in a multiframe sop instance so it can create the imageId's correctly.
  */
 let cacheSizeInBytes = 0;
-
-let loadedDataSets: Record<string, { dataSet: DataSet; cacheCount: number }> =
-  {};
 
 let promises: Record<string, CornerstoneWadoLoaderCachedPromise> = {};
 
@@ -219,7 +217,7 @@ export function getInfo(): CornerstoneWadoLoaderCacheManagerInfoResponse {
 
 // removes all cached datasets from memory
 function purge(): void {
-  loadedDataSets = {};
+  purgeLoadedDataSets();
   promises = {};
   cacheSizeInBytes = 0;
 }

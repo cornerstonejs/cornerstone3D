@@ -1,4 +1,4 @@
-import { MouseBindings, ToolModes } from '../../enums';
+import { MouseBindings, ToolModes, Events } from '../../enums';
 import get from 'lodash.get';
 import {
   triggerEvent,
@@ -9,12 +9,11 @@ import {
   Settings,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { Events } from '../../enums';
 import type {
   ToolActivatedEventDetail,
   ToolModeChangedEventDetail,
 } from '../../types/EventTypes';
-import { ToolGroupManager, state } from '../index';
+import { state } from '../state';
 import type {
   IToolBinding,
   IToolClassReference,
@@ -26,6 +25,7 @@ import type {
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
+import getToolGroup from './getToolGroup';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -805,14 +805,16 @@ export default class ToolGroup implements IToolGroup {
     newToolGroupId,
     fnToolFilter: (toolName: string) => void = null
   ): IToolGroup {
-    let toolGroup = ToolGroupManager.getToolGroup(newToolGroupId);
+    let toolGroup = getToolGroup(newToolGroupId);
 
     if (toolGroup) {
-      console.warn(`ToolGroup ${newToolGroupId} already exists`);
+      console.debug(`ToolGroup ${newToolGroupId} already exists`);
       return toolGroup;
     }
 
-    toolGroup = ToolGroupManager.createToolGroup(newToolGroupId);
+    toolGroup = new ToolGroup(newToolGroupId);
+    state.toolGroups.push(toolGroup);
+
     fnToolFilter = fnToolFilter ?? (() => true);
 
     Object.keys(this._toolInstances)

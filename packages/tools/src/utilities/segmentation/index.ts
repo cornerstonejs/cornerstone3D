@@ -7,7 +7,7 @@ import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
 import {
   triggerSegmentationRender,
   triggerSegmentationRenderBySegmentationId,
-} from './triggerSegmentationRender';
+} from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import floodFill from './floodFill';
 import {
   getBrushSizeForToolGroup,
@@ -26,7 +26,7 @@ import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
 import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
 import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
-import { getBrushToolInstances } from './utilities';
+import { getBrushToolInstances } from './getBrushToolInstances';
 
 export {
   thresholdVolumeByRange,

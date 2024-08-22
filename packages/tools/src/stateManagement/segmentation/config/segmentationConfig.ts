@@ -1,5 +1,4 @@
 import type SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 
 import type {
   RepresentationConfig,
@@ -7,6 +6,12 @@ import type {
   SegmentRepresentationConfig,
 } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import { getGlobalConfig as _getGlobalConfig } from '../getGlobalConfig';
+import { setGlobalConfig as _setGlobalConfig } from '../setGlobalConfig';
+import { getSegmentationRepresentationConfig as _getSegmentationRepresentationConfig } from '../getSegmentationRepresentationConfig';
+import { setSegmentationRepresentationConfig as _setSegmentationRepresentationConfig } from '../setSegmentationRepresentationConfig';
+import { setPerSegmentConfig as _setPerSegmentConfig } from '../setPerSegmentConfig';
+import { getPerSegmentConfig as _getPerSegmentConfig } from '../getPerSegmentConfig';
 
 /**
  * It returns the global segmentation config.
@@ -14,7 +19,7 @@ import { triggerSegmentationRepresentationModified } from '../triggerSegmentatio
  * config for each representation type and renderInactiveRepresentations flag.
  */
 function getGlobalConfig(): SegmentationRepresentationConfig {
-  return SegmentationState.getGlobalConfig();
+  return _getGlobalConfig();
 }
 
 /**
@@ -24,7 +29,7 @@ function getGlobalConfig(): SegmentationRepresentationConfig {
 function setGlobalConfig(
   segmentationConfig: SegmentationRepresentationConfig
 ): void {
-  SegmentationState.setGlobalConfig(segmentationConfig);
+  _setGlobalConfig(segmentationConfig);
 }
 
 /**
@@ -74,9 +79,7 @@ function setGlobalRepresentationConfig(
 function getSegmentationRepresentationConfig(
   segmentationRepresentationUID: string
 ): RepresentationConfig {
-  return SegmentationState.getSegmentationRepresentationConfig(
-    segmentationRepresentationUID
-  );
+  return _getSegmentationRepresentationConfig(segmentationRepresentationUID);
 }
 
 /**
@@ -89,10 +92,7 @@ function setSegmentationRepresentationConfig(
   segmentationRepresentationUID: string,
   config: RepresentationConfig
 ): void {
-  SegmentationState.setSegmentationRepresentationConfig(
-    segmentationRepresentationUID,
-    config
-  );
+  _setSegmentationRepresentationConfig(segmentationRepresentationUID, config);
 }
 
 /**
@@ -106,7 +106,7 @@ function setPerSegmentConfig(
   segmentationRepresentationUID: string,
   config: SegmentRepresentationConfig
 ): void {
-  SegmentationState.setPerSegmentConfig(segmentationRepresentationUID, config);
+  _setPerSegmentConfig(segmentationRepresentationUID, config);
 }
 
 /**
@@ -118,7 +118,7 @@ function setPerSegmentConfig(
 function getPerSegmentConfig(
   segmentationRepresentationUID: string
 ): SegmentRepresentationConfig {
-  return SegmentationState.getPerSegmentConfig(segmentationRepresentationUID);
+  return _getPerSegmentConfig(segmentationRepresentationUID);
 }
 
 /**
@@ -135,9 +135,7 @@ function setSegmentIndexConfig(
   config: RepresentationConfig,
   suppressEvent = false
 ): void {
-  const perSegment = SegmentationState.getPerSegmentConfig(
-    segmentationRepresentationUID
-  );
+  const perSegment = _getPerSegmentConfig(segmentationRepresentationUID);
 
   perSegment[segmentIndex] = config;
 
@@ -157,9 +155,7 @@ function getSegmentIndexConfig(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): RepresentationConfig {
-  const perSegment = SegmentationState.getPerSegmentConfig(
-    segmentationRepresentationUID
-  );
+  const perSegment = _getPerSegmentConfig(segmentationRepresentationUID);
 
   return perSegment?.[segmentIndex];
 }

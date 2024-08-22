@@ -1,7 +1,7 @@
 import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { state } from '../../../store';
+import { state } from '../../../store/state';
 import { Events } from '../../../enums';
 import {
   resetElementCursor,
@@ -15,7 +15,7 @@ import {
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { updateContourPolyline } from '../../../utilities/contours';
+import updateContourPolyline from '../../../utilities/contours/updateContourPolyline';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 

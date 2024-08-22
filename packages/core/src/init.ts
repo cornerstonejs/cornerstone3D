@@ -1,6 +1,6 @@
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
-import { deepMerge } from './utilities';
+import deepMerge from './utilities/deepMerge';
 import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 

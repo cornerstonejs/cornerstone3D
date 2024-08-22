@@ -1,39 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { SegmentationRepresentations } from '../../enums';
-
-const segmentIndicesCache = new Map<
-  string,
-  { indices: number[]; isDirty: boolean }
->();
-
-/**
- * Sets the segmentation as dirty, indicating that it needs to be updated.
- * @param segmentationId - The ID of the segmentation.
- */
-export const setSegmentationDirty = (segmentationId: string) => {
-  const cached = segmentIndicesCache.get(segmentationId);
-  if (cached) {
-    cached.isDirty = true;
-  }
-};
-
-export const setSegmentationClean = (segmentationId: string) => {
-  const cached = segmentIndicesCache.get(segmentationId);
-  if (cached) {
-    cached.isDirty = false;
-  }
-};
-
-function getCachedSegmentIndices(segmentationId) {
-  const cached = segmentIndicesCache.get(segmentationId);
-  if (cached && !cached.isDirty) {
-    return cached.indices;
-  }
-  return null;
-}
+import { getCachedSegmentIndices, setCachedSegmentIndices } from './utilities';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 
 /**
  * Retrieves the unique segment indices from a given segmentation.
@@ -72,7 +42,8 @@ function getUniqueSegmentIndices(segmentationId) {
   }
 
   // Update cache
-  segmentIndicesCache.set(segmentationId, { indices, isDirty: false });
+  setCachedSegmentIndices(segmentationId, indices);
+
   return indices;
 }
 

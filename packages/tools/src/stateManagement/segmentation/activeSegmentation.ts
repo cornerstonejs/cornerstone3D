@@ -2,7 +2,9 @@ import type {
   SegmentationRepresentation,
   Segmentation,
 } from '../../types/SegmentationStateTypes';
-import * as SegmentationState from './segmentationState';
+import { getActiveSegmentationRepresentation as _getActiveSegmentationRepresentation } from './getActiveSegmentationRepresentation';
+import { setActiveSegmentationRepresentation as _setActiveSegmentationRepresentation } from './setActiveSegmentationRepresentation';
+import { getSegmentation } from './getSegmentation';
 
 /**
  * Get the active segmentation representation for viewportId
@@ -12,7 +14,7 @@ import * as SegmentationState from './segmentationState';
 function getActiveSegmentationRepresentation(
   viewportId
 ): SegmentationRepresentation {
-  return SegmentationState.getActiveSegmentationRepresentation(viewportId);
+  return _getActiveSegmentationRepresentation(viewportId);
 }
 
 /**
@@ -27,7 +29,7 @@ function getActiveSegmentation(viewportId): Segmentation {
     return null;
   }
 
-  return SegmentationState.getSegmentation(activeRepresentation.segmentationId);
+  return getSegmentation(activeRepresentation.segmentationId);
 }
 
 /**
@@ -43,7 +45,7 @@ function setActiveSegmentationRepresentation(
   segmentationRepresentationUID,
   suppressEvent = false
 ): void {
-  SegmentationState.setActiveSegmentationRepresentation(
+  _setActiveSegmentationRepresentation(
     viewportId,
     segmentationRepresentationUID,
     suppressEvent

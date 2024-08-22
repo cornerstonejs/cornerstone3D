@@ -5,8 +5,6 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { utilities as coreUtils } from '@cornerstonejs/core';
-
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
 import {
@@ -49,7 +47,6 @@ import type {
 } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { roundNumber } from '../../utilities/';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
@@ -562,14 +559,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         );
       }
 
-      const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
-      const roundedEndCoord = coreUtils.roundToPrecision(endCoord);
+      const roundedStartCoord = csUtils.roundToPrecision(startCoord);
+      const roundedEndCoord = csUtils.roundToPrecision(endCoord);
 
       const coord = this._getCoordinateForViewplaneNormal(
         focalPoint,
         viewplaneNormal
       );
-      const roundedCoord = coreUtils.roundToPrecision(coord);
+      const roundedCoord = csUtils.roundToPrecision(coord);
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCoord < Math.min(roundedStartCoord, roundedEndCoord) ||
@@ -796,10 +793,10 @@ function defaultGetTextLines(data): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${roundNumber(area)} ${areaUnits}`);
-  textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
-  textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
-  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
+  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnits}`);
+  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
+  textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
+  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`);
 
   return textLines;
 }

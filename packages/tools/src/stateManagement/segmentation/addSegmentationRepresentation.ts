@@ -1,3 +1,6 @@
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type {
@@ -6,12 +9,23 @@ import type {
   RepresentationPublicInputOptions,
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
-import * as SegmentationState from './segmentationState';
-import { getSegmentationRepresentationRenderingConfig } from './helpers/getSegmentationRepresentationRenderingConfig';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
-import { triggerAnnotationRenderForViewportIds } from '../../utilities';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import { addColorLUT } from './addColorLUT';
+import { getNextColorLUTIndex } from './getNextColorLUTIndex';
+import { setSegmentationRepresentationConfig } from './setSegmentationRepresentationConfig';
+import { addSegmentationRepresentationState } from './addSegmentationRepresentationState';
+function getLabelmapSegmentationRepresentationRenderingConfig() {
+  const cfun = vtkColorTransferFunction.newInstance();
+  const ofun = vtkPiecewiseFunction.newInstance();
+  ofun.addPoint(0, 0);
+  return {
+    ofun,
+    cfun,
+  };
+}
 
 async function addSegmentationRepresentation(
   viewportId: string,
@@ -27,13 +41,21 @@ async function addSegmentationRepresentation(
 
   const colorLUTIndexToUse = getColorLUTIndex(options);
 
+  const { type } = representationInput;
+
+  let renderingConfig;
+  if (type === SegmentationRepresentations.Labelmap) {
+    renderingConfig = getLabelmapSegmentationRepresentationRenderingConfig();
+  } else {
+    renderingConfig = {};
+  }
+
   const representation: SegmentationRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
     type: representationInput.type,
     colorLUTIndex: colorLUTIndexToUse,
-    rendering:
-      getSegmentationRepresentationRenderingConfig(representationInput),
+    rendering: renderingConfig,
     polySeg: options.polySeg,
     config: {
       allSegments: {},
@@ -41,7 +63,7 @@ async function addSegmentationRepresentation(
     },
   };
 
-  SegmentationState.addSegmentationRepresentation(viewportId, representation);
+  addSegmentationRepresentationState(viewportId, representation);
 
   // Update the toolGroup specific configuration
   if (initialConfig) {
@@ -57,7 +79,7 @@ async function addSegmentationRepresentation(
     //   });
     // }
 
-    SegmentationState.setSegmentationRepresentationConfig(
+    setSegmentationRepresentationConfig(
       segmentationRepresentationUID,
       initialConfig.representations
     );
@@ -79,11 +101,11 @@ function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
   if (typeof colorLUTOrIndexInput === 'number') {
     colorLUTIndexToUse = colorLUTOrIndexInput;
   } else {
-    const nextIndex = SegmentationState.getNextColorLUTIndex();
+    const nextIndex = getNextColorLUTIndex();
     const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
       ? colorLUTOrIndexInput
       : CORNERSTONE_COLOR_LUT;
-    SegmentationState.addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
     colorLUTIndexToUse = nextIndex;
   }
   return colorLUTIndexToUse;

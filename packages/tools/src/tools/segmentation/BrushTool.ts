@@ -39,16 +39,23 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
-import {
-  config as segmentationConfig,
-  segmentLocking,
-  segmentIndex as segmentIndexController,
-  state as segmentationState,
-  activeSegmentation,
-} from '../../stateManagement/segmentation';
+// import {
+//   config as segmentationConfig,
+//   segmentLocking,
+//   segmentIndex as segmentIndexController,
+//   state as segmentationState,
+//   activeSegmentation,
+// } from '../../stateManagement/segmentation';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
-import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getActiveSegmentationRepresentation,
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
+import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
+import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
+import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -179,8 +186,9 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const activeRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
+    const activeRepresentation = getActiveSegmentationRepresentation(
+      viewport.id
+    );
     if (!activeRepresentation) {
       throw new Error(
         'No active segmentation detected, create a segmentation representation before using the brush tool'
@@ -193,11 +201,9 @@ class BrushTool extends BaseTool {
       throw new Error('Not implemented yet');
     }
 
-    const segmentsLocked =
-      segmentLocking.getLockedSegmentIndices(segmentationId);
+    const segmentsLocked = getLockedSegmentIndices(segmentationId);
 
-    const { representationData } =
-      segmentationState.getSegmentation(segmentationId);
+    const { representationData } = getSegmentation(segmentationId);
 
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
@@ -424,7 +430,7 @@ class BrushTool extends BaseTool {
   private getActiveSegmentationData(viewport) {
     const viewportId = viewport.id;
     const activeRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewportId);
+      getActiveSegmentationRepresentation(viewportId);
 
     if (!activeRepresentation) {
       console.warn(
@@ -435,10 +441,9 @@ class BrushTool extends BaseTool {
 
     const { segmentationId, segmentationRepresentationUID } =
       activeRepresentation;
-    const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const segmentIndex = getActiveSegmentIndex(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
+    const segmentColor = getSegmentIndexColor(
       segmentationRepresentationUID,
       segmentIndex
     );

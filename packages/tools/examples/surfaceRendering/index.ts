@@ -133,8 +133,6 @@ async function run() {
     configuration: { volumeId },
   });
 
-  toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
-
   toolGroup3d.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {

@@ -8,7 +8,7 @@ import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { math, roundNumber } from '../../utilities';
+import * as math from '../../utilities/math';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -1074,29 +1074,33 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnits}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (Number.isFinite(max)) {
-    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
+    textLines.push(
+      `Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`
+    );
   }
 
   if (perimeter) {
-    textLines.push(`Perimeter: ${roundNumber(perimeter)} ${lengthUnits}`);
+    textLines.push(
+      `Perimeter: ${csUtils.roundNumber(perimeter)} ${lengthUnits}`
+    );
   }
 
   if (length) {
     // No need to show length prefix as there is just the single value
-    textLines.push(`${roundNumber(length)} ${lengthUnits}`);
+    textLines.push(`${csUtils.roundNumber(length)} ${lengthUnits}`);
   }
 
   return textLines;

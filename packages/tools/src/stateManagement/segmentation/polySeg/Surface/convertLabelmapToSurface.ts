@@ -1,12 +1,17 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, eventTarget, triggerEvent, Enums } from '@cornerstonejs/core';
-import { getWebWorkerManager } from '@cornerstonejs/core';
+import {
+  cache,
+  eventTarget,
+  getWebWorkerManager,
+  triggerEvent,
+  Enums,
+} from '@cornerstonejs/core';
 import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { computeVolumeSegmentationFromStack } from '../../convertStackToVolumeSegmentation';
+import { computeVolumeSegmentationFromStack } from '../../SegmentationStateManager';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();

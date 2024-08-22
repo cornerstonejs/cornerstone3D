@@ -1,6 +1,8 @@
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
+import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
-
+import { setSegmentationRepresentationVisibility as _setSegmentationRepresentationVisibility } from '../setSegmentationRepresentationVisibility';
+import { getSegmentationRepresentationVisibility as _getSegmentationRepresentationVisibility } from '../getSegmentationRepresentationVisibility';
+import { getSegmentationRepresentationViewportStates } from '../getSegmentationRepresentationViewportStates';
 /**
  * Set the visibility of a segmentation representation for a given viewport. It fires
  * a SEGMENTATION_REPRESENTATION_MODIFIED event. Visibility true will show all segments
@@ -16,7 +18,7 @@ function setSegmentationRepresentationVisibility(
   segmentationRepresentationUID: string,
   visibility: boolean
 ): void {
-  const representation = SegmentationState.getSegmentationRepresentation(
+  const representation = getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 
@@ -24,7 +26,7 @@ function setSegmentationRepresentationVisibility(
     return;
   }
 
-  SegmentationState.setSegmentationRepresentationVisibility(
+  _setSegmentationRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID,
     visibility
@@ -46,7 +48,7 @@ function getSegmentationRepresentationVisibility(
   viewportId: string,
   segmentationRepresentationUID: string
 ): boolean | undefined {
-  return SegmentationState.getSegmentationRepresentationVisibility(
+  return _getSegmentationRepresentationVisibility(
     viewportId,
     segmentationRepresentationUID
   );
@@ -136,7 +138,7 @@ function getHiddenSegmentIndices(
   segmentationRepresentationUID: string
 ): Set<number> {
   const viewportRenderingState =
-    SegmentationState.getSegmentationRepresentationViewportStates(viewportId);
+    getSegmentationRepresentationViewportStates(viewportId);
 
   if (!viewportRenderingState) {
     return new Set();

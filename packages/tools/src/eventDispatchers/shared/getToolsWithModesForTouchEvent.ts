@@ -1,5 +1,5 @@
-import { ToolGroupManager } from '../../store';
 import type { ToolModes } from '../../enums';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { EventTypes } from '../../types';
 
 type ModesFilter = Array<ToolModes>;
@@ -17,10 +17,7 @@ export default function getToolsWithModesForTouchEvent(
   numTouchPoints?: number
 ) {
   const { renderingEngineId, viewportId } = evt.detail;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return [];

@@ -1,6 +1,6 @@
 import '@kitware/vtk.js/Rendering/Profiles/Geometry';
 
-import cache from '../cache';
+import cache from '../cache/cache';
 import { GeometryType } from '../enums';
 import type {
   IGeometry,

@@ -1,5 +1,5 @@
 import { getRenderingEngines } from '@cornerstonejs/core';
-import { state } from '../index';
+import { state } from '../state';
 import type { IToolGroup } from '../../types';
 
 /**

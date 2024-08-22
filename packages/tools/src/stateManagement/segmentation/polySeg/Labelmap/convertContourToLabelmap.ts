@@ -17,7 +17,7 @@ import type {
   ContourSegmentationData,
   PolySegConversionOptions,
 } from '../../../../types';
-import { getAnnotation } from '../../..';
+import { getAnnotation } from '../../../annotation/annotationState';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();

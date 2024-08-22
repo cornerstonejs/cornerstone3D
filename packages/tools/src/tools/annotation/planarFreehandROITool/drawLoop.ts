@@ -5,7 +5,7 @@ import {
 } from '../../../cursors/elementCursor';
 import { Events } from '../../../enums';
 import type { EventTypes } from '../../../types';
-import { state } from '../../../store';
+import { state } from '../../../store/state';
 import { vec3 } from 'gl-matrix';
 import {
   shouldSmooth,

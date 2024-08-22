@@ -1,7 +1,6 @@
 import { getEnabledElement, type Types } from '@cornerstonejs/core';
 
 import type { Annotation } from '../../types/AnnotationTypes';
-import * as segmentation from '../../stateManagement/segmentation';
 import {
   state as annotationState,
   config as annotationConfig,
@@ -10,6 +9,8 @@ import { jumpToSlice } from '../viewport';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
 import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
+import { getSegmentations } from '../../stateManagement/segmentation/getSegmentations';
+import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 
 export type Segment = {
   segmentationId: string;
@@ -48,7 +49,7 @@ export default function segmentContourAction(
     return;
   }
   const FrameOfReferenceUID = enabledElement.viewport.getFrameOfReferenceUID();
-  const segmentationsList = segmentation.state.getSegmentations();
+  const segmentationsList = getSegmentations();
   const { segmentIndex, segmentationId } = segment;
   const bidirectionals = annotationState.getAnnotations(
     this.toolName || BidirectionalTool.toolName,
@@ -145,15 +146,14 @@ export function defaultGetSegment(
   enabledElement: Types.IEnabledElement,
   configuration: SegmentContourActionConfiguration
 ): Segment {
-  const segmentationsList = segmentation.state.getSegmentations();
+  const segmentationsList = getSegmentations();
   if (!segmentationsList.length) {
     return;
   }
   const segmentationId =
     configuration.segmentationId || segmentationsList[0].segmentationId;
   const segmentIndex =
-    configuration.segmentIndex ??
-    segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    configuration.segmentIndex ?? getActiveSegmentIndex(segmentationId);
   if (!segmentIndex) {
     return;
   }

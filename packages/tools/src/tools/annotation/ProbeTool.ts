@@ -23,10 +23,9 @@ import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { roundNumber } from '../../utilities';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -635,10 +634,10 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (value instanceof Array && pixelValueUnits instanceof Array) {
     for (let i = 0; i < value.length; i++) {
-      textLines.push(`${roundNumber(value[i])} ${pixelValueUnits[i]}`);
+      textLines.push(`${csUtils.roundNumber(value[i])} ${pixelValueUnits[i]}`);
     }
   } else {
-    textLines.push(`${roundNumber(value)} ${pixelValueUnits}`);
+    textLines.push(`${csUtils.roundNumber(value)} ${pixelValueUnits}`);
   }
 
   return textLines;

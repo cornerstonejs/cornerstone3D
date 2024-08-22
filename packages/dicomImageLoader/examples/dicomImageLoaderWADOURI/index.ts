@@ -1,10 +1,11 @@
 import htmlStr from './layout';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
+  cache,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
@@ -24,8 +25,6 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-
-import { cache } from '@cornerstonejs/core';
 
 // This is for debugging purposes
 console.warn(
@@ -238,6 +237,7 @@ async function loadAndViewImage(imageId) {
 }
 
 function downloadAndView(downloadUrl) {
+  // @ts-ignore
   let url = downloadUrl || document.getElementById('wadoURL').value;
 
   // prefix the url with wadouri: so cornerstone can find the image loader

@@ -24,9 +24,8 @@ import {
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { roundNumber } from '../../utilities';
 import { distanceToPoint } from '../../utilities/math/point';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
@@ -862,24 +861,24 @@ function defaultGetTextLines(data, targetId, configuration): string[] {
   const { xValues, yValues, units, isUnitless, isHorizontal } = cachedStats;
 
   if (isUnitless) {
-    return [`${roundNumber(xValues[0])} px`];
+    return [`${csUtils.roundNumber(xValues[0])} px`];
   }
 
   if (configuration.displayBothAxesDistances) {
     const dist1 = Math.abs(xValues[1] - xValues[0]);
     const dist2 = Math.abs(yValues[1] - yValues[0]);
     return [
-      `${roundNumber(dist1)} ${units[0]}`,
-      `${roundNumber(dist2)} ${units[1]}`,
+      `${csUtils.roundNumber(dist1)} ${units[0]}`,
+      `${csUtils.roundNumber(dist2)} ${units[1]}`,
     ];
   }
 
   if (isHorizontal) {
     const dist = Math.abs(xValues[1] - xValues[0]);
-    return [`${roundNumber(dist)} ${units[0]}`];
+    return [`${csUtils.roundNumber(dist)} ${units[0]}`];
   } else {
     const dist = Math.abs(yValues[1] - yValues[0]);
-    return [`${roundNumber(dist)} ${units[1]}`];
+    return [`${csUtils.roundNumber(dist)} ${units[1]}`];
   }
 }
 

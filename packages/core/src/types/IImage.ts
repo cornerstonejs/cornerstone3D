@@ -1,15 +1,21 @@
 import type CPUFallbackLUT from './CPUFallbackLUT';
-import type CPUFallbackColormap from './CPUFallbackColormap';
-import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
 import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
-import type VoxelManager from '../utilities/VoxelManager';
 import type { ImageQualityStatus } from '../enums';
 import type IImageCalibration from './IImageCalibration';
 import type RGB from './RGB';
 import type IImageFrame from './IImageFrame';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type Mat3 from './Mat3';
+import type CPUFallbackViewport from './CPUFallbackViewport';
+import type CPUFallbackTransform from './CPUFallbackTransform';
+import type CPUFallbackColormap from './CPUFallbackColormap';
+import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
+import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { ImagePixelModule } from './ImagePixelModule';
 import type { IVoxelManager } from './IVoxelManager';
 
 /**
@@ -141,4 +147,35 @@ interface IImage {
   };
 }
 
+interface CPUFallbackEnabledElement {
+  scale?: number;
+  pan?: Point2;
+  zoom?: number;
+  rotation?: number;
+  image?: IImage;
+  canvas?: HTMLCanvasElement;
+  viewport?: CPUFallbackViewport;
+  colormap?: CPUFallbackColormap;
+  options?: {
+    [key: string]: unknown;
+    colormap?: CPUFallbackColormap;
+  };
+  renderingTools?: CPUFallbackRenderingTools;
+  transform?: CPUFallbackTransform;
+  invalid?: boolean;
+  needsRedraw?: boolean;
+  metadata?: {
+    direction?: Mat3;
+    /** Last index is always 1 for CPU */
+    dimensions?: Point3;
+    /** Last spacing is always EPSILON for CPU */
+    spacing?: Point3;
+    origin?: Point3;
+    imagePlaneModule?: ImagePlaneModule;
+    imagePixelModule?: ImagePixelModule;
+  };
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
+}
+
 export type { IImage as default };
+export type { CPUFallbackEnabledElement };

@@ -15,7 +15,7 @@ import {
   drawPolyline as drawPolylineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import {
   Events,
   MouseBindings,
@@ -32,16 +32,13 @@ import type {
   ToolProps,
   AnnotationRenderContext,
 } from '../../types';
-import {
-  math,
-  throttle,
-  roundNumber,
-  triggerAnnotationRenderForViewportIds,
-  getCalibratedLengthUnitsAndScale,
-} from '../../utilities';
-import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
+
+import * as math from '../../utilities/math';
+import throttle from '../../utilities/throttle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -55,6 +52,7 @@ import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -1224,7 +1222,7 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnits}`;
+      : `Area: ${utilities.roundNumber(area)} ${areaUnits}`;
 
     textLines.push(areaLine);
   }

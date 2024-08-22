@@ -6,7 +6,7 @@ import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Enums } from '@cornerstonejs/core';
 
 import {

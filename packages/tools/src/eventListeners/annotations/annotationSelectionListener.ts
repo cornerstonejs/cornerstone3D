@@ -1,5 +1,5 @@
 import { getRenderingEngines } from '@cornerstonejs/core';
-import { triggerAnnotationRenderForViewportIds } from '../../utilities';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 /**
  * When an annotation is deselected, trigger an annotation render for all viewports.

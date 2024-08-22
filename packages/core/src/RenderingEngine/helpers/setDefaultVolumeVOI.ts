@@ -6,9 +6,10 @@ import type {
 } from '../../types';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
-import { getMinMax, windowLevel } from '../../utilities';
+import getMinMax from '../../utilities/getMinMax';
+import * as windowLevel from '../../utilities/windowLevel';
 import { RequestType } from '../../enums';
-import cache from '../../cache';
+import cache from '../../cache/cache';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;

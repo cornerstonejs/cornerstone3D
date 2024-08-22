@@ -14,7 +14,7 @@ import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import { getConfiguration } from '../init';
-import cache from '../cache';
+import cache from '../cache/cache';
 
 /**
  * The original load image options specified just an image id,  which is optimal

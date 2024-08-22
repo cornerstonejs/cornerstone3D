@@ -6,7 +6,7 @@ import * as math from '../math';
 import {
   getParentAnnotation,
   invalidateAnnotation,
-} from '../../stateManagement';
+} from '../../stateManagement/annotation/annotationState';
 
 /**
  * Update the contour polyline data

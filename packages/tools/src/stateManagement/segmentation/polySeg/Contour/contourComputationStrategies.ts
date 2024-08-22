@@ -1,16 +1,14 @@
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import {
-  getSegmentation,
-  setSegmentationRepresentationConfig,
-} from '../../segmentationState';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
 import type { PolySegConversionOptions } from '../../../../types';
 import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComputationStrategies';
 import type { SurfaceClipResult } from '../../helpers/clipAndCacheSurfacesForViewport';
 import { clipAndCacheSurfacesForViewport } from '../../helpers/clipAndCacheSurfacesForViewport';
 import { extractContourData } from './utils/extractContourData';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
+import { getSegmentation } from '../../getSegmentation';
+import { setSegmentationRepresentationConfig } from '../../setSegmentationRepresentationConfig';
 
 // the map between segment index and the intersection points and lines
 export type RawContourData = Map<number, SurfaceClipResult[]>;

@@ -3,7 +3,6 @@ import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -24,7 +23,7 @@ import {
   drawHeight as drawHeightSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -867,7 +866,7 @@ function defaultGetTextLines(data, targetId): string[] {
     return;
   }
 
-  const textLines = [`${roundNumber(height)} ${lengthUnits}`];
+  const textLines = [`${csUtils.roundNumber(height)} ${lengthUnits}`];
 
   return textLines;
 }

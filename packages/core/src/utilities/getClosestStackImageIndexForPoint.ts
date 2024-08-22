@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import { planar } from '.';
-import { metaData } from '..';
+import * as planar from './planar';
+import * as metaData from '../metaData';
 import type { IStackViewport, Point3 } from '../types';
 
 /**

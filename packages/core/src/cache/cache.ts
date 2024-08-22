@@ -11,7 +11,8 @@ import type {
   EventTypes,
   IImageVolume,
 } from '../types';
-import { triggerEvent, imageIdToURI } from '../utilities';
+import triggerEvent from '../utilities/triggerEvent';
+import imageIdToURI from '../utilities/imageIdToURI';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 

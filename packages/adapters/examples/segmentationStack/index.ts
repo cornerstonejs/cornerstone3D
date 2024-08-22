@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { api } from "dicomweb-client";
 
 import * as cornerstone from "@cornerstonejs/core";

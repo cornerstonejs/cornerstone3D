@@ -78,7 +78,7 @@ import type { IViewport } from '../types/IViewport';
 
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
-import cache from '../cache';
+import cache from '../cache/cache';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);

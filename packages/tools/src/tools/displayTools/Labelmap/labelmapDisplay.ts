@@ -1,6 +1,3 @@
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-
 import type { Types } from '@cornerstonejs/core';
 import {
   cache,
@@ -10,7 +7,6 @@ import {
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import type {
   LabelmapConfig,
   LabelmapRenderingConfig,
@@ -21,21 +17,18 @@ import type { LabelmapRepresentation } from '../../../types/SegmentationStateTyp
 import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
-import { polySeg } from '../../../stateManagement/segmentation';
 import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
+import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
+import { getActiveSegmentationRepresentation } from '../../../stateManagement/segmentation/getActiveSegmentationRepresentation';
+import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
+import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getGlobalConfig } from '../../../stateManagement/segmentation/getGlobalConfig';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
+import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
-
-function getSegmentationRepresentationRenderingConfig() {
-  const cfun = vtkColorTransferFunction.newInstance();
-  const ofun = vtkPiecewiseFunction.newInstance();
-  ofun.addPoint(0, 0);
-  return {
-    ofun,
-    cfun,
-  };
-}
 
 let polySegConversionInProgress = false;
 
@@ -62,7 +55,7 @@ function removeRepresentation(
 
   removeLabelmapFromElement(viewport.element, segmentationRepresentationUID);
 
-  SegmentationState.removeRepresentation(segmentationRepresentationUID);
+  _removeRepresentation(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
@@ -118,7 +111,7 @@ async function render(
 ): Promise<void> {
   const { segmentationId, segmentationRepresentationUID } = representation;
 
-  const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
     console.warn('No segmentation found for segmentationId: ', segmentationId);
@@ -131,7 +124,7 @@ async function render(
 
   if (
     !labelmapData &&
-    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID) &&
+    canComputeRequestedRepresentation(segmentationRepresentationUID) &&
     !polySegConversionInProgress
   ) {
     // meaning the requested segmentation representationUID does not have
@@ -141,13 +134,10 @@ async function render(
     // underlying representations to Surface
     polySegConversionInProgress = true;
 
-    labelmapData = await polySeg.computeAndAddLabelmapRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID,
-        viewport,
-      }
-    );
+    labelmapData = await computeAndAddLabelmapRepresentation(segmentationId, {
+      segmentationRepresentationUID,
+      viewport,
+    });
 
     if (!labelmapData) {
       throw new Error(
@@ -194,11 +184,10 @@ async function render(
     }
 
     // stack segmentation
-    const labelmapImageId =
-      SegmentationState.getCurrentLabelmapImageIdForViewport(
-        viewport.id,
-        segmentationId
-      );
+    const labelmapImageId = getCurrentLabelmapImageIdForViewport(
+      viewport.id,
+      segmentationId
+    );
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
@@ -233,8 +222,7 @@ function _setLabelmapColorAndOpacity(
   const { rendering, config, colorLUTIndex } = segmentationRepresentation;
 
   // todo fix this
-  const activeSegRep =
-    SegmentationState.getActiveSegmentationRepresentation(viewportId);
+  const activeSegRep = getActiveSegmentationRepresentation(viewportId);
 
   const isActiveLabelmap = activeSegRep === segmentationRepresentation;
 
@@ -243,11 +231,9 @@ function _setLabelmapColorAndOpacity(
   const { allSegments, perSegment } = config;
 
   const globalLabelmapConfig =
-    SegmentationState.getGlobalConfig().representations[
-      Representations.Labelmap
-    ];
+    getGlobalConfig().representations[Representations.Labelmap];
 
-  const globalConfig = SegmentationState.getGlobalConfig();
+  const globalConfig = getGlobalConfig();
 
   const renderInactiveRepresentations =
     globalConfig.renderInactiveRepresentations;
@@ -262,7 +248,7 @@ function _setLabelmapColorAndOpacity(
 
   // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
   // the default color table uses RGB.
-  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+  const colorLUT = getColorLUT(colorLUTIndex);
   const numColors = Math.min(256, colorLUT.length);
   const { uid: actorUID } = actorEntry;
 
@@ -343,7 +329,7 @@ function _setLabelmapColorAndOpacity(
   // @ts-ignore - fix type in vtk
   actor.getProperty().setLabelOutlineOpacity(outlineOpacity);
 
-  const { activeSegmentIndex } = SegmentationState.getSegmentation(
+  const { activeSegmentIndex } = getSegmentation(
     segmentationRepresentation.segmentationId
   );
 
@@ -505,13 +491,8 @@ async function _addLabelmapToViewport(
 }
 
 export default {
-  getSegmentationRepresentationRenderingConfig,
   render,
   removeRepresentation,
 };
 
-export {
-  getSegmentationRepresentationRenderingConfig,
-  render,
-  removeRepresentation,
-};
+export { render, removeRepresentation };

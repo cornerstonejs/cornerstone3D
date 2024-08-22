@@ -1,9 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
 import {
   getSegmentation,
-  getAllSegmentationRepresentations,
   getSegmentationRepresentations,
   getViewportIdsWithSegmentation,
 } from '../../segmentationState';
@@ -11,7 +10,6 @@ import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
-import { viewport } from '../../../../utilities';
 
 export async function updateSurfaceData(segmentationId) {
   const surfacesObj = await computeSurfaceFromLabelmapSegmentation(

@@ -7,8 +7,10 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getCalibratedAspect } from '../../utilities/getCalibratedUnits';
-import { getCalibratedLengthUnitsAndScale, roundNumber } from '../../utilities';
+import {
+  getCalibratedAspect,
+  getCalibratedLengthUnitsAndScale,
+} from '../../utilities/getCalibratedUnits';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -26,7 +28,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -1029,27 +1031,29 @@ function defaultGetTextLines(data, targetId): string[] {
   if (radius) {
     const radiusLine = isEmptyArea
       ? `Radius: Oblique not supported`
-      : `Radius: ${roundNumber(radius)} ${radiusUnit}`;
+      : `Radius: ${csUtils.roundNumber(radius)} ${radiusUnit}`;
     textLines.push(radiusLine);
   }
 
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnits}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${pixelValueUnits}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${pixelValueUnits}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${pixelValueUnits}`);
+    textLines.push(
+      `Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`
+    );
   }
 
   return textLines;

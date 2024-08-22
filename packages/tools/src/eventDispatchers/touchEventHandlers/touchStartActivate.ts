@@ -1,4 +1,4 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import type { EventTypes } from '../../types';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 

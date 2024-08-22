@@ -5,7 +5,7 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
-import cache from '../cache';
+import cache from '../cache/cache';
 import {
   MPR_CAMERA_VALUES,
   RENDERING_DEFAULTS,
@@ -35,32 +35,30 @@ import type {
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
-import {
-  actorIsA,
-  applyPreset,
-  createSigmoidRGBTransferFunction,
-  getVoiFromSigmoidRGBTransferFunction,
-  imageIdToURI,
-  invertRgbTransferFunction,
-  triggerEvent,
-  colormap as colormapUtils,
-  isEqualNegative,
-  getVolumeViewportScrollInfo,
-  snapFocalPointToSlice,
-  isEqual,
-} from '../utilities';
-import { createVolumeActor } from './helpers';
+import triggerEvent from '../utilities/triggerEvent';
+import * as colormapUtils from '../utilities/colormap';
+import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
+import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import transformWorldToIndex from '../utilities/transformWorldToIndex';
+import { findMatchingColormap } from '../utilities/colormap';
+import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
+import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+
+import createVolumeActor from './helpers/createVolumeActor';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
 import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
-import transformWorldToIndex from '../utilities/transformWorldToIndex';
-import { findMatchingColormap } from '../utilities/colormap';
-import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
-import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import { actorIsA } from '../utilities/actorCheck';
+import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
+import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
+import isEqual, { isEqualNegative } from '../utilities/isEqual';
+import applyPreset from '../utilities/applyPreset';
+import imageIdToURI from '../utilities/imageIdToURI';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports

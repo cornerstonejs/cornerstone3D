@@ -1,16 +1,14 @@
 import type { StackViewport, Types } from '@cornerstonejs/core';
-import {
-  getEnabledElementByIds,
-  getEnabledElementByViewportId,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
-import removeContourFromElement from './removeContourFromElement';
 import { deleteConfigCache } from './contourHandler/contourConfigCache';
-import { polySeg } from '../../../stateManagement/segmentation';
 import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
+import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
+import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
 
 let polySegConversionInProgress = false;
 
@@ -36,7 +34,7 @@ function removeRepresentation(
 
   const { viewport } = enabledElement;
 
-  SegmentationState.removeRepresentation(segmentationRepresentationUID);
+  _removeRepresentation(segmentationRepresentationUID);
 
   deleteConfigCache(segmentationRepresentationUID);
 
@@ -58,7 +56,7 @@ async function render(
   contourRepresentation: ContourRepresentation
 ): Promise<void> {
   const { segmentationId } = contourRepresentation;
-  const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
     return;
@@ -68,21 +66,18 @@ async function render(
 
   if (
     !contourData &&
-    polySeg.canComputeRequestedRepresentation(
+    canComputeRequestedRepresentation(
       contourRepresentation.segmentationRepresentationUID
     ) &&
     !polySegConversionInProgress
   ) {
     polySegConversionInProgress = true;
 
-    contourData = await polySeg.computeAndAddContourRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID:
-          contourRepresentation.segmentationRepresentationUID,
-        viewport,
-      }
-    );
+    contourData = await computeAndAddContourRepresentation(segmentationId, {
+      segmentationRepresentationUID:
+        contourRepresentation.segmentationRepresentationUID,
+      viewport,
+    });
   }
 
   if (!contourData) {

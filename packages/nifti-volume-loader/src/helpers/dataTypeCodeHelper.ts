@@ -1,6 +1,6 @@
 import * as NIFTICONSTANTS from './niftiConstants';
 
-export function getArrayConstructor(datatypeCode: number): any {
+export function getArrayConstructor(datatypeCode: number): unknown {
   switch (datatypeCode) {
     case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
       return Uint8Array;

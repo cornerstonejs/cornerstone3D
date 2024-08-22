@@ -9,7 +9,7 @@ import {
 } from '../stateManagement';
 import { triggerAnnotationCompleted } from '../stateManagement/annotation/helpers/state';
 import { drawRect as drawRectSvg } from '../drawingSvg';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {

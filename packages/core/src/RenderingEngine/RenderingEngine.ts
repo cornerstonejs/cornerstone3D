@@ -1,7 +1,8 @@
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
-import { triggerEvent, uuidv4 } from '../utilities';
+import uuidv4 from '../utilities/uuidv4';
+import triggerEvent from '../utilities/triggerEvent';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
@@ -13,7 +14,6 @@ import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
 import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import type { IViewport } from '../types/IViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -22,6 +22,7 @@ import type {
   PublicViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
+  IViewport,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';

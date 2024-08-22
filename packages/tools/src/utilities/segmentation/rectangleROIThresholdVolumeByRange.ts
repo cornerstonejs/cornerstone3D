@@ -1,9 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { state } from '../../stateManagement/annotation';
-import {
-  RectangleROIStartEndThresholdTool,
-  RectangleROIThresholdTool,
-} from '../../tools';
+import RectangleROIStartEndThresholdTool from '../../tools/segmentation/RectangleROIStartEndThresholdTool';
+import RectangleROIThresholdTool from '../../tools/segmentation/RectangleROIThresholdTool';
 
 import thresholdVolumeByRange from './thresholdVolumeByRange';
 import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsIJKFromRectangleAnnotations';

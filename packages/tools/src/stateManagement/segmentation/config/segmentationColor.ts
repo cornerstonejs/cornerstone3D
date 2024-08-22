@@ -1,7 +1,9 @@
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import { addColorLUT as _addColorLUT } from '../addColorLUT';
+import { getColorLUT as _getColorLUT } from '../getColorLUT';
+import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -24,7 +26,7 @@ function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex: number): void {
     colorLUT.unshift([0, 0, 0, 0]);
   }
 
-  SegmentationState.addColorLUT(colorLUT, colorLUTIndex);
+  _addColorLUT(colorLUT, colorLUTIndex);
 }
 
 /**
@@ -37,7 +39,7 @@ function setColorLUT(
   segmentationRepresentationUID: string,
   colorLUTIndex: number
 ): void {
-  const segRepresentation = SegmentationState.getSegmentationRepresentation(
+  const segRepresentation = getSegmentationRepresentation(
     segmentationRepresentationUID
   );
 
@@ -47,7 +49,7 @@ function setColorLUT(
     );
   }
 
-  if (!SegmentationState.getColorLUT(colorLUTIndex)) {
+  if (!_getColorLUT(colorLUTIndex)) {
     throw new Error(
       `setColorLUT: could not find colorLUT with index ${colorLUTIndex}`
     );
@@ -71,10 +73,9 @@ function getSegmentIndexColor(
   segmentationRepresentationUID: string,
   segmentIndex: number
 ): Types.Color {
-  const segmentationRepresentation =
-    SegmentationState.getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
+  const segmentationRepresentation = getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
 
   if (!segmentationRepresentation) {
     throw new Error(
@@ -85,7 +86,7 @@ function getSegmentIndexColor(
   const { colorLUTIndex } = segmentationRepresentation;
 
   // get colorLUT
-  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+  const colorLUT = _getColorLUT(colorLUTIndex);
   let colorValue = colorLUT[segmentIndex];
   if (!colorValue) {
     if (typeof segmentIndex !== 'number') {

@@ -1,4 +1,4 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 import type { EventTypes } from '../../types';
 import { MouseBindings } from '../../enums/ToolBindings';

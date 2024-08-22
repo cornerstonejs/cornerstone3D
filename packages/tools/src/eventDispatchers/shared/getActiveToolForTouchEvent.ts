@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../../store';
-import { MouseBindings, ToolModes } from '../../enums';
+import { ToolModes } from '../../enums';
 import type { EventTypes } from '../../types';
 import getMouseModifier from './getMouseModifier';
 import { keyEventListener } from '../../eventListeners';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 const { Active } = ToolModes;
 
@@ -22,10 +22,7 @@ export default function getActiveToolForTouchEvent(
   const { renderingEngineId, viewportId } = evt.detail;
   const touchEvent = evt.detail.event;
 
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return null;

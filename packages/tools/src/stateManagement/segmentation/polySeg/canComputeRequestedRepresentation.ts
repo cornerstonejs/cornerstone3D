@@ -1,10 +1,8 @@
 import { SegmentationRepresentations } from '../../../enums';
-import { validateLabelmap } from '../../../tools/displayTools/Labelmap';
 import type { SegmentationRepresentationData } from '../../../types';
-import {
-  getSegmentationRepresentation,
-  getSegmentation,
-} from '../segmentationState';
+import { getSegmentation } from '../getSegmentation';
+import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
+import { validate as validateLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap';
 
 // Map of conversion paths between source and target representations
 // You should read it as "source" -> "targets"

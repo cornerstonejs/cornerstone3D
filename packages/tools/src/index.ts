@@ -2,13 +2,12 @@ import { init, destroy } from './init';
 import {
   addTool,
   removeTool,
-  state,
   ToolGroupManager,
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
 } from './store';
-
+import { state } from './store/state';
 import * as CONSTANTS from './constants';
 
 // Name spaces

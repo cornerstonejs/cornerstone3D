@@ -15,6 +15,7 @@
   },
   "scripts": {
     "api-check": "npx lerna run api-check",
+    "format-check": "npx lerna run format-check",
     "build": "npx lerna run build --stream && npx lerna run build:loader",
     "build:esm": "npx lerna run build:esm --stream",
     "build:umd": "npx lerna run build:umd --stream",
@@ -102,6 +103,7 @@
     "css-loader": "^6.7.3",
     "cssnano": "^6.0.1",
     "docdash": "^1.2.0",
+    "dpdm": "^3.14.0",
     "eslint": "^8.39.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.29.1",
@@ -109,6 +111,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-tsdoc": "^0.2.17",
     "eslint-webpack-plugin": "^4.0.1",
+    "eslint-import-resolver-typescript": "^3.6.1",
     "execa": "^7.2.0",
     "exports-loader": "^3.0.0",
     "file-loader": "^6.2.0",

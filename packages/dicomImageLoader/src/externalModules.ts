@@ -1,6 +1,4 @@
-/* eslint import/extensions:0 */
-import { getOptions } from './imageLoader/internal';
-import registerLoaders from './imageLoader/registerLoaders';
+import { getOptions } from './imageLoader/internal/options';
 
 let cornerstone;
 let dicomParser;
@@ -16,8 +14,6 @@ const workerFn = () => {
 const external = {
   set cornerstone(cs) {
     cornerstone = cs;
-
-    registerLoaders(cornerstone);
 
     const options = getOptions();
 
@@ -36,8 +32,6 @@ const external = {
           'cornerstoneDICOMImageLoader requires a copy of Cornerstone to work properly. Please add cornerstoneDICOMImageLoader.external.cornerstone = cornerstone; to your application.'
         );
       }
-
-      registerLoaders(cornerstone);
     }
 
     return cornerstone;

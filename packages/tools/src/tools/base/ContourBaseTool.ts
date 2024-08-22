@@ -17,8 +17,8 @@ import type {
 import { drawPath as drawPathSvg } from '../../drawingSvg';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import AnnotationTool from './AnnotationTool';
-import { updateContourPolyline } from '../../utilities/contours/';
-import { getContourHolesDataCanvas } from '../../utilities/contours';
+import updateContourPolyline from '../../utilities/contours/updateContourPolyline';
+import getContourHolesDataCanvas from '../../utilities/contours/getContourHolesDataCanvas';
 import type { ContourWindingDirection } from '../../types/ContourAnnotation';
 
 /**
