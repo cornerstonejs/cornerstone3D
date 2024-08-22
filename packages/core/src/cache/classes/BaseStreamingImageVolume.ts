@@ -22,7 +22,7 @@ import ImageVolume from './ImageVolume';
 import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
 import { canRenderFloatTextures } from '../../init';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
-
+import StreamingImageVolume from './StreamingImageVolume';
 const requestTypeDefault = RequestType.Prefetch;
 
 /**
