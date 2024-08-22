@@ -2926,11 +2926,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     }
 
     let testIndex = this.getCurrentImageIdIndex();
-    const currentImageId = this.imageIds[testIndex];
+    let currentImageId = this.imageIds[testIndex];
 
     if (options.withNavigation && typeof sliceIndex === 'number') {
       testIndex = sliceIndex;
+      currentImageId = this.imageIds[testIndex];
     }
+
     if (!currentImageId) {
       return false;
     }
