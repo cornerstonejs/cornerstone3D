@@ -1055,4 +1055,4 @@ class Cache implements ICache {
  */
 const cache = new Cache();
 export default cache;
-export { Cache }; // for documentation
+export { Cache, cache }; // for documentation

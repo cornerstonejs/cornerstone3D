@@ -20,14 +20,16 @@ export default {
       previewVoxelManager,
       previewSegmentIndex,
       segmentationVoxelManager,
+      segmentationId,
     } = operationData;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);
 
+    let changed = false;
     if (segmentIndex === null) {
       const oldValue = previewVoxelManager.getAtIndex(index);
       if (oldValue !== undefined) {
-        previewVoxelManager.setAtIndex(index, oldValue);
+        changed = previewVoxelManager.setAtIndex(index, oldValue);
       }
       return;
     }
@@ -36,7 +38,6 @@ export default {
       return;
     }
 
-    let changed = false;
     // Correct for preview data getting into the image area and not accepted/rejected
     if (existingValue === previewSegmentIndex) {
       if (previewVoxelManager.getAtIndex(index) === undefined) {

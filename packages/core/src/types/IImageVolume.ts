@@ -1,5 +1,4 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { VoxelManager } from '../utilities';
 import type Metadata from './Metadata';
 import type Point3 from './Point3';
 import type Mat3 from './Mat3';

@@ -189,8 +189,12 @@ export default class BrushStrategy {
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfSlices()
+      segmentationVoxelManager.getArrayOfModifiedSlices()
     );
+
+    // reset the modified slices since we are done
+    segmentationVoxelManager.resetModifiedSlices();
+
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
     if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {

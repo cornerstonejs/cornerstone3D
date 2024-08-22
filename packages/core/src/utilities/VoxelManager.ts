@@ -51,7 +51,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   width: number;
   frameSize: number;
   _get: (index: number) => T;
-  _set: (index: number, v: T) => boolean | void;
+  _set: (index: number, v: T) => boolean;
   _getConstructor?: () => new (length: number) => PixelDataTypedArray;
   _getScalarDataLength?: () => number;
   _getScalarData?: () => PixelDataTypedArray;
@@ -70,7 +70,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   constructor(
     dimensions,
     _get: (index: number) => T,
-    _set?: (index: number, v: T) => boolean | void
+    _set?: (index: number, v: T) => boolean
   ) {
     this.dimensions = dimensions;
     this.width = dimensions[0];
@@ -96,10 +96,13 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    */
   public setAtIJK = (i: number, j: number, k: number, v) => {
     const index = this.toIndex([i, j, k]);
-    if (this._set(index, v) !== false) {
+    const changed = this._set(index, v);
+    if (changed) {
       this.modifiedSlices.add(k);
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
     }
+
+    return changed;
   };
 
   /**
@@ -125,11 +128,13 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * Sets the value at the given index
    */
   public setAtIndex = (index, v) => {
-    if (this._set(index, v) !== false) {
+    const changed = this._set(index, v);
+    if (changed) {
       const pointIJK = this.toIJK(index);
       this.modifiedSlices.add(pointIJK[2]);
       VoxelManager.addBounds(this.boundsIJK, pointIJK);
     }
+    return changed;
   };
 
   /**
@@ -445,8 +450,17 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   /**
    * @returns The array of modified k indices
    */
-  public getArrayOfSlices(): number[] {
+  public getArrayOfModifiedSlices(): number[] {
     return Array.from(this.modifiedSlices);
+  }
+
+  /**
+   * Resets the set of modified slices.
+   * This method clears all entries from the `modifiedSlices` set,
+   * effectively marking all slices as unmodified.
+   */
+  public resetModifiedSlices(): void {
+    this.modifiedSlices.clear();
   }
 
   /**
@@ -1125,6 +1139,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
           map.set(k, layer);
         }
         layer[index % planeSize] = v;
+        return true;
       }
     );
     voxelManager.map = map;
@@ -1148,6 +1163,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       (index) => map.get(index),
       (index, v) => {
         map.set(index, v);
+        return true;
       }
     );
     voxelManager.map = map;

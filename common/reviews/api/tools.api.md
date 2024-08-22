@@ -16,7 +16,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
 import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
@@ -806,9 +806,20 @@ export class BrushTool extends BaseTool {
         referencedVolumeId: any;
         segmentsLocked: number[] | [];
         imageId?: undefined;
+        override?: undefined;
     } | {
         imageId: string;
         segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
+    } | {
+        imageId: string;
+        segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
         volumeId?: undefined;
         referencedVolumeId?: undefined;
     };
@@ -824,8 +835,13 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        override: {
+            voxelManager: Types_2.IVoxelManager<number>;
+            imageData: vtkImageData;
+        };
         segmentsLocked: number[];
         imageId?: string;
+        imageIds?: string[];
         volumeId?: string;
         referencedVolumeId?: string;
     } | {
@@ -843,6 +859,7 @@ export class BrushTool extends BaseTool {
         referencedVolumeId: any;
         segmentsLocked: number[] | [];
         imageId?: undefined;
+        override?: undefined;
     } | {
         points: any;
         segmentIndex: number;
@@ -856,6 +873,26 @@ export class BrushTool extends BaseTool {
         preview: unknown;
         imageId: string;
         segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        imageId: string;
+        segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
         volumeId?: undefined;
         referencedVolumeId?: undefined;
     };
@@ -2770,6 +2807,9 @@ function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], ima
 };
 
 // @public (undocumented)
+function getStackSegmentationImageIdsForViewport(viewportId: string, segmentationId: string): string[];
+
+// @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
 
 // @public (undocumented)
@@ -3280,6 +3320,10 @@ type LabelmapToolOperationData = {
     segmentationRepresentationUID: string;
     points: Types_2.Point3[];
     voxelManager: any;
+    override: {
+        voxelManager: Types_2.IVoxelManager<number>;
+        imageData: vtkImageData;
+    };
     preview: any;
     toolGroupId: string;
 };
@@ -5285,7 +5329,8 @@ declare namespace state_3 {
         getActiveSegmentationRepresentation,
         setActiveSegmentationRepresentation,
         getCurrentLabelmapImageIdForViewport,
-        updateLabelmapSegmentationImageReferences
+        updateLabelmapSegmentationImageReferences,
+        getStackSegmentationImageIdsForViewport
     }
 }
 

@@ -1017,6 +1017,8 @@ export enum EVENTS {
     // (undocumented)
     IMAGE_LOADED = "CORNERSTONE_IMAGE_LOADED",
     // (undocumented)
+    IMAGE_PIXEL_DATA_MODIFIED = "CORNERSTONE_IMAGE_PIXEL_DATA_MODIFIED",
+    // (undocumented)
     IMAGE_RENDERED = "CORNERSTONE_IMAGE_RENDERED",
     // (undocumented)
     IMAGE_RETRIEVAL_STAGE = "CORNERSTONE_IMAGE_RETRIEVAL_STAGE",
@@ -2154,6 +2156,8 @@ interface ImagePlaneModuleMetadata {
     sliceLocation: string;
     // (undocumented)
     sliceThickness: string;
+    // (undocumented)
+    usingDefaultValues: boolean;
 }
 
 // @public (undocumented)
@@ -3000,93 +3004,7 @@ interface IVolumeViewport extends IViewport {
 }
 
 // @public (undocumented)
-interface IVoxelManager<T> {
-    // (undocumented)
-    addPoint(point: Point3 | number): void;
-    // (undocumented)
-    boundsIJK: BoundsIJK;
-    // (undocumented)
-    get bytePerVoxel(): number;
-    // (undocumented)
-    clear(): void;
-    // (undocumented)
-    readonly dimensions: Point3;
-    // (undocumented)
-    forEach(callback: (args: {
-        value: unknown;
-        index: number;
-        pointIJK: Point3;
-        pointLPS: Point3;
-    }) => void, options?: {
-        boundsIJK?: BoundsIJK;
-        isInObject?: (pointLPS: Point3, pointIJK: Point3) => boolean;
-        returnPoints?: boolean;
-        imageData?: vtkImageData | CPUImageData;
-    }): unknown[];
-    // (undocumented)
-    frameSize: number;
-    // (undocumented)
-    _get: (index: number) => T;
-    // (undocumented)
-    getArrayOfSlices(): number[];
-    // (undocumented)
-    getAtIJK(i: number, j: number, k: number): T;
-    // (undocumented)
-    getAtIJKPoint(point: Point3): T;
-    // (undocumented)
-    getAtIndex(index: number): T;
-    // (undocumented)
-    getBoundsIJK(): BoundsIJK;
-    // (undocumented)
-    getCompleteScalarDataArray?: () => ArrayLike<number>;
-    // (undocumented)
-    getConstructor(): new (length: number) => PixelDataTypedArray;
-    // (undocumented)
-    getMiddleSliceData(): PixelDataTypedArray;
-    // (undocumented)
-    getPoints(): Point3[];
-    // (undocumented)
-    getRange: () => [number, number];
-    // (undocumented)
-    getScalarData(): PixelDataTypedArray;
-    // (undocumented)
-    getScalarDataLength(): number;
-    // (undocumented)
-    getSliceData(args: {
-        sliceIndex: number;
-        slicePlane: number;
-    }): PixelDataTypedArray;
-    // (undocumented)
-    isInObject: (pointLPS: Point3, pointIJK: Point3) => boolean;
-    // (undocumented)
-    map: Map<number, T> | IRLEVoxelMap<T>;
-    // (undocumented)
-    modifiedSlices: Set<number>;
-    // (undocumented)
-    numberOfComponents: number;
-    // (undocumented)
-    points: Set<number>;
-    // (undocumented)
-    _set: (index: number, v: T) => boolean | void;
-    // (undocumented)
-    setAtIJK(i: number, j: number, k: number, v: T): void;
-    // (undocumented)
-    setAtIJKPoint(point: Point3, v: T): void;
-    // (undocumented)
-    setAtIndex(index: number, v: T): void;
-    // (undocumented)
-    setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
-    // (undocumented)
-    get sizeInBytes(): number;
-    // (undocumented)
-    sourceVoxelManager: IVoxelManager<T>;
-    // (undocumented)
-    toIJK(index: number): Point3;
-    // (undocumented)
-    toIndex(ijk: Point3): number;
-    // (undocumented)
-    width: number;
-}
+type IVoxelManager<T> = VoxelManager<T>;
 
 // @public (undocumented)
 interface IWSIViewport extends IViewport {
@@ -5248,7 +5166,7 @@ type VolumeViewportProperties = ViewportProperties & {
 
 // @public (undocumented)
 class VoxelManager<T> implements IVoxelManager<T> {
-    constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean | void);
+    constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean);
     // (undocumented)
     static addBounds(bounds: BoundsIJK, point: Point3): void;
     // (undocumented)
@@ -5323,7 +5241,7 @@ class VoxelManager<T> implements IVoxelManager<T> {
     // (undocumented)
     _get: (index: number) => T;
     // (undocumented)
-    getArrayOfSlices(): number[];
+    getArrayOfModifiedSlices(): number[];
     // (undocumented)
     getAtIJK: (i: any, j: any, k: any) => T;
     // (undocumented)
@@ -5373,13 +5291,13 @@ class VoxelManager<T> implements IVoxelManager<T> {
     // (undocumented)
     points: Set<number>;
     // (undocumented)
-    _set: (index: number, v: T) => boolean | void;
+    _set: (index: number, v: T) => boolean;
     // (undocumented)
     setAtIJK: (i: number, j: number, k: number, v: any) => void;
     // (undocumented)
     setAtIJKPoint: ([i, j, k]: Point3, v: any) => void;
     // (undocumented)
-    setAtIndex: (index: any, v: any) => void;
+    setAtIndex: (index: any, v: any) => boolean;
     // (undocumented)
     setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
     // (undocumented)

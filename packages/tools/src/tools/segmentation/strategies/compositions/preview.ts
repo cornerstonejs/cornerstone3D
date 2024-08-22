@@ -119,7 +119,7 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfSlices()
+      tracking.getArrayOfModifiedSlices()
     );
     tracking.clear();
   },
@@ -142,7 +142,7 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfSlices()
+      previewVoxelManager.getArrayOfModifiedSlices()
     );
     previewVoxelManager.clear();
   },

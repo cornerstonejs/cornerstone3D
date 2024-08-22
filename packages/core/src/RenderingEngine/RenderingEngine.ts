@@ -419,7 +419,7 @@ class RenderingEngine implements IRenderingEngine {
       return viewport instanceof BaseVolumeViewport;
     };
 
-    return viewports.filter(isVolumeViewport);
+    return viewports.filter(isVolumeViewport) as IVolumeViewport[];
   }
 
   /**
