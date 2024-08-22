@@ -126,23 +126,16 @@ class PlanarFreehandROI {
             points.push([firstPoint[0], firstPoint[1]]);
         }
 
-        const {
-            area,
-            areaUnits,
-            pixelValueUnits,
-            perimeter,
-            mean,
-            max,
-            stdDev
-        } = data.cachedStats[`imageId:${referencedImageId}`] || {};
+        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
+            data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             /** From cachedStats */
             points,
             area,
-            areaUnits,
+            areaUnit,
             perimeter,
-            pixelValueUnits,
+            modalityUnit,
             mean,
             max,
             stdDev,

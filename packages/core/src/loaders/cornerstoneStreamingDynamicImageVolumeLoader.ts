@@ -1,7 +1,11 @@
-import { utilities } from '@cornerstonejs/core';
-import { splitImageIdsBy4DTags } from './helpers';
-import StreamingDynamicImageVolume from './StreamingDynamicImageVolume';
 import type { vec3 } from 'gl-matrix';
+import { StreamingDynamicImageVolume } from '../cache';
+import {
+  generateVolumePropsFromImageIds,
+  sortImageIdsAndGetSpacing,
+  splitImageIdsBy4DTags,
+  VoxelManager,
+} from '../utilities';
 
 interface IVolumeLoader {
   promise: Promise<StreamingDynamicImageVolume>;
@@ -35,7 +39,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
 
   const { imageIds } = options;
   const { splittingTag, imageIdGroups } = splitImageIdsBy4DTags(imageIds);
-  const volumeProps = utilities.generateVolumePropsFromImageIds(
+  const volumeProps = generateVolumePropsFromImageIds(
     imageIdGroups[0],
     volumeId
   );
@@ -53,7 +57,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   const scanAxisNormal = direction.slice(6, 9) as vec3;
 
   const sortedImageIdGroups = imageIdGroups.map((imageIds) => {
-    const sortedImageIds = utilities.sortImageIdsAndGetSpacing(
+    const sortedImageIds = sortImageIdsAndGetSpacing(
       imageIds,
       scanAxisNormal
     ).sortedImageIds;
@@ -63,13 +67,12 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
 
   const sortedFlatImageIds = sortedImageIdGroups.flat();
 
-  const voxelManager =
-    utilities.VoxelManager.createScalarDynamicVolumeVoxelManager({
-      dimensions,
-      imageIdGroups: sortedImageIdGroups,
-      timePoint: 0,
-      numberOfComponents,
-    });
+  const voxelManager = VoxelManager.createScalarDynamicVolumeVoxelManager({
+    dimensions,
+    imageIdGroups: sortedImageIdGroups,
+    timePoint: 0,
+    numberOfComponents,
+  });
 
   let streamingImageVolume = new StreamingDynamicImageVolume(
     // ImageVolume properties
@@ -114,4 +117,4 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   };
 }
 
-export default cornerstoneStreamingDynamicImageVolumeLoader;
+export { cornerstoneStreamingDynamicImageVolumeLoader };

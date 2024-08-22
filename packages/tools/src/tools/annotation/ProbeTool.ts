@@ -571,7 +571,7 @@ class ProbeTool extends AnnotationTool {
           ijk[2] = viewport.getCurrentImageIdIndex();
         }
 
-        let pixelValueUnits;
+        let modalityUnit;
 
         if (modality === 'US') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
@@ -585,11 +585,11 @@ class ProbeTool extends AnnotationTool {
           value = (
             hasEnhancedRegionValues ? calibratedResults.values : value
           ) as number;
-          pixelValueUnits = hasEnhancedRegionValues
+          modalityUnit = hasEnhancedRegionValues
             ? calibratedResults.units
             : 'raw';
         } else {
-          pixelValueUnits = getPixelValueUnits(
+          modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
             pixelUnitsOptions
@@ -600,7 +600,7 @@ class ProbeTool extends AnnotationTool {
           index: ijk,
           value,
           Modality: modality,
-          pixelValueUnits,
+          modalityUnit,
         };
       } else {
         this.isHandleOutsideImage = true;
@@ -622,7 +622,7 @@ class ProbeTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, pixelValueUnits } = cachedVolumeStats;
+  const { index, value, modalityUnit } = cachedVolumeStats;
 
   if (value === undefined) {
     return;
@@ -632,12 +632,12 @@ function defaultGetTextLines(data, targetId): string[] {
 
   textLines.push(`(${index[0]}, ${index[1]}, ${index[2]})`);
 
-  if (value instanceof Array && pixelValueUnits instanceof Array) {
+  if (value instanceof Array && modalityUnit instanceof Array) {
     for (let i = 0; i < value.length; i++) {
-      textLines.push(`${csUtils.roundNumber(value[i])} ${pixelValueUnits[i]}`);
+      textLines.push(`${csUtils.roundNumber(value[i])} ${modalityUnit[i]}`);
     }
   } else {
-    textLines.push(`${csUtils.roundNumber(value)} ${pixelValueUnits}`);
+    textLines.push(`${csUtils.roundNumber(value)} ${modalityUnit}`);
   }
 
   return textLines;

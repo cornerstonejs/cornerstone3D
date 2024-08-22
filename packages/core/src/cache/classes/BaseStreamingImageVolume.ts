@@ -1,27 +1,29 @@
+import * as metaData from '../../metaData';
+import { Events, ImageQualityStatus, RequestType } from '../../enums';
+import eventTarget from '../../eventTarget';
+import imageLoadPoolManager from '../../requestPool/imageLoadPoolManager';
+import type {
+  IImagesLoader,
+  ImageLoadRequests,
+  ImageVolumeProps,
+  IStreamingVolumeProperties,
+  PixelDataTypedArrayString,
+  PTScaling,
+  ScalingParameters,
+} from '../../types';
 import {
-  Enums,
-  eventTarget,
-  metaData,
-  imageLoadPoolManager,
-  triggerEvent,
-  ImageVolume,
-  imageLoader,
-  utilities as csUtils,
-  ProgressiveRetrieveImages,
-  canRenderFloatTextures,
-} from '@cornerstonejs/core';
-import type { Types, IImagesLoader } from '@cornerstonejs/core';
-
-import { autoLoad } from './helpers';
-import type ImageLoadRequests from './types/ImageLoadRequests';
-
-const requestTypeDefault = Enums.RequestType.Prefetch;
-const {
   ProgressiveIterator,
   imageRetrieveMetadataProvider,
   hasFloatScalingParameters,
-} = csUtils;
-const { ImageQualityStatus } = Enums;
+  autoLoad,
+  triggerEvent,
+} from '../../utilities';
+import ImageVolume from './ImageVolume';
+import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
+import { canRenderFloatTextures } from '../../init';
+import { loadAndCacheImage } from '../../loaders/imageLoader';
+import StreamingImageVolume from './StreamingImageVolume';
+const requestTypeDefault = RequestType.Prefetch;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -40,7 +42,7 @@ export default class BaseStreamingImageVolume
   protected reRenderTarget = 0;
   protected reRenderFraction = 2;
 
-  public dataType: Types.PixelDataTypedArrayString;
+  public dataType: PixelDataTypedArrayString;
 
   loadStatus: {
     loaded: boolean;
@@ -51,8 +53,8 @@ export default class BaseStreamingImageVolume
   imagesLoader: IImagesLoader = this;
 
   constructor(
-    imageVolumeProperties: Types.ImageVolumeProps,
-    streamingProperties: Types.IStreamingVolumeProperties
+    imageVolumeProperties: ImageVolumeProps,
+    streamingProperties: IStreamingVolumeProperties
   ) {
     super(imageVolumeProperties);
     this.loadStatus = streamingProperties.loadStatus;
@@ -135,7 +137,7 @@ export default class BaseStreamingImageVolume
 
       triggerEvent(
         eventTarget,
-        Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        Events.IMAGE_VOLUME_LOADING_COMPLETED,
         eventDetail
       );
     }
@@ -168,14 +170,14 @@ export default class BaseStreamingImageVolume
       this.framesProcessed++;
     }
 
-    const eventDetail: Types.EventTypes.ImageVolumeModifiedEventDetail = {
+    const eventDetail = {
       FrameOfReferenceUID,
       volumeId: this.volumeId,
       numberOfFrames: numFrames,
       framesProcessed: this.framesProcessed,
     };
 
-    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, eventDetail);
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, eventDetail);
 
     if (complete && this.framesProcessed === this.totalNumFrames) {
       this.loadStatus.loaded = true;
@@ -259,7 +261,7 @@ export default class BaseStreamingImageVolume
       imageId,
     };
 
-    triggerEvent(eventTarget, Enums.Events.IMAGE_LOAD_ERROR, eventDetail);
+    triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, eventDetail);
   }
 
   /**
@@ -325,7 +327,7 @@ export default class BaseStreamingImageVolume
     const generalSeriesModule =
       metaData.get('generalSeriesModule', imageId) || {};
 
-    const scalingParameters: Types.ScalingParameters = {
+    const scalingParameters: ScalingParameters = {
       rescaleSlope: modalityLutModule.rescaleSlope,
       rescaleIntercept: modalityLutModule.rescaleIntercept,
       modality: generalSeriesModule.modality,
@@ -420,19 +422,19 @@ export default class BaseStreamingImageVolume
         this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
         // Remove the event listener after it's been triggered
         eventTarget.removeEventListener(
-          Enums.Events.IMAGE_CACHE_IMAGE_ADDED,
+          Events.IMAGE_CACHE_IMAGE_ADDED,
           handleImageCacheAdded
         );
       }
     };
 
     eventTarget.addEventListener(
-      Enums.Events.IMAGE_CACHE_IMAGE_ADDED,
+      Events.IMAGE_CACHE_IMAGE_ADDED,
       handleImageCacheAdded
     );
 
     const uncompressedIterator = ProgressiveIterator.as(
-      imageLoader.loadAndCacheImage(imageId, options)
+      loadAndCacheImage(imageId, options)
     );
 
     return uncompressedIterator.forEach((image) => {
@@ -569,7 +571,7 @@ export default class BaseStreamingImageVolume
 
     const { suvbw, suvlbm, suvbsa } = suvFactor;
 
-    const petScaling = <Types.PTScaling>{};
+    const petScaling = <PTScaling>{};
 
     if (suvlbm) {
       petScaling.suvbwToSuvlbm = suvlbm / suvbw;

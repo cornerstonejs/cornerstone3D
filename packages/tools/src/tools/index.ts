@@ -5,7 +5,6 @@ import WindowLevelTool from './WindowLevelTool';
 import WindowLevelRegionTool from './WindowLevelRegionTool';
 import StackScrollTool from './StackScrollTool';
 import PlanarRotateTool from './PlanarRotateTool';
-import StackScrollMouseWheelTool from './StackScrollToolMouseWheelTool';
 import ZoomTool from './ZoomTool';
 import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
@@ -16,7 +15,6 @@ import ReferenceLinesTool from './ReferenceLinesTool';
 import OverlayGridTool from './OverlayGridTool';
 import SegmentationIntersectionTool from './SegmentationIntersectionTool';
 import ReferenceCursors from './ReferenceCursors';
-import ReferenceLines from './ReferenceLinesTool';
 import ScaleOverlayTool from './ScaleOverlayTool';
 import SculptorTool from './SculptorTool';
 
@@ -67,7 +65,6 @@ export {
   WindowLevelRegionTool,
   StackScrollTool,
   PlanarRotateTool,
-  StackScrollMouseWheelTool,
   ZoomTool,
   VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
@@ -108,7 +105,6 @@ export {
   BrushTool,
   MagnifyTool,
   AdvancedMagnifyTool,
-  ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,

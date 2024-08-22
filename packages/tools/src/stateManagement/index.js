@@ -20,8 +20,8 @@ import {
   invalidateAnnotation,
 } from './annotation/annotationState';
 
-import { addSegmentationRepresentations } from './segmentation/addSegmentationRepresentations';
-import { removeSegmentationRepresentations } from './segmentation/removeSegmentationRepresentations';
+import addSegmentationRepresentations from './segmentation/addSegmentationRepresentations';
+import removeSegmentationRepresentations from './segmentation/removeSegmentationRepresentations';
 
 export {
   // annotations

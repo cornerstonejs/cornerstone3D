@@ -41,8 +41,8 @@ const SQUARE = '\xb2';
  */
 const getCalibratedLengthUnitsAndScale = (image, handles) => {
   const { calibration, hasPixelSpacing } = image;
-  let lengthUnits = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
-  let areaUnits = lengthUnits + SQUARE;
+  let unit = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
+  let areaUnit = unit + SQUARE;
   let scale = 1;
   let calibrationType = '';
 
@@ -50,11 +50,11 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     !calibration ||
     (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
   ) {
-    return { lengthUnits, areaUnits, scale };
+    return { unit, areaUnit, scale };
   }
 
   if (calibration.type === CalibrationTypes.UNCALIBRATED) {
-    return { lengthUnits: PIXEL_UNITS, areaUnits: PIXEL_UNITS + SQUARE, scale };
+    return { unit: PIXEL_UNITS, areaUnit: PIXEL_UNITS + SQUARE, scale };
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
@@ -82,7 +82,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     // If we are not in a region at all we should show the underlying calibration
     // which might be the mm spacing for the image
     if (!regions?.length) {
-      return { lengthUnits, areaUnits, scale };
+      return { unit, areaUnit, scale };
     }
 
     // if we are in a region then it is the question of whether we support it
@@ -98,8 +98,8 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
 
     if (!regions.length) {
       return {
-        lengthUnits: PIXEL_UNITS,
-        areaUnits: PIXEL_UNITS + SQUARE,
+        unit: PIXEL_UNITS,
+        areaUnit: PIXEL_UNITS + SQUARE,
         scale,
       };
     }
@@ -124,16 +124,16 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       // 1 to 1 aspect ratio, we use just one of them
       scale = 1 / physicalDeltaX;
       calibrationType = 'US Region';
-      lengthUnits = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
-      areaUnits = lengthUnits + SQUARE;
+      unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
+      areaUnit = unit + SQUARE;
     } else {
       // here we are showing at the aspect ratio of the physical delta
       // if they are not the same, then we should show px, but the correct solution
       // is to grab each point separately and scale them individually
       // Todo: implement this
       return {
-        lengthUnits: PIXEL_UNITS,
-        areaUnits: PIXEL_UNITS + SQUARE,
+        unit: PIXEL_UNITS,
+        areaUnit: PIXEL_UNITS + SQUARE,
         scale,
       };
     }
@@ -154,8 +154,8 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   return {
-    lengthUnits: lengthUnits + (calibrationType ? ` ${calibrationType}` : ''),
-    areaUnits: areaUnits + (calibrationType ? ` ${calibrationType}` : ''),
+    unit: unit + (calibrationType ? ` ${calibrationType}` : ''),
+    areaUnit: areaUnit + (calibrationType ? ` ${calibrationType}` : ''),
     scale,
   };
 };

@@ -8,7 +8,7 @@ export interface ROICachedStats {
   [targetId: string]: {
     Modality: string;
     area: number;
-    areaUnits: string;
+    areaUnit: string;
     max: number;
     mean: number;
     stdDev: number;
@@ -139,7 +139,7 @@ export type SplineROIAnnotation = ContourAnnotation & {
       [targetId: string]: {
         Modality: string;
         area: number;
-        areaUnits: string;
+        areaUnit: string;
       };
     };
   };

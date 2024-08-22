@@ -87,16 +87,6 @@ module.exports = {
         },
         {
           type: 'category',
-          label: 'Streaming Image Volume Loader',
-          collapsed: true,
-          link: { type: 'doc', id: 'concepts/streaming-image-volume/index' },
-          items: [
-            'concepts/streaming-image-volume/streaming',
-            'concepts/streaming-image-volume/re-order',
-          ],
-        },
-        {
-          type: 'category',
           label: 'Progressive Loading',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/progressive-loading/index' },

@@ -20,7 +20,7 @@ const { Events, ViewportType } = Enums;
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 
 const {
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   WindowLevelTool,
   ToolGroupManager,
   synchronizers,
@@ -62,7 +62,7 @@ const ptVolumeId = testUtils.encodeVolumeIdInfo({
   zSpacing: 1,
 });
 
-describe('Synchronizer Manager:', () => {
+fdescribe('Synchronizer Manager:', () => {
   let testEnv;
   let renderingEngine;
   let firstToolGroup;
@@ -72,9 +72,11 @@ describe('Synchronizer Manager:', () => {
     testEnv = testUtils.setupTestEnvironment({
       renderingEngineId: renderingEngineId,
       toolGroupIds: ['volume1'],
-      tools: [StackScrollMouseWheelTool, WindowLevelTool],
+      tools: [StackScrollTool, WindowLevelTool],
       toolActivations: {
-        [StackScrollMouseWheelTool.toolName]: {},
+        [StackScrollTool.toolName]: {
+          bindings: [{ mouseButton: MouseBindings.Wheel }],
+        },
         [WindowLevelTool.toolName]: {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         },

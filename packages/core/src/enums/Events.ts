@@ -245,6 +245,11 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
    */
   COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
+
+  /**
+   * Dynamic image volume time point index changed
+   */
+  DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
 }
 
 export default Events;

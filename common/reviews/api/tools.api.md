@@ -2557,8 +2557,8 @@ const getCalibratedAspect: (image: any) => any;
 
 // @public (undocumented)
 const getCalibratedLengthUnitsAndScale: (image: any, handles: any) => {
-    lengthUnits: string;
-    areaUnits: string;
+    unit: string;
+    areaUnit: string;
     scale: number;
 };
 
@@ -3892,24 +3892,24 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
-    protected updateClosedCachedStats({ viewport, points, imageData, metadata, cachedStats, targetId, pixelValueUnits, canvasCoordinates, calibratedScale, }: {
+    protected updateClosedCachedStats({ viewport, points, imageData, metadata, cachedStats, targetId, modalityUnit, canvasCoordinates, calibratedScale, }: {
         viewport: any;
         points: any;
         imageData: any;
         metadata: any;
         cachedStats: any;
         targetId: any;
-        pixelValueUnits: any;
+        modalityUnit: any;
         canvasCoordinates: any;
         calibratedScale: any;
     }): void;
     // (undocumented)
-    protected updateOpenCachedStats({ targetId, metadata, canvasCoordinates, cachedStats, pixelValueUnits, calibratedScale, }: {
+    protected updateOpenCachedStats({ targetId, metadata, canvasCoordinates, cachedStats, modalityUnit, calibratedScale, }: {
         targetId: any;
         metadata: any;
         canvasCoordinates: any;
         cachedStats: any;
-        pixelValueUnits: any;
+        modalityUnit: any;
         calibratedScale: any;
     }): void;
 }
@@ -4503,7 +4503,7 @@ interface ReferenceLineAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-class ReferenceLines extends AnnotationDisplayTool {
+export class ReferenceLinesTool extends AnnotationDisplayTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     editData: {
@@ -4538,8 +4538,6 @@ class ReferenceLines extends AnnotationDisplayTool {
     // (undocumented)
     static toolName: any;
 }
-export { ReferenceLines }
-export { ReferenceLines as ReferenceLinesTool }
 
 // @public (undocumented)
 function registerCursor(toolName: string, iconContent: string, viewBox: {
@@ -4600,7 +4598,7 @@ interface ROICachedStats {
     [targetId: string]: {
         Modality: string;
         area: number;
-        areaUnits: string;
+        areaUnit: string;
         max: number;
         mean: number;
         stdDev: number;
@@ -5127,7 +5125,7 @@ type SplineROIAnnotation = ContourAnnotation & {
             [targetId: string]: {
                 Modality: string;
                 area: number;
-                areaUnits: string;
+                areaUnit: string;
             };
         };
     };
@@ -5214,23 +5212,6 @@ const stackPrefetch: {
     getConfiguration: typeof getConfiguration;
     setConfiguration: typeof setConfiguration;
 };
-
-// @public (undocumented)
-export class StackScrollMouseWheelTool extends BaseTool {
-    constructor(toolProps?: {}, defaultToolProps?: {
-        supportedInteractionTypes: string[];
-        configuration: {
-            invert: boolean;
-            debounceIfNotLoaded: boolean;
-            loop: boolean;
-            scrollSlabs: boolean;
-        };
-    });
-    // (undocumented)
-    mouseWheelCallback(evt: MouseWheelEventType): void;
-    // (undocumented)
-    static toolName: any;
-}
 
 // @public (undocumented)
 export class StackScrollTool extends BaseTool {

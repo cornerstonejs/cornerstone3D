@@ -680,7 +680,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const { data } = annotation;
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnits == null
+        data.cachedStats[targetId].areaUnit == null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -688,7 +688,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           max: null,
           mean: null,
           stdDev: null,
-          areaUnits: null,
+          areaUnit: null,
         };
 
         this._calculateCachedStats(
@@ -743,7 +743,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         ),
       };
 
-      const pixelValueUnits = getPixelValueUnits(
+      const modalityUnit = getPixelValueUnits(
         metadata.Modality,
         annotation.metadata.referencedImageId,
         modalityUnitOptions
@@ -793,7 +793,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           imageData,
           metadata,
           cachedStats,
-          pixelValueUnits,
+          modalityUnit,
           calibratedScale,
         });
       } else {
@@ -802,7 +802,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           canvasCoordinates,
           targetId,
           cachedStats,
-          pixelValueUnits,
+          modalityUnit,
           calibratedScale,
         });
       }
@@ -826,11 +826,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     metadata,
     cachedStats,
     targetId,
-    pixelValueUnits,
+    modalityUnit,
     canvasCoordinates,
     calibratedScale,
   }) {
-    const { scale, areaUnits, units } = calibratedScale;
+    const { scale, areaUnit, units } = calibratedScale;
 
     // Using an arbitrary start point (canvasPoint), calculate the
     // mm spacing for the canvas in the X and Y directions.
@@ -964,13 +964,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       statsArray: stats.array,
       pointsInShape: pointsInShape,
       /**
-       * areaUnits are sizing, eg mm^2 typically
+       * areaUnit are sizing, eg mm^2 typically
        * modality units are pixel value units, eg HU or other
        * unit is linear measurement unit, eg mm
        */
-      areaUnits,
-      pixelValueUnits,
-      lengthUnits: units,
+      areaUnit,
+      modalityUnit,
+      unit: units,
     };
   }
 
@@ -979,7 +979,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     metadata,
     canvasCoordinates,
     cachedStats,
-    pixelValueUnits,
+    modalityUnit,
     calibratedScale,
   }) {
     const { scale, units } = calibratedScale;
@@ -987,7 +987,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     cachedStats[targetId] = {
       Modality: metadata.Modality,
       length: calculatePerimeter(canvasCoordinates, false) / scale,
-      pixelValueUnits,
+      modalityUnit,
       getPixelValueUnitunit: units,
     };
   }
@@ -1064,9 +1064,9 @@ function defaultGetTextLines(data, targetId): string[] {
     perimeter,
     max,
     isEmptyArea,
-    lengthUnits,
-    areaUnits,
-    pixelValueUnits,
+    unit,
+    areaUnit,
+    modalityUnit,
   } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
@@ -1074,33 +1074,29 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${csUtils.roundNumber(area)} ${areaUnits}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${pixelValueUnits}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
   if (Number.isFinite(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${pixelValueUnits}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
   if (stdDev) {
-    textLines.push(
-      `Std Dev: ${csUtils.roundNumber(stdDev)} ${pixelValueUnits}`
-    );
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
   if (perimeter) {
-    textLines.push(
-      `Perimeter: ${csUtils.roundNumber(perimeter)} ${lengthUnits}`
-    );
+    textLines.push(`Perimeter: ${csUtils.roundNumber(perimeter)} ${unit}`);
   }
 
   if (length) {
     // No need to show length prefix as there is just the single value
-    textLines.push(`${csUtils.roundNumber(length)} ${lengthUnits}`);
+    textLines.push(`${csUtils.roundNumber(length)} ${unit}`);
   }
 
   return textLines;
