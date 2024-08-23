@@ -125,7 +125,6 @@ import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
-import type { WSIViewportInput } from './WSIViewportTypes';
 import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';

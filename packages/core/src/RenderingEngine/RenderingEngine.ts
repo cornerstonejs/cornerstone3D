@@ -622,17 +622,12 @@ class RenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      const resetPan = true;
-      const resetZoom = true;
-      const resetToCenter = true;
-      const resetRotation = false;
-      const suppressEvents = true;
       vp.resetCamera({
-        resetPan,
-        resetZoom,
-        resetToCenter,
-        resetRotation,
-        suppressEvents,
+        resetPan: true,
+        resetZoom: true,
+        resetToCenter: true,
+        resetRotation: false,
+        suppressEvents: true,
       });
 
       const displayArea = vp.getDisplayArea();
@@ -864,12 +859,10 @@ class RenderingEngine {
 
     // 4. Create a proper viewport based on the type of the viewport
     const ViewportType = viewportTypeToViewportClass[type];
-
-    // @ts-expect-error
     const viewport = new ViewportType(viewportInput);
 
     // 5. Storing the viewports
-    this._viewports.set(viewportId, viewport as IViewport);
+    this._viewports.set(viewportId, viewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,

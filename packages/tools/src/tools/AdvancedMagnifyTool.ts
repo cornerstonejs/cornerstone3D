@@ -1033,10 +1033,7 @@ class AdvancedMagnifyViewportManager {
       this._reset(sourceViewportId);
     };
 
-    element.addEventListener(
-      csEvents.STACK_VIEWPORT_NEW_STACK,
-      newStackHandler
-    );
+    element.addEventListener(csEvents.VIEWPORT_NEW_IMAGE_SET, newStackHandler);
 
     const newVolumeHandler = (evt) => {
       const { viewportId: sourceViewportId } = evt.detail;
@@ -1070,7 +1067,7 @@ class AdvancedMagnifyViewportManager {
 
     // Remove using the stored handlers
     element.removeEventListener(
-      csEvents.STACK_VIEWPORT_NEW_STACK,
+      csEvents.VIEWPORT_NEW_IMAGE_SET,
       element.newStackHandler
     );
     element.removeEventListener(

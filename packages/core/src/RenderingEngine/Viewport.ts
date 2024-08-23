@@ -903,7 +903,12 @@ class Viewport {
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  public resetCamera(options?): boolean {
+  public resetCamera(options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
+  }): boolean {
     const {
       resetPan = true,
       resetZoom = true,
@@ -924,7 +929,7 @@ class Viewport {
       flipVertical: false,
     });
 
-    const previousCamera = structuredClone(this.getCamera());
+    const previousCamera = this.getCamera();
     const bounds = renderer.computeVisiblePropBounds();
     const focalPoint = [0, 0, 0] as Point3;
     const imageData = this.getDefaultImageData();
@@ -1029,9 +1034,9 @@ class Viewport {
       clippingRange: clippingRangeToUse,
     });
 
-    const modifiedCamera = structuredClone(this.getCamera());
+    const modifiedCamera = this.getCamera();
 
-    this.setFitToCanvasCamera(structuredClone(this.getCamera()));
+    this.setFitToCanvasCamera(this.getCamera());
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);
@@ -1266,11 +1271,12 @@ class Viewport {
   protected getCameraNoRotation(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
+    // Always return a new instance for optimization
     return {
-      viewUp: vtkCamera.getViewUp() as Point3,
-      viewPlaneNormal: vtkCamera.getViewPlaneNormal() as Point3,
-      position: vtkCamera.getPosition() as Point3,
-      focalPoint: vtkCamera.getFocalPoint() as Point3,
+      viewUp: [...vtkCamera.getViewUp()] as Point3,
+      viewPlaneNormal: [...vtkCamera.getViewPlaneNormal()] as Point3,
+      position: [...vtkCamera.getPosition()] as Point3,
+      focalPoint: [...vtkCamera.getFocalPoint()] as Point3,
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
@@ -1303,7 +1309,7 @@ class Viewport {
     storeAsInitialCamera = false
   ): void {
     const vtkCamera = this.getVtkActiveCamera();
-    const previousCamera = structuredClone(this.getCamera());
+    const previousCamera = this.getCamera();
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,

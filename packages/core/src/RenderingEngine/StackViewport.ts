@@ -302,9 +302,19 @@ class StackViewport extends Viewport {
   public unsetColormap: () => void;
 
   /**
-   * Centers Pan and resets the zoom for stack viewport.
+   * Resets the camera for the stack viewport.
+   * This method adjusts the camera to fit the image in the viewport,
+   * potentially resetting pan, zoom, and other view parameters.
+   *
+   * @param options - Optional configuration for the reset operation
+   * @param options.resetPan - Whether to reset the pan (default: true)
+   * @param options.resetZoom - Whether to reset the zoom (default: true)
+   * @returns boolean - True if the camera was reset successfully, false otherwise
    */
-  public resetCamera: (options?) => boolean;
+  public resetCamera: (options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+  }) => boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -1575,6 +1585,78 @@ class StackViewport extends Viewport {
     };
   }
 
+  private matchImagesForOverlay(
+    currentImageId: string,
+    referencedImageId: string
+  ): string | undefined {
+    const matchImagesForOverlay = (targetImageId: string) => {
+      const referenceImagePlaneModule = metaData.get(
+        MetadataModules.IMAGE_PLANE,
+        referencedImageId
+      );
+
+      const currentImagePlaneModule = metaData.get(
+        MetadataModules.IMAGE_PLANE,
+        targetImageId
+      );
+
+      const referenceOrientation =
+        referenceImagePlaneModule.imageOrientationPatient;
+      const currentOrientation =
+        currentImagePlaneModule.imageOrientationPatient;
+
+      if (referenceOrientation && currentOrientation) {
+        const closeEnough = isEqual(
+          referenceImagePlaneModule.imageOrientationPatient,
+          currentImagePlaneModule.imageOrientationPatient
+        );
+
+        if (closeEnough) {
+          // New check for orthogonality
+          const referencePosition =
+            referenceImagePlaneModule.imagePositionPatient;
+          const currentPosition = currentImagePlaneModule.imagePositionPatient;
+
+          if (referencePosition && currentPosition) {
+            const vector = vec3.create();
+            vec3.subtract(vector, currentPosition, referencePosition);
+
+            const viewPlaneNormal = vec3.create();
+            vec3.cross(
+              viewPlaneNormal,
+              currentOrientation.slice(0, 3),
+              currentOrientation.slice(3, 6)
+            );
+
+            const dotProduct = vec3.dot(vector, viewPlaneNormal);
+            const isOrthogonal = Math.abs(dotProduct) < EPSILON;
+
+            if (isOrthogonal) {
+              return targetImageId;
+            }
+          }
+        }
+      } else {
+        // if we don't have orientation information, we can't determine based
+        // orientation, we rely on number of columns and rows
+        const referenceRows = referenceImagePlaneModule.rows;
+        const referenceColumns = referenceImagePlaneModule.columns;
+
+        const currentRows = currentImagePlaneModule.rows;
+        const currentColumns = currentImagePlaneModule.columns;
+
+        if (
+          referenceRows === currentRows &&
+          referenceColumns === currentColumns
+        ) {
+          return targetImageId;
+        }
+      }
+    };
+
+    return matchImagesForOverlay(currentImageId);
+  }
+
   /**
    * Gets the view reference data for a given image slice.  This uses the
    * image plane module to read a default focal point/normal, and also returns
@@ -1746,7 +1828,7 @@ class StackViewport extends Viewport {
       currentImageIdIndex: currentImageIdIndex,
     };
 
-    triggerEvent(this.element, Events.STACK_VIEWPORT_NEW_STACK, eventDetail);
+    triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
 
     return imageId;
   }
@@ -2272,7 +2354,7 @@ class StackViewport extends Viewport {
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = structuredClone(this.getCamera());
+    const previousCameraProps = this.getCamera();
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
@@ -2503,7 +2585,13 @@ class StackViewport extends Viewport {
     return imageId;
   }
 
-  private resetCameraCPU(resetPan, resetZoom) {
+  private resetCameraCPU({
+    resetPan = true,
+    resetZoom = true,
+  }: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+  }) {
     const { image } = this._cpuFallbackEnabledElement;
 
     if (!image) {
@@ -2526,7 +2614,7 @@ class StackViewport extends Viewport {
     });
   }
 
-  private resetCameraGPU(resetPan, resetZoom): boolean {
+  private resetCameraGPU({ resetPan, resetZoom }): boolean {
     // Todo: we need to make the rotation a camera properties so that
     // we can reset it there, right now it is not possible to reset the rotation
     // without this
@@ -2909,12 +2997,16 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * Checks to see if this target is or could be shown in this viewport
+   * Determines if a given ViewReference is viewable in this StackViewport.
+   *
+   * @param viewRef - The ViewReference to check.
+   * @param options - Additional options for compatibility checking.
+   * @returns True if the ViewReference is viewable, false otherwise.
    */
   public isReferenceViewable(
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
-  ): boolean | unknown {
+  ): boolean {
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
@@ -2937,84 +3029,13 @@ class StackViewport extends Viewport {
       return false;
     }
 
-    /**
-     * For overlay, we don't care about the imageId. We just want to
-     * know if the viewport can show the overlay image. We return true
-     * if the viewport has the same orientation as the overlay image.
-     * We may need to consider if they are in the same bounds, but
-     * that's a consideration for later.
-     */
     if (options.asOverlay && referencedImageId) {
-      const matchImagesForOverlay = (targetImageId) => {
-        const referenceImagePlaneModule = metaData.get(
-          MetadataModules.IMAGE_PLANE,
-          referencedImageId
-        );
-
-        const currentImagePlaneModule = metaData.get(
-          MetadataModules.IMAGE_PLANE,
-          targetImageId
-        );
-
-        const referenceOrientation =
-          referenceImagePlaneModule.imageOrientationPatient;
-        const currentOrientation =
-          currentImagePlaneModule.imageOrientationPatient;
-
-        if (referenceOrientation && currentOrientation) {
-          const closeEnough = isEqual(
-            referenceImagePlaneModule.imageOrientationPatient,
-            currentImagePlaneModule.imageOrientationPatient
-          );
-
-          if (closeEnough) {
-            // New check for orthogonality
-            const referencePosition =
-              referenceImagePlaneModule.imagePositionPatient;
-            const currentPosition =
-              currentImagePlaneModule.imagePositionPatient;
-
-            if (referencePosition && currentPosition) {
-              const vector = vec3.create();
-              vec3.subtract(vector, currentPosition, referencePosition);
-
-              const viewPlaneNormal = vec3.create();
-              vec3.cross(
-                viewPlaneNormal,
-                currentOrientation.slice(0, 3),
-                currentOrientation.slice(3, 6)
-              );
-
-              const dotProduct = vec3.dot(vector, viewPlaneNormal);
-              const isOrthogonal = Math.abs(dotProduct) < EPSILON;
-
-              if (isOrthogonal) {
-                return targetImageId;
-              }
-            }
-          }
-        } else {
-          // if we don't have orientation information, we can't determine based
-          // orientation, we rely on number of columns and rows
-          const referenceRows = referenceImagePlaneModule.rows;
-          const referenceColumns = referenceImagePlaneModule.columns;
-
-          const currentRows = currentImagePlaneModule.rows;
-          const currentColumns = currentImagePlaneModule.columns;
-
-          if (
-            referenceRows === currentRows &&
-            referenceColumns === currentColumns
-          ) {
-            return targetImageId;
-          }
-        }
-      };
-
-      const matchedImageId = matchImagesForOverlay(currentImageId);
-
+      const matchedImageId = this.matchImagesForOverlay(
+        currentImageId,
+        referencedImageId
+      );
       if (matchedImageId) {
-        return matchedImageId;
+        return true;
       }
     }
 
@@ -3354,12 +3375,18 @@ class StackViewport extends Viewport {
       gpu: this.setInvertColorGPU,
     },
     resetCamera: {
-      cpu: (resetPan = true, resetZoom = true): boolean => {
-        this.resetCameraCPU(resetPan, resetZoom);
+      cpu: (
+        options: { resetPan?: boolean; resetZoom?: boolean } = {}
+      ): boolean => {
+        const { resetPan = true, resetZoom = true } = options;
+        this.resetCameraCPU({ resetPan, resetZoom });
         return true;
       },
-      gpu: (resetPan = true, resetZoom = true): boolean => {
-        this.resetCameraGPU(resetPan, resetZoom);
+      gpu: (
+        options: { resetPan?: boolean; resetZoom?: boolean } = {}
+      ): boolean => {
+        const { resetPan = true, resetZoom = true } = options;
+        this.resetCameraGPU({ resetPan, resetZoom });
         return true;
       },
     },

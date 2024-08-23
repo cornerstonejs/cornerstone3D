@@ -100,7 +100,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.WholeSlide,
+    type: ViewportType.WHOLE_SLIDE,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
