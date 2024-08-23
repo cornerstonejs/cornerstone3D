@@ -14,11 +14,14 @@ import {
   fakeMetaDataProvider,
 } from '../../test/testUtilsImageLoader';
 
-export default async function initDemo() {
+export default async function initDemo(config) {
   initProviders();
   initCornerstoneDICOMImageLoader();
   initVolumeLoader();
-  await csRenderInit({ peerImport });
+  await csRenderInit({
+    peerImport,
+    ...(config?.core ? config.core : {}),
+  });
   await csToolsInit();
 
   // for testings, you don't need any of these

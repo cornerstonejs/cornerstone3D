@@ -2949,6 +2949,9 @@ enum RequestType {
 }
 
 // @public (undocumented)
+export function resetInitialization(): void;
+
+// @public (undocumented)
 export function resetUseCPURendering(): void;
 
 // @public (undocumented)

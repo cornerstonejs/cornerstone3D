@@ -878,6 +878,14 @@ abstract class BaseVolumeViewport extends Viewport {
       this.viewportProperties.slabThickness = properties.slabThickness;
     }
 
+    if (properties.rotation !== undefined) {
+      this.setRotation(properties.rotation);
+    }
+
+    if (properties.preset !== undefined) {
+      this.setPreset(properties.preset, volumeId, false);
+    }
+
     this.render();
   }
 

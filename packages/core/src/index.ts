@@ -40,6 +40,7 @@ import {
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,
+  resetInitialization,
 } from './init';
 
 // Classes
@@ -86,6 +87,7 @@ export {
   init,
   isCornerstoneInitialized,
   peerImport,
+  resetInitialization,
   // configs
   getConfiguration,
   setConfiguration,
