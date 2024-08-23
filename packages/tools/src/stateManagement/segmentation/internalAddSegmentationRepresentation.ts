@@ -48,8 +48,6 @@ async function internalAddSegmentationRepresentation(
     renderingConfig = {};
   }
 
-  debugger;
-
   const representation: SegmentationRepresentation = {
     segmentationId,
     segmentationRepresentationUID,
