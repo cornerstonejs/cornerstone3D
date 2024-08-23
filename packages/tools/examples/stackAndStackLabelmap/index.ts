@@ -209,21 +209,16 @@ async function run() {
       },
     ]);
 
-    // Add the segmentation representation to the viewport
-    await segmentation.addSegmentationRepresentations(viewportId1, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+    // Add the segmentation representation to both viewports
+    const segmentationRepresentation = {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    };
 
-    // adding the same segmentation to the stack viewport
-    await segmentation.addSegmentationRepresentations(viewportId2, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+    await segmentation.addMultiViewportSegmentationRepresentations({
+      [viewportId1]: [segmentationRepresentation],
+      [viewportId2]: [segmentationRepresentation],
+    });
   }, 100);
 }
 

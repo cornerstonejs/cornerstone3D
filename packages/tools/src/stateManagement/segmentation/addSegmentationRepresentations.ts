@@ -1,7 +1,4 @@
-import type {
-  RepresentationPublicInput,
-  RepresentationConfig,
-} from '../../types/SegmentationStateTypes';
+import type { RepresentationPublicInput } from '../../types/SegmentationStateTypes';
 
 import { internalAddSegmentationRepresentation } from './internalAddSegmentationRepresentation';
 
@@ -12,24 +9,19 @@ import { internalAddSegmentationRepresentation } from './internalAddSegmentation
  * @param representationInputArray - An array of segmentation representations to add to each viewport
  */
 async function addSegmentationRepresentations(
-  viewportIds: string[],
+  viewportId: string,
   representationInputArray: RepresentationPublicInput[]
-): Promise<{ [viewportId: string]: string[] }> {
-  const results = {};
+): Promise<string[]> {
+  const promises = representationInputArray.map((representationInput) => {
+    return internalAddSegmentationRepresentation(
+      viewportId,
+      representationInput
+    );
+  });
 
-  for (const viewportId of viewportIds) {
-    const promises = representationInputArray.map((representationInput) => {
-      return internalAddSegmentationRepresentation(
-        viewportId,
-        representationInput
-      );
-    });
+  const segmentationRepresentationUIDs = await Promise.all(promises);
 
-    const uids = await Promise.all(promises);
-    results[viewportId] = uids;
-  }
-
-  return results;
+  return segmentationRepresentationUIDs;
 }
 
 /**
@@ -37,7 +29,7 @@ async function addSegmentationRepresentations(
  *
  * @param viewportInputMap - A map of viewportIds to their respective representation input arrays
  */
-async function addSegmentationRepresentationsMap(viewportInputMap: {
+async function addMultiViewportSegmentationRepresentations(viewportInputMap: {
   [viewportId: string]: RepresentationPublicInput[];
 }): Promise<{ [viewportId: string]: string[] }> {
   const results = {};
@@ -56,4 +48,7 @@ async function addSegmentationRepresentationsMap(viewportInputMap: {
   return results;
 }
 
-export { addSegmentationRepresentations, addSegmentationRepresentationsMap };
+export {
+  addSegmentationRepresentations,
+  addMultiViewportSegmentationRepresentations,
+};

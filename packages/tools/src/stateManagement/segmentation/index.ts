@@ -2,7 +2,7 @@ import removeSegmentationRepresentations from './removeSegmentationRepresentatio
 import addSegmentations from './addSegmentations';
 import {
   addSegmentationRepresentations,
-  addSegmentationRepresentationsMap,
+  addMultiViewportSegmentationRepresentations,
 } from './addSegmentationRepresentations';
 import addRepresentationData from './addRepresentationData';
 import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation';
@@ -21,7 +21,7 @@ export {
   addSegmentationRepresentations,
   removeSegmentationRepresentations,
   addRepresentationData,
-  addSegmentationRepresentationsMap,
+  addMultiViewportSegmentationRepresentations,
   // name spaces
   state,
   activeSegmentation,

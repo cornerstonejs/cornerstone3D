@@ -49,15 +49,12 @@ export async function updateStackSegmentationState({
     };
   }
 
-  await addSegmentationRepresentations(
-    [viewportId],
-    [
-      {
-        segmentationId,
-        type: SegmentationRepresentations.Labelmap,
-      },
-    ]
-  );
+  await addSegmentationRepresentations(viewportId, [
+    {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
     triggerSegmentationDataModified(segmentationId)

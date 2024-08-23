@@ -64,16 +64,20 @@ function addColorLUT_2(colorLUT: Types_2.ColorLUT, colorLUTIndex: number): void;
 function addContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
 
 // @public (undocumented)
+function addMultiViewportSegmentationRepresentations(viewportInputMap: {
+    [viewportId: string]: RepresentationPublicInput[];
+}): Promise<{
+    [viewportId: string]: string[];
+}>;
+
+// @public (undocumented)
 function addRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
 
 // @public (undocumented)
 function addSegmentation(segmentationInput: SegmentationPublicInput, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function addSegmentationRepresentation(viewportId: string, representationInput: RepresentationPublicInput, initialConfig?: SegmentationRepresentationConfig): Promise<string>;
-
-// @public (undocumented)
-function addSegmentationRepresentations(viewportId: string, representationInputArray: RepresentationPublicInput[], segmentationRepresentationConfig?: SegmentationRepresentationConfig): Promise<string[]>;
+function addSegmentationRepresentations(viewportId: string, representationInputArray: RepresentationPublicInput[]): Promise<string[]>;
 
 // @public (undocumented)
 function addSegmentations(segmentationInputArray: SegmentationPublicInput[]): void;
@@ -625,7 +629,7 @@ interface ArrowAnnotation extends Annotation {
 }
 
 // @public (undocumented)
-export abstract class BaseTool implements IBaseTool {
+export abstract class BaseTool {
     constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
@@ -2675,13 +2679,13 @@ function getFirstLineSegmentIntersectionIndexes(points: Types_2.Point2[], p1: Ty
 function getFont(styleSpecifier: StyleSpecifier, state?: AnnotationStyleStates, mode?: ToolModes): string;
 
 // @public (undocumented)
-function getGlobalConfig(): SegmentationRepresentationConfig;
+function getGlobalConfig(): GlobalConfig;
 
 // @public (undocumented)
-function getGlobalConfig_2(): SegmentationRepresentationConfig;
+function getGlobalConfig_2(): GlobalConfig;
 
 // @public (undocumented)
-function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): RepresentationConfig['LABELMAP'];
+function getGlobalRepresentationConfig(representationType: SegmentationRepresentations): LabelmapConfig;
 
 // @public (undocumented)
 function getHiddenSegmentIndices(viewportId: string, segmentationRepresentationUID: string): Set<number>;
@@ -2726,10 +2730,10 @@ function getOrientationStringLPS(vector: Types_2.Point3): string;
 function getParentAnnotation(annotation: Annotation): Annotation;
 
 // @public (undocumented)
-function getPerSegmentConfig(segmentationRepresentationUID: string): SegmentRepresentationConfig;
+function getPerSegmentConfig(segmentationRepresentationUID: string): RepresentationConfig;
 
 // @public (undocumented)
-function getPerSegmentConfig_2(segmentationRepresentationUID: string): SegmentRepresentationConfig;
+function getPerSegmentConfig_2(segmentationRepresentationUID: string): RepresentationConfig;
 
 // @public (undocumented)
 function getPoint(points: any, idx: any): Types_2.Point3;
@@ -2862,6 +2866,12 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 };
 
 // @public (undocumented)
+type GlobalConfig = {
+    renderInactiveRepresentations: boolean;
+    representations: RepresentationsConfig;
+};
+
+// @public (undocumented)
 type GroupSpecificAnnotations = {
     [toolName: string]: Annotations;
 };
@@ -2944,6 +2954,9 @@ interface IAnnotationManager {
     // (undocumented)
     removeAnnotations: (groupKey: string) => void;
 }
+
+// @public (undocumented)
+type IBaseTool = BaseTool;
 
 // @public (undocumented)
 type IDistance = {
@@ -4617,17 +4630,24 @@ function removeSegmentationRepresentations(viewportId: string, segmentationRepre
 export function removeTool(ToolClass: any): void;
 
 // @public (undocumented)
-type RepresentationConfig = {
-    LABELMAP?: LabelmapConfig;
-    CONTOUR?: ContourConfig;
-    SURFACE?: SurfaceConfig;
-};
+type RepresentationConfig = LabelmapConfig | ContourConfig | SurfaceConfig;
+
+// @public (undocumented)
+type RepresentationData = LabelmapSegmentationData | ContourSegmentationData | SurfaceSegmentationData;
 
 // @public (undocumented)
 type RepresentationPublicInput = {
     segmentationId: string;
     type: Enums.SegmentationRepresentations;
     options?: RepresentationPublicInputOptions;
+    config?: RepresentationConfig;
+};
+
+// @public (undocumented)
+type RepresentationsData = {
+    [Enums.SegmentationRepresentations.Labelmap]?: LabelmapSegmentationData;
+    [Enums.SegmentationRepresentations.Contour]?: ContourSegmentationData;
+    [Enums.SegmentationRepresentations.Surface]?: SurfaceSegmentationData;
 };
 
 // @public (undocumented)
@@ -4766,7 +4786,7 @@ type Segmentation = {
     segmentLabels: {
         [key: string]: string;
     };
-    representationData: SegmentationRepresentationData;
+    representationData: RepresentationsData;
 };
 
 declare namespace segmentation {
@@ -4775,6 +4795,7 @@ declare namespace segmentation {
         addSegmentationRepresentations,
         removeSegmentationRepresentations,
         addRepresentationData,
+        addMultiViewportSegmentationRepresentations,
         state_3 as state,
         activeSegmentation,
         segmentLocking,
@@ -4865,19 +4886,6 @@ type SegmentationRenderedEventDetail = {
 type SegmentationRenderedEventType = Types_2.CustomEventType<SegmentationRenderedEventDetail>;
 
 // @public (undocumented)
-type SegmentationRepresentationConfig = {
-    renderInactiveRepresentations: boolean;
-    representations: RepresentationConfig;
-};
-
-// @public (undocumented)
-type SegmentationRepresentationData = {
-    LABELMAP?: LabelmapSegmentationData;
-    CONTOUR?: ContourSegmentationData;
-    SURFACE?: SurfaceSegmentationData;
-};
-
-// @public (undocumented)
 type SegmentationRepresentationModifiedEventDetail = {
     segmentationRepresentationUID: string;
 };
@@ -4896,18 +4904,18 @@ type SegmentationRepresentationRemovedEventType = Types_2.CustomEventType<Segmen
 // @public (undocumented)
 enum SegmentationRepresentations {
     // (undocumented)
-    Contour = "CONTOUR",
+    Contour = "Contour",
     // (undocumented)
-    Labelmap = "LABELMAP",
+    Labelmap = "Labelmap",
     // (undocumented)
-    Surface = "SURFACE"
+    Surface = "Surface"
 }
 
 // @public (undocumented)
 type SegmentationState = {
     colorLUT: Types_2.ColorLUT[];
     segmentations: Segmentation[];
-    globalConfig: SegmentationRepresentationConfig;
+    globalConfig: GlobalConfig;
     representations: {
         [key: string]: SegmentationRepresentation;
     };
@@ -5015,22 +5023,22 @@ function setCursorForElement(element: HTMLDivElement, cursorName: string): void;
 function _setElementCursor(element: HTMLDivElement, cursor: MouseCursor | null): void;
 
 // @public (undocumented)
-function setGlobalConfig(config: SegmentationRepresentationConfig, suppressEvents?: boolean): void;
+function setGlobalConfig(config: GlobalConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setGlobalConfig_2(segmentationConfig: SegmentationRepresentationConfig): void;
+function setGlobalConfig_2(segmentationConfig: GlobalConfig): void;
 
 // @public (undocumented)
-function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: RepresentationConfig['LABELMAP']): void;
+function setGlobalRepresentationConfig(representationType: SegmentationRepresentations, config: LabelmapConfig): void;
 
 // @public (undocumented)
 function setNewAttributesIfValid(attributes: any, svgNode: any): void;
 
 // @public (undocumented)
-function setPerSegmentConfig(segmentationRepresentationUID: string, config: SegmentRepresentationConfig, suppressEvents?: boolean): void;
+function setPerSegmentConfig(segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
 
 // @public (undocumented)
-function setPerSegmentConfig_2(segmentationRepresentationUID: string, config: SegmentRepresentationConfig): void;
+function setPerSegmentConfig_2(segmentationRepresentationUID: string, config: RepresentationConfig): void;
 
 // @public (undocumented)
 function setSegmentationRepresentationConfig(segmentationRepresentationUID: string, config: RepresentationConfig, suppressEvents?: boolean): void;
@@ -5316,7 +5324,6 @@ declare namespace state_3 {
         getPerSegmentConfig,
         setPerSegmentConfig,
         getSegmentationRepresentations,
-        addSegmentationRepresentation,
         getSegmentationRepresentationViewportStates,
         addColorLUT,
         getColorLUT,
@@ -5572,7 +5579,7 @@ interface ToolData {
 }
 
 // @public (undocumented)
-class ToolGroup implements ToolGroup {
+class ToolGroup {
     constructor(id: string);
     // (undocumented)
     addTool(toolName: string, configuration?: ToolConfiguration): void;
@@ -5917,8 +5924,8 @@ declare namespace Types {
         TextBoxHandle,
         Segmentation,
         SegmentationState,
-        SegmentationRepresentationData,
-        SegmentationRepresentationConfig,
+        RepresentationData,
+        RepresentationsData,
         RepresentationConfig,
         RepresentationPublicInput,
         LabelmapTypes,
@@ -5947,7 +5954,9 @@ declare namespace Types {
         SplineCurveSegment,
         SplineLineSegment,
         SplineProps,
-        PolySegConversionOptions
+        PolySegConversionOptions,
+        IBaseTool,
+        GlobalConfig
     }
 }
 export { Types }
