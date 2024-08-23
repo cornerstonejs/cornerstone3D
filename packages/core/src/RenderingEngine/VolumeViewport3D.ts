@@ -1,16 +1,10 @@
 import { RENDERING_DEFAULTS } from '../constants';
 import type { BlendModes } from '../enums';
-import { OrientationAxis, Events, Events } from '../enums';
+import { OrientationAxis, Events } from '../enums';
 import cache from '../cache/cache';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import triggerEvent from '../utilities/triggerEvent';
 import { isImageActor } from '../utilities/actorCheck';
-import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import { RENDERING_DEFAULTS } from '../constants';
-import cache from '../cache';
-import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import { triggerEvent, isImageActor } from '../utilities';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
@@ -114,7 +108,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
       );
     }
 
-    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
     if (isImageActor(volumeActor)) {
       const transferFunction = (volumeActor.actor as ImageActor)

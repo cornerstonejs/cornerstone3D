@@ -8,7 +8,6 @@ import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseE
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import type { MouseMoveEventType } from '../../types/EventTypes';
 import { initElementCursor } from '../../cursors/elementCursor';
-import { initElementCursor } from '../../cursors/elementCursor';
 
 const { Active, Passive } = ToolModes;
 

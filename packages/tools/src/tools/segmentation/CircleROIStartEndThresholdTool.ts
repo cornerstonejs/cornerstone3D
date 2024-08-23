@@ -348,26 +348,18 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       let tempStartCoordinate: number | vec3 = startCoordinate;
       let tempEndCoordinate: number | vec3 = endCoordinate;
-      let tempStartCoordinate: number | vec3 = startCoordinate;
-      let tempEndCoordinate: number | vec3 = endCoordinate;
       if (Array.isArray(startCoordinate)) {
-        tempStartCoordinate = this._getCoordinateForViewplaneNormal(
-          tempStartCoordinate,
         tempStartCoordinate = this._getCoordinateForViewplaneNormal(
           tempStartCoordinate,
           viewplaneNormal
         );
-        data.startCoordinate = tempStartCoordinate;
         data.startCoordinate = tempStartCoordinate;
       }
       if (Array.isArray(endCoordinate)) {
         tempEndCoordinate = this._getCoordinateForViewplaneNormal(
           tempEndCoordinate,
-        tempEndCoordinate = this._getCoordinateForViewplaneNormal(
-          tempEndCoordinate,
           viewplaneNormal
         );
-        data.endCoordinate = tempEndCoordinate;
         data.endCoordinate = tempEndCoordinate;
       }
 
@@ -377,20 +369,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const roundedEndCoordinate = coreUtils.roundToPrecision(
         data.endCoordinate
       );
-      const roundedStartCoordinate = coreUtils.roundToPrecision(
-        data.startCoordinate
-      );
-      const roundedEndCoordinate = coreUtils.roundToPrecision(
-        data.endCoordinate
-      );
 
-      const cameraCoordinate = this._getCoordinateForViewplaneNormal(
       const cameraCoordinate = this._getCoordinateForViewplaneNormal(
         focalPoint,
         viewplaneNormal
       );
-      const roundedCameraCoordinate =
-        coreUtils.roundToPrecision(cameraCoordinate);
       const roundedCameraCoordinate =
         coreUtils.roundToPrecision(cameraCoordinate);
 
@@ -400,15 +383,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
         roundedCameraCoordinate >
           Math.max(roundedStartCoordinate, roundedEndCoordinate)
-        roundedCameraCoordinate <
-          Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
-        roundedCameraCoordinate >
-          Math.max(roundedStartCoordinate, roundedEndCoordinate)
       ) {
         continue;
       }
-      const middleCoordinate = coreUtils.roundToPrecision(
-        (data.startCoordinate + data.endCoordinate) / 2
       const middleCoordinate = coreUtils.roundToPrecision(
         (data.startCoordinate + data.endCoordinate) / 2
       );
@@ -417,20 +394,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       let isMiddleSlice = false;
       if (roundedCameraCoordinate === middleCoordinate) {
-      if (roundedCameraCoordinate === middleCoordinate) {
         isMiddleSlice = true;
       }
-
-      data.handles.points[0][
-        this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
-      ] = middleCoordinate;
-
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-
-      if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement);
-      }
-
 
       data.handles.points[0][
         this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
@@ -818,15 +783,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
-
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
 
     if (this.configuration.calculatePointsInsideVolume) {
       this._computePointsInsideVolume(
