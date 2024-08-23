@@ -5,9 +5,8 @@ import type ITouchPoints from './ITouchPoints';
 import type IDistance from './IDistance';
 import type { SetToolBindingsType } from './ISetToolModeOptions';
 import type { Swipe } from '../enums/Touch';
-import type { ToolModes } from '../enums';
+import type { ToolModes, ChangeTypes } from '../enums';
 import type { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
-import type { ChangeTypes } from '../enums';
 
 /**
  * The normalized interaction event detail

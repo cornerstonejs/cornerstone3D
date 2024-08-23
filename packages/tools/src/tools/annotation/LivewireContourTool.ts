@@ -41,8 +41,9 @@ import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import type { AnnotationStyle } from '../../types/AnnotationStyle';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -52,9 +53,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   /** The scissors from the next handle, used for editing */
   protected scissorsNext: LivewireScissors;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
@@ -1033,7 +1032,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
         image,
         () => {
           const {
@@ -1074,7 +1073,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        areaUnit: areaUnits,
+        areaUnit: areaUnit,
       };
     }
 
@@ -1200,7 +1199,7 @@ function defaultGetTextLines(data, targetId): string[] {
   const textLines: string[] = [];
 
   if (area) {
-    const areaLine = `Area: ${roundNumber(area)} ${areaUnit}`;
+    const areaLine = `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
 
     textLines.push(areaLine);
   }
