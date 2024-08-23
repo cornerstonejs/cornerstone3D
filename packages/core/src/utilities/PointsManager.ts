@@ -14,7 +14,7 @@ import type { PointsXYZ } from '../types/Point3';
  * transferring them amongst systems and is planned to have more methods added
  * for generic manipulation of data.
  */
-export default class PointsManager<T> implements IPointsManager<T> {
+export default class PointsManager<T> {
   /**
    *  Allow storage for an index value to indicate where this array is
    * contained in terms of the index location.

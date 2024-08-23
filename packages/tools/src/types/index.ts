@@ -43,8 +43,10 @@ import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
   RepresentationConfig,
-  SegmentationRepresentationConfig,
-  SegmentationRepresentationData,
+  RepresentationsConfig,
+  RepresentationData,
+  RepresentationsData,
+  GlobalConfig,
   Segmentation,
   SegmentationState,
   RepresentationPublicInput,
@@ -85,6 +87,7 @@ import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { PolySegConversionOptions } from './PolySeg';
+import type { IBaseTool } from './IBaseTool';
 
 export type {
   // AnnotationState
@@ -133,8 +136,8 @@ export type {
   // Segmentation
   Segmentation,
   SegmentationState,
-  SegmentationRepresentationData,
-  SegmentationRepresentationConfig,
+  RepresentationData,
+  RepresentationsData,
   RepresentationConfig,
   RepresentationPublicInput,
   LabelmapTypes,
@@ -174,4 +177,6 @@ export type {
   SplineProps,
   // polySeg
   PolySegConversionOptions,
+  IBaseTool,
+  GlobalConfig,
 };

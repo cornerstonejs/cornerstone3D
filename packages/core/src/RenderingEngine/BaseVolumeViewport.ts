@@ -69,10 +69,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
  * For setting volumes on viewports you need to use {@link addVolumesToViewports}
  * which will add volumes to the specified viewports.
  */
-abstract class BaseVolumeViewport
-  extends Viewport
-  implements IBaseVolumeViewport
-{
+abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
 
@@ -879,6 +876,10 @@ abstract class BaseVolumeViewport
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
+    }
+
+    if (properties.preset !== undefined) {
+      this.setPreset(properties.preset, volumeId, false);
     }
 
     this.render();

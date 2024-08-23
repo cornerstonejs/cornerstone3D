@@ -177,26 +177,16 @@ async function run() {
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
 
-  await segmentation.addSegmentationRepresentations(viewportIds[0], [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  const segmentationRepresentation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
 
-  await segmentation.addSegmentationRepresentations(viewportIds[1], [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-
-  await segmentation.addSegmentationRepresentations(viewportIds[2], [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  await segmentation.addMultiViewportSegmentationRepresentations({
+    [viewportIds[0]]: [segmentationRepresentation],
+    [viewportIds[1]]: [segmentationRepresentation],
+    [viewportIds[2]]: [segmentationRepresentation],
+  });
 }
 
 run();

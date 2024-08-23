@@ -33,8 +33,8 @@ function updateContourSets(
 ) {
   const { segmentationRepresentationUID, config } = contourRepresentation;
 
-  const baseConfig = config?.allSegments?.CONTOUR;
-  const globalContourConfig = getGlobalConfig().representations.CONTOUR;
+  const baseConfig = config?.allSegments;
+  const globalContourConfig = getGlobalConfig().representations.Contour;
 
   const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
 
@@ -189,8 +189,8 @@ function addContourSetsToElement(
     }
   });
 
-  const baseConfig = contourRepresentation.config?.allSegments.CONTOUR;
-  const globalContourConfig = getGlobalConfig().representations.CONTOUR;
+  const baseConfig = contourRepresentation.config?.allSegments;
+  const globalContourConfig = getGlobalConfig().representations.Contour;
 
   const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
   const outlineWidthActive = newContourConfig.outlineWidthActive;

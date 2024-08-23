@@ -92,7 +92,7 @@ createInfoSection(content, { ordered: true })
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
   const segmentationConfig = getSegmentationConfig();
-  const contourConfig = segmentationConfig.CONTOUR;
+  const contourConfig = segmentationConfig.Contour;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
     String(
@@ -139,10 +139,10 @@ function getSegmentationConfig(): cstTypes.RepresentationConfig {
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because it
+  // Add Contour object because it
   // can return an empty object
-  if (!segmentationConfig.CONTOUR) {
-    segmentationConfig.CONTOUR = {};
+  if (!segmentationConfig.Contour) {
+    segmentationConfig.Contour = {};
   }
 
   return segmentationConfig;
@@ -151,7 +151,7 @@ function getSegmentationConfig(): cstTypes.RepresentationConfig {
 function updateSegmentationConfig(config) {
   const segmentationConfig = getSegmentationConfig();
 
-  Object.assign(segmentationConfig.CONTOUR, config);
+  Object.assign(segmentationConfig.Contour, config);
 
   segmentation.config.setSegmentationRepresentationConfig(
     segmentationRepresentationUID,
@@ -296,7 +296,7 @@ function initializeGlobalConfig() {
   const globalSegmentationConfig = segmentation.config.getGlobalConfig();
 
   Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
+    globalSegmentationConfig.representations.Contour,
     DEFAULT_SEGMENTATION_CONFIG
   );
 

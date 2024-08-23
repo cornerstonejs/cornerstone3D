@@ -43,7 +43,7 @@ const PRIMARY_BINDINGS = [{ mouseButton: MouseBindings.Primary }];
  * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupId')
  * ```
  */
-export default class ToolGroup implements IToolGroup {
+export default class ToolGroup {
   id: string;
   viewportsInfo = [];
   toolOptions = {};

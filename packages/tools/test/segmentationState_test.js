@@ -34,7 +34,7 @@ const toolGroupId = 'toolGroupId-segmentationState_test';
 
 const viewportId = 'VIEWPORT';
 
-const LABELMAP = SegmentationRepresentations.Labelmap;
+const Labelmap = SegmentationRepresentations.Labelmap;
 
 describe('Segmentation State:', () => {
   let testEnv;
@@ -120,7 +120,7 @@ describe('Segmentation State:', () => {
 
         expect(segRepresentation.segmentationRepresentationUID).toBeDefined();
         expect(segRepresentation.segmentationId).toBe(segVolumeId);
-        expect(segRepresentation.type).toBe(LABELMAP);
+        expect(segRepresentation.type).toBe(Labelmap);
         expect(segRepresentation.rendering).toBeDefined();
       }
     );
@@ -202,13 +202,13 @@ describe('Segmentation State:', () => {
 
       expect(globalConfig.renderInactiveRepresentations).toBe(true);
       expect(globalConfig.representations).toBeDefined();
-      expect(globalConfig.representations[LABELMAP]).toBeDefined();
+      expect(globalConfig.representations[Labelmap]).toBeDefined();
 
       const representationConfig = segUtils.getDefaultRepresentationConfig({
-        type: LABELMAP,
+        type: Labelmap,
       });
 
-      const stateConfig = globalConfig.representations[LABELMAP];
+      const stateConfig = globalConfig.representations[Labelmap];
 
       expect(Object.keys(stateConfig)).toEqual(
         Object.keys(representationConfig)

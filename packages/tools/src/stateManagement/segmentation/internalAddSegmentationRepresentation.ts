@@ -4,7 +4,6 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type {
-  SegmentationRepresentationConfig,
   RepresentationPublicInput,
   RepresentationPublicInputOptions,
   SegmentationRepresentation,
@@ -27,10 +26,9 @@ function getLabelmapSegmentationRepresentationRenderingConfig() {
   };
 }
 
-async function addSegmentationRepresentation(
+async function internalAddSegmentationRepresentation(
   viewportId: string,
-  representationInput: RepresentationPublicInput,
-  initialConfig?: SegmentationRepresentationConfig
+  representationInput: RepresentationPublicInput
 ): Promise<string> {
   const { segmentationId, options = {} as RepresentationPublicInputOptions } =
     representationInput;
@@ -64,7 +62,7 @@ async function addSegmentationRepresentation(
   };
 
   addSegmentationRepresentationState(viewportId, representation);
-
+  const initialConfig = representationInput.config;
   // Update the toolGroup specific configuration
   if (initialConfig) {
     // const globalConfig = SegmentationState.getGlobalConfig();
@@ -81,7 +79,7 @@ async function addSegmentationRepresentation(
 
     setSegmentationRepresentationConfig(
       segmentationRepresentationUID,
-      initialConfig.representations
+      initialConfig
     );
   }
 
@@ -111,4 +109,4 @@ function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
   return colorLUTIndexToUse;
 }
 
-export { addSegmentationRepresentation };
+export { internalAddSegmentationRepresentation };

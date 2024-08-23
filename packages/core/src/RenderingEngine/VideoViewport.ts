@@ -46,7 +46,7 @@ export type CanvasScalarData = Uint8ClampedArray & {
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
-class VideoViewport extends Viewport implements IVideoViewport {
+class VideoViewport extends Viewport {
   public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
   public modality;

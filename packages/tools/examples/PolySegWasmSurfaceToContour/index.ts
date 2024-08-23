@@ -195,7 +195,7 @@ async function run() {
     (acc: Map<number, string>, surface, index) => {
       const geometryId = surface.closedSurface.id;
       geometryLoader.createAndCacheGeometry(geometryId, {
-        type: Enums.GeometryType.SURFACE,
+        type: Enums.GeometryType.Surface,
         geometryData: surface.closedSurface as Types.PublicSurfaceData,
       });
 

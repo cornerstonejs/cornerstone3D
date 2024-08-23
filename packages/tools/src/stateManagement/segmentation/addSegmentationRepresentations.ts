@@ -1,27 +1,21 @@
-import type {
-  SegmentationRepresentationConfig,
-  RepresentationPublicInput,
-} from '../../types/SegmentationStateTypes';
+import type { RepresentationPublicInput } from '../../types/SegmentationStateTypes';
 
-import { addSegmentationRepresentation } from './addSegmentationRepresentation';
+import { internalAddSegmentationRepresentation } from './internalAddSegmentationRepresentation';
 
 /**
- * Set the specified segmentation representations on the viewports of the specified
+ * Set the specified segmentation representations on multiple viewports
  *
  * @param viewportIds - The viewportIds to add the segmentation representations to
- * @param representationInputArray - An array of segmentation representations to add to the toolGroup
- * @param segmentationRepresentationConfig - Configuration for the segmentation representations
+ * @param representationInputArray - An array of segmentation representations to add to each viewport
  */
 async function addSegmentationRepresentations(
   viewportId: string,
-  representationInputArray: RepresentationPublicInput[],
-  segmentationRepresentationConfig?: SegmentationRepresentationConfig
+  representationInputArray: RepresentationPublicInput[]
 ): Promise<string[]> {
   const promises = representationInputArray.map((representationInput) => {
-    return addSegmentationRepresentation(
+    return internalAddSegmentationRepresentation(
       viewportId,
-      representationInput,
-      segmentationRepresentationConfig
+      representationInput
     );
   });
 
@@ -30,4 +24,31 @@ async function addSegmentationRepresentations(
   return segmentationRepresentationUIDs;
 }
 
-export default addSegmentationRepresentations;
+/**
+ * Set specific segmentation representations for each viewport
+ *
+ * @param viewportInputMap - A map of viewportIds to their respective representation input arrays
+ */
+async function addMultiViewportSegmentationRepresentations(viewportInputMap: {
+  [viewportId: string]: RepresentationPublicInput[];
+}): Promise<{ [viewportId: string]: string[] }> {
+  const results = {};
+
+  for (const [viewportId, inputArray] of Object.entries(viewportInputMap)) {
+    const promises = inputArray.map((representationInput) => {
+      return internalAddSegmentationRepresentation(
+        viewportId,
+        representationInput
+      );
+    });
+
+    results[viewportId] = await Promise.all(promises);
+  }
+
+  return results;
+}
+
+export {
+  addSegmentationRepresentations,
+  addMultiViewportSegmentationRepresentations,
+};

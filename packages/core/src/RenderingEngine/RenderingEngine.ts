@@ -12,7 +12,6 @@ import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesC
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
-import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
@@ -70,7 +69,7 @@ const VIEWPORT_MIN_SIZE = 2;
  *
  * @public
  */
-class RenderingEngine implements IRenderingEngine {
+class RenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
   /** A flag which tells if the renderingEngine has been destroyed or not */
@@ -623,18 +622,7 @@ class RenderingEngine implements IRenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      const resetPan = true;
-      const resetZoom = true;
-      const resetToCenter = true;
-      const resetRotation = false;
-      const suppressEvents = true;
-      vp.resetCamera({
-        resetPan,
-        resetZoom,
-        resetToCenter,
-        resetRotation,
-        suppressEvents,
-      });
+      vp.resetCameraForResize();
 
       const displayArea = vp.getDisplayArea();
 
@@ -865,12 +853,10 @@ class RenderingEngine implements IRenderingEngine {
 
     // 4. Create a proper viewport based on the type of the viewport
     const ViewportType = viewportTypeToViewportClass[type];
-
-    // @ts-expect-error
     const viewport = new ViewportType(viewportInput);
 
     // 5. Storing the viewports
-    this._viewports.set(viewportId, viewport as IViewport);
+    this._viewports.set(viewportId, viewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,

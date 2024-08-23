@@ -21,11 +21,11 @@ export function addContourSegmentationAnnotation(
   const { segmentationId, segmentIndex } = annotation.data.segmentation;
   const segmentation = getSegmentation(segmentationId);
 
-  if (!segmentation.representationData.CONTOUR) {
-    segmentation.representationData.CONTOUR = { annotationUIDsMap: new Map() };
+  if (!segmentation.representationData.Contour) {
+    segmentation.representationData.Contour = { annotationUIDsMap: new Map() };
   }
 
-  const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
+  const { annotationUIDsMap } = segmentation.representationData.Contour;
 
   let annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);
 

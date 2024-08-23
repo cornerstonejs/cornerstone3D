@@ -15,6 +15,7 @@ import Probe from "./Probe";
 import UltrasoundDirectional from "./UltrasoundDirectional";
 
 import * as Segmentation from "./Segmentation";
+import * as ParametricMap from "./ParametricMap";
 import * as RTSS from "./RTStruct";
 
 const Cornerstone3DSR = {
@@ -38,8 +39,17 @@ const Cornerstone3DSEG = {
     Segmentation
 };
 
+const Cornerstone3DPMAP = {
+    ParametricMap
+};
+
 const Cornerstone3DRT = {
     RTSS
 };
 
-export { Cornerstone3DSR, Cornerstone3DSEG, Cornerstone3DRT };
+export {
+    Cornerstone3DSR,
+    Cornerstone3DSEG,
+    Cornerstone3DPMAP,
+    Cornerstone3DRT
+};

@@ -3,11 +3,17 @@ import {
   getEnabledElement,
   utilities as csUtils,
   VolumeViewport,
+  utilities,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
+import {
+  drawHandles as drawHandlesSvg,
+  drawLinkedTextBox as drawLinkedTextBoxSvg,
+} from '../../drawingSvg';
 import { state } from '../../store/state';
 import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
@@ -17,6 +23,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  TextBoxHandle,
 } from '../../types';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 import * as math from '../../utilities/math';
@@ -34,6 +41,9 @@ import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import type { AnnotationStyle } from '../../types/AnnotationStyle';
+import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -43,10 +53,12 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   /** The scissors from the next handle, used for editing */
   protected scissorsNext: LivewireScissors;
 
+  _throttledCalculateCachedStats: Function;
   editData: {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
+    movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
     lastCanvasPoint?: Types.Point2;
@@ -68,6 +80,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        getTextLines: defaultGetTextLines,
+        calculateStats: true,
         preventHandleOutsideImage: false,
         /**
          * Specify which modifier key is used to add a hole to a contour. The
@@ -135,6 +149,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+    this._throttledCalculateCachedStats = throttle(
+      this._calculateCachedStats,
+      100,
+      { trailing: true }
+    );
   }
 
   protected setupBaseEditData(
@@ -362,6 +381,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
+      movingTextBox: false,
     };
 
     const enabledElement = getEnabledElement(element);
@@ -383,8 +403,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     annotation.highlighted = true;
 
-    const { points } = data.handles;
-    const handleIndex = points.findIndex((p) => p === handle);
+    let movingTextBox = false;
+    let handleIndex;
+
+    if ((handle as TextBoxHandle).worldPosition) {
+      movingTextBox = true;
+    } else {
+      const { points } = data.handles;
+
+      handleIndex = points.findIndex((p) => p === handle);
+    }
 
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
@@ -396,6 +424,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       annotation,
       viewportIdsToRender,
       handleIndex,
+      movingTextBox,
     };
     this._activateModify(element);
 
@@ -712,6 +741,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     annotation.invalidated = true;
     editData.hasMoved = true;
+    editData.closed = true;
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -719,16 +749,33 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex } = this.editData;
-    if (handleIndex === undefined) {
-      // Drag mode - moving object
-      console.warn('No drag implemented for livewire');
+    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
+      this.editData;
+    const { data } = annotation;
+
+    if (movingTextBox) {
+      // Drag mode - moving text box
+      const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
+      const worldPosDelta = deltaPoints.world;
+
+      const { textBox } = data.handles;
+      const { worldPosition } = textBox;
+
+      worldPosition[0] += worldPosDelta[0];
+      worldPosition[1] += worldPosDelta[1];
+      worldPosition[2] += worldPosDelta[2];
+
+      textBox.hasMoved = true;
+    } else if (handleIndex === undefined) {
+      console.warn('Drag annotation not implemented');
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
       this.editHandle(worldPos, element, annotation, handleIndex);
     }
+
+    this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
@@ -872,10 +919,16 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotationStyle: AnnotationStyle;
     svgDrawingHelper: SVGDrawingHelper;
   }): boolean {
-    const { annotation, enabledElement, svgDrawingHelper, annotationStyle } =
-      renderContext;
+    const {
+      annotation,
+      enabledElement,
+      svgDrawingHelper,
+      annotationStyle,
+      targetId,
+    } = renderContext;
 
     const { viewport } = enabledElement;
+    const { element } = viewport;
     const { worldToCanvas } = viewport;
     const { annotationUID, data, highlighted } = annotation;
     const { handles } = data;
@@ -909,8 +962,200 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // Let the base class render the contour
     super.renderAnnotationInstance(renderContext);
 
+    if (
+      !data.cachedStats[targetId] ||
+      data.cachedStats[targetId].areaUnit == null
+    ) {
+      data.cachedStats[targetId] = {
+        Modality: null,
+        area: null,
+        areaUnit: null,
+      };
+
+      this._calculateCachedStats(annotation, element);
+    } else if (annotation.invalidated) {
+      this._throttledCalculateCachedStats(annotation, element);
+    }
+
+    this._renderStats(
+      annotation,
+      viewport,
+      svgDrawingHelper,
+      annotationStyle.textbox
+    );
+
     return true;
   }
+
+  private _calculateCachedStats = (
+    annotation: LivewireContourAnnotation,
+    element: HTMLDivElement
+  ) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
+    const data = annotation.data;
+
+    if (!data.contour.closed) {
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport, renderingEngine } = enabledElement;
+    const { cachedStats } = data;
+    const { polyline: points } = data.contour;
+    const targetIds = Object.keys(cachedStats);
+
+    for (let i = 0; i < targetIds.length; i++) {
+      const targetId = targetIds[i];
+      const image = this.getTargetIdImage(targetId, renderingEngine);
+
+      if (!image) {
+        continue;
+      }
+
+      const { metadata } = image;
+      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
+      const { imageData } = image;
+      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
+        image,
+        () => {
+          const {
+            maxX: canvasMaxX,
+            maxY: canvasMaxY,
+            minX: canvasMinX,
+            minY: canvasMinY,
+          } = math.polyline.getAABB(canvasCoordinates);
+
+          const topLeftBBWorld = viewport.canvasToWorld([
+            canvasMinX,
+            canvasMinY,
+          ]);
+
+          const topLeftBBIndex = utilities.transformWorldToIndex(
+            imageData,
+            topLeftBBWorld
+          );
+
+          const bottomRightBBWorld = viewport.canvasToWorld([
+            canvasMaxX,
+            canvasMaxY,
+          ]);
+
+          const bottomRightBBIndex = utilities.transformWorldToIndex(
+            imageData,
+            bottomRightBBWorld
+          );
+
+          return [topLeftBBIndex, bottomRightBBIndex];
+        }
+      );
+      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
+
+      // Convert from canvas_pixels ^2 to mm^2
+      area *= deltaInX * deltaInY;
+
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        areaUnit: areaUnit,
+      };
+    }
+
+    this.triggerAnnotationModified(
+      annotation,
+      enabledElement,
+      ChangeTypes.StatsUpdated
+    );
+
+    return cachedStats;
+  };
+
+  private _renderStats = (
+    annotation,
+    viewport,
+    svgDrawingHelper,
+    textboxStyle
+  ) => {
+    const data = annotation.data;
+    const targetId = this.getTargetId(viewport);
+
+    if (!data.contour.closed || !textboxStyle.visibility) {
+      return;
+    }
+
+    const textLines = this.configuration.getTextLines(data, targetId);
+    if (!textLines || textLines.length === 0) {
+      return;
+    }
+
+    const canvasCoordinates = data.handles.points.map((p) =>
+      viewport.worldToCanvas(p)
+    );
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const textBoxUID = 'textBox';
+    const boundingBox = drawLinkedTextBoxSvg(
+      svgDrawingHelper,
+      annotation.annotationUID ?? '',
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      textboxStyle
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+  };
+
+  triggerAnnotationModified = (
+    annotation: LivewireContourAnnotation,
+    enabledElement: Types.IEnabledElement,
+    changeType = ChangeTypes.StatsUpdated
+  ): void => {
+    const { viewportId, renderingEngineId } = enabledElement;
+    const eventType = Events.ANNOTATION_MODIFIED;
+    const eventDetail: AnnotationModifiedEventDetail = {
+      annotation,
+      viewportId,
+      renderingEngineId,
+      changeType,
+    };
+
+    triggerEvent(eventTarget, eventType, eventDetail);
+  };
 
   protected updateAnnotation(livewirePath: LivewirePath) {
     if (!this.editData || !livewirePath) {
@@ -947,3 +1192,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
 LivewireContourTool.toolName = 'LivewireContour';
 export default LivewireContourTool;
+
+function defaultGetTextLines(data, targetId): string[] {
+  const cachedVolumeStats = data.cachedStats[targetId];
+  const { area, areaUnit } = cachedVolumeStats;
+  const textLines: string[] = [];
+
+  if (area) {
+    const areaLine = `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
+
+    textLines.push(areaLine);
+  }
+
+  return textLines;
+}

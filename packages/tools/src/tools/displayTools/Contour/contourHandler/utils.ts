@@ -16,7 +16,7 @@ export function validateGeometry(geometry: Types.IGeometry): void {
 
   const geometryId = geometry.id;
 
-  if (geometry.type !== Enums.GeometryType.CONTOUR) {
+  if (geometry.type !== Enums.GeometryType.Contour) {
     throw new Error(
       `Geometry type ${geometry.type} not supported for rendering.`
     );

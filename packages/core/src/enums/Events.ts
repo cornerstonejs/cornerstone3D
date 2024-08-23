@@ -195,10 +195,10 @@ enum Events {
 
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.
-   * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for STACK_VIEWPORT_NEW_STACK event,
+   * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for VIEWPORT_NEW_IMAGE_SET event,
    * and see what event detail is included in {@link EventTypes.StackViewportNewStackEventDetail | StackViewportNewStack Event Detail }
    */
-  STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+  VIEWPORT_NEW_IMAGE_SET = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
 
   /**
    * Triggers on the element when the underlying StackViewport is scrolled.

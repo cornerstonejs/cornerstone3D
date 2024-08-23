@@ -1,9 +1,22 @@
+import locatorToPageCoords from './locatorToPageCoords';
+
 /**
  *
  * @param page - The page to simulate the drag on
  * @param locator - The locator of the element to perform the drag on
+ * @param locatorPoints - Array with at least two points
+ * @param options - Options object that may contain one or more of the following options
+ *   - button: button that should be used to trigger mouse down/up events
+ *   - steps: number of steps between each pair of points
+ *   - closePath: it closes the path moving the mouse back to the start point
+ *     when this is set to true
+ *   - interpolateSteps: interpolates the mouse movement by `steps` steps or by
+ *     the distance multiplied by `stepsResolution` steps.
+ *   - stepsResolution: determines how many steps will be used when `interpolateSteps`
+ *     is set to `true` but `steps` is `undefined`. The number of steps will be
+ *     equal to the distance between the two points when `stepsResolution` is set
+ *     to 1 but that may make the test run very slow. Default: 1/4.
  */
-
 async function simulateDrawPath(
   page,
   locator,
@@ -20,11 +33,7 @@ async function simulateDrawPath(
     throw new Error('locatorPoints must have at least two points');
   }
 
-  const bbox = await locator.boundingBox();
-  const pagePoints = locatorPoints.map((point) => [
-    point[0] + bbox.x,
-    point[1] + bbox.y,
-  ]);
+  const pagePoints = await locatorToPageCoords(locator, locatorPoints);
 
   if (options?.closePath) {
     pagePoints.push(pagePoints[0]);

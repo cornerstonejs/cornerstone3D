@@ -37,18 +37,18 @@ async function createAndCacheGeometry(
     return geometry;
   }
 
-  if (options.type === GeometryType.CONTOUR) {
+  if (options.type === GeometryType.Contour) {
     geometry = createContourSet(
       geometryId,
       options.geometryData as PublicContourSetData
     );
-  } else if (options.type === GeometryType.SURFACE) {
+  } else if (options.type === GeometryType.Surface) {
     geometry = createSurface(
       geometryId,
       options.geometryData as PublicSurfaceData
     );
   } else {
-    throw new Error('Unknown geometry type, Only CONTOUR is supported');
+    throw new Error('Unknown geometry type, Only Contour is supported');
   }
 
   const geometryLoadObject = {

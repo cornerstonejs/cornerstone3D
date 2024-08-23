@@ -12,6 +12,9 @@ import RectangleRoi from "./RectangleRoi";
 // Segmentation
 import Segmentation from "./Segmentation";
 
+// Parametric Map
+import ParametricMap from "./ParametricMap";
+
 const CornerstoneSR = {
     Length,
     FreehandRoi,
@@ -29,4 +32,8 @@ const CornerstoneSEG = {
     Segmentation
 };
 
-export { CornerstoneSR, CornerstoneSEG };
+const CornerstonePMAP = {
+    ParametricMap
+};
+
+export { CornerstoneSR, CornerstoneSEG, CornerstonePMAP };

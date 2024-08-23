@@ -83,7 +83,7 @@ async function addSegmentationsToState() {
     (acc: Map<number, string>, surface, index) => {
       const geometryId = surface.closedSurface.id;
       geometryLoader.createAndCacheGeometry(geometryId, {
-        type: GeometryType.SURFACE,
+        type: GeometryType.Surface,
         geometryData: surface.closedSurface as Types.PublicSurfaceData,
       });
 

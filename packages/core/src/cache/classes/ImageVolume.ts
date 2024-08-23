@@ -5,7 +5,6 @@ import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
   Metadata,
   Point3,
-  IImageVolume,
   Mat3,
   ImageVolumeProps,
   IImage,
@@ -25,7 +24,7 @@ export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
 /** The base class for volume data. It includes the volume metadata
  * and the volume data along with the loading status.
  */
-export class ImageVolume implements IImageVolume {
+export class ImageVolume {
   private _imageIds: string[];
   private _imageIdsIndexMap = new Map();
   private _imageURIsIndexMap = new Map();

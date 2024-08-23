@@ -1,14 +1,13 @@
 import { vec3 } from 'gl-matrix';
 import { Events as EVENTS, MetadataModules } from '../enums';
 import type {
-  IWSIViewport,
   WSIViewportProperties,
   Point3,
   Point2,
   ICamera,
-  WSIViewportInput,
   VOIRange,
   CPUIImageData,
+  ViewportInput,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -31,7 +30,7 @@ const EVENT_POSTRENDER = 'postrender';
  * example `initDemo.js` for one possible implementation, but the actual
  * implementation of this will depend on your platform.
  */
-class WSIViewport extends Viewport implements IWSIViewport {
+class WSIViewport extends Viewport {
   public modality;
   // Viewport Data
   protected imageIds: string[];
@@ -69,7 +68,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     upper: 255,
   };
 
-  constructor(props: WSIViewportInput) {
+  constructor(props: ViewportInput) {
     super({
       ...props,
       canvas: props.canvas || getOrCreateCanvas(props.element),

@@ -20,7 +20,7 @@ export function createContourSet(
 
   const geometry: IGeometry = {
     id: geometryId,
-    type: GeometryType.CONTOUR,
+    type: GeometryType.Contour,
     data: contourSet,
     sizeInBytes: contourSet.getSizeInBytes(),
   };

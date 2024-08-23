@@ -62,7 +62,7 @@ const ptVolumeId = testUtils.encodeVolumeIdInfo({
   zSpacing: 1,
 });
 
-fdescribe('Synchronizer Manager:', () => {
+describe('Synchronizer Manager:', () => {
   let testEnv;
   let renderingEngine;
   let firstToolGroup;

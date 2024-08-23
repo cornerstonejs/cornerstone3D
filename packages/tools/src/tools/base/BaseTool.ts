@@ -4,29 +4,12 @@ import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
-export interface IBaseTool {
-  /** ToolGroup ID the tool instance belongs to */
-  toolGroupId: string;
-  /** Tool supported interaction types */
-  supportedInteractionTypes: InteractionTypes[];
-  /** Tool Mode : Active, Passive, Enabled, Disabled */
-  mode: ToolModes;
-  /** Tool Configuration */
-  configuration: {
-    preventHandleOutsideImage?: boolean;
-    strategies?: Record<string, unknown>;
-    defaultStrategy?: string;
-    activeStrategy?: string;
-    strategyOptions?: Record<string, unknown>;
-  };
-}
-
 /**
  * Abstract base class from which all tools derive.
  * Deals with cleanly merging custom and default configuration, and strategy
  * application.
  */
-abstract class BaseTool implements IBaseTool {
+abstract class BaseTool {
   static toolName;
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];

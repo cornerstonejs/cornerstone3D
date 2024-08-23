@@ -1,4 +1,4 @@
-import type { SegmentationRepresentationConfig } from '../../types';
+import type { GlobalConfig } from '../../types';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
@@ -11,7 +11,7 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents';
  * @param suppressEvents - If true, the `segmentationGlobalStateModified` event will not be triggered.
  */
 export function setGlobalConfig(
-  config: SegmentationRepresentationConfig,
+  config: GlobalConfig,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = defaultSegmentationStateManager;

@@ -1,4 +1,9 @@
-import type { IStackViewport, IVolumeViewport, Point3 } from '../types';
+import type {
+  IStackViewport,
+  IStreamingImageVolume,
+  IVolumeViewport,
+  Point3,
+} from '../types';
 import { setVolumesForViewports } from '../RenderingEngine/helpers';
 import {
   createAndCacheVolume,
@@ -65,9 +70,9 @@ async function convertStackToVolumeViewport({
   // imageIds or not so we just let the loader handle it and we have cache
   // optimizations in place to avoid fetching the same imageId if it is already
   // cached
-  const volume = await createAndCacheVolume(volumeId, {
+  const volume = (await createAndCacheVolume(volumeId, {
     imageIds,
-  });
+  })) as IStreamingImageVolume;
 
   volume.load();
 

@@ -33,7 +33,7 @@ export async function computeContourData(
   const representationData = segmentation.representationData;
 
   try {
-    if (representationData.SURFACE) {
+    if (representationData.Surface) {
       rawContourData = await computeContourFromSurfaceSegmentation(
         segmentationId,
         {
@@ -41,7 +41,7 @@ export async function computeContourData(
           ...options,
         }
       );
-    } else if (representationData.LABELMAP) {
+    } else if (representationData.Labelmap) {
       rawContourData = await computeContourFromLabelmapSegmentation(
         segmentationId,
         {
@@ -72,7 +72,7 @@ export async function computeContourData(
   );
 
   setSegmentationRepresentationConfig(segmentationRepresentationUID, {
-    CONTOUR: {
+    Contour: {
       fillAlpha: 0,
     },
   });
@@ -152,7 +152,7 @@ async function computeContourFromSurfaceSegmentation(
   const surfaceIdToSegmentIndex = new Map() as Map<string, number>;
 
   const segmentation = getSegmentation(segmentationId);
-  const representationData = segmentation.representationData.SURFACE;
+  const representationData = segmentation.representationData.Surface;
 
   const surfacesInfo = [];
   representationData.geometryIds.forEach((geometryId, segmentIndex) => {

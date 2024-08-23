@@ -1,4 +1,4 @@
-import type { SegmentRepresentationConfig } from '../../types/SegmentationStateTypes';
+import type { RepresentationConfig } from '../../types';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
 
@@ -11,7 +11,7 @@ import { triggerSegmentationRepresentationModified } from './triggerSegmentation
  */
 export function setPerSegmentConfig(
   segmentationRepresentationUID: string,
-  config: SegmentRepresentationConfig,
+  config: RepresentationConfig,
   suppressEvents?: boolean
 ): void {
   const segmentationStateManager = defaultSegmentationStateManager;

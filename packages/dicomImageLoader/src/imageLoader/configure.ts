@@ -6,7 +6,7 @@ import registerLoaders from './registerLoaders';
 function configure(options: LoaderOptions): void {
   if (!options.cornerstone || !options.dicomParser) {
     throw new Error(
-      'cornerstoneWADOImageLoader.configure: Options object must contain the keys "cornerstone" and "dicomParser".'
+      'cornerstoneWADOImageLoader.configure: Options object must contain the cornerstone and dicomParser packages.'
     );
   }
 

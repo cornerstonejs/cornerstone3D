@@ -12,7 +12,6 @@ import { setSegmentationRepresentationConfig } from './setSegmentationRepresenta
 import { getPerSegmentConfig } from './getPerSegmentConfig';
 import { setPerSegmentConfig } from './setPerSegmentConfig';
 import { getSegmentationRepresentations } from './getSegmentationRepresentations';
-import { addSegmentationRepresentation } from './addSegmentationRepresentation';
 import { getSegmentationRepresentationViewportStates } from './getSegmentationRepresentationViewportStates';
 import { addColorLUT } from './addColorLUT';
 import { getColorLUT } from './getColorLUT';
@@ -27,6 +26,7 @@ import { setActiveSegmentationRepresentation } from './setActiveSegmentationRepr
 import { getCurrentLabelmapImageIdForViewport } from './getCurrentLabelmapImageIdForViewport';
 import { updateLabelmapSegmentationImageReferences } from './updateLabelmapSegmentationImageReferences';
 import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationImageIdsForViewport';
+
 export {
   getSegmentation,
   getSegmentations,
@@ -45,7 +45,6 @@ export {
   setPerSegmentConfig,
   // viewport
   getSegmentationRepresentations,
-  addSegmentationRepresentation,
   getSegmentationRepresentationViewportStates,
   // color
   addColorLUT,

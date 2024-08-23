@@ -279,9 +279,9 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     // Merge the configurations from different levels based on its precedence
     const mergedConfig = Object.assign(
       {},
-      globalConfig?.representations?.CONTOUR ?? {},
-      segmentationRepresentationConfig?.CONTOUR ?? {},
-      segmentConfig?.CONTOUR ?? {}
+      globalConfig?.representations?.Contour ?? {},
+      segmentationRepresentationConfig ?? {},
+      segmentConfig ?? {}
     );
 
     let lineWidth = 1;

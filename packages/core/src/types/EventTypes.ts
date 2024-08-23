@@ -286,7 +286,7 @@ interface ImageSpacingCalibratedEventDetail {
 }
 
 /**
- * The STACK_VIEWPORT_NEW_STACK event's data, when a new stack is set on a StackViewport
+ * The VIEWPORT_NEW_IMAGE_SET event's data, when a new stack is set on a StackViewport
  */
 interface StackViewportNewStackEventDetail {
   imageIds: string[];
@@ -421,7 +421,7 @@ type ImageSpacingCalibratedEvent =
   CustomEventType<ImageSpacingCalibratedEventDetail>;
 
 /**
- * STACK_VIEWPORT_NEW_STACK
+ * VIEWPORT_NEW_IMAGE_SET
  */
 type StackViewportNewStackEvent =
   CustomEventType<StackViewportNewStackEventDetail>;

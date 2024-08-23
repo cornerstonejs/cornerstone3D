@@ -22,7 +22,7 @@ export function createSurface(
 
   const geometry: IGeometry = {
     id: geometryId,
-    type: GeometryType.SURFACE,
+    type: GeometryType.Surface,
     data: surface,
     sizeInBytes: surface.getSizeInBytes(),
   };

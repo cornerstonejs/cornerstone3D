@@ -295,21 +295,16 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId1, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-  await segmentation.addSegmentationRepresentations(viewportId2, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // Add the segmentation representation to the viewports
+  const segmentationRepresentation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
 
-  // setBrushSizeForToolGroup(toolGroupId, 100);
+  await segmentation.addMultiViewportSegmentationRepresentations({
+    [viewportId1]: [segmentationRepresentation],
+    [viewportId2]: [segmentationRepresentation],
+  });
 
   // Render the image
   renderingEngine.render();

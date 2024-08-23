@@ -69,7 +69,7 @@ export interface ReferenceCompatibleOptions {
   imageURI?: string;
 
   /**
-   * To see if the reference could be overladed (labelmap, fusion) on the viewport, set this to true.
+   * To see if the reference could be overlayed (labelmap, fusion) on the viewport, set this to true.
    */
   asOverlay?: boolean;
 }
@@ -269,15 +269,15 @@ interface InternalViewportInput {
 
 interface ViewportInput {
   id: string;
-  element: HTMLDivElement;
-  canvas: HTMLCanvasElement;
   renderingEngineId: string;
   type: ViewportType;
+  element: HTMLDivElement;
   sx: number;
   sy: number;
   sWidth: number;
   sHeight: number;
   defaultOptions: ViewportInputOptions;
+  canvas: HTMLCanvasElement;
 }
 
 export type {

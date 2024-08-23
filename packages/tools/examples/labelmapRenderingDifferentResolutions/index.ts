@@ -147,18 +147,18 @@ async function addSegmentations(viewportId1) {
   });
 
   // Add segmentation representations to the viewports
-  segmentation.addSegmentationRepresentations(viewportId1, [
-    {
-      segmentationId: highResSegmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-  segmentation.addSegmentationRepresentations(viewportId1, [
-    {
-      segmentationId: lowResSegmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  await segmentation.addMultiViewportSegmentationRepresentations({
+    [viewportId1]: [
+      {
+        segmentationId: highResSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        segmentationId: lowResSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ],
+  });
 }
 
 /**

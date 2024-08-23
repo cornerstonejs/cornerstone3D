@@ -45,6 +45,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkProp from '@kitware/vtk.js/Rendering/Core/Prop';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -55,7 +56,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
-class Viewport implements IViewport {
+class Viewport {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for
@@ -902,7 +903,12 @@ class Viewport implements IViewport {
    *   be detected for pan/zoom values)
    * @returns boolean
    */
-  public resetCamera(options?): boolean {
+  public resetCamera(options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
+  }): boolean {
     const {
       resetPan = true,
       resetZoom = true,
@@ -923,7 +929,7 @@ class Viewport implements IViewport {
       flipVertical: false,
     });
 
-    const previousCamera = structuredClone(this.getCamera());
+    const previousCamera = this.getCamera();
     const bounds = renderer.computeVisiblePropBounds();
     const focalPoint = [0, 0, 0] as Point3;
     const imageData = this.getDefaultImageData();
@@ -1028,9 +1034,9 @@ class Viewport implements IViewport {
       clippingRange: clippingRangeToUse,
     });
 
-    const modifiedCamera = structuredClone(this.getCamera());
+    const modifiedCamera = this.getCamera();
 
-    this.setFitToCanvasCamera(structuredClone(this.getCamera()));
+    this.setFitToCanvasCamera(this.getCamera());
 
     if (storeAsInitialCamera) {
       this.setInitialCamera(modifiedCamera);
@@ -1265,11 +1271,12 @@ class Viewport implements IViewport {
   protected getCameraNoRotation(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
+    // Always return a new instance for optimization
     return {
-      viewUp: vtkCamera.getViewUp() as Point3,
-      viewPlaneNormal: vtkCamera.getViewPlaneNormal() as Point3,
-      position: vtkCamera.getPosition() as Point3,
-      focalPoint: vtkCamera.getFocalPoint() as Point3,
+      viewUp: [...vtkCamera.getViewUp()] as Point3,
+      viewPlaneNormal: [...vtkCamera.getViewPlaneNormal()] as Point3,
+      position: [...vtkCamera.getPosition()] as Point3,
+      focalPoint: [...vtkCamera.getFocalPoint()] as Point3,
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),
@@ -1302,7 +1309,7 @@ class Viewport implements IViewport {
     storeAsInitialCamera = false
   ): void {
     const vtkCamera = this.getVtkActiveCamera();
-    const previousCamera = structuredClone(this.getCamera());
+    const previousCamera = this.getCamera();
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
       viewUp,
@@ -1484,7 +1491,8 @@ class Viewport implements IViewport {
         return;
       }
 
-      const mapper = actorEntry.actor.getMapper();
+      const mapper = actorEntry.actor.getMapper() as vtkMapper;
+
       let vtkPlanes = actorEntry?.clippingFilter
         ? actorEntry?.clippingFilter.getClippingPlanes()
         : mapper.getClippingPlanes();
@@ -1561,7 +1569,7 @@ class Viewport implements IViewport {
       throw new Error('Invalid actor entry: Actor is undefined');
     }
 
-    const mapper = actorEntry.actor.getMapper();
+    const mapper = actorEntry.actor.getMapper() as vtkMapper;
     let vtkPlanes = actorEntry?.clippingFilter
       ? actorEntry?.clippingFilter.getClippingPlanes()
       : mapper.getClippingPlanes();

@@ -136,7 +136,7 @@ function initializeGlobalConfig() {
   const globalSegmentationConfig = segmentation.config.getGlobalConfig();
 
   Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
+    globalSegmentationConfig.representations.Contour,
     DEFAULT_SEGMENTATION_CONFIG
   );
 

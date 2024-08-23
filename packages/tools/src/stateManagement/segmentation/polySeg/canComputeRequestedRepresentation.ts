@@ -1,5 +1,5 @@
 import { SegmentationRepresentations } from '../../../enums';
-import type { SegmentationRepresentationData } from '../../../types';
+import type { RepresentationsData } from '../../../types';
 import { getSegmentation } from '../getSegmentation';
 import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
 import { validate as validateLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap';
@@ -74,7 +74,7 @@ function canComputeRequestedRepresentation(
  * @returns supportedTypes - An array of valid representation types
  */
 function getExistingRepresentationTypes(
-  representationData: SegmentationRepresentationData
+  representationData: RepresentationsData
 ): string[] {
   const supportedTypes: string[] = [];
 
