@@ -31,7 +31,7 @@ const EVENT_POSTRENDER = 'postrender';
  * example `initDemo.js` for one possible implementation, but the actual
  * implementation of this will depend on your platform.
  */
-class WSIViewport extends Viewport implements IWSIViewport {
+class WSIViewport extends Viewport {
   public modality;
   // Viewport Data
   protected imageIds: string[];

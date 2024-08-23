@@ -69,10 +69,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
  * For setting volumes on viewports you need to use {@link addVolumesToViewports}
  * which will add volumes to the specified viewports.
  */
-abstract class BaseVolumeViewport
-  extends Viewport
-  implements IBaseVolumeViewport
-{
+abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
 

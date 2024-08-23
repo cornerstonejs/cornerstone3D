@@ -55,7 +55,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
-class Viewport implements IViewport {
+class Viewport {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for

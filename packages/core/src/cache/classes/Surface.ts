@@ -10,7 +10,7 @@ interface SurfaceProps {
 /**
  * Surface class for storing surface data
  */
-export class Surface implements ISurface {
+export class Surface {
   readonly id: string;
   readonly sizeInBytes: number;
   readonly frameOfReferenceUID: string;

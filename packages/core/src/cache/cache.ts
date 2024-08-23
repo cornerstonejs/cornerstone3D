@@ -27,7 +27,7 @@ const ONE_GB = 1073741824;
  * The 3 gb is tuned to the chromium garbage collection cycle to allow image volumes
  * to be used/discarded.
  */
-class Cache implements ICache {
+class Cache {
   // used to store image data (2d)
   private readonly _imageCache = new Map<string, ICachedImage>();
   // used to store volume data (3d)

@@ -127,7 +127,7 @@ interface SetVOIOptions {
  * is not available (or low performance). Read more about StackViewports in
  * the documentation section of this website.
  */
-class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
+class StackViewport extends Viewport {
   private imageIds: string[];
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex: number;

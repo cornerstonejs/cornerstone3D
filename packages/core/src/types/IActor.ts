@@ -1,22 +1,13 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type CanvasActor from '../RenderingEngine/CanvasActor';
 
 export type Actor = vtkActor;
 export type VolumeActor = vtkVolume;
 export type ImageActor = vtkImageSlice;
 
-export interface ICanvasActor {
-  render(viewport, context): void;
-
-  getMapper();
-
-  getProperty();
-
-  isA(actorType): boolean;
-
-  getClassName(): string;
-}
+export type ICanvasActor = CanvasActor;
 
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and

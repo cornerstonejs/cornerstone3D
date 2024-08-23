@@ -1,23 +1,6 @@
-import type { PointsXYZ } from './Point3';
+import type PointsManager from '../utilities/PointsManager';
 
-export interface IPointsManager<T> {
-  kIndex: number;
-  sources: IPointsManager<T>[];
-  data: Float32Array;
-  readonly length: number;
-  readonly dimensions: number;
-  readonly dimensionLength: number;
-
-  forEach(func: (value: T, index: number) => void): void;
-  getPoint(index: number): T | undefined;
-  getPointArray(index: number): T | undefined;
-  reverse(): void;
-  push(point: T): void;
-  map<R>(f: (value: T, index: number) => R): R[];
-  readonly points: T[];
-  toXYZ(): PointsXYZ;
-  subselect(count?: number, offset?: number): IPointsManager<T>;
-}
+export type IPointsManager<T> = PointsManager<T>;
 
 export interface PolyDataPointConfiguration {
   /** The dimensionality of the points */

@@ -12,7 +12,6 @@ import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesC
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
-import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
@@ -70,7 +69,7 @@ const VIEWPORT_MIN_SIZE = 2;
  *
  * @public
  */
-class RenderingEngine implements IRenderingEngine {
+class RenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
   /** A flag which tells if the renderingEngine has been destroyed or not */

@@ -24,7 +24,7 @@ const DEFAULT_RLE_SIZE = 5 * 1024;
 /**
  * This is a simple, standard interface to values associated with a voxel.
  */
-export default class VoxelManager<T> implements IVoxelManager<T> {
+export default class VoxelManager<T> {
   public modifiedSlices = new Set<number>();
   public boundsIJK = [
     [Infinity, -Infinity],

@@ -1,4 +1,4 @@
-import type { IRLEVoxelMap, PixelDataTypedArray, RLERun } from '../types';
+import type { PixelDataTypedArray, RLERun } from '../types';
 
 /**
  * RLE based implementation of a voxel map.
@@ -6,7 +6,7 @@ import type { IRLEVoxelMap, PixelDataTypedArray, RLERun } from '../types';
  * mapped to rows and hte rows are indexed started at 0 and continuing
  * incrementing for all rows in the multi-plane voxel.
  */
-export default class RLEVoxelMap<T> implements IRLEVoxelMap<T> {
+export default class RLEVoxelMap<T> {
   /**
    * The rows for the voxel map is a map from the j index location (or for
    * volumes, `j + k*height`) to a list of RLE runs.  That is, each entry in
