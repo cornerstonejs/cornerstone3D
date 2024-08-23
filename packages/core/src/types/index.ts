@@ -272,7 +272,6 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
-  WSIViewportInput,
   BoundsIJK,
   BoundsLPS,
   Color,

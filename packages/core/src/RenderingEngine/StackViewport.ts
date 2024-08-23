@@ -24,7 +24,6 @@ import type {
   IImageData,
   IImagesLoader,
   IStackInput,
-  IStackViewport,
   ImageLoadListener,
   Mat3,
   PTScaling,
@@ -314,6 +313,8 @@ class StackViewport extends Viewport {
   public resetCamera: (options?: {
     resetPan?: boolean;
     resetZoom?: boolean;
+    resetToCenter?: boolean;
+    suppressEvents?: boolean;
   }) => boolean;
 
   /**
@@ -797,6 +798,15 @@ class StackViewport extends Viewport {
       invert,
       isComputedVOI: !voiUpdatedWithSetProperties,
     };
+  };
+
+  public resetCameraForResize = (): boolean => {
+    return this.resetCamera({
+      resetPan: true,
+      resetZoom: true,
+      resetToCenter: true,
+      suppressEvents: true,
+    });
   };
 
   /**

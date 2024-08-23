@@ -622,13 +622,7 @@ class RenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      vp.resetCamera({
-        resetPan: true,
-        resetZoom: true,
-        resetToCenter: true,
-        resetRotation: false,
-        suppressEvents: true,
-      });
+      vp.resetCameraForResize();
 
       const displayArea = vp.getDisplayArea();
 

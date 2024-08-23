@@ -241,6 +241,16 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
+  public resetCameraForResize = (): boolean => {
+    return this.resetCamera({
+      resetPan: true,
+      resetZoom: true,
+      resetToCenter: true,
+      resetRotation: false,
+      suppressEvents: true,
+    });
+  };
+
   /**
    * Reset the camera for the volume viewport
    */

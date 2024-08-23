@@ -28,11 +28,11 @@ class VolumeViewport3D extends BaseVolumeViewport {
     }
   }
 
-  public resetCamera(
+  public resetCamera({
     resetPan = true,
     resetZoom = true,
-    resetToCenter = true
-  ): boolean {
+    resetToCenter = true,
+  }): boolean {
     super.resetCamera({ resetPan, resetZoom, resetToCenter });
     const activeCamera = this.getVtkActiveCamera();
 

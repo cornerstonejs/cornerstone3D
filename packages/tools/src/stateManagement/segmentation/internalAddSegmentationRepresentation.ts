@@ -26,7 +26,7 @@ function getLabelmapSegmentationRepresentationRenderingConfig() {
   };
 }
 
-async function addSegmentationRepresentation(
+async function internalAddSegmentationRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput
 ): Promise<string> {
@@ -47,6 +47,8 @@ async function addSegmentationRepresentation(
   } else {
     renderingConfig = {};
   }
+
+  debugger;
 
   const representation: SegmentationRepresentation = {
     segmentationId,
@@ -109,4 +111,4 @@ function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
   return colorLUTIndexToUse;
 }
 
-export { addSegmentationRepresentation };
+export { internalAddSegmentationRepresentation };
