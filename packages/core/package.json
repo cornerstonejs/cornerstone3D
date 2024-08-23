@@ -14,9 +14,17 @@
   },
   "sideEffects": false,
   "exports": {
-    ".": {
-      "import": "./dist/esm/index.js"
-    }
+    ".": "./dist/esm/index.js",
+    "./utilities/*": "./dist/esm/utilities/*.js",
+    "./utilities": "./dist/esm/utilities/index.js",
+    "./constants/*": "./dist/esm/constants/*.js",
+    "./constants": "./dist/esm/constants/index.js",
+    "./enums/*": "./dist/esm/enums/*.js",
+    "./enums": "./dist/esm/enums/index.js",
+    "./loaders/*": "./dist/esm/loaders/*.js",
+    "./loaders": "./dist/esm/loaders/index.js",
+    "./types/*": "./dist/esm/types/*.d.ts",
+    "./types": "./dist/esm/types/index.d.ts"
   },
   "scripts": {
     "build:esm": "tsc --project ./tsconfig.esm.json",

@@ -31,6 +31,7 @@ import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
+import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -271,7 +272,7 @@ class VolumeViewport extends BaseVolumeViewport {
       if (!actorEntry.actor) {
         return;
       }
-      const mapper = actorEntry.actor.getMapper();
+      const mapper = actorEntry.actor.getMapper() as vtkMapper;
       const vtkPlanes = mapper.getClippingPlanes();
 
       if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {

@@ -26,12 +26,19 @@
     "access": "public"
   },
   "exports": {
-    ".": {
-      "import": "./dist/esm/src/imageLoader/index.js"
-    },
-    "./dynamic-umd": {
-      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
-    }
+    ".": "./dist/esm/src/imageLoader/index.js",
+    "./umd": "./dist/umd/cornerstoneDICOMImageLoader.bundle.min.js",
+    "./dynamic-umd": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js",
+    "./constants": "./dist/esm/src/constants/index.js",
+    "./constants/*": "./dist/esm/src/constants/*.js",
+    "./imageLoader": "./dist/esm/src/imageLoader/index.js",
+    "./imageLoader/*": "./dist/esm/src/imageLoader/*.js",
+    "./imageLoader/wadors": "./dist/esm/src/imageLoader/wadors/index.js",
+    "./imageLoader/wadors/*": "./dist/esm/src/imageLoader/wadors/*.js",
+    "./imageLoader/wadouri": "./dist/esm/src/imageLoader/wadouri/index.js",
+    "./imageLoader/wadouri/*": "./dist/esm/src/imageLoader/wadouri/*.js",
+    "./types": "./dist/esm/src/types/index.d.ts",
+    "./types/*": "./dist/esm/src/types/*.d.ts"
   },
   "scripts": {
     "build:loader": "yarn run build:all && yarn run copy-dts",

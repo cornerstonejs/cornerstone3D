@@ -13,10 +13,16 @@
         "build": "dist"
     },
     "exports": {
-        ".": {
-            "import": "./dist/esm/index.js",
-            "require": "./dist/umd/adapters.umd.js"
-        }
+        ".": "./dist/esm/index.js",
+        "./cornerstone": "./dist/esm/adapters/cornerstone/index.js",
+        "./cornerstone/*": "./dist/esm/adapters/cornerstone/*.js",
+        "./cornerstone3D": "./dist/esm/adapters/cornerstone3D/index.js",
+        "./cornerstone3D/*": "./dist/esm/adapters/cornerstone3D/*.js",
+        "./enums/*": "./dist/esm/enums/*.js",
+        "./enums": "./dist/esm/enums/index.js",
+        "./helpers/*": "./dist/esm/helpers/*.js",
+        "./helpers": "./dist/esm/helpers/index.js",
+        "./types": "./dist/esm/index.d.ts"
     },
     "publishConfig": {
         "access": "public"

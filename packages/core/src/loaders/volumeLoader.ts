@@ -18,6 +18,7 @@ import type {
   PixelDataTypedArray,
   IVolumeLoadObject,
   PixelDataTypedArrayString,
+  IStreamingImageVolume,
 } from '../types';
 import {
   createAndCacheLocalImage,
@@ -152,7 +153,7 @@ export function loadVolume(
 export async function createAndCacheVolume(
   volumeId: string,
   options?: VolumeLoaderOptions
-): Promise<IImageVolume> {
+): Promise<IImageVolume | IStreamingImageVolume> {
   if (volumeId === undefined) {
     throw new Error(
       'createAndCacheVolume: parameter volumeId must not be undefined'

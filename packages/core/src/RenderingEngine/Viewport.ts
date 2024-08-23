@@ -45,6 +45,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkProp from '@kitware/vtk.js/Rendering/Core/Prop';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -1484,7 +1485,8 @@ class Viewport {
         return;
       }
 
-      const mapper = actorEntry.actor.getMapper();
+      const mapper = actorEntry.actor.getMapper() as vtkMapper;
+
       let vtkPlanes = actorEntry?.clippingFilter
         ? actorEntry?.clippingFilter.getClippingPlanes()
         : mapper.getClippingPlanes();
@@ -1561,7 +1563,7 @@ class Viewport {
       throw new Error('Invalid actor entry: Actor is undefined');
     }
 
-    const mapper = actorEntry.actor.getMapper();
+    const mapper = actorEntry.actor.getMapper() as vtkMapper;
     let vtkPlanes = actorEntry?.clippingFilter
       ? actorEntry?.clippingFilter.getClippingPlanes()
       : mapper.getClippingPlanes();
