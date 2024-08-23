@@ -6,6 +6,9 @@ import {
   utilities,
   triggerEvent,
   eventTarget,
+  utilities,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -23,6 +26,7 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  TextBoxHandle,
   TextBoxHandle,
 } from '../../types';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
@@ -58,6 +62,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
+    movingTextBox?: boolean;
     movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;

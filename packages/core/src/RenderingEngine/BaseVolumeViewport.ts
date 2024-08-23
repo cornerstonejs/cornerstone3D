@@ -882,6 +882,10 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setPreset(properties.preset, volumeId, false);
     }
 
+    if (properties.preset !== undefined) {
+      this.setPreset(properties.preset, volumeId, false);
+    }
+
     this.render();
   }
 

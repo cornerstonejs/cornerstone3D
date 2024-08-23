@@ -491,6 +491,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       );
     }
 
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(
+        annotation,
+        targetId,
+        imageVolume,
+        enabledElement
+      );
+    }
+
     annotation.invalidated = false;
 
     // Dispatching annotation modified
@@ -561,6 +570,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         data.handles.points[0][
           this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
         ] = startCoord;
+        data.startCoordinate = startCoord;
+        data.handles.points[0][
+          this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
+        ] = startCoord;
       }
 
       if (Array.isArray(endCoordinate)) {
@@ -568,6 +581,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           endCoord,
           viewplaneNormal
         );
+        data.endCoordinate = endCoord;
         data.endCoordinate = endCoord;
       }
 
