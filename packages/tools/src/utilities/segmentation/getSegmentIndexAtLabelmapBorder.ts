@@ -31,7 +31,7 @@ export function getSegmentIndexAtLabelmapBorder(
 ): number {
   const segmentation = getSegmentation(segmentationId);
 
-  const labelmapData = segmentation.representationData.LABELMAP;
+  const labelmapData = segmentation.representationData.Labelmap;
 
   if (isVolumeSegmentation(labelmapData, viewport)) {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;

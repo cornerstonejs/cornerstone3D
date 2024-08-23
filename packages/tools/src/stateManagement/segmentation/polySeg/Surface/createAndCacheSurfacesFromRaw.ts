@@ -66,7 +66,7 @@ export async function createAndCacheSurfacesFromRaw(
     geometryIds.set(segmentIndex, geometryId);
 
     return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: Enums.GeometryType.SURFACE,
+      type: Enums.GeometryType.Surface,
       geometryData: closedSurface as unknown as Types.PublicSurfaceData,
     });
   });

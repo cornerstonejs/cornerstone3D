@@ -19,7 +19,7 @@ export function removeContourSegmentationAnnotation(
 
   const { segmentationId, segmentIndex } = annotation.data.segmentation;
   const segmentation = getSegmentation(segmentationId);
-  const { annotationUIDsMap } = segmentation?.representationData.CONTOUR || {};
+  const { annotationUIDsMap } = segmentation?.representationData.Contour || {};
   const annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
 
   if (!annotationsUIDsSet) {

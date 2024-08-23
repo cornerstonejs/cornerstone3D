@@ -66,7 +66,7 @@ addSliderToToolbar({
 
     segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
       1: {
-        LABELMAP: {
+        Labelmap: {
           fillAlpha: segment1FillAlpha,
         },
       },
@@ -83,7 +83,7 @@ addSliderToToolbar({
 
     segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
       2: {
-        LABELMAP: {
+        Labelmap: {
           fillAlpha: segment2FillAlpha,
         },
       },

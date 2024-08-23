@@ -1,9 +1,8 @@
 import type SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 
 import type {
+  GlobalConfig,
   RepresentationConfig,
-  SegmentationRepresentationConfig,
-  SegmentRepresentationConfig,
 } from '../../../types/SegmentationStateTypes';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import { getGlobalConfig as _getGlobalConfig } from '../getGlobalConfig';
@@ -12,13 +11,14 @@ import { getSegmentationRepresentationConfig as _getSegmentationRepresentationCo
 import { setSegmentationRepresentationConfig as _setSegmentationRepresentationConfig } from '../setSegmentationRepresentationConfig';
 import { setPerSegmentConfig as _setPerSegmentConfig } from '../setPerSegmentConfig';
 import { getPerSegmentConfig as _getPerSegmentConfig } from '../getPerSegmentConfig';
+import type { LabelmapConfig } from '../../../types/LabelmapTypes';
 
 /**
  * It returns the global segmentation config.
  * @returns The global segmentation config containing the representations
  * config for each representation type and renderInactiveRepresentations flag.
  */
-function getGlobalConfig(): SegmentationRepresentationConfig {
+function getGlobalConfig(): GlobalConfig {
   return _getGlobalConfig();
 }
 
@@ -26,9 +26,7 @@ function getGlobalConfig(): SegmentationRepresentationConfig {
  * Set the global segmentation config
  * @param segmentationConfig - SegmentationConfig
  */
-function setGlobalConfig(
-  segmentationConfig: SegmentationRepresentationConfig
-): void {
+function setGlobalConfig(segmentationConfig: GlobalConfig): void {
   _setGlobalConfig(segmentationConfig);
 }
 
@@ -39,7 +37,7 @@ function setGlobalConfig(
  */
 function getGlobalRepresentationConfig(
   representationType: SegmentationRepresentations
-): RepresentationConfig['LABELMAP'] {
+): LabelmapConfig {
   const globalConfig = getGlobalConfig();
   return globalConfig.representations[representationType];
 }
@@ -54,7 +52,7 @@ function getGlobalRepresentationConfig(
  */
 function setGlobalRepresentationConfig(
   representationType: SegmentationRepresentations,
-  config: RepresentationConfig['LABELMAP']
+  config: LabelmapConfig
 ): void {
   const globalConfig = getGlobalConfig();
 
@@ -104,7 +102,7 @@ function setSegmentationRepresentationConfig(
  */
 function setPerSegmentConfig(
   segmentationRepresentationUID: string,
-  config: SegmentRepresentationConfig
+  config: RepresentationConfig
 ): void {
   _setPerSegmentConfig(segmentationRepresentationUID, config);
 }
@@ -117,7 +115,7 @@ function setPerSegmentConfig(
  */
 function getPerSegmentConfig(
   segmentationRepresentationUID: string
-): SegmentRepresentationConfig {
+): RepresentationConfig {
   return _getPerSegmentConfig(segmentationRepresentationUID);
 }
 

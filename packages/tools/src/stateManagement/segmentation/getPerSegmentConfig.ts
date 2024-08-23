@@ -1,4 +1,4 @@
-import type { SegmentRepresentationConfig } from '../../types/SegmentationStateTypes';
+import type { RepresentationConfig } from '../../types/SegmentationStateTypes';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
 /**
@@ -9,7 +9,7 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
  */
 export function getPerSegmentConfig(
   segmentationRepresentationUID: string
-): SegmentRepresentationConfig {
+): RepresentationConfig {
   const segmentationStateManager = defaultSegmentationStateManager;
   return segmentationStateManager.getPerSegmentConfig(
     segmentationRepresentationUID

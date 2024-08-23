@@ -30,7 +30,7 @@ export async function convertVolumeToStackSegmentation({
   const segmentation = getSegmentation(segmentationId);
 
   const { volumeId } = segmentation.representationData
-    .LABELMAP as LabelmapSegmentationDataVolume;
+    .Labelmap as LabelmapSegmentationDataVolume;
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
   await updateStackSegmentationState({

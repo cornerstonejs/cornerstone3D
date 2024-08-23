@@ -43,8 +43,10 @@ import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
   RepresentationConfig,
-  SegmentationRepresentationConfig,
-  SegmentationRepresentationData,
+  RepresentationsConfig,
+  RepresentationData,
+  RepresentationsData,
+  GlobalConfig,
   Segmentation,
   SegmentationState,
   RepresentationPublicInput,
@@ -134,8 +136,8 @@ export type {
   // Segmentation
   Segmentation,
   SegmentationState,
-  SegmentationRepresentationData,
-  SegmentationRepresentationConfig,
+  RepresentationData,
+  RepresentationsData,
   RepresentationConfig,
   RepresentationPublicInput,
   LabelmapTypes,
@@ -176,4 +178,5 @@ export type {
   // polySeg
   PolySegConversionOptions,
   IBaseTool,
+  GlobalConfig,
 };

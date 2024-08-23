@@ -13,12 +13,11 @@ import getDefaultContourConfig from '../../tools/displayTools/Contour/contourCon
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
 import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
 import type {
+  GlobalConfig,
   RepresentationConfig,
-  SegmentRepresentationConfig,
+  RepresentationsData,
   Segmentation,
   SegmentationRepresentation,
-  SegmentationRepresentationConfig,
-  SegmentationRepresentationData,
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
 import type {
@@ -27,7 +26,7 @@ import type {
 } from '../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from './events/triggerSegmentationDataModified';
 
-const newGlobalConfig: SegmentationRepresentationConfig = {
+const newGlobalConfig: GlobalConfig = {
   renderInactiveRepresentations: true,
   representations: {
     [SegmentationRepresentations.Labelmap]: getDefaultLabelmapConfig(),
@@ -126,16 +125,16 @@ export default class SegmentationStateManager {
     }
 
     if (
-      segmentation.representationData.LABELMAP &&
-      'volumeId' in segmentation.representationData.LABELMAP &&
-      !('imageIds' in segmentation.representationData.LABELMAP)
+      segmentation.representationData.Labelmap &&
+      'volumeId' in segmentation.representationData.Labelmap &&
+      !('imageIds' in segmentation.representationData.Labelmap)
     ) {
       const imageIds = this.getLabelmapImageIds(
         segmentation.representationData
       );
       (
         segmentation.representationData
-          .LABELMAP as LabelmapSegmentationDataStack
+          .Labelmap as LabelmapSegmentationDataStack
       ).imageIds = imageIds;
     }
     this.state.segmentations.push(segmentation);
@@ -235,7 +234,7 @@ export default class SegmentationStateManager {
 
     const { representationData } = segmentation;
 
-    const isLabelmap = representationData.LABELMAP;
+    const isLabelmap = representationData.Labelmap;
 
     if (!isLabelmap) {
       // make all the other representations inactive first
@@ -246,7 +245,7 @@ export default class SegmentationStateManager {
       return;
     }
 
-    const isBaseVolumeSegmentation = 'volumeId' in representationData.LABELMAP;
+    const isBaseVolumeSegmentation = 'volumeId' in representationData.Labelmap;
 
     if (!volumeViewport) {
       // Stack Viewport
@@ -346,7 +345,7 @@ export default class SegmentationStateManager {
     }
 
     const { representationData } = segmentation;
-    if (!representationData.LABELMAP) {
+    if (!representationData.Labelmap) {
       return;
     }
 
@@ -379,7 +378,7 @@ export default class SegmentationStateManager {
     }
 
     const { representationData } = segmentation;
-    if (!representationData.LABELMAP) {
+    if (!representationData.Labelmap) {
       return;
     }
 
@@ -411,10 +410,8 @@ export default class SegmentationStateManager {
     );
   }
 
-  private getLabelmapImageIds(
-    representationData: SegmentationRepresentationData
-  ) {
-    const labelmapData = representationData.LABELMAP;
+  private getLabelmapImageIds(representationData: RepresentationsData) {
+    const labelmapData = representationData.Labelmap;
     let labelmapImageIds;
 
     if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
@@ -583,7 +580,7 @@ export default class SegmentationStateManager {
    * Returns the global segmentation representation config.
    * @returns The global segmentation representation config object.
    */
-  getGlobalConfig(): SegmentationRepresentationConfig {
+  getGlobalConfig(): GlobalConfig {
     return this.state.globalConfig;
   }
 
@@ -591,13 +588,13 @@ export default class SegmentationStateManager {
    * Sets the global segmentation representation config.
    * @param config - The global segmentation representation config object to set.
    */
-  setGlobalConfig(config: SegmentationRepresentationConfig): void {
+  setGlobalConfig(config: GlobalConfig): void {
     this.state.globalConfig = config;
   }
 
   _getRepresentationConfig(segmentationRepresentationUID: string): {
     allSegments?: RepresentationConfig;
-    perSegment?: SegmentRepresentationConfig;
+    perSegment?: RepresentationConfig;
   } {
     const segmentationRepresentation = this.getSegmentationRepresentation(
       segmentationRepresentationUID
@@ -636,7 +633,7 @@ export default class SegmentationStateManager {
    */
   getPerSegmentConfig(
     segmentationRepresentationUID: string
-  ): SegmentRepresentationConfig {
+  ): RepresentationConfig {
     const config = this._getRepresentationConfig(segmentationRepresentationUID);
 
     if (!config) {
@@ -675,7 +672,7 @@ export default class SegmentationStateManager {
    */
   setPerSegmentConfig(
     segmentationRepresentationUID: string,
-    config: SegmentRepresentationConfig
+    config: RepresentationConfig
   ): void {
     const _config = this._getRepresentationConfig(
       segmentationRepresentationUID
@@ -805,7 +802,7 @@ async function convertStackToVolumeSegmentation({
     defaultSegmentationStateManager.getSegmentation(segmentationId);
 
   const data = segmentation.representationData
-    .LABELMAP as LabelmapSegmentationDataStack;
+    .Labelmap as LabelmapSegmentationDataStack;
 
   const { volumeId } = await computeVolumeSegmentationFromStack({
     imageIds: data.imageIds,
@@ -839,7 +836,7 @@ async function updateSegmentationState({
 
   if (options?.removeOriginal) {
     const data = segmentation.representationData
-      .LABELMAP as LabelmapSegmentationDataStack;
+      .Labelmap as LabelmapSegmentationDataStack;
 
     const { imageIds } = data;
 
@@ -847,12 +844,12 @@ async function updateSegmentationState({
       cache.removeImageLoadObject(imageId);
     });
 
-    segmentation.representationData.LABELMAP = {
+    segmentation.representationData.Labelmap = {
       volumeId,
     };
   } else {
-    segmentation.representationData.LABELMAP = {
-      ...segmentation.representationData.LABELMAP,
+    segmentation.representationData.Labelmap = {
+      ...segmentation.representationData.Labelmap,
       volumeId,
     };
   }

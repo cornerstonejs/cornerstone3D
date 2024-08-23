@@ -26,7 +26,7 @@ export async function updateSurfaceData(segmentationId) {
   if (!indices.length) {
     // means all segments were removed so we need to empty out
     // the geometry data
-    const geometryIds = segmentation.representationData.SURFACE.geometryIds;
+    const geometryIds = segmentation.representationData.Surface.geometryIds;
     geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const surface = geometry.data as Types.ISurface;
@@ -60,7 +60,7 @@ export async function updateSurfaceData(segmentationId) {
           ) {
             return;
           }
-          segmentation.representationData.SURFACE.geometryIds.set(
+          segmentation.representationData.Surface.geometryIds.set(
             segmentIndex,
             geometryId
           );

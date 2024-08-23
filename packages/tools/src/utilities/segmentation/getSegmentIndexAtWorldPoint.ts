@@ -74,7 +74,7 @@ export function getSegmentIndexAtWorldForLabelmap(
   worldPoint: Types.Point3,
   { viewport }: Options
 ): number | undefined {
-  const labelmapData = segmentation.representationData.LABELMAP;
+  const labelmapData = segmentation.representationData.Labelmap;
 
   if (isVolumeSegmentation(labelmapData)) {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
@@ -139,7 +139,7 @@ export function getSegmentIndexAtWorldForContour(
   worldPoint: Types.Point3,
   { viewport }: Options
 ): number {
-  const contourData = segmentation.representationData.CONTOUR;
+  const contourData = segmentation.representationData.Contour;
 
   const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
   const { viewPlaneNormal } = viewport.getCamera();

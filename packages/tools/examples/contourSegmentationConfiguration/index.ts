@@ -217,7 +217,7 @@ async function run() {
   ]);
 
   segmentation.config.setSegmentationRepresentationConfig(segRepUID1, {
-    CONTOUR: {
+    Contour: {
       outlineWidthActive: 5,
       outlineDashActive: '10, 10',
     },

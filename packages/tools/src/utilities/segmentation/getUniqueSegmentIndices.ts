@@ -86,7 +86,7 @@ function addImageSegmentIndices(keySet, imageIds) {
 
 function handleContourSegmentation(segmentation) {
   const { annotationUIDsMap, geometryIds } =
-    segmentation.representationData.CONTOUR || {};
+    segmentation.representationData.Contour || {};
   if (!geometryIds) {
     throw new Error(
       `No geometryIds found for segmentationId ${segmentation.segmentationId}`
@@ -104,7 +104,7 @@ function handleContourSegmentation(segmentation) {
 
 function handleSurfaceSegmentation(segmentation) {
   const geometryIds =
-    segmentation.representationData.SURFACE?.geometryIds ?? [];
+    segmentation.representationData.Surface?.geometryIds ?? [];
   return Array.from(geometryIds.keys())
     .map(Number)
     .sort((a, b) => a - b);

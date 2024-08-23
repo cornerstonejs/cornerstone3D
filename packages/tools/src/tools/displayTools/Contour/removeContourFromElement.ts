@@ -28,7 +28,7 @@ function removeContourFromElement(
 
   const segmentation = getSegmentation(segmentationId);
 
-  const { annotationUIDsMap } = segmentation.representationData.CONTOUR;
+  const { annotationUIDsMap } = segmentation.representationData.Contour;
 
   annotationUIDsMap.forEach((annotationSet) => {
     annotationSet.forEach((annotationUID) => {

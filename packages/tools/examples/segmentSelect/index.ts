@@ -13,6 +13,7 @@ import {
   fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
+import type { IStreamingImageVolume } from '@cornerstonejs/core/src/types';
 
 // This is for debugging purposes
 console.warn(
@@ -207,29 +208,32 @@ async function run() {
   segmentation.config.setGlobalRepresentationConfig(
     cornerstoneTools.Enums.SegmentationRepresentations.Labelmap,
     {
-      ...globalConfig.representations.LABELMAP,
+      ...globalConfig.representations.Labelmap,
       fillAlpha: 0.05,
     }
   );
   segmentation.config.setGlobalRepresentationConfig(
     cornerstoneTools.Enums.SegmentationRepresentations.Contour,
     {
-      ...globalConfig.representations.CONTOUR,
+      ...globalConfig.representations.Contour,
       fillAlpha: 0,
     }
   );
 
   const config = segmentation.config.getGlobalConfig();
-  config.representations.LABELMAP.activeSegmentOutlineWidthDelta = 3;
-  config.representations.CONTOUR.activeSegmentOutlineWidthDelta = 3;
+  config.representations.Labelmap.activeSegmentOutlineWidthDelta = 3;
+  config.representations.Contour.activeSegmentOutlineWidthDelta = 3;
 }
 
 run();
 
 async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
-  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: volumeImageIds,
-  });
+  const volume = (await cornerstone.volumeLoader.createAndCacheVolume(
+    volumeId,
+    {
+      imageIds: volumeImageIds,
+    }
+  )) as IStreamingImageVolume;
 
   // Set the volume to load
   await volume.load();

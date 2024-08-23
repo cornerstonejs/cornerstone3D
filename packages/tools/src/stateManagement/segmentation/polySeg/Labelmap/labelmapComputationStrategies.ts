@@ -31,7 +31,7 @@ export async function computeLabelmapData(
   const representationData = segmentation.representationData;
 
   try {
-    if (representationData.CONTOUR) {
+    if (representationData.Contour) {
       rawLabelmapData = await computeLabelmapFromContourSegmentation(
         segmentationId,
         {
@@ -39,7 +39,7 @@ export async function computeLabelmapData(
           ...options,
         }
       );
-    } else if (representationData.SURFACE) {
+    } else if (representationData.Surface) {
       rawLabelmapData = await computeLabelmapFromSurfaceSegmentation(
         segmentation.segmentationId,
         {
@@ -84,7 +84,7 @@ async function computeLabelmapFromContourSegmentation(
     : getUniqueSegmentIndices(segmentationId);
 
   const segmentation = getSegmentation(segmentationId);
-  const representationData = segmentation.representationData.CONTOUR;
+  const representationData = segmentation.representationData.Contour;
 
   const convertFunction = isVolume
     ? convertContourToVolumeLabelmap
@@ -113,7 +113,7 @@ async function computeLabelmapFromSurfaceSegmentation(
   const segmentation = getSegmentation(segmentationId);
 
   const segmentsGeometryIds = new Map() as Map<number, string>;
-  const representationData = segmentation.representationData.SURFACE;
+  const representationData = segmentation.representationData.Surface;
   representationData.geometryIds.forEach((geometryId, segmentIndex) => {
     if (segmentIndices.includes(segmentIndex)) {
       segmentsGeometryIds.set(segmentIndex, geometryId);

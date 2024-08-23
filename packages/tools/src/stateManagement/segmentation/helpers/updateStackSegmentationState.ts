@@ -3,7 +3,7 @@ import { Events, SegmentationRepresentations } from '../../../enums';
 import { getSegmentation } from '../getSegmentation';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
-import addSegmentationRepresentations from '../addSegmentationRepresentations';
+import { addSegmentationRepresentations } from '../addSegmentationRepresentations';
 
 /**
  * Converts a volume segmentation to a stack segmentation.
@@ -34,28 +34,30 @@ export async function updateStackSegmentationState({
 
   if (options?.removeOriginal) {
     const data = segmentation.representationData
-      .LABELMAP as LabelmapSegmentationDataVolume;
-
+      .Labelmap as LabelmapSegmentationDataVolume;
     if (cache.getVolume(data.volumeId)) {
       cache.removeVolumeLoadObject(data.volumeId);
     }
 
-    segmentation.representationData.LABELMAP = {
+    segmentation.representationData.Labelmap = {
       imageIds,
     };
   } else {
-    segmentation.representationData.LABELMAP = {
-      ...segmentation.representationData.LABELMAP,
+    segmentation.representationData.Labelmap = {
+      ...segmentation.representationData.Labelmap,
       imageIds,
     };
   }
 
-  await addSegmentationRepresentations(viewportId, [
-    {
-      segmentationId,
-      type: SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  await addSegmentationRepresentations(
+    [viewportId],
+    [
+      {
+        segmentationId,
+        type: SegmentationRepresentations.Labelmap,
+      },
+    ]
+  );
 
   eventTarget.addEventListenerOnce(Events.SEGMENTATION_RENDERED, () =>
     triggerSegmentationDataModified(segmentationId)

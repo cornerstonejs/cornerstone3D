@@ -158,7 +158,7 @@ function updateSegmentationDropdownOptions(activeSegmentationId) {
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
   const segmentationConfig = getCurrentSegmentationConfig(viewportIds[0]);
-  const contourConfig = segmentationConfig.CONTOUR;
+  const contourConfig = segmentationConfig.Contour;
 
   (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
     String(
@@ -290,10 +290,10 @@ function getCurrentSegmentationConfig(
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because it
+  // Add Contour object because it
   // can return an empty object
-  if (!segmentationConfig.CONTOUR) {
-    segmentationConfig.CONTOUR = {};
+  if (!segmentationConfig.Contour) {
+    segmentationConfig.Contour = {};
   }
 
   return segmentationConfig;
@@ -308,7 +308,7 @@ function updateCurrentSegmentationConfig(config) {
 
     const segmentationConfig = getCurrentSegmentationConfig(viewportId);
 
-    Object.assign(segmentationConfig.CONTOUR, config);
+    Object.assign(segmentationConfig.Contour, config);
 
     segmentation.config.setSegmentationRepresentationConfig(
       segmentationRepresentationUID,
@@ -698,7 +698,7 @@ async function run() {
   const globalSegmentationConfig = segmentation.config.getGlobalConfig();
 
   Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
+    globalSegmentationConfig.representations.Contour,
     DEFAULT_SEGMENT_CONFIG
   );
 

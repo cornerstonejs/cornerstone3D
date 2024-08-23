@@ -116,7 +116,7 @@ addSliderToToolbar({
     segmentation.config.setSegmentationRepresentationConfig(
       planarSegmentationRepresentationUID,
       {
-        CONTOUR: {
+        Contour: {
           outlineWidthActive: Number(value),
         },
       }
@@ -134,7 +134,7 @@ async function addSegmentationsToState() {
     const geometryId = contourSet.id;
     geometryIds.push(geometryId);
     return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
+      type: GeometryType.Contour,
       geometryData: contourSet as Types.PublicContourSetData,
     });
   });

@@ -15,33 +15,39 @@ import type {
   SurfaceRenderingConfig,
 } from './SurfaceTypes';
 
-export type SegmentRepresentationConfig = {
-  [key: number | string]: RepresentationConfig;
-};
-
 export type SurfaceConfig = {};
 
-export type RepresentationConfig = {
+export type RepresentationsConfig = {
   /** labelmap configuration */
-  LABELMAP?: LabelmapConfig;
+  [Enums.SegmentationRepresentations.Labelmap]?: LabelmapConfig;
   /** contour configuration */
-  CONTOUR?: ContourConfig;
+  [Enums.SegmentationRepresentations.Contour]?: ContourConfig;
   /** surface configuration */
-  SURFACE?: SurfaceConfig;
+  [Enums.SegmentationRepresentations.Surface]?: SurfaceConfig;
 };
 
-export type SegmentationRepresentationConfig = {
+export type RepresentationConfig =
+  | LabelmapConfig
+  | ContourConfig
+  | SurfaceConfig;
+
+export type GlobalConfig = {
   /** Whether to render Inactive segmentations  */
   renderInactiveRepresentations: boolean;
   /** Representations configuration */
-  representations: RepresentationConfig;
+  representations: RepresentationsConfig;
 };
 
-export type SegmentationRepresentationData = {
-  LABELMAP?: LabelmapSegmentationData;
-  CONTOUR?: ContourSegmentationData;
-  SURFACE?: SurfaceSegmentationData;
+export type RepresentationsData = {
+  [Enums.SegmentationRepresentations.Labelmap]?: LabelmapSegmentationData;
+  [Enums.SegmentationRepresentations.Contour]?: ContourSegmentationData;
+  [Enums.SegmentationRepresentations.Surface]?: SurfaceSegmentationData;
 };
+
+export type RepresentationData =
+  | LabelmapSegmentationData
+  | ContourSegmentationData
+  | SurfaceSegmentationData;
 
 /**
  * Global Segmentation Data which is used for the segmentation
@@ -76,7 +82,7 @@ export type Segmentation = {
    * is contours, and other representations can be derived from the contour (currently
    * only labelmap representation is supported)
    */
-  representationData: SegmentationRepresentationData;
+  representationData: RepresentationsData;
 };
 
 /**
@@ -117,7 +123,7 @@ export type BaseSegmentationRepresentation = {
      * for each segment. Use cases: to highligh a specific segment with a brighter
      * color
      */
-    perSegment?: SegmentRepresentationConfig;
+    perSegment?: RepresentationConfig;
   };
 };
 
@@ -156,7 +162,7 @@ export type SegmentationRepresentation =
      globalConfig: {
        renderInactiveRepresentations: false,
        representations: {
-         LABELMAP: {
+         Labelmap: {
            renderFill: true,
            renderOutline: true,
          },
@@ -171,10 +177,10 @@ export type SegmentationRepresentation =
          label: 'segmentation1',
          cachedStats: {},
          representationData: {
-           LABELMAP: {
+           Labelmap: {
              volumeId: 'segmentation1',
            },
-           CONTOUR: {
+           Contour: {
              geometryIds: ['contourSet1', 'contourSet2'],
            },
          },
@@ -187,7 +193,7 @@ export type SegmentationRepresentation =
          label: 'segmentation2',
          cachedStats: {},
          representationData: {
-           CONTOUR: {
+           Contour: {
              points: Float32Array,
            },
          },
@@ -204,13 +210,13 @@ export type SegmentationRepresentation =
         },
         config: {
           allSegments: {
-            LABELMAP: {
+            Labelmap: {
               renderFill: true,
             },
           },
           perSegment: {
             '0': {
-              LABELMAP: {
+              Labelmap: {
                 renderFill: false,
               },
             },
@@ -254,7 +260,7 @@ export type SegmentationState = {
   /** segmentations */
   segmentations: Segmentation[];
   /** global segmentation state with config */
-  globalConfig: SegmentationRepresentationConfig;
+  globalConfig: GlobalConfig;
   /**
    * ToolGroup specific segmentation state with config
    */
@@ -277,17 +283,8 @@ export type SegmentationPublicInput = {
   segmentationId: string;
   representation: {
     type: Enums.SegmentationRepresentations;
-    data?:
-      | LabelmapSegmentationData
-      | ContourSegmentationData
-      | SurfaceSegmentationData;
+    data?: RepresentationData;
   };
-};
-
-export type RepresentationPublicInput = {
-  segmentationId: string;
-  type: Enums.SegmentationRepresentations;
-  options?: RepresentationPublicInputOptions;
 };
 
 export type RepresentationPublicInputOptions = {
@@ -301,4 +298,11 @@ export type RepresentationPublicInputOptions = {
     enabled: boolean;
     options?: unknown;
   };
+};
+
+export type RepresentationPublicInput = {
+  segmentationId: string;
+  type: Enums.SegmentationRepresentations;
+  options?: RepresentationPublicInputOptions;
+  config?: RepresentationConfig;
 };

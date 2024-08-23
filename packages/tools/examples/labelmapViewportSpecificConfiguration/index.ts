@@ -88,7 +88,7 @@ addToggleButtonToToolbar({
         segmentation.config.setSegmentationRepresentationConfig(
           representationUID,
           {
-            LABELMAP: {
+            Labelmap: {
               renderOutline: toggle,
             },
           }
