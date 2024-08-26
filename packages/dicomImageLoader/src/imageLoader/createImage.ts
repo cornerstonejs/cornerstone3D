@@ -3,7 +3,7 @@ import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
 import type { DICOMLoaderImageOptions, DICOMLoaderIImage } from '../types';
-import type { Types } from '@cornerstonejs/core/src';
+import type { Types } from '@cornerstonejs/core';
 import convertColorSpace from './convertColorSpace';
 import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';

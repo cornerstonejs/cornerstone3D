@@ -1,17 +1,9 @@
 {
+    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
-        "allowJs": true,
-        "checkJs": false,
-        "strict": false,
-        "declaration": true,
-        "emitDeclarationOnly": false,
-        "lib": ["ES2022", "dom"],
-        "target": "ES2022",
-        "module": "esnext",
-        "moduleResolution": "node",
-        "sourceMap": false,
-        "rootDir": "src"
+        "outDir": "./dist/esm",
+        "rootDir": "./src",
+        "sourceRoot": "/packages/adapters/src"
     },
-    "include": ["src"],
-    "exclude": ["node_modules", "dist", "examples", "old-examples"]
+    "include": ["./src/**/*"]
 }

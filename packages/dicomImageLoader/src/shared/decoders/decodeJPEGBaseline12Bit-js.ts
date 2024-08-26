@@ -1,5 +1,5 @@
 import type { ByteArray } from 'dicom-parser';
-import type { Types } from '@cornerstonejs/core/src';
+import type { Types } from '@cornerstonejs/core';
 import type { WebWorkerDecodeConfig } from '../../types';
 
 const local = {

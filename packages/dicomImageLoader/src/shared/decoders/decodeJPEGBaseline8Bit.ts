@@ -12,7 +12,7 @@ const libjpegTurboWasm = new URL(
   '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
   import.meta.url
 );
-import type { Types } from '@cornerstonejs/core/src';
+import type { Types } from '@cornerstonejs/core';
 
 const local: {
   codec: OpenJpegModule;

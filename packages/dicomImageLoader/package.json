@@ -12,11 +12,12 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "dist/esm/src/imageLoader/index.js",
-  "module": "dist/esm/src/imageLoader/index.js",
-  "types": "dist/esm/src/imageLoader/index.d.ts",
+  "type": "module",
+  "main": "./dist/esm/imageLoader/index.js",
+  "module": "./dist/esm/imageLoader/index.js",
+  "types": "./dist/esm/imageLoader/index.d.ts",
   "files": [
-    "dist/"
+    "./dist/"
   ],
   "repository": {
     "type": "git",
@@ -26,24 +27,59 @@
     "access": "public"
   },
   "exports": {
-    ".": "./dist/esm/src/imageLoader/index.js",
-    "./umd": "./dist/umd/cornerstoneDICOMImageLoader.bundle.min.js",
-    "./dynamic-umd": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js",
-    "./constants": "./dist/esm/src/constants/index.js",
-    "./constants/*": "./dist/esm/src/constants/*.js",
-    "./imageLoader": "./dist/esm/src/imageLoader/index.js",
-    "./imageLoader/*": "./dist/esm/src/imageLoader/*.js",
-    "./imageLoader/wadors": "./dist/esm/src/imageLoader/wadors/index.js",
-    "./imageLoader/wadors/*": "./dist/esm/src/imageLoader/wadors/*.js",
-    "./imageLoader/wadouri": "./dist/esm/src/imageLoader/wadouri/index.js",
-    "./imageLoader/wadouri/*": "./dist/esm/src/imageLoader/wadouri/*.js",
-    "./types": "./dist/esm/src/types/index.d.ts",
-    "./types/*": "./dist/esm/src/types/*.d.ts"
+    ".": {
+      "import": "./dist/esm/imageLoader/index.js",
+      "types": "./dist/esm/imageLoader/index.d.ts"
+    },
+    "./umd": {
+      "import": "./dist/umd/cornerstoneDICOMImageLoader.bundle.min.js"
+    },
+    "./dynamic-umd": {
+      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
+    },
+    "./constants": {
+      "import": "./dist/esm/constants/index.js",
+      "types": "./dist/esm/constants/index.d.ts"
+    },
+    "./constants/*": {
+      "import": "./dist/esm/constants/*.js",
+      "types": "./dist/esm/constants/*.d.ts"
+    },
+    "./imageLoader": {
+      "import": "./dist/esm/imageLoader/index.js",
+      "types": "./dist/esm/imageLoader/index.d.ts"
+    },
+    "./imageLoader/*": {
+      "import": "./dist/esm/imageLoader/*.js",
+      "types": "./dist/esm/imageLoader/*.d.ts"
+    },
+    "./imageLoader/wadors": {
+      "import": "./dist/esm/imageLoader/wadors/index.js",
+      "types": "./dist/esm/imageLoader/wadors/index.d.ts"
+    },
+    "./imageLoader/wadors/*": {
+      "import": "./dist/esm/imageLoader/wadors/*.js",
+      "types": "./dist/esm/imageLoader/wadors/*.d.ts"
+    },
+    "./imageLoader/wadouri": {
+      "import": "./dist/esm/imageLoader/wadouri/index.js",
+      "types": "./dist/esm/imageLoader/wadouri/index.d.ts"
+    },
+    "./imageLoader/wadouri/*": {
+      "import": "./dist/esm/imageLoader/wadouri/*.js",
+      "types": "./dist/esm/imageLoader/wadouri/*.d.ts"
+    },
+    "./types": {
+      "types": "./dist/esm/types/index.d.ts"
+    },
+    "./types/*": {
+      "types": "./dist/esm/types/*.d.ts"
+    }
   },
   "scripts": {
     "build:loader": "yarn run build:all && yarn run copy-dts",
-    "build:esm": "tsc --project ./tsconfig.esm.json",
-    "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
     "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle && yarn run build:esm",
@@ -59,7 +95,7 @@
     "clean:coverage": "shx rm -rf coverage",
     "doc": "npm run doc:generate && opn documentation/index.html",
     "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
-    "dev": "tsc --project ./tsconfig.esm.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch",
     "eslint": "eslint -c .eslintrc.js src",
     "eslint-quiet": "eslint -c .eslintrc.js --quiet src",
     "eslint-fix": "eslint -c .eslintrc.js --fix src",

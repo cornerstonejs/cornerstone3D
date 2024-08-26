@@ -13,7 +13,7 @@ import {
   fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
-import type { IStreamingImageVolume } from '@cornerstonejs/core/src/types';
+import type { IStreamingImageVolume } from '@cornerstonejs/core/types';
 
 // This is for debugging purposes
 console.warn(
