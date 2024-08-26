@@ -5,7 +5,6 @@
     "main": "./dist/umd/adapters.umd.js",
     "module": "./dist/esm/index.js",
     "types": "./dist/esm/index.d.ts",
-    "type": "module",
     "files": [
         "dist"
     ],

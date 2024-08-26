@@ -15,6 +15,10 @@
       "inputs": ["noMarkdown"],
       "dependsOn": ["^build"]
     },
+    "build:all": {
+      "inputs": ["noMarkdown"],
+      "dependsOn": ["^build"]
+    },
     "build:esm": {
       "inputs": ["noMarkdown"],
       "dependsOn": ["^build"]

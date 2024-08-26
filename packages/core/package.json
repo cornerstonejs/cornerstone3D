@@ -3,12 +3,12 @@
   "version": "2.0.0-beta.26",
   "description": "",
   "main": "./dist/umd/index.js",
-  "type": "module",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
-    "dist/esm"
+    "dist/esm",
+    "dist/umd"
   ],
   "sideEffects": false,
   "exports": {
@@ -60,8 +60,9 @@
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
-    "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
-    "build": "yarn run build:esm && yarn run copy-dts",
+    "build": "yarn run build:esm",
+    "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
+    "build:all": "yarn run build:esm && yarn run build:umd",
     "dev": "tsc --project ./tsconfig.json --watch",
     "format-check": "npx eslint ./src --quiet",
     "api-check": "api-extractor --debug run ",

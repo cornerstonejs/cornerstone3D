@@ -12,7 +12,6 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "type": "module",
   "main": "./dist/esm/imageLoader/index.js",
   "module": "./dist/esm/imageLoader/index.js",
   "types": "./dist/esm/imageLoader/index.d.ts",
@@ -32,9 +31,6 @@
       "types": "./dist/esm/imageLoader/index.d.ts"
     },
     "./umd": {
-      "import": "./dist/umd/cornerstoneDICOMImageLoader.bundle.min.js"
-    },
-    "./dynamic-umd": {
       "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
     },
     "./constants": {
@@ -82,7 +78,7 @@
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
-    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle && yarn run build:esm",
+    "build:all": "yarn run build:umd:dynamic && yarn run build:esm",
     "build:update-api": "echo 'not implemented yet'",
     "copy-dts": "echo 'not implemented yet'",
     "clean": "shx rm -rf dist",
