@@ -124,7 +124,7 @@ if (configuration.examples) {
   const currentWD = process.cwd();
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run dev:esm`);
+  shell.exec(`yarn run build:esm`);
   shell.cd('../..');
   shell.exec('yarn');
 

@@ -18,7 +18,7 @@ const openjpegWasm = new URL(
   import.meta.url
 );
 
-import type { Types } from '@cornerstonejs/core/src';
+import type { Types } from '@cornerstonejs/core';
 import type { WebWorkerDecodeConfig } from '../../types';
 
 const local: {

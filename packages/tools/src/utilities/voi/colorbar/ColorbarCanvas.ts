@@ -208,6 +208,11 @@ class ColorbarCanvas {
 
     const { width, height } = this._canvas;
     const canvasContext = this._canvas.getContext('2d');
+
+    if (!canvasContext) {
+      return;
+    }
+
     const isHorizontal = width > height;
     const maxValue = isHorizontal ? width : height;
     const { _voiRange: voiRange } = this;

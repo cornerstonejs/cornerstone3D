@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core';
-import type { PixelDataTypedArray } from '@cornerstonejs/core/src/types';
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions), and

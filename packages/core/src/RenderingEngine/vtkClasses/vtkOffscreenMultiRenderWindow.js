@@ -142,6 +142,7 @@ export function extend(publicAPI, model, initialValues = {}) {
 
 // ----------------------------------------------------------------------------
 
+// @ts-expect-error
 export const newInstance = macro.newInstance(extend);
 
 // ----------------------------------------------------------------------------

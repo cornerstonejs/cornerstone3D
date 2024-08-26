@@ -152,7 +152,7 @@ workflows:
             branches:
               only:
                 - main
-                # - beta
+                - beta
       - BUILD:
           requires:
             - CHECKOUT

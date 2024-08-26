@@ -4529,7 +4529,7 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
-    resetCamera({ resetPan, resetZoom, resetToCenter, }: {
+    resetCamera({ resetPan, resetZoom, resetToCenter, }?: {
         resetPan?: boolean;
         resetZoom?: boolean;
         resetToCenter?: boolean;

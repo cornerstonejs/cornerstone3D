@@ -6,7 +6,6 @@ import {
     derivations
 } from "dcmjs";
 import ndarray from "ndarray";
-import cloneDeep from "lodash.clonedeep";
 import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
 import checkOrientation from "../helpers/checkOrientation";
 import compareArrays from "../helpers/compareArrays";

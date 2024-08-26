@@ -1,43 +1,33 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
-    "checkJs": false,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    // Ensure that .d.ts files are created by tsc, but not .js files
-    "declaration": true,
-    "emitDeclarationOnly": false,
-    // Ensure that Babel can safely transpile files in the TypeScript project
-    "isolatedModules": false,
-
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "useDefineForClassFields": false,
-    "jsx": "react-jsx",
-    "lib": ["ES2022", "dom"],
-
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-
-    "pretty": true,
-    "removeComments": true,
     "skipLibCheck": true,
+    "target": "ES2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "checkJs": false,
+
+    // strictness
     "strict": true,
     "noUncheckedIndexedAccess": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    // wish we could turn this on
     "strictNullChecks": false,
-    "target": "ES2022",
-    "downlevelIteration": true,
-    "resolveJsonModule": true,
+
+    "baseUrl": "./",
+    "useDefineForClassFields": false,
+    "lib": ["ES2022", "dom"],
+    "removeComments": true,
 
     //
-    "module": "ES2022", // esnext | commonjs
-    "moduleResolution": "Node",
-    "outDir": "dist",
-    "sourceMap": false,
-    //
-
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "declaration": true,
+    "sourceMap": true
   },
   "exclude": [
     "node_modules",
@@ -46,6 +36,7 @@
     "packages/**/lib",
     "packages/**/lib-esm",
     "packages/adapters/**/*.js",
+    "packages/dicomImageLoader/codecs/**/*",
     "packages/docs",
     "packages/docs/**/*",
     "snippets",

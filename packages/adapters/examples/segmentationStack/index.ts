@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { api } from "dicomweb-client";
 
 import * as cornerstone from "@cornerstonejs/core";
@@ -217,6 +216,7 @@ async function fetchSegmentation() {
 
     const configSeg = dev.getConfig.fetchSegmentation;
 
+    // @ts-expect-error
     const client = new api.DICOMwebClient({
         url: configSeg.wadoRsRoot
     });
@@ -279,11 +279,11 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
         );
 
     //
-    derivedImages.imageIds.forEach(imageId => {
-        const cachedImage = cache.getImage(imageId);
+    derivedImages.forEach(image => {
+        const cachedImage = cache.getImage(image.imageId);
 
         if (cachedImage) {
-            const pixelData = cachedimage.voxelManager.getScalarData();
+            const pixelData = cachedImage.getPixelData();
 
             //
             pixelData.set(
@@ -311,9 +311,16 @@ function exportSegmentation() {
 
     // Get active segmentation
     const activeSegmentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentation();
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            toolGroupId
+        );
+    // Get active segmentation representation
+    const activeSegmentationRepresentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+            toolGroupId
+        );
 
-    if (!activeSegmentation) {
+    if (!activeSegmentation || !activeSegmentationRepresentation) {
         return;
     }
 
@@ -323,10 +330,12 @@ function exportSegmentation() {
     ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
-    if (labelmap.imageIds) {
+    debugger;
+    if (labelmap.imageIdReferenceMap) {
         //
-        labelmap.imageIds.forEach((derivedImagesId: string) => {
-            /* //
+        labelmap.imageIdReferenceMap.forEach(
+            async (derivedImagesId: string, imageId: string) => {
+                //
                 await imageLoader.loadAndCacheImage(imageId);
                 //
                 const cacheImage = cache.getImage(imageId);
@@ -337,7 +346,7 @@ function exportSegmentation() {
                 // TODO
                 // generateLabelMaps2DFrom3D required "scalarData" and "dimensions"
                 cacheSegmentationImage.scalarData =
-                    cacheSegmentationimage.voxelManager.getScalarData();
+                    cacheSegmentationImage.getPixelData();
                 cacheSegmentationImage.dimensions = [
                     cacheSegmentationImage.columns,
                     cacheSegmentationImage.rows,
@@ -421,7 +430,7 @@ function removeActiveSegmentation() {
     }
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId, [
+    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0], [
         activeSegmentationRepresentation.segmentationRepresentationUID
     ]);
 
@@ -524,14 +533,14 @@ function removeActiveSegment() {
     const modifiedFrames = new Set<number>();
 
     //
-    if (labelmap.imageIdReferenceMap) {
+    if (labelmap.imageIds) {
         //
-        labelmap.imageIdReferenceMap.forEach((derivedImagesId: string) => {
+        labelmap.imageIds.forEach((derivedImagesId: string) => {
             // Get image
             const image = cache.getImage(derivedImagesId);
 
             // Get pixel data
-            const pixelData = image.voxelManager.getScalarData();
+            const pixelData = image.getPixelData();
 
             //
             const frameLength = image.columns * image.rows;
@@ -810,7 +819,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId);
+    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0]);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();
@@ -853,13 +862,13 @@ async function addSegmentationsToState(segmentationId: string) {
             representation: {
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
                 data: {
-                    imageIds: derivedImages.imageIds
+                    imageIds: derivedImages.map(x => x.imageId)
                 }
             }
         }
     ]);
 
-    // Add the segmentation representation to the viewport
+    // Add the segmentation representation to the toolgroup
     await csToolsSegmentation.addSegmentationRepresentations(viewportIds[0], [
         {
             segmentationId,
@@ -1053,7 +1062,6 @@ async function run() {
     toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
     //
-
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);
 

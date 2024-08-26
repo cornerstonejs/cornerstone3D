@@ -46,7 +46,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * This function updates the GPU texture memory to match the current
    * representation of data held in RAM.
    *
-   * @param {Float32Array|Uint8Array|Int16Array|Uint16Array} data The data array which has been updated.
    */
   publicAPI.update3DFromRaw = () => {
     const { volumeId } = model;
@@ -155,6 +154,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const volume = cache.getVolume(model.volumeId);
 
     // loop over imageIds of the current time point and update the texture
+    // @ts-expect-error
     const imageIds = volume.getCurrentTimePointImageIds();
 
     for (let i = 0; i < imageIds.length; i++) {

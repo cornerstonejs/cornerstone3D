@@ -73,8 +73,6 @@ module.exports = {
         '/'
       )}',
       '@cornerstonejs/adapters': '${csAdapters.replace(/\\/g, '/')}',
-      // We use this alias and the CopyPlugin to support using the dynamic-import version
-      // of WADO Image Loader
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'

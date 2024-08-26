@@ -12,7 +12,7 @@ const charlsWasm = new URL(
 );
 import type { ByteArray } from 'dicom-parser';
 import type { WebWorkerDecodeConfig } from '../../types';
-import type { Types } from '@cornerstonejs/core/src';
+import type { Types } from '@cornerstonejs/core';
 
 const local: {
   codec: CharlsModule;
