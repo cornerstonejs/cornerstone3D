@@ -26,8 +26,8 @@
     //
     "module": "Preserve",
     "moduleResolution": "Bundler",
-    "declaration": true,
-    "sourceMap": true
+    "declaration": false,
+    "sourceMap": false
   },
   "exclude": [
     "node_modules",
