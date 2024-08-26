@@ -924,6 +924,10 @@ abstract class BaseVolumeViewport extends Viewport implements IVolumeViewport {
       this.setRotation(properties.rotation);
     }
 
+    if (properties.preset !== undefined) {
+      this.setPreset(properties.preset, volumeId, false);
+    }
+
     this.render();
   }
 
