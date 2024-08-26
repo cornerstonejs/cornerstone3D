@@ -3,7 +3,7 @@ import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
 import metaDataManager, {
-  retrieveMultiframeMetadata,
+  retrieveMultiframeMetadataImageId,
 } from '../metaDataManager';
 import getValue from './getValue';
 import {
@@ -28,7 +28,7 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
-    const { metadata, frame } = retrieveMultiframeMetadata(imageId);
+    const { metadata, frame } = retrieveMultiframeMetadataImageId(imageId);
 
     if (!metadata) {
       return;

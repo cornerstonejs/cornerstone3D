@@ -8,7 +8,7 @@ let multiframeMetadataByImageURI = {};
 import getValue from './metaData/getValue';
 
 // get metadata information for the first frame
-function _retrieveMultiframeMetadata(imageURI) {
+function _retrieveMultiframeMetadataImageURI(imageURI) {
   const lastSlashIdx = imageURI.indexOf('/frames/') + 8;
   // imageid string without frame number
   const imageIdFrameless = imageURI.slice(0, lastSlashIdx);
@@ -24,10 +24,10 @@ function _retrieveMultiframeMetadata(imageURI) {
   };
 }
 
-function retrieveMultiframeMetadata(imageId) {
+function retrieveMultiframeMetadataImageId(imageId) {
   const imageURI = imageIdToURI(imageId);
 
-  return _retrieveMultiframeMetadata(imageURI);
+  return _retrieveMultiframeMetadataImageURI(imageURI);
 }
 
 function isMultiframe(metadata) {
@@ -70,7 +70,7 @@ function get(imageId: string): WADORSMetaData {
   }
 
   // Try to get the metadata for a specific frame of a multiframe image
-  const retrievedMetadata = retrieveMultiframeMetadata(imageURI);
+  const retrievedMetadata = _retrieveMultiframeMetadataImageURI(imageURI);
 
   if (!retrievedMetadata || !retrievedMetadata.metadata) {
     return;
@@ -101,7 +101,7 @@ function purge() {
   multiframeMetadataByImageURI = {};
 }
 
-export { metadataByImageURI, isMultiframe, retrieveMultiframeMetadata };
+export { metadataByImageURI, isMultiframe, retrieveMultiframeMetadataImageId };
 
 export default {
   add,
