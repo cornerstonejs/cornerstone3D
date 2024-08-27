@@ -270,7 +270,6 @@ class VolumeViewport extends BaseVolumeViewport {
     super.resetCamera({ resetPan, resetZoom, resetToCenter });
 
     const activeCamera = this.getVtkActiveCamera();
-    this.setCameraClippingRange();
     const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
@@ -365,7 +364,6 @@ class VolumeViewport extends BaseVolumeViewport {
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
     // reset camera clipping range as well
-    this.setCameraClippingRange();
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
     this.viewportProperties.slabThickness = slabThickness;
   }
@@ -703,21 +701,6 @@ class VolumeViewport extends BaseVolumeViewport {
     });
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
-  }
-
-  private setCameraClippingRange() {
-    const activeCamera = this.getVtkActiveCamera();
-    if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(
-        activeCamera.getDistance(),
-        activeCamera.getDistance() + this.getSlabThickness()
-      );
-    } else {
-      activeCamera.setClippingRange(
-        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    }
   }
 
   /**
