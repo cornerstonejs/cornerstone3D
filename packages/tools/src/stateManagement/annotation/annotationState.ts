@@ -18,6 +18,16 @@ import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 // our default annotation manager
 let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
 
+const preprocessingFn = (annotation: Annotation) => {
+  checkAndDefineIsLockedProperty(annotation);
+  checkAndDefineTextBoxProperty(annotation);
+  checkAndDefineIsVisibleProperty(annotation);
+  checkAndDefineCachedStatsProperty(annotation);
+  return annotation;
+};
+
+defaultManager.setPreprocessingFn(preprocessingFn);
+
 /**
  * It returns the default annotations manager.
  * @returns the singleton default annotations manager.
@@ -162,14 +172,6 @@ function addAnnotation(
   }
 
   const manager = getAnnotationManager();
-
-  const preprocessingFn = (annotation: Annotation) => {
-    checkAndDefineIsLockedProperty(annotation);
-    checkAndDefineTextBoxProperty(annotation);
-    checkAndDefineIsVisibleProperty(annotation);
-    checkAndDefineCachedStatsProperty(annotation);
-    return annotation;
-  };
 
   // if the annotation manager selector is an element, trigger the
   // annotation added event for that element.
