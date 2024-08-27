@@ -15,6 +15,10 @@ const segmentationRepresentationRemovedEventListener = function (
     segmentationRepresentationUID
   );
 
+  if (!segmentation) {
+    return;
+  }
+
   triggerSegmentationRenderBySegmentationId(segmentation.segmentationId);
 };
 

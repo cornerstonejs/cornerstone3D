@@ -820,9 +820,13 @@ class Cache {
    * Returns the volume associated with the volumeId
    *
    * @param volumeId - Volume ID
+   * @param allowPartialMatch - If true, the volumeId can be a partial match
    * @returns Volume
    */
-  public getVolume = (volumeId: string): IImageVolume | undefined => {
+  public getVolume = (
+    volumeId: string,
+    allowPartialMatch = false
+  ): IImageVolume | undefined => {
     if (volumeId === undefined) {
       throw new Error('getVolume: volumeId must not be undefined');
     }
@@ -830,10 +834,13 @@ class Cache {
     const cachedVolume = this._volumeCache.get(volumeId);
 
     if (!cachedVolume) {
-      return;
+      return allowPartialMatch
+        ? [...this._volumeCache.values()].find((cv) =>
+            cv.volumeId.includes(volumeId)
+          )?.volume
+        : undefined;
     }
 
-    // Bump time stamp for cached volume (not used for anything for now)
     cachedVolume.timeStamp = Date.now();
 
     return cachedVolume.volume;

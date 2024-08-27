@@ -1,11 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { addAnnotation } from '../../../../stateManagement/annotation/annotationState';
 import type { Types, StackViewport } from '@cornerstonejs/core';
 import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
-import { getConfigCache, setConfigCache } from './contourConfigCache';
+import {
+  getConfigCache,
+  initializeConfigCache,
+  setConfigCache,
+} from './contourConfigCache';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
@@ -13,6 +15,7 @@ import type { ContourRepresentation } from '../../../../types/SegmentationStateT
 import { getGlobalConfig } from '../../../../stateManagement/segmentation/getGlobalConfig';
 import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
 import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config/segmentationConfig';
+import { getSegmentationRepresentation } from '../../../../stateManagement/segmentation/getSegmentationRepresentation';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -20,10 +23,23 @@ function handleContourSegmentation(
   annotationUIDsMap: Map<number, Set<string>>,
   contourRepresentation: ContourRepresentation
 ) {
-  const addOrUpdateFn = annotationUIDsMap.size
-    ? updateContourSets
-    : addContourSetsToElement;
-  addOrUpdateFn(viewport, geometryIds, contourRepresentation);
+  // if contourRepresentation exists, updateContourSets, otherwise addContourSetsToElement
+  const { segmentationRepresentationUID } = contourRepresentation;
+
+  const segmentationRepresentation = getSegmentationRepresentation(
+    segmentationRepresentationUID
+  );
+
+  // if config cache does not exist, initialize it
+  if (!getConfigCache(segmentationRepresentationUID)) {
+    initializeConfigCache(segmentationRepresentationUID);
+  }
+
+  if (segmentationRepresentation && annotationUIDsMap.size) {
+    updateContourSets(viewport, geometryIds, contourRepresentation);
+  } else {
+    addContourSetsToElement(viewport, geometryIds, contourRepresentation);
+  }
 }
 
 function updateContourSets(
@@ -65,7 +81,7 @@ function updateContourSets(
     }
   }
 
-  for (const segmentIndex of cachedConfig.segmentsHidden) {
+  for (const segmentIndex of cachedConfig?.segmentsHidden ?? []) {
     if (!segmentsHidden.has(segmentIndex)) {
       segmentsToSetToVisible.push(segmentIndex);
     }

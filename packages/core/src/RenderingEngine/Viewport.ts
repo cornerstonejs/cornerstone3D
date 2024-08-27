@@ -1412,7 +1412,7 @@ class Viewport {
       // or a new actor is added and we need to update the clipping planes
       if (cameraModifiedOutOfPlane || viewUpHasChanged) {
         const actorEntry = this.getDefaultActor();
-        if (!actorEntry.actor) {
+        if (!actorEntry?.actor) {
           return;
         }
 

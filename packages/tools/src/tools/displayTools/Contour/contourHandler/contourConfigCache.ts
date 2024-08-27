@@ -12,6 +12,17 @@ type ConfigCache = {
  */
 const configCachePerSegmentationRepresentationUID = new Map();
 
+export function initializeConfigCache(segmentationRepresentationUID: string) {
+  configCachePerSegmentationRepresentationUID.set(
+    segmentationRepresentationUID,
+    {
+      segmentsHidden: new Set(),
+      outlineWidthActive: 1,
+      visibility: true,
+    }
+  );
+}
+
 export function getConfigCache(
   segmentationRepresentationUID: string
 ): ConfigCache {

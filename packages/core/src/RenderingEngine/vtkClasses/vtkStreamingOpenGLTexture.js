@@ -104,6 +104,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         // find the updated frames
         const image = cache.getImage(imageIds[i]);
         if (!image) {
+          // console.debug('image not found', imageIds[i]);
           continue;
         }
 

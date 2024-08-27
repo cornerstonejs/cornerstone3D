@@ -8,6 +8,11 @@ import {
   triggerAnnotationAddedForFOR,
   triggerAnnotationRemoved,
 } from './helpers/state';
+import { checkAndDefineIsLockedProperty } from './annotationLocking';
+import {
+  checkAndDefineCachedStatsProperty,
+  checkAndDefineTextBoxProperty,
+} from './utilities/defineProperties';
 import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
 // our default annotation manager
@@ -156,21 +161,27 @@ function addAnnotation(
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
 
-  checkAndDefineIsVisibleProperty(annotation);
-
   const manager = getAnnotationManager();
+
+  const preprocessingFn = (annotation: Annotation) => {
+    checkAndDefineIsLockedProperty(annotation);
+    checkAndDefineTextBoxProperty(annotation);
+    checkAndDefineIsVisibleProperty(annotation);
+    checkAndDefineCachedStatsProperty(annotation);
+    return annotation;
+  };
 
   // if the annotation manager selector is an element, trigger the
   // annotation added event for that element.
   if (annotationGroupSelector instanceof HTMLDivElement) {
     const groupKey = manager.getGroupKey(annotationGroupSelector);
-    manager.addAnnotation(annotation, groupKey);
+    manager.addAnnotation(annotation, groupKey, preprocessingFn);
     triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
   } else {
     // if no element is provided, render all viewports that have the
     // same frame of reference.
     // Todo: we should do something else here for other types of annotation managers.
-    manager.addAnnotation(annotation);
+    manager.addAnnotation(annotation, undefined, preprocessingFn);
     triggerAnnotationAddedForFOR(annotation);
   }
 

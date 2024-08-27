@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist/esm",
-    "rootDir": "./src",
-    "sourceRoot": "/packages/nifti-volume-loader/src"
+    "rootDir": "./src"
   },
   "include": ["./src/**/*"]
 }

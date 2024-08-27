@@ -32,7 +32,9 @@ interface VolumeLoaderOptions {
 
 interface DerivedVolumeOptions {
   volumeId: string;
-  targetBufferType?: PixelDataTypedArrayString;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+  };
 }
 
 export interface LocalVolumeOptions {
@@ -46,7 +48,9 @@ export interface LocalVolumeOptions {
   referencedImageIds?: string[];
   referencedVolumeId?: string;
   preventCache?: boolean;
-  targetBufferType?: PixelDataTypedArrayString;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+  };
 }
 
 /**
@@ -223,7 +227,7 @@ export function createAndCacheDerivedVolume(
   // put the imageIds into the cache synchronously since they are just empty
   // images
   const derivedImages = createAndCacheDerivedImages(referencedImageIds, {
-    targetBufferType: options.targetBufferType,
+    targetBuffer: options.targetBuffer,
   });
 
   const dataType = derivedImages[0].dataType;
@@ -298,7 +302,7 @@ export function createLocalVolume(
     origin,
     direction,
     scalarData,
-    targetBufferType,
+    targetBuffer,
     preventCache = false,
   } = options;
 
@@ -312,7 +316,7 @@ export function createLocalVolume(
 
   const dataType = scalarData
     ? (scalarData.constructor.name as PixelDataTypedArrayString)
-    : targetBufferType;
+    : targetBuffer?.type;
 
   const totalNumberOfVoxels = sliceLength * dimensions[2];
   let byteLength;
@@ -356,7 +360,7 @@ export function createLocalVolume(
       spacing: [spacing[0], spacing[1]],
       origin,
       direction,
-      targetBufferType: dataType,
+      targetBuffer: { type: dataType },
     });
 
     derivedImages.push(derivedImage);
@@ -444,7 +448,7 @@ export function createAndCacheDerivedSegmentationVolume(
 ): IImageVolume {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
-    targetBufferType: 'Uint8Array',
+    targetBuffer: { type: 'Uint8Array' },
   });
 }
 

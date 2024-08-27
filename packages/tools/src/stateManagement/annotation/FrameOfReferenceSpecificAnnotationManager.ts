@@ -15,13 +15,6 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
-import { checkAndDefineIsLockedProperty } from './annotationLocking';
-
-import {
-  checkAndDefineTextBoxProperty,
-  checkAndDefineCachedStatsProperty,
-} from './utilities/defineProperties';
-
 /**
  * This is the default annotation manager. It stores annotations by default
  * based on the FrameOfReferenceUID. However, it is possible to override the
@@ -212,7 +205,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * @param annotation - The annotation to add.
    * @param groupKey - The annotation group key to add the annotation to (in default manager it is FrameOfReferenceUID).
    */
-  addAnnotation = (annotation: Annotation, groupKey?: string): void => {
+  addAnnotation = (
+    annotation: Annotation,
+    groupKey?: string,
+    preprocessingFn?: (annotation: Annotation) => Annotation
+  ): void => {
     const { metadata } = annotation;
     const { FrameOfReferenceUID, toolName } = metadata;
 
@@ -236,10 +233,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       toolSpecificAnnotations = frameOfReferenceSpecificAnnotations[toolName];
     }
 
+    if (preprocessingFn) {
+      annotation = preprocessingFn(annotation);
+    }
+
     toolSpecificAnnotations.push(annotation);
-    checkAndDefineIsLockedProperty(annotation);
-    checkAndDefineTextBoxProperty(annotation);
-    checkAndDefineCachedStatsProperty(annotation);
   };
 
   /**

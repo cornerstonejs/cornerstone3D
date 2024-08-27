@@ -79,7 +79,7 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
  * @param imageVolume - The image volume that we want to get the VOI from.
  * @returns VOIRange with lower and upper values
  */
-function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
+function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   const { imageIds, metadata } = imageVolume;
   let voi;
   if (imageIds.length) {
@@ -88,26 +88,30 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange {
     const voiLutModule = metaData.get('voiLutModule', imageId);
     if (voiLutModule?.windowWidth && voiLutModule.windowCenter) {
       const { windowWidth, windowCenter } = voiLutModule;
-      voi = {
-        windowWidth: Array.isArray(windowWidth) ? windowWidth[0] : windowWidth,
-        windowCenter: Array.isArray(windowCenter)
-          ? windowCenter[0]
-          : windowCenter,
-      };
+      const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
+      const center = Array.isArray(windowCenter)
+        ? windowCenter[0]
+        : windowCenter;
+
+      // Skip if both windowWidth and windowCenter are 0
+      if (width !== 0 || center !== 0) {
+        voi = { windowWidth: width, windowCenter: center };
+      }
     }
   } else {
     voi = metadata.voiLut[0];
   }
-  if (voi) {
+
+  if (voi && (voi.windowWidth !== 0 || voi.windowCenter !== 0)) {
     const { lower, upper } = windowLevel.toLowHighRange(
       Number(voi.windowWidth),
       Number(voi.windowCenter)
     );
-    return {
-      lower,
-      upper,
-    };
+    return { lower, upper };
   }
+
+  // Return undefined if no valid VOI was found
+  return undefined;
 }
 
 /**

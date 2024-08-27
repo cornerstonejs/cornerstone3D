@@ -275,6 +275,14 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
+        const voxelManager =
+          external.cornerstone.utilities.VoxelManager.createImageVoxelManager({
+            scalarData: imageFrame.pixelData,
+            width: imageFrame.columns,
+            height: imageFrame.rows,
+            numberOfComponents: imageFrame.samplesPerPixel,
+          });
+
         const image: DICOMLoaderIImage = {
           imageId,
           dataType: imageFrame.pixelData.constructor
@@ -312,6 +320,7 @@ function createImage(
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
+          voxelManager,
           rgba: isColorImage && useRGBA,
           getPixelData: () => imageFrame.pixelData,
           getCanvas: undefined,

@@ -330,7 +330,6 @@ function exportSegmentation() {
     ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
-    debugger;
     if (labelmap.imageIdReferenceMap) {
         //
         labelmap.imageIdReferenceMap.forEach(

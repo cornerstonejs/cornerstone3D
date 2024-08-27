@@ -93,6 +93,8 @@ export default class StreamingDynamicImageVolume
 
     triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
       volumeId: this.volumeId,
+      timePointIndex: index,
+      numTimePoints: this.numTimePoints,
       imageIdGroupIndex: index,
       numImageIdGroups: this.numTimePoints,
       splittingTag: this.splittingTag,

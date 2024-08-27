@@ -216,13 +216,21 @@ export default class ToolGroup {
     if (renderingEngines?.length === 0) {
       throw new Error('No rendering engines found.');
     }
-    if (renderingEngines.length > 1) {
-      throw new Error(
-        'Multiple rendering engines found. You must specify a renderingEngineId.'
-      );
-    }
 
-    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id;
+    // if there are multiple rendering engines, we need to search for the one that
+    // has the viewportId
+    let renderingEngineUIDToUse = renderingEngineId;
+    if (!renderingEngineUIDToUse) {
+      renderingEngineUIDToUse = renderingEngines.find((engine) =>
+        engine.getViewport(viewportId)
+      )?.id;
+
+      if (renderingEngineUIDToUse.length === 2) {
+        throw new Error(
+          'Multiple rendering engines found that contains the viewport with the same viewportId, you must specify a renderingEngineId.'
+        );
+      }
+    }
 
     // Don't overwrite if it already exists
     if (

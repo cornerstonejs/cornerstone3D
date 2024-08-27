@@ -4,13 +4,14 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 
 import { AnnotationTool } from './base';
 
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElement,
   utilities as csUtils,
   Enums,
+  CONSTANTS,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 
 import {
   getToolGroup,
@@ -50,7 +51,6 @@ import type {
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 

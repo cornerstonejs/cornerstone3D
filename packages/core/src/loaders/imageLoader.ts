@@ -31,7 +31,9 @@ export interface ImageLoaderOptions {
 
 interface LocalImageOptions {
   scalarData?: PixelDataTypedArray;
-  targetBufferType?: PixelDataTypedArrayString;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+  };
   dimensions?: Point2;
   spacing?: Point2;
   origin?: Point3;
@@ -76,54 +78,63 @@ function loadImageFromImageLoader(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
-  // check cache first , we might have a cached image
-  const cachedImage = cache.getImageLoadObject(imageId);
-  if (cachedImage) {
-    return cachedImage;
+  // Attempt to retrieve the image from cache
+  const cachedImageLoadObject = cache.getImageLoadObject(imageId);
+
+  if (cachedImageLoadObject) {
+    handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
+    return cachedImageLoadObject;
   }
 
-  // Extract the image loader scheme: wadors:https://image1 => wadors
-  const colonIndex = imageId.indexOf(':');
-  const scheme = imageId.substring(0, colonIndex);
-  const loader = imageLoaders[scheme];
-  if (loader === undefined || loader === null) {
-    if (unknownImageLoader !== undefined) {
-      return unknownImageLoader(imageId);
-    }
-    throw new Error('loadImageFromImageLoader: no image loader for imageId');
+  // Determine the appropriate image loader based on the image scheme
+  const scheme = imageId.split(':')[0];
+  const loader = imageLoaders[scheme] || unknownImageLoader;
+
+  if (!loader) {
+    throw new Error(
+      `loadImageFromImageLoader: No image loader found for scheme '${scheme}'`
+    );
   }
-  // Load using the registered loader
+
+  // Load the image using the selected loader
   const imageLoadObject = loader(imageId, options);
+  handleImageLoadPromise(imageLoadObject.promise, imageId);
 
-  // Broadcast an image loaded event once the image is loaded
-  imageLoadObject.promise
+  return imageLoadObject;
+}
+
+function handleImageLoadPromise(
+  imagePromise: Promise<IImage>,
+  imageId: string
+): void {
+  Promise.resolve(imagePromise)
     .then((image: IImage) => {
-      const scalarData = image.getPixelData();
-      const { width, height, numberOfComponents } = image;
-
-      if (!image.voxelManager) {
-        const voxelManager = VoxelManager.createImageVoxelManager({
-          scalarData,
-          width,
-          height,
-          numberOfComponents,
-        });
-
-        image.voxelManager = voxelManager;
-        image.getPixelData = () => voxelManager.getScalarData();
-        delete image.imageFrame.pixelData;
-      }
-
+      ensureVoxelManager(image);
       triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
     })
     .catch((error) => {
-      const errorObject: EventTypes.ImageLoadedFailedEventDetail = {
+      const errorDetails: EventTypes.ImageLoadedFailedEventDetail = {
         imageId,
         error,
       };
-      triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorObject);
+      triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorDetails);
     });
-  return imageLoadObject;
+}
+
+function ensureVoxelManager(image: IImage): void {
+  if (!image.voxelManager) {
+    const { width, height, numberOfComponents } = image;
+    const voxelManager = VoxelManager.createImageVoxelManager({
+      scalarData: image.getPixelData(),
+      width,
+      height,
+      numberOfComponents,
+    });
+
+    image.voxelManager = voxelManager;
+    image.getPixelData = () => voxelManager.getScalarData();
+    delete image.imageFrame.pixelData;
+  }
 }
 
 /**
@@ -232,7 +243,7 @@ export function createAndCacheDerivedImage(
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
 
   const { TypedArrayConstructor } = getBufferConfiguration(
-    options.targetBufferType,
+    options.targetBuffer?.type,
     length
   );
 
@@ -278,8 +289,9 @@ export function createAndCacheDerivedImage(
     scalarData: imageScalarData,
     onCacheAdd,
     skipCreateBuffer,
-    targetBufferType: imageScalarData.constructor
-      .name as PixelDataTypedArrayString,
+    targetBuffer: {
+      type: imageScalarData.constructor.name as PixelDataTypedArrayString,
+    },
     dimensions: [imagePlaneModule.columns, imagePlaneModule.rows],
     spacing: [
       imagePlaneModule.columnPixelSpacing,
@@ -303,14 +315,16 @@ export function createAndCacheDerivedImage(
  * @param referencedImageIds - list of imageIds
  * @param options
  * @param options.getDerivedImageId - function to get the derived imageId
- * @param options.targetBufferType - target buffer type
+ * @param options.targetBuffer - target buffer type
  * @param options.skipBufferCreate - avoid creating the buffer
  */
 export function createAndCacheDerivedImages(
   referencedImageIds: string[],
   options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
-    targetBufferType?: PixelDataTypedArrayString;
+    targetBuffer?: {
+      type: PixelDataTypedArrayString;
+    };
   } = {}
 ): IImage[] {
   if (referencedImageIds.length === 0) {
@@ -342,7 +356,7 @@ export function createAndCacheLocalImage(
     scalarData,
     origin,
     direction,
-    targetBufferType,
+    targetBuffer,
     skipCreateBuffer,
     onCacheAdd,
   } = options;
@@ -395,7 +409,7 @@ export function createAndCacheLocalImage(
   } else if (!skipCreateBuffer) {
     // Todo: need to handle numberOfComponents > 1
     const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
-      targetBufferType,
+      targetBuffer?.type,
       length
     );
 
@@ -467,7 +481,7 @@ export function createAndCacheLocalImage(
     windowWidth: 0,
     color: imagePixelModule.photometricInterpretation === 'RGB',
     numberOfComponents: imagePixelModule.samplesPerPixel,
-    dataType: targetBufferType,
+    dataType: targetBuffer?.type,
     slope: 1,
     minPixelValue: 0,
     maxPixelValue: Math.pow(2, imagePixelModule.bitsStored) - 1,
@@ -617,7 +631,7 @@ export function unregisterAllImageLoaders(): void {
  * always until we have a better solution.
  *
  * @param referencedImageIds - An array of referenced image IDs.
- * @param options - The options for creating the derived images (default: { targetBufferType: 'Uint8Array' }).
+ * @param options - The options for creating the derived images (default: { targetBuffer: { type: 'Uint8Array' } }).
  * @returns The derived images.
  */
 export function createAndCacheDerivedSegmentationImages(
@@ -626,7 +640,7 @@ export function createAndCacheDerivedSegmentationImages(
 ): IImage[] {
   return createAndCacheDerivedImages(referencedImageIds, {
     ...options,
-    targetBufferType: 'Uint8Array',
+    targetBuffer: { type: 'Uint8Array' },
   });
 }
 
@@ -637,7 +651,7 @@ export function createAndCacheDerivedSegmentationImages(
  * always until we have a better solution.
  *
  * @param referencedImageId The ID of the referenced image.
- * @param options The options for creating the derived image (default: { targetBufferType: 'Uint8Array' }).
+ * @param options The options for creating the derived image (default: { targetBuffer: { type: 'Uint8Array' } }).
  * @returns A promise that resolves to the created derived segmentation image.
  */
 export function createAndCacheDerivedSegmentationImage(
@@ -646,6 +660,6 @@ export function createAndCacheDerivedSegmentationImage(
 ): IImage {
   return createAndCacheDerivedImage(referencedImageId, {
     ...options,
-    targetBufferType: 'Uint8Array',
+    targetBuffer: { type: 'Uint8Array' },
   });
 }

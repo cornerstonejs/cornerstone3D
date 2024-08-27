@@ -1095,5 +1095,5 @@ var JpegImage = (function jpegImage() {
     },
   });
 
-  return JpegImage
+  return JpegImage;
 })();
