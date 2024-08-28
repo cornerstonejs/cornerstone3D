@@ -398,7 +398,7 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private _getOrCreateColorTransferFunction(
-    volumeId: string
+    volumeId?: string
   ): vtkColorTransferFunction {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
@@ -811,9 +811,14 @@ abstract class BaseVolumeViewport extends Viewport {
       });
     }
 
+    // invert should be set first, since if we set colormap then we invert
+    // we basically are doing a reset which is not what we want
+    if (invert !== undefined && this.viewportProperties.invert !== invert) {
+      this.setInvert(invert, volumeId, suppressEvents);
+    }
+
     // Note: colormap should always be done first, since we can then
     // modify the voiRange
-
     if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
     }
@@ -831,10 +836,6 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (VOILUTFunction !== undefined) {
       this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
-    }
-
-    if (invert !== undefined && this.viewportProperties.invert !== invert) {
-      this.setInvert(invert, volumeId, suppressEvents);
     }
 
     if (preset !== undefined) {
@@ -1035,7 +1036,8 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     const { volumeActor } = applicableVolumeActorInfo;
-    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    const cfun = this._getOrCreateColorTransferFunction(volumeId);
+    // @ts-expect-error vtkColorTransferFunction is not typed
     const { nodes } = cfun.getState();
     const RGBPoints = nodes.reduce((acc, node) => {
       acc.push(node.x, node.r, node.g, node.b);
@@ -1251,21 +1253,25 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    let volumeActor;
-
     if (volumeId) {
-      volumeActor = this.getActors()?.find(
+      const actorEntry = actorEntries?.find(
         (actor) => actor.referencedId === volumeId
-      )?.actor as vtkVolume;
+      );
+
+      return {
+        volumeActor: actorEntry.actor as vtkVolume,
+        volumeId,
+        actorUID: actorEntry.uid,
+      };
     }
 
-    // // set it for the first volume (if there are more than one - fusion)
-    if (!volumeActor) {
-      volumeActor = actorEntries[0].actor as vtkVolume;
-      volumeId = actorEntries[0].referencedId ?? actorEntries[0].uid;
-    }
+    const defaultActorEntry = actorEntries[0];
 
-    return { volumeActor, volumeId };
+    return {
+      volumeActor: defaultActorEntry.actor as vtkVolume,
+      volumeId: defaultActorEntry.referencedId,
+      actorUID: defaultActorEntry.uid,
+    };
   }
 
   private async _isValidVolumeInputArray(

@@ -62,6 +62,9 @@ async function createVolumeActor(
     numberOfComponents: number;
   };
 
+  const volumeProperty = volumeActor.getProperty();
+  volumeProperty.set({ viewportId: viewportId });
+
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);
   }
