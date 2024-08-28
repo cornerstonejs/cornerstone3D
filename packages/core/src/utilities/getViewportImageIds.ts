@@ -10,9 +10,7 @@ import type { IViewport, IStackViewport } from '../types';
  */
 function getViewportImageIds(viewport: IViewport) {
   if (viewport instanceof VolumeViewport) {
-    const defaultActor = viewport.getDefaultActor();
-    const volumeId = defaultActor.uid;
-    const volume = cache.getVolume(volumeId);
+    const volume = cache.getVolume(viewport.getVolumeId());
     return volume.imageIds;
   } else if ((viewport as IStackViewport).getImageIds) {
     return (viewport as IStackViewport).getImageIds();

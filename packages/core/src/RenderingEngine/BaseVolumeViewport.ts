@@ -60,6 +60,7 @@ import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoid
 import isEqual, { isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
+import uuidv4 from '../utilities/uuidv4';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -979,12 +980,11 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const voiRanges = this.getActors()
       .map((actorEntry) => {
-        const volumeActor = actorEntry.actor as vtkVolume;
-        const volumeId = actorEntry.uid;
-        const volume = cache.getVolume(volumeId);
+        const volume = cache.getVolume(this.getVolumeId());
         if (!volume) {
           return null;
         }
+        const volumeActor = actorEntry.actor as vtkVolume;
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
           this.viewportProperties?.VOILUTFunction === 'SIGMOID'
@@ -1096,7 +1096,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
-      const uid = actorUID || volumeId;
+      const uid = actorUID || uuidv4();
       volumeActors.push({
         uid,
         actor,
@@ -1168,7 +1168,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
-      const uid = actorUID || volumeId;
+      const uid = actorUID ?? uuidv4();
       volumeActors.push({
         uid,
         actor,
@@ -1245,26 +1245,24 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private _getApplicableVolumeActor(volumeId?: string) {
-    if (volumeId !== undefined && !this.getActor(volumeId)) {
-      return;
-    }
-
     const actorEntries = this.getActors();
 
-    if (!actorEntries.length) {
+    if (!actorEntries?.length) {
       return;
     }
 
     let volumeActor;
 
     if (volumeId) {
-      volumeActor = this.getActor(volumeId).actor as vtkVolume;
+      volumeActor = this.getActors()?.find(
+        (actor) => actor.referencedId === volumeId
+      )?.actor as vtkVolume;
     }
 
     // // set it for the first volume (if there are more than one - fusion)
     if (!volumeActor) {
       volumeActor = actorEntries[0].actor as vtkVolume;
-      volumeId = actorEntries[0].uid;
+      volumeId = actorEntries[0].referencedId ?? actorEntries[0].uid;
     }
 
     return { volumeActor, volumeId };
@@ -1389,10 +1387,11 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    const { uid: defaultActorUID } = defaultActor;
-    volumeId = volumeId ?? defaultActorUID;
+    volumeId = volumeId ?? this.getVolumeId();
 
-    const actorEntry = this.getActor(volumeId);
+    const actorEntry = this.getActors()?.find(
+      (actor) => actor.referencedId === volumeId
+    );
 
     if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
@@ -1609,8 +1608,8 @@ abstract class BaseVolumeViewport extends Viewport {
       actorIsA(actorEntry, 'vtkVolume')
     );
 
-    return volumeActors.some(({ uid }) => {
-      const volume = cache.getVolume(uid);
+    return volumeActors.some(({ uid, referencedId }) => {
+      const volume = cache.getVolume(referencedId ?? uid);
 
       if (!volume?.imageIds) {
         return false;
@@ -1675,10 +1674,10 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    const { actor, uid } = actorEntry;
+    const { actor } = actorEntry;
     const imageData = actor.getMapper().getInputData();
 
-    const volume = cache.getVolume(uid);
+    const volume = cache.getVolume(this.getVolumeId());
     const index = transformWorldToIndex(imageData, point);
 
     return volume.voxelManager.getAtIJKPoint(index) as number;
@@ -1722,19 +1721,23 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     if (!specifier?.volumeId) {
       // find the first image actor of instance type vtkVolume
-      return actorEntries.find(
+      const found = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      )?.uid;
+      );
+
+      return found?.referencedId ?? found?.uid;
     }
 
     // See if this volumeId can be found in one of the actors for this
     // viewport.  This check will cause undefined to be returned when the
     // volumeId isn't currently shown in this viewport.
-    return actorEntries.find(
+    const found = actorEntries.find(
       (actorEntry) =>
         actorEntry.actor.getClassName() === 'vtkVolume' &&
-        actorEntry.uid === specifier?.volumeId
-    )?.uid;
+        actorEntry.referencedId === specifier?.volumeId
+    );
+
+    return found?.referencedId ?? found?.uid;
   }
 
   /**

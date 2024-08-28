@@ -82,8 +82,7 @@ function isSameFrameOfReference(viewport, referencedVolumeId) {
   if (!defaultActor) {
     return false;
   }
-  const { uid: defaultActorUID } = defaultActor;
-  const volume = cache.getVolume(defaultActorUID);
+  const volume = cache.getVolume(viewport.getVolumeId());
 
   if (volume) {
     const referencedVolume = cache.getVolume(referencedVolumeId);

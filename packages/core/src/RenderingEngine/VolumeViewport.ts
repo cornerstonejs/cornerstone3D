@@ -175,7 +175,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     // Todo: fix this after we add the volumeId reference to actorEntry later
     // in the segmentation refactor
-    const volumeId = actorEntry.uid;
+    const volumeId = this.getVolumeId();
 
     const imageVolume = cache.getVolume(volumeId);
 
@@ -604,8 +604,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const { uid } = actorEntry;
-    const volume = cache.getVolume(uid);
+    const volume = cache.getVolume(this.getVolumeId());
 
     if (!volume) {
       return;
@@ -666,10 +665,11 @@ class VolumeViewport extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    const imageVolume = cache.getVolume(volumeActor.uid);
+    volumeId = volumeId ?? this.getVolumeId();
+    const imageVolume = cache.getVolume(volumeId);
     if (!imageVolume) {
       throw new Error(
-        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
@@ -758,7 +758,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return [];
     }
 
-    const volumeId = actorEntry.uid;
+    const volumeId = this.getVolumeId();
     const imageVolume = cache.getVolume(volumeId);
 
     const camera = this.getCamera();

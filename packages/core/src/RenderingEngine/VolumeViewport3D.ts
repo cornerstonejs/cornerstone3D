@@ -100,11 +100,12 @@ class VolumeViewport3D extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    const imageVolume = cache.getVolume(volumeActor.uid);
+    volumeId = volumeId ?? this.getVolumeId();
+    const imageVolume = cache.getVolume(volumeId);
 
     if (!imageVolume) {
       throw new Error(
-        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
 

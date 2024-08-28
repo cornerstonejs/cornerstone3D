@@ -144,18 +144,9 @@ abstract class BaseTool {
       return this.configuration.volumeId;
     }
 
-    // If volume not specified, then return the actorUID for the
-    // default actor - first actor
-    const actorEntries = viewport.getActors();
-
-    if (!actorEntries) {
-      return;
+    if (viewport instanceof BaseVolumeViewport) {
+      return viewport.getVolumeId();
     }
-
-    // find the first image actor of instance type vtkVolume
-    return actorEntries.find(
-      (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-    )?.uid;
   }
 
   /**

@@ -44,6 +44,7 @@ import type * as CINETypes from './CINETypes';
 import type {
   RepresentationConfig,
   RepresentationsConfig,
+  SegmentationRepresentation,
   RepresentationData,
   RepresentationsData,
   GlobalConfig,
@@ -179,4 +180,6 @@ export type {
   PolySegConversionOptions,
   IBaseTool,
   GlobalConfig,
+  SegmentationRepresentation,
+  RepresentationsConfig,
 };

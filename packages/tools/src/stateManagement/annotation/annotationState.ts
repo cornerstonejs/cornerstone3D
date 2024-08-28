@@ -177,13 +177,13 @@ function addAnnotation(
   // annotation added event for that element.
   if (annotationGroupSelector instanceof HTMLDivElement) {
     const groupKey = manager.getGroupKey(annotationGroupSelector);
-    manager.addAnnotation(annotation, groupKey, preprocessingFn);
+    manager.addAnnotation(annotation, groupKey);
     triggerAnnotationAddedForElement(annotation, annotationGroupSelector);
   } else {
     // if no element is provided, render all viewports that have the
     // same frame of reference.
     // Todo: we should do something else here for other types of annotation managers.
-    manager.addAnnotation(annotation, undefined, preprocessingFn);
+    manager.addAnnotation(annotation, undefined);
     triggerAnnotationAddedForFOR(annotation);
   }
 

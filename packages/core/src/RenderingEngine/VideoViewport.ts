@@ -33,6 +33,7 @@ import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
 import cache from '../cache/cache';
+import uuidv4 from '../utilities/uuidv4';
 
 /**
  * A data type for the scalar data for video data.
@@ -1092,8 +1093,9 @@ class VideoViewport extends Viewport {
       const image = cache.getImage(stackInput.imageId);
 
       const imageActor = this.createActorMapper(image);
+      const uid = stackInput.actorUID ?? uuidv4();
       if (imageActor) {
-        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        actors.push({ uid, actor: imageActor });
         if (stackInput.callback) {
           stackInput.callback({
             imageActor: imageActor as unknown as ImageActor,

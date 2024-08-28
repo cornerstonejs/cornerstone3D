@@ -90,6 +90,7 @@ import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import uuidv4 from '../utilities/uuidv4';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -2325,7 +2326,7 @@ class StackViewport extends Viewport {
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
         actors.push({
-          uid: stackInput.actorUID,
+          uid: stackInput.actorUID ?? uuidv4(),
           actor: imageActor,
           referencedId: imageId,
         });

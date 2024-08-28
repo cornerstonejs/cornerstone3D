@@ -231,7 +231,7 @@ class BrushTool extends BaseTool {
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
       const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referencedId)
+        cache.getVolume(actorEntry.referencedId ?? actorEntry.uid)
       );
 
       const segmentationVolume = cache.getVolume(volumeId);
