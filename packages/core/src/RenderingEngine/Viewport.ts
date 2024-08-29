@@ -548,11 +548,15 @@ class Viewport {
       this.addActor(actor);
     });
 
-    // set the clipping planes for the actors
-    this.resetCamera({
-      resetPan: resetCameraPanAndZoom,
-      resetZoom: resetCameraPanAndZoom,
-    });
+    if (!resetCameraPanAndZoom) {
+      const currentZoom = this.getZoom();
+      const currentPan = this.getPan();
+
+      this.resetCamera();
+
+      this.setZoom(currentZoom);
+      this.setPan(currentPan);
+    }
   }
 
   /**

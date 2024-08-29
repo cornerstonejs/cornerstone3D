@@ -1886,17 +1886,33 @@ class StackViewport extends Viewport {
     const isSameYSpacing = isEqual(ySpacing, image.rowPixelSpacing);
 
     // using spacing, size, and direction only for now
-    return (
-      (isSameXSpacing ||
-        (image.columnPixelSpacing === null && xSpacing === 1.0)) &&
-      (isSameYSpacing ||
-        (image.rowPixelSpacing === null && ySpacing === 1.0)) &&
-      xVoxels === image.columns &&
-      yVoxels === image.rows &&
-      isEqual(imagePlaneModule.rowCosines, rowCosines as Point3) &&
-      isEqual(imagePlaneModule.columnCosines, columnCosines as Point3) &&
-      dataType === image.voxelManager.getScalarData().constructor.name
+    const isXSpacingValid =
+      isSameXSpacing || (image.columnPixelSpacing === null && xSpacing === 1.0);
+    const isYSpacingValid =
+      isSameYSpacing || (image.rowPixelSpacing === null && ySpacing === 1.0);
+    const isXVoxelsMatching = xVoxels === image.columns;
+    const isYVoxelsMatching = yVoxels === image.rows;
+    const isRowCosinesMatching = isEqual(
+      imagePlaneModule.rowCosines,
+      rowCosines as Point3
     );
+    const isColumnCosinesMatching = isEqual(
+      imagePlaneModule.columnCosines,
+      columnCosines as Point3
+    );
+    const isDataTypeMatching =
+      dataType === image.voxelManager.getScalarData().constructor.name;
+
+    const result =
+      isXSpacingValid &&
+      isYSpacingValid &&
+      isXVoxelsMatching &&
+      isYVoxelsMatching &&
+      isRowCosinesMatching &&
+      isColumnCosinesMatching &&
+      isDataTypeMatching;
+
+    return result;
   }
 
   /**
@@ -2306,7 +2322,7 @@ class StackViewport extends Viewport {
    * @param  stackInputs - An array of stack inputs, each containing an image ID and an actor UID.
    */
   public addImages(stackInputs: IStackInput[]) {
-    const actors = this.getActors();
+    const actors = [];
     stackInputs.forEach((stackInput) => {
       const { imageId } = stackInput;
       const image = cache.getImage(imageId);
@@ -2335,7 +2351,7 @@ class StackViewport extends Viewport {
         }
       }
     });
-    this.setActors(actors);
+    this.addActors(actors);
   }
 
   /**

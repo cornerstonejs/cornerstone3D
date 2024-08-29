@@ -32,7 +32,7 @@ export default function streamRequest(
     retrieveOptions = {} as Types.RangeRetrieveOptions,
     streamingData = {} as StreamingData,
   } = options;
-  const minChunkSize = retrieveOptions.chunkSize || 128 * 1024;
+  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {

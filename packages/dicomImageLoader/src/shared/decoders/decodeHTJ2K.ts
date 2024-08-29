@@ -44,7 +44,7 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   const openJphModule = openJphFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return openjphWasm;
+        return openjphWasm.toString();
       }
 
       return f;

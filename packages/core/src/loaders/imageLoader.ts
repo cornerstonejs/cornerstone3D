@@ -55,6 +55,7 @@ interface LocalImageOptions {
 
 type DerivedImageOptions = LocalImageOptions & {
   imageId?: string;
+  instanceNumber?: number;
 };
 
 /**
@@ -272,6 +273,13 @@ export function createAndCacheDerivedImage(
     metadata: referencedImageGeneralSeriesMetadata,
   });
 
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'generalImageModule',
+    metadata: {
+      instanceNumber: options.instanceNumber,
+    },
+  });
+
   const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
   genericMetadataProvider.add(derivedImageId, {
     type: 'imagePixelModule',
@@ -332,9 +340,8 @@ export function createAndCacheDerivedImages(
       'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
     );
   }
-
   const derivedImageIds = [];
-  const images = referencedImageIds.map((referencedImageId) => {
+  const images = referencedImageIds.map((referencedImageId, index) => {
     const newOptions: DerivedImageOptions = {
       imageId:
         options?.getDerivedImageId?.(referencedImageId) ||
@@ -342,7 +349,10 @@ export function createAndCacheDerivedImages(
       ...options,
     };
     derivedImageIds.push(newOptions.imageId);
-    return createAndCacheDerivedImage(referencedImageId, newOptions);
+    return createAndCacheDerivedImage(referencedImageId, {
+      ...newOptions,
+      instanceNumber: index + 1,
+    });
   });
 
   return images;

@@ -11,22 +11,14 @@ import { getSegmentationRepresentation } from '../getSegmentationRepresentation'
  *
  * @param colorLUT - An array of The colorLUT to set.
  * @param colorLUTIndex - the index of the colorLUT in the state
- * @returns
+ * @returns The index of the color LUT that was added.
  */
-function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex: number): void {
+function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex?: number): number {
   if (!colorLUT) {
     throw new Error('addColorLUT: colorLUT is required');
   }
 
-  // Append the "zero" (no label) color to the front of the LUT, if necessary.
-  if (!utilities.isEqual(colorLUT[0], [0, 0, 0, 0])) {
-    console.warn(
-      'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
-    );
-    colorLUT.unshift([0, 0, 0, 0]);
-  }
-
-  _addColorLUT(colorLUT, colorLUTIndex);
+  return _addColorLUT(colorLUT, colorLUTIndex);
 }
 
 /**

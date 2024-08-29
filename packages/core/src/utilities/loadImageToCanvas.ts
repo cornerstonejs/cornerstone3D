@@ -168,14 +168,9 @@ export default function loadImageToCanvas(
       );
     }
 
-    const { useNorm16Texture } = getConfiguration().rendering;
-
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
-      targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
-      },
       useRGBA: !!useCPURendering,
       requestType,
     };

@@ -378,6 +378,10 @@ export default class VoxelManager<T> {
     throw new Error('No scalar data available');
   }
 
+  public setScalarData(newScalarData: PixelDataTypedArray) {
+    this.scalarData = newScalarData;
+  }
+
   /**
    * Gets the length of the scalar data.
    *
