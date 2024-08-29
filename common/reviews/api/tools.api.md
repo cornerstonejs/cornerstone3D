@@ -5251,7 +5251,7 @@ function setToolGroupSpecificConfig_2(toolGroupId: string, segmentationRepresent
 function showAllAnnotations(): void;
 
 // @public (undocumented)
-function smoothAnnotation(enabledElement: Types_2.IEnabledElement, annotation: PlanarFreehandROIAnnotation, knotsRatioPercentage: number): boolean;
+function smoothAnnotation(annotation: PlanarFreehandROIAnnotation, options?: SmoothOptions): boolean;
 
 // @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
