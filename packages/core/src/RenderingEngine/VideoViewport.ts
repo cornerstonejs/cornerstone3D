@@ -231,7 +231,7 @@ class VideoViewport extends Viewport {
   public setDataIds(imageIds: string[], options?: ImageSetOptions) {
     this.setVideo(
       imageIds[0],
-      ((options.viewReference.sliceIndex as number) || 0) + 1
+      ((options.viewReference?.sliceIndex as number) || 0) + 1
     );
   }
 
@@ -539,20 +539,29 @@ class VideoViewport extends Viewport {
   }
 
   protected getScalarData(): CanvasScalarData {
-    if (this.scalarData.frameNumber === this.getFrameNumber()) {
+    if (this.scalarData?.frameNumber === this.getFrameNumber()) {
       return this.scalarData;
     }
+
+    if (
+      !this.videoElement ||
+      !this.videoElement.videoWidth ||
+      !this.videoElement.videoHeight
+    ) {
+      console.debug('Video not ready yet, returning empty scalar data');
+      // Return an empty CanvasScalarData object
+      const emptyData = new Uint8ClampedArray() as CanvasScalarData;
+      emptyData.getRange = () => [0, 255];
+      emptyData.frameNumber = -1;
+      return emptyData;
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = this.videoWidth;
-    canvas.height = this.videoHeight;
+    canvas.width = this.videoElement.videoWidth;
+    canvas.height = this.videoElement.videoHeight;
     const context = canvas.getContext('2d');
     context.drawImage(this.videoElement, 0, 0);
-    const canvasData = context.getImageData(
-      0,
-      0,
-      this.videoWidth,
-      this.videoHeight
-    );
+    const canvasData = context.getImageData(0, 0, canvas.width, canvas.height);
     const scalarData = canvasData.data as CanvasScalarData;
     scalarData.getRange = () => [0, 255];
     scalarData.frameNumber = this.getFrameNumber();
