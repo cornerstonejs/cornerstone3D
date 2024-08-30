@@ -28,14 +28,14 @@ export interface PatientStudyModuleMetadata {
 
 export interface ImagePlaneModuleMetadata {
   frameOfReferenceUID: string;
-  rows: string;
-  columns: string;
+  rows: number;
+  columns: number;
   imageOrientationPatient: number[];
   rowCosines: number[];
   columnCosines: number[];
   imagePositionPatient: number[];
-  sliceThickness: string;
-  sliceLocation: string;
+  sliceThickness: number;
+  sliceLocation: number;
   pixelSpacing: number[];
   rowPixelSpacing: number | null;
   columnPixelSpacing: number | null;

@@ -461,7 +461,18 @@ export default class SegmentationStateManager {
     const imageIdReferenceMap =
       this._stackLabelmapImageIdReferenceMap.get(segmentationId);
 
-    return imageIdReferenceMap.get(currentImageId);
+    let labelmapImageId = imageIdReferenceMap.get(currentImageId);
+
+    if (!labelmapImageId) {
+      this._updateAllLabelmapSegmentationImageReferences(
+        viewportId,
+        segmentationId
+      );
+    }
+
+    labelmapImageId = imageIdReferenceMap.get(currentImageId);
+
+    return labelmapImageId;
   }
 
   /**
@@ -520,6 +531,11 @@ export default class SegmentationStateManager {
    * @param segmentationRepresentationUID - The UID of the segmentation representation to remove.
    */
   removeRepresentation(segmentationRepresentationUID: string): void {
+    // remove the color LUT associated with the segmentation representation
+    const colorLUTIndex =
+      this.state.representations[segmentationRepresentationUID].colorLUTIndex;
+    this.removeColorLUT(colorLUTIndex);
+
     delete this.state.representations[segmentationRepresentationUID];
 
     // remove it from every viewports as well
@@ -862,6 +878,7 @@ async function updateSegmentationState({
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.segs = defaultSegmentationStateManager.state;
 export {
   convertStackToVolumeSegmentation,
   computeVolumeSegmentationFromStack,

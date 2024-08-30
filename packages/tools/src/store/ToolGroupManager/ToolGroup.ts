@@ -26,6 +26,7 @@ import type {
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
 import getToolGroup from './getToolGroup';
+import { deepClone } from '@cornerstonejs/core/utilities';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -773,7 +774,7 @@ export default class ToolGroup {
       get(this._toolInstances[toolName].configuration, configurationPath) ||
       this._toolInstances[toolName].configuration;
 
-    return structuredClone(_configuration);
+    return deepClone(_configuration);
   }
 
   /**

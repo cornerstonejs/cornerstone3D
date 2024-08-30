@@ -1124,30 +1124,26 @@ class VideoViewport extends Viewport {
    * Renders the video frame to the viewport.
    */
   private renderFrame = () => {
+    const dpr = window.devicePixelRatio || 1;
     const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
 
     const ctx = this.canvasContext;
 
     ctx.resetTransform();
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Need to correct the transform for device pixel ratio scaling.
+    // Apply the transformation
     ctx.transform(
-      transformationMatrix[0],
-      transformationMatrix[1],
-      transformationMatrix[2],
-      transformationMatrix[3],
-      transformationMatrix[4],
-      transformationMatrix[5]
+      transformationMatrix[0] / dpr,
+      transformationMatrix[1] / dpr,
+      transformationMatrix[2] / dpr,
+      transformationMatrix[3] / dpr,
+      transformationMatrix[4] / dpr,
+      transformationMatrix[5] / dpr
     );
 
-    ctx.drawImage(
-      this.videoElement,
-      0,
-      0,
-      this.videoWidth || 1024,
-      this.videoHeight || 1024
-    );
+    ctx.drawImage(this.videoElement, 0, 0, this.videoWidth, this.videoHeight);
 
     for (const actor of this.getActors()) {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);
@@ -1174,7 +1170,7 @@ class VideoViewport extends Viewport {
       duration: this.videoElement.duration,
     });
 
-    this.initialRender();
+    this.initialRender?.();
 
     const frame = this.getFrameNumber();
     if (this.isPlaying) {

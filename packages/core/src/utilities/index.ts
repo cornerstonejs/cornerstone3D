@@ -83,6 +83,7 @@ import getDynamicVolumeInfo from './getDynamicVolumeInfo';
 import autoLoad from './autoLoad';
 import scaleArray from './scaleArray';
 import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
+import { deepClone } from './deepClone';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -170,5 +171,6 @@ export {
   getDynamicVolumeInfo,
   autoLoad,
   scaleArray,
+  deepClone,
   splitImageIdsBy4DTags,
 };

@@ -1598,12 +1598,12 @@ class StackViewport extends Viewport {
 
   private matchImagesForOverlay(
     currentImageId: string,
-    referencedImageId: string
+    targetOverlayImageId: string
   ): string | undefined {
     const matchImagesForOverlay = (targetImageId: string) => {
-      const referenceImagePlaneModule = metaData.get(
+      const overlayImagePlaneModule = metaData.get(
         MetadataModules.IMAGE_PLANE,
-        referencedImageId
+        targetOverlayImageId
       );
 
       const currentImagePlaneModule = metaData.get(
@@ -1611,21 +1611,21 @@ class StackViewport extends Viewport {
         targetImageId
       );
 
-      const referenceOrientation =
-        referenceImagePlaneModule.imageOrientationPatient;
+      const overlayOrientation =
+        overlayImagePlaneModule.imageOrientationPatient;
       const currentOrientation =
         currentImagePlaneModule.imageOrientationPatient;
 
-      if (referenceOrientation && currentOrientation) {
+      if (overlayOrientation && currentOrientation) {
         const closeEnough = isEqual(
-          referenceImagePlaneModule.imageOrientationPatient,
+          overlayImagePlaneModule.imageOrientationPatient,
           currentImagePlaneModule.imageOrientationPatient
         );
 
         if (closeEnough) {
           // New check for orthogonality
           const referencePosition =
-            referenceImagePlaneModule.imagePositionPatient;
+            overlayImagePlaneModule.imagePositionPatient;
           const currentPosition = currentImagePlaneModule.imagePositionPatient;
 
           if (referencePosition && currentPosition) {
@@ -1650,8 +1650,8 @@ class StackViewport extends Viewport {
       } else {
         // if we don't have orientation information, we can't determine based
         // orientation, we rely on number of columns and rows
-        const referenceRows = referenceImagePlaneModule.rows;
-        const referenceColumns = referenceImagePlaneModule.columns;
+        const referenceRows = overlayImagePlaneModule.rows;
+        const referenceColumns = overlayImagePlaneModule.columns;
 
         const currentRows = currentImagePlaneModule.rows;
         const currentColumns = currentImagePlaneModule.columns;

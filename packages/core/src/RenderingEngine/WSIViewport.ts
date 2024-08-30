@@ -670,7 +670,7 @@ class WSIViewport extends Viewport {
     return transform;
   }
 
-  public getReferenceId(): string {
+  public getViewReferenceId(): string {
     return `imageId:${this.getCurrentImageId()}`;
   }
 

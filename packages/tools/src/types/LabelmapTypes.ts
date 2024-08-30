@@ -58,5 +58,6 @@ export type LabelmapSegmentationData =
   | {
       volumeId?: string;
       referencedVolumeId?: string;
+      referencedImageIds?: string[];
       imageIds?: string[];
     };
