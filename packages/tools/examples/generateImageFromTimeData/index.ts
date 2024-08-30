@@ -289,7 +289,7 @@ async function run() {
     imageIds,
   });
 
-  computedVolume = await volumeLoader.createAndCacheDerivedSegmentationVolume(
+  computedVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
     volumeId,
     {
       volumeId: computedVolumeId,

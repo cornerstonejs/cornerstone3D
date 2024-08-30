@@ -246,12 +246,9 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   );
 
   // Create a segmentation of the same resolution as the source data
-  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
-    volumeId,
-    {
-      volumeId: volumeSegLabelmapId,
-    }
-  );
+  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: volumeSegLabelmapId,
+  });
 
   fillVolumeLabelmapWithMockData({
     volumeId: volumeSegLabelmapId,
@@ -322,7 +319,7 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const imageIdsArray = [stackImageIds[0]];
 
-  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
     imageIdsArray
   );
 

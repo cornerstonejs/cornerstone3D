@@ -193,7 +193,7 @@ async function run() {
 
   setTimeout(async () => {
     const segmentationImages =
-      await cornerstone.imageLoader.createAndCacheDerivedSegmentationImages(
+      await cornerstone.imageLoader.createAndCacheDerivedLabelmapImages(
         ctImageIds
       );
 

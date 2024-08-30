@@ -852,7 +852,7 @@ function getSegmentationIds(): string[] {
 async function addSegmentationsToState(segmentationId: string) {
     //
     const derivedImages =
-        imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+        imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
     // Add the segmentations to state
     csToolsSegmentation.addSegmentations([

@@ -98,7 +98,7 @@ describe('Stack Segmentation Rendering:', () => {
     try {
       vp.setStack([imageId1], 0).then(() => {
         const segImage =
-          imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         segmentation.addSegmentations([
           {
             segmentationId,
@@ -168,9 +168,9 @@ describe('Stack Segmentation Rendering:', () => {
     try {
       vp.setStack([imageId1], 0).then(() => {
         const segImage1 =
-          imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         const segImage2 =
-          imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
 
         segmentation.addSegmentations([
           {
@@ -335,7 +335,7 @@ describe('Stack Segmentation Rendering:', () => {
     try {
       vp.setStack([imageId1], 0).then(() => {
         const segImage1 =
-          imageLoader.createAndCacheDerivedSegmentationImage(imageId1);
+          imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         segmentation.addSegmentations([
           {
             segmentationId,

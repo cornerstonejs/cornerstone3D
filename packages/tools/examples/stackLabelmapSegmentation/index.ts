@@ -199,7 +199,7 @@ addButtonToToolbar({
     const currentImageId = viewport.getCurrentImageId();
 
     const segmentationImage =
-      imageLoader.createAndCacheDerivedSegmentationImage(currentImageId);
+      imageLoader.createAndCacheDerivedLabelmapImage(currentImageId);
 
     const newSegImageId = segmentationImage.imageId;
 
@@ -420,7 +420,7 @@ async function run() {
   const imageIdsArray = mgImageIds;
   const imageIdsArray2 = [imageIds[100]];
 
-  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
     imageIdsArray
   );
 

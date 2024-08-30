@@ -70,7 +70,7 @@ content.append(instructions);
 async function addSegmentations(viewportId1) {
   // Create a segmentation of the same resolution as the source data
   const highResSegmentationVolume =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: highResSegmentationId,
     });
 

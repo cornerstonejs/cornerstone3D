@@ -793,13 +793,13 @@ function createAndCacheDerivedImages(referencedImageIds: string[], options?: Der
 }): IImage[];
 
 // @public (undocumented)
-function createAndCacheDerivedSegmentationImage(referencedImageId: string, options?: DerivedImageOptions): IImage;
+function createAndCacheDerivedLabelmapImage(referencedImageId: string, options?: DerivedImageOptions): IImage;
 
 // @public (undocumented)
-function createAndCacheDerivedSegmentationImages(referencedImageIds: string[], options?: DerivedImageOptions): IImage[];
+function createAndCacheDerivedLabelmapImages(referencedImageIds: string[], options?: DerivedImageOptions): IImage[];
 
 // @public (undocumented)
-function createAndCacheDerivedSegmentationVolume(referencedVolumeId: string, options?: DerivedVolumeOptions): IImageVolume;
+function createAndCacheDerivedLabelmapVolume(referencedVolumeId: string, options?: DerivedVolumeOptions): IImageVolume;
 
 // @public (undocumented)
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): IImageVolume;
@@ -820,7 +820,7 @@ function createAndCacheVolumeFromImages(volumeId: string, imageIds: string[]): P
 function createLinearRGBTransferFunction(voiRange: VOIRange): vtkColorTransferFunction;
 
 // @public (undocumented)
-function createLocalSegmentationVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): IImageVolume;
+function createLocalLabelmapVolume(options: LocalVolumeOptions, volumeId: string, preventCache?: boolean): IImageVolume;
 
 // @public (undocumented)
 function createLocalVolume(volumeId: string, options?: LocalVolumeOptions): IImageVolume;
@@ -1826,8 +1826,8 @@ declare namespace imageLoader {
         registerImageLoader,
         registerUnknownImageLoader,
         unregisterAllImageLoaders,
-        createAndCacheDerivedSegmentationImages,
-        createAndCacheDerivedSegmentationImage,
+        createAndCacheDerivedLabelmapImages,
+        createAndCacheDerivedLabelmapImage,
         ImageLoaderOptions
     }
 }
@@ -4392,8 +4392,8 @@ declare namespace volumeLoader {
         getVolumeLoaderSchemes,
         registerUnknownVolumeLoader,
         getUnknownVolumeLoaderSchema,
-        createAndCacheDerivedSegmentationVolume,
-        createLocalSegmentationVolume,
+        createAndCacheDerivedLabelmapVolume,
+        createLocalLabelmapVolume,
         LocalVolumeOptions
     }
 }
