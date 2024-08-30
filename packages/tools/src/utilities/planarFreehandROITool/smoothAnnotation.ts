@@ -38,12 +38,35 @@ function rotateMatrix(normal, focal) {
 }
 
 /**
+ * Rotate the array to prevent interpolation at endpoints causing non-smooth endpoints
+ * Rotates the list in place.
+ */
+function rotate(list, count = Math.floor(Math.random() * (list.length - 1))) {
+  if (count === 0) {
+    return 0;
+  }
+  const srcList = [...list];
+  const { length } = list;
+  for (let i = 0; i < length; i++) {
+    list[i] = srcList[(i + count + length) % length];
+  }
+  return count;
+}
+
+/**
  * Interpolates a given annotation from a given enabledElement.
  * It mutates annotation param.
  * The param options.knotsRatioPercentage defines the percentage of points to be considered as knots on the interpolation process.
- * Interpolation will be skipped in case: annotation is not present in enabledElement (or there is no toolGroup associated with it), related tool is being modified.
  * The param options.loop can be set to run smoothing repeatedly.  This results in
  * additional smoothing.
+ * This works by translating the annotation into the view plane normal orientation, with a zero k component, and then
+ * performing the smoothing in-plane, and converting back to the original orientation.
+ * Closed polylines are smoothed at a random starting spot in order to prevent
+ * the start/end points from not being smoothed.
+ *
+ * Note that each smoothing iteration will reduce the size of the annotation, particularly
+ * for closed annotations.  This occurs because a smaller/rounder annotation is smoother
+ * in some sense than the original.
  */
 export default function smoothAnnotation(
   annotation: PlanarFreehandROIAnnotation,
@@ -55,6 +78,8 @@ export default function smoothAnnotation(
   }
 
   const { viewPlaneNormal } = annotation.metadata;
+  const { closed, polyline } = annotation.data.contour;
+
   // use only 2 dimensions on interpolation (what visually matters),
   // otherwise a 3d interpolation might have a totally different output as it consider one more dimension.
   const rotateMat = rotateMatrix(
@@ -67,6 +92,7 @@ export default function smoothAnnotation(
       return [planeP[0], planeP[1]];
     }
   );
+  let rotation = closed ? rotate(canvasPoints) : 0;
   let interpolatedCanvasPoints = <Types.Point2[]>(
     interpolateSegmentPoints(
       canvasPoints,
@@ -79,7 +105,11 @@ export default function smoothAnnotation(
   if (interpolatedCanvasPoints === canvasPoints) {
     return false;
   }
+  // Reverse the rotation so that handles still line up.
+  rotate(interpolatedCanvasPoints, -rotation);
+
   for (let i = 1; i < options?.loop; i++) {
+    rotation = closed ? rotate(interpolatedCanvasPoints) : 0;
     interpolatedCanvasPoints = <Types.Point2[]>(
       interpolateSegmentPoints(
         interpolatedCanvasPoints,
@@ -88,6 +118,7 @@ export default function smoothAnnotation(
         options?.knotsRatioPercentage || 30
       )
     );
+    rotate(interpolatedCanvasPoints, -rotation);
   }
 
   const unRotate = mat4.invert(mat4.create(), rotateMat);
