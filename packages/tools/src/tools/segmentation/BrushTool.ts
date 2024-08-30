@@ -190,9 +190,16 @@ class BrushTool extends BaseTool {
       viewport.id
     );
     if (!activeRepresentation) {
-      throw new Error(
-        'No active segmentation detected, create a segmentation representation before using the brush tool'
-      );
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message:
+            'No active segmentation detected, create a segmentation representation before using the brush tool',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return null;
     }
 
     const { segmentationId, type } = activeRepresentation;

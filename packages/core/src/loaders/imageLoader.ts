@@ -386,8 +386,8 @@ export function createAndCacheLocalImage(
   const rowPixelSpacing = spacing[1];
 
   const imagePlaneModule = {
-    rows: height.toString(),
-    columns: width.toString(),
+    rows: height,
+    columns: width,
     imageOrientationPatient: direction ?? [1, 0, 0, 0, 1, 0],
     rowCosines: direction ? direction.slice(0, 3) : [1, 0, 0],
     columnCosines: direction ? direction.slice(3, 6) : [0, 1, 0],

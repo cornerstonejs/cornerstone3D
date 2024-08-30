@@ -1,8 +1,7 @@
-import type { Types } from '@cornerstonejs/core';
+import { type Types, utilities } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
-import { isEqual } from '@cornerstonejs/core/utilities';
 
 /**
  * Add a color LUT to the segmentation state manager
@@ -22,7 +21,7 @@ export function addColorLUT(colorLUT: Types.ColorLUT, index?: number): number {
   // also has multiple entries, and if it is missing get it from
   // constant CORNERSTONE_COLOR_LUT
   // Append the "zero" (no label) color to the front of the LUT, if necessary.
-  if (!isEqual(colorLUTToUse[0], [0, 0, 0, 0])) {
+  if (!utilities.isEqual(colorLUTToUse[0], [0, 0, 0, 0])) {
     console.warn(
       'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
     );

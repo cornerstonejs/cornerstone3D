@@ -354,6 +354,11 @@ class Cache {
       return;
     }
 
+    if (!image) {
+      console.warn('Image is undefined');
+      return;
+    }
+
     if (image.sizeInBytes === undefined || Number.isNaN(image.sizeInBytes)) {
       throw new Error(
         '_putImageCommon: image.sizeInBytes must not be undefined'
