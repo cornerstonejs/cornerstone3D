@@ -27,7 +27,6 @@ const {
   StackScrollTool,
   synchronizers,
   MIPJumpToClickTool,
-  VolumeRotateMouseWheelTool,
   CrosshairsTool,
   TrackballRotateTool,
 } = cornerstoneTools;
@@ -326,7 +325,6 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
@@ -410,7 +408,15 @@ function setUpToolGroups() {
 
   // MIP Tool Groups
   mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
-  mipToolGroup.addTool('VolumeRotateMouseWheel');
+  mipToolGroup.addTool(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+    configuration: {
+      rotate: {
+        enabled: true,
+        rotateIncrementDegrees: 1,
+      },
+    },
+  });
   mipToolGroup.addTool('MIPJumpToClickTool', {
     toolGroupId: ptToolGroupId,
   });

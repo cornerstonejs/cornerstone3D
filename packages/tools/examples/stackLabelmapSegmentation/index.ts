@@ -417,7 +417,7 @@ async function run() {
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
   // const imageIdsArray = [imageIds[0], imageIds[100], mgImageIds[0]];
-  const imageIdsArray = imageIds;
+  const imageIdsArray = mgImageIds;
   const imageIdsArray2 = [imageIds[100]];
 
   const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(

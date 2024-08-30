@@ -7,29 +7,13 @@ import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_6
 import * as imageURI_64_64_10_5_3_2_0 from './groundTruth/imageURI_64_64_10_5_3_2_0.png';
 import { MouseBindings } from '../src/enums';
 
-const {
-  cache,
-  RenderingEngine,
-  Enums,
-  imageLoader,
-  metaData,
-  volumeLoader,
-  setVolumesForViewports,
-} = cornerstone3D;
+const { Enums, volumeLoader, setVolumesForViewports } = cornerstone3D;
 
 const { Events, ViewportType, InterpolationType } = Enums;
 
-const { registerVolumeLoader } = volumeLoader;
-const { StackScrollTool, ZoomTool, ToolGroupManager } = csTools3d;
+const { StackScrollTool, ZoomTool } = csTools3d;
 
-const {
-  fakeImageLoader,
-  fakeMetaDataProvider,
-  fakeVolumeLoader,
-  createNormalizedMouseEvent,
-  compareImages,
-  createViewports,
-} = testUtils;
+const { createNormalizedMouseEvent, compareImages } = testUtils;
 
 const renderingEngineId = 'RENDERING_ENGINE_UID22';
 const toolGroupId = 'stackscrollmousetool';

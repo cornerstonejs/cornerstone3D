@@ -1,3 +1,4 @@
+console.debug('tools: link: init: A9C8A2FE-AA89-459E-9AF2-54C2835D0C5A');
 import { eventTarget, Enums } from '@cornerstonejs/core';
 import { getAnnotationManager } from './stateManagement/annotation/annotationState';
 import { Events as TOOLS_EVENTS } from './enums';
