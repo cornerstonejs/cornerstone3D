@@ -493,6 +493,15 @@ function _updateMouseEventsLastPoints(
  * @returns The difference in IPoints format
  */
 function _getDeltaPoints(currentPoints: IPoints, lastPoints: IPoints): IPoints {
+  if (!currentPoints || !lastPoints) {
+    return {
+      page: [0, 0],
+      client: [0, 0],
+      canvas: [0, 0],
+      world: [0, 0, 0],
+    };
+  }
+
   return {
     page: _subtractPoints2D(currentPoints.page, lastPoints.page),
     client: _subtractPoints2D(currentPoints.client, lastPoints.client),

@@ -166,6 +166,21 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
+  protected setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        activeCamera.getDistance(),
+        activeCamera.getDistance() + this.getSlabThickness()
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+  }
+
   private _getAcquisitionPlaneOrientation(): OrientationVectors {
     const actorEntry = this.getDefaultActor();
 

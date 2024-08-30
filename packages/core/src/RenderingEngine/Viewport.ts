@@ -548,12 +548,12 @@ class Viewport {
       this.addActor(actor);
     });
 
+    const currentZoom = this.getZoom();
+    const currentPan = this.getPan();
+
+    this.resetCamera();
+
     if (!resetCameraPanAndZoom) {
-      const currentZoom = this.getZoom();
-      const currentPan = this.getPan();
-
-      this.resetCamera();
-
       this.setZoom(currentZoom);
       this.setPan(currentPan);
     }

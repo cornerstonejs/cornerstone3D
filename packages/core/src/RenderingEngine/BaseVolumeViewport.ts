@@ -1427,6 +1427,14 @@ abstract class BaseVolumeViewport extends Viewport {
     };
   }
 
+  protected setCameraClippingRange() {
+    throw new Error('Method not implemented.');
+  }
+
+  public getSliceIndex(): number {
+    throw new Error('Method not implemented.');
+  }
+
   public setCamera(
     cameraInterface: ICamera,
     storeAsInitialCamera?: boolean
@@ -1435,21 +1443,6 @@ abstract class BaseVolumeViewport extends Viewport {
     // This is very important to set the clipping range for the camera
     // for volume viewport, since we are doing slab rendering
     this.setCameraClippingRange();
-  }
-
-  private setCameraClippingRange() {
-    const activeCamera = this.getVtkActiveCamera();
-    if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(
-        activeCamera.getDistance(),
-        activeCamera.getDistance() + this.getSlabThickness()
-      );
-    } else {
-      activeCamera.setClippingRange(
-        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    }
   }
 
   /**

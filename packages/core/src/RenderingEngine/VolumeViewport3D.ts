@@ -130,6 +130,21 @@ class VolumeViewport3D extends BaseVolumeViewport {
     );
   }
 
+  protected setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+  }
+
   resetSlabThickness(): void {
     return null;
   }
