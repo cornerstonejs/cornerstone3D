@@ -498,10 +498,10 @@ class Viewport {
    */
   public setActors(actors: ActorEntry[]): void {
     this.removeAllActors();
-    const resetCameraPanAndZoom = true;
+    const resetCamera = true;
     // when we set the actor we need to reset the camera to initialize the
     // camera focal point with the bounds of the actors.
-    this.addActors(actors, resetCameraPanAndZoom);
+    this.addActors(actors, resetCamera);
   }
 
   /**
@@ -531,11 +531,11 @@ class Viewport {
 
   /**
    * Add a list of actors (actor entries) to the viewport
-   * @param resetCameraPanAndZoom - force reset pan and zoom of the camera,
+   * @param resetCamera - force reset pan and zoom of the camera,
    *        default value is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(actors: ActorEntry[], resetCameraPanAndZoom = false): void {
+  public addActors(actors: ActorEntry[], resetCamera = false): void {
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       console.warn(
@@ -548,14 +548,14 @@ class Viewport {
       this.addActor(actor);
     });
 
-    const currentZoom = this.getZoom();
-    const currentPan = this.getPan();
+    const prevViewPresentation = this.getViewPresentation();
+    const prevViewRef = this.getViewReference();
 
     this.resetCamera();
 
-    if (!resetCameraPanAndZoom) {
-      this.setZoom(currentZoom);
-      this.setPan(currentPan);
+    if (!resetCamera) {
+      this.setViewReference(prevViewRef);
+      this.setViewPresentation(prevViewPresentation);
     }
   }
 

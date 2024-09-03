@@ -1,4 +1,5 @@
-import { cache, utilities } from '@cornerstonejs/core';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   getSegmentation,
@@ -6,8 +7,6 @@ import {
   getCurrentLabelmapImageIdForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
-import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 type Options = {
   viewport?: Types.IViewport;
@@ -33,7 +32,7 @@ export function getSegmentIndexAtLabelmapBorder(
 
   const labelmapData = segmentation.representationData.Labelmap;
 
-  if (isVolumeSegmentation(labelmapData, viewport)) {
+  if (viewport instanceof BaseVolumeViewport) {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
     const segmentationVolume = cache.getVolume(volumeId);
 

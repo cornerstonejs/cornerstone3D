@@ -1,4 +1,8 @@
-import { cache, getEnabledElement } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -28,11 +32,8 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -186,9 +187,7 @@ class SphereScissorsTool extends BaseTool {
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 

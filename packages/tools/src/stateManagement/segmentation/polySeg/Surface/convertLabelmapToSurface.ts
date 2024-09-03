@@ -33,12 +33,11 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  */
 export async function convertLabelmapToSurface(
   labelmapRepresentationData: LabelmapSegmentationData,
-  segmentIndex: number,
-  isVolume = true
+  segmentIndex: number
 ): Promise<Types.SurfaceData> {
   let volumeId;
 
-  if (isVolume) {
+  if ((labelmapRepresentationData as LabelmapSegmentationDataVolume).volumeId) {
     volumeId = (labelmapRepresentationData as LabelmapSegmentationDataVolume)
       .volumeId;
   } else {

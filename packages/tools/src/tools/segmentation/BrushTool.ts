@@ -5,6 +5,7 @@ import {
   StackViewport,
   eventTarget,
   Enums,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
@@ -40,7 +41,6 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import {
   getActiveSegmentationRepresentation,
   getCurrentLabelmapImageIdForViewport,
@@ -212,10 +212,7 @@ class BrushTool extends BaseTool {
 
     const { representationData } = getSegmentation(segmentationId);
 
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
-
-    if (isVolumeSegmentation(labelmapData, viewport)) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
         type
       ] as LabelmapSegmentationDataVolume;

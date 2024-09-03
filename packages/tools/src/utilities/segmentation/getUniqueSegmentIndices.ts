@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { SegmentationRepresentations } from '../../enums';
 import { getCachedSegmentIndices, setCachedSegmentIndices } from './utilities';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
@@ -52,10 +51,10 @@ function handleLabelmapSegmentation(segmentation, segmentationId) {
     segmentation.representationData[SegmentationRepresentations.Labelmap];
   const keySet = new Set();
 
-  if (isVolumeSegmentation(labelmapData)) {
-    addVolumeSegmentIndices(keySet, segmentationId);
-  } else {
+  if (labelmapData.imageIds) {
     addImageSegmentIndices(keySet, labelmapData.imageIds);
+  } else {
+    addVolumeSegmentIndices(keySet, segmentationId);
   }
 
   return Array.from(keySet)

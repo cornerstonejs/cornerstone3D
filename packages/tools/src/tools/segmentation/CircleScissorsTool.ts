@@ -1,4 +1,8 @@
-import { cache, getEnabledElement } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -28,11 +32,7 @@ import {
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -185,9 +185,7 @@ class CircleScissorsTool extends BaseTool {
       referencedVolumeId: null,
     };
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 

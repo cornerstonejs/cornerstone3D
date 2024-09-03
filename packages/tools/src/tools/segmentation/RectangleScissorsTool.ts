@@ -1,4 +1,9 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+  StackViewport,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -19,7 +24,10 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationData,
+} from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -30,8 +38,6 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -181,9 +187,7 @@ class RectangleScissorsTool extends BaseTool {
       imageId: null,
     };
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 

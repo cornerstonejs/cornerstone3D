@@ -2,7 +2,6 @@ import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
-  StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
 
@@ -16,7 +15,6 @@ import type { LabelmapRepresentation } from '../../../types/SegmentationStateTyp
 
 import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
-import { isVolumeSegmentation } from '../../segmentation/strategies/utils/stackVolumeCheck';
 import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
 import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import { getActiveSegmentationRepresentation } from '../../../stateManagement/segmentation/getActiveSegmentationRepresentation';
@@ -150,23 +148,7 @@ async function render(
   if (!labelmapData) {
     return;
   }
-  if (isVolumeSegmentation(labelmapData, viewport)) {
-    if (viewport instanceof StackViewport) {
-      return;
-    }
-
-    const { volumeId: labelmapUID } = labelmapData;
-
-    const labelmap = cache.getVolume(labelmapUID);
-
-    if (!labelmap) {
-      throw new Error(`No Labelmap found for volumeId: ${labelmapUID}`);
-    }
-
-    if (!isSameFrameOfReference(viewport, labelmapData?.referencedVolumeId)) {
-      return;
-    }
-
+  if (viewport instanceof VolumeViewport) {
     if (!actorEntry) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(

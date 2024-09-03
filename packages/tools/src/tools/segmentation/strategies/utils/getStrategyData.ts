@@ -1,5 +1,4 @@
-import { cache } from '@cornerstonejs/core';
-import { isVolumeSegmentation } from './stackVolumeCheck';
+import { BaseVolumeViewport, cache } from '@cornerstonejs/core';
 import type { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 
@@ -8,7 +7,7 @@ function getStrategyData({ operationData, viewport }) {
   let imageVoxelManager;
   let segmentationVoxelManager;
 
-  if (isVolumeSegmentation(operationData, viewport)) {
+  if (viewport instanceof BaseVolumeViewport) {
     const { volumeId, referencedVolumeId } = operationData;
 
     const segmentationVolume = cache.getVolume(volumeId);
