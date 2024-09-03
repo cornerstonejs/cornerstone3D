@@ -118,28 +118,33 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     // viewportsWithAnnotations stores which viewports have an annotation,
     // if the viewport does not have an annotation, create a new one
-    if (!viewportsWithAnnotations.includes(viewport.id)) {
-      const newAnnotation: ScaleOverlayAnnotation = {
-        metadata: {
-          toolName: this.getToolName(),
-          viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-          viewUp: <Types.Point3>[...viewUp],
-          FrameOfReferenceUID,
-          referencedImageId: null,
-        },
-        data: {
-          handles: {
-            points: viewportCanvasCornersInWorld,
+    enabledElements.forEach((element) => {
+      const { viewport } = element;
+      if (!viewportsWithAnnotations.includes(viewport.id)) {
+        const newAnnotation: ScaleOverlayAnnotation = {
+          metadata: {
+            toolName: this.getToolName(),
+            viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+            viewUp: <Types.Point3>[...viewUp],
+            FrameOfReferenceUID,
+            referencedImageId: null,
           },
-          viewportId: viewport.id,
-        },
-      };
+          data: {
+            handles: {
+              points: csUtils.getViewportImageCornersInWorld(viewport),
+            },
+            viewportId: viewport.id,
+          },
+        };
 
-      viewportsWithAnnotations.push(viewport.id);
+        viewportsWithAnnotations.push(viewport.id);
 
-      addAnnotation(newAnnotation, viewport.element);
-      annotation = newAnnotation;
-    } else if (
+        addAnnotation(newAnnotation, viewport.element);
+        annotation = newAnnotation;
+      }
+    });
+
+    if (
       this.editData.annotation &&
       this.editData.annotation.data.viewportId == viewport.id
     ) {

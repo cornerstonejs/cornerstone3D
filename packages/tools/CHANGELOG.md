@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.84.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.1...v1.84.2) (2024-08-30)
+
+### Bug Fixes
+
+- Smooth annotations for off viewport destroyed coords ([#1447](https://github.com/cornerstonejs/cornerstone3D/issues/1447)) ([3e134ef](https://github.com/cornerstonejs/cornerstone3D/commit/3e134efec0e594c1086ad35fac32f9c26a88ba1a))
+
+## [1.84.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.0...v1.84.1) (2024-08-19)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [1.84.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.4...v1.84.0) (2024-08-08)
+
+### Features
+
+- **tools): add stats for livewire tool / fix(cursors:** restore element cursor when not interacting with a tool ([#1416](https://github.com/cornerstonejs/cornerstone3D/issues/1416)) ([acb23d1](https://github.com/cornerstonejs/cornerstone3D/commit/acb23d14d7c9845c3998179f8cf76fca91c0b29c))
+
+## [1.83.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.3...v1.83.4) (2024-08-07)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.83.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.2...v1.83.3) (2024-08-02)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [1.83.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.1...v1.83.2) (2024-08-02)
+
+### Bug Fixes
+
+- **scale overlay tool:** race condition for viewports ([#1413](https://github.com/cornerstonejs/cornerstone3D/issues/1413)) ([734fa10](https://github.com/cornerstonejs/cornerstone3D/commit/734fa100a86497e9ed634a717e88b5fd12a7019b))
+
 ## [1.83.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.83.0...v1.83.1) (2024-07-27)
 
 ### Bug Fixes
