@@ -1,4 +1,9 @@
-import { BaseVolumeViewport, cache } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  Enums,
+  eventTarget,
+} from '@cornerstonejs/core';
 import type { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 
@@ -9,6 +14,18 @@ function getStrategyData({ operationData, viewport }) {
 
   if (viewport instanceof BaseVolumeViewport) {
     const { volumeId, referencedVolumeId } = operationData;
+
+    if (!volumeId) {
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message: 'No volume id found for the segmentation',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return null;
+    }
 
     const segmentationVolume = cache.getVolume(volumeId);
 

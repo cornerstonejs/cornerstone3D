@@ -68,6 +68,8 @@ async function addLabelmapToElement(
         ...segmentation.representationData.Labelmap,
         volumeId,
       };
+
+      (labelMapData as LabelmapSegmentationDataVolume).volumeId = volumeId;
     }
 
     // Todo: Right now we use MIP blend mode for the labelmap, since the
