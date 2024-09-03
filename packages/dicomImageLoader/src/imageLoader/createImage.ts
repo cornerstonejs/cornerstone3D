@@ -256,12 +256,12 @@ function createImage(
             imageFrame.rows
           );
           if (!useRGBA) {
+            // Use a hard coded 3 samples per pixel for the destination, as the
+            // original samples per pixel may not be 3 for palette color
             imageData = {
               ...imageData,
               data: new Uint8ClampedArray(
-                imageFrame.samplesPerPixel *
-                  imageFrame.columns *
-                  imageFrame.rows
+                3 * imageFrame.columns * imageFrame.rows
               ),
             };
           }
