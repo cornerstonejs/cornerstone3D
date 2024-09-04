@@ -43,6 +43,9 @@ function removeRepresentation(
   segmentationRepresentationUID: string,
   renderImmediate = false
 ): void {
+  // remove from state first
+  _removeRepresentation(segmentationRepresentationUID);
+
   const enabledElement = getEnabledElementByViewportId(viewportId);
 
   if (!enabledElement) {
@@ -52,8 +55,6 @@ function removeRepresentation(
   const { viewport } = enabledElement;
 
   removeLabelmapFromElement(viewport.element, segmentationRepresentationUID);
-
-  _removeRepresentation(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
@@ -272,6 +273,7 @@ function _setLabelmapColorAndOpacity(
         renderOutline,
         segmentColor,
         outlineWidth,
+        segmentsHidden,
       });
 
     if (forceColorUpdate) {
@@ -396,12 +398,14 @@ function _needsTransferFunctionUpdate(
     renderOutline,
     segmentColor,
     outlineWidth,
+    segmentsHidden,
   }: {
     fillAlpha: number;
     renderFill: boolean;
     renderOutline: boolean;
     outlineWidth: number;
     segmentColor: number[];
+    segmentsHidden: Set<number>;
   }
 ) {
   const cacheUID = `${viewportId}-${actorUID}-${segmentIndex}`;
@@ -414,6 +418,7 @@ function _needsTransferFunctionUpdate(
       renderOutline,
       outlineWidth,
       segmentColor: segmentColor.slice(), // Create a copy
+      segmentsHidden: new Set(segmentsHidden), // Create a copy
     });
 
     return {
@@ -428,6 +433,7 @@ function _needsTransferFunctionUpdate(
     renderOutline: oldRenderOutline,
     outlineWidth: oldOutlineWidth,
     segmentColor: oldSegmentColor,
+    segmentsHidden: oldSegmentsHidden,
   } = oldConfig;
 
   const forceColorUpdate =
@@ -440,7 +446,8 @@ function _needsTransferFunctionUpdate(
     oldFillAlpha !== fillAlpha ||
     oldRenderFill !== renderFill ||
     oldRenderOutline !== renderOutline ||
-    oldOutlineWidth !== outlineWidth;
+    oldOutlineWidth !== outlineWidth ||
+    oldSegmentsHidden !== segmentsHidden;
 
   // Update the cache only if needed
   if (forceOpacityUpdate || forceColorUpdate) {
@@ -450,6 +457,7 @@ function _needsTransferFunctionUpdate(
       renderOutline,
       outlineWidth,
       segmentColor: segmentColor.slice(), // Create a copy
+      segmentsHidden: new Set(segmentsHidden), // Create a copy
     });
   }
 

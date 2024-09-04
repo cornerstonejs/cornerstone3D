@@ -17,6 +17,7 @@ import type {
 import { getSegmentationRepresentation } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { triggerSegmentationModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 
 const { uuidv4 } = utilities;
 
@@ -51,7 +52,6 @@ async function addLabelmapToElement(
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
 
     let volumeId = volumeLabelMapData.volumeId;
-
     if (!volumeId) {
       volumeId = uuidv4();
 
@@ -70,6 +70,8 @@ async function addLabelmapToElement(
       };
 
       (labelMapData as LabelmapSegmentationDataVolume).volumeId = volumeId;
+
+      triggerSegmentationModified(segmentationRepresentation.segmentationId);
     }
 
     // Todo: Right now we use MIP blend mode for the labelmap, since the

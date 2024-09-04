@@ -26,6 +26,7 @@ import { setActiveSegmentationRepresentation } from './setActiveSegmentationRepr
 import { getCurrentLabelmapImageIdForViewport } from './getCurrentLabelmapImageIdForViewport';
 import { updateLabelmapSegmentationImageReferences } from './updateLabelmapSegmentationImageReferences';
 import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationImageIdsForViewport';
+import { addSegmentationRepresentationUIDToViewport } from './addSegmentationRepresentationUIDToViewport';
 
 export {
   getSegmentation,
@@ -62,4 +63,5 @@ export {
   getCurrentLabelmapImageIdForViewport,
   updateLabelmapSegmentationImageReferences,
   getStackSegmentationImageIdsForViewport,
+  addSegmentationRepresentationUIDToViewport,
 };

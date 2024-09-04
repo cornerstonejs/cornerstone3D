@@ -163,7 +163,11 @@ class SegmentationRenderingEngine {
     if (!segmentationRepresentations?.length) {
       return;
     }
-    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const { viewport } = getEnabledElementByViewportId(viewportId) || {};
+
+    if (!viewport) {
+      return;
+    }
 
     const viewportRenderList = [];
 

@@ -461,18 +461,7 @@ export default class SegmentationStateManager {
     const imageIdReferenceMap =
       this._stackLabelmapImageIdReferenceMap.get(segmentationId);
 
-    let labelmapImageId = imageIdReferenceMap.get(currentImageId);
-
-    if (!labelmapImageId) {
-      this._updateAllLabelmapSegmentationImageReferences(
-        viewportId,
-        segmentationId
-      );
-    }
-
-    labelmapImageId = imageIdReferenceMap.get(currentImageId);
-
-    return labelmapImageId;
+    return imageIdReferenceMap.get(currentImageId);
   }
 
   /**

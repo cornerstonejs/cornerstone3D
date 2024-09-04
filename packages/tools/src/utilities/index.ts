@@ -49,7 +49,7 @@ import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
 import * as voi from './voi';
 import * as contourSegmentation from './contourSegmentation';
-
+import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCallback';
 const roundNumber = utilities.roundNumber;
 
 export {
@@ -95,4 +95,5 @@ export {
   contourSegmentation,
   annotationHydration,
   getClosestImageIdForStackViewport,
+  pointInSurroundingSphereCallback,
 };
