@@ -5,7 +5,6 @@ import Representations from '../../../enums/SegmentationRepresentations';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import { deleteConfigCache } from './contourHandler/contourConfigCache';
 import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
-import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
@@ -33,8 +32,6 @@ function removeRepresentation(
   }
 
   const { viewport } = enabledElement;
-
-  _removeRepresentation(segmentationRepresentationUID);
 
   deleteConfigCache(segmentationRepresentationUID);
 

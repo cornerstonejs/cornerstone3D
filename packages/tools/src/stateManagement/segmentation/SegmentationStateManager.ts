@@ -527,10 +527,25 @@ export default class SegmentationStateManager {
 
     delete this.state.representations[segmentationRepresentationUID];
 
-    // remove it from every viewports as well
+    // remove the segmentation representation from all viewports
     Object.keys(this.state.viewports).forEach((viewportId) => {
       delete this.state.viewports[viewportId][segmentationRepresentationUID];
     });
+  }
+
+  /**
+   * Removes a segmentation representation from a specific viewport.
+   * This method deletes the segmentation representation data associated with the given
+   * segmentationRepresentationUID from the specified viewport in the state.
+   *
+   * @param viewportId - The ID of the viewport from which to remove the segmentation representation.
+   * @param segmentationRepresentationUID - The unique identifier of the segmentation representation to remove.
+   */
+  removeRepresentationFromViewport(
+    viewportId: string,
+    segmentationRepresentationUID: string
+  ): void {
+    delete this.state.viewports[viewportId][segmentationRepresentationUID];
   }
 
   /**

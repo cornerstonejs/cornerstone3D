@@ -16,7 +16,6 @@ import type { LabelmapRepresentation } from '../../../types/SegmentationStateTyp
 import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
-import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import { getActiveSegmentationRepresentation } from '../../../stateManagement/segmentation/getActiveSegmentationRepresentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
@@ -43,9 +42,6 @@ function removeRepresentation(
   segmentationRepresentationUID: string,
   renderImmediate = false
 ): void {
-  // remove from state first
-  _removeRepresentation(segmentationRepresentationUID);
-
   const enabledElement = getEnabledElementByViewportId(viewportId);
 
   if (!enabledElement) {

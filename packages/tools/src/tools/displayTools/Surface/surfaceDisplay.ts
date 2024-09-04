@@ -7,7 +7,6 @@ import {
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
-import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
@@ -38,7 +37,6 @@ function removeRepresentation(
   const { viewport } = enabledElement;
 
   removeSurfaceFromElement(viewport.element, segmentationRepresentationUID);
-  _removeRepresentation(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
