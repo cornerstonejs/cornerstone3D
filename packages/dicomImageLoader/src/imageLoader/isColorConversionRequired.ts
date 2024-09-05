@@ -12,7 +12,7 @@ export default function isColorConversionRequired(imageFrame) {
   if (imageFrame === undefined) {
     return false;
   }
-  const { rows, columns, photometricInterpretation, pixelDataLength } =
+  const { rows, columns, photometricInterpretation, pixelDataLength, planarConfiguration } =
     imageFrame;
 
   // if it is rgba don't convert (typically jpeg, jpeg-xl, jpeg2000 etc)
@@ -34,7 +34,7 @@ export default function isColorConversionRequired(imageFrame) {
         Math.floor(rows / 2) * columns
     );
   } else {
-    return photometricInterpretation !== 'RGB';
+    return photometricInterpretation !== 'RGB' || planarConfiguration===1;
     // and it is one of the rle and lei cases then we need to convert
   }
 }
