@@ -141,7 +141,7 @@ class StackViewport extends Viewport {
   protected imagesLoader: IImagesLoader = this;
 
   // Viewport Properties
-  private globalDefaultProperties: StackViewportProperties;
+  private globalDefaultProperties: StackViewportProperties = {};
   private perImageIdDefaultProperties = new Map<
     string,
     StackViewportProperties
@@ -160,7 +160,6 @@ class StackViewport extends Viewport {
 
   // Helpers
   private _imageData: vtkImageDataType;
-  private cameraFocalPointOnRender: Point3; // we use focalPoint since flip manipulates the position and makes it useless to track
   private stackInvalidated = false; // if true -> new actor is forced to be created for the stack
   private _publishCalibratedEvent = false;
   private _calibrationEvent: CalibrationEvent;
@@ -201,7 +200,6 @@ class StackViewport extends Viewport {
     this.imageIds = [];
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
-    this.cameraFocalPointOnRender = [0, 0, 0];
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
@@ -465,11 +463,11 @@ class StackViewport extends Viewport {
       },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: { ...this.csImage.calibration, ...this.calibration },
+      calibration: { ...this.csImage?.calibration, ...this.calibration },
       preScale: {
-        ...this.csImage.preScale,
+        ...this.csImage?.preScale,
       },
-      voxelManager: this.csImage.voxelManager,
+      voxelManager: this.csImage?.voxelManager,
     };
   }
 
@@ -515,7 +513,7 @@ class StackViewport extends Viewport {
       preScale: {
         ...this.csImage.preScale,
       },
-      voxelManager: this.csImage.voxelManager,
+      voxelManager: this.csImage?.voxelManager,
     };
   }
 
@@ -723,15 +721,15 @@ class StackViewport extends Viewport {
       ? ViewportStatus.PRE_RENDER
       : ViewportStatus.LOADING;
 
-    if (this.globalDefaultProperties == null) {
-      this.setDefaultProperties({
-        colormap,
-        voiRange,
-        VOILUTFunction,
-        invert,
-        interpolationType,
-      });
-    }
+    this.globalDefaultProperties = {
+      colormap: this.globalDefaultProperties.colormap ?? colormap,
+      voiRange: this.globalDefaultProperties.voiRange ?? voiRange,
+      VOILUTFunction:
+        this.globalDefaultProperties.VOILUTFunction ?? VOILUTFunction,
+      invert: this.globalDefaultProperties.invert ?? invert,
+      interpolationType:
+        this.globalDefaultProperties.interpolationType ?? interpolationType,
+    };
 
     if (typeof colormap !== 'undefined') {
       this.setColormap(colormap);
@@ -907,9 +905,7 @@ class StackViewport extends Viewport {
     this.render();
   }
 
-  private _setPropertiesFromCache(): void {
-    const { interpolationType, invert } = this;
-
+  private _getVOIFromCache(): VOIRange {
     let voiRange;
     if (this.voiUpdatedWithSetProperties) {
       // use the cached voiRange if the voiRange is locked (if the user has
@@ -925,6 +921,13 @@ class StackViewport extends Viewport {
       // otherwise, use the cached voiRange
       voiRange = this._getVOIRangeForCurrentImage() ?? this.voiRange;
     }
+
+    return voiRange;
+  }
+
+  private _setPropertiesFromCache(): void {
+    const voiRange = this._getVOIFromCache();
+    const { interpolationType, invert } = this;
 
     this.setVOI(voiRange);
     this.setInterpolationType(interpolationType);
@@ -2377,56 +2380,32 @@ class StackViewport extends Viewport {
       this._imageData
     );
 
-    const activeCamera = this.getRenderer().getActiveCamera();
+    // const activeCamera = this.getRenderer().getActiveCamera();
+    const viewPresentation = this.getViewPresentation();
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
-    const previousCameraProps = this.getCamera();
+    // const previousCameraProps = this.getCamera();
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
 
-      // Since the 3D location of the imageData is changing as we scroll, we need
-      // to modify the camera position to render this properly. However, resetting
-      // causes problem related to zoom and pan tools: upon rendering of a new slice
-      // the pan and zoom will get reset. To solve this, 1) we store the camera
-      // properties related to pan and zoom 2) reset the camera to correctly place
-      // it in the space 3) restore the pan, zoom props.
-      const cameraProps = this.getCamera();
-
-      const panCache = vec3.subtract(
-        vec3.create(),
-        this.cameraFocalPointOnRender,
-        cameraProps.focalPoint
-      );
-
-      // Reset the camera to point to the new slice location, reset camera doesn't
-      // modify the direction of projection and viewUp
       this.resetCameraNoEvent();
+      this.setViewPresentation(viewPresentation);
 
       // set the flip and view up back to the previous value since the restore camera props
       // rely on the correct flip value
-      this.setCameraNoEvent({
-        flipHorizontal: previousCameraProps.flipHorizontal,
-        flipVertical: previousCameraProps.flipVertical,
-        viewUp: previousCameraProps.viewUp,
-      });
-
-      const { focalPoint } = this.getCamera();
-      this.cameraFocalPointOnRender = focalPoint;
+      // this.setCameraNoEvent({
+      //   flipHorizontal: previousCameraProps.flipHorizontal,
+      //   flipVertical: previousCameraProps.flipVertical,
+      //   viewUp: previousCameraProps.viewUp,
+      // });
 
       // This is necessary to initialize the clipping range and it is not related
       // to our custom slabThickness.
+      // Todo: i'm not sure if this is needed
       // @ts-ignore: vtkjs incorrect typing
-      activeCamera.setFreezeFocalPoint(true);
-
-      // We shouldn't restore the focalPoint, position and parallelScale after reset
-      // if it is the first render or we have completely re-created the vtkImageData
-      this._restoreCameraProps(
-        cameraProps,
-        previousCameraProps,
-        panCache as Point3
-      );
+      // activeCamera.setFreezeFocalPoint(true);
 
       this._setPropertiesFromCache();
       this.stackActorReInitialized = false;
@@ -2474,6 +2453,7 @@ class StackViewport extends Viewport {
     // contains various image orientations (axial ct, sagittal xray)
     const { viewPlaneNormal, viewUp } = this._getCameraOrientation(direction);
 
+    const previousCamera = this.getCamera();
     this.setCameraNoEvent({ viewUp, viewPlaneNormal });
 
     // Setting this makes the following comment about resetCameraNoEvent not modifying viewUp true.
@@ -2483,12 +2463,16 @@ class StackViewport extends Viewport {
     // modify the direction of projection and viewUp
     this.resetCameraNoEvent();
 
-    this.triggerCameraEvent(this.getCamera(), previousCameraProps);
+    // set the view presentation back to the original one to restore the pan and zoom
+    this.setViewPresentation(viewPresentation);
+
+    this.triggerCameraEvent(this.getCamera(), previousCamera);
 
     // This is necessary to initialize the clipping range and it is not related
     // to our custom slabThickness.
     // @ts-ignore: vtkjs incorrect typing
-    activeCamera.setFreezeFocalPoint(true);
+    //Todo: i'm not sure if this is needed
+    // activeCamera.setFreezeFocalPoint(true);
 
     const monochrome1 =
       imagePixelModule.photometricInterpretation === 'MONOCHROME1';
@@ -2496,7 +2480,8 @@ class StackViewport extends Viewport {
     // invalidate the stack so that we can set the voi range
     this.stackInvalidated = true;
 
-    this.setVOI(this._getInitialVOIRange(image), {
+    const voiRange = this._getInitialVOIRange(image);
+    this.setVOI(voiRange, {
       forceRecreateLUTFunction: !!monochrome1,
     });
 
@@ -2506,7 +2491,6 @@ class StackViewport extends Viewport {
     this.setInvertColor(this.invert || this.initialInvert);
 
     // Saving position of camera on render, to cache the panning
-    this.cameraFocalPointOnRender = this.getCamera().focalPoint;
     this.stackInvalidated = false;
 
     this.stackActorReInitialized = true;
@@ -2749,48 +2733,6 @@ class StackViewport extends Viewport {
     const imageIdIndex = this.getImageIds().indexOf(imageId);
     this.stackInvalidated = true;
     this._loadAndDisplayImage(imageId, imageIdIndex);
-  }
-
-  /**
-   * Restores the camera props such zooming and panning after an image is
-   * changed, if needed (after scroll)
-   *
-   * @param parallelScale - camera parallel scale
-   */
-  private _restoreCameraProps(
-    { parallelScale: prevScale }: ICamera,
-    previousCamera: ICamera,
-    panCache: Point3
-  ): void {
-    const renderer = this.getRenderer();
-
-    // get the focalPoint and position after the reset
-    const { position, focalPoint } = this.getCamera();
-
-    const newPosition = vec3.subtract(vec3.create(), position, panCache);
-    const newFocal = vec3.subtract(vec3.create(), focalPoint, panCache);
-
-    // Restoring previous state x,y and scale, keeping the new z
-    // we need to break the flip operations since they also work on the
-    // camera position and focal point
-    this.setCameraNoEvent({
-      parallelScale: prevScale,
-      position: newPosition as Point3,
-      focalPoint: newFocal as Point3,
-    });
-
-    const camera = this.getCamera();
-
-    this.triggerCameraEvent(camera, previousCamera);
-
-    // Invoking render
-    const RESET_CAMERA_EVENT = {
-      type: 'ResetCameraEvent',
-      renderer,
-    };
-
-    // @ts-expect-error invokeEvent is not defined in vtkRenderer
-    renderer.invokeEvent(RESET_CAMERA_EVENT);
   }
 
   private triggerCameraEvent(camera: ICamera, previousCamera: ICamera) {
