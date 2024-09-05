@@ -24,6 +24,7 @@ import {
   createAndCacheLocalImage,
   createAndCacheDerivedImages,
 } from './imageLoader';
+import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -272,6 +273,30 @@ export async function createAndCacheVolumeFromImages(
 
   if (cachedVolume) {
     return cachedVolume;
+  }
+
+  // check if imageIds are already in the cache
+  const imageIdsToLoad = imageIds.filter((imageId) => !cache.getImage(imageId));
+
+  if (imageIdsToLoad.length === 0) {
+    const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
+
+    const derivedVolume = new ImageVolume({
+      volumeId,
+      dataType: volumeProps.dataType,
+      metadata: structuredClone(volumeProps.metadata),
+      dimensions: volumeProps.dimensions,
+      spacing: volumeProps.spacing,
+      origin: volumeProps.origin,
+      direction: volumeProps.direction,
+      referencedVolumeId: volumeProps.referencedVolumeId,
+      imageIds: volumeProps.imageIds,
+      referencedImageIds: volumeProps.referencedImageIds,
+    }) as IImageVolume;
+
+    cache.putVolumeSync(volumeId, derivedVolume);
+
+    return derivedVolume;
   }
 
   const volume = (await createAndCacheVolume(volumeId, {

@@ -67,6 +67,7 @@ import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
+import { pointInShapeCallback } from './pointInShapeCallback';
 // name spaces
 import * as planar from './planar';
 import * as windowLevel from './windowLevel';
@@ -173,4 +174,5 @@ export {
   scaleArray,
   deepClone,
   splitImageIdsBy4DTags,
+  pointInShapeCallback,
 };

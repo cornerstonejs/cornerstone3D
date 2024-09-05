@@ -130,6 +130,18 @@ class VolumeViewport3D extends BaseVolumeViewport {
     );
   }
 
+  public resetCameraForResize = (): boolean => {
+    return this.resetCamera({
+      resetPan: true,
+      resetZoom: true,
+      resetToCenter: true,
+    });
+  };
+
+  public getSliceIndex(): number {
+    return null;
+  }
+
   protected setCameraClippingRange() {
     const activeCamera = this.getVtkActiveCamera();
     if (activeCamera.getParallelProjection()) {
