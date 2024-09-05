@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
-import { getSegmentation } from './getSegmentation';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { updateStackSegmentationState } from './helpers/updateStackSegmentationState';
+import { getSegmentation } from '../getSegmentation';
+import { updateStackSegmentationState } from '../helpers/updateStackSegmentationState';
+import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 // This function is responsible for the conversion calculations
 export async function computeStackSegmentationFromVolume({
