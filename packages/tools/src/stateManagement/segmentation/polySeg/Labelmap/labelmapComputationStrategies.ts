@@ -11,7 +11,7 @@ import {
   convertContourToVolumeLabelmap,
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
-import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
+import { computeStackSegmentationFromVolume } from '../../helpers/convertVolumeToStackSegmentation';
 import type { PolySegConversionOptions } from '../../../../types';
 
 export type RawLabelmapData =

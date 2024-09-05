@@ -11,7 +11,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { computeVolumeSegmentationFromStack } from '../../SegmentationStateManager';
+import { computeVolumeSegmentationFromStack } from '../../helpers/computeVolumeSegmentationFromStack';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();

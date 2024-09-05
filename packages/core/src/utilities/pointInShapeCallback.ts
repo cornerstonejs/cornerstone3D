@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type BoundsIJK from '../types/BoundsIJK';
+import type { CPUImageData, Point3 } from '../types';
 
 export type PointInShape = {
   value: number;
@@ -18,8 +18,8 @@ export type PointInShapeCallback = ({
 }: {
   value: number;
   index: number;
-  pointIJK: Types.Point3;
-  pointLPS: Types.Point3;
+  pointIJK: Point3;
+  pointLPS: Point3;
 }) => void;
 
 export type ShapeFnCriteria = (pointLPS: vec3, pointIJK: vec3) => boolean;
@@ -43,7 +43,7 @@ export type ShapeFnCriteria = (pointLPS: vec3, pointIJK: vec3) => boolean;
  * @param boundsIJK - The bounds of the volume in IJK coordinates.
  */
 export function pointInShapeCallback(
-  imageData: vtkImageData | Types.CPUImageData,
+  imageData: vtkImageData | CPUImageData,
   pointInShapeFn: ShapeFnCriteria,
   callback?: PointInShapeCallback,
   boundsIJK?: BoundsIJK
@@ -51,11 +51,11 @@ export function pointInShapeCallback(
   let iMin, iMax, jMin, jMax, kMin, kMax;
 
   let scalarData;
-  const { numComps } = imageData as any;
+  const { numComps } = imageData as unknown as { numComps: number };
 
   // if getScalarData is a method on imageData
-  if ((imageData as Types.CPUImageData).getScalarData) {
-    scalarData = (imageData as Types.CPUImageData).getScalarData();
+  if ((imageData as CPUImageData).getScalarData) {
+    scalarData = (imageData as CPUImageData).getScalarData();
   } else {
     scalarData = (imageData as vtkImageData)
       .getPointData()
@@ -129,10 +129,10 @@ export function pointInShapeCallback(
       const startPosI = vec3.clone(currentPos);
 
       for (let i = iMin; i <= iMax; i++) {
-        const pointIJK: Types.Point3 = [i, j, k];
+        const pointIJK: Point3 = [i, j, k];
 
         // The current world position (pointLPS) is now in currentPos
-        if (pointInShapeFn(currentPos as Types.Point3, pointIJK)) {
+        if (pointInShapeFn(currentPos as Point3, pointIJK)) {
           const index = k * zMultiple + j * yMultiple + i * xMultiple;
           let value;
           if (xMultiple > 2) {
@@ -152,7 +152,12 @@ export function pointInShapeCallback(
             pointLPS: currentPos.slice(),
           });
           if (callback) {
-            callback({ value, index, pointIJK, pointLPS: currentPos });
+            callback({
+              value,
+              index,
+              pointIJK,
+              pointLPS: currentPos as Point3,
+            });
           }
         }
 
