@@ -252,8 +252,7 @@ function _setLabelmapColorAndOpacity(
     const segmentIndex = i;
     const segmentColor = colorLUT[segmentIndex];
 
-    const segmentSpecificLabelmapConfig =
-      perSegment?.[segmentIndex]?.[Representations.Labelmap];
+    const segmentSpecificLabelmapConfig = perSegment?.[segmentIndex];
 
     const { fillAlpha, outlineWidth, renderFill, renderOutline } =
       _getLabelmapConfig(

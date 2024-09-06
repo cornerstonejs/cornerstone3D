@@ -23,7 +23,6 @@ const initializeCircle = {
       imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -67,12 +66,13 @@ const initializeCircle = {
       segmentationImageData.getDimensions()
     );
 
-    segmentationVoxelManager.boundsIJK = boundsIJK;
-    imageVoxelManager.isInObject = createPointInEllipse({
+    operationData.isInObject = createPointInEllipse({
       topLeftWorld,
       bottomRightWorld,
       center,
     });
+
+    operationData.isInObjectBoundsIJK = boundsIJK;
   },
 } as Composition;
 

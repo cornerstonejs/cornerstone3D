@@ -18,6 +18,8 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;
   centerWorld: Types.Point3;
+  isInObject: (point: Types.Point3) => boolean;
+  isInObjectBoundsIJK: Types.BoundsIJK;
   viewport: Types.IViewport;
   imageVoxelManager:
     | Types.IVoxelManager<number>
@@ -247,6 +249,8 @@ export default class BrushStrategy {
       previewVoxelManager,
       viewport,
       centerWorld: null,
+      isInObject: null,
+      isInObjectBoundsIJK: null,
       brushStrategy: this,
     };
 

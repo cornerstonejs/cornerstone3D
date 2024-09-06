@@ -12,13 +12,7 @@ import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
 
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      points,
-      imageVoxelManager,
-      viewport,
-      segmentationImageData,
-      segmentationVoxelManager,
-    } = operationData;
+    const { points, viewport, segmentationImageData } = operationData;
 
     // Happens on a preview setup
     if (!points) {
@@ -47,16 +41,8 @@ const sphereComposition = {
       viewport
     );
 
-    segmentationVoxelManager.boundsIJK = newBoundsIJK;
-
-    // if (imageVoxelManager) {
-    //   imageVoxelManager.isInObject = createEllipseInPoint({
-    //     topLeftWorld,
-    //     bottomRightWorld,
-    //     center,
-    //   });
-    // } else {
-    segmentationVoxelManager.isInObject = createEllipseInPoint({
+    operationData.isInObjectBoundsIJK = newBoundsIJK;
+    operationData.isInObject = createEllipseInPoint({
       topLeftWorld,
       bottomRightWorld,
       center,

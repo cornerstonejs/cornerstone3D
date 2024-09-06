@@ -18,6 +18,14 @@ import * as triggerSegmentationEvents from './triggerSegmentationEvents';
 import { convertStackToVolumeSegmentation } from './helpers/convertStackToVolumeSegmentation';
 import { computeVolumeSegmentationFromStack } from './helpers/computeVolumeSegmentationFromStack';
 import * as polySegManager from './polySeg';
+import { clearSegmentValue } from './helpers/clearSegmentValue';
+
+const helpers = {
+  clearSegmentValue,
+  convertStackToVolumeSegmentation,
+  computeVolumeSegmentationFromStack,
+  convertVolumeToStackSegmentation,
+};
 
 export {
   // functions
@@ -34,8 +42,6 @@ export {
   config,
   segmentIndex,
   triggerSegmentationEvents,
-  convertStackToVolumeSegmentation,
-  computeVolumeSegmentationFromStack,
-  convertVolumeToStackSegmentation,
+  helpers,
   polySegManager as polySeg,
 };
