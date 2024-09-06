@@ -1,7 +1,5 @@
 import { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { PlanarFreehandROITool } from '../../tools';
-import { ToolGroupManager } from '../../store';
 import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 

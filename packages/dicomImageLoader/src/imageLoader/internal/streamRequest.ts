@@ -37,7 +37,8 @@ export default function streamRequest(
   // Make the request for the streamable image frame (i.e. HTJ2K)
   const loadIterator = new ProgressiveIterator('streamRequest');
   loadIterator.generate(async (iterator, reject) => {
-    const headers = Object.assign({}, defaultHeaders /* beforeSendHeaders */);
+    const beforeSendHeaders = globalOptions.beforeSend?.(null, url, defaultHeaders, {});
+    const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     Object.keys(headers).forEach(function (key) {
       if (headers[key] === null) {
@@ -50,7 +51,7 @@ export default function streamRequest(
 
     try {
       const response = await fetch(url, {
-        headers: defaultHeaders,
+        headers,
         signal: undefined,
       });
 
