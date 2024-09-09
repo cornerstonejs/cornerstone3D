@@ -4,6 +4,7 @@ import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
 import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 
 import { getSegmentationRepresentation } from './getSegmentationRepresentation';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 /**
  * Removes specified segmentation representations from the state.
@@ -95,6 +96,12 @@ function _removeRepresentation(
     );
   } else {
     throw new Error(`The representation ${type} is not supported yet`);
+  }
+
+  // trigger render for viewport
+  const { viewport } = getEnabledElementByViewportId(viewportId);
+  if (viewport) {
+    viewport.render();
   }
 }
 
