@@ -1632,20 +1632,9 @@ class StackViewport extends Viewport {
           const currentPosition = currentImagePlaneModule.imagePositionPatient;
 
           if (referencePosition && currentPosition) {
-            const vector = vec3.create();
-            vec3.subtract(vector, currentPosition, referencePosition);
+            const closeEnough = isEqual(referencePosition, currentPosition);
 
-            const viewPlaneNormal = vec3.create();
-            vec3.cross(
-              viewPlaneNormal,
-              currentOrientation.slice(0, 3),
-              currentOrientation.slice(3, 6)
-            );
-
-            const dotProduct = vec3.dot(vector, viewPlaneNormal);
-            const isOrthogonal = Math.abs(dotProduct) < EPSILON;
-
-            if (isOrthogonal) {
+            if (closeEnough) {
               return targetImageId;
             }
           }
