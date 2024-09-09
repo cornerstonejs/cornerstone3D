@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.84.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.3...v1.84.4) (2024-09-09)
+
+### Bug Fixes
+
+- Add HTTP headers from configuration for streaming image loading ([#1458](https://github.com/cornerstonejs/cornerstone3D/issues/1458)) ([b9c873f](https://github.com/cornerstonejs/cornerstone3D/commit/b9c873f680d29113635a39cdaf616dc95e4b88dd))
+
 ## [1.84.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.2...v1.84.3) (2024-09-05)
 
 ### Bug Fixes
