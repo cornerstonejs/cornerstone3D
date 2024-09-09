@@ -3012,10 +3012,12 @@ class StackViewport extends Viewport {
 
     if (!imageURI) {
       // Remove the dataLoader scheme since that can change
-      const colonIndex = currentImageId.indexOf(':');
-      imageURI = currentImageId.substring(colonIndex + 1);
+      imageURI = imageIdToURI(currentImageId);
     }
-    return referencedImageId?.endsWith(imageURI);
+
+    const referencedImageURI = imageIdToURI(referencedImageId);
+
+    return referencedImageURI === imageURI;
   }
 
   /**

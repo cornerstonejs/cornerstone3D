@@ -86,35 +86,8 @@ function _imageChangeEventListener(evt) {
   // Update the maps
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
-    const labelmapImageId = updateLabelmapSegmentationImageReferences(
-      viewportId,
-      segmentationId
-    );
+    updateLabelmapSegmentationImageReferences(viewportId, segmentationId);
   });
-
-  // const segmentationFound = actors.find((actor) => {
-  //   if (!representationList.includes(actor.uid)) {
-  //     return false;
-  //   }
-
-  //   return true;
-  // });
-
-  // if (!segmentationFound) {
-  //   // If the segmentation is not found, it could be because of some special cases
-  //   // where we are in the process of updating the volume conversion to a stack while
-  //   // the data is still coming in. In such situations, we should trigger the render
-  //   // to ensure that the segmentation actors are created, even if the data arrives late.
-
-  //   if (!perViewportManualTriggers.has(viewportId)) {
-  //     perViewportManualTriggers.set(viewportId, true);
-  //     triggerSegmentationRenderForViewports([viewportId]);
-  //   }
-
-  //   // we should return here, since there is no segmentation actor to update
-  //   // we will hit this function later on after the actor is created
-  //   return;
-  // }
 
   // we need to check for the current viewport state with the current representations
   // is there any extra actor that needs to be removed

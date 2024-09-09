@@ -309,6 +309,8 @@ export function createAndCacheDerivedImage(
     direction: imagePlaneModule.imageOrientationPatient,
   });
 
+  localImage.referencedImageId = referencedImageId;
+
   // 3. Caching the image
   if (!cache.getImageLoadObject(imageId)) {
     cache.putImageSync(imageId, localImage);
