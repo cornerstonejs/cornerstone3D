@@ -11,7 +11,13 @@ export function getSegmentationRepresentation(
   segmentationRepresentationUID: string
 ): SegmentationRepresentation | undefined {
   const segmentationStateManager = defaultSegmentationStateManager;
-  return segmentationStateManager.getSegmentationRepresentation(
+  const representation = segmentationStateManager.getSegmentationRepresentation(
     segmentationRepresentationUID
   );
+
+  if (!representation) {
+    return undefined;
+  }
+
+  return representation;
 }

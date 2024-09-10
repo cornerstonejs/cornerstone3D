@@ -73,6 +73,14 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       const ofTable = new Float32Array(oSize);
       const tmpTable = new Float32Array(oWidth);
 
+      // for debugging
+      // for (let index = 0; index < 3; index++) {
+      //   const ofun = vprop.getScalarOpacity(0);
+      //   const nodeValue1 = [];
+      //   ofun.getNodeValue(index, nodeValue1);
+      //   console.debug(index, nodeValue1);
+      // }
+
       for (let c = 0; c < numIComps; ++c) {
         const ofun = vprop.getScalarOpacity(c);
         const opacityFactor =
@@ -162,10 +170,19 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       const cTable = new Uint8ClampedArray(cSize);
       const tmpTable = new Float32Array(cWidth * 3);
 
+      // // for debugging
+      // for (let index = 0; index < 3; index++) {
+      //   const cfun = vprop.getRGBTransferFunction(0);
+      //   const nodeValue1 = [];
+      //   cfun.getNodeValue(index, nodeValue1);
+      //   console.debug(index, nodeValue1);
+      // }
+
       for (let c = 0; c < numIComps; ++c) {
         const cfun = vprop.getRGBTransferFunction(c);
         const cRange = cfun.getRange();
         cfun.getTable(cRange[0], cRange[1], cWidth, tmpTable, 1);
+
         for (let i = 0; i < cWidth * 3; ++i) {
           cTable[c * cWidth * 6 + i] = 255.0 * tmpTable[i];
           cTable[c * cWidth * 6 + i + cWidth * 3] = 255.0 * tmpTable[i];
