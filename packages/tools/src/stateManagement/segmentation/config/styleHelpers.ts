@@ -1,4 +1,8 @@
 import type SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import type { ContourStyle } from '../../../types/ContourTypes';
+import type { LabelmapStyle } from '../../../types/LabelmapTypes';
+import type { SurfaceStyle } from '../../../types/SurfaceTypes';
+import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import { segmentationStyle } from '../SegmentationStyle';
 import type { RepresentationStyle } from '../SegmentationStyle';
 
@@ -24,7 +28,35 @@ function setGlobalStyle(
   representationType: SegmentationRepresentations,
   style: RepresentationStyle
 ): void {
-  segmentationStyle.setGlobalStyle(type, style);
+  segmentationStyle.setGlobalStyle(representationType, style);
+  triggerSegmentationRender();
+}
+
+/**
+ * Set the global labelmap style
+ * @param style - The labelmap style to be set globally.
+ */
+function setGlobalLabelmapStyle(style: LabelmapStyle): void {
+  segmentationStyle.setGlobalLabelmapStyle(style);
+  triggerSegmentationRender();
+}
+
+/**
+ * Set the global contour style
+ * @param style - The contour style to be set globally.
+ */
+function setGlobalContourStyle(style: ContourStyle): void {
+  segmentationStyle.setGlobalContourStyle(style);
+  triggerSegmentationRender();
+}
+
+/**
+ * Set the global surface style
+ * @param style - The surface style to be set globally.
+ */
+function setGlobalSurfaceStyle(style: SurfaceStyle): void {
+  segmentationStyle.setGlobalSurfaceStyle(style);
+  triggerSegmentationRender();
 }
 
 /**
@@ -61,6 +93,7 @@ function setSegmentationRepresentationStyle(specifier: {
 }): void {
   const { style, ...rest } = specifier;
   segmentationStyle.setViewportStyle(rest, style);
+  triggerSegmentationRender(rest.viewportId);
 }
 
 /**
@@ -89,6 +122,7 @@ function setPerSegmentStyle(specifier: {
       segmentStyle
     );
   });
+  triggerSegmentationRender(rest.viewportId);
 }
 
 /**
@@ -129,6 +163,7 @@ function setSegmentIndexStyle(specifier: {
 }): void {
   const { style, ...rest } = specifier;
   segmentationStyle.setViewportStyle(rest, style);
+  triggerSegmentationRender(rest.viewportId);
 }
 
 /**
@@ -150,10 +185,30 @@ function getSegmentIndexStyle(specifier: {
   return segmentationStyle.getSegmentationStyle(specifier);
 }
 
+/**
+ * Sets the renderInactiveSegmentations flag for a specific viewport.
+ * @param viewportId - The ID of the viewport.
+ * @param renderInactiveSegmentations - Whether to render inactive segmentations.
+ */
+function setViewportRenderInactiveSegmentations(
+  viewportId: string,
+  renderInactiveSegmentations: boolean
+): void {
+  segmentationStyle.setViewportRenderInactiveSegmentations(
+    viewportId,
+    renderInactiveSegmentations
+  );
+
+  triggerSegmentationRender(viewportId);
+}
+
 export {
   // Global
   getGlobalStyle,
   setGlobalStyle,
+  setGlobalLabelmapStyle,
+  setGlobalContourStyle,
+  setGlobalSurfaceStyle,
   // segmentation representation style
   getSegmentationRepresentationStyle,
   setSegmentationRepresentationStyle,
@@ -162,4 +217,5 @@ export {
   // segment index get/set
   setSegmentIndexStyle,
   getSegmentIndexStyle,
+  setViewportRenderInactiveSegmentations,
 };

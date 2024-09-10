@@ -186,10 +186,6 @@ function _removeCornerstoneToolsEventListeners() {
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   );
-
-  eventTarget.removeEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED
-  );
 }
 
 export default init;

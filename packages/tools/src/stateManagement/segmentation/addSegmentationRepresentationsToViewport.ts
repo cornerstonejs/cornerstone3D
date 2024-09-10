@@ -5,7 +5,7 @@ import { internalAddSegmentationRepresentation } from './internalAddSegmentation
 /**
  * Adds one or more segmentations to a specific viewport.
  */
-async function addSegmentationToViewport(
+export async function addSegmentationRepresentations(
   viewportId: string,
   segmentationInputArray: RepresentationPublicInput[]
 ) {
@@ -27,7 +27,7 @@ async function addContourRepresentationToViewport(
   viewportId: string,
   contourInputArray: RepresentationPublicInput[]
 ) {
-  return addSegmentationToViewport(
+  return addSegmentationRepresentations(
     viewportId,
     contourInputArray.map((input) => ({
       ...input,
@@ -68,7 +68,7 @@ async function addLabelmapRepresentationToViewport(
   viewportId: string,
   labelmapInputArray: RepresentationPublicInput[]
 ) {
-  return addSegmentationToViewport(
+  return addSegmentationRepresentations(
     viewportId,
     labelmapInputArray.map((input) => ({
       ...input,
@@ -112,7 +112,7 @@ async function addSurfaceRepresentationToViewport(
   viewportId: string,
   surfaceInputArray: RepresentationPublicInput[]
 ) {
-  return addSegmentationToViewport(
+  return addSegmentationRepresentations(
     viewportId,
     surfaceInputArray.map((input) => ({
       ...input,

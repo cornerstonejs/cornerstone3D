@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { addColorLUT as _addColorLUT } from '../addColorLUT';
 import { getColorLUT as _getColorLUT } from '../getColorLUT';
-import { getViewportSegmentationEntries } from '../getSegmentationsForViewport';
 import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import {
   getSegmentationRepresentation,
@@ -41,17 +40,19 @@ function setColorLUT(
     );
   }
 
-  const segmentationEntries = getViewportSegmentationEntries(viewportId, {
-    segmentationId,
-  });
+  const segmentationRepresentations = getSegmentationRepresentations(
+    viewportId,
+    segmentationId
+  );
 
-  if (!segmentationEntries) {
+  if (!segmentationRepresentations) {
     throw new Error(
       `viewport specific state for viewport ${viewportId} does not exist`
     );
   }
-  segmentationEntries.forEach((segmentationEntry) => {
-    segmentationEntry.config.colorLUTIndex = colorLUTIndex;
+
+  segmentationRepresentations.forEach((segmentationRepresentation) => {
+    segmentationRepresentation.config.colorLUTIndex = colorLUTIndex;
   });
 
   triggerSegmentationRender(viewportId);

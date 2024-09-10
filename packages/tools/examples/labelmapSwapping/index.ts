@@ -14,6 +14,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { removeLabelmapRepresentation } from '../../src/stateManagement/segmentation';
 
 // This is for debugging purposes
 console.warn(
@@ -67,6 +68,8 @@ addButtonToToolbar({
   title: 'Swap Segmentation',
   onClick: async () => {
     if (segmentationDisplayed === segmentationId1) {
+      removeLabelmapRepresentation(viewportId, segmentationId1, true);
+
       // Add segmentation 2
       await segmentation.addLabelmapRepresentationToViewport(viewportId, [
         {
@@ -76,6 +79,7 @@ addButtonToToolbar({
 
       segmentationDisplayed = segmentationId2;
     } else {
+      removeLabelmapRepresentation(viewportId, segmentationId2, true);
       // Add segmentation 1
       await segmentation.addLabelmapRepresentationToViewport(viewportId, [
         {

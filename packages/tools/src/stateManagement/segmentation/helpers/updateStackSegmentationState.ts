@@ -3,6 +3,7 @@ import { Events, SegmentationRepresentations } from '../../../enums';
 import { getSegmentation } from '../getSegmentation';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
+import { addSegmentationRepresentations } from '../addSegmentationRepresentationsToViewport';
 
 /**
  * Converts a volume segmentation to a stack segmentation.

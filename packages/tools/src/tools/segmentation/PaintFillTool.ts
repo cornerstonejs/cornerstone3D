@@ -84,15 +84,12 @@ class PaintFillTool extends BaseTool {
       );
     }
 
-    const { segmentationId, type } = activeSegmentationRepresentation;
+    const { segmentationId } = activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked: number[] =
       segmentLocking.getLockedSegmentIndices(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
-
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
 
     let dimensions: Types.Point3;
     let direction: Types.Mat3;
@@ -102,7 +99,7 @@ class PaintFillTool extends BaseTool {
 
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
-        type
+        SegmentationRepresentations.Labelmap
       ] as LabelmapSegmentationDataVolume;
 
       const segmentation = cache.getVolume(volumeId);

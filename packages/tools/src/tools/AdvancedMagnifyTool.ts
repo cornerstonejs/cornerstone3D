@@ -61,6 +61,7 @@ import type {
   ToolModeChangedEventType,
 } from '../types/EventTypes';
 import { distanceToPoint } from '../utilities/math/point';
+import { addSegmentationRepresentations } from '../stateManagement/segmentation';
 
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;

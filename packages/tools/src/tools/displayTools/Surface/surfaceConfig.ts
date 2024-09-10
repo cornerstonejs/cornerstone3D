@@ -1,12 +1,12 @@
-import type { SurfaceRenderingConfig } from '../../../types/SurfaceTypes';
+import type { SurfaceStyle } from '../../../types/SurfaceTypes';
 
-const defaultSurfaceConfig: SurfaceRenderingConfig = {
+const defaultSurfaceConfig: SurfaceStyle = {
   renderFill: true,
   fillAlpha: 1,
 };
 
-function getDefaultSurfaceConfig(): SurfaceRenderingConfig {
+function getDefaultSurfaceStyle(): SurfaceStyle {
   return defaultSurfaceConfig;
 }
 
-export default getDefaultSurfaceConfig;
+export default getDefaultSurfaceStyle;

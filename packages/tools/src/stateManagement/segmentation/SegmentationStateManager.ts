@@ -7,7 +7,7 @@ import {
   volumeLoader,
 } from '@cornerstonejs/core';
 
-import { SegmentationRepresentations, Events } from '../../enums';
+import { SegmentationRepresentations } from '../../enums';
 import type {
   ContourRenderingConfig,
   LabelmapRenderingConfig,
@@ -190,6 +190,8 @@ export default class SegmentationStateManager {
       return;
     }
 
+    debugger;
+
     /**
      * Handle various scenarios for representation rendering:
      *
@@ -212,7 +214,6 @@ export default class SegmentationStateManager {
      *    (from referencedVolumeId) matches between labelmap and viewport
      *    before rendering.
      */
-
     const volumeViewport =
       enabledElement.viewport instanceof BaseVolumeViewport;
 
@@ -223,14 +224,6 @@ export default class SegmentationStateManager {
     }
 
     const { representationData } = segmentation;
-
-    const isLabelmap = representationData.Labelmap;
-
-    if (!isLabelmap) {
-      // make all the other representations inactive first
-      this.setActiveSegmentation(viewportId, segmentationId);
-      return;
-    }
 
     const isBaseVolumeSegmentation = 'volumeId' in representationData.Labelmap;
 
@@ -545,15 +538,15 @@ export default class SegmentationStateManager {
    * @returns The active segmentation representation, or undefined if not found.
    */
   getActiveSegmentation(viewportId: string): Segmentation | undefined {
-    const activeSegRep = Object.entries(this.state.viewports[viewportId]).find(
-      ([, value]) => value.active
+    const activeSegRep = this.state.viewports[viewportId].find(
+      (segRep) => segRep.active
     );
 
     if (!activeSegRep) {
       return;
     }
 
-    return this.getSegmentation(activeSegRep[0]);
+    return this.getSegmentation(activeSegRep.segmentationId);
   }
 
   /**

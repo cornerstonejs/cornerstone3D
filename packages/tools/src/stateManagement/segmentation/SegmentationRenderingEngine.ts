@@ -179,8 +179,6 @@ class SegmentationRenderingEngine {
     // Render each segmentationData, in each viewport
     const segmentationRenderList = segmentationRepresentations.map(
       (representation: SegmentationRepresentation) => {
-        // const viewportsRenderList = [];
-
         if (representation.type === SegmentationRepresentations.Contour) {
           // if the representation is contour we need to make sure
           // that the planarFreeHandTool is added
@@ -190,11 +188,8 @@ class SegmentationRenderingEngine {
         const display = renderers[representation.type];
 
         try {
-          const viewportId = display.render(
-            // @ts-ignore
-            viewport,
-            representation
-          );
+          // @ts-ignore
+          const viewportId = display.render(viewport, representation);
           viewportRenderList.push(viewportId);
         } catch (error) {
           console.error(error);

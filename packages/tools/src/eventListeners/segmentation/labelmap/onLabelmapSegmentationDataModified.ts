@@ -110,7 +110,7 @@ function performVolumeLabelmapUpdate({
 
 function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
   viewportIds.forEach((viewportId) => {
-    const segmentations = getViewportSegmentations(
+    const segmentations = SegmentationState.getViewportSegmentations(
       viewportId,
       SegmentationRepresentations.Labelmap
     );

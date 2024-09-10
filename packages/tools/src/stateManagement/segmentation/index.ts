@@ -12,6 +12,7 @@ import {
   addSurfaceRepresentationToViewportMap,
   addLabelmapRepresentationToViewport,
   addLabelmapRepresentationToViewportMap,
+  addSegmentationRepresentations,
 } from './addSegmentationRepresentationsToViewport';
 
 import { addSegmentations } from './addSegmentations';
@@ -42,6 +43,7 @@ export {
   removeSurfaceRepresentation,
   addLabelmapRepresentationToViewport,
   addLabelmapRepresentationToViewportMap,
+  addSegmentationRepresentations,
   addContourRepresentationToViewport,
   addContourRepresentationToViewportMap,
   addSurfaceRepresentationToViewport,

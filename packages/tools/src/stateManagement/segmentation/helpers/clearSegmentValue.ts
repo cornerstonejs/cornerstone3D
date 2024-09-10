@@ -21,9 +21,8 @@ export function clearSegmentValue(
   segmentIndex: number
 ) {
   const segmentation = getSegmentation(segmentationId);
-  const { type } = segmentation;
 
-  if (type === SegmentationRepresentations.Labelmap) {
+  if (segmentation.representationData.Labelmap) {
     const { representationData } = segmentation;
     const labelmapData = representationData.Labelmap;
 

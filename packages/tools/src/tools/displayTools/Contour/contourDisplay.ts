@@ -7,6 +7,7 @@ import { getSegmentation } from '../../../stateManagement/segmentation/getSegmen
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
+import removeContourFromElement from './removeContourFromElement';
 
 let polySegConversionInProgress = false;
 
@@ -35,6 +36,8 @@ function removeRepresentation(
   if (!renderImmediate) {
     return;
   }
+
+  removeContourFromElement(viewportId, segmentationId);
 
   viewport.render();
 }

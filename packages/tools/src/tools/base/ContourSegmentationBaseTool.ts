@@ -255,7 +255,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       segmentationId,
       representationType: SegmentationRepresentations.Contour,
       segmentIndex,
-    }) as RepresentationStyle;
+    });
 
     const mergedConfig = style as ContourStyle;
     let lineWidth = 1;

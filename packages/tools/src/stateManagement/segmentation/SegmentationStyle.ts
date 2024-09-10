@@ -1,4 +1,4 @@
-import type { SegmentationRepresentations } from '../../enums';
+import { SegmentationRepresentations } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
 import type { ContourStyle } from '../../types/ContourTypes';
@@ -6,10 +6,7 @@ import type { LabelmapStyle } from '../../types/LabelmapTypes';
 import type { SurfaceStyle } from '../../types/SurfaceTypes';
 import * as Enums from '../../enums';
 
-export type RepresentationStyle = {
-  style: LabelmapStyle | ContourStyle | SurfaceStyle;
-  renderInactiveSegmentations: boolean;
-};
+export type RepresentationStyle = LabelmapStyle | ContourStyle | SurfaceStyle;
 
 interface SegmentationStyleConfig {
   global: {
@@ -77,6 +74,18 @@ class SegmentationStyle {
     representationType: SegmentationRepresentations
   ): RepresentationStyle {
     return this.config.global[representationType];
+  }
+
+  setGlobalLabelmapStyle(styles: LabelmapStyle): void {
+    this.setGlobalStyle(SegmentationRepresentations.Labelmap, styles);
+  }
+
+  setGlobalContourStyle(styles: ContourStyle): void {
+    this.setGlobalStyle(SegmentationRepresentations.Contour, styles);
+  }
+
+  setGlobalSurfaceStyle(styles: SurfaceStyle): void {
+    this.setGlobalStyle(SegmentationRepresentations.Surface, styles);
   }
 
   /**

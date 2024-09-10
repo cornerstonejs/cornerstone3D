@@ -58,6 +58,9 @@ function removeRepresentation(
 
   removeLabelmapFromElement(viewport.element, segmentationId);
 
+  // Clean up the cache for this segmentation
+  _cleanupLabelMapConfigCache(viewportId, segmentationId);
+
   if (!renderImmediate) {
     return;
   }
@@ -172,7 +175,7 @@ function _setLabelmapColorAndOpacity(
 
   // todo fix this
   const activeSegmentation = getActiveSegmentation(viewportId);
-
+  debugger;
   const isActiveLabelmap =
     activeSegmentation?.segmentationId === segmentationId;
 
@@ -209,7 +212,6 @@ function _setLabelmapColorAndOpacity(
   // even for brush drawing which does not makes sense
   for (let i = 0; i < numColors; i++) {
     const segmentIndex = i;
-    const cacheUID = `${viewportId}-${segmentationId}-${segmentIndex}`;
     const segmentColor = colorLUT[segmentIndex];
 
     const perSegment = segmentationStyle.getSegmentationStyle({
@@ -302,7 +304,6 @@ function _setLabelmapColorAndOpacity(
   }
 
   labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
-
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
@@ -448,6 +449,17 @@ async function _addLabelmapToViewport(
   segmentationId: string
 ): Promise<void> {
   await addLabelmapToElement(viewport.element, labelmapData, segmentationId);
+}
+
+function _cleanupLabelMapConfigCache(
+  viewportId: string,
+  segmentationId: string
+): void {
+  for (const key of labelMapConfigCache.keys()) {
+    if (key.startsWith(`${viewportId}-${segmentationId}-`)) {
+      labelMapConfigCache.delete(key);
+    }
+  }
 }
 
 export default {

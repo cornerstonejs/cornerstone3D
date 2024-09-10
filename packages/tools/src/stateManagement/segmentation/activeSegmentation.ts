@@ -1,5 +1,6 @@
 import type { Segmentation } from '../../types/SegmentationStateTypes';
 import { getActiveSegmentation as _getActiveSegmentation } from './getActiveSegmentation';
+import { triggerSegmentationRender } from './SegmentationRenderingEngine';
 import { setActiveSegmentation as _setActiveSegmentation } from './setActiveSegmentation';
 
 /**
@@ -22,7 +23,11 @@ function setActiveSegmentation(
   segmentationId: string,
   suppressEvent: boolean = false
 ): void {
-  _setActiveSegmentation(viewportId, segmentationId, suppressEvent);
+  _setActiveSegmentation(viewportId, segmentationId);
+
+  if (!suppressEvent) {
+    triggerSegmentationRender(viewportId);
+  }
 }
 
 export {

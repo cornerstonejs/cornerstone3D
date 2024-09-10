@@ -8,7 +8,7 @@ import { addContourSegmentationAnnotation } from '../../../../utilities/contourS
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
-import { getSegmentIndexStyle } from '../../../../stateManagement/segmentation/config/segmentationConfig';
+import { getSegmentIndexStyle } from '../../../../stateManagement/segmentation/config/styleHelpers';
 import { SegmentationRepresentations } from '../../../../enums';
 
 function handleContourSegmentation(
