@@ -3049,11 +3049,13 @@ class StackViewport extends Viewport {
       imageURI = imageIdToURI(currentImageId);
     }
 
-    const referencedImageURI = imageIdToURI(referencedImageId);
+    const referenceColonIndex = referencedImageId.indexOf(':');
+    const referencedImageURI = referencedImageId.substring(
+      referenceColonIndex + 1
+    );
 
-    const endsWith = referencedImageId?.endsWith(imageURI);
-    if (endsWith) {
-      return endsWith;
+    if (referencedImageURI === imageURI) {
+      return true;
     }
 
     // if camera focal point is provided, we can use that as a point
