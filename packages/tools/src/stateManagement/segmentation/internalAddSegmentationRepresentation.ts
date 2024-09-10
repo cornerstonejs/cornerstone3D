@@ -1,12 +1,7 @@
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-
-import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type {
+  RenderingConfig,
   RepresentationPublicInput,
-  RepresentationPublicInputOptions,
-  SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -14,158 +9,51 @@ import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
-import { setSegmentationRepresentationConfig } from './setSegmentationRepresentationConfig';
-import { addSegmentationRepresentationState } from './addSegmentationRepresentationState';
-import { getSegmentationRepresentation } from './getSegmentationRepresentation';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
-
-function getLabelmapSegmentationRepresentationRenderingConfig() {
-  const cfun = vtkColorTransferFunction.newInstance();
-  const ofun = vtkPiecewiseFunction.newInstance();
-  ofun.addPoint(0, 0);
-  return {
-    ofun,
-    cfun,
-  };
-}
+import { getColorLUT } from './getColorLUT';
 
 async function internalAddSegmentationRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput
-): Promise<string> {
-  const { segmentationId, options = {} as RepresentationPublicInputOptions } =
-    representationInput;
+) {
+  const { segmentationId, config } = representationInput;
 
-  const segmentationRepresentationUID =
-    representationInput.options?.segmentationRepresentationUID ||
-    utilities.uuidv4();
+  // need to be able to override from the outside
+  const renderingConfig: RenderingConfig = {
+    colorLUTIndex: getColorLUTIndex(config),
+  };
 
-  // if the segmentationRepresentationUID is already in the state, we should use it
-  // and add it to the viewport instead
-
-  const existingRepresentation = getSegmentationRepresentation(
-    segmentationRepresentationUID
+  defaultSegmentationStateManager.addSegmentationRepresentation(
+    viewportId,
+    segmentationId,
+    representationInput.type,
+    renderingConfig
   );
 
-  if (existingRepresentation) {
-    internalAddSegmentationRepresentationUIDToViewport(
-      viewportId,
-      existingRepresentation.segmentationRepresentationUID
-    );
-  } else {
-    const colorLUTIndexToUse = getColorLUTIndex(options);
-
-    const { type } = representationInput;
-
-    let renderingConfig;
-    if (type === SegmentationRepresentations.Labelmap) {
-      renderingConfig = getLabelmapSegmentationRepresentationRenderingConfig();
-    } else {
-      renderingConfig = {};
-    }
-
-    const representation: SegmentationRepresentation = {
-      segmentationId,
-      segmentationRepresentationUID,
-      type: representationInput.type,
-      colorLUTIndex: colorLUTIndexToUse,
-      rendering: renderingConfig,
-      polySeg: options.polySeg,
-      config: {
-        allSegments: {},
-        perSegment: {},
-      },
-    };
-
-    addSegmentationRepresentationState(viewportId, representation);
-    const initialConfig = representationInput.config;
-    // Update the toolGroup specific configuration
-    if (initialConfig) {
-      // const globalConfig = SegmentationState.getGlobalConfig();
-      // if (
-      //   initialConfig.renderInactiveRepresentations !==
-      //   globalConfig.renderInactiveRepresentations
-      // ) {
-      //   SegmentationState.setGlobalConfig({
-      //     ...globalConfig,
-      //     renderInactiveRepresentations:
-      //       initialConfig.renderInactiveRepresentations,
-      //   });
-      // }
-
-      setSegmentationRepresentationConfig(
-        segmentationRepresentationUID,
-        initialConfig
-      );
-    }
-  }
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);
   }
 
   triggerSegmentationModified(segmentationId);
-
-  return segmentationRepresentationUID;
 }
 
-function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
-  const colorLUTOrIndexInput = options.colorLUTOrIndex;
-  let colorLUTIndexToUse;
+function getColorLUTIndex(config: RepresentationPublicInput['config']) {
+  const colorLUT = config?.colorLUT;
 
-  if (typeof colorLUTOrIndexInput === 'number') {
-    colorLUTIndexToUse = colorLUTOrIndexInput;
-  } else {
-    const nextIndex = getNextColorLUTIndex();
-    const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
-      ? colorLUTOrIndexInput
-      : CORNERSTONE_COLOR_LUT;
-    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
-    colorLUTIndexToUse = nextIndex;
+  const nextIndex = getNextColorLUTIndex();
+  const colorLUTToAdd = Array.isArray(colorLUT)
+    ? colorLUT
+    : CORNERSTONE_COLOR_LUT;
+
+  // in any case add the colorLUT to the state
+  addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+
+  const colorLUTIndex = nextIndex;
+
+  if (!getColorLUT(colorLUTIndex)) {
+    throw new Error(`Color LUT with index ${colorLUTIndex} not found`);
   }
-  return colorLUTIndexToUse;
-}
-
-/**
- * Adds a segmentation representation UID to a specific viewport.
- *
- * This function uses the default segmentation state manager to associate
- * a segmentation representation with a given viewport. This is typically
- * used to prepare a viewport for rendering a specific segmentation.
- *
- * @param viewportId - The unique identifier of the viewport to which the
- *                     segmentation representation should be added.
- * @param segmentationRepresentationUID - The unique identifier of the
- *                                        segmentation representation to be
- *                                        added to the viewport.
- *
- * @returns void
- *
- * @example
- * ```typescript
- * addSegmentationRepresentationUIDToViewport('viewport1', 'segmentationUID123');
- * ```
- */
-export function internalAddSegmentationRepresentationUIDToViewport(
-  viewportId: string,
-  segmentationRepresentationUID: string
-): void {
-  const segmentationStateManager = defaultSegmentationStateManager;
-
-  const segmentationRepresentation =
-    segmentationStateManager.getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
-
-  if (!segmentationRepresentation) {
-    throw new Error(
-      `Segmentation representation with UID ${segmentationRepresentationUID} not found`
-    );
-  }
-
-  segmentationStateManager.addSegmentationRepresentationToViewport(
-    viewportId,
-    segmentationRepresentationUID
-  );
+  return colorLUTIndex;
 }
 
 export { internalAddSegmentationRepresentation };

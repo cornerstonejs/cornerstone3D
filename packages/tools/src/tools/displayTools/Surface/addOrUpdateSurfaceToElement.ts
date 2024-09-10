@@ -9,12 +9,9 @@ import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helper
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
   surface: Types.ISurface,
-  segmentationRepresentationUID: string
+  segmentationId: string
 ): void {
-  const actorUID = getSurfaceActorUID(
-    segmentationRepresentationUID,
-    surface.id
-  );
+  const actorUID = getSurfaceActorUID(segmentationId, surface.id);
 
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;

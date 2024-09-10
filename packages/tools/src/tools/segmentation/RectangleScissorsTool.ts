@@ -60,7 +60,6 @@ class RectangleScissorsTool extends BaseTool {
     segmentationId: string;
     segmentIndex: number;
     segmentsLocked: number[];
-    segmentationRepresentationUID: string;
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     handleIndex?: number;
@@ -116,23 +115,24 @@ class RectangleScissorsTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
-    if (!activeSegmentationRepresentation) {
+    const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+    if (!activeLabelmapSegmentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeLabelmapSegmentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked =
       segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const segmentColor = segmentationConfig.color.getSegmentIndexColor(
-      segmentationRepresentationUID,
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
@@ -181,7 +181,6 @@ class RectangleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-      segmentationRepresentationUID,
       volumeId: null,
       referencedVolumeId: null,
       imageId: null,

@@ -3,19 +3,13 @@ import type { Types, StackViewport } from '@cornerstonejs/core';
 import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
-import {
-  getConfigCache,
-  initializeConfigCache,
-  setConfigCache,
-} from './contourConfigCache';
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
-import { getGlobalConfig } from '../../../../stateManagement/segmentation/getGlobalConfig';
 import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
-import { getSegmentIndexConfig } from '../../../../stateManagement/segmentation/config/segmentationConfig';
-import { getSegmentationRepresentation } from '../../../../stateManagement/segmentation/getSegmentationRepresentation';
+import { getSegmentIndexStyle } from '../../../../stateManagement/segmentation/config/segmentationConfig';
+import { SegmentationRepresentations } from '../../../../enums';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -23,19 +17,7 @@ function handleContourSegmentation(
   annotationUIDsMap: Map<number, Set<string>>,
   contourRepresentation: ContourRepresentation
 ) {
-  // if contourRepresentation exists, updateContourSets, otherwise addContourSetsToElement
-  const { segmentationRepresentationUID } = contourRepresentation;
-
-  const segmentationRepresentation = getSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
-
-  // if config cache does not exist, initialize it
-  if (!getConfigCache(segmentationRepresentationUID)) {
-    initializeConfigCache(segmentationRepresentationUID);
-  }
-
-  if (segmentationRepresentation && annotationUIDsMap.size) {
+  if (annotationUIDsMap.size) {
     updateContourSets(viewport, geometryIds, contourRepresentation);
   } else {
     addContourSetsToElement(viewport, geometryIds, contourRepresentation);
@@ -47,83 +29,31 @@ function updateContourSets(
   geometryIds: string[],
   contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, config } = contourRepresentation;
-
-  const baseConfig = config?.allSegments;
-  const globalContourConfig = getGlobalConfig().representations.Contour;
-
-  const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
-
-  const cachedConfig = getConfigCache(segmentationRepresentationUID);
-
-  const newOutlineWithActive = newContourConfig.outlineWidthActive;
-
-  if (cachedConfig?.outlineWidthActive !== newOutlineWithActive) {
-    setConfigCache(
-      segmentationRepresentationUID,
-      Object.assign({}, cachedConfig, {
-        outlineWidthActive: newOutlineWithActive,
-      })
-    );
-  }
-
-  const segmentsToSetToInvisible = [];
-  const segmentsToSetToVisible = [];
+  const { segmentationId } = contourRepresentation;
 
   const segmentsHidden = getHiddenSegmentIndices(
     viewport.id,
-    segmentationRepresentationUID
+    segmentationId,
+    SegmentationRepresentations.Contour
   );
-
-  for (const segmentIndex of segmentsHidden) {
-    if (!cachedConfig.segmentsHidden.has(segmentIndex)) {
-      segmentsToSetToInvisible.push(segmentIndex);
-    }
-  }
-
-  for (const segmentIndex of cachedConfig?.segmentsHidden ?? []) {
-    if (!segmentsHidden.has(segmentIndex)) {
-      segmentsToSetToVisible.push(segmentIndex);
-    }
-  }
-
-  const mergedInvisibleSegments = Array.from(cachedConfig.segmentsHidden)
-    .filter((segmentIndex) => !segmentsToSetToVisible.includes(segmentIndex))
-    .concat(segmentsToSetToInvisible);
 
   const { segmentSpecificConfigs } = geometryIds.reduce(
     (acc, geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const segmentSpecificConfig = getSegmentIndexConfig(
-        segmentationRepresentationUID,
-        segmentIndex
-      );
+      const segmentSpecificConfig = getSegmentIndexStyle({
+        viewportId: viewport.id,
+        segmentationId,
+        representationType: SegmentationRepresentations.Contour,
+        segmentIndex,
+      });
       acc.segmentSpecificConfigs[segmentIndex] = segmentSpecificConfig ?? {};
 
       return acc;
     },
     { contourSets: [], segmentSpecificConfigs: {} }
   );
-
-  const affectedSegments = [
-    ...mergedInvisibleSegments,
-    ...segmentsToSetToVisible,
-  ];
-
-  const hasCustomSegmentSpecificConfig = Object.values(
-    segmentSpecificConfigs
-  ).some((config) => Object.keys(config).length > 0);
-
-  if (affectedSegments.length || hasCustomSegmentSpecificConfig) {
-    setConfigCache(
-      segmentationRepresentationUID,
-      Object.assign({}, cachedConfig, {
-        segmentsHidden: new Set(segmentsHidden),
-      })
-    );
-  }
 
   viewport.render();
 }
@@ -133,8 +63,7 @@ function addContourSetsToElement(
   geometryIds: string[],
   contourRepresentation: ContourRepresentation
 ) {
-  const { segmentationRepresentationUID, segmentationId } =
-    contourRepresentation;
+  const { segmentationId } = contourRepresentation;
 
   const segmentSpecificMap = new Map();
 
@@ -152,10 +81,12 @@ function addContourSetsToElement(
 
     validateGeometry(geometry);
 
-    const segmentSpecificConfig = getSegmentIndexConfig(
-      segmentationRepresentationUID,
-      segmentIndex
-    );
+    const segmentSpecificConfig = getSegmentIndexStyle({
+      viewportId: viewport.id,
+      segmentationId,
+      representationType: SegmentationRepresentations.Contour,
+      segmentIndex,
+    });
 
     const contourSet = geometry.data as Types.IContourSet;
 
@@ -205,24 +136,10 @@ function addContourSetsToElement(
     }
   });
 
-  const baseConfig = contourRepresentation.config?.allSegments;
-  const globalContourConfig = getGlobalConfig().representations.Contour;
-
-  const newContourConfig = utilities.deepMerge(globalContourConfig, baseConfig);
-  const outlineWidthActive = newContourConfig.outlineWidthActive;
-
   const segmentsHidden = getHiddenSegmentIndices(
     viewport.id,
-    segmentationRepresentationUID
-  );
-
-  setConfigCache(
-    segmentationRepresentationUID,
-    Object.assign({}, getConfigCache(segmentationRepresentationUID), {
-      segmentsHidden: new Set(segmentsHidden),
-      segmentSpecificMap,
-      outlineWidthActive,
-    })
+    segmentationId,
+    SegmentationRepresentations.Contour
   );
 
   viewport.resetCamera();

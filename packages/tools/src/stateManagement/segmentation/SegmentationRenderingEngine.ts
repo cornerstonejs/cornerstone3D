@@ -13,7 +13,10 @@ import {
 
 import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
-import { getSegmentationRepresentations } from './getSegmentationRepresentations';
+import {
+  getAllSegmentationRepresentations,
+  getSegmentationRepresentations,
+} from './getSegmentationRepresentation';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
 import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
@@ -80,19 +83,21 @@ class SegmentationRenderingEngine {
 
     for (const viewport of viewports) {
       const viewportId = viewport.id;
-      const segmentationRepresentations =
-        getSegmentationRepresentations(viewportId);
 
       if (segmentationId) {
-        const hasSegmentationRepresentation = segmentationRepresentations.some(
-          (representation) => representation.segmentationId === segmentationId
+        const segmentationRepresentations = getSegmentationRepresentations(
+          viewportId,
+          segmentationId
         );
 
-        if (hasSegmentationRepresentation) {
+        if (segmentationRepresentations?.length > 0) {
           viewportIds.push(viewportId);
         }
       } else {
-        if (segmentationRepresentations.length > 0) {
+        const segmentationRepresentations =
+          getAllSegmentationRepresentations(viewportId);
+
+        if (segmentationRepresentations?.length > 0) {
           viewportIds.push(viewportId);
         }
       }
@@ -158,7 +163,7 @@ class SegmentationRenderingEngine {
 
   _triggerRender(viewportId?: string) {
     const segmentationRepresentations =
-      getSegmentationRepresentations(viewportId);
+      getAllSegmentationRepresentations(viewportId);
 
     if (!segmentationRepresentations?.length) {
       return;

@@ -57,7 +57,6 @@ class CircleScissorsTool extends BaseTool {
     newAnnotation?: boolean;
     hasMoved?: boolean;
     centerCanvas?: Array<number>;
-    segmentationRepresentationUID?: string;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -108,30 +107,31 @@ class CircleScissorsTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
-    if (!activeSegmentationRepresentation) {
+    const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+    if (!activeLabelmapSegmentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeLabelmapSegmentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked =
       segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const segmentColor = segmentationConfig.color.getSegmentIndexColor(
-      segmentationRepresentationUID,
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const labelmapData = representationData[type];
+    const labelmapData = representationData.Labelmap;
 
     if (!labelmapData) {
       throw new Error(
@@ -180,7 +180,6 @@ class CircleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-      segmentationRepresentationUID,
       volumeId: null,
       referencedVolumeId: null,
     };

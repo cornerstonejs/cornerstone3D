@@ -19,7 +19,6 @@ type LabelmapToolOperationData = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   strategySpecificConfiguration: any;
   // constraintFn: (pointIJK: number) => boolean;
-  segmentationRepresentationUID: string;
   points: Types.Point3[];
   voxelManager;
   override: {

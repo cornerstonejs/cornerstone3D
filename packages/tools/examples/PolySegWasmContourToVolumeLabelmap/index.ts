@@ -88,15 +88,9 @@ addButtonToToolbar({
   title: 'Convert contour segmentation to labelmap segmentation',
   onClick: async () => {
     // add the 3d representation to the 3d viewport
-    await segmentation.addSegmentationRepresentations(viewportId2, [
+    await segmentation.addLabelmapRepresentationToViewport(viewportId2, [
       {
         segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -201,18 +195,15 @@ async function run() {
   await segmentation.addSegmentations([
     {
       segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+      data: {},
     },
   ]);
 
   // // Add the segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId1, [
+  await segmentation.addContourRepresentationToViewport(viewportId1, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 

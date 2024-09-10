@@ -1,10 +1,7 @@
-import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import type { vtkPiecewiseFunction } from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-
 /**
  * Label map config for the label map representation
  */
-export type LabelmapConfig = {
+export type LabelmapStyle = {
   /** whether to render segmentation outline  */
   renderOutline?: boolean;
   /** thickness of the outline when segmentation is active - all segments */
@@ -26,16 +23,6 @@ export type LabelmapConfig = {
   outlineOpacity?: number;
   /** alpha of outline for inactive segmentation */
   outlineOpacityInactive?: number;
-};
-
-/**
- * Labelmap representation type
- */
-export type LabelmapRenderingConfig = {
-  /** color transfer function */
-  cfun?: vtkColorTransferFunction;
-  /** opacity transfer function */
-  ofun?: vtkPiecewiseFunction;
 };
 
 export type LabelmapSegmentationDataVolume = {

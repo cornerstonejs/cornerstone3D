@@ -12,11 +12,13 @@ export function getViewportIdsWithSegmentation(
   const state = segmentationStateManager.getState();
   const viewports = state.viewports;
 
-  return Object.keys(viewports).filter((viewportId) => {
-    const viewport = viewports[viewportId];
-    return Object.keys(viewport).some(
-      (segRepUID) =>
-        state.representations[segRepUID].segmentationId === segmentationId
-    );
-  });
+  const viewportIdsWithSegmentation = Object.entries(viewports)
+    .filter(([, viewportSegmentations]) =>
+      viewportSegmentations.some(
+        (segRep) => segRep.segmentationId === segmentationId
+      )
+    )
+    .map(([viewportId]) => viewportId);
+
+  return viewportIdsWithSegmentation;
 }

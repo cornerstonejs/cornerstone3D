@@ -1,25 +1,27 @@
 import type { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
-import { validateSegmentationInput } from './helpers';
-import { addSegmentation as addSegmentationToState } from './segmentationState';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import normalizeSegmentationInput from './helpers/normalizeSegmentationInput';
+
 /**
- * Adds the segmentation to the cornerstone3D segmentation state. It should be
- * noted that segmentations are not added to any toolGroup's viewports. In order to
- * do so, you should add a "representation" of the segmentation to the toolGroup
- * using addSegmentationRepresentations helper. The reason for this is that there
- * can be multiple representations of the same segmentation (e.g. Labelmap and
- * Contour, etc. - Currently only Labelmap representations is supported).
- * @param segmentationInputArray - The array of segmentation input, each of which
- * defining the segmentationId and the main representation data for the segmentation.
+ * It takes a segmentation input and adds it to the segmentation state manager
+ * @param segmentationInput - The segmentation to add.
+ * @param suppressEvents - If true, the event will not be triggered.
  */
-function addSegmentations(
-  segmentationInputArray: SegmentationPublicInput[]
+export function addSegmentations(
+  segmentationInputArray: SegmentationPublicInput[],
+  suppressEvents?: boolean
 ): void {
-  validateSegmentationInput(segmentationInputArray);
+  const segmentationStateManager = defaultSegmentationStateManager;
 
-  segmentationInputArray.map((segInput) => {
-    const segmentationInput = structuredClone(segInput);
+  segmentationInputArray.forEach((segmentationInput) => {
+    const segmentation = normalizeSegmentationInput(segmentationInput);
 
-    addSegmentationToState(segmentationInput);
+    segmentationStateManager.addSegmentation(segmentation);
+
+    if (!suppressEvents) {
+      triggerSegmentationModified(segmentation.segmentationId);
+    }
   });
 }
 

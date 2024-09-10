@@ -1,4 +1,3 @@
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
 import { triggerSegmentationRenderBySegmentationId } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
@@ -11,9 +10,9 @@ const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
   const { segmentationId } = evt.detail;
-  const { type } = getSegmentation(segmentationId);
+  const { representationData } = getSegmentation(segmentationId);
 
-  if (type === SegmentationRepresentations.Labelmap) {
+  if (representationData.Labelmap) {
     onLabelmapSegmentationDataModified(evt);
   }
 

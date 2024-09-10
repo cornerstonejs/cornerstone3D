@@ -14,10 +14,10 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getSegmentationRepresentation } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { triggerSegmentationModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { SegmentationRepresentations } from '../../../enums';
 
 const { uuidv4 } = utilities;
 
@@ -27,14 +27,14 @@ const { uuidv4 } = utilities;
  *
  * @param element - The element that will be rendered.
  * @param volumeId - The volume id of the labelmap.
- * @param segmentationRepresentationUID - The segmentation representation UID.
+ * @param segmentationId - The segmentation id of the labelmap.
  *
  * @internal
  */
 async function addLabelmapToElement(
   element: HTMLDivElement,
   labelMapData: LabelmapSegmentationData,
-  segmentationRepresentationUID: string
+  segmentationId: string
 ): Promise<void> {
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, viewport } = enabledElement;
@@ -56,13 +56,8 @@ async function addLabelmapToElement(
       volumeId = uuidv4();
 
       // update the labelmap data with the new volumeId
-      const segmentationRepresentation = getSegmentationRepresentation(
-        segmentationRepresentationUID
-      );
 
-      const segmentation = getSegmentation(
-        segmentationRepresentation.segmentationId
-      );
+      const segmentation = getSegmentation(segmentationId);
 
       segmentation.representationData.Labelmap = {
         ...segmentation.representationData.Labelmap,
@@ -71,7 +66,7 @@ async function addLabelmapToElement(
 
       (labelMapData as LabelmapSegmentationDataVolume).volumeId = volumeId;
 
-      triggerSegmentationModified(segmentationRepresentation.segmentationId);
+      triggerSegmentationModified(segmentationId);
     }
 
     // Todo: Right now we use MIP blend mode for the labelmap, since the
@@ -85,7 +80,7 @@ async function addLabelmapToElement(
     const volumeInputs: Types.IVolumeInput[] = [
       {
         volumeId,
-        actorUID: segmentationRepresentationUID,
+        actorUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
         visibility,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       },
@@ -100,20 +95,17 @@ async function addLabelmapToElement(
       suppressEvents
     );
   } else {
-    const representation = getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
     const segmentationImageId = getCurrentLabelmapImageIdForViewport(
       viewport.id,
-      representation.segmentationId
+      segmentationId
     );
 
     const stackInputs: Types.IStackInput[] = [
       {
         imageId: segmentationImageId,
-        actorUID: segmentationRepresentationUID,
+        actorUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
       },
     ];
 

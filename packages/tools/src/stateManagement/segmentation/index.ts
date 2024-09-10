@@ -1,40 +1,52 @@
 import {
-  removeSegmentationRepresentations,
-  removeSegmentationRepresentationsFromViewport,
+  removeContourRepresentation,
+  removeLabelmapRepresentation,
+  removeSegmentationRepresentation,
+  removeSurfaceRepresentation,
 } from './removeSegmentationRepresentations';
-import addSegmentations from './addSegmentations';
+
 import {
-  addSegmentationRepresentations,
-  addMultiViewportSegmentationRepresentations,
-} from './addSegmentationRepresentations';
-import addRepresentationData from './addRepresentationData';
-import { convertVolumeToStackSegmentation } from './helpers/convertVolumeToStackSegmentation';
+  addContourRepresentationToViewport,
+  addContourRepresentationToViewportMap,
+  addSurfaceRepresentationToViewport,
+  addSurfaceRepresentationToViewportMap,
+  addLabelmapRepresentationToViewport,
+  addLabelmapRepresentationToViewportMap,
+} from './addSegmentationRepresentationsToViewport';
+
+import { addSegmentations } from './addSegmentations';
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
 import * as state from './segmentationState';
 import * as config from './config';
 import * as segmentIndex from './segmentIndex';
 import * as triggerSegmentationEvents from './triggerSegmentationEvents';
-import { convertStackToVolumeSegmentation } from './helpers/convertStackToVolumeSegmentation';
-import { computeVolumeSegmentationFromStack } from './helpers/computeVolumeSegmentationFromStack';
+import { convertStackToVolumeLabelmap } from './helpers/convertStackToVolumeLabelmap';
+import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapFromStack';
 import * as polySegManager from './polySeg';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
+import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 
 const helpers = {
   clearSegmentValue,
-  convertStackToVolumeSegmentation,
-  computeVolumeSegmentationFromStack,
-  convertVolumeToStackSegmentation,
+  convertStackToVolumeLabelmap,
+  computeVolumeLabelmapFromStack,
+  convertVolumeToStackLabelmap,
 };
 
 export {
   // functions
+  removeSegmentationRepresentation,
+  removeContourRepresentation,
+  removeLabelmapRepresentation,
+  removeSurfaceRepresentation,
+  addLabelmapRepresentationToViewport,
+  addLabelmapRepresentationToViewportMap,
+  addContourRepresentationToViewport,
+  addContourRepresentationToViewportMap,
+  addSurfaceRepresentationToViewport,
+  addSurfaceRepresentationToViewportMap,
   addSegmentations,
-  addSegmentationRepresentations,
-  addMultiViewportSegmentationRepresentations,
-  removeSegmentationRepresentations,
-  removeSegmentationRepresentationsFromViewport,
-  addRepresentationData,
   // name spaces
   state,
   activeSegmentation,

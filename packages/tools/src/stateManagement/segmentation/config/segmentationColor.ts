@@ -1,9 +1,12 @@
-import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 import { addColorLUT as _addColorLUT } from '../addColorLUT';
 import { getColorLUT as _getColorLUT } from '../getColorLUT';
-import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
+import { getViewportSegmentationEntries } from '../getSegmentationsForViewport';
+import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
+import {
+  getSegmentationRepresentation,
+  getSegmentationRepresentations,
+} from '../getSegmentationRepresentation';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -22,34 +25,36 @@ function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex?: number): number {
 }
 
 /**
- * It sets the segmentationRepresentation to use the provided
- * colorLUT at the given colorLUTIndex.
- * @param segmentationRepresentationUID - the representationUID for the segmentation
- * @param colorLUTIndex - the index of the colorLUT to use
+ * Sets the color LUT index for a segmentation in a specific viewport.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param colorLUTIndex - The index of the color LUT to set.
  */
 function setColorLUT(
-  segmentationRepresentationUID: string,
+  viewportId: string,
+  segmentationId: string,
   colorLUTIndex: number
 ): void {
-  const segRepresentation = getSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
-
-  if (!segRepresentation) {
-    throw new Error(
-      `setColorLUT: could not find segmentation representation with UID ${segmentationRepresentationUID}`
-    );
-  }
-
   if (!_getColorLUT(colorLUTIndex)) {
     throw new Error(
       `setColorLUT: could not find colorLUT with index ${colorLUTIndex}`
     );
   }
 
-  segRepresentation.colorLUTIndex = colorLUTIndex;
+  const segmentationEntries = getViewportSegmentationEntries(viewportId, {
+    segmentationId,
+  });
 
-  triggerSegmentationRepresentationModified(segmentationRepresentationUID);
+  if (!segmentationEntries) {
+    throw new Error(
+      `viewport specific state for viewport ${viewportId} does not exist`
+    );
+  }
+  segmentationEntries.forEach((segmentationEntry) => {
+    segmentationEntry.config.colorLUTIndex = colorLUTIndex;
+  });
+
+  triggerSegmentationRender(viewportId);
 }
 
 /**
@@ -57,25 +62,30 @@ function setColorLUT(
  * color for that segment. It can be used for segmentation tools that need to
  * display the color of their annotation.
  *
- * @param segmentationRepresentationUID - The uid of the segmentation representation
+ * @param viewportId - The id of the viewport
+ * @param segmentationId - The id of the segmentation
  * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.
  */
 function getSegmentIndexColor(
-  segmentationRepresentationUID: string,
+  viewportId: string,
+  segmentationId: string,
   segmentIndex: number
 ): Types.Color {
-  const segmentationRepresentation = getSegmentationRepresentation(
-    segmentationRepresentationUID
+  const representations = getSegmentationRepresentations(
+    viewportId,
+    segmentationId
   );
 
-  if (!segmentationRepresentation) {
+  if (!representations) {
     throw new Error(
-      `segmentation representation with UID ${segmentationRepresentationUID} does not exist`
+      `segmentation representation with segmentationId ${segmentationId} does not exist`
     );
   }
 
-  const { colorLUTIndex } = segmentationRepresentation;
+  const representation = representations[0];
+
+  const { colorLUTIndex } = representation.config;
 
   // get colorLUT
   const colorLUT = _getColorLUT(colorLUTIndex);
@@ -90,13 +100,15 @@ function getSegmentIndexColor(
 }
 
 function setSegmentIndexColor(
-  segmentationRepresentationUID: string,
+  viewportId: string,
+  segmentationId: string,
   segmentIndex: number,
   color: Types.Color
 ): void {
   // Get the reference to the color in the colorLUT.
   const colorReference = getSegmentIndexColor(
-    segmentationRepresentationUID,
+    viewportId,
+    segmentationId,
     segmentIndex
   );
 
@@ -105,7 +117,7 @@ function setSegmentIndexColor(
     colorReference[i] = color[i];
   }
 
-  triggerSegmentationRepresentationModified(segmentationRepresentationUID);
+  triggerSegmentationRender(viewportId);
 }
 
 export { getSegmentIndexColor, addColorLUT, setColorLUT, setSegmentIndexColor };

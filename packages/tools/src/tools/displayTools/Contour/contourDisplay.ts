@@ -2,12 +2,11 @@ import type { StackViewport, Types } from '@cornerstonejs/core';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
-import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
-import { deleteConfigCache } from './contourHandler/contourConfigCache';
 import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
+import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 
 let polySegConversionInProgress = false;
 
@@ -23,7 +22,7 @@ let polySegConversionInProgress = false;
  */
 function removeRepresentation(
   viewportId: string,
-  segmentationRepresentationUID: string,
+  segmentationId: string,
   renderImmediate = false
 ): void {
   const enabledElement = getEnabledElementByViewportId(viewportId);
@@ -32,8 +31,6 @@ function removeRepresentation(
   }
 
   const { viewport } = enabledElement;
-
-  deleteConfigCache(segmentationRepresentationUID);
 
   if (!renderImmediate) {
     return;
@@ -64,15 +61,14 @@ async function render(
   if (
     !contourData &&
     canComputeRequestedRepresentation(
-      contourRepresentation.segmentationRepresentationUID
+      segmentationId,
+      Representations.Contour
     ) &&
     !polySegConversionInProgress
   ) {
     polySegConversionInProgress = true;
 
     contourData = await computeAndAddContourRepresentation(segmentationId, {
-      segmentationRepresentationUID:
-        contourRepresentation.segmentationRepresentationUID,
       viewport,
     });
   }

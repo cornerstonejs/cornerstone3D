@@ -11,7 +11,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { computeVolumeSegmentationFromStack } from '../../helpers/computeVolumeSegmentationFromStack';
+import { computeVolumeLabelmapFromStack } from '../../helpers/computeVolumeLabelmapFromStack';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
@@ -44,7 +44,7 @@ export async function convertLabelmapToSurface(
     const { imageIds } =
       labelmapRepresentationData as LabelmapSegmentationDataStack;
 
-    ({ volumeId } = await computeVolumeSegmentationFromStack({
+    ({ volumeId } = await computeVolumeLabelmapFromStack({
       imageIds,
     }));
   }

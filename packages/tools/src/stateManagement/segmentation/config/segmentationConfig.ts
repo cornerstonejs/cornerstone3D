@@ -1,175 +1,165 @@
 import type SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
-
-import type {
-  GlobalConfig,
-  RepresentationConfig,
-} from '../../../types/SegmentationStateTypes';
-import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
-import { getGlobalConfig as _getGlobalConfig } from '../getGlobalConfig';
-import { setGlobalConfig as _setGlobalConfig } from '../setGlobalConfig';
-import { getSegmentationRepresentationConfig as _getSegmentationRepresentationConfig } from '../getSegmentationRepresentationConfig';
-import { setSegmentationRepresentationConfig as _setSegmentationRepresentationConfig } from '../setSegmentationRepresentationConfig';
-import { setPerSegmentConfig as _setPerSegmentConfig } from '../setPerSegmentConfig';
-import { getPerSegmentConfig as _getPerSegmentConfig } from '../getPerSegmentConfig';
-import type { LabelmapConfig } from '../../../types/LabelmapTypes';
+import { segmentationStyle } from '../SegmentationStyle';
+import type { RepresentationStyle } from '../SegmentationStyle';
 
 /**
- * It returns the global segmentation config.
- * @returns The global segmentation config containing the representations
- * config for each representation type and renderInactiveRepresentations flag.
+ * It returns the global segmentation style.
+ * @param specifier - An object containing the specifications for the global style.
+ * @param specifier.type - The type of segmentation representation.
+ * @returns The global segmentation style containing the representations
+ * style for each representation type.
  */
-function getGlobalConfig(): GlobalConfig {
-  return _getGlobalConfig();
-}
-
-/**
- * Set the global segmentation config
- * @param segmentationConfig - SegmentationConfig
- */
-function setGlobalConfig(segmentationConfig: GlobalConfig): void {
-  _setGlobalConfig(segmentationConfig);
-}
-
-/**
- * Given a representation type, return the corresponding global representation config
- * @param representationType - The type of representation to query
- * @returns A representation configuration object.
- */
-function getGlobalRepresentationConfig(
+function getGlobalStyle(
   representationType: SegmentationRepresentations
-): LabelmapConfig {
-  const globalConfig = getGlobalConfig();
-  return globalConfig.representations[representationType];
+): RepresentationStyle {
+  return segmentationStyle.getGlobalStyle(representationType);
 }
 
 /**
- * Set the global configuration for a given representation type. It fires
- * a SEGMENTATION_MODIFIED event.
- *
- * @triggers SEGMENTATION_MODIFIED
- * @param representationType - The type of representation to set config for
- * @param config - The configuration for the representation.
+ * Set the global segmentation style
+ * @param type - The type of segmentation representation.
+ * @param style - The style to be set globally.
  */
-function setGlobalRepresentationConfig(
+function setGlobalStyle(
   representationType: SegmentationRepresentations,
-  config: LabelmapConfig
+  style: RepresentationStyle
 ): void {
-  const globalConfig = getGlobalConfig();
+  segmentationStyle.setGlobalStyle(type, style);
+}
 
-  setGlobalConfig({
-    ...globalConfig,
-    representations: {
-      ...globalConfig.representations,
-      [representationType]: {
-        ...globalConfig.representations[representationType],
-        ...config,
+/**
+ * Retrieves the style for all segments of a given segmentation representation.
+ *
+ * @param specifier - An object containing the specifications for the segmentation representation style.
+ * @param specifier.viewportId - The ID of the viewport.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.representationType - The type of segmentation representation.
+ * @returns The representation style for all segments.
+ */
+function getSegmentationRepresentationStyle(specifier: {
+  viewportId: string;
+  segmentationId: string;
+  representationType: SegmentationRepresentations;
+}): RepresentationStyle {
+  return segmentationStyle.getSegmentationStyle(specifier);
+}
+
+/**
+ * Sets the style for all segments of a given segmentation representation.
+ *
+ * @param specifier - An object containing the specifications for the segmentation representation style.
+ * @param specifier.viewportId - The ID of the viewport.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.representationType - The type of segmentation representation.
+ * @param specifier.style - The style to be set for all segments.
+ */
+function setSegmentationRepresentationStyle(specifier: {
+  viewportId: string;
+  segmentationId: string;
+  representationType: SegmentationRepresentations;
+  style: RepresentationStyle;
+}): void {
+  const { style, ...rest } = specifier;
+  segmentationStyle.setViewportStyle(rest, style);
+}
+
+/**
+ * Sets the style that is specific to each segment in the segmentation representation.
+ * Note this is setting style for each segment in bulk
+ *
+ * @param specifier - An object containing the specifications for the segmentation representation style.
+ * @param specifier.viewportId - The ID of the viewport.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.representationType - The type of segmentation representation.
+ * @param specifier.style - The style to be set for the segmentation representation.
+ */
+function setPerSegmentStyle(specifier: {
+  viewportId: string;
+  segmentationId: string;
+  representationType: SegmentationRepresentations;
+  style: Record<number, RepresentationStyle>;
+}): void {
+  const { style, ...rest } = specifier;
+  Object.entries(style).forEach(([segmentIndex, segmentStyle]) => {
+    segmentationStyle.setViewportStyle(
+      {
+        ...rest,
+        segmentIndex: Number(segmentIndex),
       },
-    },
+      segmentStyle
+    );
   });
 }
 
 /**
- * Retrieves the configuration for all segments of a given segmentation representation.
+ * Retrieves the segment representation style for a given segmentation.
  *
- * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
- * @returns The representation configuration for all segments.
+ * @param specifier - An object containing the specifications for the segmentation representation style.
+ * @param specifier.viewportId - The ID of the viewport.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.representationType - The type of segmentation representation.
+ * @returns The segment representation style.
  */
-function getSegmentationRepresentationConfig(
-  segmentationRepresentationUID: string
-): RepresentationConfig {
-  return _getSegmentationRepresentationConfig(segmentationRepresentationUID);
+function getPerSegmentStyle(specifier: {
+  viewportId: string;
+  segmentationId: string;
+  representationType: SegmentationRepresentations;
+}): Record<number, RepresentationStyle> {
+  // This function needs to be implemented in SegmentationStyle class
+  // For now, we'll return an empty object
+  return {};
 }
 
 /**
- * Sets the configuration for all segments of a given segmentation representation.
+ * Sets the style for a specific segment index in a segmentation representation.
  *
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @param config - The configuration to be set for all segments.
+ * @param specifier - An object containing the specifications for the segmentation representation style.
+ * @param specifier.viewportId - The ID of the viewport.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.representationType - The type of segmentation representation.
+ * @param specifier.segmentIndex - The index of the segment.
+ * @param specifier.style - The style to set for the segment.
  */
-function setSegmentationRepresentationConfig(
-  segmentationRepresentationUID: string,
-  config: RepresentationConfig
-): void {
-  _setSegmentationRepresentationConfig(segmentationRepresentationUID, config);
+function setSegmentIndexStyle(specifier: {
+  viewportId: string;
+  segmentationId: string;
+  representationType: SegmentationRepresentations;
+  segmentIndex: number;
+  style: RepresentationStyle;
+}): void {
+  const { style, ...rest } = specifier;
+  segmentationStyle.setViewportStyle(rest, style);
 }
 
 /**
- * Sets the configuration that is specific to each segment in the segmentation representation.
- * Note this is setting configuration for each segmetn in bulk
+ * Get the segment specific style for the segmentation representation.
  *
- * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
- * @param config - The configuration to be set for the segmentation representation.
+ * @param specifier - An object containing the specifications for the segmentation representation style.
+ * @param specifier.viewportId - The ID of the viewport.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.representationType - The type of segmentation representation.
+ * @param specifier.segmentIndex - The index of the segment
+ * @returns - The style for the segment index in the segmentation representation
  */
-function setPerSegmentConfig(
-  segmentationRepresentationUID: string,
-  config: RepresentationConfig
-): void {
-  _setPerSegmentConfig(segmentationRepresentationUID, config);
-}
-
-/**
- * Retrieves the segment representation configuration for a given segmentation representation UID.
- *
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @returns The segment representation configuration.
- */
-function getPerSegmentConfig(
-  segmentationRepresentationUID: string
-): RepresentationConfig {
-  return _getPerSegmentConfig(segmentationRepresentationUID);
-}
-
-/**
- * Sets the configuration for a specific segment index in a segmentation representation.
- *
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @param segmentIndex - The index of the segment.
- * @param config - The configuration to set for the segment.
- * @param suppressEvent - Optional. If true, the segmentation representation modified event will not be triggered. Default is false.
- */
-function setSegmentIndexConfig(
-  segmentationRepresentationUID: string,
-  segmentIndex: number,
-  config: RepresentationConfig,
-  suppressEvent = false
-): void {
-  const perSegment = _getPerSegmentConfig(segmentationRepresentationUID);
-
-  perSegment[segmentIndex] = config;
-
-  if (!suppressEvent) {
-    triggerSegmentationRepresentationModified(segmentationRepresentationUID);
-  }
-}
-
-/**
- * Get the segment specific configuration for the segmentation representation.
- *
- * @param segmentationRepresentationUID  - The uid of the segmentation representation
- * @param segmentIndex - The index of the segment
- * @returns - The configuration for the segment index in the segmentation representation
- */
-function getSegmentIndexConfig(
-  segmentationRepresentationUID: string,
-  segmentIndex: number
-): RepresentationConfig {
-  const perSegment = _getPerSegmentConfig(segmentationRepresentationUID);
-
-  return perSegment?.[segmentIndex];
+function getSegmentIndexStyle(specifier: {
+  viewportId: string;
+  segmentationId: string;
+  representationType: SegmentationRepresentations;
+  segmentIndex: number;
+}): RepresentationStyle {
+  return segmentationStyle.getSegmentationStyle(specifier);
 }
 
 export {
   // Global
-  getGlobalConfig,
-  setGlobalConfig,
-  getGlobalRepresentationConfig,
-  setGlobalRepresentationConfig,
-  // segmentation representation config
-  getSegmentationRepresentationConfig,
-  setSegmentationRepresentationConfig,
-  setPerSegmentConfig,
-  getPerSegmentConfig,
+  getGlobalStyle,
+  setGlobalStyle,
+  // segmentation representation style
+  getSegmentationRepresentationStyle,
+  setSegmentationRepresentationStyle,
+  setPerSegmentStyle,
+  getPerSegmentStyle,
   // segment index get/set
-  setSegmentIndexConfig,
-  getSegmentIndexConfig,
+  setSegmentIndexStyle,
+  getSegmentIndexStyle,
 };

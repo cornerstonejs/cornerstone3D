@@ -118,7 +118,6 @@ describe('Segmentation State:', () => {
 
         const segRepresentation = toolGroupSegRepresentations[0];
 
-        expect(segRepresentation.segmentationRepresentationUID).toBeDefined();
         expect(segRepresentation.segmentationId).toBe(segVolumeId);
         expect(segRepresentation.type).toBe(Labelmap);
         expect(segRepresentation.rendering).toBeDefined();

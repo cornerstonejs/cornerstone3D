@@ -246,8 +246,8 @@ type SegmentationRenderedEventDetail = {
  * EventDetail for when a Segmentation Representation for a toolGroup is modified
  */
 type SegmentationRepresentationModifiedEventDetail = {
-  /** segmentation representationUID */
-  segmentationRepresentationUID: string;
+  /** segmentationId */
+  segmentationId: string;
 };
 
 /**
@@ -262,8 +262,8 @@ type SegmentationRemovedEventDetail = {
  * EventDetail for when a Segmentation Representation is removed
  */
 type SegmentationRepresentationRemovedEventDetail = {
-  /** segmentation representationUID */
-  segmentationRepresentationUID: string;
+  /** segmentationId */
+  segmentationId: string;
 };
 
 /**

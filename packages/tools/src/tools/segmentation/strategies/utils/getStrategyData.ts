@@ -6,6 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import type { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
+import { getLabelmapActor } from '../../../../stateManagement/segmentation/helpers';
 
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
@@ -44,8 +45,7 @@ function getStrategyData({ operationData, viewport }) {
     ({ imageData: segmentationImageData } = segmentationVolume);
     // segmentationDimensions = segmentationVolume.dimensions;
   } else {
-    const { segmentationRepresentationUID, segmentationId } =
-      operationData as LabelmapToolOperationDataStack;
+    const { segmentationId } = operationData as LabelmapToolOperationDataStack;
 
     const labelmapImageId = getCurrentLabelmapImageIdForViewport(
       viewport.id,
@@ -60,16 +60,13 @@ function getStrategyData({ operationData, viewport }) {
       return;
     }
 
-    // we know that the segmentationRepresentationUID is the name of the actor always
-    // and always circle modifies the current imageId which in fact is the imageData
-    // of that actor at that moment so we have the imageData already
-    const actor = viewport.getActor(segmentationRepresentationUID);
+    const actor = getLabelmapActor(viewport.id, segmentationId);
     if (!actor) {
       return;
     }
 
     const currentSegImage = cache.getImage(labelmapImageId);
-    segmentationImageData = actor.actor.getMapper().getInputData();
+    segmentationImageData = actor.getMapper().getInputData();
     segmentationVoxelManager = currentSegImage.voxelManager;
     const currentSegmentationImageId = operationData.imageId;
 

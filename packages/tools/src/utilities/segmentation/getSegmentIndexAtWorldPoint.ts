@@ -3,13 +3,13 @@ import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
-  getSegmentationRepresentationsForSegmentation,
   getCurrentLabelmapImageIdForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
+import { getLabelmapActor } from '../../stateManagement/segmentation/helpers';
 
 type Options = {
   representationType?: SegmentationRepresentations;
@@ -101,16 +101,11 @@ export function getSegmentIndexAtWorldForLabelmap(
     return;
   }
 
-  // find the first segmentationRepresentationUID for the segmentationId, since
-  // that is what we use as actorUID in the viewport
-
-  const segmentationRepresentations =
-    getSegmentationRepresentationsForSegmentation(segmentation.segmentationId);
-
-  const { segmentationRepresentationUID } = segmentationRepresentations[0];
-
-  const segmentationActor = viewport.getActor(segmentationRepresentationUID);
-  const imageData = segmentationActor?.actor.getMapper().getInputData();
+  const segmentationActor = getLabelmapActor(
+    viewport.id,
+    segmentation.segmentationId
+  );
+  const imageData = segmentationActor?.getMapper().getInputData();
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
   const dimensions = imageData.getDimensions();

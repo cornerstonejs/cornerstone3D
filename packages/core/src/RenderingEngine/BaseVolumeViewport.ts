@@ -54,7 +54,7 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { actorIsA } from '../utilities/actorCheck';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import isEqual, { isEqualNegative } from '../utilities/isEqual';
@@ -978,14 +978,19 @@ abstract class BaseVolumeViewport extends Viewport {
       slabThickness,
       preset,
     } = this.viewportProperties;
+    const volume = cache.getVolume(this.getVolumeId());
+    if (!volume) {
+      return null;
+    }
 
     const voiRanges = this.getActors()
       .map((actorEntry) => {
-        const volume = cache.getVolume(this.getVolumeId());
-        if (!volume) {
+        const volumeActor = actorEntry.actor as vtkVolume;
+
+        if (!actorIsA(actorEntry, 'vtkVolume')) {
           return null;
         }
-        const volumeActor = actorEntry.actor as vtkVolume;
+
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
           this.viewportProperties?.VOILUTFunction === 'SIGMOID'

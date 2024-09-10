@@ -5,16 +5,13 @@ import {
   utilities as csUtils,
   getEnabledElementByViewportId,
   volumeLoader,
-  eventTarget,
 } from '@cornerstonejs/core';
 
 import { SegmentationRepresentations, Events } from '../../enums';
-import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
-import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
-import getDefaultSurfaceConfig from '../../tools/displayTools/Surface/surfaceConfig';
 import type {
-  GlobalConfig,
-  RepresentationConfig,
+  ContourRenderingConfig,
+  LabelmapRenderingConfig,
+  RenderingConfig,
   RepresentationsData,
   Segmentation,
   SegmentationRepresentation,
@@ -24,21 +21,13 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
-
-const newGlobalConfig: GlobalConfig = {
-  renderInactiveRepresentations: true,
-  representations: {
-    [SegmentationRepresentations.Labelmap]: getDefaultLabelmapConfig(),
-    [SegmentationRepresentations.Contour]: getDefaultContourConfig(),
-    [SegmentationRepresentations.Surface]: getDefaultSurfaceConfig(),
-  },
-};
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import { segmentationStyle } from './SegmentationStyle';
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
   segmentations: [],
-  globalConfig: newGlobalConfig,
-  representations: {},
   viewports: {},
 };
 
@@ -61,6 +50,10 @@ export default class SegmentationStateManager {
     Map<string, string>
   >();
 
+  /**
+   * Creates an instance of SegmentationStateManager.
+   * @param {string} [uid] - Optional unique identifier for the manager.
+   */
   constructor(uid?: string) {
     if (!uid) {
       uid = csUtils.uuidv4();
@@ -71,7 +64,7 @@ export default class SegmentationStateManager {
 
   /**
    * Returns a copy of the current state of the segmentation.
-   * @returns A deep copy of the segmentation state.
+   * @returns {SegmentationState} A deep copy of the segmentation state.
    */
   getState(): SegmentationState {
     return this.state;
@@ -79,8 +72,8 @@ export default class SegmentationStateManager {
 
   /**
    * Returns the colorLUT at the specified index.
-   * @param lutIndex - The index of the color LUT to retrieve.
-   * @returns A ColorLUT object.
+   * @param {number} lutIndex - The index of the color LUT to retrieve.
+   * @returns {Types.ColorLUT | undefined} A ColorLUT object or undefined if not found.
    */
   getColorLUT(lutIndex: number): Types.ColorLUT | undefined {
     return this.state.colorLUT[lutIndex];
@@ -88,7 +81,7 @@ export default class SegmentationStateManager {
 
   /**
    * Returns the next available color LUT index.
-   * @returns The next color LUT index.
+   * @returns {number} The next color LUT index.
    */
   getNextColorLUTIndex(): number {
     return this.state.colorLUT.length;
@@ -103,8 +96,8 @@ export default class SegmentationStateManager {
 
   /**
    * Returns the segmentation state for the given segmentation ID.
-   * @param segmentationId - The ID of the segmentation.
-   * @returns The segmentation state object.
+   * @param {string} segmentationId - The ID of the segmentation.
+   * @returns {Segmentation | undefined} The segmentation state object or undefined if not found.
    */
   getSegmentation(segmentationId: string): Segmentation | undefined {
     return this.state.segmentations.find(
@@ -114,7 +107,8 @@ export default class SegmentationStateManager {
 
   /**
    * Adds a segmentation to the segmentations array.
-   * @param segmentation - The segmentation object to add.
+   * @param {Segmentation} segmentation - The segmentation object to add.
+   * @throws {Error} If a segmentation with the same ID already exists.
    */
   addSegmentation(segmentation: Segmentation): void {
     if (this.getSegmentation(segmentation.segmentationId)) {
@@ -141,7 +135,7 @@ export default class SegmentationStateManager {
 
   /**
    * Removes the segmentation from the segmentation state.
-   * @param segmentationId - The ID of the segmentation to remove.
+   * @param {string} segmentationId - The ID of the segmentation to remove.
    */
   removeSegmentation(segmentationId: string): void {
     this.state.segmentations = this.state.segmentations.filter(
@@ -150,36 +144,17 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Returns the segmentation representation with the given UID.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
-   * @returns The segmentation representation object.
-   */
-  getSegmentationRepresentation(
-    segmentationRepresentationUID: string
-  ): SegmentationRepresentation | undefined {
-    return this.state.representations[segmentationRepresentationUID];
-  }
-
-  /**
-   * Adds a segmentation representation to the representations object.
-   * @param segmentationRepresentation - The segmentation representation object to add.
-   */
-  addSegmentationRepresentationState(
-    segmentationRepresentation: SegmentationRepresentation
-  ): void {
-    const { segmentationRepresentationUID } = segmentationRepresentation;
-    this.state.representations[segmentationRepresentationUID] =
-      segmentationRepresentation;
-  }
-
-  /**
    * Adds a segmentation representation to the specified viewport.
-   * @param viewportId - The ID of the viewport.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
+   * @param {string} viewportId - The ID of the viewport.
+   * @param {string} segmentationId - The ID of the segmentation.
+   * @param {SegmentationRepresentations} type - The type of segmentation representation.
+   * @param {RenderingConfig} renderingConfig - The rendering configuration for the segmentation.
    */
-  addSegmentationRepresentationToViewport(
+  addSegmentationRepresentation(
     viewportId: string,
-    segmentationRepresentationUID: string
+    segmentationId: string,
+    type: SegmentationRepresentations,
+    renderingConfig: RenderingConfig
   ): void {
     const enabledElement = getEnabledElementByViewportId(viewportId);
 
@@ -188,18 +163,30 @@ export default class SegmentationStateManager {
     }
 
     if (!this.state.viewports[viewportId]) {
-      this.state.viewports[viewportId] = {};
+      this.state.viewports[viewportId] = [];
+      // if this is the first time we make the viewports render inactive segmentations
+      // unless the user has specifically requested to render inactive segmentations
+      segmentationStyle.setViewportRenderInactiveSegmentations(
+        viewportId,
+        true
+      );
     }
 
-    const representation = this.getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
+    if (type !== SegmentationRepresentations.Labelmap) {
+      this.state.viewports[viewportId].push({
+        segmentationId,
+        type,
+        active: false,
+        visible: true,
+        segmentsHidden: new Set(),
+        config: {
+          ...getDefaultRenderingConfig(type),
+          ...renderingConfig,
+        },
+      });
 
-    if (representation.type !== SegmentationRepresentations.Labelmap) {
-      this.setActiveSegmentationRepresentation(
-        viewportId,
-        segmentationRepresentationUID
-      );
+      this.setActiveSegmentation(viewportId, segmentationId);
+
       return;
     }
 
@@ -229,7 +216,11 @@ export default class SegmentationStateManager {
     const volumeViewport =
       enabledElement.viewport instanceof BaseVolumeViewport;
 
-    const segmentation = this.getSegmentation(representation.segmentationId);
+    const segmentation = this.getSegmentation(segmentationId);
+
+    if (!segmentation) {
+      return;
+    }
 
     const { representationData } = segmentation;
 
@@ -237,10 +228,7 @@ export default class SegmentationStateManager {
 
     if (!isLabelmap) {
       // make all the other representations inactive first
-      this.setActiveSegmentationRepresentation(
-        viewportId,
-        segmentationRepresentationUID
-      );
+      this.setActiveSegmentation(viewportId, segmentationId);
       return;
     }
 
@@ -276,26 +264,36 @@ export default class SegmentationStateManager {
         );
         const segImage = cache.getImage(imageIds[0]);
         if (segImage?.FrameOfReferenceUID === frameOfReferenceUID) {
-          internalConvertStackToVolumeSegmentation(segmentation);
+          internaConvertStackToVolumeLabelmap(segmentation);
         }
       } else {
         // TODO: Implement Volume Labelmap on Volume Viewport
       }
     }
 
+    this.state.viewports[viewportId].push({
+      segmentationId,
+      type,
+      active: true,
+      visible: true,
+      segmentsHidden: new Set(),
+      config: {
+        ...getDefaultRenderingConfig(type),
+        ...renderingConfig,
+      },
+    });
+
     // make all the other representations inactive first
-    this.setActiveSegmentationRepresentation(
-      viewportId,
-      segmentationRepresentationUID
-    );
+    this.setActiveSegmentation(viewportId, segmentationId);
   }
 
   /**
    * Helper function to update labelmap segmentation image references.
-   * @param segmentationId - The ID of the segmentation representation.
-   * @param stackViewport - The stack viewport.
-   * @param labelmapImageIds - The labelmap image IDs.
-   * @param updateCallback - A callback to update the reference map.
+   * @param {string} segmentationId - The ID of the segmentation representation.
+   * @param {Types.IStackViewport} stackViewport - The stack viewport.
+   * @param {string[]} labelmapImageIds - The labelmap image IDs.
+   * @param {Function} updateCallback - A callback to update the reference map.
+   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   _updateLabelmapSegmentationReferences(
     segmentationId,
@@ -329,9 +327,9 @@ export default class SegmentationStateManager {
 
   /**
    * Updates the segmentation image references for a given viewport and segmentation representation.
-   * @param viewportId - The ID of the viewport.
-   * @param segmentationId - The Id of the segmentation representation.
-   * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
+   * @param {string} viewportId - The ID of the viewport.
+   * @param {string} segmentationId - The Id of the segmentation representation.
+   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   updateLabelmapSegmentationImageReferences(viewportId, segmentationId) {
     const segmentation = this.getSegmentation(segmentationId);
@@ -362,9 +360,9 @@ export default class SegmentationStateManager {
 
   /**
    * Updates all segmentation image references for a given viewport and segmentation representation.
-   * @param viewportId - The ID of the viewport.
-   * @param segmentationId - The Id of the segmentation representation.
-   * @returns The labelmap imageId reference for the current imageId rendered on the viewport.
+   * @param {string} viewportId - The ID of the viewport.
+   * @param {string} segmentationId - The Id of the segmentation representation.
+   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   _updateAllLabelmapSegmentationImageReferences(viewportId, segmentationId) {
     const segmentation = this.getSegmentation(segmentationId);
@@ -409,6 +407,11 @@ export default class SegmentationStateManager {
     );
   }
 
+  /**
+   * Retrieves the labelmap image IDs for a given representation data.
+   * @param {RepresentationsData} representationData - The representation data.
+   * @returns {string[]} An array of labelmap image IDs.
+   */
   private getLabelmapImageIds(representationData: RepresentationsData) {
     const labelmapData = representationData.Labelmap;
     let labelmapImageIds;
@@ -496,94 +499,52 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Retrieves an array of segmentation representations for a given viewport.
-   * @param viewportId - The ID of the viewport.
-   * @returns An array of SegmentationRepresentation objects.
+   * Removes a segmentation representation from the state.
+   * @param {string} viewportId - The ID of the viewport.
+   * @param {string} segmentationId - The ID of the segmentation.
+   * @param {SegmentationRepresentations} type - The type of segmentation representation.
    */
-  getSegmentationRepresentations(
-    viewportId: string
-  ): SegmentationRepresentation[] {
+  removeSegmentationRepresentation(
+    viewportId: string,
+    segmentationId: string,
+    type: SegmentationRepresentations
+  ): void {
     const viewport = this.state.viewports[viewportId];
 
     if (!viewport) {
-      return [];
-    }
-
-    return Object.keys(viewport).map((segRepUID) => {
-      return this.getSegmentationRepresentation(segRepUID);
-    });
-  }
-
-  /**
-   * Removes a segmentation representation from the representations object.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation to remove.
-   */
-  removeRepresentation(segmentationRepresentationUID: string): void {
-    // remove the color LUT associated with the segmentation representation
-    const colorLUTIndex =
-      this.state.representations[segmentationRepresentationUID].colorLUTIndex;
-    this.removeColorLUT(colorLUTIndex);
-
-    delete this.state.representations[segmentationRepresentationUID];
-
-    // remove the segmentation representation from all viewports
-    Object.keys(this.state.viewports).forEach((viewportId) => {
-      delete this.state.viewports[viewportId][segmentationRepresentationUID];
-    });
-  }
-
-  /**
-   * Removes a segmentation representation from a specific viewport.
-   * This method deletes the segmentation representation data associated with the given
-   * segmentationRepresentationUID from the specified viewport in the state.
-   *
-   * @param viewportId - The ID of the viewport from which to remove the segmentation representation.
-   * @param segmentationRepresentationUID - The unique identifier of the segmentation representation to remove.
-   */
-  removeRepresentationFromViewport(
-    viewportId: string,
-    segmentationRepresentationUID: string
-  ): void {
-    delete this.state.viewports[viewportId][segmentationRepresentationUID];
-  }
-
-  /**
-   * Set the active segmentation representation for the give viewport
-   * @param viewportId - The Id of the tool group that owns the
-   * segmentation data.
-   * @param segmentationRepresentationUID - string
-   */
-  setActiveSegmentationRepresentation(
-    viewportId: string,
-    segmentationRepresentationUID: string
-  ): void {
-    Object.keys(this.state.viewports[viewportId]).forEach((segRepUID) => {
-      this.state.viewports[viewportId][segRepUID].active = false;
-    });
-
-    if (!this.state.viewports[viewportId]) {
-      this.state.viewports[viewportId] = {};
-    }
-
-    if (!this.state.viewports[viewportId][segmentationRepresentationUID]) {
-      this.state.viewports[viewportId][segmentationRepresentationUID] = {
-        active: false,
-        visible: true,
-        segmentsHidden: new Set(),
-      };
-    }
-
-    this.state.viewports[viewportId][segmentationRepresentationUID].active =
-      true;
-  }
-
-  getActiveSegmentationRepresentation(
-    viewportId: string
-  ): SegmentationRepresentation | undefined {
-    if (!this.state.viewports?.[viewportId]) {
       return;
     }
 
+    const viewportRendering = viewport.find(
+      (segRep) =>
+        segRep.segmentationId === segmentationId && segRep.type === type
+    );
+
+    if (!viewportRendering) {
+      return;
+    }
+
+    viewport.splice(viewport.indexOf(viewportRendering), 1);
+  }
+
+  setActiveSegmentation(viewportId: string, segmentationId: string): void {
+    const viewport = this.state.viewports[viewportId];
+
+    if (!viewport) {
+      return;
+    }
+
+    Object.entries(viewport).forEach(([key, value]) => {
+      value.active = value.segmentationId === segmentationId;
+    });
+  }
+
+  /**
+   * Retrieves the active segmentation representation for a given viewport.
+   * @param viewportId - The ID of the viewport.
+   * @returns The active segmentation representation, or undefined if not found.
+   */
+  getActiveSegmentation(viewportId: string): Segmentation | undefined {
     const activeSegRep = Object.entries(this.state.viewports[viewportId]).find(
       ([, value]) => value.active
     );
@@ -592,149 +553,95 @@ export default class SegmentationStateManager {
       return;
     }
 
-    return this.getSegmentationRepresentation(activeSegRep[0]);
+    return this.getSegmentation(activeSegRep[0]);
   }
 
   /**
-   * Returns the global segmentation representation config.
-   * @returns The global segmentation representation config object.
-   */
-  getGlobalConfig(): GlobalConfig {
-    return this.state.globalConfig;
-  }
-
-  /**
-   * Sets the global segmentation representation config.
-   * @param config - The global segmentation representation config object to set.
-   */
-  setGlobalConfig(config: GlobalConfig): void {
-    this.state.globalConfig = config;
-  }
-
-  _getRepresentationConfig(segmentationRepresentationUID: string): {
-    allSegments?: RepresentationConfig;
-    perSegment?: RepresentationConfig;
-  } {
-    const segmentationRepresentation = this.getSegmentationRepresentation(
-      segmentationRepresentationUID
-    );
-
-    if (!segmentationRepresentation) {
-      return;
-    }
-
-    return segmentationRepresentation.config;
-  }
-
-  /**
-   * Returns the default representation config for the given segmentation representation UID.
-   * that is used for all segments.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
-   * @returns The default representation config object.
-   */
-  getSegmentationRepresentationConfig(
-    segmentationRepresentationUID: string
-  ): RepresentationConfig {
-    const config = this._getRepresentationConfig(segmentationRepresentationUID);
-
-    if (!config) {
-      return;
-    }
-
-    return config.allSegments;
-  }
-
-  /**
-   * Retrieves the configuration for per-segment settings of a segmentation representation.
-   *
-   * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
-   * @returns The configuration for per-segment settings, or undefined if the segmentation representation is not found.
-   */
-  getPerSegmentConfig(
-    segmentationRepresentationUID: string
-  ): RepresentationConfig {
-    const config = this._getRepresentationConfig(segmentationRepresentationUID);
-
-    if (!config) {
-      return;
-    }
-
-    return config.perSegment;
-  }
-
-  /**
-   * Sets the configuration for all segments of a segmentation representation.
-   *
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
-   * @param config - The configuration to be set for all segments.
-   */
-  setSegmentationRepresentationConfig(
-    segmentationRepresentationUID: string,
-    config: RepresentationConfig
-  ): void {
-    const _config = this._getRepresentationConfig(
-      segmentationRepresentationUID
-    );
-
-    if (!_config) {
-      return;
-    }
-
-    _config.allSegments = config;
-  }
-
-  /**
-   * Sets the configuration for per-segment settings of a segmentation representation.
-   *
-   * @param segmentationRepresentationUID - The unique identifier of the segmentation representation.
-   * @param config - The configuration for per-segment settings.
-   */
-  setPerSegmentConfig(
-    segmentationRepresentationUID: string,
-    config: RepresentationConfig
-  ): void {
-    const _config = this._getRepresentationConfig(
-      segmentationRepresentationUID
-    );
-
-    if (!_config) {
-      return;
-    }
-
-    _config.perSegment = config;
-  }
-
-  /**
-   * Returns the visibility of a segmentation representation in a specific viewport.
+   * Retrieves the segmentation representations for a given viewport.
    * @param viewportId - The ID of the viewport.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
+   * @param specifier - The specifier for the segmentation representations.
+   * @returns The segmentation representations for the given viewport, or undefined if not found.
+   */
+  getSegmentationRepresentations(
+    viewportId: string,
+    specifier: {
+      segmentationId?: string;
+      type?: SegmentationRepresentations;
+    } = {}
+  ): SegmentationRepresentation[] | [] {
+    const segmentationRepresentations = this.state.viewports[viewportId];
+
+    if (!segmentationRepresentations) {
+      return;
+    }
+
+    // If no specifier is provided, return all entries
+    if (!specifier.type && !specifier.segmentationId) {
+      return segmentationRepresentations;
+    }
+
+    return segmentationRepresentations.filter((representation) => {
+      const typeMatch = specifier.type
+        ? representation.type === specifier.type
+        : true;
+      const idMatch = specifier.segmentationId
+        ? representation.segmentationId === specifier.segmentationId
+        : true;
+      return typeMatch && idMatch;
+    });
+  }
+
+  /**
+   * Retrieves the visibility of a segmentation representation in a specific viewport.
+   * @param viewportId - The ID of the viewport.
+   * @param segmentationId - The ID of the segmentation.
+   * @param type - The type of the segmentation representation.
    * @returns The visibility of the segmentation representation in the viewport.
    */
   getSegmentationRepresentationVisibility(
     viewportId: string,
-    segmentationRepresentationUID: string
+    segmentationId: string,
+    type: SegmentationRepresentations
   ): boolean {
-    const viewport = this.state.viewports[viewportId];
-    return viewport && viewport[segmentationRepresentationUID]?.visible;
+    const viewportRepresentations = this.getSegmentationRepresentations(
+      viewportId,
+      {
+        segmentationId,
+        type,
+      }
+    );
+
+    return viewportRepresentations?.[0]?.visible;
   }
 
   /**
    * Sets the visibility of a segmentation representation in a specific viewport.
    * @param viewportId - The ID of the viewport.
-   * @param segmentationRepresentationUID - The UID of the segmentation representation.
+   * @param segmentationId - The ID of the segmentation.
+   * @param type - The type of the segmentation representation.
    * @param visible - The visibility to set for the segmentation representation in the viewport.
    */
   setSegmentationRepresentationVisibility(
     viewportId: string,
-    segmentationRepresentationUID: string,
+    segmentationId: string,
+    type: SegmentationRepresentations,
     visible: boolean
   ): void {
-    if (!this.state.viewports[viewportId]) {
-      this.state.viewports[viewportId] = {};
+    const viewportRepresentations = this.getSegmentationRepresentations(
+      viewportId,
+      {
+        segmentationId,
+        type,
+      }
+    );
+
+    if (!viewportRepresentations) {
+      return;
     }
 
-    this.state.viewports[viewportId][segmentationRepresentationUID].visible =
-      visible;
+    viewportRepresentations.forEach((representation) => {
+      representation.visible = visible;
+    });
   }
 
   /**
@@ -771,7 +678,7 @@ export default class SegmentationStateManager {
   }
 }
 
-async function internalComputeVolumeSegmentationFromStack({
+async function internalComputeVolumeLabelmapFromStack({
   imageIds,
   options = {},
 }: {
@@ -793,7 +700,7 @@ async function internalComputeVolumeSegmentationFromStack({
   return { volumeId };
 }
 
-async function internalConvertStackToVolumeSegmentation({
+async function internaConvertStackToVolumeLabelmap({
   segmentationId,
   options,
 }: {
@@ -810,7 +717,7 @@ async function internalConvertStackToVolumeSegmentation({
   const data = segmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
 
-  const { volumeId } = await internalComputeVolumeSegmentationFromStack({
+  const { volumeId } = await internalComputeVolumeLabelmapFromStack({
     imageIds: data.imageIds,
     options,
   });
@@ -820,9 +727,28 @@ async function internalConvertStackToVolumeSegmentation({
   ).volumeId = volumeId;
 }
 
+function getDefaultRenderingConfig(type: string): RenderingConfig {
+  const cfun = vtkColorTransferFunction.newInstance();
+  const ofun = vtkPiecewiseFunction.newInstance();
+  ofun.addPoint(0, 0);
+
+  if (type === SegmentationRepresentations.Labelmap) {
+    return {
+      cfun,
+      ofun,
+      colorLUTIndex: 0,
+    } as LabelmapRenderingConfig;
+  } else {
+    return {
+      colorLUTIndex: 0,
+    } as ContourRenderingConfig;
+  }
+}
+
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.segs = defaultSegmentationStateManager.state;
 export {
-  internalConvertStackToVolumeSegmentation,
-  internalComputeVolumeSegmentationFromStack,
+  internaConvertStackToVolumeLabelmap,
+  internalComputeVolumeLabelmapFromStack,
   defaultSegmentationStateManager,
 };

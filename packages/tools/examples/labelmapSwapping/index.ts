@@ -66,34 +66,23 @@ let viewportId;
 addButtonToToolbar({
   title: 'Swap Segmentation',
   onClick: async () => {
-    // Remove the currently displayed segmentation representation
-    segmentation.removeSegmentationRepresentations(viewportId, [
-      activeSegmentationRepresentationUID,
-    ]);
-
     if (segmentationDisplayed === segmentationId1) {
       // Add segmentation 2
-      const [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(viewportId, [
-          {
-            segmentationId: segmentationId2,
-            type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          },
-        ]);
+      await segmentation.addLabelmapRepresentationToViewport(viewportId, [
+        {
+          segmentationId: segmentationId2,
+        },
+      ]);
 
-      activeSegmentationRepresentationUID = segmentationRepresentationUID;
       segmentationDisplayed = segmentationId2;
     } else {
       // Add segmentation 1
-      const [segmentationRepresentationUID] =
-        await segmentation.addSegmentationRepresentations(viewportId, [
-          {
-            segmentationId: segmentationId1,
-            type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          },
-        ]);
+      await segmentation.addLabelmapRepresentationToViewport(viewportId, [
+        {
+          segmentationId: segmentationId1,
+        },
+      ]);
 
-      activeSegmentationRepresentationUID = segmentationRepresentationUID;
       segmentationDisplayed = segmentationId1;
     }
   },
@@ -185,7 +174,7 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  viewportId = 'CT_AXIAL_STACK';
+  viewportId = 'CT_AXIAL';
 
   const viewportInput = {
     viewportId,
@@ -208,15 +197,11 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the first segmentation representation to the viewport
-  const [segmentationRepresentationUID] =
-    await segmentation.addSegmentationRepresentations(viewportId, [
-      {
-        segmentationId: segmentationId1,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
-
-  activeSegmentationRepresentationUID = segmentationRepresentationUID;
+  await segmentation.addLabelmapRepresentationToViewport(viewportId, [
+    {
+      segmentationId: segmentationId1,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);

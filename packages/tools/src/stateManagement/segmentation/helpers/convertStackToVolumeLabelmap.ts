@@ -1,4 +1,4 @@
-import { internalConvertStackToVolumeSegmentation } from '../SegmentationStateManager';
+import { internaConvertStackToVolumeLabelmap } from '../SegmentationStateManager';
 import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 
 /**
@@ -14,8 +14,8 @@ import { triggerSegmentationModified } from '../triggerSegmentationEvents';
  *
  * @returns A promise that resolves when the conversion is complete.
  */
-export async function convertStackToVolumeSegmentation(args) {
-  const result = internalConvertStackToVolumeSegmentation(args);
+export async function convertStackToVolumeLabelmap(args) {
+  const result = internaConvertStackToVolumeLabelmap(args);
   triggerSegmentationModified(args.segmentationId);
   return result;
 }

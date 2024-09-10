@@ -9,6 +9,8 @@ import {
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
+import { getLabelmapActor } from '../../../stateManagement/segmentation/helpers';
+import { SegmentationRepresentations } from '../../../enums';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -18,7 +20,7 @@ const onLabelmapSegmentationDataModified = function (
 ): void {
   const { segmentationId, modifiedSlicesToUse } = evt.detail;
 
-  const { representationData, type } =
+  const { representationData } =
     SegmentationState.getSegmentation(segmentationId);
 
   const viewportIds =
@@ -48,7 +50,7 @@ const onLabelmapSegmentationDataModified = function (
       performVolumeLabelmapUpdate({
         modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
         representationData,
-        type,
+        type: SegmentationRepresentations.Labelmap,
       });
     }
 
@@ -108,11 +110,13 @@ function performVolumeLabelmapUpdate({
 
 function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
   viewportIds.forEach((viewportId) => {
-    const viewportSegReps =
-      SegmentationState.getSegmentationRepresentations(viewportId);
+    const segmentations = getViewportSegmentations(
+      viewportId,
+      SegmentationRepresentations.Labelmap
+    );
 
-    viewportSegReps.forEach((representation) => {
-      if (representation.segmentationId !== segmentationId) {
+    segmentations.forEach((segmentation) => {
+      if (segmentation.segmentationId !== segmentationId) {
         return;
       }
 
@@ -128,20 +132,14 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
         return;
       }
 
-      const actorEntry = viewport.getActor(
-        representation.segmentationRepresentationUID
-      );
+      const actor = getLabelmapActor(viewportId, segmentationId);
 
-      if (!actorEntry) {
-        return;
-      }
-
-      const segImageData = actorEntry.actor.getMapper().getInputData();
+      const segImageData = actor.getMapper().getInputData();
 
       const currentSegmentationImageId =
         SegmentationState.getCurrentLabelmapImageIdForViewport(
           viewportId,
-          representation.segmentationId
+          segmentationId
         );
 
       const segmentationImage = cache.getImage(currentSegmentationImageId);

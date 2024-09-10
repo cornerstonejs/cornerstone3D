@@ -3,6 +3,7 @@ import { cache } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
 import {
   getSegmentation,
+  getSegmentationRepresentation,
   getSegmentationRepresentations,
   getViewportIdsWithSegmentation,
 } from '../../segmentationState';
@@ -50,16 +51,13 @@ export async function updateSurfaceData(segmentationId) {
       const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
       return viewportIds.map((viewportId) => {
-        const segmentationRepresentations =
-          getSegmentationRepresentations(viewportId);
+        const surfaceRepresentation = getSegmentationRepresentation(
+          viewportId,
+          segmentationId,
+          SegmentationRepresentations.Surface
+        );
 
-        return segmentationRepresentations.map((segmentationRepresentation) => {
-          if (
-            segmentationRepresentation.type !==
-            SegmentationRepresentations.Surface
-          ) {
-            return;
-          }
+        return [surfaceRepresentation].map((surfaceRepresentation) => {
           segmentation.representationData.Surface.geometryIds.set(
             segmentIndex,
             geometryId
@@ -69,8 +67,7 @@ export async function updateSurfaceData(segmentationId) {
             segmentationId,
             [{ segmentIndex, data }],
             {
-              segmentationRepresentationUID:
-                segmentationRepresentation.segmentationRepresentationUID,
+              segmentationId: surfaceRepresentation.segmentationId,
             }
           );
         });

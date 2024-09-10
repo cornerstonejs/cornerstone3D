@@ -1,4 +1,3 @@
-import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
 /**
@@ -7,11 +6,10 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
  * @param viewportId - The ID of the viewport.
  * @returns The active segmentation representation, or undefined if not found.
  */
-export function getActiveSegmentationRepresentation(
-  viewportId: string
-): SegmentationRepresentation | undefined {
+export function setActiveSegmentation(
+  viewportId: string,
+  segmentationId: string
+): void {
   const segmentationStateManager = defaultSegmentationStateManager;
-  return segmentationStateManager.getActiveSegmentationRepresentation(
-    viewportId
-  );
+  segmentationStateManager.setActiveSegmentation(viewportId, segmentationId);
 }

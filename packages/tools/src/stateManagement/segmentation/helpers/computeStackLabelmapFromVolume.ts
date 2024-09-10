@@ -5,7 +5,7 @@ import { updateStackSegmentationState } from '../helpers/updateStackSegmentation
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 // This function is responsible for the conversion calculations
-export async function computeStackSegmentationFromVolume({
+export async function computeStackLabelmapFromVolume({
   volumeId,
 }: {
   volumeId: string;
@@ -16,7 +16,7 @@ export async function computeStackSegmentationFromVolume({
 }
 
 // Updated original function to call the new separate functions
-export async function convertVolumeToStackSegmentation({
+export async function convertVolumeToStackLabelmap({
   segmentationId,
   options,
 }: {
@@ -28,6 +28,10 @@ export async function convertVolumeToStackSegmentation({
   };
 }): Promise<void> {
   const segmentation = getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    return;
+  }
 
   const { volumeId } = segmentation.representationData
     .Labelmap as LabelmapSegmentationDataVolume;

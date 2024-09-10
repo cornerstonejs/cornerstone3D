@@ -1,68 +1,54 @@
 import { getSegmentation } from './getSegmentation';
 import { getSegmentations } from './getSegmentations';
-import { addSegmentation } from './addSegmentation';
+import { addSegmentations } from './addSegmentations';
 import { removeSegmentation } from './removeSegmentation';
-import { getAllSegmentationRepresentations } from './getAllSegmentationRepresentations';
-import { getSegmentationRepresentation } from './getSegmentationRepresentation';
 import {
-  removeSegmentationRepresentationsFromViewport,
-  removeSegmentationRepresentations,
+  removeLabelmapRepresentation,
+  removeContourRepresentation,
+  removeSurfaceRepresentation,
+  removeSegmentationRepresentation,
 } from './removeSegmentationRepresentations';
-import { getGlobalConfig } from './getGlobalConfig';
-import { setGlobalConfig } from './setGlobalConfig';
-import { getSegmentationRepresentationConfig } from './getSegmentationRepresentationConfig';
-import { setSegmentationRepresentationConfig } from './setSegmentationRepresentationConfig';
-import { getPerSegmentConfig } from './getPerSegmentConfig';
-import { setPerSegmentConfig } from './setPerSegmentConfig';
-import { getSegmentationRepresentations } from './getSegmentationRepresentations';
-import { getSegmentationRepresentationViewportStates } from './getSegmentationRepresentationViewportStates';
+
 import { addColorLUT } from './addColorLUT';
 import { getColorLUT } from './getColorLUT';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import { removeColorLUT } from './removeColorLUT';
-import { getSegmentationRepresentationsForSegmentation } from './getSegmentationRepresentationsForSegmentation';
-import { getSegmentationRepresentationVisibility } from './getSegmentationRepresentationVisibility';
-import { setSegmentationRepresentationVisibility } from './setSegmentationRepresentationVisibility';
+import { getViewportSegmentations } from './getViewportSegmentations';
 import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
-import { getActiveSegmentationRepresentation } from './getActiveSegmentationRepresentation';
-import { setActiveSegmentationRepresentation } from './setActiveSegmentationRepresentation';
 import { getCurrentLabelmapImageIdForViewport } from './getCurrentLabelmapImageIdForViewport';
 import { updateLabelmapSegmentationImageReferences } from './updateLabelmapSegmentationImageReferences';
 import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationImageIdsForViewport';
+import {
+  getAllSegmentationRepresentations,
+  getSegmentationRepresentation,
+  getSegmentationRepresentations,
+} from './getSegmentationRepresentation';
 
 export {
   // get
-  getActiveSegmentationRepresentation,
-  getAllSegmentationRepresentations,
   getColorLUT,
   getCurrentLabelmapImageIdForViewport,
-  getGlobalConfig,
   getNextColorLUTIndex,
-  getPerSegmentConfig,
   getSegmentation,
-  getSegmentationRepresentation,
-  getSegmentationRepresentationConfig,
-  getSegmentationRepresentations,
-  getSegmentationRepresentationViewportStates,
-  getSegmentationRepresentationsForSegmentation,
-  getSegmentationRepresentationVisibility,
   getSegmentations,
   getStackSegmentationImageIdsForViewport,
   getViewportIdsWithSegmentation,
+  getAllSegmentationRepresentations,
+  getSegmentationRepresentation,
+  getSegmentationRepresentations,
   // set
-  setActiveSegmentationRepresentation,
-  setGlobalConfig,
-  setPerSegmentConfig,
-  setSegmentationRepresentationConfig,
-  setSegmentationRepresentationVisibility,
   // remove
   removeColorLUT,
+  getViewportSegmentations,
   removeSegmentation,
-  removeSegmentationRepresentations,
-  removeSegmentationRepresentationsFromViewport,
+  removeLabelmapRepresentation,
+  removeContourRepresentation,
+  removeSurfaceRepresentation,
+  removeSegmentationRepresentation,
   // add
   addColorLUT,
-  addSegmentation,
+  addSegmentations,
   // update
   updateLabelmapSegmentationImageReferences,
+  // style
 };

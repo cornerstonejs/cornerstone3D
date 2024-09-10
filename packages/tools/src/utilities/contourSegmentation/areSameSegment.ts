@@ -1,17 +1,16 @@
 import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
 
 /**
- * Check if two contour segmentations are from same segmentId,
- * segmentationRepresentationUID and segmentIndex.
- * @param firstAnnotation - First annotation
- * @param secondAnnotation - Second annotation
- * @returns True if they are from same segmentId, segmentationRepresentationUID
- * and segmentIndex or false otherwise.
+ * Compares two ContourSegmentationAnnotations to determine if they belong to the same segment.
+ *
+ * @param firstAnnotation - The first ContourSegmentationAnnotation to compare.
+ * @param secondAnnotation - The second ContourSegmentationAnnotation to compare.
+ * @returns True if both annotations belong to the same segment, false otherwise.
  */
 export default function areSameSegment(
   firstAnnotation: ContourSegmentationAnnotation,
   secondAnnotation: ContourSegmentationAnnotation
-) {
+): boolean {
   const { segmentation: firstSegmentation } = firstAnnotation.data;
   const { segmentation: secondSegmentation } = secondAnnotation.data;
 

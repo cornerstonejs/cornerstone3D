@@ -1,4 +1,4 @@
-import { internalComputeVolumeSegmentationFromStack } from '../SegmentationStateManager';
+import { internalComputeVolumeLabelmapFromStack } from '../SegmentationStateManager';
 
 /**
  * Computes a volume segmentation from a stack of image IDs.
@@ -10,6 +10,6 @@ import { internalComputeVolumeSegmentationFromStack } from '../SegmentationState
  * @param [params.options.volumeId] - The ID to use for the created volume. If not provided, a new UUID will be generated.
  * @returns A promise that resolves to an object containing the volumeId of the created volume.
  */
-export async function computeVolumeSegmentationFromStack(args) {
-  return internalComputeVolumeSegmentationFromStack(args);
+export async function computeVolumeLabelmapFromStack(args) {
+  return internalComputeVolumeLabelmapFromStack(args);
 }

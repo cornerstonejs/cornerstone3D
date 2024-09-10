@@ -1104,6 +1104,10 @@ class Viewport {
    * value is [0,0].
    */
   public getPan(initialCamera = this.initialCamera): Point2 {
+    if (!initialCamera) {
+      return [0, 0];
+    }
+
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 

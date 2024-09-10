@@ -51,14 +51,8 @@ export default {
   },
 
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      toolGroupId,
-      segmentIndex,
-      segmentationRepresentationUID,
-      previewSegmentIndex,
-      previewColors,
-      preview,
-    } = operationData;
+    const { segmentIndex, previewSegmentIndex, previewColors, preview } =
+      operationData;
     if (previewColors === undefined) {
       return;
     }
@@ -76,7 +70,8 @@ export default {
 
     const configColor = previewColors?.[segmentIndex];
     const segmentColor = getSegmentIndexColor(
-      segmentationRepresentationUID,
+      operationData.viewport.id,
+      operationData.segmentationId,
       segmentIndex
     );
     if (!configColor && !segmentColor) {
@@ -85,7 +80,8 @@ export default {
     const previewColor = configColor || lightenColor(...segmentColor);
 
     setSegmentIndexColor(
-      segmentationRepresentationUID,
+      operationData.viewport.id,
+      operationData.segmentationId,
       previewSegmentIndex,
       previewColor as Types.Color
     );

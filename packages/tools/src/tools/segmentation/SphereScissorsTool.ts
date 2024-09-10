@@ -48,7 +48,6 @@ class SphereScissorsTool extends BaseTool {
     annotation: Annotation;
     segmentIndex: number;
     segmentsLocked: number[];
-    segmentationRepresentationUID: string;
     segmentationId: string;
     // volume labelmap
     volumeId: string;
@@ -115,22 +114,22 @@ class SphereScissorsTool extends BaseTool {
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
+      activeSegmentation.getActiveSegmentation(viewport.id);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked =
       segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const segmentColor = segmentationConfig.color.getSegmentIndexColor(
-      segmentationRepresentationUID,
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
@@ -167,7 +166,6 @@ class SphereScissorsTool extends BaseTool {
     this.editData = {
       annotation,
       centerCanvas: canvasPos,
-      segmentationRepresentationUID,
       segmentIndex,
       segmentationId,
       segmentsLocked,
@@ -268,7 +266,6 @@ class SphereScissorsTool extends BaseTool {
       newAnnotation,
       hasMoved,
       segmentIndex,
-      segmentationRepresentationUID,
       segmentsLocked,
     } = this.editData;
     const { data } = annotation;
@@ -290,7 +287,6 @@ class SphereScissorsTool extends BaseTool {
       ...this.editData,
       points: data.handles.points,
       segmentIndex,
-      segmentationRepresentationUID,
       segmentsLocked,
       viewPlaneNormal,
       viewUp,

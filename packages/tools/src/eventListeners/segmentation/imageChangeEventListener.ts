@@ -9,11 +9,12 @@ import {
   cache,
   utilities,
 } from '@cornerstonejs/core';
-import Representations from '../../enums/SegmentationRepresentations';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
-import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentations';
 import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getViewportSegmentations } from '../../stateManagement/segmentation/getViewportSegmentations';
+import { SegmentationRepresentations } from '../../enums';
+import { getLabelmapActorUID } from '../../stateManagement/segmentation/helpers/getLabelmapActor';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -66,26 +67,20 @@ function _imageChangeEventListener(evt) {
     renderingEngineId
   ) as { viewport: Types.IStackViewport };
 
-  const segmentationRepresentations =
-    getSegmentationRepresentations(viewportId);
-
-  if (!segmentationRepresentations?.length) {
-    return;
-  }
-
-  const labelmapRepresentations = segmentationRepresentations.filter(
-    (representation) => representation.type === Representations.Labelmap
+  const segmentations = getViewportSegmentations(
+    viewportId,
+    SegmentationRepresentations.Labelmap
   );
 
-  if (!labelmapRepresentations.length) {
+  if (!segmentations?.length) {
     return;
   }
 
   const actors = viewport.getActors();
 
   // Update the maps
-  labelmapRepresentations.forEach((representation) => {
-    const { segmentationId } = representation;
+  segmentations.forEach((segmentation) => {
+    const { segmentationId } = segmentation;
     updateLabelmapSegmentationImageReferences(viewportId, segmentationId);
   });
 
@@ -93,13 +88,6 @@ function _imageChangeEventListener(evt) {
   // is there any extra actor that needs to be removed
   // or any actor that needs to be added (which it is added later down), but remove
   // it here if it is not needed
-
-  const allLabelmapActors = actors.filter((actor) =>
-    labelmapRepresentations.some(
-      (representation) =>
-        representation.segmentationRepresentationUID === actor.uid
-    )
-  );
 
   allLabelmapActors.forEach((actor) => {
     // if cannot find a representation for this actor means it has stuck around
@@ -190,7 +178,7 @@ function _imageChangeEventListener(evt) {
       viewport.addImages([
         {
           imageId: derivedImageId,
-          actorUID: representation.segmentationRepresentationUID,
+          actorUID: getLabelmapActorUID(segmentationId),
           callback: ({ imageActor }) => {
             imageActor.getMapper().setInputData(imageData);
           },

@@ -8,7 +8,6 @@ import { clipAndCacheSurfacesForViewport } from '../../helpers/clipAndCacheSurfa
 import { extractContourData } from './utils/extractContourData';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
 import { getSegmentation } from '../../getSegmentation';
-import { setSegmentationRepresentationConfig } from '../../setSegmentationRepresentationConfig';
 
 // the map between segment index and the intersection points and lines
 export type RawContourData = Map<number, SurfaceClipResult[]>;
@@ -71,11 +70,15 @@ export async function computeContourData(
     segmentationId
   );
 
-  setSegmentationRepresentationConfig(segmentationRepresentationUID, {
-    Contour: {
-      fillAlpha: 0,
-    },
-  });
+  setSegmentationRepresentationConfig(
+    viewport.id,
+    segmentationRepresentationUID,
+    {
+      Contour: {
+        fillAlpha: 0,
+      },
+    }
+  );
 
   return {
     annotationUIDsMap,

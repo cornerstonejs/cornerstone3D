@@ -9,8 +9,6 @@ import {
   annotationSelectionListener,
   annotationModifiedListener,
   segmentationDataModifiedEventListener,
-  segmentationRepresentationModifiedEventListener,
-  segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
 } from './eventListeners';
 import { annotationInterpolationEventDispatcher } from './eventDispatchers';
@@ -141,15 +139,11 @@ function _addCornerstoneToolsEventListeners() {
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   );
-  eventTarget.addEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
-    segmentationRepresentationModifiedEventListener
-  );
 
-  eventTarget.addEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
-    segmentationRepresentationRemovedEventListener
-  );
+  // eventTarget.addEventListener(
+  //   TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
+  //   segmentationRepresentationRemovedListener
+  // );
 }
 
 /**
@@ -192,14 +186,9 @@ function _removeCornerstoneToolsEventListeners() {
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   );
-  eventTarget.removeEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
-    segmentationRepresentationModifiedEventListener
-  );
 
   eventTarget.removeEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
-    segmentationRepresentationRemovedEventListener
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED
   );
 }
 

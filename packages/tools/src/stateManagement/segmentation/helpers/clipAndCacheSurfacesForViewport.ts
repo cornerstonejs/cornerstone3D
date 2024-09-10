@@ -6,7 +6,7 @@ import {
   triggerEvent,
 } from '@cornerstonejs/core';
 
-import { WorkerTypes } from '../../../enums';
+import { SegmentationRepresentations, WorkerTypes } from '../../../enums';
 import { pointToString } from '../../../utilities/pointToString';
 import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
 const workerManager = getWebWorkerManager();
@@ -52,13 +52,13 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  *
  * @param surfacesInfo - An array of surfaces information.
  * @param viewport - The volume viewport.
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
+ * @param segmentationId - The id of the segmentation.
  * @returns The cached polydata.
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
   viewport: Types.IVolumeViewport,
-  segmentationRepresentationUID: string
+  segmentationId: string
 ) {
   registerPolySegWorker();
   // All planes is an array of planes pairs for each slice, so we should loop over them and
@@ -116,7 +116,7 @@ export async function clipAndCacheSurfacesForViewport(
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
             polyDataResults.forEach((polyDataResult, surfaceId) => {
-              const actorUID = `${segmentationRepresentationUID}_${surfaceId}`;
+              const actorUID = getSurfaceActorUID(segmentationId, surfaceId);
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,
@@ -174,11 +174,8 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
   });
 }
 
-export function getSurfaceActorUID(
-  segmentationRepresentationUID: string,
-  surfaceId: string
-) {
-  return `${segmentationRepresentationUID}_${surfaceId}`;
+export function getSurfaceActorUID(segmentationId: string, surfaceId: string) {
+  return `${segmentationId}-${SegmentationRepresentations.Surface}_${surfaceId}`;
 }
 
 // Helper function to generate a cache ID

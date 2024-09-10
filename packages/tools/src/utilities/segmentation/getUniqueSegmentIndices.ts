@@ -26,18 +26,16 @@ function getUniqueSegmentIndices(segmentationId) {
   }
 
   let indices;
-  switch (segmentation.type) {
-    case SegmentationRepresentations.Labelmap:
-      indices = handleLabelmapSegmentation(segmentation, segmentationId);
-      break;
-    case SegmentationRepresentations.Contour:
-      indices = handleContourSegmentation(segmentation);
-      break;
-    case SegmentationRepresentations.Surface:
-      indices = handleSurfaceSegmentation(segmentation);
-      break;
-    default:
-      throw new Error(`Unsupported segmentation type: ${segmentation.type}`);
+  if (segmentation.representationData.Labelmap) {
+    indices = handleLabelmapSegmentation(segmentation, segmentationId);
+  } else if (segmentation.representationData.Contour) {
+    indices = handleContourSegmentation(segmentation);
+  } else if (segmentation.representationData.Surface) {
+    indices = handleSurfaceSegmentation(segmentation);
+  } else {
+    throw new Error(
+      `Unsupported segmentation type: ${segmentation.representationData}`
+    );
   }
 
   // Update cache
