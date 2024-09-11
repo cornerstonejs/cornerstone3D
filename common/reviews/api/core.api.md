@@ -169,6 +169,8 @@ export abstract class BaseVolumeViewport extends Viewport {
     // (undocumented)
     getSlabThickness(): number;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     getSliceViewInfo(): {
         width: number;
         height: number;
@@ -207,6 +209,10 @@ export abstract class BaseVolumeViewport extends Viewport {
     scroll(delta?: number): void;
     // (undocumented)
     abstract setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
+    // (undocumented)
+    setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
+    // (undocumented)
+    protected setCameraClippingRange(): void;
     // (undocumented)
     setDefaultProperties(ViewportProperties: VolumeViewportProperties, volumeId?: string): void;
     // (undocumented)
@@ -789,7 +795,9 @@ function createAndCacheDerivedImage(referencedImageId: string, options?: Derived
 // @public (undocumented)
 function createAndCacheDerivedImages(referencedImageIds: string[], options?: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
-    targetBufferType?: PixelDataTypedArrayString;
+    targetBuffer?: {
+        type: PixelDataTypedArrayString;
+    };
 }): IImage[];
 
 // @public (undocumented)
@@ -826,7 +834,7 @@ function createLocalLabelmapVolume(options: LocalVolumeOptions, volumeId: string
 function createLocalVolume(volumeId: string, options?: LocalVolumeOptions): IImageVolume;
 
 // @public (undocumented)
-function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): unknown;
+function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): vtkColorTransferFunction;
 
 // @public (undocumented)
 export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean): Promise<VolumeActor>;
@@ -854,6 +862,9 @@ interface DataSetOptions {
 
 // @public (undocumented)
 function decimate(list: unknown[], interleave: number, offset?: number): number[];
+
+// @public (undocumented)
+function deepClone(obj: unknown): unknown;
 
 // @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
@@ -1035,7 +1046,7 @@ export enum EVENTS {
     // (undocumented)
     STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
     // (undocumented)
-    VIEWPORT_NEW_IMAGE_SET = "CORNERSTONE_STACK_VIEWPORT_NEW_STACK",
+    VIEWPORT_NEW_IMAGE_SET = "CORNERSTONE_VIEWPORT_NEW_IMAGE_SET",
     // (undocumented)
     VOI_MODIFIED = "CORNERSTONE_VOI_MODIFIED",
     // (undocumented)
@@ -2011,7 +2022,7 @@ interface ImagePlaneModuleMetadata {
     // (undocumented)
     columnPixelSpacing: number | null;
     // (undocumented)
-    columns: string;
+    columns: number;
     // (undocumented)
     frameOfReferenceUID: string;
     // (undocumented)
@@ -2025,11 +2036,11 @@ interface ImagePlaneModuleMetadata {
     // (undocumented)
     rowPixelSpacing: number | null;
     // (undocumented)
-    rows: string;
+    rows: number;
     // (undocumented)
-    sliceLocation: string;
+    sliceLocation: number;
     // (undocumented)
-    sliceThickness: string;
+    sliceThickness: number;
     // (undocumented)
     usingDefaultValues: boolean;
 }
@@ -2438,7 +2449,9 @@ interface LocalVolumeOptions {
     // (undocumented)
     spacing: Point3;
     // (undocumented)
-    targetBufferType?: PixelDataTypedArrayString;
+    targetBuffer?: {
+        type: PixelDataTypedArrayString;
+    };
 }
 
 // @public (undocumented)
@@ -2643,6 +2656,9 @@ type Point3 = [number, number, number];
 
 // @public (undocumented)
 type Point4 = [number, number, number, number];
+
+// @public (undocumented)
+function pointInShapeCallback(imageData: vtkImageData | CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
 
 // @public (undocumented)
 class PointsManager<T> {
@@ -3702,7 +3718,9 @@ declare namespace utilities {
         getDynamicVolumeInfo,
         autoLoad,
         scaleArray,
-        splitImageIdsBy4DTags
+        deepClone,
+        splitImageIdsBy4DTags,
+        pointInShapeCallback
     }
 }
 export { utilities }
@@ -3909,7 +3927,7 @@ export class Viewport {
     // (undocumented)
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
-    addActors(actors: ActorEntry[], resetCameraPanAndZoom?: boolean): void;
+    addActors(actors: ActorEntry[], resetCamera?: boolean): void;
     // (undocumented)
     addWidget: (widgetId: any, widget: any) => void;
     // (undocumented)
@@ -4189,6 +4207,8 @@ interface ViewportProperties {
     interpolationType?: InterpolationType;
     // (undocumented)
     invert?: boolean;
+    // (undocumented)
+    preset?: string;
     // (undocumented)
     VOILUTFunction?: VOILUTFunctionType;
     // (undocumented)
@@ -4512,6 +4532,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: any[], immediate?: boolean): void;
     // (undocumented)
+    protected setCameraClippingRange(): void;
+    // (undocumented)
     setOrientation(orientation: OrientationAxis | OrientationVectors, immediate?: boolean): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: any[]): void;
@@ -4529,17 +4551,23 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getSliceIndex(): number;
+    // (undocumented)
     resetCamera({ resetPan, resetZoom, resetToCenter, }?: {
         resetPan?: boolean;
         resetZoom?: boolean;
         resetToCenter?: boolean;
     }): boolean;
     // (undocumented)
+    resetCameraForResize: () => boolean;
+    // (undocumented)
     resetProperties(volumeId?: string): void;
     // (undocumented)
     resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
+    // (undocumented)
+    protected setCameraClippingRange(): void;
     // (undocumented)
     setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void;
 }
@@ -4560,8 +4588,6 @@ class VoxelManager<T> {
     static addInstanceToImage(image: IImage): void;
     // (undocumented)
     addPoint(point: Point3 | number): void;
-    // (undocumented)
-    boundsIJK: BoundsIJK;
     // (undocumented)
     get bytePerVoxel(): number;
     // (undocumented)
@@ -4644,6 +4670,8 @@ class VoxelManager<T> {
     // (undocumented)
     _getConstructor?: () => new (length: number) => PixelDataTypedArray;
     // (undocumented)
+    getDefaultBounds(): BoundsIJK;
+    // (undocumented)
     getMiddleSliceData: () => PixelDataTypedArray;
     // (undocumented)
     getPoints(): Point3[];
@@ -4689,6 +4717,8 @@ class VoxelManager<T> {
     setAtIndex: (index: any, v: any) => boolean;
     // (undocumented)
     setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
+    // (undocumented)
+    setScalarData(newScalarData: PixelDataTypedArray): void;
     // (undocumented)
     get sizeInBytes(): number;
     // (undocumented)
@@ -4741,8 +4771,6 @@ export class WSIViewport extends Viewport {
     // (undocumented)
     getProperties: () => WSIViewportProperties;
     // (undocumented)
-    getReferenceId(): string;
-    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     protected getScalarData(): any;
@@ -4752,6 +4780,8 @@ export class WSIViewport extends Viewport {
     protected getTransform(): Transform;
     // (undocumented)
     getView(): any;
+    // (undocumented)
+    getViewReferenceId(): string;
     // (undocumented)
     getZoom(): any;
     // (undocumented)

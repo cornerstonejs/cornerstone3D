@@ -32,6 +32,8 @@ export default function streamRequest(
     retrieveOptions = {} as Types.RangeRetrieveOptions,
     streamingData = {} as StreamingData,
   } = options;
+
+  // @ts-expect-error
   const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
 
   const errorInterceptor = (err) => {

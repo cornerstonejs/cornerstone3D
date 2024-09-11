@@ -1,11 +1,8 @@
-import {
-  getSegmentationRepresentation,
-  getSegmentationRepresentations,
-} from '../getSegmentationRepresentation';
+import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
 import { setSegmentationRepresentationVisibility as _setSegmentationRepresentationVisibility } from '../setSegmentationRepresentationVisibility';
 import { getSegmentationRepresentationVisibility as _getSegmentationRepresentationVisibility } from '../getSegmentationRepresentationVisibility';
-import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import type { SegmentationRepresentations } from '../../../enums';
+import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 
 /**
  * Sets the visibility of a segmentation representation for a given viewport.
@@ -42,7 +39,7 @@ function setSegmentationRepresentationVisibility(
     visibility
   );
 
-  triggerSegmentationRender(viewportId);
+  triggerSegmentationModified(segmentationId);
 }
 
 /**
@@ -93,7 +90,7 @@ function setSegmentIndicesVisibility(
       : hiddenSegments.add(segmentIndex);
   });
 
-  triggerSegmentationRender(viewport);
+  triggerSegmentationModified(segmentationId);
 }
 
 /**
@@ -122,7 +119,7 @@ function setSegmentIndexVisibility(
     ? hiddenSegments.delete(segmentIndex)
     : hiddenSegments.add(segmentIndex);
 
-  triggerSegmentationRender(viewportId);
+  triggerSegmentationModified(segmentationId);
 }
 
 /**

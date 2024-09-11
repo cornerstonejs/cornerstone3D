@@ -1,11 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import { addColorLUT as _addColorLUT } from '../addColorLUT';
 import { getColorLUT as _getColorLUT } from '../getColorLUT';
-import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
-import {
-  getSegmentationRepresentation,
-  getSegmentationRepresentations,
-} from '../getSegmentationRepresentation';
+import { getSegmentationRepresentations } from '../getSegmentationRepresentation';
+import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -55,7 +52,7 @@ function setColorLUT(
     segmentationRepresentation.config.colorLUTIndex = colorLUTIndex;
   });
 
-  triggerSegmentationRender(viewportId);
+  triggerSegmentationModified(segmentationId);
 }
 
 /**
@@ -118,7 +115,7 @@ function setSegmentIndexColor(
     colorReference[i] = color[i];
   }
 
-  triggerSegmentationRender(viewportId);
+  triggerSegmentationModified(segmentationId);
 }
 
 export { getSegmentIndexColor, addColorLUT, setColorLUT, setSegmentIndexColor };

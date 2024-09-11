@@ -29,10 +29,7 @@ import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentati
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
-import {
-  segmentationStyle,
-  type RepresentationStyle,
-} from '../../stateManagement/segmentation/SegmentationStyle';
+import { segmentationStyle } from '../../stateManagement/segmentation/SegmentationStyle';
 import type { ContourStyle } from '../../types/ContourTypes';
 
 /**

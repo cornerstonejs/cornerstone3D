@@ -1,13 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
-import {
-  getSegmentation,
-  getSegmentationRepresentation,
-  getSegmentationRepresentations,
-  getViewportIdsWithSegmentation,
-} from '../../segmentationState';
+import { getViewportIdsWithSegmentation } from '../../getViewportIdsWithSegmentation';
+import { getSegmentation } from '../../getSegmentation';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
+import { getSegmentationRepresentation } from '../../getSegmentationRepresentation';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';

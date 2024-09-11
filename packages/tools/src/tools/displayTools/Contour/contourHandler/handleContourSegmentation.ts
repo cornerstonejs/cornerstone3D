@@ -9,7 +9,7 @@ import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
 import { SegmentationRepresentations } from '../../../../enums';
-import { getStyle } from '../../../../stateManagement/segmentation/config/styleHelpers';
+import { segmentationStyle } from '../../../../stateManagement/segmentation/SegmentationStyle';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -42,7 +42,7 @@ function updateContourSets(
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
       const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
-      const segmentSpecificConfig = getStyle({
+      const segmentSpecificConfig = segmentationStyle.getStyle({
         viewportId: viewport.id,
         segmentationId,
         representationType: SegmentationRepresentations.Contour,
@@ -81,7 +81,7 @@ function addContourSetsToElement(
 
     validateGeometry(geometry);
 
-    const segmentSpecificConfig = getStyle({
+    const segmentSpecificConfig = segmentationStyle.getStyle({
       viewportId: viewport.id,
       segmentationId,
       representationType: SegmentationRepresentations.Contour,
