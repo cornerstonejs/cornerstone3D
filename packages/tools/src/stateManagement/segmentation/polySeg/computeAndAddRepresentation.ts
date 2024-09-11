@@ -5,6 +5,7 @@ import addRepresentationData from '../internalAddRepresentationData';
 import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 import debounce from '../../../utilities/debounce';
 import { registerPolySegWorker } from './registerPolySegWorker';
+import { defaultSegmentationStateManager } from '../SegmentationStateManager';
 
 const computedRepresentations = new Map<
   string,
@@ -25,20 +26,22 @@ async function computeAndAddRepresentation<T>(
   segmentationId: string,
   representationType: SegmentationRepresentations,
   computeFunction: () => Promise<T>,
-  updateFunction?: () => void
+  updateFunction?: () => void,
+  onComputationComplete?: () => void
 ): Promise<T> {
   // register the worker if it hasn't been registered yet
   registerPolySegWorker();
 
   // Compute the specific representation data
   const data = await computeFunction();
-
   // Add the computed data to the system
   addRepresentationData({
     segmentationId,
     type: representationType,
     data,
   });
+
+  onComputationComplete?.();
 
   // Update internal structures and possibly UI components
   if (!computedRepresentations.has(segmentationId)) {

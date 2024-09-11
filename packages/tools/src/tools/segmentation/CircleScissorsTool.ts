@@ -186,6 +186,7 @@ class CircleScissorsTool extends BaseTool {
       hasMoved: false,
       volumeId: null,
       referencedVolumeId: null,
+      imageId: null,
     };
 
     if (viewport instanceof BaseVolumeViewport) {

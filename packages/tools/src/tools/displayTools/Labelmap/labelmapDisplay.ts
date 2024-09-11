@@ -29,6 +29,7 @@ import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorT
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import { getLabelmapActor } from '../../../stateManagement/segmentation/helpers';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
+import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -132,10 +133,6 @@ async function render(
 
     labelmapActor = getLabelmapActor(viewport.id, segmentationId);
   } else {
-    if (viewport instanceof VolumeViewport) {
-      return;
-    }
-
     // stack segmentation
     const labelmapImageId = getCurrentLabelmapImageIdForViewport(
       viewport.id,

@@ -210,12 +210,12 @@ export default class VoxelManager<T> {
 
     const useLPSTransform = options.imageData;
 
-    const iMin = isInObjectBoundsIJK[0][0];
-    const iMax = isInObjectBoundsIJK[0][1];
-    const jMin = isInObjectBoundsIJK[1][0];
-    const jMax = isInObjectBoundsIJK[1][1];
-    const kMin = isInObjectBoundsIJK[2][0];
-    const kMax = isInObjectBoundsIJK[2][1];
+    const iMin = Math.min(isInObjectBoundsIJK[0][0], isInObjectBoundsIJK[0][1]);
+    const iMax = Math.max(isInObjectBoundsIJK[0][0], isInObjectBoundsIJK[0][1]);
+    const jMin = Math.min(isInObjectBoundsIJK[1][0], isInObjectBoundsIJK[1][1]);
+    const jMax = Math.max(isInObjectBoundsIJK[1][0], isInObjectBoundsIJK[1][1]);
+    const kMin = Math.min(isInObjectBoundsIJK[2][0], isInObjectBoundsIJK[2][1]);
+    const kMax = Math.max(isInObjectBoundsIJK[2][0], isInObjectBoundsIJK[2][1]);
 
     const pointsInShape = [];
 

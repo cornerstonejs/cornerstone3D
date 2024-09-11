@@ -434,10 +434,6 @@
         "name": "StackViewport to and from VolumeViewport ",
         "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
       },
-      "stackToVolumeWithSegmentations": {
-        "name": "Stack Segmentation to and from Volume Segmentation ",
-        "description": "Demonstrates how you can convert stack to volume segmentation and vice versa while the data is preserved and memory is optimized"
-      },
       "volumeViewportSynchronization": {
         "name": "Volume Viewport Synchronization",
         "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."

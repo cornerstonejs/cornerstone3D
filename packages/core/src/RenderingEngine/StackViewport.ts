@@ -1637,7 +1637,19 @@ class StackViewport extends Viewport {
             const closeEnough = isEqual(referencePosition, currentPosition);
 
             if (closeEnough) {
-              return targetImageId;
+              // check if height and width are the same
+              const referenceRows = overlayImagePlaneModule.rows;
+              const referenceColumns = overlayImagePlaneModule.columns;
+
+              const currentRows = currentImagePlaneModule.rows;
+              const currentColumns = currentImagePlaneModule.columns;
+
+              if (
+                referenceRows === currentRows &&
+                referenceColumns === currentColumns
+              ) {
+                return targetImageId;
+              }
             }
           }
         }

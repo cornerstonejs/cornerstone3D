@@ -232,7 +232,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     // the style for the visibility and that goes through the segment indices
     // calculation which is expensive. We should cache the styles and only update
     // them if the segmentation representation modified event is triggered.
-
     const segmentColor = getSegmentIndexColor(
       context.styleSpecifier.viewportId,
       segmentationId,
@@ -278,8 +277,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       lineOpacity = mergedConfig.outlineOpacityInactive ?? lineOpacity;
       fillOpacity = mergedConfig.fillAlphaInactive ?? fillOpacity;
     }
-
-    console.debug(lineWidth);
 
     // Change the line thickness when the mouse is over the contour segment
     if (segmentation.activeSegmentIndex === segmentIndex) {

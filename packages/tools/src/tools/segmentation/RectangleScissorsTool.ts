@@ -293,8 +293,6 @@ class RectangleScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true;
 
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 

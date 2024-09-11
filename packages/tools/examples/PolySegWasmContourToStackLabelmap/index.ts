@@ -1,4 +1,4 @@
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -7,6 +7,7 @@ import {
   addDropdownToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -106,6 +107,21 @@ addDropdownToToolbar({
       Number(number) as number
     );
   },
+});
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
 });
 
 /**

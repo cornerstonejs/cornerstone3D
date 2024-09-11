@@ -53,7 +53,7 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  * @param surfacesInfo - An array of surfaces information.
  * @param viewport - The volume viewport.
  * @param segmentationId - The id of the segmentation.
- * @returns The cached polydata.
+ * @returns The cached polyData.
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],

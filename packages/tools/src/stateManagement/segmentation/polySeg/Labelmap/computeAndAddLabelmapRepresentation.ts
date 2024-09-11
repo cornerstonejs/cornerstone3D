@@ -2,6 +2,8 @@ import { SegmentationRepresentations } from '../../../../enums';
 import { computeAndAddRepresentation } from '../computeAndAddRepresentation';
 import { computeLabelmapData } from './labelmapComputationStrategies';
 import type { PolySegConversionOptions } from '../../../../types';
+import { defaultSegmentationStateManager } from '../../SegmentationStateManager';
+import { triggerSegmentationDataModified } from '../../triggerSegmentationEvents';
 
 /**
  * Computes and adds the labelmap representation for a given segmentation.
@@ -12,7 +14,7 @@ import type { PolySegConversionOptions } from '../../../../types';
  * @param options.segmentationRepresentationUID - The UID of the segmentation representation.
  * @returns A promise that resolves when the labelmap representation is computed and added.
  */
-export function computeAndAddLabelmapRepresentation(
+export async function computeAndAddLabelmapRepresentation(
   segmentationId: string,
   options: PolySegConversionOptions = {}
 ) {
@@ -20,6 +22,17 @@ export function computeAndAddLabelmapRepresentation(
     segmentationId,
     SegmentationRepresentations.Labelmap,
     () => computeLabelmapData(segmentationId, options),
-    () => undefined
+    () => null,
+    () => {
+      defaultSegmentationStateManager.processLabelmapRepresentationAddition(
+        options.viewport.id,
+        segmentationId
+      );
+
+      /// need to figure out how to trigger the labelmap update properly
+      setTimeout(() => {
+        triggerSegmentationDataModified(segmentationId);
+      }, 0);
+    }
   );
 }

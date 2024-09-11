@@ -172,21 +172,118 @@ export default class SegmentationStateManager {
       );
     }
 
+    const segmentation = this.getSegmentation(segmentationId);
+
+    if (!segmentation) {
+      return;
+    }
+
     if (type !== SegmentationRepresentations.Labelmap) {
-      this.state.viewports[viewportId].push({
+      return this.addDefaultSegmentationRepresentation(
+        viewportId,
         segmentationId,
         type,
-        active: false,
-        visible: true,
-        segmentsHidden: new Set(),
-        config: {
-          ...getDefaultRenderingConfig(type),
-          ...renderingConfig,
-        },
-      });
+        renderingConfig
+      );
+    }
 
-      this.setActiveSegmentation(viewportId, segmentationId);
+    this.addLabelmapRepresentation(viewportId, segmentationId, renderingConfig);
+  }
 
+  private addDefaultSegmentationRepresentation(
+    viewportId: string,
+    segmentationId: string,
+    type: SegmentationRepresentations,
+    renderingConfig: RenderingConfig
+  ) {
+    this.state.viewports[viewportId].push({
+      segmentationId,
+      type,
+      active: true,
+      visible: true,
+      segmentsHidden: new Set(),
+      config: {
+        ...getDefaultRenderingConfig(type),
+        ...renderingConfig,
+      },
+    });
+
+    this.setActiveSegmentation(viewportId, segmentationId);
+  }
+
+  addLabelmapRepresentation(
+    viewportId: string,
+    segmentationId: string,
+    renderingConfig: RenderingConfig = getDefaultRenderingConfig(
+      SegmentationRepresentations.Labelmap
+    )
+  ) {
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+
+    if (!enabledElement) {
+      return;
+    }
+
+    const segmentation = this.getSegmentation(segmentationId);
+
+    if (!segmentation) {
+      return;
+    }
+
+    const { representationData } = segmentation;
+
+    // if type is labelmap and we don't have the representation data we need to get it
+    // through polySeg so just return
+    if (!representationData.Labelmap) {
+      return this.addDefaultSegmentationRepresentation(
+        viewportId,
+        segmentationId,
+        SegmentationRepresentations.Labelmap,
+        renderingConfig
+      );
+    }
+
+    this.processLabelmapRepresentationAddition(viewportId, segmentationId);
+
+    this.addDefaultSegmentationRepresentation(
+      viewportId,
+      segmentationId,
+      SegmentationRepresentations.Labelmap,
+      renderingConfig
+    );
+  }
+
+  /**
+   * Processes the addition of a labelmap representation for a given viewport and segmentation.
+   * This method handles various scenarios for representation rendering based on the viewport type
+   * and the segmentation data.
+   *
+   * @param viewportId - The ID of the viewport where the labelmap representation will be added.
+   * @param segmentationId - The ID of the segmentation to be processed.
+   * @param renderingConfig - The configuration for rendering the labelmap representation.
+   *
+   * @remarks
+   * This method handles four main scenarios:
+   * 1. Stack Labelmap on Stack Viewport
+   * 2. Stack Labelmap on Volume Viewport
+   * 3. Volume Labelmap on Stack Viewport
+   * 4. Volume Labelmap on Volume Viewport
+   *
+   * Each scenario requires different processing steps to ensure proper rendering and performance optimization.
+   */
+  public processLabelmapRepresentationAddition(
+    viewportId: string,
+    segmentationId: string
+  ) {
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+
+    if (!enabledElement) {
+      return;
+    }
+
+    const segmentation = this.getSegmentation(segmentationId);
+
+    if (!segmentation) {
       return;
     }
 
@@ -214,12 +311,6 @@ export default class SegmentationStateManager {
      */
     const volumeViewport =
       enabledElement.viewport instanceof BaseVolumeViewport;
-
-    const segmentation = this.getSegmentation(segmentationId);
-
-    if (!segmentation) {
-      return;
-    }
 
     const { representationData } = segmentation;
 
@@ -261,21 +352,6 @@ export default class SegmentationStateManager {
         // TODO: Implement Volume Labelmap on Volume Viewport
       }
     }
-
-    this.state.viewports[viewportId].push({
-      segmentationId,
-      type,
-      active: true,
-      visible: true,
-      segmentsHidden: new Set(),
-      config: {
-        ...getDefaultRenderingConfig(type),
-        ...renderingConfig,
-      },
-    });
-
-    // make all the other representations inactive first
-    this.setActiveSegmentation(viewportId, segmentationId);
   }
 
   /**
@@ -741,7 +817,6 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
-window.segs = defaultSegmentationStateManager.state;
 export {
   internalConvertStackToVolumeLabelmap,
   internalComputeVolumeLabelmapFromStack,
