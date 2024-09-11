@@ -47,16 +47,18 @@ const { segmentation: segmentationUtils } = cstUtils;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const volumeId = encodeVolumeIdInfo({
-  loader: 'fakeVolumeLoader',
-  name: 'volumeURI',
-  rows: 100,
-  columns: 100,
-  slices: 10,
-  xSpacing: 1,
-  ySpacing: 1,
-  zSpacing: 1,
-});
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+// const volumeId = encodeVolumeIdInfo({
+//   loader: 'fakeVolumeLoader',
+//   name: 'volumeURI',
+//   rows: 100,
+//   columns: 100,
+//   slices: 10,
+//   xSpacing: 1,
+//   ySpacing: 1,
+//   zSpacing: 1,
+// });
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -353,14 +355,18 @@ async function run() {
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.2.826.0.1.3680043.8.498.21429579114586728888067401120368300850',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.2.826.0.1.3680043.8.498.11142221493947294482931331063839292897',
-    wadoRsRoot: 'http://localhost/dicom-web',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId);
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  volume.load();
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
@@ -426,7 +432,7 @@ async function run() {
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
   };
 
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [segmentationRepresentation],
     [viewportId2]: [segmentationRepresentation],
     [viewportId3]: [segmentationRepresentation],

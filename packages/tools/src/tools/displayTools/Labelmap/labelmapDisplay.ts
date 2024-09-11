@@ -175,12 +175,12 @@ function _setLabelmapColorAndOpacity(
 
   // todo fix this
   const activeSegmentation = getActiveSegmentation(viewportId);
-  debugger;
+
   const isActiveLabelmap =
     activeSegmentation?.segmentationId === segmentationId;
 
   const { style: labelmapStyle, renderInactiveSegmentations } =
-    segmentationStyle.getSegmentationStyle({
+    segmentationStyle.getStyle({
       viewportId,
       representationType: Representations.Labelmap,
       segmentationId,
@@ -214,14 +214,14 @@ function _setLabelmapColorAndOpacity(
     const segmentIndex = i;
     const segmentColor = colorLUT[segmentIndex];
 
-    const perSegment = segmentationStyle.getSegmentationStyle({
+    const { style: perSegmentStyle } = segmentationStyle.getStyle({
       viewportId,
       representationType: Representations.Labelmap,
       segmentationId,
       segmentIndex,
     });
 
-    const segmentSpecificLabelmapConfig = perSegment?.[segmentIndex];
+    const segmentSpecificLabelmapConfig = perSegmentStyle;
 
     const { fillAlpha, outlineWidth, renderFill, renderOutline } =
       _getLabelmapConfig(
@@ -334,7 +334,9 @@ function _getLabelmapConfig(
     ? configToUse.renderFill
     : configToUse.renderFillInactive;
 
-  const renderOutline = configToUse.renderOutline;
+  const renderOutline = isActiveLabelmap
+    ? configToUse.renderOutline
+    : configToUse.renderOutlineInactive;
 
   const outlineOpacity = isActiveLabelmap
     ? configToUse.outlineOpacity

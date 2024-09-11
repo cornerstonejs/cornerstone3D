@@ -31,7 +31,10 @@ import {
   segmentIndex as segmentIndexController,
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 /**
@@ -56,6 +59,7 @@ class CircleScissorsTool extends BaseTool {
     movingTextBox: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    imageId: string;
     centerCanvas?: Array<number>;
   } | null;
   isDrawing: boolean;
@@ -194,8 +198,14 @@ class CircleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
+
       this.editData = {
         ...this.editData,
+        imageId: segmentationImageId,
       };
     }
 

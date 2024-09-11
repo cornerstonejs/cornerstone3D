@@ -155,60 +155,6 @@ function updateSegmentationDropdownOptions(activeSegmentationId) {
   }
 }
 
-function updateInputsForCurrentSegmentation() {
-  // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getCurrentSegmentationConfig(viewportIds[0]);
-  const contourConfig = segmentationConfig.Contour;
-
-  (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineWidthActive ??
-        DEFAULT_SEGMENT_CONFIG.outlineWidthActive
-    );
-
-  (document.getElementById('outlineWidthInactive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineWidthInactive ??
-        DEFAULT_SEGMENT_CONFIG.outlineWidthInactive
-    );
-
-  (document.getElementById('outlineOpacity') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineOpacity ?? DEFAULT_SEGMENT_CONFIG.outlineOpacity
-    );
-
-  (
-    document.getElementById('outlineOpacityInactive') as HTMLInputElement
-  ).value = String(
-    contourConfig.outlineOpacityInactive ??
-      DEFAULT_SEGMENT_CONFIG.outlineOpacityInactive
-  );
-
-  (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
-    contourConfig.fillAlpha ?? DEFAULT_SEGMENT_CONFIG.fillAlpha
-  );
-
-  (document.getElementById('fillAlphaInactive') as HTMLInputElement).value =
-    String(
-      contourConfig.fillAlphaInactive ??
-        DEFAULT_SEGMENT_CONFIG.fillAlphaInactive
-    );
-
-  (document.getElementById('outlineDashActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineDashActive?.split(',')[0] ??
-        DEFAULT_SEGMENT_CONFIG.outlineDashActive?.split(',')[0] ??
-        '0'
-    );
-
-  (document.getElementById('outlineDashInactive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineDashInactive?.split(',')[0] ??
-        DEFAULT_SEGMENT_CONFIG.outlineDashInactive?.split(',')[0] ??
-        '0'
-    );
-}
-
 async function addNewSegmentation() {
   const newSegmentationId = `SEGMENTATION_${segmentationSequenceId++}`;
 
@@ -225,17 +171,12 @@ async function addNewSegmentation() {
 
   for (let i = 0; i < viewportIds.length; i++) {
     const viewportId = viewportIds[i];
-    const [uid] = await segmentation.addSegmentationRepresentations(
-      viewportId,
-      [
-        {
-          segmentationId: newSegmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Contour,
-        },
-      ]
-    );
-
-    segmentationRepresentationUIDs[viewportId].push(uid);
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId: newSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
   }
 
   // Update global state
@@ -250,11 +191,9 @@ function updateActiveSegmentationState() {
   const index = segmentationIds.indexOf(activeSegmentationId);
 
   viewportIds.forEach((viewportId) => {
-    const uid = segmentationRepresentationUIDs[viewportId][index];
-
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    segmentation.activeSegmentation.setActiveSegmentation(
       viewportId,
-      uid
+      activeSegmentationId
     );
   });
 
@@ -262,8 +201,6 @@ function updateActiveSegmentationState() {
     activeSegmentationId,
     activeSegmentIndex
   );
-
-  updateInputsForCurrentSegmentation();
 }
 
 function getSegmentsVisibilityState(activeSegmentationId: string) {
@@ -275,46 +212,6 @@ function getSegmentsVisibilityState(activeSegmentationId: string) {
   }
 
   return segmentsVisibility;
-}
-
-function getCurrentSegmentationConfig(
-  viewportId: string
-): cstTypes.RepresentationConfig {
-  const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
-
-  const segmentationRepresentationUID =
-    segmentationRepresentationUIDs[viewportId][segmentationIndex];
-
-  const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationConfig(
-      segmentationRepresentationUID
-    ) ?? {};
-
-  // Add Contour object because it
-  // can return an empty object
-  if (!segmentationConfig.Contour) {
-    segmentationConfig.Contour = {};
-  }
-
-  return segmentationConfig;
-}
-
-function updateCurrentSegmentationConfig(config) {
-  const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
-
-  viewportIds.forEach((viewportId) => {
-    const segmentationRepresentationUID =
-      segmentationRepresentationUIDs[viewportId][segmentationIndex];
-
-    const segmentationConfig = getCurrentSegmentationConfig(viewportId);
-
-    Object.assign(segmentationConfig.Contour, config);
-
-    segmentation.config.setSegmentationRepresentationConfig(
-      segmentationRepresentationUID,
-      segmentationConfig
-    );
-  });
 }
 
 // ============================= //
@@ -333,6 +230,22 @@ elements.forEach((element) => {
   );
 });
 
+function updateCurrentSegmentationConfig(config) {
+  const { style } = segmentation.config.style.getStyle({
+    segmentationId: activeSegmentationId,
+    representationType: csToolsEnums.SegmentationRepresentations.Contour,
+  });
+
+  const mergedConfig = { ...style, ...config };
+
+  segmentation.config.style.setSegmentationSpecificStyle(
+    {
+      segmentationId: activeSegmentationId,
+      representationType: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+    mergedConfig
+  );
+}
 const Splines = {
   CatmullRomSplineROI: {
     splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
@@ -407,7 +320,8 @@ addToggleButtonToToolbar({
 
       segmentation.config.visibility.setSegmentationRepresentationVisibility(
         viewportId,
-        segmentationRepresentationUID,
+        activeSegmentationId,
+        csToolsEnums.SegmentationRepresentations.Contour,
         !toggle
       );
     });
@@ -424,12 +338,10 @@ addButtonToToolbar({
     const visible = !segmentsVisibility[activeSegmentIndex];
 
     viewportIds.forEach((viewportId) => {
-      const representationUID =
-        segmentationRepresentationUIDs[viewportId][segmentationIndex];
-
       segmentation.config.visibility.setSegmentIndexVisibility(
         viewportId,
-        representationUID,
+        activeSegmentationId,
+        csToolsEnums.SegmentationRepresentations.Contour,
         activeSegmentIndex,
         visible
       );
@@ -692,18 +604,6 @@ async function run() {
 
   // Add the first segmentation that can be edited by the user
   addNewSegmentation();
-
-  // Get the entire global segmentation configuration,
-  // update it and set as the new default config
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.Contour,
-    DEFAULT_SEGMENT_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-  updateInputsForCurrentSegmentation();
 }
 
 run();

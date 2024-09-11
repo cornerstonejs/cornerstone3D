@@ -195,8 +195,10 @@ async function run() {
   await segmentation.addSegmentations([
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
-      data: {},
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+        data: {},
+      },
     },
   ]);
 

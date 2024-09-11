@@ -86,10 +86,8 @@ addButtonToToolbar({
 
     let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      segmentation.state.removeRepresentation(volumeToolGroupId);
-
       newViewport = await csUtils.convertStackToVolumeViewport({
-        viewport,
+        viewport: viewport as Types.IStackViewport,
         options: {
           background: <Types.Point3>[0, 0.4, 0],
           volumeId: `cornerstoneStreamingImageVolume:myVolume`,
@@ -99,13 +97,6 @@ addButtonToToolbar({
       if (volumeToolGroup) {
         volumeToolGroup.addViewport(newViewport.id, renderingEngineId);
       }
-
-      segmentation.convertStackToVolumeSegmentation({
-        segmentationId,
-        options: {
-          volumeId: `cornerstoneStreamingImageVolume:segMyVolume`,
-        },
-      });
 
       if (volumeToolGroup) {
         volumeToolGroup.addViewport(newViewport.id, renderingEngineId);
@@ -120,19 +111,10 @@ addButtonToToolbar({
         });
       }
     } else {
-      segmentation.state.removeRepresentations(stackToolGroupId);
-
       newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0, 0.4],
-        },
-      });
-
-      segmentation.convertVolumeToStackSegmentation({
-        segmentationId,
-        options: {
-          viewportId: newViewport.id,
         },
       });
 

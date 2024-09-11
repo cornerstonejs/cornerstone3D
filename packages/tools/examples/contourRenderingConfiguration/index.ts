@@ -17,7 +17,7 @@ import {
 import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes
-console.warn(
+console.debug(
   'Click on index.ts to open source code for this example --------->'
 );
 
@@ -43,14 +43,13 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Contour Segmentation Configuration',
-  'Here we demonstrate how to configure the contour rendering. This example download the contour data.'
+  'Here we demonstrate how to configure the contour rendering. This example downloads the contour data.'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
@@ -67,7 +66,6 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 content.append(instructions);
 
-let planarSegmentationRepresentationUID;
 let viewportId;
 // ============================= //
 
@@ -76,7 +74,8 @@ addToggleButtonToToolbar({
   onClick: (toggle) => {
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportId,
-      planarSegmentationRepresentationUID,
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       !toggle
     );
   },
@@ -88,7 +87,8 @@ addToggleButtonToToolbar({
     const segmentIndex = 1;
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportId,
-      planarSegmentationRepresentationUID,
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       segmentIndex,
       !toggle
     );
@@ -101,7 +101,8 @@ addToggleButtonToToolbar({
     const segmentIndex = 2;
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportId,
-      planarSegmentationRepresentationUID,
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       segmentIndex,
       !toggle
     );
@@ -113,14 +114,9 @@ addSliderToToolbar({
   range: [0.1, 10],
   defaultValue: 4,
   onSelectedValueChange: (value) => {
-    segmentation.config.setSegmentationRepresentationConfig(
-      planarSegmentationRepresentationUID,
-      {
-        Contour: {
-          outlineWidthActive: Number(value),
-        },
-      }
-    );
+    segmentation.config.style.setGlobalContourStyle({
+      outlineWidthActive: Number(value),
+    });
   },
 });
 
@@ -144,7 +140,7 @@ async function addSegmentationsToState() {
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
-      segmentationId: `${segmentationId}`,
+      segmentationId,
       representation: {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
@@ -247,18 +243,13 @@ async function run() {
   // Set volumes on the viewports
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // // Add the segmentation representation to the viewport
-  const segRepresentations1 = await segmentation.addSegmentationRepresentations(
-    viewportId,
-    [
-      {
-        segmentationId: `${segmentationId}`,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
-
-  planarSegmentationRepresentationUID = segRepresentations1[0];
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   // Render the image
   renderingEngine.render();

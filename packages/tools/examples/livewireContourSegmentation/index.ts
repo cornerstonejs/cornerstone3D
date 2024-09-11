@@ -120,17 +120,20 @@ addToggleButtonToToolbar({
 
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[0],
-      segmentationRepresentationUIDs[0],
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       !toggle
     );
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[1],
-      segmentationRepresentationUIDs[1],
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       !toggle
     );
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[2],
-      segmentationRepresentationUIDs[2],
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       !toggle
     );
 
@@ -146,19 +149,22 @@ addButtonToToolbar({
 
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportIds[0],
-      segmentationRepresentationUIDs[0],
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       activeSegmentIndex,
       visible
     );
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportIds[1],
-      segmentationRepresentationUIDs[1],
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       activeSegmentIndex,
       visible
     );
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportIds[2],
-      segmentationRepresentationUIDs[2],
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
       activeSegmentIndex,
       visible
     );
@@ -217,17 +223,6 @@ addSliderToToolbar({
 const toolGroupId = 'DEFAULT_TOOL_GROUP_ID';
 let segmentationRepresentationUIDs;
 
-function initializeGlobalConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.Contour,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
   const segmentationConfig = getSegmentationConfig();
@@ -272,29 +267,20 @@ function getSegmentsVisibilityState() {
   return segmentsVisibility;
 }
 
-function getSegmentationConfig(): cstTypes.RepresentationConfig {
-  const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationConfig(
-      segmentationRepresentationUIDs[0]
-    ) ?? {};
-
-  // Add Contour object because it
-  // can return an empty object
-  if (!segmentationConfig.Contour) {
-    segmentationConfig.Contour = {};
-  }
-
-  return segmentationConfig;
-}
-
 function updateSegmentationConfig(config) {
-  const segmentationConfig = getSegmentationConfig();
+  const { style } = segmentation.config.style.getStyle({
+    segmentationId,
+    representationType: csToolsEnums.SegmentationRepresentations.Contour,
+  });
 
-  Object.assign(segmentationConfig.Contour, config);
+  const mergedConfig = { ...style, ...config };
 
-  segmentation.config.setSegmentationRepresentationConfig(
-    segmentationRepresentationUIDs[0],
-    segmentationConfig
+  segmentation.config.style.setSegmentationSpecificStyle(
+    {
+      segmentationId,
+      representationType: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+    mergedConfig
   );
 }
 
@@ -490,8 +476,6 @@ async function run() {
   );
 
   updateActiveSegmentIndex(1);
-  initializeGlobalConfig();
-  updateInputsForCurrentSegmentation();
 }
 
 run();

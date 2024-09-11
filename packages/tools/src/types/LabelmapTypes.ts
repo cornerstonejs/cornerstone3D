@@ -4,6 +4,8 @@
 export type LabelmapStyle = {
   /** whether to render segmentation outline  */
   renderOutline?: boolean;
+  /** whether to render segmentation outline when inactive */
+  renderOutlineInactive?: boolean;
   /** thickness of the outline when segmentation is active - all segments */
   outlineWidthActive?: number;
   /** thickness of the outline when segmentation is inactive - all segments */

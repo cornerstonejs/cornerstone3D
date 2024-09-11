@@ -47,7 +47,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'volumeSegmentationId';
 const toolGroupId = 'toolgroupIdVolume';
-const segmentationRepresentationUIDs = [];
 
 const actionConfiguration = {
   contourBidirectional: {
@@ -227,14 +226,12 @@ async function addSegmentationsToState() {
   ]);
 
   // Add the segmentation representation to the viewport
-  segmentationRepresentationUIDs.push(
-    ...(await segmentation.addSegmentationRepresentations(viewportId1, [
-      {
-        segmentationId: segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]))
-  );
+  await segmentation.addSegmentationRepresentations(viewportId1, [
+    {
+      segmentationId: segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 }
 
 /**
@@ -245,7 +242,8 @@ function createSegmentConfiguration(segmentIndex, otherSegments?) {
     ? { has: (segmentIndex) => otherSegments.indexOf(segmentIndex) !== -1 }
     : undefined;
   const colorConfig = segmentation.config.color.getSegmentIndexColor(
-    segmentationRepresentationUIDs[0],
+    viewportId1,
+    segmentationId,
     segmentIndex
   );
   // Allow null style to skip style set

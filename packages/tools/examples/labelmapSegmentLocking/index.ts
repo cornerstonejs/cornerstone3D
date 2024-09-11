@@ -263,7 +263,7 @@ async function run() {
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
   };
 
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [segmentationRepresentation],
     [viewportId2]: [segmentationRepresentation],
     [viewportId3]: [segmentationRepresentation],

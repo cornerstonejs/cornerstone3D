@@ -92,11 +92,6 @@ addButtonToToolbar({
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },

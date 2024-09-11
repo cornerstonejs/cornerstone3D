@@ -190,8 +190,6 @@ export default class SegmentationStateManager {
       return;
     }
 
-    debugger;
-
     /**
      * Handle various scenarios for representation rendering:
      *
@@ -257,7 +255,7 @@ export default class SegmentationStateManager {
         );
         const segImage = cache.getImage(imageIds[0]);
         if (segImage?.FrameOfReferenceUID === frameOfReferenceUID) {
-          internaConvertStackToVolumeLabelmap(segmentation);
+          internalConvertStackToVolumeLabelmap(segmentation);
         }
       } else {
         // TODO: Implement Volume Labelmap on Volume Viewport
@@ -538,6 +536,10 @@ export default class SegmentationStateManager {
    * @returns The active segmentation representation, or undefined if not found.
    */
   getActiveSegmentation(viewportId: string): Segmentation | undefined {
+    if (!this.state.viewports[viewportId]) {
+      return;
+    }
+
     const activeSegRep = this.state.viewports[viewportId].find(
       (segRep) => segRep.active
     );
@@ -693,7 +695,7 @@ async function internalComputeVolumeLabelmapFromStack({
   return { volumeId };
 }
 
-async function internaConvertStackToVolumeLabelmap({
+async function internalConvertStackToVolumeLabelmap({
   segmentationId,
   options,
 }: {
@@ -741,7 +743,7 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
 window.segs = defaultSegmentationStateManager.state;
 export {
-  internaConvertStackToVolumeLabelmap,
+  internalConvertStackToVolumeLabelmap,
   internalComputeVolumeLabelmapFromStack,
   defaultSegmentationStateManager,
 };

@@ -87,7 +87,7 @@ async function addSegmentations(viewportId1) {
 
   const localVolumeOptions = {
     scalarData: new Uint8Array(
-      highResSegmentationVolume.scalarData.length /
+      highResSegmentationVolume.voxelManager.getScalarDataLength() /
         (DOWN_SAMPLE_RATE * DOWN_SAMPLE_RATE)
     ),
     metadata: highResSegmentationVolume.metadata, // Just use the same metadata for the example.
@@ -147,7 +147,7 @@ async function addSegmentations(viewportId1) {
   });
 
   // Add segmentation representations to the viewports
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [
       {
         segmentationId: highResSegmentationId,

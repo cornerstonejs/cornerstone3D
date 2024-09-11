@@ -246,11 +246,10 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     );
 
     const activeSegmentation = getActiveSegmentation(viewportId);
-
     const isActive = activeSegmentation?.segmentationId === segmentationId;
 
     // Merge the configurations from different levels based on its precedence
-    const { style } = segmentationStyle.getSegmentationStyle({
+    const { style } = segmentationStyle.getStyle({
       viewportId,
       segmentationId,
       representationType: SegmentationRepresentations.Contour,
@@ -279,6 +278,8 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       lineOpacity = mergedConfig.outlineOpacityInactive ?? lineOpacity;
       fillOpacity = mergedConfig.fillAlphaInactive ?? fillOpacity;
     }
+
+    console.debug(lineWidth);
 
     // Change the line thickness when the mouse is over the contour segment
     if (segmentation.activeSegmentIndex === segmentIndex) {

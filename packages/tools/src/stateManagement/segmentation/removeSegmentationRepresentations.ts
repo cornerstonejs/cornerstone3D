@@ -3,10 +3,7 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
 import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
 import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 
-import {
-  getSegmentationRepresentation,
-  getSegmentationRepresentations,
-} from './getSegmentationRepresentation';
+import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 function removeSegmentationRepresentation(

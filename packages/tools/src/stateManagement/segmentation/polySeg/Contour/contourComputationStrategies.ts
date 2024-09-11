@@ -90,13 +90,7 @@ export async function computeContourData(
     fillAlpha: 0,
   } as ContourStyle;
 
-  segmentationStyle.setSegmentationStyle(
-    {
-      segmentationId,
-      representationType: SegmentationRepresentations.Contour,
-    },
-    contourStyle
-  );
+  segmentationStyle.setGlobalContourStyle(contourStyle);
 
   return {
     annotationUIDsMap,

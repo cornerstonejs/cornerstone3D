@@ -448,13 +448,15 @@ class StackViewport extends Viewport {
 
     const { actor } = defaultActor;
     const vtkImageData = actor.getMapper().getInputData();
+    const csImage = this.csImage;
+
     return {
       dimensions: vtkImageData.getDimensions(),
       spacing: vtkImageData.getSpacing(),
       origin: vtkImageData.getOrigin(),
       direction: vtkImageData.getDirection(),
       get scalarData() {
-        return this.csImage.voxelManager.getScalarData();
+        return csImage?.voxelManager.getScalarData();
       },
       imageData: actor.getMapper().getInputData(),
       metadata: {
@@ -463,11 +465,11 @@ class StackViewport extends Viewport {
       },
       scaling: this.scaling,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: { ...this.csImage?.calibration, ...this.calibration },
+      calibration: { ...csImage?.calibration, ...this.calibration },
       preScale: {
-        ...this.csImage?.preScale,
+        ...csImage?.preScale,
       },
-      voxelManager: this.csImage?.voxelManager,
+      voxelManager: csImage?.voxelManager,
     };
   }
 
@@ -475,7 +477,7 @@ class StackViewport extends Viewport {
     const { metadata } = this._cpuFallbackEnabledElement;
 
     const spacing = metadata.spacing;
-
+    const csImage = this.csImage;
     return {
       dimensions: metadata.dimensions,
       spacing,
@@ -509,11 +511,11 @@ class StackViewport extends Viewport {
       },
       scalarData: this.cpuImagePixelData,
       hasPixelSpacing: this.hasPixelSpacing,
-      calibration: { ...this.csImage.calibration, ...this.calibration },
+      calibration: { ...csImage?.calibration, ...this.calibration },
       preScale: {
-        ...this.csImage.preScale,
+        ...csImage?.preScale,
       },
-      voxelManager: this.csImage?.voxelManager,
+      voxelManager: csImage?.voxelManager,
     };
   }
 

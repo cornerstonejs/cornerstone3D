@@ -292,7 +292,7 @@
       },
       "wsi": {
         "name": "Whole Slide Imaging",
-        "description": "Dispaly WSI Series"
+        "description": "Display WSI Series"
       },
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
@@ -338,7 +338,7 @@
       },
       "labelmapSegmentationDynamicThreshold": {
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
-        "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
+        "description": "Demonstrates how to use dynamic threshold with preview to modify the segmentation data"
       },
       "labelmapSegmentColorChange": {
         "name": "Labelmap Segment Color Change",

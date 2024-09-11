@@ -89,14 +89,24 @@ const getRandomRGBA = () => [
 addButtonToToolbar({
   title: 'change segment 1 color left viewport',
   onClick: () => {
-    segmentation.config.color.setSegmentIndexColor(segRep1, 1, getRandomRGBA());
+    segmentation.config.color.setSegmentIndexColor(
+      viewportId1,
+      segmentationId1,
+      1,
+      getRandomRGBA()
+    );
   },
 });
 
 addButtonToToolbar({
   title: 'change segment 2 color right viewport',
   onClick: () => {
-    segmentation.config.color.setSegmentIndexColor(segRep2, 2, getRandomRGBA());
+    segmentation.config.color.setSegmentIndexColor(
+      viewportId2,
+      segmentationId1,
+      2,
+      getRandomRGBA()
+    );
   },
 });
 
@@ -205,12 +215,12 @@ async function run() {
   );
 
   // // Add the segmentation representations to toolgroup1
-  [segRep1] = await segmentation.addSegmentationRepresentations(viewportId1, [
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      options: {
-        colorLUTOrIndex: [
+      config: {
+        colorLUT: [
           [0, 0, 0, 0],
           [125, 152, 180, 255],
           [125, 152, 20, 255],
@@ -219,7 +229,7 @@ async function run() {
     },
   ]);
 
-  [segRep2] = await segmentation.addSegmentationRepresentations(viewportId2, [
+  await segmentation.addSegmentationRepresentations(viewportId2, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

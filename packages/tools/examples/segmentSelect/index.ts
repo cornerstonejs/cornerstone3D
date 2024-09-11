@@ -204,25 +204,14 @@ async function run() {
   _handleVolumeViewports(volumeImageIds, renderingEngine);
 
   // set the fillAlpha for the labelmap to 0
-  const globalConfig = segmentation.config.getGlobalConfig();
-  segmentation.config.setGlobalRepresentationConfig(
-    cornerstoneTools.Enums.SegmentationRepresentations.Labelmap,
-    {
-      ...globalConfig.representations.Labelmap,
-      fillAlpha: 0.05,
-    }
-  );
-  segmentation.config.setGlobalRepresentationConfig(
-    cornerstoneTools.Enums.SegmentationRepresentations.Contour,
-    {
-      ...globalConfig.representations.Contour,
-      fillAlpha: 0,
-    }
-  );
-
-  const config = segmentation.config.getGlobalConfig();
-  config.representations.Labelmap.activeSegmentOutlineWidthDelta = 3;
-  config.representations.Contour.activeSegmentOutlineWidthDelta = 3;
+  segmentation.config.style.setGlobalLabelmapStyle({
+    fillAlpha: 0.05,
+    activeSegmentOutlineWidthDelta: 3,
+  });
+  segmentation.config.style.setGlobalContourStyle({
+    fillAlpha: 0,
+    activeSegmentOutlineWidthDelta: 3,
+  });
 }
 
 run();

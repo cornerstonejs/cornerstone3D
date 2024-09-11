@@ -70,7 +70,7 @@ addToggleButtonToToolbar({
 addToggleButtonToToolbar({
   title: 'toggle outline rendering',
   onClick: (toggle) => {
-    segmentation.config.style.setGloablLabelmapStyle({
+    segmentation.config.style.setGlobalLabelmapStyle({
       renderOutline: toggle,
     });
   },
@@ -79,12 +79,9 @@ addToggleButtonToToolbar({
 addToggleButtonToToolbar({
   title: 'toggle fill rendering',
   onClick: (toggle) => {
-    segmentation.config.style.setGlobalLab(
-      csToolsEnums.SegmentationRepresentations.Labelmap,
-      {
-        renderFill: toggle,
-      }
-    );
+    segmentation.config.style.setGlobalLabelmapStyle({
+      renderFill: toggle,
+    });
   },
   defaultToggle: true,
 });
@@ -94,25 +91,20 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    segmentation.config.style.setGlobalLab(
-      csToolsEnums.SegmentationRepresentations.Labelmap,
-      {
-        outlineWidth: Number(value),
-      }
-    );
+    segmentation.config.style.setGlobalLabelmapStyle({
+      outlineWidthActive: Number(value),
+    });
   },
 });
+
 addSliderToToolbar({
   title: 'outline alpha active',
   range: [0, 100],
   defaultValue: 100,
   onSelectedValueChange: (value) => {
-    segmentation.config.style.setGlobalLab(
-      csToolsEnums.SegmentationRepresentations.Labelmap,
-      {
-        outlineOpacity: Number(value) / 100,
-      }
-    );
+    segmentation.config.style.setGlobalLabelmapStyle({
+      outlineOpacity: Number(value) / 100,
+    });
   },
 });
 addSliderToToolbar({
@@ -120,12 +112,9 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    segmentation.config.style.setGlobalLab(
-      csToolsEnums.SegmentationRepresentations.Labelmap,
-      {
-        outlineWidthInactive: Number(value),
-      }
-    );
+    segmentation.config.style.setGlobalLabelmapStyle({
+      outlineWidthInactive: Number(value),
+    });
   },
 });
 addSliderToToolbar({
@@ -135,12 +124,9 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     const mappedValue = Number(value) / 100.0;
 
-    segmentation.config.style.setGlobalLab(
-      csToolsEnums.SegmentationRepresentations.Labelmap,
-      {
-        fillAlpha: mappedValue,
-      }
-    );
+    segmentation.config.style.setGlobalLabelmapStyle({
+      fillAlpha: mappedValue,
+    });
   },
 });
 addSliderToToolbar({
@@ -149,12 +135,9 @@ addSliderToToolbar({
   defaultValue: 50,
   onSelectedValueChange: (value) => {
     const mappedValue = Number(value) / 100.0;
-    segmentation.config.style.setGlobalLab(
-      csToolsEnums.SegmentationRepresentations.Labelmap,
-      {
-        fillAlphaInactive: mappedValue,
-      }
-    );
+    segmentation.config.style.setGlobalLabelmapStyle({
+      fillAlphaInactive: mappedValue,
+    });
   },
 });
 

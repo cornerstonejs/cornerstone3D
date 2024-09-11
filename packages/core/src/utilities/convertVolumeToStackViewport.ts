@@ -62,7 +62,6 @@ async function convertVolumeToStackViewport({
 
   stackViewport.setViewReference(prevView);
 
-  // Render the image
   stackViewport.render();
 
   return stackViewport;

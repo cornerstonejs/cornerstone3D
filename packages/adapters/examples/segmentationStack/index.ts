@@ -818,7 +818,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0]);
+    csToolsSegmentation.removeSegmentationRepresentation(viewportIds[0]);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();

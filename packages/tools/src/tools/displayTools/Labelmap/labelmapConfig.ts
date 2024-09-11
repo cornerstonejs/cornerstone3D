@@ -2,6 +2,7 @@ import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 
 const defaultLabelmapConfig: LabelmapStyle = {
   renderOutline: true,
+  renderOutlineInactive: true,
   outlineWidthActive: 3,
   outlineWidthInactive: 2,
   activeSegmentOutlineWidthDelta: 0,

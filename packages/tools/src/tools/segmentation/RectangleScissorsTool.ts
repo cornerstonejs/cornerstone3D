@@ -2,7 +2,6 @@ import {
   BaseVolumeViewport,
   cache,
   getEnabledElement,
-  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -37,7 +36,11 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+  getStackSegmentationImageIdsForViewport,
+} from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -196,8 +199,14 @@ class RectangleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
+
       this.editData = {
         ...this.editData,
+        imageId: segmentationImageId,
       };
     }
 
@@ -315,7 +324,6 @@ class RectangleScissorsTool extends BaseTool {
 
     this.editData = null;
     this.isDrawing = false;
-
     this.applyActiveStrategy(enabledElement, operationData);
   };
 
