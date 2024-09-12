@@ -32,6 +32,7 @@ import {
   annotationHydration,
   getClosestImageIdForStackViewport,
 } from './annotationHydration';
+import { getModalityUnit } from './getModalityUnit';
 // name spaces
 import * as contours from './contours';
 import * as segmentation from './segmentation';
@@ -102,4 +103,5 @@ export {
   contourSegmentation,
   annotationHydration,
   getClosestImageIdForStackViewport,
+  getModalityUnit,
 };
