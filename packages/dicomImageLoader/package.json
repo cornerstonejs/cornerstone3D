@@ -12,9 +12,9 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "./dist/esm/imageLoader/index.js",
-  "module": "./dist/esm/imageLoader/index.js",
-  "types": "./dist/esm/imageLoader/index.d.ts",
+  "main": "./dist/esm/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "files": [
     "./dist/"
   ],
@@ -27,8 +27,8 @@
   },
   "exports": {
     ".": {
-      "import": "./dist/esm/imageLoader/index.js",
-      "types": "./dist/esm/imageLoader/index.d.ts"
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
     },
     "./umd": {
       "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
@@ -45,23 +45,19 @@
       "import": "./dist/esm/imageLoader/index.js",
       "types": "./dist/esm/imageLoader/index.d.ts"
     },
-    "./imageLoader/*": {
-      "import": "./dist/esm/imageLoader/*.js",
-      "types": "./dist/esm/imageLoader/*.d.ts"
-    },
-    "./imageLoader/wadors": {
+    "./wadors": {
       "import": "./dist/esm/imageLoader/wadors/index.js",
       "types": "./dist/esm/imageLoader/wadors/index.d.ts"
     },
-    "./imageLoader/wadors/*": {
+    "./wadors/*": {
       "import": "./dist/esm/imageLoader/wadors/*.js",
       "types": "./dist/esm/imageLoader/wadors/*.d.ts"
     },
-    "./imageLoader/wadouri": {
+    "./wadouri": {
       "import": "./dist/esm/imageLoader/wadouri/index.js",
       "types": "./dist/esm/imageLoader/wadouri/index.d.ts"
     },
-    "./imageLoader/wadouri/*": {
+    "./wadouri/*": {
       "import": "./dist/esm/imageLoader/wadouri/*.js",
       "types": "./dist/esm/imageLoader/wadouri/*.d.ts"
     },
@@ -79,12 +75,12 @@
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
     "build:all": "yarn run build:umd:dynamic && yarn run build:esm",
-    "build:update-api": "echo 'not implemented yet'",
     "copy-dts": "echo 'not implemented yet'",
     "clean": "shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "format-check": "npx eslint ./src --quiet",
-    "api-check": "yarn run format-check",
+    "api-check": "api-extractor --debug run ",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
     "cm": "npx git-cz",
     "clean:dist": "shx rm -rf dist",
     "clean:docs": "shx rm -rf documentation",

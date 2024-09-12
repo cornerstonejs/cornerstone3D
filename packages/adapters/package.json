@@ -62,8 +62,7 @@
         "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
         "format-check": "npx eslint ./src --quiet",
-        "api-check": "yarn run format-check ",
-        "build:update-api": "yarn run build:esm && api-extractor run --local",
+        "api-check": "echo 'No API check for this package'",
         "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."

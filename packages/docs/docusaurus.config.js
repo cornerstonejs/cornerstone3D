@@ -198,7 +198,11 @@ module.exports = {
       'docusaurus-plugin-typedoc-api',
       {
         projectRoot: path.join(__dirname, '../../'),
-        packages: [...['core', 'tools'].map((pkg) => `packages/${pkg}`)],
+        packages: [
+          ...['core', 'tools', 'dicomImageLoader', 'nifti-volume-loader'].map(
+            (pkg) => `packages/${pkg}`
+          ),
+        ],
         url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
         removeScopes: ['cornerstonejs'],
         minimal: false,
