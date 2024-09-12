@@ -62,10 +62,8 @@ class ViewportColorbar extends Colorbar {
       viewport.render();
     } else if (viewport instanceof VolumeViewport) {
       const { _volumeId: volumeId } = this;
-      const viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
-        volumeId,
-        viewport.renderingEngineId
-      );
+      const viewportsContainingVolumeUID =
+        utilities.getViewportsWithVolumeId(volumeId);
 
       viewport.setProperties({ voiRange }, volumeId);
       viewportsContainingVolumeUID.forEach((vp) => vp.render());

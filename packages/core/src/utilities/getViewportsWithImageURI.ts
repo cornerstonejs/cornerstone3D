@@ -1,7 +1,7 @@
 import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
-import type { IStackViewport, IVolumeViewport } from '../types';
+import type { IBaseVolumeViewport, IStackViewport } from '../types';
 
-type Viewport = IStackViewport | IVolumeViewport;
+type Viewport = IStackViewport | IBaseVolumeViewport;
 
 /**
  * Get the viewport that is rendering the image with the given imageURI (imageId without
@@ -17,7 +17,10 @@ export default function getViewportsWithImageURI(imageURI: string): Viewport[] {
 
   const viewports = [];
   renderingEngines.forEach((renderingEngine) => {
-    const viewportsForRenderingEngine = renderingEngine.getViewports();
+    const viewportsForRenderingEngine = renderingEngine.getViewports() as (
+      | IStackViewport
+      | IBaseVolumeViewport
+    )[];
 
     viewportsForRenderingEngine.forEach((viewport) => {
       if (viewport.hasImageURI(imageURI)) {
