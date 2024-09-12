@@ -6,6 +6,7 @@ import {
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { StackScrollOutOfBoundsEvent } from 'core/src/types/EventTypes';
 
 // This is for debugging purposes
 console.warn(
@@ -16,6 +17,7 @@ const {
   PanTool,
   WindowLevelTool,
   StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   PlanarRotateTool,
   ToolGroupManager,
@@ -26,7 +28,11 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const leftClickTools = [WindowLevelTool.toolName, PlanarRotateTool.toolName];
+const leftClickTools = [
+  WindowLevelTool.toolName,
+  PlanarRotateTool.toolName,
+  StackScrollTool.toolName,
+];
 const defaultLeftClickTool = leftClickTools[0];
 let currentLeftClickTool = leftClickTools[0];
 
@@ -77,6 +83,46 @@ addDropdownToToolbar({
   },
 });
 
+const lastEvents = [];
+const lastEventsDiv = document.createElement('div');
+
+content.appendChild(lastEventsDiv);
+
+function updateLastEvents(number, eventName, detail) {
+  if (lastEvents.length > 4) {
+    lastEvents.pop();
+  }
+
+  lastEvents.unshift({ number, eventName, detail });
+
+  // Display
+  lastEventsDiv.innerHTML = '';
+
+  lastEvents.forEach((le) => {
+    const element = document.createElement('p');
+
+    element.style.border = '1px solid black';
+    element.innerText = le.number + ' ' + le.eventName + '\n\n' + le.detail;
+
+    lastEventsDiv.appendChild(element);
+  });
+}
+
+let eventNumber = 1;
+
+const { STACK_SCROLL_OUT_OF_BOUNDS } = Enums.Events;
+
+element.addEventListener(STACK_SCROLL_OUT_OF_BOUNDS, ((
+  evt: StackScrollOutOfBoundsEvent
+) => {
+  updateLastEvents(
+    eventNumber,
+    STACK_SCROLL_OUT_OF_BOUNDS,
+    JSON.stringify(evt.detail)
+  );
+  eventNumber++;
+}) as EventListener);
+
 /**
  * Runs the demo
  */
@@ -88,6 +134,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PlanarRotateTool);
 
@@ -100,6 +147,7 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
+  toolGroup.addTool(StackScrollTool.toolName, { loop: false });
   toolGroup.addTool(PlanarRotateTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
