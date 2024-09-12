@@ -2658,7 +2658,7 @@ type Point3 = [number, number, number];
 type Point4 = [number, number, number, number];
 
 // @public (undocumented)
-function pointInShapeCallback(imageData: vtkImageData | CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK): Array<PointInShape>;
+function pointInShapeCallback(imageData: vtkImageData | CPUImageData, options: PointInShapeOptions): Array<PointInShape> | undefined;
 
 // @public (undocumented)
 class PointsManager<T> {
@@ -3927,7 +3927,9 @@ export class Viewport {
     // (undocumented)
     addActor(actorEntry: ActorEntry): void;
     // (undocumented)
-    addActors(actors: ActorEntry[], resetCamera?: boolean): void;
+    addActors(actors: ActorEntry[], options?: {
+        resetCamera?: boolean;
+    }): void;
     // (undocumented)
     addWidget: (widgetId: any, widget: any) => void;
     // (undocumented)
