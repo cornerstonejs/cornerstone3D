@@ -261,6 +261,7 @@ class WSIViewport extends Viewport {
       },
       scalarData: this.getScalarData(),
       imageData,
+      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
       voxelManager: {
         forEach: (
           callback: (args: {
@@ -276,12 +277,12 @@ class WSIViewport extends Viewport {
             imageData;
           }
         ) => {
-          return pointInShapeCallback(
-            imageData as unknown as vtkImageData | CPUImageData,
-            options.isInObject ?? (() => true),
-            callback,
-            options.boundsIJK
-          );
+          return pointInShapeCallback(options.imageData, {
+            pointInShapeFn: options.isInObject ?? (() => true),
+            callback: callback,
+            boundsIJK: options.boundsIJK,
+            returnPoints: options.returnPoints ?? false,
+          });
         },
       },
     };

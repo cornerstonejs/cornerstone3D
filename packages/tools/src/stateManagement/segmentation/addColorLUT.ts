@@ -16,20 +16,18 @@ export function addColorLUT(colorLUT: Types.ColorLUT, index?: number): number {
   const segmentationStateManager = defaultSegmentationStateManager;
 
   const indexToUse = index ?? getNextColorLUTIndex();
-  let colorLUTToUse = colorLUT;
-  // make sure the colorLUT is always starts at [0, 0, 0, 0], and
-  // also has multiple entries, and if it is missing get it from
-  // constant CORNERSTONE_COLOR_LUT
-  // Append the "zero" (no label) color to the front of the LUT, if necessary.
+  let colorLUTToUse = [...colorLUT] as Types.ColorLUT;
+
+  // Make sure the colorLUT always starts with [0, 0, 0, 0] for the background color
   if (!utilities.isEqual(colorLUTToUse[0], [0, 0, 0, 0])) {
     console.warn(
       'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
     );
-    colorLUTToUse.unshift([0, 0, 0, 0]);
+    colorLUTToUse = [[0, 0, 0, 0], ...colorLUTToUse];
   }
 
-  if (colorLUT.length < 255) {
-    // use whatever is missing from CORNERSTONE_COLOR_LUT
+  // Ensure the colorLUT has at least 255 entries
+  if (colorLUTToUse.length < 255) {
     const missingColorLUTs = CORNERSTONE_COLOR_LUT.slice(colorLUTToUse.length);
     colorLUTToUse = [...colorLUTToUse, ...missingColorLUTs] as Types.ColorLUT;
   }

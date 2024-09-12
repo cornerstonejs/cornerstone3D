@@ -680,7 +680,7 @@ class VolumeViewport extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    volumeId = volumeId ?? this.getVolumeId();
+    volumeId ||= this.getVolumeId();
     const imageVolume = cache.getVolume(volumeId);
     if (!imageVolume) {
       throw new Error(

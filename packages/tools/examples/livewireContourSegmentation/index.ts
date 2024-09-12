@@ -120,20 +120,26 @@ addToggleButtonToToolbar({
 
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[0],
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[1],
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[2],
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
 
@@ -221,35 +227,6 @@ addSliderToToolbar({
 // =============================================================================
 
 const toolGroupId = 'DEFAULT_TOOL_GROUP_ID';
-let segmentationRepresentationUIDs;
-
-function updateInputsForCurrentSegmentation() {
-  // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getSegmentationConfig();
-  const contourConfig = segmentationConfig.Contour;
-
-  (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineWidthActive ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineWidthActive
-    );
-
-  (document.getElementById('outlineOpacity') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineOpacity ?? DEFAULT_SEGMENTATION_CONFIG.outlineOpacity
-    );
-
-  (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
-    contourConfig.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
-  );
-
-  (document.getElementById('outlineDashActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineDashActive?.split(',')[0] ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineDashActive?.split(',')[0] ??
-        '0'
-    );
-}
 
 function updateActiveSegmentIndex(segmentIndex: number): void {
   activeSegmentIndex = segmentIndex;
@@ -270,7 +247,7 @@ function getSegmentsVisibilityState() {
 function updateSegmentationConfig(config) {
   const { style } = segmentation.config.style.getStyle({
     segmentationId,
-    representationType: csToolsEnums.SegmentationRepresentations.Contour,
+    type: csToolsEnums.SegmentationRepresentations.Contour,
   });
 
   const mergedConfig = { ...style, ...config };
@@ -278,7 +255,7 @@ function updateSegmentationConfig(config) {
   segmentation.config.style.setSegmentationSpecificStyle(
     {
       segmentationId,
-      representationType: csToolsEnums.SegmentationRepresentations.Contour,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
     mergedConfig
   );
@@ -460,20 +437,14 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the viewportId
-  const segmentationRepresentationUIDPromises = viewportIds.map(
-    (viewportId) => {
-      return segmentation.addSegmentationRepresentations(viewportId, [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Contour,
-        },
-      ]);
-    }
-  );
-
-  segmentationRepresentationUIDs = await Promise.all(
-    segmentationRepresentationUIDPromises
-  );
+  viewportIds.map((viewportId) => {
+    return segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
+  });
 
   updateActiveSegmentIndex(1);
 }

@@ -200,7 +200,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const { viewportId } = context.styleSpecifier;
     const segmentationRepresentations = getSegmentationRepresentations(
       viewportId,
-      segmentationId
+      { segmentationId }
     );
 
     if (!segmentationRepresentations?.length) {
@@ -237,8 +237,10 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
     const segmentationVisible = getSegmentationRepresentationVisibility(
       viewportId,
-      segmentationId,
-      SegmentationRepresentations.Contour
+      {
+        segmentationId,
+        type: SegmentationRepresentations.Contour,
+      }
     );
 
     const activeSegmentation = getActiveSegmentation(viewportId);
@@ -248,7 +250,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const { style } = segmentationStyle.getStyle({
       viewportId,
       segmentationId,
-      representationType: SegmentationRepresentations.Contour,
+      type: SegmentationRepresentations.Contour,
       segmentIndex,
     });
 
@@ -299,8 +301,10 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
         segmentationVisible &&
         getSegmentIndexVisibility(
           viewportId,
-          segmentationId,
-          SegmentationRepresentations.Contour,
+          {
+            segmentationId,
+            type: SegmentationRepresentations.Contour,
+          },
           segmentIndex
         ),
       locked: annotationLocked,

@@ -99,7 +99,6 @@ const optionsValues = [...brushValues];
 let viewport;
 
 const segmentationId = 'VIDEO_SEGMENTATION';
-const segmentationRepresentationUIDs = [];
 
 // ============================= //
 addDropdownToToolbar({

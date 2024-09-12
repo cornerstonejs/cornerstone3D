@@ -31,8 +31,6 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   outlineDashInactive: undefined,
 };
 
-const { KeyboardBindings } = cornerstoneTools.Enums;
-
 const {
   SplineContourSegmentationTool,
 
@@ -41,14 +39,12 @@ const {
   Enums: csToolsEnums,
   segmentation,
 } = cornerstoneTools;
-const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 const toolGroupId = 'STACK_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
-const segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 let activeSegmentIndex = 0;
@@ -109,7 +105,7 @@ function updateSegmentationConfig(config) {
   segmentation.config.style.setSegmentationSpecificStyle(
     {
       segmentationId,
-      representationType: csToolsEnums.SegmentationRepresentations.Contour,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
     config
   );
@@ -178,8 +174,10 @@ addToggleButtonToToolbar({
 
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportId,
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
 

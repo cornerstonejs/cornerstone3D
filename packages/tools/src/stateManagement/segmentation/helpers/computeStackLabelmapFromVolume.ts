@@ -16,7 +16,7 @@ export async function computeStackLabelmapFromVolume({
 }
 
 // Updated original function to call the new separate functions
-export async function convertVolumeToStackLabelmap({
+export function convertVolumeToStackLabelmap({
   segmentationId,
   options,
 }: {
@@ -37,7 +37,7 @@ export async function convertVolumeToStackLabelmap({
     .Labelmap as LabelmapSegmentationDataVolume;
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
-  await updateStackSegmentationState({
+  return updateStackSegmentationState({
     segmentationId,
     viewportId: options.viewportId,
     imageIds: segmentationVolume.imageIds,

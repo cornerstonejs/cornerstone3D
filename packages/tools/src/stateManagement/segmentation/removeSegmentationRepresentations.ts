@@ -1,24 +1,76 @@
-import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
 import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
+/**
+ * Removes a segmentation representation from a viewport.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param type - Optional. The type of segmentation representation to remove.
+ * @param immediate - Optional. If true, the removal is performed immediately.
+ *
+ * @remarks
+ * If a specific type is provided, only that representation type is removed.
+ * If no type is specified, all representations for the segmentation are removed.
+ */
 function removeSegmentationRepresentation(
   viewportId: string,
-  segmentationId: string,
-  type: SegmentationRepresentations,
+  specifier: {
+    segmentationId: string;
+    type: SegmentationRepresentations;
+  },
   immediate?: boolean
 ): void {
-  _removeRepresentation(viewportId, segmentationId, immediate);
+  const { segmentationId, type } = specifier;
 
-  defaultSegmentationStateManager.removeSegmentationRepresentation(
-    viewportId,
+  // remove representation from state
+  defaultSegmentationStateManager.removeSegmentationRepresentation(viewportId, {
     segmentationId,
-    type
+    type,
+  });
+
+  _removeRepresentation(viewportId, segmentationId, type, immediate);
+}
+
+/**
+ * Removes all segmentation representations from a viewport.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param type - Optional. The type of segmentation representation to remove.
+ * @param immediate - Optional. If true, the removal is performed immediately.
+ *
+ * @remarks
+ * If no specifier is provided, all segmentation representations for the viewport are removed.
+ * If a segmentationId specifier is provided, only the segmentation representation with the specified segmentationId and type are removed.
+ * If a type specifier is provided, only the segmentation representation with the specified type are removed.
+ * If both a segmentationId and type specifier are provided, only the segmentation representation with the specified segmentationId and type are removed.
+ */
+function removeSegmentationRepresentations(
+  viewportId: string,
+  specifier: {
+    segmentationId: string;
+    type?: SegmentationRepresentations;
+  },
+  immediate?: boolean
+): void {
+  const { segmentationId, type } = specifier;
+
+  // remove representation from state
+  defaultSegmentationStateManager.removeSegmentationRepresentations(
+    viewportId,
+    {
+      segmentationId,
+      type,
+    }
   );
+
+  _removeRepresentation(viewportId, segmentationId, type, immediate);
 }
 
 /**
@@ -35,8 +87,10 @@ function removeLabelmapRepresentation(
 ): void {
   removeSegmentationRepresentation(
     viewportId,
-    segmentationId,
-    SegmentationRepresentations.Labelmap,
+    {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    },
     immediate
   );
 }
@@ -55,8 +109,10 @@ function removeContourRepresentation(
 ): void {
   removeSegmentationRepresentation(
     viewportId,
-    segmentationId,
-    SegmentationRepresentations.Contour,
+    {
+      segmentationId,
+      type: SegmentationRepresentations.Contour,
+    },
     immediate
   );
 }
@@ -75,39 +131,42 @@ function removeSurfaceRepresentation(
 ): void {
   removeSegmentationRepresentation(
     viewportId,
-    segmentationId,
-    SegmentationRepresentations.Surface,
+    {
+      segmentationId,
+      type: SegmentationRepresentations.Surface,
+    },
     immediate
   );
 }
 
 function _removeRepresentation(
-  viewportId,
+  viewportId: string,
   segmentationId: string,
+  type?: SegmentationRepresentations,
   immediate?: boolean
 ): void {
-  const representations = getSegmentationRepresentations(
-    viewportId,
-    segmentationId
-  );
+  const representations = getSegmentationRepresentations(viewportId, {
+    segmentationId,
+    type,
+  });
 
   representations.forEach((representation) => {
-    const { type } = representation;
-
-    if (type === SegmentationRepresentations.Labelmap) {
-      labelmapDisplay.removeRepresentation(
-        viewportId,
-        segmentationId,
-        immediate
-      );
-    } else if (type === SegmentationRepresentations.Contour) {
-      contourDisplay.removeRepresentation(
-        viewportId,
-        segmentationId,
-        immediate
-      );
-    } else {
-      throw new Error(`The representation ${type} is not supported yet`);
+    if (representation.type === type) {
+      if (type === SegmentationRepresentations.Labelmap) {
+        labelmapDisplay.removeRepresentation(
+          viewportId,
+          segmentationId,
+          immediate
+        );
+      } else if (type === SegmentationRepresentations.Contour) {
+        contourDisplay.removeRepresentation(
+          viewportId,
+          segmentationId,
+          immediate
+        );
+      } else {
+        throw new Error(`The representation ${type} is not supported yet`);
+      }
     }
   });
 
@@ -120,6 +179,7 @@ function _removeRepresentation(
 
 export {
   removeSegmentationRepresentation,
+  removeSegmentationRepresentations,
   removeLabelmapRepresentation,
   removeContourRepresentation,
   removeSurfaceRepresentation,

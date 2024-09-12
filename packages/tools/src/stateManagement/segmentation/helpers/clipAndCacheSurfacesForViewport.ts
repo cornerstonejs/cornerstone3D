@@ -6,9 +6,10 @@ import {
   triggerEvent,
 } from '@cornerstonejs/core';
 
-import { SegmentationRepresentations, WorkerTypes } from '../../../enums';
+import { WorkerTypes } from '../../../enums';
 import { pointToString } from '../../../utilities/pointToString';
 import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
+import { getSurfaceActorUID } from './getSegmentationActor';
 const workerManager = getWebWorkerManager();
 
 /**
@@ -115,8 +116,8 @@ export async function clipAndCacheSurfacesForViewport(
           },
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
-            polyDataResults.forEach((polyDataResult, surfaceId) => {
-              const actorUID = getSurfaceActorUID(segmentationId, surfaceId);
+            polyDataResults.forEach((polyDataResult) => {
+              const actorUID = getSurfaceActorUID(segmentationId);
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,
@@ -172,10 +173,6 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
   surfacesAABB.forEach((aabb, id) => {
     surfacesAABBCache.set(id, aabb);
   });
-}
-
-export function getSurfaceActorUID(segmentationId: string, surfaceId: string) {
-  return `${segmentationId}-${SegmentationRepresentations.Surface}_${surfaceId}`;
 }
 
 // Helper function to generate a cache ID

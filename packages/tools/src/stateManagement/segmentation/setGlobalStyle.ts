@@ -6,7 +6,7 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents';
 /**
  * Sets the global configuration for a specific segmentation representation type.
  *
- * @param representationType - The type of segmentation representation.
+ * @param type - The type of segmentation representation.
  * @param config - The global configuration to be set.
  * @param suppressEvents - Optional. If true, suppresses triggering of segmentation modified events.
  *
@@ -16,11 +16,11 @@ import { triggerSegmentationModified } from './triggerSegmentationEvents';
  * it triggers a segmentation modified event after updating the style.
  */
 export function setGlobalStyle(
-  representationType: SegmentationRepresentations,
+  type: SegmentationRepresentations,
   styles: RepresentationStyle,
   suppressEvents?: boolean
 ): void {
-  segmentationStyle.setGlobalStyle(representationType, styles);
+  segmentationStyle.setGlobalStyle(type, styles);
 
   if (!suppressEvents) {
     triggerSegmentationModified();

@@ -1,5 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { getLabelmapActorUID } from '../../../stateManagement/segmentation/helpers/getLabelmapActor';
+import { getLabelmapActorUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 /**
  * Remove the labelmap segmentation representation from the viewport's HTML Element.

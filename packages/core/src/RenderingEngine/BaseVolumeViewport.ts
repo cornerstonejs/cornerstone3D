@@ -1175,7 +1175,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
-      const uid = actorUID ?? uuidv4();
+      const uid = actorUID || uuidv4();
       volumeActors.push({
         uid,
         actor,
@@ -1259,7 +1259,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     if (volumeId) {
-      const actorEntry = actorEntries?.find(
+      const actorEntry = actorEntries.find(
         (actor) => actor.referencedId === volumeId
       );
 
@@ -1398,7 +1398,7 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    volumeId = volumeId ?? this.getVolumeId();
+    volumeId ||= this.getVolumeId();
 
     const actorEntry = this.getActors()?.find(
       (actor) => actor.referencedId === volumeId
@@ -1613,7 +1613,7 @@ abstract class BaseVolumeViewport extends Viewport {
     );
 
     return volumeActors.some(({ uid, referencedId }) => {
-      const volume = cache.getVolume(referencedId ?? uid);
+      const volume = cache.getVolume(referencedId || uid);
 
       if (!volume?.imageIds) {
         return false;
@@ -1729,7 +1729,7 @@ abstract class BaseVolumeViewport extends Viewport {
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       );
 
-      return found?.referencedId ?? found?.uid;
+      return found?.referencedId || found?.uid;
     }
 
     // See if this volumeId can be found in one of the actors for this
@@ -1741,7 +1741,7 @@ abstract class BaseVolumeViewport extends Viewport {
         actorEntry.referencedId === specifier?.volumeId
     );
 
-    return found?.referencedId ?? found?.uid;
+    return found?.referencedId || found?.uid;
   }
 
   /**

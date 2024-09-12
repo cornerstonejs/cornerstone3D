@@ -211,26 +211,10 @@ export default class ToolGroup {
       throw new Error('viewportId must be defined and be a string');
     }
 
-    const renderingEngines = getRenderingEngines();
-
-    if (renderingEngines?.length === 0) {
-      throw new Error('No rendering engines found.');
-    }
-
-    // if there are multiple rendering engines, we need to search for the one that
-    // has the viewportId
-    let renderingEngineUIDToUse = renderingEngineId;
-    if (!renderingEngineUIDToUse) {
-      renderingEngineUIDToUse = renderingEngines.find((engine) =>
-        engine.getViewport(viewportId)
-      )?.id;
-
-      if (renderingEngineUIDToUse.length === 2) {
-        throw new Error(
-          'Multiple rendering engines found that contains the viewport with the same viewportId, you must specify a renderingEngineId.'
-        );
-      }
-    }
+    const renderingEngineUIDToUse = this._findRenderingEngine(
+      viewportId,
+      renderingEngineId
+    );
 
     // Don't overwrite if it already exists
     if (
@@ -886,6 +870,39 @@ export default class ToolGroup {
     };
 
     triggerEvent(eventTarget, Events.TOOL_MODE_CHANGED, eventDetail);
+  }
+
+  private _findRenderingEngine(
+    viewportId: string,
+    renderingEngineId?: string
+  ): string {
+    const renderingEngines = getRenderingEngines();
+
+    if (renderingEngines?.length === 0) {
+      throw new Error('No rendering engines found.');
+    }
+
+    if (renderingEngineId) {
+      return renderingEngineId;
+    }
+
+    const matchingEngines = renderingEngines.filter((engine) =>
+      engine.getViewport(viewportId)
+    );
+
+    if (matchingEngines.length === 0) {
+      throw new Error(
+        `No rendering engine found containing viewport ${viewportId}`
+      );
+    }
+
+    if (matchingEngines.length > 1) {
+      throw new Error(
+        'Multiple rendering engines found that contain the viewport with the same viewportId, you must specify a renderingEngineId.'
+      );
+    }
+
+    return matchingEngines[0].id;
   }
 }
 

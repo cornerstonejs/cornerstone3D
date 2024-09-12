@@ -61,7 +61,6 @@ content.append(instructions);
 // ============================= //
 
 let segmentationDisplayed = segmentationId1;
-let activeSegmentationRepresentationUID;
 let viewportId;
 
 addButtonToToolbar({

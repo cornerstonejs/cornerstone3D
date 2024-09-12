@@ -17,7 +17,7 @@ const { ProgressiveIterator } = utilities;
  * ProgressiveIterator instance.
  *
  * @param url - to request and parse as either multipart or singlepart.
- * @param imageId
+ * @param imageId - the imageId to be used in the returned detail object
  * @param defaultHeaders
  * @returns
  */

@@ -12,13 +12,9 @@ import {
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
-import { getViewportSegmentations } from '../../stateManagement/segmentation/getViewportSegmentations';
 import { SegmentationRepresentations } from '../../enums';
-import { getLabelmapActorUID } from '../../stateManagement/segmentation/helpers/getLabelmapActor';
-import {
-  getAllSegmentationRepresentations,
-  getSegmentationRepresentations,
-} from '../../stateManagement/segmentation/getSegmentationRepresentation';
+import { getLabelmapActorUID } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 
 const enable = function (element: HTMLDivElement): void {
   const { viewport } = getEnabledElement(element);
@@ -71,7 +67,7 @@ function _imageChangeEventListener(evt) {
     renderingEngineId
   ) as { viewport: Types.IStackViewport };
 
-  const representations = getAllSegmentationRepresentations(viewportId);
+  const representations = getSegmentationRepresentations(viewportId);
 
   if (!representations?.length) {
     return;

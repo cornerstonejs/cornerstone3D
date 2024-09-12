@@ -12,7 +12,7 @@ import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { getColorLUT } from './getColorLUT';
 
-async function internalAddSegmentationRepresentation(
+function internalAddSegmentationRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput
 ) {

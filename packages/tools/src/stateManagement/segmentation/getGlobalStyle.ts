@@ -3,11 +3,12 @@ import type { RepresentationStyle } from './SegmentationStyle';
 import { segmentationStyle } from './SegmentationStyle';
 
 /**
- * It returns the global segmentation config.
- * @returns The global segmentation configuration for all segmentations.
+ * Retrieves the global style for a given segmentation representation type.
+ * @param type - The type of segmentation representation.
+ * @returns The global style for the given representation type.
  */
 export function getGlobalStyle(
-  representationType: SegmentationRepresentations
+  type: SegmentationRepresentations
 ): RepresentationStyle {
-  return segmentationStyle.getGlobalStyle(representationType);
+  return segmentationStyle.getGlobalStyle(type);
 }

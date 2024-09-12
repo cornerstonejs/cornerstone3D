@@ -10,9 +10,9 @@ export function getViewportIdsWithSegmentation(
 ): string[] {
   const segmentationStateManager = defaultSegmentationStateManager;
   const state = segmentationStateManager.getState();
-  const viewports = state.viewports;
+  const viewportSegRepresentations = state.viewportSegRepresentations;
 
-  const viewportIdsWithSegmentation = Object.entries(viewports)
+  const viewportIdsWithSegmentation = Object.entries(viewportSegRepresentations)
     .filter(([, viewportSegmentations]) =>
       viewportSegmentations.some(
         (segRep) => segRep.segmentationId === segmentationId

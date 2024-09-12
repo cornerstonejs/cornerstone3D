@@ -202,20 +202,6 @@ describe('Segmentation State:', () => {
       expect(globalConfig.renderInactiveRepresentations).toBe(true);
       expect(globalConfig.representations).toBeDefined();
       expect(globalConfig.representations[Labelmap]).toBeDefined();
-
-      // const representationConfig = segUtils.getDefaultRepresentationConfig({
-      //   type: Labelmap,
-      // });
-
-      // const stateConfig = globalConfig.representations[Labelmap];
-
-      // expect(Object.keys(stateConfig)).toEqual(
-      //   Object.keys(representationConfig)
-      // );
-
-      // expect(Object.values(stateConfig)).toEqual(
-      //   Object.values(representationConfig)
-      // );
     });
 
     eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {

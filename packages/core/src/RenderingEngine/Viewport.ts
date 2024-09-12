@@ -498,10 +498,9 @@ class Viewport {
    */
   public setActors(actors: ActorEntry[]): void {
     this.removeAllActors();
-    const resetCamera = true;
     // when we set the actor we need to reset the camera to initialize the
     // camera focal point with the bounds of the actors.
-    this.addActors(actors, resetCamera);
+    this.addActors(actors, { resetCamera: true });
   }
 
   /**
@@ -535,7 +534,11 @@ class Viewport {
    *        default value is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(actors: ActorEntry[], resetCamera = false): void {
+  public addActors(
+    actors: ActorEntry[],
+    options: { resetCamera?: boolean } = {}
+  ): void {
+    const { resetCamera = false } = options;
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       console.warn(

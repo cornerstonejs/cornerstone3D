@@ -723,6 +723,8 @@ class StackViewport extends Viewport {
       ? ViewportStatus.PRE_RENDER
       : ViewportStatus.LOADING;
 
+    // setting the global default properties to the viewport, since we can always
+    // go back to the default properties by calling resetToDefaultProperties
     this.globalDefaultProperties = {
       colormap: this.globalDefaultProperties.colormap ?? colormap,
       voiRange: this.globalDefaultProperties.voiRange ?? voiRange,
@@ -1601,16 +1603,22 @@ class StackViewport extends Viewport {
     };
   }
 
+  /**
+   * Matches images for overlay by comparing their orientation, position, and dimensions.
+   * @param currentImageId - The ID of the current image.
+   * @param targetOverlayImageId - The ID of the target overlay image.
+   * @returns The ID of the matched image, or undefined if no match is found.
+   */
   private matchImagesForOverlay(
     currentImageId: string,
     targetOverlayImageId: string
   ): string | undefined {
     const matchImagesForOverlay = (targetImageId: string) => {
+      // Retrieve image plane metadata for both overlay and current images
       const overlayImagePlaneModule = metaData.get(
         MetadataModules.IMAGE_PLANE,
         targetOverlayImageId
       );
-
       const currentImagePlaneModule = metaData.get(
         MetadataModules.IMAGE_PLANE,
         targetImageId
@@ -1622,13 +1630,14 @@ class StackViewport extends Viewport {
         currentImagePlaneModule.imageOrientationPatient;
 
       if (overlayOrientation && currentOrientation) {
+        // Compare image orientations
         const closeEnough = isEqual(
           overlayImagePlaneModule.imageOrientationPatient,
           currentImagePlaneModule.imageOrientationPatient
         );
 
         if (closeEnough) {
-          // New check for orthogonality
+          // Compare image positions
           const referencePosition =
             overlayImagePlaneModule.imagePositionPatient;
           const currentPosition = currentImagePlaneModule.imagePositionPatient;
@@ -1637,10 +1646,9 @@ class StackViewport extends Viewport {
             const closeEnough = isEqual(referencePosition, currentPosition);
 
             if (closeEnough) {
-              // check if height and width are the same
+              // Compare image dimensions
               const referenceRows = overlayImagePlaneModule.rows;
               const referenceColumns = overlayImagePlaneModule.columns;
-
               const currentRows = currentImagePlaneModule.rows;
               const currentColumns = currentImagePlaneModule.columns;
 
@@ -1654,11 +1662,9 @@ class StackViewport extends Viewport {
           }
         }
       } else {
-        // if we don't have orientation information, we can't determine based
-        // orientation, we rely on number of columns and rows
+        // If orientation information is not available, compare dimensions only
         const referenceRows = overlayImagePlaneModule.rows;
         const referenceColumns = overlayImagePlaneModule.columns;
-
         const currentRows = currentImagePlaneModule.rows;
         const currentColumns = currentImagePlaneModule.columns;
 

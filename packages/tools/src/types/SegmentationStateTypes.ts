@@ -102,7 +102,7 @@ export type SegmentationState = {
   /** segmentations */
   segmentations: Segmentation[];
   /** viewports association with segmentation representations */
-  viewports: {
+  viewportSegRepresentations: {
     [viewportId: string]: Array<SegmentationRepresentation>;
   };
 };

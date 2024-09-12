@@ -93,8 +93,8 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
         ? windowCenter[0]
         : windowCenter;
 
-      // Skip if both windowWidth and windowCenter are 0
-      if (width !== 0 || center !== 0) {
+      // Skip if width is 0
+      if (width !== 0) {
         voi = { windowWidth: width, windowCenter: center };
       }
     }

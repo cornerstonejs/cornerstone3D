@@ -4,28 +4,27 @@ import { getSegmentation } from './getSegmentation';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
 /**
- * Retrieves the viewport IDs that have a specific segmentation.
- * @param segmentationId - The ID of the segmentation.
- * @returns An array of viewport IDs that have the specified segmentation.
+ * Retrieves the segmentations for a given viewport and type.
+ * @param viewportId - The ID of the viewport.
+ * @param type - The type of the segmentation representation.
+ * @returns An array of segmentations for the given viewport and type.
  */
 export function getViewportSegmentations(
   viewportId: string,
-  type: SegmentationRepresentations
+  type?: SegmentationRepresentations
 ): Segmentation[] {
   const segmentationStateManager = defaultSegmentationStateManager;
   const state = segmentationStateManager.getState();
-  const viewports = state.viewports;
 
-  const segmentationsForViewportId = viewports[viewportId];
+  const viewportRepresentations = state.viewportSegRepresentations[viewportId];
 
-  const segmentations = segmentationsForViewportId.map(
-    (segmentationInViewport) =>
-      getSegmentation(
-        type && segmentationInViewport.type === type
-          ? segmentationInViewport.segmentationId
-          : segmentationInViewport.segmentationId
-      )
-  );
+  const segmentations = viewportRepresentations.map((representation) => {
+    if (type && representation.type === type) {
+      return getSegmentation(representation.segmentationId);
+    }
+
+    return getSegmentation(representation.segmentationId);
+  });
 
   const filteredSegmentations = segmentations.filter(
     (segmentation) => segmentation !== undefined

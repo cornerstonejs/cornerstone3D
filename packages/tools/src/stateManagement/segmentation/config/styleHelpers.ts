@@ -8,13 +8,13 @@ import type { RepresentationStyle } from '../SegmentationStyle';
 
 /**
  * Get the style for a given segmentation representation.
- * @param specifier The specifier object containing the viewportId, segmentationId, representationType, and segmentIndex.
+ * @param specifier The specifier object containing the viewportId, segmentationId, type, and segmentIndex.
  * @returns The style for the given segmentation representation.
  */
 function getStyle(specifier: {
   viewportId?: string;
   segmentationId?: string;
-  representationType?: SegmentationRepresentations;
+  type?: SegmentationRepresentations;
   segmentIndex?: number;
 }): { style: RepresentationStyle; renderInactiveSegmentations: boolean } {
   return segmentationStyle.getStyle(specifier);
@@ -22,25 +22,25 @@ function getStyle(specifier: {
 
 /**
  * Get the global segmentation style for a specific representation type.
- * @param representationType - The type of segmentation representation.
+ * @param type - The type of segmentation representation.
  * @returns The global segmentation style for the specified representation type.
  */
 function getGlobalStyle(
-  representationType: SegmentationRepresentations
+  type: SegmentationRepresentations
 ): RepresentationStyle {
-  return segmentationStyle.getGlobalStyle(representationType);
+  return segmentationStyle.getGlobalStyle(type);
 }
 
 /**
  * Set the global segmentation style for a specific representation type.
- * @param representationType - The type of segmentation representation.
+ * @param type - The type of segmentation representation.
  * @param style - The style to be set globally.
  */
 function setGlobalStyle(
-  representationType: SegmentationRepresentations,
+  type: SegmentationRepresentations,
   style: RepresentationStyle
 ): void {
-  segmentationStyle.setGlobalStyle(representationType, style);
+  segmentationStyle.setGlobalStyle(type, style);
   triggerSegmentationRender();
 }
 
@@ -79,7 +79,7 @@ function setGlobalSurfaceStyle(style: SurfaceStyle): void {
 function setSegmentationSpecificStyle(
   specifier: {
     segmentationId: string;
-    representationType: SegmentationRepresentations;
+    type: SegmentationRepresentations;
     segmentIndex?: number;
   },
   style: RepresentationStyle
@@ -102,7 +102,7 @@ function setLabelmapStyle(
   setSegmentationSpecificStyle(
     {
       ...specifier,
-      representationType: SegmentationRepresentations.Labelmap,
+      type: SegmentationRepresentations.Labelmap,
     },
     style
   );
@@ -113,17 +113,14 @@ function setLabelmapStyle(
  * @param specifier - An object containing the specifications for the viewport-specific style.
  * @param style - The style to be set for the representation type in the specified viewport.
  */
-function setViewportSpecificStyleForRepresentationType(
+function setViewportSpecificStyleForType(
   specifier: {
     viewportId: string;
-    representationType: SegmentationRepresentations;
+    type: SegmentationRepresentations;
   },
   style: RepresentationStyle
 ): void {
-  segmentationStyle.setViewportSpecificStyleForRepresentationType(
-    specifier,
-    style
-  );
+  segmentationStyle.setViewportSpecificStyleForType(specifier, style);
   triggerSegmentationRender(specifier.viewportId);
 }
 
@@ -136,7 +133,7 @@ function setViewportSpecificStyleForSegmentation(
   specifier: {
     viewportId: string;
     segmentationId: string;
-    representationType: SegmentationRepresentations;
+    type: SegmentationRepresentations;
     segmentIndex?: number;
   },
   style: RepresentationStyle
@@ -173,7 +170,7 @@ export {
   setSegmentationSpecificStyle,
   setLabelmapStyle,
   // Viewport-specific style
-  setViewportSpecificStyleForRepresentationType,
+  setViewportSpecificStyleForType,
   setViewportSpecificStyleForSegmentation,
   // Per-segment style
   // Viewport render inactive segmentations

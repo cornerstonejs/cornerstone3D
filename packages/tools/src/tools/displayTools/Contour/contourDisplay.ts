@@ -14,12 +14,9 @@ let polySegConversionInProgress = false;
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
- * @param toolGroupId - The toolGroupId of the toolGroup that the
- * segmentationRepresentation belongs to.
- * @param segmentationRepresentationUID - This is the unique identifier
- * for the segmentation representation.
- * @param renderImmediate - If true, the viewport will be rendered
- * immediately after the segmentation representation is removed.
+ * @param viewportId - The id of the viewport
+ * @param segmentationId - The id of the segmentation
+ * @param renderImmediate - If true, the viewport will be rendered immediately after the segmentation representation is removed
  */
 function removeRepresentation(
   viewportId: string,

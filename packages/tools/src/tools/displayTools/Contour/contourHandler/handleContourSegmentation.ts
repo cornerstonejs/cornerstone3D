@@ -31,12 +31,6 @@ function updateContourSets(
 ) {
   const { segmentationId } = contourRepresentation;
 
-  const segmentsHidden = getHiddenSegmentIndices(
-    viewport.id,
-    segmentationId,
-    SegmentationRepresentations.Contour
-  );
-
   const { segmentSpecificConfigs } = geometryIds.reduce(
     (acc, geometryId) => {
       const geometry = cache.getGeometry(geometryId);
@@ -45,7 +39,7 @@ function updateContourSets(
       const segmentSpecificConfig = segmentationStyle.getStyle({
         viewportId: viewport.id,
         segmentationId,
-        representationType: SegmentationRepresentations.Contour,
+        type: SegmentationRepresentations.Contour,
         segmentIndex,
       });
       acc.segmentSpecificConfigs[segmentIndex] = segmentSpecificConfig ?? {};
@@ -84,7 +78,7 @@ function addContourSetsToElement(
     const segmentSpecificConfig = segmentationStyle.getStyle({
       viewportId: viewport.id,
       segmentationId,
-      representationType: SegmentationRepresentations.Contour,
+      type: SegmentationRepresentations.Contour,
       segmentIndex,
     });
 
@@ -136,11 +130,10 @@ function addContourSetsToElement(
     }
   });
 
-  const segmentsHidden = getHiddenSegmentIndices(
-    viewport.id,
+  const segmentsHidden = getHiddenSegmentIndices(viewport.id, {
     segmentationId,
-    SegmentationRepresentations.Contour
-  );
+    type: SegmentationRepresentations.Contour,
+  });
 
   viewport.resetCamera();
   viewport.render();

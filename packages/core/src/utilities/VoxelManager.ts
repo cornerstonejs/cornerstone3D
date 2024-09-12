@@ -476,7 +476,6 @@ export default class VoxelManager<T> {
    */
   public static addBounds(bounds: BoundsIJK, point: Point3) {
     if (!bounds) {
-      console.debug('🚀 ~ reset bounds');
       bounds = [
         [Infinity, -Infinity],
         [Infinity, -Infinity],

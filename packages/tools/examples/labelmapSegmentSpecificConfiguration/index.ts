@@ -36,7 +36,6 @@ const segmentationId1 = 'SEGMENTATION_ID_1';
 const toolGroupId = 'MY_ TOOL_GROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_AXIAL_STACK';
-let segmentationRepresentationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -67,7 +66,7 @@ addSliderToToolbar({
     segmentation.config.style.setSegmentationSpecificStyle(
       {
         segmentationId: segmentationId1,
-        representationType: csToolsEnums.SegmentationRepresentations.Labelmap,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
         segmentIndex: 1,
       },
       {
@@ -87,7 +86,7 @@ addSliderToToolbar({
     segmentation.config.style.setSegmentationSpecificStyle(
       {
         segmentationId: segmentationId1,
-        representationType: csToolsEnums.SegmentationRepresentations.Labelmap,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
         segmentIndex: 2,
       },
       {

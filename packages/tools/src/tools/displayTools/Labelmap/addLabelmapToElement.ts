@@ -26,7 +26,7 @@ const { uuidv4 } = utilities;
  * NOTE: This function should not be called directly.
  *
  * @param element - The element that will be rendered.
- * @param volumeId - The volume id of the labelmap.
+ * @param labelMapData - The labelmap segmentation data.
  * @param segmentationId - The segmentation id of the labelmap.
  *
  * @internal
@@ -48,26 +48,11 @@ async function addLabelmapToElement(
   const suppressEvents = true;
 
   if (viewport instanceof BaseVolumeViewport) {
-    // assume labelMapData is a LabelmapSegmentationDataVolume
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
-
-    let volumeId = volumeLabelMapData.volumeId;
-    if (!volumeId) {
-      volumeId = uuidv4();
-
-      // update the labelmap data with the new volumeId
-
-      const segmentation = getSegmentation(segmentationId);
-
-      segmentation.representationData.Labelmap = {
-        ...segmentation.representationData.Labelmap,
-        volumeId,
-      };
-
-      (labelMapData as LabelmapSegmentationDataVolume).volumeId = volumeId;
-
-      triggerSegmentationModified(segmentationId);
-    }
+    const volumeId = _ensureVolumeHasVolumeId(
+      volumeLabelMapData,
+      segmentationId
+    );
 
     // Todo: Right now we use MIP blend mode for the labelmap, since the
     // composite blend mode has a non linear behavior regarding fill and line
@@ -112,6 +97,32 @@ async function addLabelmapToElement(
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
     await addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
   }
+}
+
+/**
+ * Ensures that the volume has a volumeId, generating one if necessary.
+ * @param labelMapData - The labelmap segmentation data.
+ * @param segmentationId - The segmentation id.
+ * @returns The ensured volumeId.
+ */
+function _ensureVolumeHasVolumeId(
+  labelMapData: LabelmapSegmentationDataVolume,
+  segmentationId: string
+): string {
+  let { volumeId } = labelMapData;
+  if (!volumeId) {
+    volumeId = uuidv4();
+
+    const segmentation = getSegmentation(segmentationId);
+    segmentation.representationData.Labelmap = {
+      ...segmentation.representationData.Labelmap,
+      volumeId,
+    };
+
+    labelMapData.volumeId = volumeId;
+    triggerSegmentationModified(segmentationId);
+  }
+  return volumeId;
 }
 
 async function _handleMissingVolume(labelMapData: LabelmapSegmentationData) {

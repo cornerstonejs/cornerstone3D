@@ -1,4 +1,4 @@
 import validateSegmentationInput from './validateSegmentationInput';
-import { getLabelmapActor } from './getLabelmapActor';
+import { getSegmentationActor } from './getSegmentationActor';
 
-export { validateSegmentationInput, getLabelmapActor };
+export { validateSegmentationInput, getSegmentationActor };

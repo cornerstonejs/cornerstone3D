@@ -55,7 +55,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const stackToolGroupId = 'STACK_TOOLGROUP_ID';
 const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
-const toolGroupIds = [stackToolGroupId, volumeToolGroupId];
 const numViewports = 3;
 const viewportIds = [
   'CT_STACK_AXIAL',
@@ -64,10 +63,6 @@ const viewportIds = [
 ];
 let segmentationSequenceId = 1;
 const segmentationIds = [];
-const segmentationRepresentationUIDs = viewportIds.reduce((acc, cur) => {
-  acc[cur] = [];
-  return acc;
-}, {});
 const segmentationsDropDownId = 'SEGMENTATION_DROPDOWN';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
@@ -233,7 +228,7 @@ elements.forEach((element) => {
 function updateCurrentSegmentationConfig(config) {
   const { style } = segmentation.config.style.getStyle({
     segmentationId: activeSegmentationId,
-    representationType: csToolsEnums.SegmentationRepresentations.Contour,
+    type: csToolsEnums.SegmentationRepresentations.Contour,
   });
 
   const mergedConfig = { ...style, ...config };
@@ -241,7 +236,7 @@ function updateCurrentSegmentationConfig(config) {
   segmentation.config.style.setSegmentationSpecificStyle(
     {
       segmentationId: activeSegmentationId,
-      representationType: csToolsEnums.SegmentationRepresentations.Contour,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
     mergedConfig
   );
@@ -311,17 +306,15 @@ addDropdownToToolbar({
 addToggleButtonToToolbar({
   title: 'Show/Hide All Segments',
   onClick: function (toggle) {
-    const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
     const segmentsVisibility = getSegmentsVisibilityState(activeSegmentationId);
 
     viewportIds.forEach((viewportId) => {
-      const segmentationRepresentationUID =
-        segmentationRepresentationUIDs[viewportId][segmentationIndex];
-
       segmentation.config.visibility.setSegmentationRepresentationVisibility(
         viewportId,
-        activeSegmentationId,
-        csToolsEnums.SegmentationRepresentations.Contour,
+        {
+          segmentationId: activeSegmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Contour,
+        },
         !toggle
       );
     });
@@ -333,7 +326,6 @@ addToggleButtonToToolbar({
 addButtonToToolbar({
   title: 'Show/Hide Current Segment',
   onClick: function () {
-    const segmentationIndex = segmentationIds.indexOf(activeSegmentationId);
     const segmentsVisibility = getSegmentsVisibilityState(activeSegmentationId);
     const visible = !segmentsVisibility[activeSegmentIndex];
 

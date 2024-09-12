@@ -50,8 +50,10 @@ export async function updateSurfaceData(segmentationId) {
       return viewportIds.map((viewportId) => {
         const surfaceRepresentation = getSegmentationRepresentation(
           viewportId,
-          segmentationId,
-          SegmentationRepresentations.Surface
+          {
+            segmentationId,
+            type: SegmentationRepresentations.Surface,
+          }
         );
 
         return [surfaceRepresentation].map((surfaceRepresentation) => {

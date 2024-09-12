@@ -605,6 +605,7 @@ class VideoViewport extends Viewport {
       getScalarData: () => this.getScalarData(),
       scalarData: this.getScalarData(),
       imageData,
+      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
       voxelManager: {
         forEach: (
           callback: (args: {
@@ -620,12 +621,12 @@ class VideoViewport extends Viewport {
             imageData;
           }
         ) => {
-          return pointInShapeCallback(
-            options.imageData,
-            options.isInObject ?? (() => true),
-            callback,
-            options.boundsIJK
-          );
+          return pointInShapeCallback(options.imageData, {
+            pointInShapeFn: options.isInObject ?? (() => true),
+            callback: callback,
+            boundsIJK: options.boundsIJK,
+            returnPoints: options.returnPoints ?? false,
+          });
         },
       },
       hasPixelSpacing: this.hasPixelSpacing,

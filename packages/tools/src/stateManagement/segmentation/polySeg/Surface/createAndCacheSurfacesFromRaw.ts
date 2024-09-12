@@ -8,12 +8,10 @@ import { getSegmentation } from '../../getSegmentation';
 /**
  * Creates and caches surfaces from raw surface data.
  *
- * @param segmentationId - The ID of the segmentation.
- * @param rawSurfacesData - The raw surface data.
- * @param options - Additional options for creating and caching surfaces.
- * @param options.segmentIndices - An array of segment indices.
- * @param options.segmentationRepresentationUID - The UID of the segmentation representation.
- * @returns An object containing the IDs of the created surfaces.
+ * @param segmentationId - The id of the segmentation
+ * @param rawSurfacesData - The raw surface data
+ * @param options - Optional parameters for creating and caching surfaces
+ * @returns An object containing the IDs of the created surfaces
  */
 export async function createAndCacheSurfacesFromRaw(
   segmentationId: string,

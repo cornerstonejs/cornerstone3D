@@ -29,17 +29,17 @@ function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex?: number): number {
 function setColorLUT(
   viewportId: string,
   segmentationId: string,
-  colorLUTIndex: number
+  colorLUTsIndex: number
 ): void {
-  if (!_getColorLUT(colorLUTIndex)) {
+  if (!_getColorLUT(colorLUTsIndex)) {
     throw new Error(
-      `setColorLUT: could not find colorLUT with index ${colorLUTIndex}`
+      `setColorLUT: could not find colorLUT with index ${colorLUTsIndex}`
     );
   }
 
   const segmentationRepresentations = getSegmentationRepresentations(
     viewportId,
-    segmentationId
+    { segmentationId }
   );
 
   if (!segmentationRepresentations) {
@@ -49,7 +49,7 @@ function setColorLUT(
   }
 
   segmentationRepresentations.forEach((segmentationRepresentation) => {
-    segmentationRepresentation.config.colorLUTIndex = colorLUTIndex;
+    segmentationRepresentation.config.colorLUTIndex = colorLUTsIndex;
   });
 
   triggerSegmentationModified(segmentationId);
@@ -70,10 +70,9 @@ function getSegmentIndexColor(
   segmentationId: string,
   segmentIndex: number
 ): Types.Color {
-  const representations = getSegmentationRepresentations(
-    viewportId,
-    segmentationId
-  );
+  const representations = getSegmentationRepresentations(viewportId, {
+    segmentationId,
+  });
 
   if (!representations) {
     throw new Error(
@@ -97,6 +96,26 @@ function getSegmentIndexColor(
   return colorValue;
 }
 
+/**
+ * Sets the color for a specific segment in a segmentation.
+ *
+ * @param viewportId - The ID of the viewport containing the segmentation.
+ * @param segmentationId - The ID of the segmentation to modify.
+ * @param segmentIndex - The index of the segment to change the color for.
+ * @param color - The new color to set for the segment.
+ *
+ * @remarks
+ * This function modifies the color of a specific segment in the color lookup table (LUT)
+ * for the given segmentation. It directly updates the color reference in the LUT,
+ * ensuring that all representations of this segmentation will reflect the new color.
+ * After updating the color, it triggers a segmentation modified event to notify
+ * listeners of the change.
+ *
+ * @example
+ * ```typescript
+ * setSegmentIndexColor('viewport1', 'segmentation1', 2, [255, 0, 0, 255]);
+ * ```
+ */
 function setSegmentIndexColor(
   viewportId: string,
   segmentationId: string,

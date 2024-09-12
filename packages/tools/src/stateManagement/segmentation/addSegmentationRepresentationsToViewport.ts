@@ -5,15 +5,13 @@ import { internalAddSegmentationRepresentation } from './internalAddSegmentation
 /**
  * Adds one or more segmentations to a specific viewport.
  */
-export async function addSegmentationRepresentations(
+export function addSegmentationRepresentations(
   viewportId: string,
   segmentationInputArray: RepresentationPublicInput[]
 ) {
-  const promises = segmentationInputArray.map((segmentationInput) => {
+  segmentationInputArray.map((segmentationInput) => {
     return internalAddSegmentationRepresentation(viewportId, segmentationInput);
   });
-
-  Promise.all(promises);
 }
 
 /**
@@ -23,7 +21,7 @@ export async function addSegmentationRepresentations(
  * @param contourInputArray - An array of contour segmentation inputs to be added.
  * @returns A promise that resolves to an array of segmentation representation UIDs.
  */
-async function addContourRepresentationToViewport(
+function addContourRepresentationToViewport(
   viewportId: string,
   contourInputArray: RepresentationPublicInput[]
 ) {
@@ -42,13 +40,13 @@ async function addContourRepresentationToViewport(
  * @param viewportInputMap - An object mapping viewport IDs to arrays of contour segmentation inputs.
  * @returns A promise that resolves to an object mapping viewport IDs to arrays of segmentation representation UIDs.
  */
-async function addContourRepresentationToViewportMap(viewportInputMap: {
+function addContourRepresentationToViewportMap(viewportInputMap: {
   [viewportId: string]: RepresentationPublicInput[];
-}): Promise<{ [viewportId: string]: string[] }> {
+}) {
   const results = {};
 
   for (const [viewportId, inputArray] of Object.entries(viewportInputMap)) {
-    results[viewportId] = await addContourRepresentationToViewport(
+    results[viewportId] = addContourRepresentationToViewport(
       viewportId,
       inputArray
     );
@@ -64,7 +62,7 @@ async function addContourRepresentationToViewportMap(viewportInputMap: {
  * @param labelmapInputArray - An array of labelmap segmentation inputs to be added.
  * @returns A promise that resolves to an array of segmentation representation UIDs.
  */
-async function addLabelmapRepresentationToViewport(
+function addLabelmapRepresentationToViewport(
   viewportId: string,
   labelmapInputArray: RepresentationPublicInput[]
 ) {
@@ -83,13 +81,13 @@ async function addLabelmapRepresentationToViewport(
  * @param viewportInputMap - An object mapping viewport IDs to arrays of labelmap segmentation inputs.
  * @returns A promise that resolves to an object mapping viewport IDs to arrays of segmentation representation UIDs.
  */
-async function addLabelmapRepresentationToViewportMap(viewportInputMap: {
+function addLabelmapRepresentationToViewportMap(viewportInputMap: {
   [viewportId: string]: RepresentationPublicInput[];
-}): Promise<{ [viewportId: string]: string[] }> {
+}) {
   const results = {};
 
   for (const [viewportId, inputArray] of Object.entries(viewportInputMap)) {
-    results[viewportId] = await addLabelmapRepresentationToViewport(
+    results[viewportId] = addLabelmapRepresentationToViewport(
       viewportId,
       inputArray.map((input) => ({
         ...input,
@@ -97,8 +95,6 @@ async function addLabelmapRepresentationToViewportMap(viewportInputMap: {
       }))
     );
   }
-
-  return results;
 }
 
 /**
@@ -108,7 +104,7 @@ async function addLabelmapRepresentationToViewportMap(viewportInputMap: {
  * @param surfaceInputArray - An array of surface segmentation inputs to be added.
  * @returns A promise that resolves to an array of segmentation representation UIDs.
  */
-async function addSurfaceRepresentationToViewport(
+function addSurfaceRepresentationToViewport(
   viewportId: string,
   surfaceInputArray: RepresentationPublicInput[]
 ) {
@@ -127,13 +123,13 @@ async function addSurfaceRepresentationToViewport(
  * @param viewportInputMap - An object mapping viewport IDs to arrays of surface segmentation inputs.
  * @returns A promise that resolves to an object mapping viewport IDs to arrays of segmentation representation UIDs.
  */
-async function addSurfaceRepresentationToViewportMap(viewportInputMap: {
+function addSurfaceRepresentationToViewportMap(viewportInputMap: {
   [viewportId: string]: RepresentationPublicInput[];
-}): Promise<{ [viewportId: string]: string[] }> {
+}) {
   const results = {};
 
   for (const [viewportId, inputArray] of Object.entries(viewportInputMap)) {
-    results[viewportId] = await addSurfaceRepresentationToViewport(
+    results[viewportId] = addSurfaceRepresentationToViewport(
       viewportId,
       inputArray
     );

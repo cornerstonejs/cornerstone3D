@@ -137,7 +137,7 @@ function getSegmentsVisibilityState() {
 function updateSegmentationConfig(config) {
   const currentConfig = segmentation.config.style.getStyle({
     segmentationId,
-    representationType: csToolsEnums.SegmentationRepresentations.Contour,
+    type: csToolsEnums.SegmentationRepresentations.Contour,
     segmentIndex: activeSegmentIndex,
   });
 
@@ -146,7 +146,7 @@ function updateSegmentationConfig(config) {
   segmentation.config.style.setSegmentationSpecificStyle(
     {
       segmentationId,
-      representationType: csToolsEnums.SegmentationRepresentations.Contour,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
       segmentIndex: activeSegmentIndex,
     },
     mergedConfig
@@ -184,14 +184,18 @@ addToggleButtonToToolbar({
 
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[0],
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportIds[1],
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
 
@@ -303,7 +307,6 @@ addSliderToToolbar({
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-let segmentationRepresentationUID1, segmentationRepresentationUID2;
 /**
  * Runs the demo
  */

@@ -27,9 +27,10 @@ import { canComputeRequestedRepresentation } from '../../../stateManagement/segm
 import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import { getLabelmapActor } from '../../../stateManagement/segmentation/helpers';
+import { getSegmentationActor } from '../../../stateManagement/segmentation/helpers';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
+import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -91,7 +92,10 @@ async function render(
 
   let labelmapData = segmentation.representationData[Representations.Labelmap];
 
-  let labelmapActor = getLabelmapActor(viewport.id, segmentationId);
+  let labelmapActor = getSegmentationActor(viewport.id, {
+    segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  });
 
   if (
     !labelmapData &&
@@ -131,7 +135,10 @@ async function render(
       await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
     }
 
-    labelmapActor = getLabelmapActor(viewport.id, segmentationId);
+    labelmapActor = getSegmentationActor(viewport.id, {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    });
   } else {
     // stack segmentation
     const labelmapImageId = getCurrentLabelmapImageIdForViewport(
@@ -150,7 +157,10 @@ async function render(
       await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
     }
 
-    labelmapActor = getLabelmapActor(viewport.id, segmentationId);
+    labelmapActor = getSegmentationActor(viewport.id, {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    });
   }
 
   if (!labelmapActor) {
@@ -179,7 +189,7 @@ function _setLabelmapColorAndOpacity(
   const { style: labelmapStyle, renderInactiveSegmentations } =
     segmentationStyle.getStyle({
       viewportId,
-      representationType: Representations.Labelmap,
+      type: Representations.Labelmap,
       segmentationId,
     });
 
@@ -198,11 +208,10 @@ function _setLabelmapColorAndOpacity(
     activeSegmentOutlineWidthDelta,
   } = _getLabelmapConfig(labelmapStyle as LabelmapStyle, isActiveLabelmap);
 
-  const segmentsHidden = getHiddenSegmentIndices(
-    viewportId,
+  const segmentsHidden = getHiddenSegmentIndices(viewportId, {
     segmentationId,
-    Representations.Labelmap
-  );
+    type: Representations.Labelmap,
+  });
 
   // Todo: the below loop probably can be optimized so that we don't hit it
   // unless a config has changed. Right now we get into the following loop
@@ -213,7 +222,7 @@ function _setLabelmapColorAndOpacity(
 
     const { style: perSegmentStyle } = segmentationStyle.getStyle({
       viewportId,
-      representationType: Representations.Labelmap,
+      type: Representations.Labelmap,
       segmentationId,
       segmentIndex,
     });

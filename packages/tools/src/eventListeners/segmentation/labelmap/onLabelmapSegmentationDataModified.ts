@@ -9,7 +9,7 @@ import {
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
-import { getLabelmapActor } from '../../../stateManagement/segmentation/helpers';
+import { getSegmentationActor } from '../../../stateManagement/segmentation/helpers';
 import { SegmentationRepresentations } from '../../../enums';
 
 /** A callback function that is called when the segmentation data is modified which
@@ -112,7 +112,7 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
   viewportIds.forEach((viewportId) => {
     let representations = SegmentationState.getSegmentationRepresentations(
       viewportId,
-      segmentationId
+      { segmentationId }
     );
 
     representations = representations.filter(
@@ -137,7 +137,10 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
         return;
       }
 
-      const actor = getLabelmapActor(viewportId, segmentationId);
+      const actor = getSegmentationActor(viewportId, {
+        segmentationId,
+        type: SegmentationRepresentations.Labelmap,
+      });
 
       const segImageData = actor.getMapper().getInputData();
 

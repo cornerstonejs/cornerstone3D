@@ -9,7 +9,7 @@ import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
-import { getLabelmapActor } from '../../stateManagement/segmentation/helpers';
+import { getSegmentationActor } from '../../stateManagement/segmentation/helpers';
 
 type Options = {
   representationType?: SegmentationRepresentations;
@@ -101,10 +101,10 @@ export function getSegmentIndexAtWorldForLabelmap(
     return;
   }
 
-  const segmentationActor = getLabelmapActor(
-    viewport.id,
-    segmentation.segmentationId
-  );
+  const segmentationActor = getSegmentationActor(viewport.id, {
+    segmentationId: segmentation.segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  });
   const imageData = segmentationActor?.getMapper().getInputData();
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 

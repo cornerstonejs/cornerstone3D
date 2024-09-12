@@ -1,10 +1,10 @@
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
 /**
- * Retrieves the active segmentation representation for a given viewport.
+ * Set the active segmentation representation for a given viewport.
  *
  * @param viewportId - The ID of the viewport.
- * @returns The active segmentation representation, or undefined if not found.
+ * @param segmentationId - The ID of the segmentation.
  */
 export function setActiveSegmentation(
   viewportId: string,

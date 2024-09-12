@@ -24,7 +24,7 @@ const computedRepresentations = new Map<
  */
 async function computeAndAddRepresentation<T>(
   segmentationId: string,
-  representationType: SegmentationRepresentations,
+  type: SegmentationRepresentations,
   computeFunction: () => Promise<T>,
   updateFunction?: () => void,
   onComputationComplete?: () => void
@@ -37,7 +37,7 @@ async function computeAndAddRepresentation<T>(
   // Add the computed data to the system
   addRepresentationData({
     segmentationId,
-    type: representationType,
+    type,
     data,
   });
 
@@ -49,8 +49,8 @@ async function computeAndAddRepresentation<T>(
   }
 
   const representations = computedRepresentations.get(segmentationId);
-  if (!representations.includes(representationType)) {
-    representations.push(representationType);
+  if (!representations.includes(type)) {
+    representations.push(type);
   }
 
   // Subscribe to any changes in the segmentation data for real-time updates

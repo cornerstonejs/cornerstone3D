@@ -19,7 +19,6 @@ import { getCurrentLabelmapImageIdForViewport } from './getCurrentLabelmapImageI
 import { updateLabelmapSegmentationImageReferences } from './updateLabelmapSegmentationImageReferences';
 import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationImageIdsForViewport';
 import {
-  getAllSegmentationRepresentations,
   getSegmentationRepresentation,
   getSegmentationRepresentations,
 } from './getSegmentationRepresentation';
@@ -33,7 +32,6 @@ export {
   getSegmentations,
   getStackSegmentationImageIdsForViewport,
   getViewportIdsWithSegmentation,
-  getAllSegmentationRepresentations,
   getSegmentationRepresentation,
   getSegmentationRepresentations,
   // set

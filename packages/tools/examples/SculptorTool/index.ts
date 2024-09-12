@@ -45,7 +45,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 const segmentationId = `SEGMENTATION_ID`;
-const segmentationRepresentationUID = '';
 let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //

@@ -25,6 +25,25 @@ export type PointInShapeCallback = ({
 export type ShapeFnCriteria = (pointLPS: vec3, pointIJK: vec3) => boolean;
 
 /**
+ * Options for the pointInShapeCallback function.
+ */
+export interface PointInShapeOptions {
+  /** Function to determine if a point is inside the shape */
+  pointInShapeFn: ShapeFnCriteria;
+  /** Callback function for each point in the shape */
+  callback?: PointInShapeCallback;
+  /** Bounds of the volume in IJK coordinates */
+  boundsIJK?: BoundsIJK;
+  /** Whether to return the set of points in the shape */
+  returnPoints?: boolean;
+  // Add other options here for future optimizations
+  // For example:
+  // orthogonalVector?: vec3;
+  // basisPoints?: { min: Point3, max: Point3 };
+  // minMaxGenerator?: (row: number) => { min: number, max: number };
+}
+
+/**
  * @deprecated
  * You should use the voxelManager.forEach method instead.
  * This method is deprecated and will be removed in a future version.
@@ -35,19 +54,21 @@ export type ShapeFnCriteria = (pointLPS: vec3, pointIJK: vec3) => boolean;
  * provided pointInShapeFn)
  *
  * @param imageData - The image data object.
- * @param dimensions - The dimensions of the image.
- * @param pointInShapeFn - A function that takes a point in LPS space and returns
- * true if the point is in the shape and false if it is not.
- * @param callback - A function that will be called for
- * every point in the shape.
- * @param boundsIJK - The bounds of the volume in IJK coordinates.
+ * @param options - Configuration options for the shape callback.
+ * @returns An array of points in the shape if returnPoints is true, otherwise undefined.
  */
 export function pointInShapeCallback(
   imageData: vtkImageData | CPUImageData,
-  pointInShapeFn: ShapeFnCriteria,
-  callback?: PointInShapeCallback,
-  boundsIJK?: BoundsIJK
-): Array<PointInShape> {
+  options: PointInShapeOptions
+): Array<PointInShape> | undefined {
+  const {
+    pointInShapeFn,
+    callback,
+    boundsIJK,
+    returnPoints = false,
+    // Destructure other options here as needed
+  } = options;
+
   let iMin, iMax, jMin, jMax, kMin, kMax;
 
   let scalarData;
@@ -175,5 +196,6 @@ export function pointInShapeCallback(
     vec3.add(currentPos, currentPos, scanAxisStep);
   }
 
-  return pointsInShape;
+  // Modify the return statement
+  return returnPoints ? pointsInShape : undefined;
 }

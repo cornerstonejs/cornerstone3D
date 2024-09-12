@@ -114,7 +114,6 @@ let viewport;
 const viewportId2 = 'STACK_VIEWPORT_2';
 
 const segmentationIds = ['STACK_SEGMENTATION'];
-const segmentationRepresentationUIDs = [];
 const dropDownId = 'SEGMENTATION_DROPDOWN';
 
 function updateSegmentationDropdownOptions(
@@ -241,7 +240,6 @@ addDropdownToToolbar({
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
     const index = segmentationIds.indexOf(name);
-    const uid = segmentationRepresentationUIDs[index];
     segmentation.activeSegmentation.setActiveSegmentation(viewportId, name);
 
     // Update the dropdown

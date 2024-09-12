@@ -74,8 +74,10 @@ addToggleButtonToToolbar({
   onClick: (toggle) => {
     segmentation.config.visibility.setSegmentationRepresentationVisibility(
       viewportId,
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
   },

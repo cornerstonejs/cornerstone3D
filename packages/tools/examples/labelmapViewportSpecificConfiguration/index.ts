@@ -81,7 +81,7 @@ addToggleButtonToToolbar({
     segmentation.config.style.setViewportSpecificStyleForRepresentationType(
       {
         viewportId: viewportId1,
-        representationType: csToolsEnums.SegmentationRepresentations.Labelmap,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
       {
         renderOutline: toggle,
