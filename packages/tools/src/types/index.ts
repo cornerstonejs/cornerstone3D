@@ -25,6 +25,7 @@ import type {
   ContourSegmentationAnnotation,
   ContourSegmentationAnnotationData,
 } from './ContourSegmentationAnnotation';
+import type { ModalityUnitOptions } from '../utilities/getModalityUnit';
 
 // Rendering
 import type AnnotationRenderContext from './AnnotationRenderContext';
@@ -152,6 +153,7 @@ export type {
   InterpolationViewportData,
   JumpToSliceOptions,
   ToolSpecificAnnotationTypes,
+  ModalityUnitOptions,
   // Rendering
   AnnotationRenderContext,
   // Geometry
