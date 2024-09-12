@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-beta.27",
+  "version": "2.0.0-beta.28",
   "packages": [
     "packages/core",
     "packages/tools",
