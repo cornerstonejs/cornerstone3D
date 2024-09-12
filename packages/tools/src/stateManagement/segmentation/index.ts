@@ -3,6 +3,8 @@ import {
   removeLabelmapRepresentation,
   removeSegmentationRepresentation,
   removeSurfaceRepresentation,
+  removeSegmentationRepresentations,
+  removeAllSegmentationRepresentations,
 } from './removeSegmentationRepresentations';
 
 import {
@@ -41,9 +43,11 @@ export {
   removeContourRepresentation,
   removeLabelmapRepresentation,
   removeSurfaceRepresentation,
+  removeSegmentationRepresentations,
   addLabelmapRepresentationToViewport,
   addLabelmapRepresentationToViewportMap,
   addSegmentationRepresentations,
+  removeAllSegmentationRepresentations,
   addContourRepresentationToViewport,
   addContourRepresentationToViewportMap,
   addSurfaceRepresentationToViewport,

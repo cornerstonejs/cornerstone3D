@@ -650,9 +650,7 @@ export abstract class BaseTool {
     // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
-    protected getTargetIdImage(targetId: string, renderingEngine: Types_2.IRenderingEngine): Types_2.IImageData | Types_2.CPUIImageData | Types_2.IImageVolume;
-    // (undocumented)
-    protected getTargetVolumeId(viewport: Types_2.IViewport): string | undefined;
+    protected getTargetImageData(targetId: string): Types_2.IImageData | Types_2.CPUIImageData;
     // (undocumented)
     getToolName(): string;
     // (undocumented)
@@ -1909,6 +1907,9 @@ function destroy_2(): void;
 
 // @public (undocumented)
 function destroy_3(): void;
+
+// @public (undocumented)
+function destroy_4(): void;
 
 // @public (undocumented)
 function destroySynchronizer(synchronizerId: string): void;
@@ -4571,6 +4572,9 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 function removeAllAnnotations(): void;
 
 // @public (undocumented)
+function removeAllSegmentationRepresentations(): void;
+
+// @public (undocumented)
 function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
@@ -4595,6 +4599,12 @@ function removeSegmentation(segmentationId: string): void;
 function removeSegmentationRepresentation(viewportId: string, specifier: {
     segmentationId: string;
     type: SegmentationRepresentations;
+}, immediate?: boolean): void;
+
+// @public (undocumented)
+function removeSegmentationRepresentations(viewportId: string, specifier: {
+    segmentationId: string;
+    type?: SegmentationRepresentations;
 }, immediate?: boolean): void;
 
 // @public (undocumented)
@@ -4757,9 +4767,11 @@ declare namespace segmentation {
         removeContourRepresentation,
         removeLabelmapRepresentation,
         removeSurfaceRepresentation,
+        removeSegmentationRepresentations,
         addLabelmapRepresentationToViewport,
         addLabelmapRepresentationToViewportMap,
         addSegmentationRepresentations,
+        removeAllSegmentationRepresentations,
         addContourRepresentationToViewport,
         addContourRepresentationToViewportMap,
         addSurfaceRepresentationToViewport,
@@ -5303,9 +5315,11 @@ declare namespace state_3 {
         removeContourRepresentation,
         removeSurfaceRepresentation,
         removeSegmentationRepresentation,
+        removeAllSegmentationRepresentations,
         addColorLUT,
         addSegmentations,
-        updateLabelmapSegmentationImageReferences
+        updateLabelmapSegmentationImageReferences,
+        destroy_4 as destroy
     }
 }
 

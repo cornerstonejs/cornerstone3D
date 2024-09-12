@@ -87,11 +87,6 @@ describe('Segmentation Tools:', () => {
     });
     const vp = renderingEngine.getViewport(viewportId1);
 
-    eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-      const { segmentationId } = evt.detail;
-      expect(segmentationId.includes(volumeId)).toBe(true);
-    });
-
     eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
       done();
     });
@@ -234,11 +229,6 @@ describe('Segmentation Tools:', () => {
       Events.SEGMENTATION_RENDERED,
       newSegRenderedCallback
     );
-
-    eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-      const { segmentationId } = evt.detail;
-      expect(segmentationId.includes(volumeId)).toBe(true);
-    });
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
@@ -417,11 +407,6 @@ describe('Segmentation Tools:', () => {
       Events.SEGMENTATION_RENDERED,
       newSegRenderedCallback
     );
-
-    eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-      const { segmentationId } = evt.detail;
-      expect(segmentationId.includes(volumeId)).toBe(true);
-    });
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {

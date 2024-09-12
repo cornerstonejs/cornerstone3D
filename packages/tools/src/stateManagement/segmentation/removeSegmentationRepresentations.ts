@@ -27,14 +27,13 @@ function removeSegmentationRepresentation(
   immediate?: boolean
 ): void {
   const { segmentationId, type } = specifier;
+  _removeRepresentation(viewportId, segmentationId, type, immediate);
 
   // remove representation from state
   defaultSegmentationStateManager.removeSegmentationRepresentation(viewportId, {
     segmentationId,
     type,
   });
-
-  _removeRepresentation(viewportId, segmentationId, type, immediate);
 }
 
 /**
@@ -71,6 +70,30 @@ function removeSegmentationRepresentations(
   );
 
   _removeRepresentation(viewportId, segmentationId, type, immediate);
+}
+
+/**
+ * Removes all segmentation representations from all viewports and resets the segmentation state.
+ *
+ * @remarks
+ * This function iterates through all viewport segmentation representations,
+ * removes each representation, and then resets the segmentation state.
+ * It effectively clears all segmentation data from the application.
+ *
+ */
+function removeAllSegmentationRepresentations(): void {
+  const state =
+    defaultSegmentationStateManager.getAllViewportSegmentationRepresentations();
+
+  state.forEach(({ viewportId, representations }) => {
+    representations.forEach(({ segmentationId, type }) => {
+      removeSegmentationRepresentation(viewportId, {
+        segmentationId,
+        type,
+      });
+    });
+  });
+  defaultSegmentationStateManager.resetState();
 }
 
 /**
@@ -180,6 +203,7 @@ function _removeRepresentation(
 export {
   removeSegmentationRepresentation,
   removeSegmentationRepresentations,
+  removeAllSegmentationRepresentations,
   removeLabelmapRepresentation,
   removeContourRepresentation,
   removeSurfaceRepresentation,

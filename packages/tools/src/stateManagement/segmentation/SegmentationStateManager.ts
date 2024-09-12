@@ -895,6 +895,22 @@ export default class SegmentationStateManager {
       .map((imageId) => imageId.slice(-Math.round(imageId.length * 0.15)))
       .join('_');
   }
+
+  /**
+   * Retrieves all viewport segmentation representations as an array.
+   * @returns An array of objects, each containing a viewportId and its associated representations.
+   */
+  public getAllViewportSegmentationRepresentations(): Array<{
+    viewportId: string;
+    representations: SegmentationRepresentation[];
+  }> {
+    return Object.entries(this.state.viewportSegRepresentations).map(
+      ([viewportId, representations]) => ({
+        viewportId,
+        representations,
+      })
+    );
+  }
 }
 
 async function internalComputeVolumeLabelmapFromStack({

@@ -891,8 +891,11 @@ export default class ToolGroup {
     );
 
     if (matchingEngines.length === 0) {
+      if (renderingEngines.length === 1) {
+        return renderingEngines[0].id;
+      }
       throw new Error(
-        `No rendering engine found containing viewport ${viewportId}`
+        'No rendering engines found that contain the viewport with the same viewportId, you must specify a renderingEngineId.'
       );
     }
 

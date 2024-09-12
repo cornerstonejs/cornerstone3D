@@ -26,6 +26,7 @@ import {
   ToolGroupManager,
   SynchronizerManager,
   destroy,
+  segmentation,
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
@@ -104,6 +105,7 @@ function cleanupTestEnvironment(options = {}) {
     unregisterImageLoaders = true,
     cleanupDOMElements = true,
   } = options;
+  segmentation.state.removeAllSegmentationRepresentations();
 
   // Clear the cache
   cache.purgeCache();
@@ -153,7 +155,6 @@ function cleanupTestEnvironment(options = {}) {
 
   // purge cache
   cache.purgeCache();
-
   const ONE_GB = 1073741824;
 
   cache.setMaxCacheSize(ONE_GB);

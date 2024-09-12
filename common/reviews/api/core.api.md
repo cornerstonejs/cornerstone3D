@@ -192,6 +192,8 @@ export abstract class BaseVolumeViewport extends Viewport {
     // (undocumented)
     hasVolumeId(volumeId: string): boolean;
     // (undocumented)
+    hasVolumeURI(volumeURI: string): boolean;
+    // (undocumented)
     protected initialTransferFunctionNodes: TransferFunctionNodes;
     // (undocumented)
     protected initialViewUp: Point3;
@@ -1300,10 +1302,10 @@ function getViewportImageIds(viewport: IViewport): string[];
 const getViewportModality: (viewport: IViewport, volumeId?: string) => string;
 
 // @public (undocumented)
-function getViewportsWithImageURI(imageURI: string, renderingEngineId?: string): Viewport_2[];
+function getViewportsWithImageURI(imageURI: string): Viewport_2[];
 
 // @public (undocumented)
-function getViewportsWithVolumeId(volumeId: string, renderingEngineId?: string): IVolumeViewport[];
+function getViewportsWithVolumeId(volumeId: string): IVolumeViewport[];
 
 // @public (undocumented)
 function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [number, number];

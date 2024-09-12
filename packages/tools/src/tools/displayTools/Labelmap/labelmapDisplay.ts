@@ -29,7 +29,6 @@ import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorT
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import { getSegmentationActor } from '../../../stateManagement/segmentation/helpers';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
-import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 
 const MAX_NUMBER_COLORS = 255;
@@ -52,6 +51,9 @@ function removeRepresentation(
 ): void {
   const enabledElement = getEnabledElementByViewportId(viewportId);
 
+  // Clean up the cache for this segmentation
+  _cleanupLabelMapConfigCache(viewportId, segmentationId);
+
   if (!enabledElement) {
     return;
   }
@@ -59,9 +61,6 @@ function removeRepresentation(
   const { viewport } = enabledElement;
 
   removeLabelmapFromElement(viewport.element, segmentationId);
-
-  // Clean up the cache for this segmentation
-  _cleanupLabelMapConfigCache(viewportId, segmentationId);
 
   if (!renderImmediate) {
     return;

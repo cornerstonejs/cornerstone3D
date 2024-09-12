@@ -7,6 +7,7 @@ import {
   removeContourRepresentation,
   removeSurfaceRepresentation,
   removeSegmentationRepresentation,
+  removeAllSegmentationRepresentations,
 } from './removeSegmentationRepresentations';
 
 import { addColorLUT } from './addColorLUT';
@@ -22,6 +23,11 @@ import {
   getSegmentationRepresentation,
   getSegmentationRepresentations,
 } from './getSegmentationRepresentation';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
+
+function destroy() {
+  defaultSegmentationStateManager.resetState();
+}
 
 export {
   // get
@@ -43,10 +49,12 @@ export {
   removeContourRepresentation,
   removeSurfaceRepresentation,
   removeSegmentationRepresentation,
+  removeAllSegmentationRepresentations,
   // add
   addColorLUT,
   addSegmentations,
   // update
   updateLabelmapSegmentationImageReferences,
+  destroy,
   // style
 };

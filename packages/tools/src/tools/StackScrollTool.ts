@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   VolumeViewport,
   type Types,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { scroll } from '../utilities';
@@ -196,18 +197,17 @@ class StackScrollTool extends BaseTool {
     const { wheel, element } = evt.detail;
     const { direction } = wheel;
     const { invert } = this.configuration;
-    const { viewport } = getEnabledElement(element) as {
-      viewport: Types.IVolumeViewport;
-    };
+    const { viewport } = getEnabledElement(element);
     const delta = direction * (invert ? -1 : 1);
-
-    const volumeId = viewport.getVolumeId();
 
     scroll(viewport, {
       delta,
       debounceLoading: this.configuration.debounceIfNotLoaded,
       loop: this.configuration.loop,
-      volumeId,
+      volumeId:
+        viewport instanceof BaseVolumeViewport
+          ? viewport.getVolumeId()
+          : undefined,
       scrollSlabs: this.configuration.scrollSlabs,
     });
   }
