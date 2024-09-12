@@ -116,7 +116,7 @@ addToggleButtonToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -263,7 +263,7 @@ async function run() {
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
   };
 
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [segmentationRepresentation],
     [viewportId2]: [segmentationRepresentation],
     [viewportId3]: [segmentationRepresentation],

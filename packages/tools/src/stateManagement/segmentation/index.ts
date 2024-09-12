@@ -1,27 +1,58 @@
-import removeSegmentationRepresentations from './removeSegmentationRepresentations';
-import addSegmentations from './addSegmentations';
 import {
+  removeContourRepresentation,
+  removeLabelmapRepresentation,
+  removeSegmentationRepresentation,
+  removeSurfaceRepresentation,
+  removeSegmentationRepresentations,
+  removeAllSegmentationRepresentations,
+} from './removeSegmentationRepresentations';
+
+import {
+  addContourRepresentationToViewport,
+  addContourRepresentationToViewportMap,
+  addSurfaceRepresentationToViewport,
+  addSurfaceRepresentationToViewportMap,
+  addLabelmapRepresentationToViewport,
+  addLabelmapRepresentationToViewportMap,
   addSegmentationRepresentations,
-  addMultiViewportSegmentationRepresentations,
-} from './addSegmentationRepresentations';
-import addRepresentationData from './addRepresentationData';
-import { convertVolumeToStackSegmentation } from './convertVolumeToStackSegmentation';
+} from './addSegmentationRepresentationsToViewport';
+
+import { addSegmentations } from './addSegmentations';
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
 import * as state from './segmentationState';
 import * as config from './config';
 import * as segmentIndex from './segmentIndex';
 import * as triggerSegmentationEvents from './triggerSegmentationEvents';
-import { convertStackToVolumeSegmentation } from './SegmentationStateManager';
+import { convertStackToVolumeLabelmap } from './helpers/convertStackToVolumeLabelmap';
+import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapFromStack';
 import * as polySegManager from './polySeg';
+import { clearSegmentValue } from './helpers/clearSegmentValue';
+import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
+
+const helpers = {
+  clearSegmentValue,
+  convertStackToVolumeLabelmap,
+  computeVolumeLabelmapFromStack,
+  convertVolumeToStackLabelmap,
+};
 
 export {
   // functions
-  addSegmentations,
-  addSegmentationRepresentations,
+  removeSegmentationRepresentation,
+  removeContourRepresentation,
+  removeLabelmapRepresentation,
+  removeSurfaceRepresentation,
   removeSegmentationRepresentations,
-  addRepresentationData,
-  addMultiViewportSegmentationRepresentations,
+  addLabelmapRepresentationToViewport,
+  addLabelmapRepresentationToViewportMap,
+  addSegmentationRepresentations,
+  removeAllSegmentationRepresentations,
+  addContourRepresentationToViewport,
+  addContourRepresentationToViewportMap,
+  addSurfaceRepresentationToViewport,
+  addSurfaceRepresentationToViewportMap,
+  addSegmentations,
   // name spaces
   state,
   activeSegmentation,
@@ -29,7 +60,6 @@ export {
   config,
   segmentIndex,
   triggerSegmentationEvents,
-  convertStackToVolumeSegmentation,
-  convertVolumeToStackSegmentation,
+  helpers,
   polySegManager as polySeg,
 };

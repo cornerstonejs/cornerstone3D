@@ -67,11 +67,6 @@ viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 
-let leftRepresentationUID1,
-  leftRepresentationUID2,
-  rightRepresentationUID1,
-  rightRepresentationUID2;
-
 const instructions = document.createElement('p');
 instructions.innerText = `
   The left viewport uses a segmentation using only global configuration for
@@ -81,18 +76,16 @@ instructions.innerText = `
 // ============================= //
 
 addToggleButtonToToolbar({
-  title: 'toggle outline rendering',
+  title: 'toggle outline rendering for left viewport',
   onClick: (toggle) => {
-    [rightRepresentationUID1, rightRepresentationUID2].forEach(
-      (representationUID) => {
-        segmentation.config.setSegmentationRepresentationConfig(
-          representationUID,
-          {
-            Labelmap: {
-              renderOutline: toggle,
-            },
-          }
-        );
+    segmentation.config.style.setViewportSpecificStyleForRepresentationType(
+      {
+        viewportId: viewportId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        renderOutline: toggle,
+        renderOutlineInactive: toggle,
       }
     );
   },
@@ -104,11 +97,11 @@ addToggleButtonToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId1,
     });
   const segmentationVolume2 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId2,
     });
 
@@ -224,30 +217,28 @@ async function run() {
   );
 
   // // Add the segmentation representations to viewportId1
-  [leftRepresentationUID1, leftRepresentationUID2] =
-    await segmentation.addSegmentationRepresentations(viewportId1, [
-      {
-        segmentationId: segmentationId1,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-      {
-        segmentationId: segmentationId2,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+  await segmentation.addSegmentationRepresentations(viewportId1, [
+    {
+      segmentationId: segmentationId1,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+    {
+      segmentationId: segmentationId2,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // // Add the segmentation representations to viewportId2
-  [rightRepresentationUID1, rightRepresentationUID2] =
-    await segmentation.addSegmentationRepresentations(viewportId2, [
-      {
-        segmentationId: segmentationId1,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-      {
-        segmentationId: segmentationId2,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+  await segmentation.addSegmentationRepresentations(viewportId2, [
+    {
+      segmentationId: segmentationId1,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+    {
+      segmentationId: segmentationId2,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2]);

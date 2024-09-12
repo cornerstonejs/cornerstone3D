@@ -88,6 +88,10 @@ export default function updateContourPolyline(
     polyline.reverse();
   }
 
+  if (!data.handles?.points?.length) {
+    return;
+  }
+
   const handlePoints = data.handles.points.map((p) => worldToCanvas(p));
 
   if (handlePoints.length > 2) {

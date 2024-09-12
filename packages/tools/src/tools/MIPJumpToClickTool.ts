@@ -41,10 +41,13 @@ class MIPJumpToClickTool extends BaseTool {
 
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport, renderingEngine } = enabledElement as {
+      viewport: Types.IVolumeViewport;
+      renderingEngine: Types.IRenderingEngine;
+    };
 
     // 2. Getting the target volume that is clicked on
-    const volumeId = this.getTargetVolumeId(viewport);
+    const volumeId = viewport.getVolumeId();
 
     if (!volumeId) {
       throw new Error(

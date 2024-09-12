@@ -134,7 +134,7 @@ export function fillInsideRectangle(
 }
 
 /**
- * Fill the area outside of a rectangle for the toolGroupId and segmentationRepresentationUID.
+ * Fill the area outside of a rectangle for the toolGroupId and .
  * @param toolGroupId - The unique identifier of the tool group.
  * @param operationData - The data that will be used to create the
  * new rectangle.

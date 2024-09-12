@@ -8,6 +8,8 @@ import type {
   VOIRange,
   CPUIImageData,
   ViewportInput,
+  BoundsIJK,
+  CPUImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -17,6 +19,8 @@ import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
 import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
+import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
+import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -223,7 +227,23 @@ class WSIViewport extends Viewport {
 
     const { spacing } = metadata;
 
-    return {
+    const imageData = {
+      getDirection: () => metadata.direction,
+      getDimensions: () => metadata.dimensions,
+      getRange: () => [0, 255],
+      getScalarData: () => this.getScalarData(),
+      getSpacing: () => metadata.spacing,
+      worldToIndex: (point: Point3) => {
+        const canvasPoint = this.worldToCanvas(point);
+        const pixelCoord = this.canvasToIndex(canvasPoint);
+        return [pixelCoord[0], pixelCoord[1], 0] as Point3;
+      },
+      indexToWorld: (point: Point3) => {
+        const canvasPoint = this.indexToCanvas([point[0], point[1]]);
+        return this.canvasToWorld(canvasPoint);
+      },
+    };
+    const imageDataReturn = {
       dimensions: metadata.dimensions,
       spacing,
       numberOfComponents: 3,
@@ -233,29 +253,42 @@ class WSIViewport extends Viewport {
         Modality: this.modality,
         FrameOfReferenceUID: this.frameOfReferenceUID,
       },
-      imageData: {
-        getDirection: () => metadata.direction,
-        getDimensions: () => metadata.dimensions,
-        getRange: () => [0, 255],
-        getScalarData: () => this.getScalarData(),
-        getSpacing: () => metadata.spacing,
-        worldToIndex: (point: Point3) => {
-          const canvasPoint = this.worldToCanvas(point);
-          const pixelCoord = this.canvasToIndex(canvasPoint);
-          return [pixelCoord[0], pixelCoord[1], 0] as Point3;
-        },
-        indexToWorld: (point: Point3) => {
-          const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-          return this.canvasToWorld(canvasPoint);
-        },
-      },
+
       hasPixelSpacing: this.hasPixelSpacing,
       calibration: this.calibration,
       preScale: {
         scaled: false,
       },
       scalarData: this.getScalarData(),
+      imageData,
+      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
+      voxelManager: {
+        forEach: (
+          callback: (args: {
+            value: unknown;
+            index: number;
+            pointIJK: Point3;
+            pointLPS: Point3;
+          }) => void,
+          options?: {
+            boundsIJK?: BoundsIJK;
+            isInObject?: (pointLPS, pointIJK) => boolean;
+            returnPoints?: boolean;
+            imageData;
+          }
+        ) => {
+          return pointInShapeCallback(options.imageData, {
+            pointInShapeFn: options.isInObject ?? (() => true),
+            callback: callback,
+            boundsIJK: options.boundsIJK,
+            returnPoints: options.returnPoints ?? false,
+          });
+        },
+      },
     };
+
+    // @ts-expect-error we need to fully migrate the voxelManager to the new system
+    return imageDataReturn;
   }
 
   /**
@@ -670,7 +703,7 @@ class WSIViewport extends Viewport {
     return transform;
   }
 
-  public getReferenceId(): string {
+  public getViewReferenceId(): string {
     return `imageId:${this.getCurrentImageId()}`;
   }
 

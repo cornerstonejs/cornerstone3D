@@ -15,19 +15,14 @@ function normalizeSegmentationInput(
   segmentationInput: SegmentationPublicInput
 ): Segmentation {
   const { segmentationId, representation } = segmentationInput;
-  const isContourRepresentation =
-    representation.type === SegmentationRepresentations.Contour;
-  let data = representation.data ? { ...representation.data } : null;
-
-  // Contour representation data is defined internally
-  data = !data && isContourRepresentation ? {} : data;
+  const { type, data: inputData } = representation;
+  const data = inputData ? { ...inputData } : {};
 
   // Data cannot be undefined for labelmap and surface
   if (!data) {
     throw new Error('Segmentation representation data may not be undefined');
   }
-
-  if (isContourRepresentation) {
+  if (type === SegmentationRepresentations.Contour) {
     const contourData = <ContourSegmentationData>data;
 
     // geometryIds will be removed in a near future. It still exist in the
@@ -48,10 +43,9 @@ function normalizeSegmentationInput(
     segmentLabels: {},
     label: null,
     segmentsLocked: new Set(),
-    type: representation.type,
     activeSegmentIndex: 1,
     representationData: {
-      [representation.type]: {
+      [type]: {
         ...data,
       },
     },

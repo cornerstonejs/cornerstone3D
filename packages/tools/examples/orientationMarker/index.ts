@@ -53,7 +53,7 @@ const {
   OrientationMarkerTool,
   ZoomTool,
   PanTool,
-  VolumeRotateMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 
@@ -146,7 +146,7 @@ async function run() {
   cornerstoneTools.addTool(OrientationMarkerTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   ctToolGroup.addTool(OrientationMarkerTool.toolName);
@@ -171,8 +171,20 @@ async function run() {
   ptToolGroup.addTool(OrientationMarkerTool.toolName);
   ptToolGroup.addTool(ZoomTool.toolName);
   ptToolGroup.addTool(PanTool.toolName);
-  ptToolGroup.addTool(VolumeRotateMouseWheelTool.toolName);
-  ptToolGroup.setToolActive(VolumeRotateMouseWheelTool.toolName);
+  ptToolGroup.addTool(StackScrollTool.toolName);
+  ptToolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+    configuration: {
+      rotate: {
+        enabled: true,
+        rotateIncrementDegrees: 1,
+      },
+    },
+  });
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

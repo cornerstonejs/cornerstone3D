@@ -6,6 +6,7 @@ import {
   volumeLoader,
   CONSTANTS,
   utilities,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -17,6 +18,7 @@ import {
   addToggleButtonToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -170,6 +172,21 @@ addToggleButtonToToolbar({
   },
 });
 
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
+});
+
 /**
  * Runs the demo
  */
@@ -275,7 +292,7 @@ async function run() {
 
   // Add some segmentations based on the source data volume
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -301,7 +318,7 @@ async function run() {
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
   };
 
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [segmentationRepresentation],
     [viewportId2]: [segmentationRepresentation],
   });

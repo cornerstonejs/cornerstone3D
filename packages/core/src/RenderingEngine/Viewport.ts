@@ -498,10 +498,9 @@ class Viewport {
    */
   public setActors(actors: ActorEntry[]): void {
     this.removeAllActors();
-    const resetCameraPanAndZoom = true;
     // when we set the actor we need to reset the camera to initialize the
     // camera focal point with the bounds of the actors.
-    this.addActors(actors, resetCameraPanAndZoom);
+    this.addActors(actors, { resetCamera: true });
   }
 
   /**
@@ -531,11 +530,15 @@ class Viewport {
 
   /**
    * Add a list of actors (actor entries) to the viewport
-   * @param resetCameraPanAndZoom - force reset pan and zoom of the camera,
+   * @param resetCamera - force reset pan and zoom of the camera,
    *        default value is false.
    * @param actors - An array of ActorEntry objects.
    */
-  public addActors(actors: ActorEntry[], resetCameraPanAndZoom = false): void {
+  public addActors(
+    actors: ActorEntry[],
+    options: { resetCamera?: boolean } = {}
+  ): void {
+    const { resetCamera = false } = options;
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
       console.warn(
@@ -548,11 +551,15 @@ class Viewport {
       this.addActor(actor);
     });
 
-    // set the clipping planes for the actors
-    this.resetCamera({
-      resetPan: resetCameraPanAndZoom,
-      resetZoom: resetCameraPanAndZoom,
-    });
+    const prevViewPresentation = this.getViewPresentation();
+    const prevViewRef = this.getViewReference();
+
+    this.resetCamera();
+
+    if (!resetCamera) {
+      this.setViewReference(prevViewRef);
+      this.setViewPresentation(prevViewPresentation);
+    }
   }
 
   /**
@@ -1100,6 +1107,10 @@ class Viewport {
    * value is [0,0].
    */
   public getPan(initialCamera = this.initialCamera): Point2 {
+    if (!initialCamera) {
+      return [0, 0];
+    }
+
     const activeCamera = this.getVtkActiveCamera();
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
@@ -1412,7 +1423,7 @@ class Viewport {
       // or a new actor is added and we need to update the clipping planes
       if (cameraModifiedOutOfPlane || viewUpHasChanged) {
         const actorEntry = this.getDefaultActor();
-        if (!actorEntry.actor) {
+        if (!actorEntry?.actor) {
           return;
         }
 

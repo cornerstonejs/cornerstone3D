@@ -535,7 +535,7 @@ class ProbeTool extends AnnotationTool {
         ),
       };
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -561,10 +561,7 @@ class ProbeTool extends AnnotationTool {
         if (targetId.startsWith('imageId:')) {
           const imageId = targetId.split('imageId:')[1];
           const imageURI = csUtils.imageIdToURI(imageId);
-          const viewports = csUtils.getViewportsWithImageURI(
-            imageURI,
-            renderingEngineId
-          );
+          const viewports = csUtils.getViewportsWithImageURI(imageURI);
 
           const viewport = viewports[0];
 

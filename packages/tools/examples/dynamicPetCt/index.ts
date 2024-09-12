@@ -29,7 +29,6 @@ const {
   StackScrollTool,
   synchronizers,
   MIPJumpToClickTool,
-  VolumeRotateMouseWheelTool,
   CrosshairsTool,
 } = cornerstoneTools;
 
@@ -316,7 +315,6 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
   // Define tool groups for the main 9 viewports.

@@ -13,7 +13,7 @@ import {
 
 import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
-import { getSegmentationRepresentations } from './getSegmentationRepresentations';
+import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
 import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
@@ -80,19 +80,21 @@ class SegmentationRenderingEngine {
 
     for (const viewport of viewports) {
       const viewportId = viewport.id;
-      const segmentationRepresentations =
-        getSegmentationRepresentations(viewportId);
 
       if (segmentationId) {
-        const hasSegmentationRepresentation = segmentationRepresentations.some(
-          (representation) => representation.segmentationId === segmentationId
+        const segmentationRepresentations = getSegmentationRepresentations(
+          viewportId,
+          { segmentationId }
         );
 
-        if (hasSegmentationRepresentation) {
+        if (segmentationRepresentations?.length > 0) {
           viewportIds.push(viewportId);
         }
       } else {
-        if (segmentationRepresentations.length > 0) {
+        const segmentationRepresentations =
+          getSegmentationRepresentations(viewportId);
+
+        if (segmentationRepresentations?.length > 0) {
           viewportIds.push(viewportId);
         }
       }
@@ -163,15 +165,17 @@ class SegmentationRenderingEngine {
     if (!segmentationRepresentations?.length) {
       return;
     }
-    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const { viewport } = getEnabledElementByViewportId(viewportId) || {};
+
+    if (!viewport) {
+      return;
+    }
 
     const viewportRenderList = [];
 
     // Render each segmentationData, in each viewport
     const segmentationRenderList = segmentationRepresentations.map(
       (representation: SegmentationRepresentation) => {
-        // const viewportsRenderList = [];
-
         if (representation.type === SegmentationRepresentations.Contour) {
           // if the representation is contour we need to make sure
           // that the planarFreeHandTool is added
@@ -181,11 +185,8 @@ class SegmentationRenderingEngine {
         const display = renderers[representation.type];
 
         try {
-          const viewportId = display.render(
-            // @ts-ignore
-            viewport,
-            representation
-          );
+          // @ts-ignore
+          const viewportId = display.render(viewport, representation);
           viewportRenderList.push(viewportId);
         } catch (error) {
           console.error(error);

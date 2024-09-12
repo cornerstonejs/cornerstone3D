@@ -11,8 +11,8 @@ import {
   convertContourToVolumeLabelmap,
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
-import { computeStackSegmentationFromVolume } from '../../convertVolumeToStackSegmentation';
 import type { PolySegConversionOptions } from '../../../../types';
+import { computeStackLabelmapFromVolume } from '../../helpers/computeStackLabelmapFromVolume';
 
 export type RawLabelmapData =
   | LabelmapSegmentationDataVolume
@@ -92,7 +92,6 @@ async function computeLabelmapFromContourSegmentation(
 
   const result = await convertFunction(representationData, {
     segmentIndices,
-    segmentationRepresentationUID: options.segmentationRepresentationUID,
     viewport: options.viewport,
   });
 
@@ -134,12 +133,12 @@ async function computeLabelmapFromSurfaceSegmentation(
   let segmentationVolume;
   if (isVolume) {
     const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
-    segmentationVolume =
-      await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId);
+    segmentationVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
+      volumeId
+    );
   } else {
     const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
-    const segImages =
-      imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+    const segImages = imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
     const segImageIds = segImages.map((image) => image.imageId);
 
@@ -159,7 +158,7 @@ async function computeLabelmapFromSurfaceSegmentation(
   }
 
   // we need to convert the volume labelmap to a stack labelmap
-  const stackData = (await computeStackSegmentationFromVolume({
+  const stackData = (await computeStackLabelmapFromVolume({
     volumeId: segmentationVolume.volumeId,
   })) as LabelmapSegmentationDataStack;
 

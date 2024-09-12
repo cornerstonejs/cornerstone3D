@@ -1,4 +1,8 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -19,7 +23,10 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataVolume,
+  LabelmapSegmentationData,
+} from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -29,9 +36,11 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+  getStackSegmentationImageIdsForViewport,
+} from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -54,7 +63,6 @@ class RectangleScissorsTool extends BaseTool {
     segmentationId: string;
     segmentIndex: number;
     segmentsLocked: number[];
-    segmentationRepresentationUID: string;
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     handleIndex?: number;
@@ -110,23 +118,24 @@ class RectangleScissorsTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
-    if (!activeSegmentationRepresentation) {
+    const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+    if (!activeLabelmapSegmentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeLabelmapSegmentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked =
       segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const segmentColor = segmentationConfig.color.getSegmentIndexColor(
-      segmentationRepresentationUID,
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
@@ -175,15 +184,12 @@ class RectangleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-      segmentationRepresentationUID,
       volumeId: null,
       referencedVolumeId: null,
       imageId: null,
     };
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 
@@ -193,8 +199,14 @@ class RectangleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
+
       this.editData = {
         ...this.editData,
+        imageId: segmentationImageId,
       };
     }
 
@@ -281,8 +293,6 @@ class RectangleScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true;
 
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
@@ -312,7 +322,6 @@ class RectangleScissorsTool extends BaseTool {
 
     this.editData = null;
     this.isDrawing = false;
-
     this.applyActiveStrategy(enabledElement, operationData);
   };
 

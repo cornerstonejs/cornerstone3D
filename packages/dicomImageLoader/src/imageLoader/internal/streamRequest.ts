@@ -17,7 +17,7 @@ const { ProgressiveIterator } = utilities;
  * ProgressiveIterator instance.
  *
  * @param url - to request and parse as either multipart or singlepart.
- * @param imageId
+ * @param imageId - the imageId to be used in the returned detail object
  * @param defaultHeaders
  * @returns
  */
@@ -32,7 +32,9 @@ export default function streamRequest(
     retrieveOptions = {} as Types.RangeRetrieveOptions,
     streamingData = {} as StreamingData,
   } = options;
-  const minChunkSize = retrieveOptions.chunkSize || 128 * 1024;
+
+  // @ts-expect-error
+  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {

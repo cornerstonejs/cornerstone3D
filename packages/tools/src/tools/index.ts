@@ -6,7 +6,6 @@ import WindowLevelRegionTool from './WindowLevelRegionTool';
 import StackScrollTool from './StackScrollTool';
 import PlanarRotateTool from './PlanarRotateTool';
 import ZoomTool from './ZoomTool';
-import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
 import MagnifyTool from './MagnifyTool';
@@ -66,7 +65,6 @@ export {
   StackScrollTool,
   PlanarRotateTool,
   ZoomTool,
-  VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   ReferenceCursors,
   // Annotation Tools

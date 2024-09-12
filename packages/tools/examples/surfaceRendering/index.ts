@@ -13,7 +13,6 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   downloadSurfacesData,
-  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -100,7 +99,6 @@ async function addSegmentationsToState() {
     {
       segmentationId,
       representation: {
-        // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Surface,
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
@@ -208,10 +206,9 @@ async function run() {
     }
   );
 
-  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+  await segmentation.addSurfaceRepresentationToViewport(viewportId2, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
     },
   ]);
 

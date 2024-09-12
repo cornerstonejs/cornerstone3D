@@ -204,25 +204,14 @@ async function run() {
   _handleVolumeViewports(volumeImageIds, renderingEngine);
 
   // set the fillAlpha for the labelmap to 0
-  const globalConfig = segmentation.config.getGlobalConfig();
-  segmentation.config.setGlobalRepresentationConfig(
-    cornerstoneTools.Enums.SegmentationRepresentations.Labelmap,
-    {
-      ...globalConfig.representations.Labelmap,
-      fillAlpha: 0.05,
-    }
-  );
-  segmentation.config.setGlobalRepresentationConfig(
-    cornerstoneTools.Enums.SegmentationRepresentations.Contour,
-    {
-      ...globalConfig.representations.Contour,
-      fillAlpha: 0,
-    }
-  );
-
-  const config = segmentation.config.getGlobalConfig();
-  config.representations.Labelmap.activeSegmentOutlineWidthDelta = 3;
-  config.representations.Contour.activeSegmentOutlineWidthDelta = 3;
+  segmentation.config.style.setGlobalLabelmapStyle({
+    fillAlpha: 0.05,
+    activeSegmentOutlineWidthDelta: 3,
+  });
+  segmentation.config.style.setGlobalContourStyle({
+    fillAlpha: 0,
+    activeSegmentOutlineWidthDelta: 3,
+  });
 }
 
 run();
@@ -246,12 +235,9 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   );
 
   // Create a segmentation of the same resolution as the source data
-  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
-    volumeId,
-    {
-      volumeId: volumeSegLabelmapId,
-    }
-  );
+  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: volumeSegLabelmapId,
+  });
 
   fillVolumeLabelmapWithMockData({
     volumeId: volumeSegLabelmapId,
@@ -322,7 +308,7 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const imageIdsArray = [stackImageIds[0]];
 
-  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
     imageIdsArray
   );
 

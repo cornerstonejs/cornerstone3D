@@ -5,7 +5,7 @@ import { BaseTool } from '../base';
 import type { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { getActiveSegmentationRepresentation } from '../../stateManagement/segmentation/activeSegmentation';
+import { getActiveSegmentation } from '../../stateManagement/segmentation/activeSegmentation';
 import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import {
@@ -15,7 +15,10 @@ import {
 } from '../../utilities/segmentation';
 import { state } from '../../store/state';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
+import type {
+  Segmentation,
+  SegmentationRepresentation,
+} from '../../types/SegmentationStateTypes';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -88,34 +91,17 @@ class SegmentSelectTool extends BaseTool {
 
     const { viewport } = enabledElement;
 
-    const activeSegmentationReps = getActiveSegmentationRepresentation(
-      viewport.id
-    );
+    const activeSegmentation = getActiveSegmentation(viewport.id);
 
-    if (!activeSegmentationReps) {
+    if (!activeSegmentation) {
       return;
     }
 
-    const supportedTypes = [
-      RepresentationTypes.Labelmap,
-      RepresentationTypes.Contour,
-    ];
-
-    if (supportedTypes.includes(activeSegmentationReps.type)) {
-      this._setActiveSegmentForType(
-        activeSegmentationReps,
-        worldPoint,
-        viewport
-      );
-    } else {
-      console.warn(
-        'SegmentSelectTool does not support the current segmentation type.'
-      );
-    }
+    this._setActiveSegmentForType(activeSegmentation, worldPoint, viewport);
   }
 
   _setActiveSegmentForType(
-    activeSegmentationReps: SegmentationRepresentation,
+    activeSegmentation: Segmentation,
     worldPoint: Types.Point3,
     viewport: Types.IStackViewport | Types.IVolumeViewport
   ): void {
@@ -125,7 +111,7 @@ class SegmentSelectTool extends BaseTool {
       return;
     }
 
-    const { segmentationId, type } = activeSegmentationReps;
+    const { segmentationId, representationData } = activeSegmentation;
 
     let hoveredSegmentIndex;
 
@@ -138,22 +124,20 @@ class SegmentSelectTool extends BaseTool {
         }
       );
     } else {
-      switch (type) {
-        case SegmentationRepresentations.Labelmap:
-          hoveredSegmentIndex = getSegmentIndexAtLabelmapBorder(
-            segmentationId,
-            worldPoint,
-            {
-              viewport,
-              searchRadius: this.configuration.searchRadius,
-            }
-          );
-          break;
-
-        case SegmentationRepresentations.Contour:
-          hoveredSegmentIndex =
-            getHoveredContourSegmentationAnnotation(segmentationId);
-          break;
+      if (representationData.Labelmap) {
+        hoveredSegmentIndex = getSegmentIndexAtLabelmapBorder(
+          segmentationId,
+          worldPoint,
+          {
+            viewport,
+            searchRadius: this.configuration.searchRadius,
+          }
+        );
+      } else if (representationData.Contour) {
+        hoveredSegmentIndex =
+          getHoveredContourSegmentationAnnotation(segmentationId);
+      } else if (representationData.Surface) {
+        // Handle Surface representation if needed
       }
     }
 

@@ -45,7 +45,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
 let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //
@@ -131,17 +130,6 @@ addDropdownToToolbar({
     selectedToolName = <string>newSelectedToolName;
   },
 });
-
-function initializeGlobalConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.Contour,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
@@ -262,27 +250,16 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the viewportId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(viewportIds[0], [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]);
-
-  // Store the segmentation representation that was just created
-  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  await segmentation.addSegmentationRepresentations(viewportIds[0], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   updateActiveSegmentIndex(1);
-  initializeGlobalConfig();
 }
 
 run();

@@ -23,7 +23,6 @@ const {
   Enums: csToolsEnums,
   RectangleScissorsTool,
   CircleScissorsTool,
-  SphereScissorsTool,
   BrushTool,
   PaintFillTool,
   PanTool,
@@ -39,13 +38,12 @@ const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VIEWPORT';
-const viewportId2 = 'SECOND_VIEWPORT';
 const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation in StackViewport',
-  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image. We show that even with different stack ordering, we are capable of mathcing the correct labelmap and render them on the second viewport'
+  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image.'
 );
 
 const size = '500px';
@@ -86,7 +84,6 @@ content.append(instructions);
 
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
-  SphereBrush: 'SphereBrush',
   CircularEraser: 'CircularEraser',
   ThresholdBrush: 'ThresholdBrush',
   DynamicThreshold: 'DynamicThreshold',
@@ -94,14 +91,12 @@ const brushInstanceNames = {
 
 const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
-  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
   [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
 
 const brushValues = [
-  brushInstanceNames.SphereBrush,
   brushInstanceNames.CircularBrush,
   brushInstanceNames.CircularEraser,
   brushInstanceNames.ThresholdBrush,
@@ -112,14 +107,13 @@ const optionsValues = [
   ...brushValues,
   RectangleScissorsTool.toolName,
   CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
   PaintFillTool.toolName,
 ];
 
 let viewport;
+const viewportId2 = 'STACK_VIEWPORT_2';
 
 const segmentationIds = ['STACK_SEGMENTATION'];
-const segmentationRepresentationUIDs = [];
 const dropDownId = 'SEGMENTATION_DROPDOWN';
 
 function updateSegmentationDropdownOptions(
@@ -153,6 +147,10 @@ addDropdownToToolbar({
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    if (!toolGroup) {
+      return;
+    }
 
     // Set the currently active tool disabled
     const toolName = toolGroup.getActivePrimaryMouseButtonTool();
@@ -199,10 +197,9 @@ addButtonToToolbar({
     const currentImageId = viewport.getCurrentImageId();
 
     const segmentationImage =
-      imageLoader.createAndCacheDerivedSegmentationImage(currentImageId);
+      await imageLoader.createAndCacheDerivedLabelmapImage(currentImageId);
 
     const newSegImageId = segmentationImage.imageId;
-
     const newSegmentationId = `SEGMENTATION_${newSegImageId}`;
     segmentationIds.push(newSegmentationId);
 
@@ -218,22 +215,17 @@ addButtonToToolbar({
       },
     ]);
 
-    // Add the segmentation representation to the viewport
-    const [uid] = await segmentation.addSegmentationRepresentations(
-      viewportId,
-      [
-        {
-          segmentationId: newSegmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]
-    );
+    // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId: newSegmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
 
-    segmentationRepresentationUIDs.push(uid);
-
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
+    segmentation.activeSegmentation.setActiveSegmentation(
       viewportId,
-      uid
+      newSegmentationId
     );
 
     // update the dropdown
@@ -248,11 +240,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
     const index = segmentationIds.indexOf(name);
-    const uid = segmentationRepresentationUIDs[index];
-    segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-      viewportId,
-      uid
-    );
+    segmentation.activeSegmentation.setActiveSegmentation(viewportId, name);
 
     // Update the dropdown
     updateSegmentationDropdownOptions(segmentationIds, name);
@@ -268,7 +256,6 @@ function setupTools(toolGroupId) {
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(SphereScissorsTool);
   cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
@@ -284,21 +271,12 @@ function setupTools(toolGroupId) {
   // Segmentation Tools
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
-  toolGroup.addTool(SphereScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
-    }
-  );
-
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereBrush,
     }
   );
   toolGroup.addToolInstance(
@@ -315,7 +293,6 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.ThresholdBrush,
     }
   );
-
   toolGroup.addToolInstance(
     brushInstanceNames.DynamicThreshold,
     BrushTool.toolName,
@@ -331,7 +308,7 @@ function setupTools(toolGroupId) {
     }
   );
 
-  toolGroup.setToolActive(brushInstanceNames.SphereBrush, {
+  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
@@ -360,7 +337,8 @@ function setupTools(toolGroupId) {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Wheel,
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Alt,
       },
     ],
   });
@@ -411,29 +389,24 @@ async function run() {
     },
   ];
   renderingEngine.setViewports(viewportInputArray);
-  toolGroup.addViewport(viewportId);
-  toolGroup.addViewport(viewportId2);
+  toolGroup.addViewport(viewportId, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
-  const viewport2 = renderingEngine.getViewport(viewportId2);
 
-  // const imageIdsArray = [imageIds[0], imageIds[100], mgImageIds[0]];
-  const imageIdsArray = imageIds;
-  const imageIdsArray2 = [imageIds[100]];
+  const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
 
-  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
     imageIdsArray
   );
 
+  const viewport2 = renderingEngine.getViewport(viewportId2);
   await viewport.setStack(imageIdsArray, 0);
-  await viewport2.setStack(imageIdsArray2, 0);
-
+  await viewport2.setStack([imageIdsArray[2]], 0);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
 
-  const segmentationImageIds = segImages.map((it) => it.imageId);
   // fillStackSegmentationWithMockData({
-  //   imageIds: imageIdsArray.slice(0, 2),
-  //   segmentationImageIds,
+  //   imageIds: [imageIds[0]],
+  //   segmentationImageIds: segImages.map((it) => it.imageId),
   //   cornerstone,
   // });
 
@@ -445,30 +418,25 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIds: segmentationImageIds,
+          imageIds: segImages.map((it) => it.imageId),
         },
       },
     },
   ]);
-
-  // Add the segmentation representation to the viewport
-  const [uid] = await segmentation.addSegmentationRepresentations(viewportId, [
+  // Add the segmentation representation to the toolgroup
+  await segmentation.addSegmentationRepresentations(viewportId, [
     {
       segmentationId: segmentationIds[0],
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  const [uid2] = await segmentation.addSegmentationRepresentations(
-    viewportId2,
-    [
-      {
-        segmentationId: segmentationIds[0],
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]
-  );
 
-  segmentationRepresentationUIDs.push(uid);
+  await segmentation.addSegmentationRepresentations(viewportId2, [
+    {
+      segmentationId: segmentationIds[0],
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 }
 
 run();

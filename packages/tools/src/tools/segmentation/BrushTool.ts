@@ -5,6 +5,7 @@ import {
   StackViewport,
   eventTarget,
   Enums,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
@@ -40,9 +41,7 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 import {
-  getActiveSegmentationRepresentation,
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
   getStackSegmentationImageIdsForViewport,
@@ -51,6 +50,7 @@ import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segm
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -79,7 +79,6 @@ class BrushTool extends BaseTool {
       imageData: vtkImageData;
     };
     segmentsLocked: number[]; //
-    segmentationRepresentationUID?: string;
     imageId?: string; // stack labelmap
     imageIds?: string[]; // stack labelmap
     volumeId?: string; // volume labelmap
@@ -90,7 +89,6 @@ class BrushTool extends BaseTool {
     brushCursor: any;
     segmentationId: string;
     segmentIndex: number;
-    segmentationRepresentationUID: string;
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
@@ -186,31 +184,29 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const activeRepresentation = getActiveSegmentationRepresentation(
-      viewport.id
-    );
-    if (!activeRepresentation) {
-      throw new Error(
-        'No active segmentation detected, create a segmentation representation before using the brush tool'
-      );
+    const activeSegmentation = getActiveSegmentation(viewport.id);
+    if (!activeSegmentation) {
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message:
+            'No active segmentation detected, create a segmentation representation before using the brush tool',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return null;
     }
 
-    const { segmentationId, type } = activeRepresentation;
-
-    if (type === SegmentationRepresentations.Contour) {
-      throw new Error('Not implemented yet');
-    }
+    const { segmentationId } = activeSegmentation;
 
     const segmentsLocked = getLockedSegmentIndices(segmentationId);
 
     const { representationData } = getSegmentation(segmentationId);
 
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
-
-    if (isVolumeSegmentation(labelmapData, viewport)) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
-        type
+        SegmentationRepresentations.Labelmap
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
@@ -231,7 +227,7 @@ class BrushTool extends BaseTool {
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
       const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referencedId)
+        cache.getVolume(actorEntry.referencedId ?? actorEntry.uid)
       );
 
       const segmentationVolume = cache.getVolume(volumeId);
@@ -439,12 +435,8 @@ class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      segmentColor,
-    } = this.getActiveSegmentationData(viewport) || {};
+    const { segmentIndex, segmentationId, segmentColor } =
+      this.getActiveSegmentationData(viewport) || {};
 
     // Center of circle in canvas Coordinates
     const brushCursor = {
@@ -465,7 +457,6 @@ class BrushTool extends BaseTool {
       segmentIndex,
       viewport,
       segmentationId,
-      segmentationRepresentationUID,
       segmentColor,
       viewportIdsToRender,
     };
@@ -473,8 +464,7 @@ class BrushTool extends BaseTool {
 
   private getActiveSegmentationData(viewport) {
     const viewportId = viewport.id;
-    const activeRepresentation =
-      getActiveSegmentationRepresentation(viewportId);
+    const activeRepresentation = getActiveSegmentation(viewportId);
 
     if (!activeRepresentation) {
       console.warn(
@@ -483,19 +473,18 @@ class BrushTool extends BaseTool {
       return;
     }
 
-    const { segmentationId, segmentationRepresentationUID } =
-      activeRepresentation;
+    const { segmentationId } = activeRepresentation;
     const segmentIndex = getActiveSegmentIndex(segmentationId);
 
     const segmentColor = getSegmentIndexColor(
-      segmentationRepresentationUID,
+      viewportId,
+      segmentationId,
       segmentIndex
     );
 
     return {
       segmentIndex,
       segmentationId,
-      segmentationRepresentationUID,
       segmentColor,
     };
   }
@@ -561,12 +550,8 @@ class BrushTool extends BaseTool {
 
   protected getOperationData(element?) {
     const editData = this._editData || this.createEditData(element);
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-    } = this._hoverData || this.createHoverData(element);
+    const { segmentIndex, segmentationId, brushCursor } =
+      this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
     const operationData = {
@@ -579,7 +564,6 @@ class BrushTool extends BaseTool {
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,
-      segmentationRepresentationUID,
       viewUp,
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,

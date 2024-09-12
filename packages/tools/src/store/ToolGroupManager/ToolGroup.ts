@@ -8,7 +8,7 @@ import {
   getEnabledElementByIds,
   Settings,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { type Types, utilities } from '@cornerstonejs/core';
 import type {
   ToolActivatedEventDetail,
   ToolModeChangedEventDetail,
@@ -211,18 +211,10 @@ export default class ToolGroup {
       throw new Error('viewportId must be defined and be a string');
     }
 
-    const renderingEngines = getRenderingEngines();
-
-    if (renderingEngines?.length === 0) {
-      throw new Error('No rendering engines found.');
-    }
-    if (renderingEngines.length > 1) {
-      throw new Error(
-        'Multiple rendering engines found. You must specify a renderingEngineId.'
-      );
-    }
-
-    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id;
+    const renderingEngineUIDToUse = this._findRenderingEngine(
+      viewportId,
+      renderingEngineId
+    );
 
     // Don't overwrite if it already exists
     if (
@@ -765,7 +757,7 @@ export default class ToolGroup {
       get(this._toolInstances[toolName].configuration, configurationPath) ||
       this._toolInstances[toolName].configuration;
 
-    return structuredClone(_configuration);
+    return utilities.deepClone(_configuration);
   }
 
   /**
@@ -878,6 +870,42 @@ export default class ToolGroup {
     };
 
     triggerEvent(eventTarget, Events.TOOL_MODE_CHANGED, eventDetail);
+  }
+
+  private _findRenderingEngine(
+    viewportId: string,
+    renderingEngineId?: string
+  ): string {
+    const renderingEngines = getRenderingEngines();
+
+    if (renderingEngines?.length === 0) {
+      throw new Error('No rendering engines found.');
+    }
+
+    if (renderingEngineId) {
+      return renderingEngineId;
+    }
+
+    const matchingEngines = renderingEngines.filter((engine) =>
+      engine.getViewport(viewportId)
+    );
+
+    if (matchingEngines.length === 0) {
+      if (renderingEngines.length === 1) {
+        return renderingEngines[0].id;
+      }
+      throw new Error(
+        'No rendering engines found that contain the viewport with the same viewportId, you must specify a renderingEngineId.'
+      );
+    }
+
+    if (matchingEngines.length > 1) {
+      throw new Error(
+        'Multiple rendering engines found that contain the viewport with the same viewportId, you must specify a renderingEngineId.'
+      );
+    }
+
+    return matchingEngines[0].id;
   }
 }
 

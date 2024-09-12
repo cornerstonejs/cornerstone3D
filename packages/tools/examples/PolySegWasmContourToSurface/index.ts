@@ -6,6 +6,7 @@ import {
   volumeLoader,
   CONSTANTS,
   utilities,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -17,6 +18,7 @@ import {
   addToggleButtonToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -148,6 +150,21 @@ addButtonToToolbar({
     // render
     renderingEngine.render();
   },
+});
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
 });
 
 /**

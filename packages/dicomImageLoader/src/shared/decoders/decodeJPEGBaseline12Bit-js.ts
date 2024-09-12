@@ -18,7 +18,7 @@ export function initialize(
 
   return new Promise((resolve, reject) => {
     // @ts-ignore
-    import('../../../codecs/jpeg').then(({ JpegImage }) => {
+    import('../../codecs/jpeg').then(({ JpegImage }) => {
       local.JpegImage = JpegImage;
       resolve();
     }, reject);

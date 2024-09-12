@@ -146,7 +146,6 @@ async function run() {
     {
       segmentationId,
       representation: {
-        // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
@@ -186,10 +185,9 @@ async function run() {
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
 
   // // Add the segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId1, [
+  await segmentation.addContourRepresentationToViewport(viewportId1, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 

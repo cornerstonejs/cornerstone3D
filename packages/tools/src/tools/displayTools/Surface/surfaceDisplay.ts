@@ -7,7 +7,6 @@ import {
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
-import { removeRepresentation as _removeRepresentation } from '../../../stateManagement/segmentation/removeRepresentation';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
@@ -19,15 +18,15 @@ import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/seg
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
  * @param toolGroupId - The toolGroupId of the toolGroup that the
- * segmentationRepresentation belongs to.
- * @param segmentationRepresentationUID - This is the unique identifier
- * for the segmentation representation.
+ * segmentation belongs to.
+ * @param segmentationId - This is the unique identifier
+ * for the segmentation.
  * @param renderImmediate - If true, the viewport will be rendered
  * immediately after the segmentation representation is removed.
  */
 function removeRepresentation(
   viewportId: string,
-  segmentationRepresentationUID: string,
+  segmentationId: string,
   renderImmediate = false
 ): void {
   const enabledElement = getEnabledElementByViewportId(viewportId);
@@ -37,8 +36,7 @@ function removeRepresentation(
 
   const { viewport } = enabledElement;
 
-  removeSurfaceFromElement(viewport.element, segmentationRepresentationUID);
-  _removeRepresentation(segmentationRepresentationUID);
+  removeSurfaceFromElement(viewport.element, segmentationId);
 
   if (!renderImmediate) {
     return;
@@ -57,8 +55,7 @@ async function render(
   viewport: Types.IVolumeViewport | Types.IStackViewport,
   representation: SegmentationRepresentation
 ): Promise<void> {
-  const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
-    representation;
+  const { segmentationId } = representation;
 
   const segmentation = getSegmentation(segmentationId);
 
@@ -76,12 +73,12 @@ async function render(
 
   if (
     !SurfaceData &&
-    canComputeRequestedRepresentation(segmentationRepresentationUID)
+    canComputeRequestedRepresentation(segmentationId, Representations.Surface)
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
     SurfaceData = await computeAndAddSurfaceRepresentation(segmentationId, {
-      segmentationRepresentationUID,
+      viewport,
     });
 
     if (!SurfaceData) {
@@ -98,6 +95,8 @@ async function render(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );
   }
+
+  const colorLUTIndex = representation.config?.colorLUTIndex;
 
   const colorLUT = getColorLUT(colorLUTIndex);
 
@@ -119,7 +118,7 @@ async function render(
     addOrUpdateSurfaceToElement(
       viewport.element,
       surface as Types.ISurface,
-      segmentationRepresentationUID
+      segmentationId
     );
 
     surfaces.push(surface);

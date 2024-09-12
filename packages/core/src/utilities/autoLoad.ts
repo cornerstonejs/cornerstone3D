@@ -42,7 +42,7 @@ function getRenderingEngineAndViewportsContainingVolume(
     [];
 
   renderingEnginesArray.forEach((renderingEngine) => {
-    const viewports = getViewportsWithVolumeId(volumeId, renderingEngine.id);
+    const viewports = getViewportsWithVolumeId(volumeId);
 
     if (viewports.length) {
       renderingEngineAndViewportIds.push({

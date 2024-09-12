@@ -166,6 +166,21 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
+  protected setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        activeCamera.getDistance(),
+        activeCamera.getDistance() + this.getSlabThickness()
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+  }
+
   private _getAcquisitionPlaneOrientation(): OrientationVectors {
     const actorEntry = this.getDefaultActor();
 
@@ -175,7 +190,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     // Todo: fix this after we add the volumeId reference to actorEntry later
     // in the segmentation refactor
-    const volumeId = actorEntry.uid;
+    const volumeId = this.getVolumeId();
 
     const imageVolume = cache.getVolume(volumeId);
 
@@ -270,7 +285,6 @@ class VolumeViewport extends BaseVolumeViewport {
     super.resetCamera({ resetPan, resetZoom, resetToCenter });
 
     const activeCamera = this.getVtkActiveCamera();
-    this.setCameraClippingRange();
     const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
@@ -365,7 +379,6 @@ class VolumeViewport extends BaseVolumeViewport {
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
     // reset camera clipping range as well
-    this.setCameraClippingRange();
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
     this.viewportProperties.slabThickness = slabThickness;
   }
@@ -606,8 +619,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const { uid } = actorEntry;
-    const volume = cache.getVolume(uid);
+    const volume = cache.getVolume(this.getVolumeId());
 
     if (!volume) {
       return;
@@ -668,10 +680,11 @@ class VolumeViewport extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    const imageVolume = cache.getVolume(volumeActor.uid);
+    volumeId ||= this.getVolumeId();
+    const imageVolume = cache.getVolume(volumeId);
     if (!imageVolume) {
       throw new Error(
-        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
@@ -703,21 +716,6 @@ class VolumeViewport extends BaseVolumeViewport {
     });
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
-  }
-
-  private setCameraClippingRange() {
-    const activeCamera = this.getVtkActiveCamera();
-    if (activeCamera.getParallelProjection()) {
-      activeCamera.setClippingRange(
-        activeCamera.getDistance(),
-        activeCamera.getDistance() + this.getSlabThickness()
-      );
-    } else {
-      activeCamera.setClippingRange(
-        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-      );
-    }
   }
 
   /**
@@ -775,7 +773,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return [];
     }
 
-    const volumeId = actorEntry.uid;
+    const volumeId = this.getVolumeId();
     const imageVolume = cache.getVolume(volumeId);
 
     const camera = this.getCamera();

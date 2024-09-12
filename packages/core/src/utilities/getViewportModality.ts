@@ -18,7 +18,7 @@ function _getViewportModality(
   }
 
   if ((viewport as IVolumeViewport).setVolumes) {
-    volumeId = volumeId ?? viewport.getDefaultActor().uid;
+    volumeId = volumeId ?? (viewport as IVolumeViewport).getVolumeId();
 
     if (!volumeId || !getVolume) {
       return;

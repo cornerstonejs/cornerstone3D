@@ -46,10 +46,12 @@ export async function convertContourToVolumeLabelmap(
 
   const segmentationVolumeId = utilities.uuidv4();
 
-  const segmentationVolume =
-    volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  const segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
+    volumeId,
+    {
       volumeId: segmentationVolumeId,
-    });
+    }
+  );
 
   const { dimensions, origin, direction, spacing, voxelManager } =
     segmentationVolume;
@@ -121,7 +123,7 @@ export async function convertContourToStackLabelmap(
   });
 
   // create
-  const segImages = await imageLoader.createAndCacheDerivedSegmentationImages(
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
     imageIds
   );
 

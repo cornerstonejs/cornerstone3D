@@ -61,7 +61,6 @@ const resetPrefetchDelay = 5;
  */
 const enable = (element): void => {
   const stack = getStackData(element);
-
   if (!stack) {
     return;
   }

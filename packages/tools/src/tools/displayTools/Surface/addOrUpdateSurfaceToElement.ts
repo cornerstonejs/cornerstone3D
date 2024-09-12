@@ -4,17 +4,14 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport';
+import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
   surface: Types.ISurface,
-  segmentationRepresentationUID: string
+  segmentationId: string
 ): void {
-  const actorUID = getSurfaceActorUID(
-    segmentationRepresentationUID,
-    surface.id
-  );
+  const actorUID = getSurfaceActorUID(segmentationId);
 
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;

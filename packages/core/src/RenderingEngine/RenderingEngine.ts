@@ -599,10 +599,18 @@ class RenderingEngine {
     immediate = true
   ) {
     // Ensure all the canvases are ready for rendering
-    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      getOrCreateCanvas(vp.element);
+    const canvasesDrivenByVtkJs = vtkDrivenViewports.map(
+      (vp: IStackViewport | IVolumeViewport) => {
+        return getOrCreateCanvas(vp.element);
+      }
+    );
+
+    // reset the canvas size to the client size
+    canvasesDrivenByVtkJs.forEach((canvas) => {
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * devicePixelRatio;
+      canvas.height = canvas.clientHeight * devicePixelRatio;
     });
-    const canvasesDrivenByVtkJs = vtkDrivenViewports.map((vp) => vp.canvas);
 
     if (canvasesDrivenByVtkJs.length) {
       // 1. Recalculate and resize the offscreen canvas size

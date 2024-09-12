@@ -26,7 +26,7 @@ const {
 
 const { Events } = csToolsEnums;
 
-const { addSegmentationRepresentations, addSegmentations } = segmentation;
+const { addSegmentationRepresentations, addSegmentations } = segmentation.state;
 
 const { fakeVolumeLoader, fakeMetaDataProvider, compareImages } = testUtils;
 

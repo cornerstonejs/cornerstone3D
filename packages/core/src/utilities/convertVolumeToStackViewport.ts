@@ -32,9 +32,7 @@ async function convertVolumeToStackViewport({
   const { background } = options;
   const viewportId = options.viewportId || id;
 
-  const actorEntry = volumeViewport.getDefaultActor();
-  const { uid: volumeId } = actorEntry;
-  const volume = cache.getVolume(volumeId);
+  const volume = cache.getVolume(volumeViewport.getVolumeId());
 
   if (!(volume instanceof ImageVolume)) {
     throw new Error(
@@ -64,7 +62,6 @@ async function convertVolumeToStackViewport({
 
   stackViewport.setViewReference(prevView);
 
-  // Render the image
   stackViewport.render();
 
   return stackViewport;

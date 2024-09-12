@@ -100,11 +100,12 @@ class VolumeViewport3D extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    const imageVolume = cache.getVolume(volumeActor.uid);
+    volumeId ||= this.getVolumeId();
+    const imageVolume = cache.getVolume(volumeId);
 
     if (!imageVolume) {
       throw new Error(
-        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
 
@@ -127,6 +128,33 @@ class VolumeViewport3D extends BaseVolumeViewport {
       Events.VOI_MODIFIED,
       super.getVOIModifiedEventDetail(volumeId)
     );
+  }
+
+  public resetCameraForResize = (): boolean => {
+    return this.resetCamera({
+      resetPan: true,
+      resetZoom: true,
+      resetToCenter: true,
+    });
+  };
+
+  public getSliceIndex(): number {
+    return null;
+  }
+
+  protected setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
   }
 
   resetSlabThickness(): void {

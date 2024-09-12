@@ -619,12 +619,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ) {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, viewUp } = metadata;
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const projectionPoints = data.cachedStats.projectionPoints;
 
     const pointsInsideVolume: Types.Point3[][] = [[]];
 
-    const image = this.getTargetIdImage(targetId, renderingEngine);
+    const image = this.getTargetImageData(targetId);
 
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)

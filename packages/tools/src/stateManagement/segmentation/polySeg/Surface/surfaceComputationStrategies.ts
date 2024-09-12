@@ -12,7 +12,6 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { convertLabelmapToSurface } from './convertLabelmapToSurface';
 
 export type RawSurfacesData = {
@@ -90,10 +89,6 @@ async function computeSurfaceFromLabelmapSegmentation(
     return;
   }
 
-  const isVolume = isVolumeSegmentation(
-    segmentation.representationData.Labelmap
-  );
-
   const labelmapRepresentationData = segmentation.representationData.Labelmap;
 
   const segmentIndices =
@@ -104,8 +99,7 @@ async function computeSurfaceFromLabelmapSegmentation(
       labelmapRepresentationData as
         | LabelmapSegmentationDataVolume
         | LabelmapSegmentationDataStack,
-      index,
-      isVolume
+      index
     );
 
     return surface;

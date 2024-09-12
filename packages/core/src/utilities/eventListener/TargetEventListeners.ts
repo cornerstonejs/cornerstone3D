@@ -166,7 +166,7 @@ class TargetEventListeners {
       this._eventListeners.set(type, listenersMap);
     }
 
-    const useCapture = options.capture ?? false;
+    const useCapture = options?.capture ?? false;
     const listenerPhase = useCapture
       ? EventListenerPhases.Capture
       : EventListenerPhases.Bubble;

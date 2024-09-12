@@ -3,6 +3,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,6 +14,7 @@ import {
   addDropdownToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -88,15 +90,9 @@ addButtonToToolbar({
   title: 'Convert contour segmentation to labelmap segmentation',
   onClick: async () => {
     // add the 3d representation to the 3d viewport
-    await segmentation.addSegmentationRepresentations(viewportId2, [
+    await segmentation.addLabelmapRepresentationToViewport(viewportId2, [
       {
         segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -111,6 +107,21 @@ addDropdownToToolbar({
       Number(number) as number
     );
   },
+});
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
 });
 
 /**
@@ -202,17 +213,16 @@ async function run() {
     {
       segmentationId,
       representation: {
-        // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
+        data: {},
       },
     },
   ]);
 
   // // Add the segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId1, [
+  await segmentation.addContourRepresentationToViewport(viewportId1, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 

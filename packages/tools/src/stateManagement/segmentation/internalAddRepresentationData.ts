@@ -31,12 +31,16 @@ type AddRepresentationData = {
  * @param representationData - representation data to add, it can be either
  * labelmap, contour or surface representation data.
  */
-function addRepresentationData({
+function internalAddRepresentationData({
   segmentationId,
   type,
   data,
 }: AddRepresentationData) {
   const segmentation = getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    throw new Error(`Segmentation ${segmentationId} not found`);
+  }
 
   if (segmentation.representationData[type]) {
     console.warn(
@@ -68,4 +72,4 @@ function addRepresentationData({
   }
 }
 
-export default addRepresentationData;
+export default internalAddRepresentationData;

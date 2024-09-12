@@ -341,12 +341,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     // Decide whether there's at least one point is outside image
-    const image = this.getTargetIdImage(
-      this.getTargetId(enabledElement.viewport),
-      enabledElement.renderingEngine
+    const image = this.getTargetImageData(
+      this.getTargetId(enabledElement.viewport)
     );
     const { imageData, dimensions } = image;
     this.isHandleOutsideImage = data.handles.points
@@ -1130,7 +1128,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and

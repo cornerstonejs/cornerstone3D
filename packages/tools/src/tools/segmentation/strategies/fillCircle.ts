@@ -20,10 +20,8 @@ const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
-      imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -67,12 +65,13 @@ const initializeCircle = {
       segmentationImageData.getDimensions()
     );
 
-    segmentationVoxelManager.boundsIJK = boundsIJK;
-    imageVoxelManager.isInObject = createPointInEllipse({
+    operationData.isInObject = createPointInEllipse({
       topLeftWorld,
       bottomRightWorld,
       center,
     });
+
+    operationData.isInObjectBoundsIJK = boundsIJK;
   },
 } as Composition;
 

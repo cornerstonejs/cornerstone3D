@@ -82,8 +82,6 @@ const volumeSegContourToolGroupId = 'TOOL_GROUP_VOLUME_CONTOUR';
 const viewportId1 = 'viewport1';
 const viewportId2 = 'viewport2';
 
-let segRepUID1, segRepUID2;
-
 // ============================= //
 
 cornerstoneTools.addTool(SegmentSelectTool);
@@ -203,25 +201,29 @@ async function run() {
   });
 
   // Add the segmentation representation to the viewport
-  segRepUID1 = await segmentation.addSegmentationRepresentations(viewportId1, [
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
-  segRepUID2 = await segmentation.addSegmentationRepresentations(viewportId2, [
+  await segmentation.addSegmentationRepresentations(viewportId2, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 
-  segmentation.config.setSegmentationRepresentationConfig(segRepUID1, {
-    Contour: {
+  segmentation.config.style.setViewportSpecificStyleForRepresentationType(
+    {
+      viewportId: viewportId1,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+    {
       outlineWidthActive: 5,
       outlineDashActive: '10, 10',
-    },
-  });
+    }
+  );
 
   renderingEngine.render();
 }

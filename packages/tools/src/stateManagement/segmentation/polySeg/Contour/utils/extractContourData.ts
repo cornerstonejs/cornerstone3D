@@ -15,15 +15,16 @@ export function extractContourData(
 
   for (const [cacheId, intersectionInfo] of polyDataCache) {
     // Todo; fix this
-    const surfaceId = cacheId.split('_')[1];
+    let segmentIndex;
+    const surfaceId = cacheId.split('-')[1];
+    if (!segmentIndexMap) {
+      segmentIndex = Number(surfaceId.split('_')[1]);
+    } else {
+      segmentIndex = segmentIndexMap.get(surfaceId.split('_')[1]);
+    }
 
     for (const [_, result] of intersectionInfo) {
       if (!result) {
-        continue;
-      }
-      const segmentIndex = Number(surfaceId) || segmentIndexMap?.get(surfaceId);
-
-      if (!segmentIndex) {
         continue;
       }
 

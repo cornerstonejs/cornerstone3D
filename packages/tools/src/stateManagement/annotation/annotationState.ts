@@ -8,10 +8,25 @@ import {
   triggerAnnotationAddedForFOR,
   triggerAnnotationRemoved,
 } from './helpers/state';
+import { checkAndDefineIsLockedProperty } from './annotationLocking';
+import {
+  checkAndDefineCachedStatsProperty,
+  checkAndDefineTextBoxProperty,
+} from './utilities/defineProperties';
 import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
 
 // our default annotation manager
 let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
+
+const preprocessingFn = (annotation: Annotation) => {
+  checkAndDefineIsLockedProperty(annotation);
+  checkAndDefineTextBoxProperty(annotation);
+  checkAndDefineIsVisibleProperty(annotation);
+  checkAndDefineCachedStatsProperty(annotation);
+  return annotation;
+};
+
+defaultManager.setPreprocessingFn(preprocessingFn);
 
 /**
  * It returns the default annotations manager.
@@ -156,8 +171,6 @@ function addAnnotation(
     annotation.annotationUID = csUtils.uuidv4() as string;
   }
 
-  checkAndDefineIsVisibleProperty(annotation);
-
   const manager = getAnnotationManager();
 
   // if the annotation manager selector is an element, trigger the
@@ -170,7 +183,7 @@ function addAnnotation(
     // if no element is provided, render all viewports that have the
     // same frame of reference.
     // Todo: we should do something else here for other types of annotation managers.
-    manager.addAnnotation(annotation);
+    manager.addAnnotation(annotation, undefined);
     triggerAnnotationAddedForFOR(annotation);
   }
 

@@ -193,7 +193,7 @@ async function run() {
 
   setTimeout(async () => {
     const segmentationImages =
-      await cornerstone.imageLoader.createAndCacheDerivedSegmentationImages(
+      await cornerstone.imageLoader.createAndCacheDerivedLabelmapImages(
         ctImageIds
       );
 
@@ -215,7 +215,7 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     };
 
-    await segmentation.addMultiViewportSegmentationRepresentations({
+    await segmentation.addLabelmapRepresentationToViewportMap({
       [viewportId1]: [segmentationRepresentation],
       [viewportId2]: [segmentationRepresentation],
     });

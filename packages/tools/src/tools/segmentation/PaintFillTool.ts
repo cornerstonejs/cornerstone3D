@@ -2,11 +2,18 @@ import {
   cache,
   getEnabledElement,
   utilities as csUtils,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import type {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  FloodFillResult,
+  FloodFillGetter,
+} from '../../types';
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import {
@@ -19,9 +26,7 @@ import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { FloodFillResult, FloodFillGetter } from '../../types';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -72,22 +77,19 @@ class PaintFillTool extends BaseTool {
     const { viewPlaneNormal } = camera;
 
     const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
+      activeSegmentation.getActiveSegmentation(viewport.id);
     if (!activeSegmentationRepresentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationId, type } = activeSegmentationRepresentation;
+    const { segmentationId } = activeSegmentationRepresentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked: number[] =
       segmentLocking.getLockedSegmentIndices(segmentationId);
     const { representationData } = getSegmentation(segmentationId);
-
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
 
     let dimensions: Types.Point3;
     let direction: Types.Mat3;
@@ -95,9 +97,9 @@ class PaintFillTool extends BaseTool {
     let index: Types.Point3;
     let voxelManager;
 
-    if (isVolumeSegmentation(labelmapData, viewport)) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
-        type
+        SegmentationRepresentations.Labelmap
       ] as LabelmapSegmentationDataVolume;
 
       const segmentation = cache.getVolume(volumeId);

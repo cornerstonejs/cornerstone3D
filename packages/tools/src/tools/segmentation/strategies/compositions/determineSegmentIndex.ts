@@ -57,8 +57,7 @@ export default {
 
     imageVoxelManager.forEach(callback, {
       imageData: segmentationImageData,
-      isInObject: imageVoxelManager.isInObject,
-      boundsIJK: segmentationVoxelManager.boundsIJK,
+      isInObject: operationData.isInObject,
     });
 
     if (!hasSegmentIndex && !hasPreviewIndex) {

@@ -92,8 +92,8 @@ const toolGroupId2 = 'ToolGroup_3D';
 let toolGroup1, toolGroup2;
 let renderingEngine;
 // Create the viewports
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
+const viewportId1 = 'CT_LEFT';
+const viewportId2 = 'CT_RIGHT';
 
 addButtonToToolbar({
   title: 'Convert labelmap to contour',
@@ -131,7 +131,7 @@ eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
   }
 
   const { progress } = evt.detail;
-  label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
 });
 
 /**
@@ -208,7 +208,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
     },
   ];

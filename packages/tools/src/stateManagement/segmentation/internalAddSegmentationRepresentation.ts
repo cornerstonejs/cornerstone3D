@@ -1,12 +1,7 @@
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-
-import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type {
+  RenderingConfig,
   RepresentationPublicInput,
-  RepresentationPublicInputOptions,
-  SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -14,99 +9,51 @@ import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
-import { setSegmentationRepresentationConfig } from './setSegmentationRepresentationConfig';
-import { addSegmentationRepresentationState } from './addSegmentationRepresentationState';
-function getLabelmapSegmentationRepresentationRenderingConfig() {
-  const cfun = vtkColorTransferFunction.newInstance();
-  const ofun = vtkPiecewiseFunction.newInstance();
-  ofun.addPoint(0, 0);
-  return {
-    ofun,
-    cfun,
-  };
-}
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { getColorLUT } from './getColorLUT';
 
-async function internalAddSegmentationRepresentation(
+function internalAddSegmentationRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput
-): Promise<string> {
-  const { segmentationId, options = {} as RepresentationPublicInputOptions } =
-    representationInput;
+) {
+  const { segmentationId, config } = representationInput;
 
-  const segmentationRepresentationUID =
-    representationInput.options?.segmentationRepresentationUID ||
-    utilities.uuidv4();
-
-  const colorLUTIndexToUse = getColorLUTIndex(options);
-
-  const { type } = representationInput;
-
-  let renderingConfig;
-  if (type === SegmentationRepresentations.Labelmap) {
-    renderingConfig = getLabelmapSegmentationRepresentationRenderingConfig();
-  } else {
-    renderingConfig = {};
-  }
-
-  const representation: SegmentationRepresentation = {
-    segmentationId,
-    segmentationRepresentationUID,
-    type: representationInput.type,
-    colorLUTIndex: colorLUTIndexToUse,
-    rendering: renderingConfig,
-    polySeg: options.polySeg,
-    config: {
-      allSegments: {},
-      perSegment: {},
-    },
+  // need to be able to override from the outside
+  const renderingConfig: RenderingConfig = {
+    colorLUTIndex: getColorLUTIndex(config),
   };
 
-  addSegmentationRepresentationState(viewportId, representation);
-  const initialConfig = representationInput.config;
-  // Update the toolGroup specific configuration
-  if (initialConfig) {
-    // const globalConfig = SegmentationState.getGlobalConfig();
-    // if (
-    //   initialConfig.renderInactiveRepresentations !==
-    //   globalConfig.renderInactiveRepresentations
-    // ) {
-    //   SegmentationState.setGlobalConfig({
-    //     ...globalConfig,
-    //     renderInactiveRepresentations:
-    //       initialConfig.renderInactiveRepresentations,
-    //   });
-    // }
-
-    setSegmentationRepresentationConfig(
-      segmentationRepresentationUID,
-      initialConfig
-    );
-  }
+  defaultSegmentationStateManager.addSegmentationRepresentation(
+    viewportId,
+    segmentationId,
+    representationInput.type,
+    renderingConfig
+  );
 
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);
   }
 
   triggerSegmentationModified(segmentationId);
-
-  return segmentationRepresentationUID;
 }
 
-function getColorLUTIndex(options = {} as RepresentationPublicInputOptions) {
-  const colorLUTOrIndexInput = options.colorLUTOrIndex;
-  let colorLUTIndexToUse;
+function getColorLUTIndex(config: RepresentationPublicInput['config']) {
+  const colorLUT = config?.colorLUT;
 
-  if (typeof colorLUTOrIndexInput === 'number') {
-    colorLUTIndexToUse = colorLUTOrIndexInput;
-  } else {
-    const nextIndex = getNextColorLUTIndex();
-    const colorLUTToAdd = Array.isArray(colorLUTOrIndexInput)
-      ? colorLUTOrIndexInput
-      : CORNERSTONE_COLOR_LUT;
-    addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
-    colorLUTIndexToUse = nextIndex;
+  const nextIndex = getNextColorLUTIndex();
+  const colorLUTToAdd = Array.isArray(colorLUT)
+    ? colorLUT
+    : CORNERSTONE_COLOR_LUT;
+
+  // in any case add the colorLUT to the state
+  addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+
+  const colorLUTIndex = nextIndex;
+
+  if (!getColorLUT(colorLUTIndex)) {
+    throw new Error(`Color LUT with index ${colorLUTIndex} not found`);
   }
-  return colorLUTIndexToUse;
+  return colorLUTIndex;
 }
 
 export { internalAddSegmentationRepresentation };

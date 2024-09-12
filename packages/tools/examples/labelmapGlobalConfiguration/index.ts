@@ -56,42 +56,32 @@ element.style.height = size;
 content.appendChild(element);
 // ============================= //
 
-function setConfigValue(property, value) {
-  const config = segmentation.config.getGlobalConfig();
-
-  config.representations.LABELMAP[property] = value;
-  segmentation.config.setGlobalConfig(config);
-
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  renderingEngine.renderViewports([viewportId]);
-}
-
 addToggleButtonToToolbar({
   title: 'toggle render inactive segmentations',
   onClick: (toggle) => {
-    const config = segmentation.config.getGlobalConfig();
-
-    config.renderInactiveRepresentations = toggle;
-    segmentation.config.setGlobalConfig(config);
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    renderingEngine.renderViewports([viewportId]);
+    segmentation.config.style.setViewportRenderInactiveSegmentations(
+      viewportId,
+      toggle
+    );
   },
   defaultToggle: true,
 });
+
 addToggleButtonToToolbar({
   title: 'toggle outline rendering',
   onClick: (toggle) => {
-    setConfigValue('renderOutline', toggle);
+    segmentation.config.style.setGlobalLabelmapStyle({
+      renderOutline: toggle,
+    });
   },
   defaultToggle: true,
 });
 addToggleButtonToToolbar({
   title: 'toggle fill rendering',
   onClick: (toggle) => {
-    setConfigValue('renderFill', toggle);
+    segmentation.config.style.setGlobalLabelmapStyle({
+      renderFill: toggle,
+    });
   },
   defaultToggle: true,
 });
@@ -101,15 +91,20 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthActive', Number(value));
+    segmentation.config.style.setGlobalLabelmapStyle({
+      outlineWidthActive: Number(value),
+    });
   },
 });
+
 addSliderToToolbar({
   title: 'outline alpha active',
   range: [0, 100],
   defaultValue: 100,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineOpacity', Number(value) / 100);
+    segmentation.config.style.setGlobalLabelmapStyle({
+      outlineOpacity: Number(value) / 100,
+    });
   },
 });
 addSliderToToolbar({
@@ -117,7 +112,9 @@ addSliderToToolbar({
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthInactive', Number(value));
+    segmentation.config.style.setGlobalLabelmapStyle({
+      outlineWidthInactive: Number(value),
+    });
   },
 });
 addSliderToToolbar({
@@ -127,7 +124,9 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     const mappedValue = Number(value) / 100.0;
 
-    setConfigValue('fillAlpha', mappedValue);
+    segmentation.config.style.setGlobalLabelmapStyle({
+      fillAlpha: mappedValue,
+    });
   },
 });
 addSliderToToolbar({
@@ -136,7 +135,9 @@ addSliderToToolbar({
   defaultValue: 50,
   onSelectedValueChange: (value) => {
     const mappedValue = Number(value) / 100.0;
-    setConfigValue('fillAlphaInactive', mappedValue);
+    segmentation.config.style.setGlobalLabelmapStyle({
+      fillAlphaInactive: mappedValue,
+    });
   },
 });
 
@@ -145,11 +146,11 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId1,
     });
   const segmentationVolume2 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId2,
     });
 

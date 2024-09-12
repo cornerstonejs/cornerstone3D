@@ -226,11 +226,6 @@ describe('Segmentation Tools:', () => {
       newSegRenderedCallback
     );
 
-    eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-      const { segmentationId } = evt.detail;
-      expect(segmentationId.includes(volumeId)).toBe(true);
-    });
-
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         setVolumesForViewports(

@@ -42,14 +42,10 @@ import type BoundsIJK from './BoundsIJK';
 import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
 import type {
-  RepresentationConfig,
-  RepresentationsConfig,
   RepresentationData,
   RepresentationsData,
-  GlobalConfig,
   Segmentation,
   SegmentationState,
-  RepresentationPublicInput,
 } from './SegmentationStateTypes';
 import type { ISculptToolShape } from './ISculptToolShape';
 import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
@@ -138,8 +134,6 @@ export type {
   SegmentationState,
   RepresentationData,
   RepresentationsData,
-  RepresentationConfig,
-  RepresentationPublicInput,
   LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,
@@ -178,5 +172,4 @@ export type {
   // polySeg
   PolySegConversionOptions,
   IBaseTool,
-  GlobalConfig,
 };

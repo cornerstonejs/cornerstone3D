@@ -12,7 +12,6 @@
     "docusaurus": "docusaurus",
     "docusaurus:build": "docusaurus build",
     "docs": "cross-env NODE_OPTIONS=--max_old_space_size=16384 docusaurus start --port 3333",
-    "dev": "yarn run docs",
     "dev:docs": "yarn run docs:ci && yarn run start",
     "docs:ci": "cross-env NODE_OPTIONS=--max_old_space_size=16384 && yarn run prep && cd docs && yarn run build:docs",
     "docs:ci-no-tests": "cross-env NODE_OPTIONS=--max_old_space_size=16384 && yarn run prep-no-tests && yarn run build:docs",

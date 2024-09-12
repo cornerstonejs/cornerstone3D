@@ -14,7 +14,6 @@ export default {
       segmentationImageData,
       segmentationVoxelManager,
       previewVoxelManager: previewVoxelManager,
-      imageVoxelManager,
       brushStrategy,
       centerIJK,
     } = operationData;
@@ -32,11 +31,10 @@ export default {
         }
       : (data) => setValue(operationData, data);
 
-    imageVoxelManager.forEach(callback, {
+    segmentationVoxelManager.forEach(callback, {
       imageData: segmentationImageData,
-      isInObject:
-        imageVoxelManager?.isInObject || segmentationVoxelManager.isInObject,
-      boundsIJK: segmentationVoxelManager.boundsIJK,
+      isInObject: operationData.isInObject,
+      boundsIJK: operationData.isInObjectBoundsIJK,
     });
 
     previewVoxelManager.addPoint(centerIJK);

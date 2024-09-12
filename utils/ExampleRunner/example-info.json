@@ -292,7 +292,7 @@
       },
       "wsi": {
         "name": "Whole Slide Imaging",
-        "description": "Dispaly WSI Series"
+        "description": "Display WSI Series"
       },
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
@@ -338,7 +338,7 @@
       },
       "labelmapSegmentationDynamicThreshold": {
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
-        "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
+        "description": "Demonstrates how to use dynamic threshold with preview to modify the segmentation data"
       },
       "labelmapSegmentColorChange": {
         "name": "Labelmap Segment Color Change",
@@ -433,10 +433,6 @@
       "stackToVolumeWithAnnotations": {
         "name": "StackViewport to and from VolumeViewport ",
         "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
-      },
-      "stackToVolumeWithSegmentations": {
-        "name": "Stack Segmentation to and from Volume Segmentation ",
-        "description": "Demonstrates how you can convert stack to volume segmentation and vice versa while the data is preserved and memory is optimized"
       },
       "volumeViewportSynchronization": {
         "name": "Volume Viewport Synchronization",

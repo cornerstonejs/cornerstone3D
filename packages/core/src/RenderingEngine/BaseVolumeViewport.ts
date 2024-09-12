@@ -32,7 +32,7 @@ import type {
   ReferenceCompatibleOptions,
   ViewReference,
   IVolumeViewport,
-  IBaseVolumeViewport,
+  ICamera,
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { ViewportInput } from '../types/IViewport';
@@ -54,12 +54,13 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { actorIsA } from '../utilities/actorCheck';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import isEqual, { isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
+import uuidv4 from '../utilities/uuidv4';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -397,7 +398,7 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private _getOrCreateColorTransferFunction(
-    volumeId: string
+    volumeId?: string
   ): vtkColorTransferFunction {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
@@ -810,9 +811,14 @@ abstract class BaseVolumeViewport extends Viewport {
       });
     }
 
+    // invert should be set first, since if we set colormap then we invert
+    // we basically are doing a reset which is not what we want
+    if (invert !== undefined && this.viewportProperties.invert !== invert) {
+      this.setInvert(invert, volumeId, suppressEvents);
+    }
+
     // Note: colormap should always be done first, since we can then
     // modify the voiRange
-
     if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
     }
@@ -830,10 +836,6 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (VOILUTFunction !== undefined) {
       this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
-    }
-
-    if (invert !== undefined && this.viewportProperties.invert !== invert) {
-      this.setInvert(invert, volumeId, suppressEvents);
     }
 
     if (preset !== undefined) {
@@ -976,15 +978,19 @@ abstract class BaseVolumeViewport extends Viewport {
       slabThickness,
       preset,
     } = this.viewportProperties;
+    const volume = cache.getVolume(this.getVolumeId());
+    if (!volume) {
+      return null;
+    }
 
     const voiRanges = this.getActors()
       .map((actorEntry) => {
         const volumeActor = actorEntry.actor as vtkVolume;
-        const volumeId = actorEntry.uid;
-        const volume = cache.getVolume(volumeId);
-        if (!volume) {
+
+        if (!actorIsA(actorEntry, 'vtkVolume')) {
           return null;
         }
+
         const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
         const [lower, upper] =
           this.viewportProperties?.VOILUTFunction === 'SIGMOID'
@@ -1035,7 +1041,8 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     const { volumeActor } = applicableVolumeActorInfo;
-    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    const cfun = this._getOrCreateColorTransferFunction(volumeId);
+    // @ts-expect-error vtkColorTransferFunction is not typed
     const { nodes } = cfun.getState();
     const RGBPoints = nodes.reduce((acc, node) => {
       acc.push(node.x, node.r, node.g, node.b);
@@ -1096,7 +1103,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
-      const uid = actorUID || volumeId;
+      const uid = actorUID || uuidv4();
       volumeActors.push({
         uid,
         actor,
@@ -1168,7 +1175,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // same name, and we don't allow that) AND We cannot use only any uid, since
       // we rely on the volume in the cache for mapper. So we prefer actorUID if
       // it is defined, otherwise we use volumeId for the actor name.
-      const uid = actorUID || volumeId;
+      const uid = actorUID || uuidv4();
       volumeActors.push({
         uid,
         actor,
@@ -1245,29 +1252,31 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private _getApplicableVolumeActor(volumeId?: string) {
-    if (volumeId !== undefined && !this.getActor(volumeId)) {
-      return;
-    }
-
     const actorEntries = this.getActors();
 
-    if (!actorEntries.length) {
+    if (!actorEntries?.length) {
       return;
     }
 
-    let volumeActor;
-
     if (volumeId) {
-      volumeActor = this.getActor(volumeId).actor as vtkVolume;
+      const actorEntry = actorEntries.find(
+        (actor) => actor.referencedId === volumeId
+      );
+
+      return {
+        volumeActor: actorEntry.actor as vtkVolume,
+        volumeId,
+        actorUID: actorEntry.uid,
+      };
     }
 
-    // // set it for the first volume (if there are more than one - fusion)
-    if (!volumeActor) {
-      volumeActor = actorEntries[0].actor as vtkVolume;
-      volumeId = actorEntries[0].uid;
-    }
+    const defaultActorEntry = actorEntries[0];
 
-    return { volumeActor, volumeId };
+    return {
+      volumeActor: defaultActorEntry.actor as vtkVolume,
+      volumeId: defaultActorEntry.referencedId,
+      actorUID: defaultActorEntry.uid,
+    };
   }
 
   private async _isValidVolumeInputArray(
@@ -1373,6 +1382,22 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
+   * Checks if the viewport has a volume with the given volumeURI.
+   *
+   * @param volumeURI - The URI of the volume to check for.
+   * @returns A boolean indicating whether the viewport contains a volume with the given URI.
+   */
+  public hasVolumeURI(volumeURI: string): boolean {
+    // loop through this.volumeIds and check if any volumeId contains the volumeURI
+    for (const volumeId of this.volumeIds) {
+      if (volumeId.includes(volumeURI)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
@@ -1389,10 +1414,11 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    const { uid: defaultActorUID } = defaultActor;
-    volumeId = volumeId ?? defaultActorUID;
+    volumeId ||= this.getVolumeId();
 
-    const actorEntry = this.getActor(volumeId);
+    const actorEntry = this.getActors()?.find(
+      (actor) => actor.referencedId === volumeId
+    );
 
     if (!actorIsA(actorEntry, 'vtkVolume')) {
       return;
@@ -1420,6 +1446,24 @@ abstract class BaseVolumeViewport extends Viewport {
       hasPixelSpacing: true,
       voxelManager: volume?.voxelManager,
     };
+  }
+
+  protected setCameraClippingRange() {
+    throw new Error('Method not implemented.');
+  }
+
+  public getSliceIndex(): number {
+    throw new Error('Method not implemented.');
+  }
+
+  public setCamera(
+    cameraInterface: ICamera,
+    storeAsInitialCamera?: boolean
+  ): void {
+    super.setCamera(cameraInterface, storeAsInitialCamera);
+    // This is very important to set the clipping range for the camera
+    // for volume viewport, since we are doing slab rendering
+    this.setCameraClippingRange();
   }
 
   /**
@@ -1584,8 +1628,8 @@ abstract class BaseVolumeViewport extends Viewport {
       actorIsA(actorEntry, 'vtkVolume')
     );
 
-    return volumeActors.some(({ uid }) => {
-      const volume = cache.getVolume(uid);
+    return volumeActors.some(({ uid, referencedId }) => {
+      const volume = cache.getVolume(referencedId || uid);
 
       if (!volume?.imageIds) {
         return false;
@@ -1650,10 +1694,10 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    const { actor, uid } = actorEntry;
+    const { actor } = actorEntry;
     const imageData = actor.getMapper().getInputData();
 
-    const volume = cache.getVolume(uid);
+    const volume = cache.getVolume(this.getVolumeId());
     const index = transformWorldToIndex(imageData, point);
 
     return volume.voxelManager.getAtIJKPoint(index) as number;
@@ -1697,19 +1741,23 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     if (!specifier?.volumeId) {
       // find the first image actor of instance type vtkVolume
-      return actorEntries.find(
+      const found = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      )?.uid;
+      );
+
+      return found?.referencedId || found?.uid;
     }
 
     // See if this volumeId can be found in one of the actors for this
     // viewport.  This check will cause undefined to be returned when the
     // volumeId isn't currently shown in this viewport.
-    return actorEntries.find(
+    const found = actorEntries.find(
       (actorEntry) =>
         actorEntry.actor.getClassName() === 'vtkVolume' &&
-        actorEntry.uid === specifier?.volumeId
-    )?.uid;
+        actorEntry.referencedId === specifier?.volumeId
+    );
+
+    return found?.referencedId || found?.uid;
   }
 
   /**
@@ -1730,7 +1778,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // find the first image actor of instance type vtkVolume
       volumeId = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      )?.uid;
+      )?.referencedId;
     }
 
     const currentIndex = this.getSliceIndex();

@@ -24,6 +24,7 @@ import {
   createAndCacheLocalImage,
   createAndCacheDerivedImages,
 } from './imageLoader';
+import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -32,7 +33,9 @@ interface VolumeLoaderOptions {
 
 interface DerivedVolumeOptions {
   volumeId: string;
-  targetBufferType?: PixelDataTypedArrayString;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+  };
 }
 
 export interface LocalVolumeOptions {
@@ -46,7 +49,9 @@ export interface LocalVolumeOptions {
   referencedImageIds?: string[];
   referencedVolumeId?: string;
   preventCache?: boolean;
-  targetBufferType?: PixelDataTypedArrayString;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+  };
 }
 
 /**
@@ -223,7 +228,7 @@ export function createAndCacheDerivedVolume(
   // put the imageIds into the cache synchronously since they are just empty
   // images
   const derivedImages = createAndCacheDerivedImages(referencedImageIds, {
-    targetBufferType: options.targetBufferType,
+    targetBuffer: options.targetBuffer,
   });
 
   const dataType = derivedImages[0].dataType;
@@ -270,6 +275,30 @@ export async function createAndCacheVolumeFromImages(
     return cachedVolume;
   }
 
+  // check if imageIds are already in the cache
+  const imageIdsToLoad = imageIds.filter((imageId) => !cache.getImage(imageId));
+
+  if (imageIdsToLoad.length === 0) {
+    const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
+
+    const derivedVolume = new ImageVolume({
+      volumeId,
+      dataType: volumeProps.dataType,
+      metadata: structuredClone(volumeProps.metadata),
+      dimensions: volumeProps.dimensions,
+      spacing: volumeProps.spacing,
+      origin: volumeProps.origin,
+      direction: volumeProps.direction,
+      referencedVolumeId: volumeProps.referencedVolumeId,
+      imageIds: volumeProps.imageIds,
+      referencedImageIds: volumeProps.referencedImageIds,
+    }) as IImageVolume;
+
+    cache.putVolumeSync(volumeId, derivedVolume);
+
+    return derivedVolume;
+  }
+
   const volume = (await createAndCacheVolume(volumeId, {
     imageIds,
   })) as IImageVolume;
@@ -298,7 +327,7 @@ export function createLocalVolume(
     origin,
     direction,
     scalarData,
-    targetBufferType,
+    targetBuffer,
     preventCache = false,
   } = options;
 
@@ -312,7 +341,7 @@ export function createLocalVolume(
 
   const dataType = scalarData
     ? (scalarData.constructor.name as PixelDataTypedArrayString)
-    : targetBufferType;
+    : targetBuffer?.type;
 
   const totalNumberOfVoxels = sliceLength * dimensions[2];
   let byteLength;
@@ -356,7 +385,7 @@ export function createLocalVolume(
       spacing: [spacing[0], spacing[1]],
       origin,
       direction,
-      targetBufferType: dataType,
+      targetBuffer: { type: dataType },
     });
 
     derivedImages.push(derivedImage);
@@ -430,7 +459,7 @@ export function getUnknownVolumeLoaderSchema(): string {
 }
 
 /**
- * Creates and caches a derived segmentation volume based on a referenced volume.
+ * Creates and caches a derived labelmap volume based on a referenced volume.
  * This is basically a utility method since for the segmentations we have to specify
  * Uint8Array as the targetBuffer type for now until we support other types.
  *
@@ -438,13 +467,13 @@ export function getUnknownVolumeLoaderSchema(): string {
  * @param options - The options for creating the derived volume.
  * @returns A promise that resolves to the created derived segmentation volume.
  */
-export function createAndCacheDerivedSegmentationVolume(
+export function createAndCacheDerivedLabelmapVolume(
   referencedVolumeId: string,
   options = {} as DerivedVolumeOptions
 ): IImageVolume {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
-    targetBufferType: 'Uint8Array',
+    targetBuffer: { type: 'Uint8Array' },
   });
 }
 
@@ -456,7 +485,7 @@ export function createAndCacheDerivedSegmentationVolume(
  * @param preventCache - Whether to prevent caching the volume.
  * @returns A promise that resolves to the created image volume.
  */
-export function createLocalSegmentationVolume(
+export function createLocalLabelmapVolume(
   options: LocalVolumeOptions,
   volumeId: string,
   preventCache = false

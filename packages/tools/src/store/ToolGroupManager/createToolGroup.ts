@@ -10,15 +10,14 @@ import type { IToolGroup } from '../../types';
  * @param toolGroupId - The unique ID of the tool group.
  * @returns A reference to the tool group that was created.
  */
-function createToolGroup(toolGroupId: string): IToolGroup | undefined {
+function createToolGroup(toolGroupId: string): IToolGroup {
   // Exit early if ID conflict
-  const toolGroupWithIdExists = state.toolGroups.some(
+  const toolGroupWithSameId = state.toolGroups.find(
     (tg) => tg.id === toolGroupId
   );
-
-  if (toolGroupWithIdExists) {
+  if (toolGroupWithSameId) {
     console.warn(`'${toolGroupId}' already exists.`);
-    return;
+    return toolGroupWithSameId;
   }
 
   const toolGroup = new ToolGroup(toolGroupId);

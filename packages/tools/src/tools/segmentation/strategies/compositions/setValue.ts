@@ -20,7 +20,6 @@ export default {
       previewVoxelManager,
       previewSegmentIndex,
       segmentationVoxelManager,
-      segmentationId,
     } = operationData;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);

@@ -50,6 +50,22 @@
       "import": "./dist/esm/tools/*.js",
       "types": "./dist/esm/tools/*.d.ts"
     },
+    "./segmentation": {
+      "import": "./dist/esm/stateManagement/segmentation/index.js",
+      "types": "./dist/esm/stateManagement/segmentation/index.d.ts"
+    },
+    "./segmentation/*": {
+      "import": "./dist/esm/stateManagement/segmentation/*.js",
+      "types": "./dist/esm/stateManagement/segmentation/*.d.ts"
+    },
+    "./annotation": {
+      "import": "./dist/esm/stateManagement/annotation/index.js",
+      "types": "./dist/esm/stateManagement/annotation/index.d.ts"
+    },
+    "./annotation/*": {
+      "import": "./dist/esm/stateManagement/annotation/*.js",
+      "types": "./dist/esm/stateManagement/annotation/*.d.ts"
+    },
     "./synchronizers": {
       "import": "./dist/esm/synchronizers/index.js",
       "types": "./dist/esm/synchronizers/index.d.ts"

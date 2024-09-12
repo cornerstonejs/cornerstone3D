@@ -87,10 +87,10 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFinal',
   },
-  {
-    // This goes back to basic retrieve to recover from retrieving against
-    // servers returning errors for any of the above requests.
-    id: 'errorRetrieve',
-  },
+  // {
+  //   // This goes back to basic retrieve to recover from retrieving against
+  //   // servers returning errors for any of the above requests.
+  //   id: 'errorRetrieve',
+  // },
 ];
 export default interleavedRetrieveConfiguration;

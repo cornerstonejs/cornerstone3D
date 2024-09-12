@@ -225,7 +225,7 @@ function _createSegFromImages(images, isMultiframe, options) {
 }
 
 /**
- * generateToolState - Given a set of cornrstoneTools imageIds and a Segmentation buffer,
+ * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
  *
  * @param  {string[]} imageIds - An array of the imageIds.
@@ -1284,7 +1284,7 @@ function unpackPixelData(multiframe, options) {
     }
 
     if (data === undefined) {
-        log.error("This segmentation pixeldata is undefined.");
+        log.error("This segmentation pixelData is undefined.");
     }
 
     if (segType === "BINARY") {

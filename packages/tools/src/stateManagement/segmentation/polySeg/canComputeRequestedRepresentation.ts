@@ -1,7 +1,6 @@
 import { SegmentationRepresentations } from '../../../enums';
 import type { RepresentationsData } from '../../../types';
 import { getSegmentation } from '../getSegmentation';
-import { getSegmentationRepresentation } from '../getSegmentationRepresentation';
 import { validate as validateLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap';
 
 // Map of conversion paths between source and target representations
@@ -38,31 +37,21 @@ const conversionPaths = new Map<
  * representation to compute the requested representation. You can checkout the polySeg
  * examples to see how this is used polyDataActorManipulationTools and others
  *
- * @param segmentationRepresentationUID - The UID of the desired segmentation representation.
- * @returns true if the requested representation can be computed, otherwise false.
+ * @param segmentationId - The id of the segmentation
+ * @param representationType - The type of the representation to compute
+ * @returns true if the representation can be computed, false otherwise
  */
 function canComputeRequestedRepresentation(
-  segmentationRepresentationUID: string
+  segmentationId: string,
+  type: SegmentationRepresentations
 ): boolean {
-  const segmentationRepresentation = getSegmentationRepresentation(
-    segmentationRepresentationUID
-  );
-
-  const { type: representationType, polySeg } = segmentationRepresentation;
-
-  if (!polySeg || !polySeg.enabled) {
-    return false;
-  }
-
-  const { representationData } = getSegmentation(
-    segmentationRepresentation.segmentationId
-  );
+  const { representationData } = getSegmentation(segmentationId);
 
   const existingRepresentationTypes =
     getExistingRepresentationTypes(representationData);
 
   return existingRepresentationTypes.some((existingRepresentationType) =>
-    canConvertFromTo(existingRepresentationType, representationType)
+    canConvertFromTo(existingRepresentationType, type)
   );
 }
 

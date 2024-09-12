@@ -26,7 +26,7 @@ const DEFAULT_RLE_SIZE = 5 * 1024;
  */
 export default class VoxelManager<T> {
   public modifiedSlices = new Set<number>();
-  public boundsIJK = [
+  private boundsIJK = [
     [Infinity, -Infinity],
     [Infinity, -Infinity],
     [Infinity, -Infinity],
@@ -163,6 +163,10 @@ export default class VoxelManager<T> {
     return ijk[0] + ijk[1] * this.width + ijk[2] * this.frameSize;
   }
 
+  public getDefaultBounds() {
+    return this.dimensions.map((dimension) => [0, dimension - 1]) as BoundsIJK;
+  }
+
   /**
    * Gets the bounds for the modified set of values.
    */
@@ -170,7 +174,7 @@ export default class VoxelManager<T> {
     if (this.boundsIJK[0][0] < this.dimensions[0]) {
       return this.boundsIJK;
     }
-    return this.dimensions.map((dimension) => [0, dimension - 1]) as BoundsIJK;
+    return this.getDefaultBounds();
   }
 
   /**
@@ -193,25 +197,25 @@ export default class VoxelManager<T> {
       pointIJK: Point3;
       pointLPS: Point3;
     }) => void,
-    options?: {
+    options: {
       boundsIJK?: BoundsIJK;
       isInObject?: (pointLPS, pointIJK) => boolean;
       returnPoints?: boolean;
       imageData?: vtkImageData | CPUImageData;
-    }
+    } = {}
   ) => {
-    const boundsIJK = options.boundsIJK || this.getBoundsIJK();
+    const isInObjectBoundsIJK = options.boundsIJK || this.getBoundsIJK();
     const isInObject = options.isInObject || this.isInObject || (() => true);
     const returnPoints = options.returnPoints || false;
 
     const useLPSTransform = options.imageData;
 
-    const iMin = boundsIJK[0][0];
-    const iMax = boundsIJK[0][1];
-    const jMin = boundsIJK[1][0];
-    const jMax = boundsIJK[1][1];
-    const kMin = boundsIJK[2][0];
-    const kMax = boundsIJK[2][1];
+    const iMin = Math.min(isInObjectBoundsIJK[0][0], isInObjectBoundsIJK[0][1]);
+    const iMax = Math.max(isInObjectBoundsIJK[0][0], isInObjectBoundsIJK[0][1]);
+    const jMin = Math.min(isInObjectBoundsIJK[1][0], isInObjectBoundsIJK[1][1]);
+    const jMax = Math.max(isInObjectBoundsIJK[1][0], isInObjectBoundsIJK[1][1]);
+    const kMin = Math.min(isInObjectBoundsIJK[2][0], isInObjectBoundsIJK[2][1]);
+    const kMax = Math.max(isInObjectBoundsIJK[2][0], isInObjectBoundsIJK[2][1]);
 
     const pointsInShape = [];
 
@@ -376,6 +380,10 @@ export default class VoxelManager<T> {
     }
 
     throw new Error('No scalar data available');
+  }
+
+  public setScalarData(newScalarData: PixelDataTypedArray) {
+    this.scalarData = newScalarData;
   }
 
   /**

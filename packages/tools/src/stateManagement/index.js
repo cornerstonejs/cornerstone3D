@@ -20,12 +20,6 @@ import {
   invalidateAnnotation,
 } from './annotation/annotationState';
 
-import {
-  addSegmentationRepresentations,
-  addMultiViewportSegmentationRepresentations,
-} from './segmentation/addSegmentationRepresentations';
-import removeSegmentationRepresentations from './segmentation/removeSegmentationRepresentations';
-
 export {
   // annotations
   FrameOfReferenceSpecificAnnotationManager,
@@ -45,8 +39,4 @@ export {
   getAnnotationManager,
   resetAnnotationManager,
   invalidateAnnotation,
-  // segmentations
-  addSegmentationRepresentations,
-  addMultiViewportSegmentationRepresentations,
-  removeSegmentationRepresentations,
 };

@@ -11,7 +11,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { computeVolumeSegmentationFromStack } from '../../SegmentationStateManager';
+import { computeVolumeLabelmapFromStack } from '../../helpers/computeVolumeLabelmapFromStack';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
@@ -33,19 +33,18 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  */
 export async function convertLabelmapToSurface(
   labelmapRepresentationData: LabelmapSegmentationData,
-  segmentIndex: number,
-  isVolume = true
+  segmentIndex: number
 ): Promise<Types.SurfaceData> {
   let volumeId;
 
-  if (isVolume) {
+  if ((labelmapRepresentationData as LabelmapSegmentationDataVolume).volumeId) {
     volumeId = (labelmapRepresentationData as LabelmapSegmentationDataVolume)
       .volumeId;
   } else {
     const { imageIds } =
       labelmapRepresentationData as LabelmapSegmentationDataStack;
 
-    ({ volumeId } = await computeVolumeSegmentationFromStack({
+    ({ volumeId } = await computeVolumeLabelmapFromStack({
       imageIds,
     }));
   }

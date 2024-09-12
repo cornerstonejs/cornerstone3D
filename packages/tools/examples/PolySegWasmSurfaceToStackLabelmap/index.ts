@@ -4,6 +4,7 @@ import {
   Enums,
   CONSTANTS,
   geometryLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,6 +14,7 @@ import {
   createInfoSection,
   downloadSurfacesData,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -103,6 +105,21 @@ addButtonToToolbar({
       },
     ]);
   },
+});
+
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
 });
 
 /**

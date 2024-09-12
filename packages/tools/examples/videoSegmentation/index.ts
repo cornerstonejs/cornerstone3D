@@ -99,7 +99,6 @@ const optionsValues = [...brushValues];
 let viewport;
 
 const segmentationId = 'VIDEO_SEGMENTATION';
-const segmentationRepresentationUIDs = [];
 
 // ============================= //
 addDropdownToToolbar({
@@ -251,14 +250,12 @@ async function run() {
     },
   ]);
   // Add the segmentation representation to the viewport
-  const [uid] = await segmentation.addSegmentationRepresentations(viewport.id, [
+  await segmentation.addSegmentationRepresentations(viewport.id, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-
-  segmentationRepresentationUIDs.push(uid);
 }
 
 run();

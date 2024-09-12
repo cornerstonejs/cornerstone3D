@@ -52,8 +52,8 @@ export default async function createLabelmapVolumeForViewport(input: {
     await volumeLoader.createLocalVolume(segmentationId, properties);
   } else {
     // create a labelmap from a reference volume
-    const { uid: volumeId } = viewport.getDefaultActor();
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    const volumeId = viewport.getVolumeId();
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId,
     });
   }

@@ -330,7 +330,6 @@ function exportSegmentation() {
     ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
-    debugger;
     if (labelmap.imageIdReferenceMap) {
         //
         labelmap.imageIdReferenceMap.forEach(
@@ -819,7 +818,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0]);
+    csToolsSegmentation.removeSegmentationRepresentation(viewportIds[0]);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();
@@ -853,7 +852,7 @@ function getSegmentationIds(): string[] {
 async function addSegmentationsToState(segmentationId: string) {
     //
     const derivedImages =
-        imageLoader.createAndCacheDerivedSegmentationImages(imageIds);
+        imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
     // Add the segmentations to state
     csToolsSegmentation.addSegmentations([

@@ -1,10 +1,11 @@
 import { eventTarget } from '@cornerstonejs/core';
 import type { SegmentationRepresentations } from '../../../enums';
 import { Events } from '../../../enums';
-import addRepresentationData from '../addRepresentationData';
+import addRepresentationData from '../internalAddRepresentationData';
 import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 import debounce from '../../../utilities/debounce';
 import { registerPolySegWorker } from './registerPolySegWorker';
+import { defaultSegmentationStateManager } from '../SegmentationStateManager';
 
 const computedRepresentations = new Map<
   string,
@@ -23,22 +24,24 @@ const computedRepresentations = new Map<
  */
 async function computeAndAddRepresentation<T>(
   segmentationId: string,
-  representationType: SegmentationRepresentations,
+  type: SegmentationRepresentations,
   computeFunction: () => Promise<T>,
-  updateFunction?: () => void
+  updateFunction?: () => void,
+  onComputationComplete?: () => void
 ): Promise<T> {
   // register the worker if it hasn't been registered yet
   registerPolySegWorker();
 
   // Compute the specific representation data
   const data = await computeFunction();
-
   // Add the computed data to the system
   addRepresentationData({
     segmentationId,
-    type: representationType,
+    type,
     data,
   });
+
+  onComputationComplete?.();
 
   // Update internal structures and possibly UI components
   if (!computedRepresentations.has(segmentationId)) {
@@ -46,8 +49,8 @@ async function computeAndAddRepresentation<T>(
   }
 
   const representations = computedRepresentations.get(segmentationId);
-  if (!representations.includes(representationType)) {
-    representations.push(representationType);
+  if (!representations.includes(type)) {
+    representations.push(type);
   }
 
   // Subscribe to any changes in the segmentation data for real-time updates

@@ -8,7 +8,8 @@ import { clipAndCacheSurfacesForViewport } from '../../helpers/clipAndCacheSurfa
 import { extractContourData } from './utils/extractContourData';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
 import { getSegmentation } from '../../getSegmentation';
-import { setSegmentationRepresentationConfig } from '../../setSegmentationRepresentationConfig';
+import { segmentationStyle } from '../../SegmentationStyle';
+import { SegmentationRepresentations } from '../../../../enums';
 
 // the map between segment index and the intersection points and lines
 export type RawContourData = Map<number, SurfaceClipResult[]>;
@@ -61,7 +62,7 @@ export async function computeContourData(
     );
   }
 
-  const { viewport, segmentationRepresentationUID } = options;
+  const { viewport } = options;
 
   // create the new annotations and add them to the segmentation state representation
   // data for the contour representation
@@ -71,11 +72,12 @@ export async function computeContourData(
     segmentationId
   );
 
-  setSegmentationRepresentationConfig(segmentationRepresentationUID, {
-    Contour: {
+  segmentationStyle.setSegmentationSpecificStyle(
+    { segmentationId, type: SegmentationRepresentations.Contour },
+    {
       fillAlpha: 0,
-    },
-  });
+    }
+  );
 
   return {
     annotationUIDsMap,
@@ -106,7 +108,7 @@ async function computeContourFromLabelmapSegmentation(
     return;
   }
 
-  const { viewport, segmentationRepresentationUID } = options;
+  const { viewport } = options;
 
   const pointsAndPolys = results.map((surface) => {
     return {
@@ -120,7 +122,7 @@ async function computeContourFromLabelmapSegmentation(
   const polyDataCache = await clipAndCacheSurfacesForViewport(
     pointsAndPolys,
     viewport as Types.IVolumeViewport,
-    segmentationRepresentationUID
+    segmentationId
   );
 
   const rawResults = extractContourData(polyDataCache);
@@ -142,7 +144,7 @@ async function computeContourFromSurfaceSegmentation(
   if (!options.viewport) {
     throw new Error('Viewport is required to compute contour from surface');
   }
-  const { viewport, segmentationRepresentationUID } = options;
+  const { viewport } = options;
 
   const segmentIndices = options.segmentIndices?.length
     ? options.segmentIndices
@@ -176,7 +178,7 @@ async function computeContourFromSurfaceSegmentation(
   const polyDataCache = await clipAndCacheSurfacesForViewport(
     surfacesInfo,
     viewport as Types.IVolumeViewport,
-    segmentationRepresentationUID
+    segmentationId
   );
 
   const rawResults = extractContourData(polyDataCache, surfaceIdToSegmentIndex);

@@ -30,7 +30,6 @@ import {
   ZoomTool,
   StackScrollTool,
   PlanarRotateTool,
-  VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   LengthTool,
   HeightTool,
@@ -98,7 +97,6 @@ export {
   ZoomTool,
   StackScrollTool,
   PlanarRotateTool,
-  VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   // Annotation Tools
   LengthTool,

@@ -1,15 +1,33 @@
-import { cache } from '@cornerstonejs/core';
-import { isVolumeSegmentation } from './stackVolumeCheck';
+import {
+  BaseVolumeViewport,
+  cache,
+  Enums,
+  eventTarget,
+} from '@cornerstonejs/core';
 import type { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
+import { getSegmentationActor } from '../../../../stateManagement/segmentation/helpers';
+import { SegmentationRepresentations } from '../../../../enums';
 
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
   let imageVoxelManager;
   let segmentationVoxelManager;
 
-  if (isVolumeSegmentation(operationData, viewport)) {
+  if (viewport instanceof BaseVolumeViewport) {
     const { volumeId, referencedVolumeId } = operationData;
+
+    if (!volumeId) {
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message: 'No volume id found for the segmentation',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return null;
+    }
 
     const segmentationVolume = cache.getVolume(volumeId);
 
@@ -28,8 +46,7 @@ function getStrategyData({ operationData, viewport }) {
     ({ imageData: segmentationImageData } = segmentationVolume);
     // segmentationDimensions = segmentationVolume.dimensions;
   } else {
-    const { segmentationRepresentationUID, segmentationId } =
-      operationData as LabelmapToolOperationDataStack;
+    const { segmentationId } = operationData as LabelmapToolOperationDataStack;
 
     const labelmapImageId = getCurrentLabelmapImageIdForViewport(
       viewport.id,
@@ -44,16 +61,16 @@ function getStrategyData({ operationData, viewport }) {
       return;
     }
 
-    // we know that the segmentationRepresentationUID is the name of the actor always
-    // and always circle modifies the current imageId which in fact is the imageData
-    // of that actor at that moment so we have the imageData already
-    const actor = viewport.getActor(segmentationRepresentationUID);
+    const actor = getSegmentationActor(viewport.id, {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    });
     if (!actor) {
       return;
     }
 
     const currentSegImage = cache.getImage(labelmapImageId);
-    segmentationImageData = actor.actor.getMapper().getInputData();
+    segmentationImageData = actor.getMapper().getInputData();
     segmentationVoxelManager = currentSegImage.voxelManager;
     const currentSegmentationImageId = operationData.imageId;
 

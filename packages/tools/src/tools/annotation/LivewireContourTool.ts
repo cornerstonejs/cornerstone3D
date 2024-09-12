@@ -176,8 +176,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     let height;
     let scalarData;
 
-    if (!(viewport instanceof VolumeViewport) && scalarData) {
-      ({ scalarData } = viewportImageData);
+    if (!(viewport instanceof VolumeViewport)) {
       width = viewportImageData.dimensions[0];
       height = viewportImageData.dimensions[1];
 
@@ -196,6 +195,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       // coordinate from index space.
       sliceToWorld = (point: Types.Point2) =>
         csUtils.transformIndexToWorld(vtkImageData, [point[0], point[1], 0]);
+      scalarData = viewportImageData.scalarData;
     } else if (viewport instanceof VolumeViewport) {
       const sliceImageData = csUtils.getCurrentVolumeViewportSlice(viewport);
       const { sliceToIndexMatrix, indexToSliceMatrix } = sliceImageData;
@@ -1008,7 +1008,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       if (!image) {
         continue;

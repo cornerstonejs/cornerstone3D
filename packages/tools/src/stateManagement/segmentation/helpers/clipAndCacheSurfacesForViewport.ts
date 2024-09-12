@@ -9,6 +9,7 @@ import {
 import { WorkerTypes } from '../../../enums';
 import { pointToString } from '../../../utilities/pointToString';
 import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
+import { getSurfaceActorUID } from './getSegmentationActor';
 const workerManager = getWebWorkerManager();
 
 /**
@@ -52,13 +53,13 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  *
  * @param surfacesInfo - An array of surfaces information.
  * @param viewport - The volume viewport.
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @returns The cached polydata.
+ * @param segmentationId - The id of the segmentation.
+ * @returns The cached polyData.
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
   viewport: Types.IVolumeViewport,
-  segmentationRepresentationUID: string
+  segmentationId: string
 ) {
   registerPolySegWorker();
   // All planes is an array of planes pairs for each slice, so we should loop over them and
@@ -115,8 +116,8 @@ export async function clipAndCacheSurfacesForViewport(
           },
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
-            polyDataResults.forEach((polyDataResult, surfaceId) => {
-              const actorUID = `${segmentationRepresentationUID}_${surfaceId}`;
+            polyDataResults.forEach((polyDataResult) => {
+              const actorUID = getSurfaceActorUID(segmentationId);
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,
@@ -172,13 +173,6 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
   surfacesAABB.forEach((aabb, id) => {
     surfacesAABBCache.set(id, aabb);
   });
-}
-
-export function getSurfaceActorUID(
-  segmentationRepresentationUID: string,
-  surfaceId: string
-) {
-  return `${segmentationRepresentationUID}_${surfaceId}`;
 }
 
 // Helper function to generate a cache ID

@@ -311,9 +311,9 @@ const polySegConverters = {
 
         const firstDim = (sharedDimensionIndex + 1) % 3;
         const secondDim = (sharedDimensionIndex + 2) % 3;
-
-        const voxels = utilities.VoxelManager.createScalarVolumeVoxelManager({
-          dimensions: imageData.getDimensions(),
+        const voxels = utilities.VoxelManager.createImageVoxelManager({
+          width: imageData.getDimensions()[0],
+          height: imageData.getDimensions()[1],
           scalarData: imageData.getPointData().getScalars().getData(),
         });
 
@@ -558,7 +558,7 @@ const polySegConverters = {
 
         const polyDataResults = new Map();
         for (const polyDataInfo of surfacesInfo) {
-          const { points, polys, id } = polyDataInfo;
+          const { points, polys, id, segmentIndex } = polyDataInfo;
 
           const aabb3 =
             surfacesAABB.get(id) || getAABB(points, { numDimensions: 3 });

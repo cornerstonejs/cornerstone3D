@@ -1,4 +1,8 @@
-import { cache, getEnabledElement } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -27,12 +31,11 @@ import {
   segmentIndex as segmentIndexController,
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -56,8 +59,8 @@ class CircleScissorsTool extends BaseTool {
     movingTextBox: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    imageId: string;
     centerCanvas?: Array<number>;
-    segmentationRepresentationUID?: string;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -108,30 +111,31 @@ class CircleScissorsTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(viewport.id);
-    if (!activeSegmentationRepresentation) {
+    const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+    if (!activeLabelmapSegmentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeLabelmapSegmentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const segmentsLocked =
       segmentLocking.getLockedSegmentIndices(segmentationId);
 
     const segmentColor = segmentationConfig.color.getSegmentIndexColor(
-      segmentationRepresentationUID,
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const labelmapData = representationData[type];
+    const labelmapData = representationData.Labelmap;
 
     if (!labelmapData) {
       throw new Error(
@@ -180,14 +184,12 @@ class CircleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-      segmentationRepresentationUID,
       volumeId: null,
       referencedVolumeId: null,
+      imageId: null,
     };
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 
@@ -197,8 +199,14 @@ class CircleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
+
       this.editData = {
         ...this.editData,
+        imageId: segmentationImageId,
       };
     }
 

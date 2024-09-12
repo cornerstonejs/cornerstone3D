@@ -1,12 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
 import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
-import {
-  getSegmentation,
-  getSegmentationRepresentations,
-  getViewportIdsWithSegmentation,
-} from '../../segmentationState';
+import { getViewportIdsWithSegmentation } from '../../getViewportIdsWithSegmentation';
+import { getSegmentation } from '../../getSegmentation';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
+import { getSegmentationRepresentation } from '../../getSegmentationRepresentation';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
@@ -50,16 +48,15 @@ export async function updateSurfaceData(segmentationId) {
       const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
       return viewportIds.map((viewportId) => {
-        const segmentationRepresentations =
-          getSegmentationRepresentations(viewportId);
-
-        return segmentationRepresentations.map((segmentationRepresentation) => {
-          if (
-            segmentationRepresentation.type !==
-            SegmentationRepresentations.Surface
-          ) {
-            return;
+        const surfaceRepresentation = getSegmentationRepresentation(
+          viewportId,
+          {
+            segmentationId,
+            type: SegmentationRepresentations.Surface,
           }
+        );
+
+        return [surfaceRepresentation].map((surfaceRepresentation) => {
           segmentation.representationData.Surface.geometryIds.set(
             segmentIndex,
             geometryId
@@ -69,8 +66,7 @@ export async function updateSurfaceData(segmentationId) {
             segmentationId,
             [{ segmentIndex, data }],
             {
-              segmentationRepresentationUID:
-                segmentationRepresentation.segmentationRepresentationUID,
+              segmentationId: surfaceRepresentation.segmentationId,
             }
           );
         });

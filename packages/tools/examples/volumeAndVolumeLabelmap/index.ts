@@ -203,12 +203,9 @@ async function run() {
 
   const segmentationVolumeId = 'SEGMENTATION_VOLUME_ID';
 
-  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
-    volumeId,
-    {
-      volumeId: segmentationVolumeId,
-    }
-  );
+  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationVolumeId,
+  });
 
   segmentation.addSegmentations([
     {
@@ -227,7 +224,7 @@ async function run() {
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
   };
 
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [segmentationRepresentation],
     [viewportId2]: [segmentationRepresentation],
   });

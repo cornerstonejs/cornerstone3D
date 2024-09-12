@@ -9,7 +9,7 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
  */
 export function getCurrentLabelmapImageIdForViewport(
   viewportId: string,
-  segmentationId?: string
+  segmentationId: string
 ) {
   const segmentationStateManager = defaultSegmentationStateManager;
   return segmentationStateManager.getCurrentLabelmapImageIdForViewport(

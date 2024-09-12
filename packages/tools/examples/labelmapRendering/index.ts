@@ -13,6 +13,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
+import { SegmentationRepresentations } from '../../src/enums';
 
 // This is for debugging purposes
 console.warn(
@@ -63,37 +64,6 @@ viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
-
-// ============================= //
-
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-    volumeId: segmentationId,
-  });
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: segmentationId,
-        },
-      },
-    },
-  ]);
-
-  // Add some data to the segmentations
-  fillVolumeLabelmapWithMockData({
-    volumeId: segmentationId,
-    cornerstone,
-  });
-}
 
 /**
  * Runs the demo
@@ -175,14 +145,37 @@ async function run() {
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  // ============================= //
+
+  // Create a segmentation of the same resolution as the source data
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add some data to the segmentations
+  fillVolumeLabelmapWithMockData({
+    volumeId: segmentationId,
+    cornerstone,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: SegmentationRepresentations.Labelmap,
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
 
   const segmentationRepresentation = {
     segmentationId,
-    type: csToolsEnums.SegmentationRepresentations.Labelmap,
   };
 
-  await segmentation.addMultiViewportSegmentationRepresentations({
+  await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportIds[0]]: [segmentationRepresentation],
     [viewportIds[1]]: [segmentationRepresentation],
     [viewportIds[2]]: [segmentationRepresentation],

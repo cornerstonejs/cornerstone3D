@@ -1,7 +1,7 @@
 /**
  * Labelmap representation type
  */
-export type SurfaceRenderingConfig = {
+export type SurfaceStyle = {
   // not much here yet
 };
 

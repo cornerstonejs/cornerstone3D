@@ -1,11 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
-import { getSegmentation } from './getSegmentation';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { updateStackSegmentationState } from './helpers/updateStackSegmentationState';
+import { getSegmentation } from '../getSegmentation';
+import { updateStackSegmentationState } from '../helpers/updateStackSegmentationState';
+import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 // This function is responsible for the conversion calculations
-export async function computeStackSegmentationFromVolume({
+export async function computeStackLabelmapFromVolume({
   volumeId,
 }: {
   volumeId: string;
@@ -16,7 +16,7 @@ export async function computeStackSegmentationFromVolume({
 }
 
 // Updated original function to call the new separate functions
-export async function convertVolumeToStackSegmentation({
+export function convertVolumeToStackLabelmap({
   segmentationId,
   options,
 }: {
@@ -29,11 +29,15 @@ export async function convertVolumeToStackSegmentation({
 }): Promise<void> {
   const segmentation = getSegmentation(segmentationId);
 
+  if (!segmentation) {
+    return;
+  }
+
   const { volumeId } = segmentation.representationData
     .Labelmap as LabelmapSegmentationDataVolume;
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
-  await updateStackSegmentationState({
+  return updateStackSegmentationState({
     segmentationId,
     viewportId: options.viewportId,
     imageIds: segmentationVolume.imageIds,

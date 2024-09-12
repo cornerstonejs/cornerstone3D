@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist/esm",
-    "rootDir": "./src",
-    "sourceRoot": "/packages/dicomImageLoader/src"
+    "rootDir": "./src"
   },
   "include": ["./src/**/*"],
   "exclude": ["./codecs/**/*"]

@@ -25,6 +25,7 @@ import type {
   ImageActor,
   CPUIImageData,
   IImageData,
+  BoundsIJK,
 } from '../types';
 import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
@@ -33,6 +34,8 @@ import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
 import cache from '../cache/cache';
+import uuidv4 from '../utilities/uuidv4';
+import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 
 /**
  * A data type for the scalar data for video data.
@@ -230,7 +233,7 @@ class VideoViewport extends Viewport {
   public setDataIds(imageIds: string[], options?: ImageSetOptions) {
     this.setVideo(
       imageIds[0],
-      ((options.viewReference.sliceIndex as number) || 0) + 1
+      ((options.viewReference?.sliceIndex as number) || 0) + 1
     );
   }
 
@@ -538,20 +541,29 @@ class VideoViewport extends Viewport {
   }
 
   protected getScalarData(): CanvasScalarData {
-    if (this.scalarData.frameNumber === this.getFrameNumber()) {
+    if (this.scalarData?.frameNumber === this.getFrameNumber()) {
       return this.scalarData;
     }
+
+    if (
+      !this.videoElement ||
+      !this.videoElement.videoWidth ||
+      !this.videoElement.videoHeight
+    ) {
+      console.debug('Video not ready yet, returning empty scalar data');
+      // Return an empty CanvasScalarData object
+      const emptyData = new Uint8ClampedArray() as CanvasScalarData;
+      emptyData.getRange = () => [0, 255];
+      emptyData.frameNumber = -1;
+      return emptyData;
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = this.videoWidth;
-    canvas.height = this.videoHeight;
+    canvas.width = this.videoElement.videoWidth;
+    canvas.height = this.videoElement.videoHeight;
     const context = canvas.getContext('2d');
     context.drawImage(this.videoElement, 0, 0);
-    const canvasData = context.getImageData(
-      0,
-      0,
-      this.videoWidth,
-      this.videoHeight
-    );
+    const canvasData = context.getImageData(0, 0, canvas.width, canvas.height);
     const scalarData = canvasData.data as CanvasScalarData;
     scalarData.getRange = () => [0, 255];
     scalarData.frameNumber = this.getFrameNumber();
@@ -565,6 +577,23 @@ class VideoViewport extends Viewport {
     const spacing = metadata.spacing;
 
     const imageData = {
+      getDirection: () => metadata.direction,
+      getDimensions: () => metadata.dimensions,
+      getRange: () => [0, 255] as Point2,
+      getScalarData: () => this.getScalarData(),
+      getSpacing: () => metadata.spacing,
+      worldToIndex: (point: Point3) => {
+        const canvasPoint = this.worldToCanvas(point);
+        const pixelCoord = this.canvasToIndex(canvasPoint);
+        return [pixelCoord[0], pixelCoord[1], 0] as Point3;
+      },
+      indexToWorld: (point: Point3, destPoint?: Point3) => {
+        const canvasPoint = this.indexToCanvas([point[0], point[1]]);
+        return this.canvasToWorld(canvasPoint, destPoint) as Point3;
+      },
+    };
+
+    const imageDataForReturn = {
       dimensions: metadata.dimensions,
       spacing,
       origin: metadata.origin,
@@ -575,20 +604,29 @@ class VideoViewport extends Viewport {
       },
       getScalarData: () => this.getScalarData(),
       scalarData: this.getScalarData(),
-      imageData: {
-        getDirection: () => metadata.direction,
-        getDimensions: () => metadata.dimensions,
-        getRange: () => [0, 255] as Point2,
-        getScalarData: () => this.getScalarData(),
-        getSpacing: () => metadata.spacing,
-        worldToIndex: (point: Point3) => {
-          const canvasPoint = this.worldToCanvas(point);
-          const pixelCoord = this.canvasToIndex(canvasPoint);
-          return [pixelCoord[0], pixelCoord[1], 0] as Point3;
-        },
-        indexToWorld: (point: Point3, destPoint?: Point3) => {
-          const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-          return this.canvasToWorld(canvasPoint, destPoint) as Point3;
+      imageData,
+      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
+      voxelManager: {
+        forEach: (
+          callback: (args: {
+            value: unknown;
+            index: number;
+            pointIJK: Point3;
+            pointLPS: Point3;
+          }) => void,
+          options?: {
+            boundsIJK?: BoundsIJK;
+            isInObject?: (pointLPS, pointIJK) => boolean;
+            returnPoints?: boolean;
+            imageData;
+          }
+        ) => {
+          return pointInShapeCallback(options.imageData, {
+            pointInShapeFn: options.isInObject ?? (() => true),
+            callback: callback,
+            boundsIJK: options.boundsIJK,
+            returnPoints: options.returnPoints ?? false,
+          });
         },
       },
       hasPixelSpacing: this.hasPixelSpacing,
@@ -597,11 +635,14 @@ class VideoViewport extends Viewport {
         scaled: false,
       },
     };
+
     Object.defineProperty(imageData, 'scalarData', {
       get: () => this.getScalarData(),
       enumerable: true,
     });
-    return imageData;
+
+    // @ts-expect-error because of voxelmanager
+    return imageDataForReturn;
   }
 
   getMiddleSliceData = () => {
@@ -821,7 +862,7 @@ class VideoViewport extends Viewport {
   public getViewReference(
     viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
-    let sliceIndex = viewRefSpecifier.sliceIndex;
+    let sliceIndex = viewRefSpecifier?.sliceIndex ?? this.getSliceIndex();
     if (!sliceIndex) {
       sliceIndex = this.isPlaying
         ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
@@ -1092,8 +1133,9 @@ class VideoViewport extends Viewport {
       const image = cache.getImage(stackInput.imageId);
 
       const imageActor = this.createActorMapper(image);
+      const uid = stackInput.actorUID ?? uuidv4();
       if (imageActor) {
-        actors.push({ uid: stackInput.actorUID, actor: imageActor });
+        actors.push({ uid, actor: imageActor });
         if (stackInput.callback) {
           stackInput.callback({
             imageActor: imageActor as unknown as ImageActor,
@@ -1113,30 +1155,26 @@ class VideoViewport extends Viewport {
    * Renders the video frame to the viewport.
    */
   private renderFrame = () => {
+    const dpr = window.devicePixelRatio || 1;
     const transform = this.getTransform();
     const transformationMatrix: number[] = transform.getMatrix();
 
     const ctx = this.canvasContext;
 
     ctx.resetTransform();
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Need to correct the transform for device pixel ratio scaling.
+    // Apply the transformation
     ctx.transform(
-      transformationMatrix[0],
-      transformationMatrix[1],
-      transformationMatrix[2],
-      transformationMatrix[3],
-      transformationMatrix[4],
-      transformationMatrix[5]
+      transformationMatrix[0] / dpr,
+      transformationMatrix[1] / dpr,
+      transformationMatrix[2] / dpr,
+      transformationMatrix[3] / dpr,
+      transformationMatrix[4] / dpr,
+      transformationMatrix[5] / dpr
     );
 
-    ctx.drawImage(
-      this.videoElement,
-      0,
-      0,
-      this.videoWidth || 1024,
-      this.videoHeight || 1024
-    );
+    ctx.drawImage(this.videoElement, 0, 0, this.videoWidth, this.videoHeight);
 
     for (const actor of this.getActors()) {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);
@@ -1163,7 +1201,7 @@ class VideoViewport extends Viewport {
       duration: this.videoElement.duration,
     });
 
-    this.initialRender();
+    this.initialRender?.();
 
     const frame = this.getFrameNumber();
     if (this.isPlaying) {

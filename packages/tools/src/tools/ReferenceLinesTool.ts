@@ -78,7 +78,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     const sourceViewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(sourceViewport);
 
-    let annotation = this.editData.annotation;
+    let annotation = this.editData?.annotation;
     const FrameOfReferenceUID = sourceViewport.getFrameOfReferenceUID();
 
     if (!annotation) {
@@ -148,6 +148,11 @@ class ReferenceLines extends AnnotationDisplayTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     const { viewport: targetViewport } = enabledElement;
+
+    if (!this.editData) {
+      return false;
+    }
+
     const { annotation, sourceViewportId } = this.editData;
 
     let renderStatus = false;
@@ -300,7 +305,7 @@ class ReferenceLines extends AnnotationDisplayTool {
   ) {
     const renderingEngine = targetViewport.getRenderingEngine();
     const targetId = this.getTargetId(targetViewport);
-    const targetImage = this.getTargetIdImage(targetId, renderingEngine);
+    const targetImage = this.getTargetImageData(targetId);
 
     const referencedImageId = this.getReferencedImageId(
       targetViewport,

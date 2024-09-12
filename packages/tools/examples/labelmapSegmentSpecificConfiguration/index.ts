@@ -36,7 +36,6 @@ const segmentationId1 = 'SEGMENTATION_ID_1';
 const toolGroupId = 'MY_ TOOL_GROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_AXIAL_STACK';
-let segmentationRepresentationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -64,13 +63,16 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment1FillAlpha = Number(value) / 100;
 
-    segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
-      1: {
-        Labelmap: {
-          fillAlpha: segment1FillAlpha,
-        },
+    segmentation.config.style.setSegmentationSpecificStyle(
+      {
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        segmentIndex: 1,
       },
-    });
+      {
+        fillAlpha: segment1FillAlpha,
+      }
+    );
   },
 });
 
@@ -81,13 +83,16 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment2FillAlpha = Number(value) / 100;
 
-    segmentation.config.setPerSegmentConfig(segmentationRepresentationUID, {
-      2: {
-        Labelmap: {
-          fillAlpha: segment2FillAlpha,
-        },
+    segmentation.config.style.setSegmentationSpecificStyle(
+      {
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        segmentIndex: 2,
       },
-    });
+      {
+        fillAlpha: segment2FillAlpha,
+      }
+    );
   },
 });
 
@@ -96,7 +101,7 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId1,
     });
 
@@ -179,13 +184,12 @@ async function run() {
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
   // // Add the segmentation representations to the viewport
-  [segmentationRepresentationUID] =
-    await segmentation.addSegmentationRepresentations(viewportId, [
-      {
-        segmentationId: segmentationId1,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+  await segmentation.addSegmentationRepresentations(viewportId, [
+    {
+      segmentationId: segmentationId1,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);
