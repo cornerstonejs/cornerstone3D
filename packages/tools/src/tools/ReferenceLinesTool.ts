@@ -305,7 +305,7 @@ class ReferenceLines extends AnnotationDisplayTool {
   ) {
     const renderingEngine = targetViewport.getRenderingEngine();
     const targetId = this.getTargetId(targetViewport);
-    const targetImage = this.getTargetIdImage(targetId, renderingEngine);
+    const targetImage = this.getTargetImageData(targetId);
 
     const referencedImageId = this.getReferencedImageId(
       targetViewport,

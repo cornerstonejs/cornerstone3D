@@ -128,28 +128,6 @@ abstract class BaseTool {
   }
 
   /**
-   * Returns the volumeId for the volume viewport. It will grabbed the volumeId
-   * from the volumeId if particularly specified in the tool configuration, or if
-   * not, the first actorUID in the viewport is returned as the volumeId. NOTE: for
-   * segmentations, actorUID is not necessarily the volumeId since the segmentation
-   * can have multiple representations, use segmentation helpers to get the volumeId
-   * based on the actorUID.
-   *
-   * @param viewport - Volume viewport
-   * @returns the volumeId for the viewport if specified in the tool configuration,
-   * or the first actorUID in the viewport if not.
-   */
-  protected getTargetVolumeId(viewport: Types.IViewport): string | undefined {
-    if (this.configuration.volumeId) {
-      return this.configuration.volumeId;
-    }
-
-    if (viewport instanceof BaseVolumeViewport) {
-      return viewport.getVolumeId();
-    }
-  }
-
-  /**
    * Get the image that is displayed for the targetId in the cachedStats
    * which can be
    * * imageId:<imageId>
@@ -157,20 +135,15 @@ abstract class BaseTool {
    * * videoId:<basePathForVideo>/frames/<frameSpecifier>
    *
    * @param targetId - annotation targetId stored in the cached stats
-   * @param renderingEngine - The rendering engine
    * @returns The image data for the target.
    */
-  protected getTargetIdImage(
-    targetId: string,
-    renderingEngine: Types.IRenderingEngine
-  ): Types.IImageData | Types.CPUIImageData | Types.IImageVolume {
+  protected getTargetImageData(
+    targetId: string
+  ): Types.IImageData | Types.CPUIImageData {
     if (targetId.startsWith('imageId:')) {
       const imageId = targetId.split('imageId:')[1];
       const imageURI = utilities.imageIdToURI(imageId);
-      let viewports = utilities.getViewportsWithImageURI(
-        imageURI,
-        renderingEngine.id
-      );
+      let viewports = utilities.getViewportsWithImageURI(imageURI);
 
       if (!viewports || !viewports.length) {
         return;
@@ -187,10 +160,7 @@ abstract class BaseTool {
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
       const volumeId = utilities.getVolumeId(targetId);
-      const viewports = utilities.getViewportsWithVolumeId(
-        volumeId,
-        renderingEngine.id
-      );
+      const viewports = utilities.getViewportsWithVolumeId(volumeId);
 
       if (!viewports || !viewports.length) {
         return;
@@ -200,10 +170,7 @@ abstract class BaseTool {
     } else if (targetId.startsWith('videoId:')) {
       // Video id can be multi-valued for the frame information
       const imageURI = utilities.imageIdToURI(targetId);
-      const viewports = utilities.getViewportsWithImageURI(
-        imageURI,
-        renderingEngine.id
-      );
+      const viewports = utilities.getViewportsWithImageURI(imageURI);
 
       if (!viewports || !viewports.length) {
         return;
@@ -231,9 +198,6 @@ abstract class BaseTool {
     const targetId = viewport.getViewReferenceId?.();
     if (targetId) {
       return targetId;
-    }
-    if (viewport instanceof BaseVolumeViewport) {
-      return `volumeId:${this.getTargetVolumeId(viewport)}`;
     }
     throw new Error(
       'getTargetId: viewport must have a getViewReferenceId method'

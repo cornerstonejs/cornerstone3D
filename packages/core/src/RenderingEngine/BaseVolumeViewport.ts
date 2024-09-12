@@ -1382,6 +1382,22 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
+   * Checks if the viewport has a volume with the given volumeURI.
+   *
+   * @param volumeURI - The URI of the volume to check for.
+   * @returns A boolean indicating whether the viewport contains a volume with the given URI.
+   */
+  public hasVolumeURI(volumeURI: string): boolean {
+    // loop through this.volumeIds and check if any volumeId contains the volumeURI
+    for (const volumeId of this.volumeIds) {
+      if (volumeId.includes(volumeURI)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Returns the image and its properties that is being shown inside the
    * stack viewport. It returns, the image dimensions, image direction,
    * image scalar data, vtkImageData object, metadata, and scaling (e.g., PET suvbw)
@@ -1762,7 +1778,7 @@ abstract class BaseVolumeViewport extends Viewport {
       // find the first image actor of instance type vtkVolume
       volumeId = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      )?.uid;
+      )?.referencedId;
     }
 
     const currentIndex = this.getSliceIndex();

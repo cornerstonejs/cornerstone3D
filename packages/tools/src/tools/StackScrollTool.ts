@@ -117,7 +117,7 @@ class StackScrollTool extends BaseTool {
 
     let volumeId;
     if (viewport instanceof VolumeViewport) {
-      volumeId = this.getTargetVolumeId(viewport);
+      volumeId = viewport.getVolumeId();
     }
 
     const pixelsPerImage = this._getPixelPerImage(viewport);
@@ -196,10 +196,12 @@ class StackScrollTool extends BaseTool {
     const { wheel, element } = evt.detail;
     const { direction } = wheel;
     const { invert } = this.configuration;
-    const { viewport } = getEnabledElement(element);
+    const { viewport } = getEnabledElement(element) as {
+      viewport: Types.IVolumeViewport;
+    };
     const delta = direction * (invert ? -1 : 1);
 
-    const volumeId = this.getTargetVolumeId(viewport);
+    const volumeId = viewport.getVolumeId();
 
     scroll(viewport, {
       delta,

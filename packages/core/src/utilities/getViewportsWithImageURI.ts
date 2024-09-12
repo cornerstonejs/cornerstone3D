@@ -1,4 +1,3 @@
-import { getRenderingEngine } from '../RenderingEngine';
 import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
 import type { IStackViewport, IVolumeViewport } from '../types';
 
@@ -12,17 +11,9 @@ type Viewport = IStackViewport | IVolumeViewport;
  * @param imageURI - The imageURI of the image that is requested
  * @returns A Viewport
  */
-export default function getViewportsWithImageURI(
-  imageURI: string,
-  renderingEngineId?: string
-): Viewport[] {
+export default function getViewportsWithImageURI(imageURI: string): Viewport[] {
   // If rendering engine is not provided, use all rendering engines
-  let renderingEngines;
-  if (renderingEngineId) {
-    renderingEngines = [getRenderingEngine(renderingEngineId)];
-  } else {
-    renderingEngines = getRenderingEngines();
-  }
+  const renderingEngines = getRenderingEngines();
 
   const viewports = [];
   renderingEngines.forEach((renderingEngine) => {

@@ -799,10 +799,7 @@ class AngleTool extends AnnotationTool {
         [worldPos1, worldPos2],
         [worldPos2, worldPos3]
       );
-      const { dimensions, imageData } = this.getTargetIdImage(
-        targetId,
-        renderingEngine
-      );
+      const { dimensions, imageData } = this.getTargetImageData(targetId);
 
       // Decide if there's at least one handle is outside of image
       this.isHandleOutsideImage = [worldPos1, worldPos2, worldPos3]

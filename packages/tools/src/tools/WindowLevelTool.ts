@@ -48,7 +48,7 @@ class WindowLevelTool extends BaseTool {
 
     const properties = viewport.getProperties();
     if (viewport instanceof VolumeViewport) {
-      volumeId = this.getTargetVolumeId(viewport);
+      volumeId = viewport.getVolumeId();
 
       viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
         volumeId,
