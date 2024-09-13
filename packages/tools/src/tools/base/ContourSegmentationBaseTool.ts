@@ -28,9 +28,9 @@ import { getSegmentationRepresentationVisibility } from '../../stateManagement/s
 import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentation/getViewportIdsWithSegmentation';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
-import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
 import { segmentationStyle } from '../../stateManagement/segmentation/SegmentationStyle';
 import type { ContourStyle } from '../../types/ContourTypes';
+import { internalGetHiddenSegmentIndices } from '../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
 /**
  * A base contour segmentation class responsible for rendering, registering
@@ -288,6 +288,13 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     const color = `rgba(${segmentColor[0]}, ${segmentColor[1]}, ${segmentColor[2]}, ${lineOpacity})`;
     const fillColor = `rgb(${segmentColor[0]}, ${segmentColor[1]}, ${segmentColor[2]})`;
 
+    const hiddenSegments = internalGetHiddenSegmentIndices(viewportId, {
+      segmentationId,
+      type: SegmentationRepresentations.Contour,
+    });
+
+    const isVisible = !hiddenSegments.has(segmentIndex);
+
     return {
       color,
       fillColor,
@@ -297,16 +304,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       textbox: {
         color,
       },
-      visibility:
-        segmentationVisible &&
-        getSegmentIndexVisibility(
-          viewportId,
-          {
-            segmentationId,
-            type: SegmentationRepresentations.Contour,
-          },
-          segmentIndex
-        ),
+      visibility: segmentationVisible && isVisible,
       locked: annotationLocked,
     };
   }

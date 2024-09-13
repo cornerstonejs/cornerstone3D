@@ -240,6 +240,10 @@ type SegmentationDataModifiedEventDetail = {
 type SegmentationRenderedEventDetail = {
   /** unique id of the viewport */
   viewportId: string;
+  /** unique id of the segmentation */
+  segmentationId: string;
+  /** type of the segmentation */
+  type: string;
 };
 
 /**
@@ -248,6 +252,10 @@ type SegmentationRenderedEventDetail = {
 type SegmentationRepresentationModifiedEventDetail = {
   /** segmentationId */
   segmentationId: string;
+  /** type of the segmentation */
+  type: string;
+  /** viewport */
+  viewportId: string;
 };
 
 /**
@@ -264,6 +272,10 @@ type SegmentationRemovedEventDetail = {
 type SegmentationRepresentationRemovedEventDetail = {
   /** segmentationId */
   segmentationId: string;
+  /** type of the segmentation */
+  type: string;
+  /** viewport */
+  viewportId: string;
 };
 
 /**

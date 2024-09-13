@@ -2,7 +2,6 @@ import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 import { Events } from '../../../enums';
 import type { SegmentationModifiedEventDetail } from '../../../types/EventTypes';
-import { getSegmentations } from '../getSegmentations';
 
 /**
  * Triggers segmentation global state updated event, notifying all listeners
@@ -12,21 +11,9 @@ import { getSegmentations } from '../getSegmentations';
  *
  * @param segmentationId - The id of the segmentation that has been updated
  */
-export function triggerSegmentationModified(segmentationId?: string): void {
-  let segmentationIds;
-
-  if (segmentationId) {
-    segmentationIds = [segmentationId];
-  } else {
-    segmentationIds = getSegmentations().map(
-      ({ segmentationId }) => segmentationId
-    );
-  }
-
-  segmentationIds.forEach((segmentationId) => {
-    const eventDetail: SegmentationModifiedEventDetail = {
-      segmentationId,
-    };
-    triggerEvent(eventTarget, Events.SEGMENTATION_MODIFIED, eventDetail);
-  });
+export function triggerSegmentationModified(segmentationId: string): void {
+  const eventDetail: SegmentationModifiedEventDetail = {
+    segmentationId,
+  };
+  triggerEvent(eventTarget, Events.SEGMENTATION_MODIFIED, eventDetail);
 }

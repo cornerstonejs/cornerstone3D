@@ -10,7 +10,6 @@ an [`Image Object`](./images.md). Since loading images usually requires a call t
 
 ## Image Loader Workflow
 
-![Imageloader](../../../assets/image-loader-workflow.png)
 
 1. `ImageLoaders` register themselves using [`registerImageLoader`](/api/core/namespace/imageLoader#registerImageLoader) API with cornerstone to load specific ImageId URL schemes
 2. The application requests to load an image using the `loadImage` API for stack or `createAndCacheVolume` API for volume.

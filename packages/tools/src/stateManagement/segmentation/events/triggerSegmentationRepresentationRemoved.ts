@@ -1,16 +1,29 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
+import type { SegmentationRepresentations } from '../../../enums';
 import { Events } from '../../../enums';
-import type { SegmentationRemovedEventDetail } from '../../../types/EventTypes';
+import type { SegmentationRepresentationRemovedEventDetail } from '../../../types/EventTypes';
 
 /**
- * Trigger an event that a segmentation is removed
+ * Trigger an event that a segmentation representation is removed
+ * @param viewportId - The Id of viewport
  * @param segmentationId - The Id of segmentation
+ * @param type - The type of segmentation representation
  */
-export function triggerSegmentationRemoved(segmentationId: string): void {
-  const eventDetail: SegmentationRemovedEventDetail = {
+export function triggerSegmentationRepresentationRemoved(
+  viewportId: string,
+  segmentationId: string,
+  type: SegmentationRepresentations
+): void {
+  const eventDetail: SegmentationRepresentationRemovedEventDetail = {
+    viewportId,
     segmentationId,
+    type,
   };
 
-  triggerEvent(eventTarget, Events.SEGMENTATION_REMOVED, eventDetail);
+  triggerEvent(
+    eventTarget,
+    Events.SEGMENTATION_REPRESENTATION_REMOVED,
+    eventDetail
+  );
 }

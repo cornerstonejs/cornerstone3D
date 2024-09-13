@@ -2,7 +2,10 @@ import SegmentationRepresentations from '../../../enums/SegmentationRepresentati
 import type { ContourStyle } from '../../../types/ContourTypes';
 import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 import type { SurfaceStyle } from '../../../types/SurfaceTypes';
-import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
+import {
+  triggerSegmentationRender,
+  triggerSegmentationRenderBySegmentationId,
+} from '../SegmentationRenderingEngine';
 import { segmentationStyle } from '../SegmentationStyle';
 import type { RepresentationStyle } from '../SegmentationStyle';
 
@@ -85,7 +88,7 @@ function setSegmentationSpecificStyle(
   style: RepresentationStyle
 ): void {
   segmentationStyle.setSegmentationSpecificStyle(specifier, style);
-  triggerSegmentationRender();
+  triggerSegmentationRenderBySegmentationId(specifier.segmentationId);
 }
 
 /**

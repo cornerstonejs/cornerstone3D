@@ -5,7 +5,7 @@ import {
 import { setSegmentationRepresentationVisibility as _setSegmentationRepresentationVisibility } from '../setSegmentationRepresentationVisibility';
 import { getSegmentationRepresentationVisibility as _getSegmentationRepresentationVisibility } from '../getSegmentationRepresentationVisibility';
 import type { SegmentationRepresentations } from '../../../enums';
-import { triggerSegmentationModified } from '../triggerSegmentationEvents';
+import { triggerSegmentationRenderBySegmentationId } from '../SegmentationRenderingEngine';
 
 /**
  * Sets the visibility of a segmentation representation for a given viewport.
@@ -47,8 +47,6 @@ function setSegmentationRepresentationVisibility(
       visibility
     );
   });
-
-  triggerSegmentationModified(specifier.segmentationId);
 }
 
 /**
@@ -107,7 +105,9 @@ function setSegmentIndexVisibility(
       : hiddenSegments.add(segmentIndex);
   });
 
-  triggerSegmentationModified(specifier.segmentationId);
+  // Note: we should make sure to trigger here, since this does not go
+  // through the SegmentationStateManager
+  triggerSegmentationRenderBySegmentationId(specifier.segmentationId);
 }
 
 /**

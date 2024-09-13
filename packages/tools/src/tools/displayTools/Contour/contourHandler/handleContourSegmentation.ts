@@ -7,9 +7,9 @@ import { addContourSegmentationAnnotation } from '../../../../utilities/contourS
 
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
-import { getHiddenSegmentIndices } from '../../../../stateManagement/segmentation/config/segmentationVisibility';
 import { SegmentationRepresentations } from '../../../../enums';
 import { segmentationStyle } from '../../../../stateManagement/segmentation/SegmentationStyle';
+import { internalGetHiddenSegmentIndices } from '../../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -130,7 +130,7 @@ function addContourSetsToElement(
     }
   });
 
-  const segmentsHidden = getHiddenSegmentIndices(viewport.id, {
+  const segmentsHidden = internalGetHiddenSegmentIndices(viewport.id, {
     segmentationId,
     type: SegmentationRepresentations.Contour,
   });

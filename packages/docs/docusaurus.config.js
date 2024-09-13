@@ -49,6 +49,11 @@ module.exports = {
           label: 'API',
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           to: 'docs/help',
           label: 'Help',
           position: 'right',
@@ -167,6 +172,12 @@ module.exports = {
           // Please change this to your repo.
           editUrl:
             'https://github.com/cornerstonejs/cornerstone3D/edit/main/packages/docs/',
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: `${2.0} (Latest)`,
+            },
+          },
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
