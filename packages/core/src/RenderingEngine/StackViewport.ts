@@ -84,7 +84,6 @@ import {
   PixelDataTypedArray,
 } from '../types';
 import {
-  StackScrollOutOfBoundsEventDetail,
   StackViewportNewStackEventDetail,
   StackViewportScrollEventDetail,
   VoiModifiedEventDetail,
@@ -2600,19 +2599,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       this.debouncedTimeout = window.setTimeout(() => {
         this.setImageIdIndex(newTargetImageIdIndex);
       }, 40);
-    }
-
-    const imageIdIndex = this.getCurrentImageIdIndex();
-
-    if (
-      imageIdIndex + delta > this.getImageIds().length - 1 ||
-      imageIdIndex + delta < 0
-    ) {
-      const eventData: StackScrollOutOfBoundsEventDetail = {
-        imageIdIndex,
-        direction: delta,
-      };
-      triggerEvent(this.element, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
     }
 
     const eventData: StackViewportScrollEventDetail = {

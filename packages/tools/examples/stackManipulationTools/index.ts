@@ -1,4 +1,9 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import {
+  eventTarget,
+  RenderingEngine,
+  Types,
+  Enums,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -112,7 +117,7 @@ let eventNumber = 1;
 
 const { STACK_SCROLL_OUT_OF_BOUNDS } = Enums.Events;
 
-element.addEventListener(STACK_SCROLL_OUT_OF_BOUNDS, ((
+eventTarget.addEventListener(STACK_SCROLL_OUT_OF_BOUNDS, ((
   evt: StackScrollOutOfBoundsEvent
 ) => {
   updateLastEvents(
