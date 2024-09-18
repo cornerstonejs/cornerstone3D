@@ -97,7 +97,7 @@ export default class VoxelManager<T> {
   public setAtIJK = (i: number, j: number, k: number, v) => {
     const index = this.toIndex([i, j, k]);
     const changed = this._set(index, v);
-    if (changed) {
+    if (changed !== false) {
       this.modifiedSlices.add(k);
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
     }
@@ -129,7 +129,7 @@ export default class VoxelManager<T> {
    */
   public setAtIndex = (index, v) => {
     const changed = this._set(index, v);
-    if (changed) {
+    if (changed !== false) {
       const pointIJK = this.toIJK(index);
       this.modifiedSlices.add(pointIJK[2]);
       VoxelManager.addBounds(this.boundsIJK, pointIJK);
