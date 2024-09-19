@@ -27,16 +27,16 @@ const nearbyFrames: NearbyFrames[] = [
  *   6. Retrieve every 4th image, offsets 1 and 3, full images if not already done
  */
 const interleavedRetrieveConfiguration: RetrieveStage[] = [
-  {
-    id: 'initialImages',
-    // Values between -1 and 1 are relative to size, so 0.5 is middle image
-    // and 0 is first image, -1 is last image
-    positions: [0.5, 0, -1],
-    retrieveType: 'default',
-    requestType: RequestType.Thumbnail,
-    priority: 5,
-    nearbyFrames,
-  },
+  // {
+  //   id: 'initialImages',
+  //   // Values between -1 and 1 are relative to size, so 0.5 is middle image
+  //   // and 0 is first image, -1 is last image
+  //   positions: [0.5, 0, -1],
+  //   retrieveType: 'default',
+  //   requestType: RequestType.Thumbnail,
+  //   priority: 5,
+  //   nearbyFrames,
+  // },
   {
     id: 'quarterThumb',
     decimate: 4,
@@ -46,39 +46,39 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     priority: 6,
     nearbyFrames,
   },
-  {
-    id: 'halfThumb',
-    decimate: 4,
-    offset: 1,
-    priority: 7,
-    requestType: RequestType.Thumbnail,
-    retrieveType: 'multipleFast',
-    nearbyFrames,
-  },
-  {
-    id: 'quarterFull',
-    decimate: 4,
-    offset: 2,
-    priority: 8,
-    requestType: RequestType.Thumbnail,
-    retrieveType: 'multipleFinal',
-  },
-  {
-    id: 'halfFull',
-    decimate: 4,
-    offset: 0,
-    priority: 9,
-    requestType: RequestType.Thumbnail,
-    retrieveType: 'multipleFinal',
-  },
-  {
-    id: 'threeQuarterFull',
-    decimate: 4,
-    offset: 1,
-    priority: 10,
-    requestType: RequestType.Thumbnail,
-    retrieveType: 'multipleFinal',
-  },
+  // {
+  //   id: 'halfThumb',
+  //   decimate: 4,
+  //   offset: 1,
+  //   priority: 7,
+  //   requestType: RequestType.Thumbnail,
+  //   retrieveType: 'multipleFast',
+  //   nearbyFrames,
+  // },
+  // {
+  //   id: 'quarterFull',
+  //   decimate: 4,
+  //   offset: 2,
+  //   priority: 8,
+  //   requestType: RequestType.Thumbnail,
+  //   retrieveType: 'multipleFinal',
+  // },
+  // {
+  //   id: 'halfFull',
+  //   decimate: 4,
+  //   offset: 0,
+  //   priority: 9,
+  //   requestType: RequestType.Thumbnail,
+  //   retrieveType: 'multipleFinal',
+  // },
+  // {
+  //   id: 'threeQuarterFull',
+  //   decimate: 4,
+  //   offset: 1,
+  //   priority: 10,
+  //   requestType: RequestType.Thumbnail,
+  //   retrieveType: 'multipleFinal',
+  // },
   {
     id: 'finalFull',
     decimate: 4,

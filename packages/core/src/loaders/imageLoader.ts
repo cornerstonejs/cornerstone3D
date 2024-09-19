@@ -21,6 +21,7 @@ import type {
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import * as metaData from '../metaData';
+import { ImageQualityStatus } from '../enums';
 
 export interface ImageLoaderOptions {
   priority: number;
@@ -83,6 +84,12 @@ function loadImageFromImageLoader(
   const cachedImageLoadObject = cache.getImageLoadObject(imageId);
 
   if (cachedImageLoadObject) {
+    console.log(
+      '***** image already has loader, just handling promise',
+      imageId
+    );
+    // This is an in-progress image, which someone else is loading, so just
+    // handle the response directly.
     handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
     return cachedImageLoadObject;
   }

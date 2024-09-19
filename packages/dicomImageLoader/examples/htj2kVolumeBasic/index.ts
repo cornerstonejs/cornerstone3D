@@ -166,6 +166,8 @@ const configHtj2k = {
   ...interleavedRetrieveStages,
 };
 
+console.log("********** interleavedRetrieveStages=", interleavedRetrieveStages);
+
 const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
@@ -293,8 +295,12 @@ async function run() {
   imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
   imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
 
-  async function loadVolume(volumeId, imageIds, config, text) {
-    cache.purgeCache();
+  async function loadVolume(volumeId, imageIds, config, text, purge=true) {
+    if( purge ) {
+      cache.purgeCache();
+    } else {
+      cache.purgeVolumeCache();
+    }
     imageRetrieveMetadataProvider.clear();
     if (config) {
       imageRetrieveMetadataProvider.add('volume', config);
@@ -347,6 +353,8 @@ async function run() {
 
   loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
   loadButton('J2K Interleaved', volumeId, imageIdsCT, configHtj2k);
+  // Can add a button to do a secondary load on the same data
+  // createButton('J2K With Cache Load', loadVolume.bind(null, volumeId+'2', imageIdsCT, configHtj2k, 'J2K With Cache Load', false));
   loadButton('J2K Byte Ranges', volumeId, imageIdsCT, configHtj2kByteRange);
 }
 

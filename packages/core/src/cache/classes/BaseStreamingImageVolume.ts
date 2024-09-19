@@ -41,8 +41,6 @@ export default class BaseStreamingImageVolume
   protected reRenderTarget = 0;
   protected reRenderFraction = 2;
 
-  public dataType: PixelDataTypedArrayString;
-
   loadStatus: {
     loaded: boolean;
     loading: boolean;

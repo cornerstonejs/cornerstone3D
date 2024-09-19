@@ -35,6 +35,9 @@ class Cache {
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
+  // Used to store temporary lower resolution/quality/duplicated images
+  private readonly temporaryCache = new Map<string, IImage>();
+
   private _imageCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
 
@@ -197,6 +200,7 @@ class Cache {
    *
    */
   public purgeCache = (): void => {
+    this.temporaryCache.clear();
     const imageIterator = this._imageCache.keys();
 
     // need to purge volume cache first to avoid issues with image cache
@@ -377,6 +381,8 @@ class Cache {
     this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
 
     cachedImage.loaded = true;
+    console.log('********* Deleting temporary', imageId);
+    this.temporaryCache.delete(imageId);
 
     cachedImage.image = image;
     cachedImage.sizeInBytes = image.sizeInBytes;
@@ -475,6 +481,14 @@ class Cache {
       });
   }
 
+  public putTemporaryImage(imageId: string, image: IImage): void {
+    if (this.isLoaded(imageId)) {
+      console.log('Not putting temporary because already laoded', imageId);
+      return;
+    }
+    this.temporaryCache.set(imageId, image);
+  }
+
   /**
    * Puts a new image directly into the cache (synchronous version)
    *
@@ -525,7 +539,7 @@ class Cache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
-      return;
+      return this.temporary;
     }
 
     // Bump time stamp for cached image
@@ -812,7 +826,12 @@ class Cache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
-      return;
+      // Use a temporary alternative if there is one, to allow low resolution
+      // versions to be used for initial render
+      if (this.temporaryCache.has(imageId)) {
+        console.log('Temporary cache contains a copy of', imageId);
+      }
+      return this.temporaryCache.get(imageId);
     }
 
     // Bump time stamp for cached volume (not used for anything for now)
