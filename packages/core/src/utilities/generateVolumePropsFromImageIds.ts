@@ -98,7 +98,7 @@ function _determineDataType(
     scalingParameters.rescaleIntercept < 0 ||
     scalingParameters.rescaleSlope < 0;
 
-  // The prescale is ALWAYS used with modality LUT, so we can assume that
+  // The preScale is ALWAYS used with modality LUT, so we can assume that
   // if the rescale slope is not an integer, we need to use Float32
   const floatAfterScale = hasFloatScalingParameters(scalingParameters);
   const canRenderFloat = canRenderFloatTextures();

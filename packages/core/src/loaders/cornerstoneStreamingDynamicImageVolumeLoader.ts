@@ -39,8 +39,9 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
 
   const { imageIds } = options;
   const { splittingTag, imageIdGroups } = splitImageIdsBy4DTags(imageIds);
+  const middleIndex = Math.floor(imageIdGroups.length / 2);
   const volumeProps = generateVolumePropsFromImageIds(
-    imageIdGroups[0],
+    imageIdGroups[middleIndex],
     volumeId
   );
   const {

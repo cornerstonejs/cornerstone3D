@@ -24,10 +24,17 @@ export default function getClosestImageId(
     return;
   }
 
-  const { direction, imageIds } = imageVolume;
+  const { direction } = imageVolume;
+  let { imageIds } = imageVolume;
 
   if (!imageIds.length) {
     return;
+  }
+
+  // Important: this is huge performance gain for streaming dynamic image volumes
+  if ('getCurrentTimePointImageIds' in imageVolume) {
+    // @ts-ignore
+    imageIds = imageVolume.getCurrentTimePointImageIds();
   }
 
   // 1. Get ScanAxis vector

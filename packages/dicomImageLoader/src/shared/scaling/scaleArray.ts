@@ -7,7 +7,11 @@ export default function scaleArray(
   const arrayLength = array.length;
   const { rescaleSlope, rescaleIntercept, suvbw } = scalingParameters;
 
-  if (scalingParameters.modality === 'PT' && typeof suvbw === 'number') {
+  if (
+    scalingParameters.modality === 'PT' &&
+    typeof suvbw === 'number' &&
+    !isNaN(suvbw)
+  ) {
     for (let i = 0; i < arrayLength; i++) {
       array[i] = suvbw * (array[i] * rescaleSlope + rescaleIntercept);
     }
