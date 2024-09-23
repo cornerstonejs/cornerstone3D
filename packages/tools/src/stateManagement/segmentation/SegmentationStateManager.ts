@@ -120,6 +120,41 @@ export default class SegmentationStateManager {
   }
 
   /**
+   * Updates an existing segmentation with new data.
+   *
+   * @param segmentationId - The unique identifier of the segmentation to update.
+   * @param payload - An object containing the properties to update in the segmentation.
+   *
+   * @remarks
+   * This method updates the state immutably. If the segmentation with the given ID is not found,
+   * the method will return without making any changes.
+   *
+   * @example
+   * ```typescript
+   * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
+   * ```
+   */
+  updateSegmentation(
+    segmentationId: string,
+    payload: Partial<Segmentation>
+  ): void {
+    this.updateState((state) => {
+      const segmentation = state.segmentations.find(
+        (segmentation) => segmentation.segmentationId === segmentationId
+      );
+      if (!segmentation) {
+        return;
+      }
+      state.segmentations = state.segmentations.map((segmentation) => {
+        if (segmentation.segmentationId === segmentationId) {
+          return { ...segmentation, ...payload };
+        }
+        return segmentation;
+      });
+    });
+  }
+
+  /**
    * Adds a segmentation to the segmentations array.
    * @param {Segmentation} segmentation - The segmentation object to add.
    * @throws {Error} If a segmentation with the same ID already exists.
@@ -1022,6 +1057,8 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.segs = () => defaultSegmentationStateManager.getState();
+
 export {
   internalConvertStackToVolumeLabelmap,
   internalComputeVolumeLabelmapFromStack,

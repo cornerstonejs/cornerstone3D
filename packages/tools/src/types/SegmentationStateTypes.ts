@@ -17,6 +17,19 @@ export type RepresentationData =
   | ContourSegmentationData
   | SurfaceSegmentationData;
 
+export type Segment = {
+  /** segment index */
+  segmentIndex: number;
+  /** segment label */
+  label: string;
+  /** is segment locked for editing */
+  locked: boolean;
+  /** cached stats for the segment, e.g., pt suv mean, max etc. */
+  cachedStats: { [key: string]: unknown };
+  /** is segment active for editing, at the same time only one segment can be active for editing */
+  active: boolean;
+};
+
 /**
  * Global Segmentation Data which is used for the segmentation
  */
@@ -25,22 +38,9 @@ export type Segmentation = {
   segmentationId: string;
   /** segmentation label */
   label: string;
-  /**
-   * Active segment index in the segmentation, this index will get used
-   * inside the segmentation tools
-   */
-  activeSegmentIndex: number;
-  /**
-   * Locked segments in the segmentation, if a segment is locked no tool
-   * will be able to modify it
-   */
-  segmentsLocked: Set<number>;
-  /**
-   * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
-   */
-  cachedStats: { [key: string]: number };
-  /** segment labels */
-  segmentLabels: { [key: string]: string };
+  segments: {
+    [segmentIndex: number]: Segment;
+  };
   /**
    * Representations of the segmentation. Each segmentation "can" be viewed
    * in various representations. For instance, if a DICOM SEG is loaded, the main
@@ -80,21 +80,22 @@ type BaseSegmentationRepresentation = {
   /** rendering config for display of this representation */
 };
 
-export type SegmentationRepresentation = BaseSegmentationRepresentation & {
-  config: RenderingConfig;
-};
-
-export type LabelmapRepresentation = SegmentationRepresentation & {
+export type LabelmapRepresentation = BaseSegmentationRepresentation & {
   config: LabelmapRenderingConfig;
 };
 
-export type ContourRepresentation = SegmentationRepresentation & {
+export type ContourRepresentation = BaseSegmentationRepresentation & {
   config: ContourRenderingConfig;
 };
 
-export type SurfaceRepresentation = SegmentationRepresentation & {
+export type SurfaceRepresentation = BaseSegmentationRepresentation & {
   config: SurfaceRenderingConfig;
 };
+
+export type SegmentationRepresentation =
+  | LabelmapRepresentation
+  | ContourRepresentation
+  | SurfaceRepresentation;
 
 export type SegmentationState = {
   /** Array of colorLUT for segmentation to render */
@@ -112,6 +113,12 @@ export type SegmentationPublicInput = {
   representation: {
     type: Enums.SegmentationRepresentations;
     data?: RepresentationData;
+  };
+  config?: {
+    segments?: {
+      [segmentIndex: number]: Partial<Segment>;
+    };
+    label?: string;
   };
 };
 

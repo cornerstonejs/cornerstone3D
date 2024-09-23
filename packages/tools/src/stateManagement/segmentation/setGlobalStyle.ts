@@ -1,7 +1,7 @@
 import type { SegmentationRepresentations } from '../../enums';
+import { triggerSegmentationRender } from './SegmentationRenderingEngine';
 import type { RepresentationStyle } from './SegmentationStyle';
 import { segmentationStyle } from './SegmentationStyle';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 /**
  * Sets the global configuration for a specific segmentation representation type.
@@ -23,6 +23,6 @@ export function setGlobalStyle(
   segmentationStyle.setGlobalStyle(type, styles);
 
   if (!suppressEvents) {
-    triggerSegmentationModified();
+    triggerSegmentationRender();
   }
 }

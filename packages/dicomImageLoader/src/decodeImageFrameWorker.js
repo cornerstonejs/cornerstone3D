@@ -431,6 +431,7 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
   const { scalingType = 'replicate' } = targetBuffer;
   imageUtils[scalingType](imageFrame, dest);
   Object.assign(imageFrame, dest);
+  imageFrame.pixelDataLength = imageFrame.pixelData.length;
   return imageFrame;
 }
 

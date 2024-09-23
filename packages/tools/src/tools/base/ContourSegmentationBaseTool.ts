@@ -278,7 +278,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     }
 
     // Change the line thickness when the mouse is over the contour segment
-    if (segmentation.activeSegmentIndex === segmentIndex) {
+    if (getActiveSegmentIndex(segmentationId) === segmentIndex) {
       lineWidth += mergedConfig.activeSegmentOutlineWidthDelta;
     }
 

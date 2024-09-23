@@ -18,8 +18,8 @@ function isSegmentIndexLocked(
     throw new Error(`No segmentation state found for ${segmentationId}`);
   }
 
-  const { segmentsLocked } = segmentation;
-  return segmentsLocked.has(segmentIndex);
+  const { segments } = segmentation;
+  return segments[segmentIndex].locked;
 }
 
 /**
@@ -39,13 +39,9 @@ function setSegmentIndexLocked(
     throw new Error(`No segmentation state found for ${segmentationId}`);
   }
 
-  const { segmentsLocked } = segmentation;
+  const { segments } = segmentation;
 
-  if (locked) {
-    segmentsLocked.add(segmentIndex);
-  } else {
-    segmentsLocked.delete(segmentIndex);
-  }
+  segments[segmentIndex].locked = locked;
 
   triggerSegmentationModified(segmentationId);
 }
@@ -63,8 +59,11 @@ function getLockedSegmentIndices(segmentationId: string): number[] | [] {
     throw new Error(`No segmentation state found for ${segmentationId}`);
   }
 
-  const { segmentsLocked } = segmentation;
-  return Array.from(segmentsLocked);
+  const { segments } = segmentation;
+  const lockedSegmentIndices = Object.keys(segments).filter(
+    (segmentIndex) => segments[segmentIndex].locked
+  );
+  return lockedSegmentIndices.map((segmentIndex) => parseInt(segmentIndex));
 }
 
 export { isSegmentIndexLocked, setSegmentIndexLocked, getLockedSegmentIndices };

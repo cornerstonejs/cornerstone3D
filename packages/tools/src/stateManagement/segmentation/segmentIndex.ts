@@ -25,8 +25,13 @@ function setActiveSegmentIndex(
     segmentIndex = Number(segmentIndex);
   }
 
-  if (segmentation?.activeSegmentIndex !== segmentIndex) {
-    segmentation.activeSegmentIndex = segmentIndex;
+  // set all other segments to inactive
+  Object.values(segmentation.segments).forEach((segment) => {
+    segment.active = false;
+  });
+
+  if (segmentation?.segments[segmentIndex].active !== true) {
+    segmentation.segments[segmentIndex].active = true;
 
     triggerSegmentationModified(segmentationId);
   }

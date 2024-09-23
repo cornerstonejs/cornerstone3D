@@ -15,6 +15,7 @@ import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
 import { defaultSegmentationStateManager } from './stateManagement/segmentation/SegmentationStateManager';
+import segmentationRepresentationModifiedListener from './eventListeners/segmentation/segmentationRepresentationModifiedListener';
 
 let csToolsInitialized = false;
 
@@ -140,10 +141,10 @@ function _addCornerstoneToolsEventListeners() {
     segmentationDataModifiedEventListener
   );
 
-  // eventTarget.addEventListener(
-  //   TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
-  //   segmentationRepresentationRemovedListener
-  // );
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
+    segmentationRepresentationModifiedListener
+  );
 }
 
 /**
@@ -185,6 +186,11 @@ function _removeCornerstoneToolsEventListeners() {
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
+  );
+
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
+    segmentationRepresentationModifiedListener
   );
 }
 

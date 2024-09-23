@@ -29,6 +29,7 @@ import { getSegmentationActor } from '../../../stateManagement/segmentation/help
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
+import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -283,7 +284,7 @@ function _setLabelmapColorAndOpacity(
   // @ts-ignore - fix type in vtk
   labelmapActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
 
-  const { activeSegmentIndex } = getSegmentation(
+  const activeSegmentIndex = getActiveSegmentIndex(
     segmentationRepresentation.segmentationId
   );
 

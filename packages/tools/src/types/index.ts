@@ -45,6 +45,9 @@ import type {
   RepresentationData,
   RepresentationsData,
   Segmentation,
+  Segment,
+  SegmentationPublicInput,
+  SegmentationRepresentation,
   SegmentationState,
 } from './SegmentationStateTypes';
 import type { ISculptToolShape } from './ISculptToolShape';
@@ -84,7 +87,7 @@ import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { PolySegConversionOptions } from './PolySeg';
 import type { IBaseTool } from './IBaseTool';
-
+import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
 export type {
   // AnnotationState
   Annotation,
@@ -131,6 +134,7 @@ export type {
   TextBoxHandle,
   // Segmentation
   Segmentation,
+  SegmentationRepresentation,
   SegmentationState,
   RepresentationData,
   RepresentationsData,
@@ -172,4 +176,7 @@ export type {
   // polySeg
   PolySegConversionOptions,
   IBaseTool,
+  RepresentationStyle,
+  Segment,
+  SegmentationPublicInput,
 };
