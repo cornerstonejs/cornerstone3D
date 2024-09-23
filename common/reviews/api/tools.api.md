@@ -2749,6 +2749,9 @@ function getMeanPoints(points: IPoints[]): IPoints;
 function getMeanTouchPoints(points: ITouchPoints[]): ITouchPoints;
 
 // @public (undocumented)
+function getModalityUnit(modality: string, imageId: string, options: ModalityUnitOptions): string;
+
+// @public (undocumented)
 function getNextColorLUTIndex(): number;
 
 // @public (undocumented)
@@ -3669,6 +3672,12 @@ export class MIPJumpToClickTool extends BaseTool {
 
 // @public (undocumented)
 function mirror(mirrorPoint: Types_2.Point2, staticPoint: Types_2.Point2): Types_2.Point2;
+
+// @public (undocumented)
+type ModalityUnitOptions = {
+    isPreScaled: boolean;
+    isSuvScaled: boolean;
+};
 
 // @public (undocumented)
 enum MouseBindings {
@@ -6131,6 +6140,7 @@ declare namespace Types {
         InterpolationViewportData,
         JumpToSliceOptions,
         ToolSpecificAnnotationTypes,
+        ModalityUnitOptions,
         AnnotationRenderContext,
         PlanarBoundingBox,
         PublicToolProps,
@@ -6361,7 +6371,8 @@ declare namespace utilities {
         AnnotationFrameRange as annotationFrameRange,
         contourSegmentation,
         annotationHydration,
-        getClosestImageIdForStackViewport
+        getClosestImageIdForStackViewport,
+        getModalityUnit
     }
 }
 export { utilities }
