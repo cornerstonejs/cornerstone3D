@@ -24,7 +24,7 @@ function isModalityLUTForDisplay(sopClassUid: string): boolean {
 }
 
 /**
- * Helper function to set pixel d2023-03-17-16-35-04.pngata to the right typed array.
+ * Helper function to set the right typed array.
  * This is needed because web workers can transfer array buffers but not typed arrays
  *
  * Here we are setting the pixel data to the right typed array based on the final

@@ -177,9 +177,9 @@ function _setLabelmapColorAndOpacity(
 ): void {
   const { segmentationId } = segmentationRepresentation;
 
-  const { cfun, ofun, colorLUTIndex } =
+  const { cfun, ofun } =
     segmentationRepresentation.config as LabelmapRenderingConfig;
-
+  const { colorLUTIndex } = segmentationRepresentation;
   // todo fix this
   const activeSegmentation = getActiveSegmentation(viewportId);
 

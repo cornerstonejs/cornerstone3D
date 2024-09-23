@@ -1,5 +1,7 @@
 import { getActiveSegmentIndex } from './getActiveSegmentIndex';
 import { getSegmentation } from './getSegmentation';
+import { getSegmentationRepresentations } from './getSegmentationRepresentation';
+import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { setActiveSegmentIndex } from './segmentIndex';
 import { updateSegmentations } from './updateSegmentations';
@@ -36,7 +38,7 @@ export function removeSegment(
 
   const segmentation = getSegmentation(segmentationId);
   const { segments } = segmentation;
-  debugger;
+
   // remove the segment from the list
   delete segments[segmentIndex];
 
@@ -55,13 +57,31 @@ export function removeSegment(
 
   if (isThisSegmentActive && options.setNextSegmentAsActive) {
     // set the next or previous segment as active
-    const nextSegmentIndex = segmentIndex + 1;
-    const previousSegmentIndex = segmentIndex - 1;
+    const segmentIndices = Object.keys(segments)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const currentIndex = segmentIndices.indexOf(segmentIndex);
 
-    if (segments[nextSegmentIndex]) {
+    const nextSegmentIndex = segmentIndices[currentIndex + 1];
+    const previousSegmentIndex = segmentIndices[currentIndex - 1];
+
+    if (nextSegmentIndex !== undefined) {
       setActiveSegmentIndex(segmentationId, nextSegmentIndex);
-    } else if (segments[previousSegmentIndex]) {
+    } else if (previousSegmentIndex !== undefined) {
       setActiveSegmentIndex(segmentationId, previousSegmentIndex);
     }
   }
+
+  // remove the segment from the viewport representations
+  const viewportIds = getViewportIdsWithSegmentation(segmentationId);
+
+  viewportIds.forEach((viewportId) => {
+    const representations = getSegmentationRepresentations(viewportId, {
+      segmentationId,
+    });
+
+    representations.forEach((representation) => {
+      delete representation.segments[segmentIndex];
+    });
+  });
 }

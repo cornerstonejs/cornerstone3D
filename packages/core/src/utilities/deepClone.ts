@@ -14,13 +14,8 @@ export function deepClone(obj: unknown): unknown {
   }
 
   if (typeof structuredClone === 'function') {
-    try {
-      return structuredClone(obj);
-    } catch (error) {
-      console.debug(
-        'structuredClone failed, falling back to custom implementation'
-      );
-    }
+    // just return the object
+    return obj;
   }
 
   if (Array.isArray(obj)) {

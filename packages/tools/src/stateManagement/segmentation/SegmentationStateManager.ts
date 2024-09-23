@@ -134,24 +134,46 @@ export default class SegmentationStateManager {
    * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
    * ```
    */
+  // updateSegmentation(
+  //   segmentationId: string,
+  //   payload: Partial<Segmentation>
+  // ): void {
+  //   this.updateState((state) => {
+  //     const segmentation = state.segmentations.find(
+  //       (segmentation) => segmentation.segmentationId === segmentationId
+  //     );
+  //     if (!segmentation) {
+  //       return;
+  //     }
+  //     state.segmentations = state.segmentations.map((segmentation) => {
+  //       if (segmentation.segmentationId === segmentationId) {
+  //         return { ...segmentation, ...payload };
+  //       }
+  //       return segmentation;
+  //     });
+  //   });
+  // }
   updateSegmentation(
     segmentationId: string,
     payload: Partial<Segmentation>
   ): void {
-    this.updateState((state) => {
-      const segmentation = state.segmentations.find(
+    this.updateState((draftState) => {
+      const segmentation = draftState.segmentations.find(
         (segmentation) => segmentation.segmentationId === segmentationId
       );
+
       if (!segmentation) {
+        console.warn(
+          `Segmentation with id ${segmentationId} not found. Update aborted.`
+        );
         return;
       }
-      state.segmentations = state.segmentations.map((segmentation) => {
-        if (segmentation.segmentationId === segmentationId) {
-          return { ...segmentation, ...payload };
-        }
-        return segmentation;
-      });
+
+      // Directly mutate the draft state
+      Object.assign(segmentation, payload);
     });
+
+    triggerSegmentationModified(segmentationId);
   }
 
   /**
@@ -266,12 +288,28 @@ export default class SegmentationStateManager {
     type: SegmentationRepresentations,
     renderingConfig: RenderingConfig
   ) {
+    const segmentation = state.segmentations.find(
+      (segmentation) => segmentation.segmentationId === segmentationId
+    );
+
+    if (!segmentation) {
+      return;
+    }
+
+    const segmentReps = {};
+    Object.keys(segmentation.segments).forEach((segmentIndex) => {
+      segmentReps[Number(segmentIndex)] = {
+        visible: true,
+      };
+    });
+
     state.viewportSegRepresentations[viewportId].push({
       segmentationId,
       type,
       active: true,
       visible: true,
-      segmentsHidden: new Set(),
+      colorLUTIndex: 0,
+      segments: segmentReps,
       config: {
         ...getDefaultRenderingConfig(type),
         ...renderingConfig,
@@ -671,7 +709,7 @@ export default class SegmentationStateManager {
       const currentRepresentations =
         state.viewportSegRepresentations[viewportId];
 
-      if (!specifier) {
+      if (!Object.values(specifier).filter(Boolean).length) {
         // Remove all segmentation representations for the viewport
         removedRepresentations.push(...currentRepresentations);
         delete state.viewportSegRepresentations[viewportId];
@@ -926,6 +964,12 @@ export default class SegmentationStateManager {
 
       viewportRepresentations.forEach((representation) => {
         representation.visible = visible;
+
+        Object.entries(representation.segments).forEach(
+          ([segmentIndex, segment]) => {
+            segment.visible = visible;
+          }
+        );
       });
     });
 
@@ -1047,12 +1091,9 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
     return {
       cfun,
       ofun,
-      colorLUTIndex: 0,
     } as LabelmapRenderingConfig;
   } else {
-    return {
-      colorLUTIndex: 0,
-    } as ContourRenderingConfig;
+    return {} as ContourRenderingConfig;
   }
 }
 

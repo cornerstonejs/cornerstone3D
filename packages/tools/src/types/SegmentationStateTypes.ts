@@ -51,18 +51,14 @@ export type Segmentation = {
   representationData: RepresentationsData;
 };
 
-type BaseRenderingConfig = {
-  colorLUTIndex: number;
-};
-
-export type LabelmapRenderingConfig = BaseRenderingConfig & {
+export type LabelmapRenderingConfig = {
   cfun: vtkColorTransferFunction;
   ofun: vtkPiecewiseFunction;
 };
 
-export type ContourRenderingConfig = BaseRenderingConfig & {};
+export type ContourRenderingConfig = {};
 
-export type SurfaceRenderingConfig = BaseRenderingConfig & {};
+export type SurfaceRenderingConfig = {};
 
 export type RenderingConfig =
   | LabelmapRenderingConfig
@@ -70,14 +66,18 @@ export type RenderingConfig =
   | SurfaceRenderingConfig;
 
 type BaseSegmentationRepresentation = {
+  colorLUTIndex: number;
   // identifier for the segmentation representation
   segmentationId: string;
   type: Enums.SegmentationRepresentations;
   // settings
   visible: boolean;
   active: boolean;
-  segmentsHidden: Set<number>;
-  /** rendering config for display of this representation */
+  segments: {
+    [segmentIndex: number]: {
+      visible: boolean;
+    };
+  };
 };
 
 export type LabelmapRepresentation = BaseSegmentationRepresentation & {
@@ -130,6 +130,6 @@ export type RepresentationPublicInput = {
   segmentationId: string;
   type?: Enums.SegmentationRepresentations;
   config?: {
-    colorLUT?: Types.ColorLUT[];
+    colorLUTOrIndex?: Types.ColorLUT[] | number;
   };
 };

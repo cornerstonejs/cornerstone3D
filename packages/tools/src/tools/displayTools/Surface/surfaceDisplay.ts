@@ -96,7 +96,7 @@ async function render(
     );
   }
 
-  const colorLUTIndex = representation.config?.colorLUTIndex;
+  const { colorLUTIndex } = representation;
 
   const colorLUT = getColorLUT(colorLUTIndex);
 

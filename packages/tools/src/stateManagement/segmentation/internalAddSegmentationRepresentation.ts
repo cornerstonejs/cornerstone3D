@@ -37,22 +37,36 @@ function internalAddSegmentationRepresentation(
   triggerSegmentationModified(segmentationId);
 }
 
-function getColorLUTIndex(config: RepresentationPublicInput['config']) {
-  const colorLUT = config?.colorLUT;
+/**
+ * Retrieves or adds a Color Lookup Table (LUT) index based on the provided configuration.
+ *
+ * @param config - Configuration object containing colorLUTOrIndex.
+ * @returns The index of the Color LUT to be used.
+ */
+function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
+  // Destructure colorLUTOrIndex from the config, with a fallback to undefined if config is undefined
+  const { colorLUTOrIndex } = config || {};
 
-  const nextIndex = getNextColorLUTIndex();
-  const colorLUTToAdd = Array.isArray(colorLUT)
-    ? colorLUT
+  // Determine if colorLUTOrIndex is a numeric index or a Color LUT object
+  const isIndexProvided = typeof colorLUTOrIndex === 'number';
+
+  // If an index is provided, retrieve the corresponding Color LUT; otherwise, use the default Color LUT
+  const selectedColorLUT: Types.ColorLUT = isIndexProvided
+    ? getColorLUT(colorLUTOrIndex)
     : CORNERSTONE_COLOR_LUT;
 
-  // in any case add the colorLUT to the state
-  addColorLUT(colorLUTToAdd as Types.ColorLUT, nextIndex);
+  // Determine the Color LUT index:
+  // - Use the provided index if available
+  // - Otherwise, obtain the next available index
+  const colorLUTIndex: number = isIndexProvided
+    ? colorLUTOrIndex
+    : getNextColorLUTIndex();
 
-  const colorLUTIndex = nextIndex;
-
-  if (!getColorLUT(colorLUTIndex)) {
-    throw new Error(`Color LUT with index ${colorLUTIndex} not found`);
+  // If a Color LUT object is provided instead of an index, add it to the state with the determined index
+  if (!isIndexProvided) {
+    addColorLUT(selectedColorLUT, colorLUTIndex);
   }
+
   return colorLUTIndex;
 }
 

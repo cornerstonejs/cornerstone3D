@@ -130,11 +130,6 @@ function addContourSetsToElement(
     }
   });
 
-  const segmentsHidden = internalGetHiddenSegmentIndices(viewport.id, {
-    segmentationId,
-    type: SegmentationRepresentations.Contour,
-  });
-
   viewport.resetCamera();
   viewport.render();
 }

@@ -14,5 +14,15 @@ export function internalGetHiddenSegmentIndices(
     return new Set();
   }
 
-  return (representation.segmentsHidden ?? new Set()) as Set<number>;
+  const segmentsHidden = Object.entries(representation.segments).reduce(
+    (acc, [segmentIndex, segment]) => {
+      if (!segment.visible) {
+        acc.add(Number(segmentIndex));
+      }
+      return acc;
+    },
+    new Set<number>()
+  );
+
+  return segmentsHidden;
 }

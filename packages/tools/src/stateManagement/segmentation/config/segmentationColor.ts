@@ -49,7 +49,7 @@ function setColorLUT(
   }
 
   segmentationRepresentations.forEach((segmentationRepresentation) => {
-    segmentationRepresentation.config.colorLUTIndex = colorLUTsIndex;
+    segmentationRepresentation.colorLUTIndex = colorLUTsIndex;
   });
 
   triggerSegmentationRepresentationModified(viewportId, segmentationId);
@@ -82,7 +82,7 @@ function getSegmentIndexColor(
 
   const representation = representations[0];
 
-  const { colorLUTIndex } = representation.config;
+  const { colorLUTIndex } = representation;
 
   // get colorLUT
   const colorLUT = _getColorLUT(colorLUTIndex);
