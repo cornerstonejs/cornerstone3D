@@ -60,6 +60,7 @@ function getBufferConfiguration(
     isVolumeBuffer
   );
 
+  // @ts-expect-error
   const bytesPerElement = TypedArrayConstructor.BYTES_PER_ELEMENT;
   const numBytes = length * bytesPerElement;
 
