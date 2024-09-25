@@ -311,6 +311,16 @@ type StackViewportScrollEventDetail = {
 };
 
 /**
+ * Stack Scroll out of bounds event detail
+ */
+type StackScrollOutOfBoundsEventDetail = {
+  /** the current imageId index in the stack that we just scroll to */
+  imageIdIndex: number;
+  /** direction of the scroll */
+  direction: number;
+};
+
+/**
  * CameraModified Event type
  */
 type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
@@ -431,6 +441,9 @@ type StackViewportNewStackEvent =
 
 type StackViewportScrollEvent = CustomEventType<StackViewportScrollEventDetail>;
 
+type StackScrollOutOfBoundsEvent =
+  CustomEventType<StackScrollOutOfBoundsEventDetail>;
+
 export type {
   CameraModifiedEventDetail,
   CameraModifiedEvent,
@@ -478,6 +491,8 @@ export type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEvent,
   StackViewportScrollEventDetail,
+  StackScrollOutOfBoundsEvent,
+  StackScrollOutOfBoundsEventDetail,
   CameraResetEvent,
   CameraResetEventDetail,
 };
