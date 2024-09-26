@@ -69,6 +69,8 @@ export type ReferenceCompatibleOptions = {
    * not need to be provided.
    */
   imageURI?: string;
+  isFiltering?: boolean;
+  currentImageId?: string;
 };
 
 /**
