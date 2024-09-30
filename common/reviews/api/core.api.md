@@ -2793,6 +2793,8 @@ type ReferenceCompatibleOptions = {
     asVolume?: boolean;
     withOrientation?: boolean;
     imageURI?: string;
+    isFiltering?: boolean;
+    currentImageId?: string;
 };
 
 // @public (undocumented)
