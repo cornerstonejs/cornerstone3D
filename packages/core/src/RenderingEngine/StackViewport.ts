@@ -34,7 +34,6 @@ import type {
   StackViewportProperties,
   VOIRange,
   ViewReference,
-  ViewPresentation,
   VolumeActor,
 } from '../types';
 import {
@@ -98,6 +97,7 @@ import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { findMatchingColormap } from '../utilities/colormap';
+import findIndexByFOR from './helpers/findIndexByFOR';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -2941,35 +2941,12 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
         isFiltering === true
           ? this.imageIds.filter((imageId) => imageId === currentImageId)
           : this.imageIds;
-      let foundIndex = -1;
-      for (let i = 0; i < imageIds.length; ++i) {
-        const imageMetadata = metaData.get('instance', imageIds[i]);
-        if (imageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID) {
-          continue;
-        }
 
-        const sliceNormal = [0, 0, 0];
-        const orientation = imageMetadata.ImageOrientationPatient;
-        sliceNormal[0] =
-          orientation[1] * orientation[5] - orientation[2] * orientation[4];
-        sliceNormal[1] =
-          orientation[2] * orientation[3] - orientation[0] * orientation[5];
-        sliceNormal[2] =
-          orientation[0] * orientation[4] - orientation[1] * orientation[3];
-
-        let distanceAlongNormal = 0;
-        for (let j = 0; j < 3; ++j) {
-          distanceAlongNormal +=
-            sliceNormal[j] * imageMetadata.ImagePositionPatient[j];
-        }
-
-        /** Assuming 2 mm tolerance */
-        if (Math.abs(distanceAlongNormal - cameraFocalPoint[2]) > 2) {
-          continue;
-        }
-        foundIndex = i;
-        break;
-      }
+      const foundIndex = findIndexByFOR({
+        FrameOfReferenceUID,
+        imageIds,
+        cameraFocalPoint,
+      });
       return foundIndex !== -1;
     } else {
       return false;
@@ -3034,37 +3011,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       if (foundIndex !== -1) {
         this.scroll(foundIndex - this.targetImageIdIndex);
       } else if (cameraFocalPoint && FrameOfReferenceUID) {
-        let foundIndex = -1;
-        for (let i = 0; i < this.imageIds.length; ++i) {
-          const imageMetadata = metaData.get('instance', this.imageIds[i]);
-          if (imageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID) {
-            continue;
-          }
+        const foundIndex = findIndexByFOR({
+          FrameOfReferenceUID,
+          imageIds: this.imageIds,
+          cameraFocalPoint,
+        });
 
-          const sliceNormal = [0, 0, 0];
-          const orientation = imageMetadata.ImageOrientationPatient;
-          sliceNormal[0] =
-            orientation[1] * orientation[5] - orientation[2] * orientation[4];
-          sliceNormal[1] =
-            orientation[2] * orientation[3] - orientation[0] * orientation[5];
-          sliceNormal[2] =
-            orientation[0] * orientation[4] - orientation[1] * orientation[3];
-
-          let distanceAlongNormal = 0;
-          for (let j = 0; j < 3; ++j) {
-            distanceAlongNormal +=
-              sliceNormal[j] * imageMetadata.ImagePositionPatient[j];
-          }
-
-          /** Assuming 2 mm tolerance */
-          if (Math.abs(distanceAlongNormal - cameraFocalPoint[2]) > 2) {
-            continue;
-          }
-          foundIndex = i;
-          break;
-        }
         if (foundIndex !== -1) {
-          console.debug('Index found:', foundIndex);
           this.scroll(foundIndex - this.targetImageIdIndex);
           return;
         }
