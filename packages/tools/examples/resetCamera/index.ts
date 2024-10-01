@@ -13,8 +13,6 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  addSliderToToolbar,
-  camera as cameraHelpers,
   setCtTransferFunctionForVolumeActor,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
