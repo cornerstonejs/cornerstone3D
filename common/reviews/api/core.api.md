@@ -2797,6 +2797,7 @@ type ReferenceCompatibleOptions = {
     asVolume?: boolean;
     withOrientation?: boolean;
     imageURI?: string;
+    asNearbyProjection?: boolean;
 };
 
 // @public (undocumented)

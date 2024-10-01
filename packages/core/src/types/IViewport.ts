@@ -69,6 +69,10 @@ export type ReferenceCompatibleOptions = {
    * not need to be provided.
    */
   imageURI?: string;
+  /**
+   * As nearby projection
+   */
+  asNearbyProjection?: boolean;
 };
 
 /**
