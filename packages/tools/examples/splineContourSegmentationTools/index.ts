@@ -86,7 +86,19 @@ createInfoSection(content, { ordered: true })
     'Notice that each segment index has a different color assigned to it'
   )
   .addInstruction('Change the style for the segmentation')
-  .addInstruction('Confirm the style is applied properly');
+  .addInstruction('Confirm the style is applied properly')
+  .addInstruction('You can draw overlapping splines to:')
+  .openNestedSection()
+  .addInstruction(
+    'Merge both splines when the first point of the second spline is inside the first spline'
+  )
+  .addInstruction(
+    'Subctract the second spline from the first spline when the first point of the second spline is outside the first spline'
+  )
+  .closeNestedSection()
+  .addInstruction(
+    'The resulting contour is converted to freehand ROI when splines are merged/subtracted'
+  );
 
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way

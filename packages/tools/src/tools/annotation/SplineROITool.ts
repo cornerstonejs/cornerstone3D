@@ -720,7 +720,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
           closed: data.contour.closed,
           targetWindingDirection: ContourWindingDirection.Clockwise,
         },
-        viewport
+        viewport,
+        { updateWindingDirection: data.contour.closed }
       );
     });
 
