@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0-beta.29](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.28...v2.0.0-beta.29) (2024-10-01)
+
+### Bug Fixes
+
+- Dynamic threshold wasn't working in the beta branch ([#1470](https://github.com/cornerstonejs/cornerstone3D/issues/1470)) ([c5ba018](https://github.com/cornerstonejs/cornerstone3D/commit/c5ba0182f11a9bf29bf149ce61c88aefa46c8efe))
+- segmentation and versioned docs([#1488](https://github.com/cornerstonejs/cornerstone3D/issues/1488)) ([580dc4b](https://github.com/cornerstonejs/cornerstone3D/commit/580dc4b06a8e9c9698de8f8a37921a581e77ce84))
+
 # [2.0.0-beta.28](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.0-beta.27...v2.0.0-beta.28) (2024-09-12)
 
 ### Features
