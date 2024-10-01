@@ -254,10 +254,7 @@ export default class SegmentationStateManager {
     this.updateState((state) => {
       if (!state.viewportSegRepresentations[viewportId]) {
         state.viewportSegRepresentations[viewportId] = [];
-        segmentationStyle.setViewportRenderInactiveSegmentations(
-          viewportId,
-          true
-        );
+        segmentationStyle.setRenderInactiveSegmentations(viewportId, true);
       }
 
       if (type !== SegmentationRepresentations.Labelmap) {
@@ -709,7 +706,10 @@ export default class SegmentationStateManager {
       const currentRepresentations =
         state.viewportSegRepresentations[viewportId];
 
-      if (!Object.values(specifier).filter(Boolean).length) {
+      if (
+        !specifier ||
+        Object.values(specifier).every((value) => value === undefined)
+      ) {
         // Remove all segmentation representations for the viewport
         removedRepresentations.push(...currentRepresentations);
         delete state.viewportSegRepresentations[viewportId];

@@ -20,7 +20,7 @@ export function setGlobalStyle(
   styles: RepresentationStyle,
   suppressEvents?: boolean
 ): void {
-  segmentationStyle.setGlobalStyle(type, styles);
+  segmentationStyle.setStyle({ type }, styles);
 
   if (!suppressEvents) {
     triggerSegmentationRender();

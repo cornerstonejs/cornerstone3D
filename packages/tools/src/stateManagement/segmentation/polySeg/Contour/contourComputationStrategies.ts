@@ -72,7 +72,7 @@ export async function computeContourData(
     segmentationId
   );
 
-  segmentationStyle.setSegmentationSpecificStyle(
+  segmentationStyle.setStyle(
     { segmentationId, type: SegmentationRepresentations.Contour },
     {
       fillAlpha: 0,

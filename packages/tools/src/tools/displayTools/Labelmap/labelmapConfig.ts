@@ -3,13 +3,13 @@ import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 const defaultLabelmapConfig: LabelmapStyle = {
   renderOutline: true,
   renderOutlineInactive: true,
-  outlineWidthActive: 3,
+  outlineWidth: 3,
   outlineWidthInactive: 2,
   activeSegmentOutlineWidthDelta: 0,
   renderFill: true,
   renderFillInactive: true,
-  fillAlpha: 0.7,
-  fillAlphaInactive: 0.65,
+  fillAlpha: 0.5,
+  fillAlphaInactive: 0.4,
   outlineOpacity: 1,
   outlineOpacityInactive: 0.85,
 };

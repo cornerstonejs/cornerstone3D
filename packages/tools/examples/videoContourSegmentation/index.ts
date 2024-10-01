@@ -28,9 +28,9 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   fillAlphaInactive: 0.3,
   outlineOpacity: 1,
   outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
+  outlineWidth: 3,
   outlineWidthInactive: 2,
-  outlineDashActive: undefined,
+  outlineDash: undefined,
   outlineDashInactive: undefined,
 };
 
@@ -92,11 +92,9 @@ function updateInputsForCurrentSegmentation() {
   const segmentationConfig = getSegmentationConfig(toolGroupId);
   const contourConfig = segmentationConfig.Contour;
 
-  (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineWidthActive ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineWidthActive
-    );
+  (document.getElementById('outlineWidth') as HTMLInputElement).value = String(
+    contourConfig.outlineWidth ?? DEFAULT_SEGMENTATION_CONFIG.outlineWidth
+  );
 
   (document.getElementById('outlineOpacity') as HTMLInputElement).value =
     String(
@@ -205,13 +203,13 @@ addButtonToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineWidthActive',
+  id: 'outlineWidth',
   title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineWidthActive: Number(value) });
+    updateSegmentationConfig({ outlineWidth: Number(value) });
   },
 });
 

@@ -10,5 +10,5 @@ import { segmentationStyle } from './SegmentationStyle';
 export function getGlobalStyle(
   type: SegmentationRepresentations
 ): RepresentationStyle {
-  return segmentationStyle.getGlobalStyle(type);
+  return segmentationStyle.getStyle({ type });
 }

@@ -1,181 +1,121 @@
-import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import type SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import type { ContourStyle } from '../../../types/ContourTypes';
 import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 import type { SurfaceStyle } from '../../../types/SurfaceTypes';
-import {
-  triggerSegmentationRender,
-  triggerSegmentationRenderBySegmentationId,
-} from '../SegmentationRenderingEngine';
+import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import { segmentationStyle } from '../SegmentationStyle';
 import type { RepresentationStyle } from '../SegmentationStyle';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+
+type BaseSpecifier = {
+  viewportId?: string;
+  segmentationId?: string;
+  segmentIndex?: number;
+};
+
+type SpecifierWithType<T extends SegmentationRepresentations> =
+  BaseSpecifier & {
+    type: T;
+  };
+
+type StyleForType<T extends SegmentationRepresentations> =
+  T extends SegmentationRepresentations.Labelmap
+    ? LabelmapStyle
+    : T extends SegmentationRepresentations.Contour
+    ? ContourStyle
+    : T extends SegmentationRepresentations.Surface
+    ? SurfaceStyle
+    : never;
 
 /**
  * Get the style for a given segmentation representation.
  * @param specifier The specifier object containing the viewportId, segmentationId, type, and segmentIndex.
  * @returns The style for the given segmentation representation.
  */
-function getStyle(specifier: {
-  viewportId?: string;
-  segmentationId?: string;
-  type?: SegmentationRepresentations;
-  segmentIndex?: number;
-}): { style: RepresentationStyle; renderInactiveSegmentations: boolean } {
+function getStyle<T extends SegmentationRepresentations>(
+  specifier: SpecifierWithType<T>
+): StyleForType<T>;
+function getStyle(
+  specifier: BaseSpecifier & { type?: SegmentationRepresentations }
+): RepresentationStyle {
   return segmentationStyle.getStyle(specifier);
 }
 
 /**
- * Get the global segmentation style for a specific representation type.
- * @param type - The type of segmentation representation.
- * @returns The global segmentation style for the specified representation type.
+ * Set the style for a given segmentation representation.
+ * @param specifier The specifier object containing the viewportId, segmentationId, type, and segmentIndex.
+ * @param style The style to set for the given segmentation representation.
  */
-function getGlobalStyle(
-  type: SegmentationRepresentations
-): RepresentationStyle {
-  return segmentationStyle.getGlobalStyle(type);
-}
-
-/**
- * Set the global segmentation style for a specific representation type.
- * @param type - The type of segmentation representation.
- * @param style - The style to be set globally.
- */
-function setGlobalStyle(
-  type: SegmentationRepresentations,
+function setStyle<T extends SegmentationRepresentations>(
+  specifier: SpecifierWithType<T>,
+  style: StyleForType<T>
+): void;
+function setStyle(
+  specifier: BaseSpecifier & { type: SegmentationRepresentations },
   style: RepresentationStyle
 ): void {
-  segmentationStyle.setGlobalStyle(type, style);
-  triggerSegmentationRender();
-}
+  segmentationStyle.setStyle(specifier, style);
 
-/**
- * Set the global labelmap style.
- * @param style - The labelmap style to be set globally.
- */
-function setGlobalLabelmapStyle(style: LabelmapStyle): void {
-  segmentationStyle.setGlobalLabelmapStyle(style);
-  triggerSegmentationRender();
-}
-
-/**
- * Set the global contour style.
- * @param style - The contour style to be set globally.
- */
-function setGlobalContourStyle(style: ContourStyle): void {
-  segmentationStyle.setGlobalContourStyle(style);
-  triggerSegmentationRender();
-}
-
-/**
- * Set the global surface style.
- * @param style - The surface style to be set globally.
- */
-function setGlobalSurfaceStyle(style: SurfaceStyle): void {
-  segmentationStyle.setGlobalSurfaceStyle(style);
-  triggerSegmentationRender();
-}
-
-/**
- * Sets the style for a specific segmentation across all viewports.
- * @param specifier - An object containing the specifications for the segmentation style.
- * @param style - The style to be set for the segmentation.
- */
-function setSegmentationSpecificStyle(
-  specifier: {
-    segmentationId: string;
-    type: SegmentationRepresentations;
-    segmentIndex?: number;
-  },
-  style: RepresentationStyle
-): void {
-  segmentationStyle.setSegmentationSpecificStyle(specifier, style);
-  triggerSegmentationRenderBySegmentationId(specifier.segmentationId);
-}
-
-/**
- * Sets the style for a labelmap segmentation representation across all viewports.
- * @param specifier - An object containing the specifications for the labelmap style.
- * @param style - The labelmap style to be set.
- */
-function setLabelmapStyle(
-  specifier: {
-    segmentationId: string;
-  },
-  style: LabelmapStyle
-): void {
-  setSegmentationSpecificStyle(
-    {
-      ...specifier,
-      type: SegmentationRepresentations.Labelmap,
-    },
-    style
+  triggerSegmentationRepresentationModified(
+    specifier.viewportId,
+    specifier.segmentationId,
+    specifier.type
   );
 }
 
 /**
- * Sets the style for all segmentations of a specific representation type in a viewport.
- * @param specifier - An object containing the specifications for the viewport-specific style.
- * @param style - The style to be set for the representation type in the specified viewport.
+ * Set the renderInactiveSegmentations flag for a specific viewport.
+ * @param viewportId The ID of the viewport.
+ * @param renderInactiveSegmentations Whether to render inactive segmentations.
  */
-function setViewportSpecificStyleForType(
-  specifier: {
-    viewportId: string;
-    type: SegmentationRepresentations;
-  },
-  style: RepresentationStyle
-): void {
-  segmentationStyle.setViewportSpecificStyleForType(specifier, style);
-  triggerSegmentationRender(specifier.viewportId);
-}
-
-/**
- * Sets the style for a specific segmentation and representation type in a specific viewport.
- * @param specifier - An object containing the specifications for the viewport-specific segmentation style.
- * @param style - The style to be set for the segmentation in the specified viewport.
- */
-function setViewportSpecificStyleForSegmentation(
-  specifier: {
-    viewportId: string;
-    segmentationId: string;
-    type: SegmentationRepresentations;
-    segmentIndex?: number;
-  },
-  style: RepresentationStyle
-): void {
-  segmentationStyle.setViewportSpecificStyleForSegmentation(specifier, style);
-  triggerSegmentationRender(specifier.viewportId);
-}
-
-/**
- * Sets the renderInactiveSegmentations flag for a specific viewport.
- * @param viewportId - The ID of the viewport.
- * @param renderInactiveSegmentations - Whether to render inactive segmentations.
- */
-function setViewportRenderInactiveSegmentations(
+function setRenderInactiveSegmentations(
   viewportId: string,
   renderInactiveSegmentations: boolean
 ): void {
-  segmentationStyle.setViewportRenderInactiveSegmentations(
+  segmentationStyle.setRenderInactiveSegmentations(
     viewportId,
     renderInactiveSegmentations
   );
+
   triggerSegmentationRender(viewportId);
+}
+
+/**
+ * Get the renderInactiveSegmentations flag for a specific viewport.
+ * @param viewportId The ID of the viewport.
+ * @returns Whether to render inactive segmentations.
+ */
+function getRenderInactiveSegmentations(viewportId: string): boolean {
+  return segmentationStyle.getRenderInactiveSegmentations(viewportId);
+}
+
+/**
+ * Reset the segmentation style to the global style.
+ */
+function resetToGlobalStyle(): void {
+  segmentationStyle.resetToGlobalStyle();
+  triggerSegmentationRender();
+}
+
+/**
+ * Checks if there is a non-global style for a given specifier.
+ * @param specifier - The specifier object containing viewportId, segmentationId, type, and segmentIndex.
+ * @returns True if there is a non-global style, false otherwise.
+ */
+function hasCustomStyle(specifier: {
+  viewportId?: string;
+  segmentationId?: string;
+  type?: SegmentationRepresentations;
+  segmentIndex?: number;
+}): boolean {
+  return segmentationStyle.hasCustomStyle(specifier);
 }
 
 export {
   getStyle,
-  // Global
-  getGlobalStyle,
-  setGlobalStyle,
-  setGlobalLabelmapStyle,
-  setGlobalContourStyle,
-  setGlobalSurfaceStyle,
-  // Segmentation-specific style
-  setSegmentationSpecificStyle,
-  setLabelmapStyle,
-  // Viewport-specific style
-  setViewportSpecificStyleForType,
-  setViewportSpecificStyleForSegmentation,
-  // Per-segment style
-  // Viewport render inactive segmentations
-  setViewportRenderInactiveSegmentations,
+  setStyle,
+  setRenderInactiveSegmentations,
+  getRenderInactiveSegmentations,
+  resetToGlobalStyle,
+  hasCustomStyle,
 };

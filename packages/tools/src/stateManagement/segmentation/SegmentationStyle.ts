@@ -1,22 +1,30 @@
-import { SegmentationRepresentations } from '../../enums';
+import type { SegmentationRepresentations } from '../../enums';
 import getDefaultContourConfig from '../../tools/displayTools/Contour/contourConfig';
 import getDefaultLabelmapConfig from '../../tools/displayTools/Labelmap/labelmapConfig';
-import type { ContourStyle } from '../../types/ContourTypes';
-import type { LabelmapStyle } from '../../types/LabelmapTypes';
+import type { BaseContourStyle, ContourStyle } from '../../types/ContourTypes';
+import type {
+  BaseLabelmapStyle,
+  LabelmapStyle,
+} from '../../types/LabelmapTypes';
 import type { SurfaceStyle } from '../../types/SurfaceTypes';
 import * as Enums from '../../enums';
+import { utilities } from '@cornerstonejs/core';
 
 export type RepresentationStyle = LabelmapStyle | ContourStyle | SurfaceStyle;
+
+export type BaseRepresentationStyle = BaseLabelmapStyle | BaseContourStyle;
 
 interface SegmentationStyleConfig {
   global: {
     [key in SegmentationRepresentations]?: RepresentationStyle;
   };
+  // per segmentation we follow the same active and inactive style properties
+  // since the target (segmentation) is important not the activeness etc
   segmentations: {
     [segmentationId: string]: {
       [key in SegmentationRepresentations]?: {
-        allSegments?: RepresentationStyle;
-        perSegment?: { [key: number]: RepresentationStyle };
+        allSegments?: BaseRepresentationStyle;
+        perSegment?: { [key: number]: BaseRepresentationStyle };
       };
     };
   };
@@ -26,8 +34,10 @@ interface SegmentationStyleConfig {
       representations: {
         [segmentationId: string]: {
           [key in SegmentationRepresentations]?: {
-            allSegments?: RepresentationStyle;
-            perSegment?: { [key: number]: RepresentationStyle };
+            allSegments?: BaseRepresentationStyle;
+            perSegment?: {
+              [key: number]: BaseRepresentationStyle;
+            };
           };
         };
       };
@@ -60,190 +70,161 @@ class SegmentationStyle {
   }
 
   /**
-   * Sets the global style for a specific representation type.
-   * @param type - The type of segmentation representation.
-   * @param styles - The styles to set globally for the representation type.
-   */
-  setGlobalStyle(
-    type: SegmentationRepresentations,
-    styles: RepresentationStyle
-  ): void {
-    this.config.global[type] = styles;
-  }
-
-  getGlobalStyle(type: SegmentationRepresentations): RepresentationStyle {
-    return this.config.global[type];
-  }
-
-  setGlobalLabelmapStyle(styles: LabelmapStyle): void {
-    this.setGlobalStyle(SegmentationRepresentations.Labelmap, styles);
-  }
-
-  setGlobalContourStyle(styles: ContourStyle): void {
-    this.setGlobalStyle(SegmentationRepresentations.Contour, styles);
-  }
-
-  setGlobalSurfaceStyle(styles: SurfaceStyle): void {
-    this.setGlobalStyle(SegmentationRepresentations.Surface, styles);
-  }
-
-  /**
-   * Sets the style for a specific segmentation across all viewports.
-   * @param specifier - An object containing the specifications for the segmentation style.
-   * @param specifier.segmentationId - The ID of the segmentation.
-   * @param specifier.type - The type of segmentation representation.
+   * Sets the style based on the provided specifiers.
+   * The priority hierarchy is as follows:
+   * 1) Viewport-specific styles for a specific segmentation and representation type
+   * 2) Viewport-specific styles for all segmentations of a representation type
+   * 3) Segmentation-specific styles for a representation type
+   * 4) Global styles for a representation type
+   * 5) Default styles
+   * @param specifier - An object containing the specifications for the style.
+   * @param specifier.type - The type of segmentation representation (required).
+   * @param specifier.viewportId - Optional. The ID of the viewport.
+   * @param specifier.segmentationId - Optional. The ID of the segmentation.
    * @param specifier.segmentIndex - Optional. The index of the specific segment to style.
-   * @param styles - The styles to set for the segmentation.
+   * @param styles - The styles to set.
    */
-  setSegmentationSpecificStyle(
+  setStyle(
     specifier: {
-      segmentationId: string;
       type: SegmentationRepresentations;
-      segmentIndex?: number;
-    },
-    styles: RepresentationStyle
-  ): void {
-    const { segmentationId, type, segmentIndex } = specifier;
-
-    if (!this.config.segmentations[segmentationId]) {
-      this.config.segmentations[segmentationId] = {};
-    }
-    if (!this.config.segmentations[segmentationId][type]) {
-      this.config.segmentations[segmentationId][type] = {};
-    }
-
-    if (segmentIndex !== undefined) {
-      if (!this.config.segmentations[segmentationId][type].perSegment) {
-        this.config.segmentations[segmentationId][type].perSegment = {};
-      }
-      this.config.segmentations[segmentationId][type].perSegment[segmentIndex] =
-        styles;
-    } else {
-      this.config.segmentations[segmentationId][type].allSegments = styles;
-    }
-  }
-
-  /**
-   * Sets the style for all segmentations of a specific representation type in a viewport.
-   * @param specifier - An object containing the specifications for the viewport-specific style.
-   * @param specifier.viewportId - The ID of the viewport.
-   * @param specifier.type - The type of segmentation representation.
-   * @param styles - The styles to set for the representation type in the specified viewport.
-   */
-  setViewportSpecificStyleForType(
-    specifier: {
-      viewportId: string;
-      type: SegmentationRepresentations;
-    },
-    styles: RepresentationStyle
-  ): void {
-    const { viewportId, type } = specifier;
-
-    if (!this.config.viewportsStyle[viewportId]) {
-      this.config.viewportsStyle[viewportId] = {
-        renderInactiveSegmentations: false,
-        representations: {},
-      };
-    }
-
-    // Create a special key for viewport-wide representation styles
-    const allSegmentationsKey = '__allSegmentations__';
-    if (
-      !this.config.viewportsStyle[viewportId].representations[
-        allSegmentationsKey
-      ]
-    ) {
-      this.config.viewportsStyle[viewportId].representations[
-        allSegmentationsKey
-      ] = {};
-    }
-
-    this.config.viewportsStyle[viewportId].representations[allSegmentationsKey][
-      type
-    ] = {
-      allSegments: styles,
-    };
-  }
-
-  /**
-   * Sets the style for a specific segmentation and representation type in a specific viewport.
-   * @param specifier - An object containing the specifications for the viewport-specific segmentation style.
-   * @param specifier.viewportId - The ID of the viewport.
-   * @param specifier.segmentationId - The ID of the segmentation.
-   * @param specifier.type - The type of segmentation representation.
-   * @param specifier.segmentIndex - Optional. The index of the specific segment to style.
-   * @param styles - The styles to set for the segmentation in the specified viewport.
-   */
-  setViewportSpecificStyleForSegmentation(
-    specifier: {
-      viewportId: string;
-      segmentationId: string;
-      type: SegmentationRepresentations;
+      viewportId?: string;
+      segmentationId?: string;
       segmentIndex?: number;
     },
     styles: RepresentationStyle
   ): void {
     const { viewportId, segmentationId, type, segmentIndex } = specifier;
 
-    if (!this.config.viewportsStyle[viewportId]) {
-      this.config.viewportsStyle[viewportId] = {
-        renderInactiveSegmentations: false,
-        representations: {},
+    const currentStyles = this.getStyle(specifier);
+
+    let updatedStyles: RepresentationStyle;
+
+    if (!viewportId && !segmentationId) {
+      // Global style setting
+      updatedStyles = {
+        ...currentStyles,
+        ...styles,
       };
-    }
-    if (
-      !this.config.viewportsStyle[viewportId].representations[segmentationId]
-    ) {
-      this.config.viewportsStyle[viewportId].representations[segmentationId] =
-        {};
-    }
-    if (
-      !this.config.viewportsStyle[viewportId].representations[segmentationId][
+    } else {
+      // Per segmentation or per viewport style setting
+      updatedStyles = this.copyActiveToInactiveIfNotProvided(
+        {
+          ...currentStyles,
+          ...styles,
+        },
         type
-      ]
-    ) {
-      this.config.viewportsStyle[viewportId].representations[segmentationId][
-        type
-      ] = {};
+      );
     }
 
-    if (segmentIndex !== undefined) {
-      if (
-        !this.config.viewportsStyle[viewportId].representations[segmentationId][
-          type
-        ].perSegment
-      ) {
-        this.config.viewportsStyle[viewportId].representations[segmentationId][
-          type
-        ].perSegment = {};
+    if (!type) {
+      throw new Error('Type is required to set a style');
+    }
+
+    if (viewportId) {
+      // Viewport-specific styles
+      if (!this.config.viewportsStyle[viewportId]) {
+        this.config.viewportsStyle[viewportId] = {
+          renderInactiveSegmentations: false,
+          representations: {},
+        };
       }
-      this.config.viewportsStyle[viewportId].representations[segmentationId][
-        type
-      ].perSegment[segmentIndex] = styles;
+
+      const representations =
+        this.config.viewportsStyle[viewportId].representations;
+
+      if (segmentationId) {
+        // Viewport-specific style for a specific segmentation
+        if (!representations[segmentationId]) {
+          representations[segmentationId] = {};
+        }
+        if (!representations[segmentationId][type]) {
+          representations[segmentationId][type] = {};
+        }
+
+        const repConfig = representations[segmentationId][type];
+
+        if (segmentIndex !== undefined) {
+          // Style for a specific segment
+          if (!repConfig.perSegment) {
+            repConfig.perSegment = {};
+          }
+          repConfig.perSegment[segmentIndex] = updatedStyles;
+        } else {
+          // Style for all segments of the segmentation
+          repConfig.allSegments = updatedStyles;
+        }
+      } else {
+        // Viewport-specific style for all segmentations of a type
+        const ALL_SEGMENTATIONS_KEY = '__allSegmentations__';
+        if (!representations[ALL_SEGMENTATIONS_KEY]) {
+          representations[ALL_SEGMENTATIONS_KEY] = {};
+        }
+        if (!representations[ALL_SEGMENTATIONS_KEY][type]) {
+          representations[ALL_SEGMENTATIONS_KEY][type] = {};
+        }
+
+        representations[ALL_SEGMENTATIONS_KEY][type].allSegments =
+          updatedStyles;
+      }
+    } else if (segmentationId) {
+      // Segmentation-specific updatedStyles
+      if (!this.config.segmentations[segmentationId]) {
+        this.config.segmentations[segmentationId] = {};
+      }
+      if (!this.config.segmentations[segmentationId][type]) {
+        this.config.segmentations[segmentationId][type] = {};
+      }
+
+      const segConfig = this.config.segmentations[segmentationId][type];
+
+      if (segmentIndex !== undefined) {
+        // Style for a specific segment
+        if (!segConfig.perSegment) {
+          segConfig.perSegment = {};
+        }
+        segConfig.perSegment[segmentIndex] = updatedStyles;
+      } else {
+        // Style for all segments of the segmentation
+        segConfig.allSegments = updatedStyles;
+      }
     } else {
-      this.config.viewportsStyle[viewportId].representations[segmentationId][
-        type
-      ].allSegments = styles;
+      // Global style for the representation type
+      this.config.global[type] = updatedStyles;
     }
   }
 
   /**
-   * Sets the renderInactiveSegmentations flag for a specific viewport.
-   * @param viewportId - The ID of the viewport.
-   * @param renderInactiveSegmentations - Whether to render inactive segmentations.
+   * Copies active style properties to their inactive counterparts if not provided.
+   * @param styles - The styles to process.
+   * @param type - The type of segmentation representation.
+   * @returns The processed styles with inactive properties set if not provided.
    */
-  setViewportRenderInactiveSegmentations(
-    viewportId: string,
-    renderInactiveSegmentations: boolean
-  ): void {
-    if (!this.config.viewportsStyle[viewportId]) {
-      this.config.viewportsStyle[viewportId] = {
-        renderInactiveSegmentations: false,
-        representations: {},
-      };
+  private copyActiveToInactiveIfNotProvided(
+    styles: RepresentationStyle,
+    type: SegmentationRepresentations
+  ): RepresentationStyle {
+    const processedStyles = { ...styles };
+
+    if (type === Enums.SegmentationRepresentations.Labelmap) {
+      const labelmapStyles = processedStyles as LabelmapStyle;
+
+      labelmapStyles.renderOutlineInactive = labelmapStyles.renderOutline;
+      labelmapStyles.outlineWidthInactive = labelmapStyles.outlineWidth;
+      labelmapStyles.renderFillInactive = labelmapStyles.renderFill;
+      labelmapStyles.fillAlphaInactive = labelmapStyles.fillAlpha;
+      labelmapStyles.outlineOpacityInactive = labelmapStyles.outlineOpacity;
+    } else if (type === Enums.SegmentationRepresentations.Contour) {
+      const contourStyles = processedStyles as ContourStyle;
+
+      contourStyles.outlineWidthInactive = contourStyles.outlineWidth;
+      contourStyles.outlineOpacityInactive = contourStyles.outlineOpacity;
+      contourStyles.outlineDashInactive = contourStyles.outlineDash;
+      contourStyles.renderOutlineInactive = contourStyles.renderOutline;
+      contourStyles.renderFillInactive = contourStyles.renderFill;
+      contourStyles.fillAlphaInactive = contourStyles.fillAlpha;
     }
-    this.config.viewportsStyle[viewportId].renderInactiveSegmentations =
-      renderInactiveSegmentations;
+
+    return processedStyles;
   }
 
   /**
@@ -260,9 +241,8 @@ class SegmentationStyle {
     segmentationId?: string;
     type?: SegmentationRepresentations;
     segmentIndex?: number;
-  }): { style: RepresentationStyle; renderInactiveSegmentations: boolean } {
+  }): RepresentationStyle {
     const { viewportId, segmentationId, type, segmentIndex } = specifier;
-
     let combinedStyle = this.getDefaultStyle(type);
     let renderInactiveSegmentations = false;
 
@@ -344,7 +324,36 @@ class SegmentationStyle {
       }
     }
 
-    return { style: combinedStyle, renderInactiveSegmentations };
+    return combinedStyle;
+  }
+
+  /**
+   * Retrieves the renderInactiveSegmentations flag for a specific viewport.
+   *
+   * @param viewportId - The ID of the viewport to check.
+   * @returns A boolean indicating whether inactive segmentations should be rendered for the specified viewport.
+   */
+  getRenderInactiveSegmentations(viewportId: string): boolean {
+    return this.config.viewportsStyle[viewportId]?.renderInactiveSegmentations;
+  }
+
+  /**
+   * Sets the renderInactiveSegmentations flag for a specific viewport.
+   * @param viewportId - The ID of the viewport.
+   * @param renderInactiveSegmentations - Whether to render inactive segmentations.
+   */
+  setRenderInactiveSegmentations(
+    viewportId: string,
+    renderInactiveSegmentations: boolean
+  ): void {
+    if (!this.config.viewportsStyle[viewportId]) {
+      this.config.viewportsStyle[viewportId] = {
+        renderInactiveSegmentations: false,
+        representations: {},
+      };
+    }
+    this.config.viewportsStyle[viewportId].renderInactiveSegmentations =
+      renderInactiveSegmentations;
   }
 
   /**
@@ -366,8 +375,79 @@ class SegmentationStyle {
         throw new Error(`Unknown representation type: ${type}`);
     }
   }
+
+  /**
+   * Clears the segmentation-specific style for a given segmentation ID.
+   * @param segmentationId - The ID of the segmentation to clear.
+   */
+  clearSegmentationStyle(segmentationId: string): void {
+    if (this.config.segmentations[segmentationId]) {
+      delete this.config.segmentations[segmentationId];
+    }
+  }
+
+  /**
+   * Clears all segmentation-specific styles.
+   */
+  clearAllSegmentationStyles(): void {
+    this.config.segmentations = {};
+  }
+
+  /**
+   * Clears the viewport-specific style for a given viewport ID.
+   * @param viewportId - The ID of the viewport to clear.
+   */
+  clearViewportStyle(viewportId: string): void {
+    if (this.config.viewportsStyle[viewportId]) {
+      delete this.config.viewportsStyle[viewportId];
+    }
+  }
+
+  /**
+   * Clears all viewport-specific representation styles while preserving the renderInactiveSegmentations setting.
+   */
+  clearAllViewportStyles(): void {
+    for (const viewportId in this.config.viewportsStyle) {
+      const viewportStyle = this.config.viewportsStyle[viewportId];
+      const renderInactiveSegmentations =
+        viewportStyle.renderInactiveSegmentations;
+      this.config.viewportsStyle[viewportId] = {
+        renderInactiveSegmentations,
+        representations: {},
+      };
+    }
+  }
+
+  /**
+   * Clears both segmentation-specific and viewport-specific styles,
+   * effectively resetting to global styles.
+   */
+  resetToGlobalStyle(): void {
+    this.clearAllSegmentationStyles();
+    this.clearAllViewportStyles();
+  }
+
+  /**
+   * Checks if there is a non-global style for a given specifier.
+   * @param specifier - The specifier object containing viewportId, segmentationId, type, and segmentIndex.
+   * @returns True if there is a non-global style, false otherwise.
+   */
+  hasCustomStyle(specifier: {
+    viewportId?: string;
+    segmentationId?: string;
+    type?: SegmentationRepresentations;
+    segmentIndex?: number;
+  }): boolean {
+    const { type } = specifier;
+    const style = this.getStyle(specifier);
+    // Perform a deep comparison between the style and the default style
+    const defaultStyle = this.getDefaultStyle(type);
+    return !utilities.deepEqual(style, defaultStyle);
+  }
 }
 
 const segmentationStyle = new SegmentationStyle();
+
+window.style = segmentationStyle;
 
 export { segmentationStyle };
