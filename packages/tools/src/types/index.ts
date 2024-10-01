@@ -13,7 +13,6 @@ import type {
   ContourSegmentationAnnotation,
 } from './ContourSegmentationAnnotation';
 import type * as EventTypes from './EventTypes';
-import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
 import type ITouchPoints from './ITouchPoints';
 import type IDistance from './IDistance';
@@ -45,6 +44,9 @@ import type {
   RepresentationData,
   RepresentationsData,
   Segmentation,
+  Segment,
+  SegmentationPublicInput,
+  SegmentationRepresentation,
   SegmentationState,
 } from './SegmentationStateTypes';
 import type { ISculptToolShape } from './ISculptToolShape';
@@ -55,7 +57,7 @@ import type {
   FloodFillResult,
 } from './FloodFillTypes';
 import type IToolClassReference from './IToolClassReference';
-import type { ContourSegmentationData } from './ContourTypes';
+import type { ContourSegmentationData, ContourStyle } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type AnnotationRenderContext from './AnnotationRenderContext';
@@ -84,6 +86,9 @@ import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { PolySegConversionOptions } from './PolySeg';
 import type { IBaseTool } from './IBaseTool';
+import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
+import type { LabelmapStyle } from './LabelmapTypes';
+import type { SurfaceStyle } from './SurfaceTypes';
 
 export type {
   // AnnotationState
@@ -131,10 +136,10 @@ export type {
   TextBoxHandle,
   // Segmentation
   Segmentation,
+  SegmentationRepresentation,
   SegmentationState,
   RepresentationData,
   RepresentationsData,
-  LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,
@@ -172,4 +177,10 @@ export type {
   // polySeg
   PolySegConversionOptions,
   IBaseTool,
+  RepresentationStyle,
+  Segment,
+  SegmentationPublicInput,
+  LabelmapStyle,
+  ContourStyle,
+  SurfaceStyle,
 };

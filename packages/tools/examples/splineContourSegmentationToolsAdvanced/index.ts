@@ -16,23 +16,11 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import type { Types as cstTypes } from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
-
-const DEFAULT_SEGMENT_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 2,
-  outlineDashActive: undefined,
-  outlineDashInactive: undefined,
-};
 
 const {
   SplineContourSegmentationTool,
@@ -344,13 +332,13 @@ addButtonToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineWidthActive',
+  id: 'outlineWidth',
   title: 'Outline Thickness (active)',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    updateCurrentSegmentationConfig({ outlineWidthActive: Number(value) });
+    updateCurrentSegmentationConfig({ outlineWidth: Number(value) });
   },
 });
 
@@ -410,14 +398,14 @@ addSliderToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineDashActive',
+  id: 'outlineDash',
   title: 'Outline Dash (active)',
   range: [0, 10],
   step: 1,
   defaultValue: 0,
   onSelectedValueChange: (value) => {
     const outlineDash = value === '0' ? undefined : `${value},${value}`;
-    updateCurrentSegmentationConfig({ outlineDashActive: outlineDash });
+    updateCurrentSegmentationConfig({ outlineDash: outlineDash });
   },
 });
 

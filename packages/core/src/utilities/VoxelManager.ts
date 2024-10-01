@@ -945,51 +945,58 @@ export default class VoxelManager<T> {
     // Create a VoxelManager that will manage the active voxel group
     const voxelManager = new VoxelManager(
       dimensions,
-      (index) => voxelGroups[timePoint]._get(index),
+      (index) => voxelGroups[timePoint - 1]._get(index),
       // @ts-ignore
-      (index, v) => voxelGroups[timePoint]._set(index, v)
+      (index, v) => voxelGroups[timePoint - 1]._set(index, v)
     ) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.numberOfComponents = numberOfComponents;
 
     voxelManager.getScalarDataLength = () => {
-      return voxelGroups[timePoint].getScalarDataLength();
+      return voxelGroups[timePoint - 1].getScalarDataLength();
     };
 
     voxelManager.getConstructor = () => {
-      return voxelGroups[timePoint].getConstructor();
+      return voxelGroups[timePoint - 1].getConstructor();
     };
 
     voxelManager.getRange = () => {
-      return voxelGroups[timePoint].getRange();
+      return voxelGroups[timePoint - 1].getRange();
     };
 
     voxelManager.getMiddleSliceData = () => {
-      return voxelGroups[timePoint].getMiddleSliceData();
+      return voxelGroups[timePoint - 1].getMiddleSliceData();
     };
 
     // @ts-ignore
     voxelManager.setTimePoint = (newTimePoint: number) => {
       timePoint = newTimePoint;
       // @ts-ignore
-      voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
+      voxelManager._get = (index) => voxelGroups[timePoint - 1]._get(index);
       // @ts-ignore
-      voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
+      voxelManager._set = (index, v) =>
+        voxelGroups[timePoint - 1]._set(index, v);
     };
 
     // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
-      return voxelGroups[tp]._get(index);
+      return voxelGroups[tp - 1]._get(index);
     };
 
     // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
-      return voxelGroups[tp].getCompleteScalarDataArray();
+      return voxelGroups[tp - 1].getCompleteScalarDataArray();
+    };
+
+    // @ts-ignore
+    // get the given time point complete scalar data array
+    voxelManager.getTimePointScalarData = (tp: number) => {
+      return voxelGroups[tp - 1].getCompleteScalarDataArray();
     };
 
     // @ts-ignore
     voxelManager.getCurrentTimePointScalarData = () => {
-      return voxelGroups[timePoint].getCompleteScalarDataArray();
+      return voxelGroups[timePoint - 1].getCompleteScalarDataArray();
     };
 
     return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;

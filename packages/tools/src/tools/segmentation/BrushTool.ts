@@ -476,6 +476,10 @@ class BrushTool extends BaseTool {
     const { segmentationId } = activeRepresentation;
     const segmentIndex = getActiveSegmentIndex(segmentationId);
 
+    if (!segmentIndex) {
+      return;
+    }
+
     const segmentColor = getSegmentIndexColor(
       viewportId,
       segmentationId,

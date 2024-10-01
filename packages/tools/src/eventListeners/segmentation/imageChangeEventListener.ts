@@ -197,7 +197,7 @@ function _imageChangeEventListener(evt) {
         },
       ]);
 
-      triggerSegmentationRender();
+      triggerSegmentationRender(viewportId);
       return;
     } else {
       // if actor found

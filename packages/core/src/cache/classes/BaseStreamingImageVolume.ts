@@ -41,8 +41,6 @@ export default class BaseStreamingImageVolume
   protected reRenderTarget = 0;
   protected reRenderFraction = 2;
 
-  public dataType: PixelDataTypedArrayString;
-
   loadStatus: {
     loaded: boolean;
     loading: boolean;
@@ -280,12 +278,15 @@ export default class BaseStreamingImageVolume
       'volume'
     );
 
-    this.imagesLoader = imageRetrieveConfiguration
+    this.imagesLoader = this.isDynamicVolume()
+      ? this
+      : imageRetrieveConfiguration
       ? (
           imageRetrieveConfiguration.create ||
           ProgressiveRetrieveImages.createProgressive
         )(imageRetrieveConfiguration)
       : this;
+
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.
     }

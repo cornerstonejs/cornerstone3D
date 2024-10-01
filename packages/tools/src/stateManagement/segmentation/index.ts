@@ -18,6 +18,7 @@ import {
 } from './addSegmentationRepresentationsToViewport';
 
 import { addSegmentations } from './addSegmentations';
+import { updateSegmentations } from './updateSegmentations';
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
 import * as state from './segmentationState';
@@ -29,6 +30,7 @@ import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapF
 import * as polySegManager from './polySeg';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
+import { removeSegment } from './removeSegment';
 
 const helpers = {
   clearSegmentValue,
@@ -53,6 +55,7 @@ export {
   addSurfaceRepresentationToViewport,
   addSurfaceRepresentationToViewportMap,
   addSegmentations,
+  updateSegmentations,
   // name spaces
   state,
   activeSegmentation,
@@ -62,4 +65,5 @@ export {
   triggerSegmentationEvents,
   helpers,
   polySegManager as polySeg,
+  removeSegment,
 };

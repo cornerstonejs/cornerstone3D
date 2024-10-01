@@ -25,6 +25,7 @@ import {
   createAndCacheDerivedImages,
 } from './imageLoader';
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
+import type { StreamingDynamicImageVolume } from '../cache';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -209,7 +210,11 @@ export function createAndCacheDerivedVolume(
 
   const { metadata, dimensions, spacing, origin, direction } = referencedVolume;
 
-  const referencedImageIds = referencedVolume.imageIds ?? [];
+  const referencedImageIds = referencedVolume.isDynamicVolume()
+    ? (
+        referencedVolume as StreamingDynamicImageVolume
+      ).getCurrentTimePointImageIds()
+    : referencedVolume.imageIds ?? [];
 
   // Todo: fix later
   // const byteLength = referencedImageIds.reduce((total, imageId) => {

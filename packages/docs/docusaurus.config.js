@@ -49,6 +49,11 @@ module.exports = {
           label: 'API',
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           to: 'docs/help',
           label: 'Help',
           position: 'right',
@@ -167,6 +172,12 @@ module.exports = {
           // Please change this to your repo.
           editUrl:
             'https://github.com/cornerstonejs/cornerstone3D/edit/main/packages/docs/',
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: `${2.0} (Latest)`,
+            },
+          },
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -198,7 +209,11 @@ module.exports = {
       'docusaurus-plugin-typedoc-api',
       {
         projectRoot: path.join(__dirname, '../../'),
-        packages: [...['core', 'tools'].map((pkg) => `packages/${pkg}`)],
+        packages: [
+          ...['core', 'tools', 'dicomImageLoader', 'nifti-volume-loader'].map(
+            (pkg) => `packages/${pkg}`
+          ),
+        ],
         url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
         removeScopes: ['cornerstonejs'],
         minimal: false,

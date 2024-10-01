@@ -331,7 +331,6 @@ async function _startFromVolume(
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender();
 }
 
 async function _startFromStack(
@@ -395,7 +394,6 @@ async function _startFromStack(
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender();
 
   stackToolGroup.setToolActive('CircularBrush', {
     bindings: [

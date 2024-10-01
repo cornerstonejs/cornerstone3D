@@ -12,7 +12,7 @@ import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg';
+import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -96,7 +96,7 @@ async function render(
     );
   }
 
-  const colorLUTIndex = representation.config?.colorLUTIndex;
+  const { colorLUTIndex } = representation;
 
   const colorLUT = getColorLUT(colorLUTIndex);
 

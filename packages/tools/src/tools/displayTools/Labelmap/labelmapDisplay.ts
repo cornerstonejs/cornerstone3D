@@ -1,11 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  cache,
   getEnabledElementByViewportId,
   VolumeViewport,
 } from '@cornerstonejs/core';
 
-import Representations from '../../../enums/SegmentationRepresentations';
 import type {
   LabelmapSegmentationData,
   LabelmapStyle,
@@ -18,8 +16,7 @@ import type {
 
 import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
-import { getHiddenSegmentIndices } from '../../../stateManagement/segmentation/config/segmentationVisibility';
-import { getActiveSegmentation } from '../../../stateManagement/segmentation/getActiveSegmentation';
+import { getActiveSegmentation } from '../../../stateManagement/segmentation/activeSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
@@ -30,6 +27,8 @@ import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/Piecewis
 import { getSegmentationActor } from '../../../stateManagement/segmentation/helpers';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
+import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
+import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -89,7 +88,8 @@ async function render(
     return;
   }
 
-  let labelmapData = segmentation.representationData[Representations.Labelmap];
+  let labelmapData =
+    segmentation.representationData[SegmentationRepresentations.Labelmap];
 
   let labelmapActor = getSegmentationActor(viewport.id, {
     segmentationId,
@@ -100,7 +100,7 @@ async function render(
     !labelmapData &&
     canComputeRequestedRepresentation(
       segmentationId,
-      Representations.Labelmap
+      SegmentationRepresentations.Labelmap
     ) &&
     !polySegConversionInProgress
   ) {
@@ -176,21 +176,23 @@ function _setLabelmapColorAndOpacity(
 ): void {
   const { segmentationId } = segmentationRepresentation;
 
-  const { cfun, ofun, colorLUTIndex } =
+  const { cfun, ofun } =
     segmentationRepresentation.config as LabelmapRenderingConfig;
-
+  const { colorLUTIndex } = segmentationRepresentation;
   // todo fix this
   const activeSegmentation = getActiveSegmentation(viewportId);
 
   const isActiveLabelmap =
     activeSegmentation?.segmentationId === segmentationId;
 
-  const { style: labelmapStyle, renderInactiveSegmentations } =
-    segmentationStyle.getStyle({
-      viewportId,
-      type: Representations.Labelmap,
-      segmentationId,
-    });
+  const labelmapStyle = segmentationStyle.getStyle({
+    viewportId,
+    type: SegmentationRepresentations.Labelmap,
+    segmentationId,
+  });
+
+  const renderInactiveSegmentations =
+    segmentationStyle.getRenderInactiveSegmentations(viewportId);
 
   // Note: MAX_NUMBER_COLORS = 256 is needed because the current method to generate
   // the default color table uses RGB.
@@ -207,9 +209,9 @@ function _setLabelmapColorAndOpacity(
     activeSegmentOutlineWidthDelta,
   } = _getLabelmapConfig(labelmapStyle as LabelmapStyle, isActiveLabelmap);
 
-  const segmentsHidden = getHiddenSegmentIndices(viewportId, {
+  const segmentsHidden = internalGetHiddenSegmentIndices(viewportId, {
     segmentationId,
-    type: Representations.Labelmap,
+    type: SegmentationRepresentations.Labelmap,
   });
 
   // Todo: the below loop probably can be optimized so that we don't hit it
@@ -219,9 +221,9 @@ function _setLabelmapColorAndOpacity(
     const segmentIndex = i;
     const segmentColor = colorLUT[segmentIndex];
 
-    const { style: perSegmentStyle } = segmentationStyle.getStyle({
+    const perSegmentStyle = segmentationStyle.getStyle({
       viewportId,
-      type: Representations.Labelmap,
+      type: SegmentationRepresentations.Labelmap,
       segmentationId,
       segmentIndex,
     });
@@ -242,7 +244,7 @@ function _setLabelmapColorAndOpacity(
         renderOutline,
         segmentColor,
         outlineWidth,
-        segmentsHidden,
+        segmentsHidden: segmentsHidden as Set<number>,
         cfun,
         ofun,
       });
@@ -277,38 +279,45 @@ function _setLabelmapColorAndOpacity(
   labelmapActor.getProperty().setScalarOpacity(0, ofun);
   labelmapActor.getProperty().setInterpolationTypeToNearest();
 
-  // @ts-ignore - fix type in vtk
-  labelmapActor.getProperty().setUseLabelOutline(renderOutline);
+  if (renderOutline) {
+    // @ts-ignore - fix type in vtk
+    labelmapActor.getProperty().setUseLabelOutline(renderOutline);
 
-  // @ts-ignore - fix type in vtk
-  labelmapActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
+    // @ts-ignore - fix type in vtk
+    labelmapActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
 
-  const { activeSegmentIndex } = getSegmentation(
-    segmentationRepresentation.segmentationId
-  );
+    const activeSegmentIndex = getActiveSegmentIndex(
+      segmentationRepresentation.segmentationId
+    );
 
-  // create an array that contains all the segment indices and for the active
-  // segment index, use the activeSegmentOutlineWidthDelta, otherwise use the
-  // outlineWidth
-  // Pre-allocate the array with the required size to avoid dynamic resizing.
-  const outlineWidths = new Array(numColors - 1);
+    // create an array that contains all the segment indices and for the active
+    // segment index, use the activeSegmentOutlineWidthDelta, otherwise use the
+    // outlineWidth
+    // Pre-allocate the array with the required size to avoid dynamic resizing.
+    const outlineWidths = new Array(numColors - 1);
 
-  for (let i = 1; i < numColors; i++) {
-    // Start from 1 to skip the background segment index.
-    const isHidden = segmentsHidden.has(i);
+    for (let i = 1; i < numColors; i++) {
+      // Start from 1 to skip the background segment index.
+      const isHidden = segmentsHidden.has(i);
 
-    if (isHidden) {
-      outlineWidths[i - 1] = 0;
-      continue;
+      if (isHidden) {
+        outlineWidths[i - 1] = 0;
+        continue;
+      }
+
+      outlineWidths[i - 1] =
+        i === activeSegmentIndex
+          ? outlineWidth + activeSegmentOutlineWidthDelta
+          : outlineWidth;
     }
 
-    outlineWidths[i - 1] =
-      i === activeSegmentIndex
-        ? outlineWidth + activeSegmentOutlineWidthDelta
-        : outlineWidth;
+    labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
+  } else {
+    // reset outline width to 0
+    labelmapActor
+      .getProperty()
+      .setLabelOutlineThickness(new Array(numColors - 1).fill(0));
   }
-
-  labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
   // Set visibility based on whether actor visibility is specifically asked
   // to be turned on/off (on by default) AND whether is is in active but
   // we are rendering inactive labelmap
@@ -332,7 +341,7 @@ function _getLabelmapConfig(
     ? configToUse.fillAlpha
     : configToUse.fillAlphaInactive;
   const outlineWidth = isActiveLabelmap
-    ? configToUse.outlineWidthActive
+    ? configToUse.outlineWidth
     : configToUse.outlineWidthInactive;
 
   const renderFill = isActiveLabelmap

@@ -117,7 +117,7 @@ addSliderToToolbar({
   defaultValue: 4,
   onSelectedValueChange: (value) => {
     segmentation.config.style.setGlobalContourStyle({
-      outlineWidthActive: Number(value),
+      outlineWidth: Number(value),
     });
   },
 });

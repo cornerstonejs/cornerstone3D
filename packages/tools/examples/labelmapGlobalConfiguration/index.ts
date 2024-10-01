@@ -59,7 +59,7 @@ content.appendChild(element);
 addToggleButtonToToolbar({
   title: 'toggle render inactive segmentations',
   onClick: (toggle) => {
-    segmentation.config.style.setViewportRenderInactiveSegmentations(
+    segmentation.config.style.setRenderInactiveSegmentations(
       viewportId,
       toggle
     );
@@ -92,7 +92,7 @@ addSliderToToolbar({
   defaultValue: 1,
   onSelectedValueChange: (value) => {
     segmentation.config.style.setGlobalLabelmapStyle({
-      outlineWidthActive: Number(value),
+      outlineWidth: Number(value),
     });
   },
 });

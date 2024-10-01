@@ -23,6 +23,12 @@ import type {
 } from '../../types/LabelmapTypes';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import {
+  triggerSegmentationModified,
+  triggerSegmentationRemoved,
+  triggerSegmentationRepresentationModified,
+  triggerSegmentationRepresentationRemoved,
+} from './triggerSegmentationEvents';
 import { segmentationStyle } from './SegmentationStyle';
 
 const initialDefaultState: SegmentationState = {
@@ -114,6 +120,63 @@ export default class SegmentationStateManager {
   }
 
   /**
+   * Updates an existing segmentation with new data.
+   *
+   * @param segmentationId - The unique identifier of the segmentation to update.
+   * @param payload - An object containing the properties to update in the segmentation.
+   *
+   * @remarks
+   * This method updates the state immutably. If the segmentation with the given ID is not found,
+   * the method will return without making any changes.
+   *
+   * @example
+   * ```typescript
+   * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
+   * ```
+   */
+  // updateSegmentation(
+  //   segmentationId: string,
+  //   payload: Partial<Segmentation>
+  // ): void {
+  //   this.updateState((state) => {
+  //     const segmentation = state.segmentations.find(
+  //       (segmentation) => segmentation.segmentationId === segmentationId
+  //     );
+  //     if (!segmentation) {
+  //       return;
+  //     }
+  //     state.segmentations = state.segmentations.map((segmentation) => {
+  //       if (segmentation.segmentationId === segmentationId) {
+  //         return { ...segmentation, ...payload };
+  //       }
+  //       return segmentation;
+  //     });
+  //   });
+  // }
+  updateSegmentation(
+    segmentationId: string,
+    payload: Partial<Segmentation>
+  ): void {
+    this.updateState((draftState) => {
+      const segmentation = draftState.segmentations.find(
+        (segmentation) => segmentation.segmentationId === segmentationId
+      );
+
+      if (!segmentation) {
+        console.warn(
+          `Segmentation with id ${segmentationId} not found. Update aborted.`
+        );
+        return;
+      }
+
+      // Directly mutate the draft state
+      Object.assign(segmentation, payload);
+    });
+
+    triggerSegmentationModified(segmentationId);
+  }
+
+  /**
    * Adds a segmentation to the segmentations array.
    * @param {Segmentation} segmentation - The segmentation object to add.
    * @throws {Error} If a segmentation with the same ID already exists.
@@ -142,6 +205,8 @@ export default class SegmentationStateManager {
       }
       state.segmentations.push(newSegmentation);
     });
+
+    triggerSegmentationModified(segmentation.segmentationId);
   }
 
   /**
@@ -163,6 +228,8 @@ export default class SegmentationStateManager {
         }
       );
     });
+
+    triggerSegmentationRemoved(segmentationId);
   }
 
   /**
@@ -187,10 +254,7 @@ export default class SegmentationStateManager {
     this.updateState((state) => {
       if (!state.viewportSegRepresentations[viewportId]) {
         state.viewportSegRepresentations[viewportId] = [];
-        segmentationStyle.setViewportRenderInactiveSegmentations(
-          viewportId,
-          true
-        );
+        segmentationStyle.setRenderInactiveSegmentations(viewportId, true);
       }
 
       if (type !== SegmentationRepresentations.Labelmap) {
@@ -210,6 +274,8 @@ export default class SegmentationStateManager {
         );
       }
     });
+
+    triggerSegmentationRepresentationModified(viewportId, segmentationId, type);
   }
 
   private addDefaultSegmentationRepresentation(
@@ -219,12 +285,28 @@ export default class SegmentationStateManager {
     type: SegmentationRepresentations,
     renderingConfig: RenderingConfig
   ) {
+    const segmentation = state.segmentations.find(
+      (segmentation) => segmentation.segmentationId === segmentationId
+    );
+
+    if (!segmentation) {
+      return;
+    }
+
+    const segmentReps = {};
+    Object.keys(segmentation.segments).forEach((segmentIndex) => {
+      segmentReps[Number(segmentIndex)] = {
+        visible: true,
+      };
+    });
+
     state.viewportSegRepresentations[viewportId].push({
       segmentationId,
       type,
       active: true,
       visible: true,
-      segmentsHidden: new Set(),
+      colorLUTIndex: 0,
+      segments: segmentReps,
       config: {
         ...getDefaultRenderingConfig(type),
         ...renderingConfig,
@@ -611,44 +693,62 @@ export default class SegmentationStateManager {
       type?: SegmentationRepresentations;
     }
   ): void {
+    const removedRepresentations: Array<{
+      segmentationId: string;
+      type: SegmentationRepresentations;
+    }> = [];
+
     this.updateState((state) => {
       if (!state.viewportSegRepresentations[viewportId]) {
         return;
       }
 
-      if (!specifier) {
+      const currentRepresentations =
+        state.viewportSegRepresentations[viewportId];
+
+      if (
+        !specifier ||
+        Object.values(specifier).every((value) => value === undefined)
+      ) {
         // Remove all segmentation representations for the viewport
+        removedRepresentations.push(...currentRepresentations);
         delete state.viewportSegRepresentations[viewportId];
-        return;
-      }
+      } else {
+        const { segmentationId, type } = specifier;
 
-      const { segmentationId, type } = specifier;
-
-      state.viewportSegRepresentations[viewportId] =
-        state.viewportSegRepresentations[viewportId].filter(
-          (representation) => {
-            if (segmentationId && type) {
-              // Remove representation with specific segmentationId and type
-              return !(
+        state.viewportSegRepresentations[viewportId] =
+          currentRepresentations.filter((representation) => {
+            const shouldRemove =
+              (segmentationId &&
+                type &&
                 representation.segmentationId === segmentationId &&
-                representation.type === type
-              );
-            } else if (segmentationId) {
-              // Remove all representations with specific segmentationId
-              return representation.segmentationId !== segmentationId;
-            } else if (type) {
-              // Remove all representations with specific type
-              return representation.type !== type;
-            }
-            // This case should not occur due to the initial check, but it's here for completeness
-            return true;
-          }
-        );
+                representation.type === type) ||
+              (segmentationId &&
+                !type &&
+                representation.segmentationId === segmentationId) ||
+              (!segmentationId && type && representation.type === type);
 
-      // If no representations left for the viewport, remove the viewport entry
-      if (state.viewportSegRepresentations[viewportId].length === 0) {
-        delete state.viewportSegRepresentations[viewportId];
+            if (shouldRemove) {
+              removedRepresentations.push(representation);
+            }
+
+            return !shouldRemove;
+          });
+
+        // If no representations left for the viewport, remove the viewport entry
+        if (state.viewportSegRepresentations[viewportId].length === 0) {
+          delete state.viewportSegRepresentations[viewportId];
+        }
       }
+    });
+
+    // Trigger events for all removed representations
+    removedRepresentations.forEach((representation) => {
+      triggerSegmentationRepresentationRemoved(
+        viewportId,
+        representation.segmentationId,
+        representation.type
+      );
     });
   }
 
@@ -684,6 +784,12 @@ export default class SegmentationStateManager {
 
       viewport.splice(viewport.indexOf(viewportRendering), 1);
     });
+
+    triggerSegmentationRepresentationRemoved(
+      viewportId,
+      specifier.segmentationId,
+      specifier.type
+    );
   }
 
   _setActiveSegmentation(
@@ -722,6 +828,8 @@ export default class SegmentationStateManager {
         value.active = value.segmentationId === segmentationId;
       });
     });
+
+    triggerSegmentationRepresentationModified(viewportId, segmentationId);
   }
 
   /**
@@ -856,8 +964,20 @@ export default class SegmentationStateManager {
 
       viewportRepresentations.forEach((representation) => {
         representation.visible = visible;
+
+        Object.entries(representation.segments).forEach(
+          ([segmentIndex, segment]) => {
+            segment.visible = visible;
+          }
+        );
       });
     });
+
+    triggerSegmentationRepresentationModified(
+      viewportId,
+      specifier.segmentationId,
+      specifier.type
+    );
   }
 
   /**
@@ -971,16 +1091,14 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
     return {
       cfun,
       ofun,
-      colorLUTIndex: 0,
     } as LabelmapRenderingConfig;
   } else {
-    return {
-      colorLUTIndex: 0,
-    } as ContourRenderingConfig;
+    return {} as ContourRenderingConfig;
   }
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+
 export {
   internalConvertStackToVolumeLabelmap,
   internalComputeVolumeLabelmapFromStack,

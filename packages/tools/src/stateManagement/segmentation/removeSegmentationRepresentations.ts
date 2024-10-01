@@ -53,12 +53,14 @@ function removeSegmentationRepresentation(
 function removeSegmentationRepresentations(
   viewportId: string,
   specifier: {
-    segmentationId: string;
+    segmentationId?: string;
     type?: SegmentationRepresentations;
   },
   immediate?: boolean
 ): void {
   const { segmentationId, type } = specifier;
+
+  _removeRepresentation(viewportId, segmentationId, type, immediate);
 
   // remove representation from state
   defaultSegmentationStateManager.removeSegmentationRepresentations(
@@ -68,8 +70,6 @@ function removeSegmentationRepresentations(
       type,
     }
   );
-
-  _removeRepresentation(viewportId, segmentationId, type, immediate);
 }
 
 /**
@@ -174,27 +174,27 @@ function _removeRepresentation(
   });
 
   representations.forEach((representation) => {
-    if (representation.type === type) {
-      if (type === SegmentationRepresentations.Labelmap) {
-        labelmapDisplay.removeRepresentation(
-          viewportId,
-          segmentationId,
-          immediate
-        );
-      } else if (type === SegmentationRepresentations.Contour) {
-        contourDisplay.removeRepresentation(
-          viewportId,
-          segmentationId,
-          immediate
-        );
-      } else {
-        throw new Error(`The representation ${type} is not supported yet`);
-      }
+    if (representation.type === SegmentationRepresentations.Labelmap) {
+      labelmapDisplay.removeRepresentation(
+        viewportId,
+        segmentationId,
+        immediate
+      );
+    } else if (representation.type === SegmentationRepresentations.Contour) {
+      contourDisplay.removeRepresentation(
+        viewportId,
+        segmentationId,
+        immediate
+      );
+    } else {
+      throw new Error(
+        `The representation ${representation.type} is not supported yet`
+      );
     }
   });
 
   // trigger render for viewport
-  const { viewport } = getEnabledElementByViewportId(viewportId);
+  const { viewport } = getEnabledElementByViewportId(viewportId) || {};
   if (viewport) {
     viewport.render();
   }

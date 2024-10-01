@@ -220,8 +220,8 @@ async function run() {
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
     {
-      outlineWidthActive: 5,
-      outlineDashActive: '10, 10',
+      outlineWidth: 5,
+      outlineDash: '10, 10',
     }
   );
 

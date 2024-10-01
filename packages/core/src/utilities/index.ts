@@ -74,7 +74,7 @@ import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as color from './color';
-
+import { deepEqual } from './deepEqual';
 import type { IViewport } from '../types/IViewport';
 
 // solving the circular dependency issue
@@ -175,4 +175,5 @@ export {
   deepClone,
   splitImageIdsBy4DTags,
   pointInShapeCallback,
+  deepEqual,
 };

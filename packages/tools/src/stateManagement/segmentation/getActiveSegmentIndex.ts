@@ -11,6 +11,11 @@ export function getActiveSegmentIndex(
   const segmentation = getSegmentation(segmentationId);
 
   if (segmentation) {
-    return segmentation.activeSegmentIndex;
+    const activeSegmentIndex = Object.keys(segmentation.segments).find(
+      (segmentIndex) => segmentation.segments[segmentIndex].active
+    );
+    return activeSegmentIndex ? Number(activeSegmentIndex) : undefined;
   }
+
+  return undefined;
 }
