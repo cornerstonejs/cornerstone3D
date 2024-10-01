@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.85.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.85.0...v1.85.1) (2024-10-01)
+
+### Bug Fixes
+
+- **workflow:** use a fixed ubuntu version for the runner ([#1486](https://github.com/cornerstonejs/cornerstone3D/issues/1486)) ([b3d85a2](https://github.com/cornerstonejs/cornerstone3D/commit/b3d85a25b190cab883aca2323a921f1631013e47))
+
 # [1.85.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.4...v1.85.0) (2024-09-25)
 
 ### Features
