@@ -35,6 +35,14 @@ const leftArmContour = [
   [390, 93],
 ];
 
+const leftArmBoneContour = [
+  [403, 150],
+  [410, 169],
+  [396, 194],
+  [386, 181],
+  [391, 157],
+];
+
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'stackSegmentation');
 });
@@ -121,21 +129,46 @@ test.describe('Stack Segmentation', async () => {
       await page.getByRole('slider').fill('25');
     });
 
-    test('should paint the expected pixels based on the initial pixel value', async ({
-      page,
-    }) => {
-      const canvas = await page.locator('canvas');
+    test.describe('and "CT Fat" threshold is selected', async () => {
+      test('should paint the fat tissue only', async ({ page }) => {
+        const canvas = await page.locator('canvas');
 
-      await simulateDrawPath(page, canvas, leftArmContour, {
-        interpolateSteps: true,
-        closePath: true,
+        await page
+          .locator('#thresholdDropdown')
+          .selectOption('CT Fat: (-150, -70)');
+
+        await simulateDrawPath(page, canvas, leftArmContour, {
+          interpolateSteps: true,
+          closePath: true,
+        });
+
+        await checkForScreenshot(
+          page,
+          canvas,
+          screenShotPaths.stackSegmentation.thresholdBrushFatSegment1
+        );
       });
+    });
 
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.stackSegmentation.thresholdBrushSegment1
-      );
+    test.describe('and "CT Bone" threshold is selected', async () => {
+      test('should paint the bone only', async ({ page }) => {
+        const canvas = await page.locator('canvas');
+
+        await page
+          .locator('#thresholdDropdown')
+          .selectOption('CT Bone: (200, 1000)');
+
+        await simulateDrawPath(page, canvas, leftArmBoneContour, {
+          interpolateSteps: true,
+          closePath: true,
+        });
+
+        await checkForScreenshot(
+          page,
+          canvas,
+          screenShotPaths.stackSegmentation.thresholdBrushBoneSegment1
+        );
+      });
     });
   });
 
