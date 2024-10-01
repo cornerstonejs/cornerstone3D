@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.86.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.85.1...v1.86.0) (2024-10-01)
+
+### Features
+
+- **viewReference:** add as nearby projection ([#1487](https://github.com/cornerstonejs/cornerstone3D/issues/1487)) ([358c296](https://github.com/cornerstonejs/cornerstone3D/commit/358c296492ed30aa79813a16b5179a9d67fb5fd4))
+
 ## [1.85.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.85.0...v1.85.1) (2024-10-01)
 
 ### Bug Fixes
