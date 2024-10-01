@@ -3932,6 +3932,8 @@ export class OrientationMarkerTool extends BaseTool {
     // (undocumented)
     _unsubscribeToViewportNewVolumeSet(): void;
     // (undocumented)
+    updatingOrientationMarker: any;
+    // (undocumented)
     static VTPFILE: number;
 }
 

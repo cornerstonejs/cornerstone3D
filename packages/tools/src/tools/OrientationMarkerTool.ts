@@ -33,6 +33,7 @@ class OrientationMarkerTool extends BaseTool {
   static AXIS = 2;
   static VTPFILE = 3;
   orientationMarkers;
+  updatingOrientationMarker;
   polyDataURL;
   _resizeObservers = new Map();
 
@@ -88,6 +89,7 @@ class OrientationMarkerTool extends BaseTool {
   ) {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
+    this.updatingOrientationMarker = {};
   }
 
   onSetToolEnabled = (): void => {
@@ -239,7 +241,9 @@ class OrientationMarkerTool extends BaseTool {
     viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
 
     viewports.forEach((viewport) => {
-      if (!viewport.getWidget(this.getToolName())) {
+      const widget = viewport.getWidget(this.getToolName());
+      // testing if widget has been deleted
+      if (!widget || widget.isDeleted()) {
         this.addAxisActorInViewport(viewport);
       }
     });
@@ -247,59 +251,65 @@ class OrientationMarkerTool extends BaseTool {
 
   async addAxisActorInViewport(viewport) {
     const viewportId = viewport.id;
-    const type = this.configuration.overlayMarkerType;
+    if (!this.updatingOrientationMarker[viewportId]) {
+      this.updatingOrientationMarker[viewportId] = true;
+      const type = this.configuration.overlayMarkerType;
 
-    const overlayConfiguration = this.configuration.overlayConfiguration[type];
+      const overlayConfiguration =
+        this.configuration.overlayConfiguration[type];
 
-    if (this.orientationMarkers[viewportId]) {
-      const { actor, orientationWidget } = this.orientationMarkers[viewportId];
-      // remove the previous one
-      viewport.getRenderer().removeActor(actor);
-      orientationWidget.setEnabled(false);
+      if (this.orientationMarkers[viewportId]) {
+        const { actor, orientationWidget } =
+          this.orientationMarkers[viewportId];
+        // remove the previous one
+        viewport.getRenderer().removeActor(actor);
+        orientationWidget.setEnabled(false);
+      }
+
+      let actor;
+      if (type === 1) {
+        actor = this.createAnnotationCube(overlayConfiguration);
+      } else if (type === 2) {
+        actor = vtkAxesActor.newInstance();
+      } else if (type === 3) {
+        actor = await this.createCustomActor();
+      }
+
+      const renderer = viewport.getRenderer();
+      const renderWindow = viewport
+        .getRenderingEngine()
+        .offscreenMultiRenderWindow.getRenderWindow();
+
+      const {
+        enabled,
+        viewportCorner,
+        viewportSize,
+        minPixelSize,
+        maxPixelSize,
+      } = this.configuration.orientationWidget;
+
+      const orientationWidget = vtkOrientationMarkerWidget.newInstance({
+        actor,
+        interactor: renderWindow.getInteractor(),
+        parentRenderer: renderer,
+      });
+
+      orientationWidget.setEnabled(enabled);
+      orientationWidget.setViewportCorner(viewportCorner);
+      orientationWidget.setViewportSize(viewportSize);
+      orientationWidget.setMinPixelSize(minPixelSize);
+      orientationWidget.setMaxPixelSize(maxPixelSize);
+
+      orientationWidget.updateMarkerOrientation();
+      this.orientationMarkers[viewportId] = {
+        orientationWidget,
+        actor,
+      };
+      viewport.addWidget(this.getToolName(), orientationWidget);
+      renderWindow.render();
+      viewport.getRenderingEngine().render();
+      this.updatingOrientationMarker[viewportId] = false;
     }
-
-    let actor;
-    if (type === 1) {
-      actor = this.createAnnotationCube(overlayConfiguration);
-    } else if (type === 2) {
-      actor = vtkAxesActor.newInstance();
-    } else if (type === 3) {
-      actor = await this.createCustomActor();
-    }
-
-    const renderer = viewport.getRenderer();
-    const renderWindow = viewport
-      .getRenderingEngine()
-      .offscreenMultiRenderWindow.getRenderWindow();
-
-    const {
-      enabled,
-      viewportCorner,
-      viewportSize,
-      minPixelSize,
-      maxPixelSize,
-    } = this.configuration.orientationWidget;
-
-    const orientationWidget = vtkOrientationMarkerWidget.newInstance({
-      actor,
-      interactor: renderWindow.getInteractor(),
-      parentRenderer: renderer,
-    });
-
-    orientationWidget.setEnabled(enabled);
-    orientationWidget.setViewportCorner(viewportCorner);
-    orientationWidget.setViewportSize(viewportSize);
-    orientationWidget.setMinPixelSize(minPixelSize);
-    orientationWidget.setMaxPixelSize(maxPixelSize);
-
-    orientationWidget.updateMarkerOrientation();
-    this.orientationMarkers[viewportId] = {
-      orientationWidget,
-      actor,
-    };
-    viewport.addWidget(this.getToolName(), orientationWidget);
-    renderWindow.render();
-    viewport.getRenderingEngine().render();
   }
 
   private async createCustomActor() {
