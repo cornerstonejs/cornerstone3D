@@ -415,10 +415,10 @@ class BrushTool extends BaseTool {
   };
 
   previewCallback = () => {
+    this._previewData.timer = null;
     if (this._previewData.preview) {
       return;
     }
-    this._previewData.timer = null;
     this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
