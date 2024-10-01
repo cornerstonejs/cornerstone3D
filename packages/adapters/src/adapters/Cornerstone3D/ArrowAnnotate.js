@@ -98,20 +98,28 @@ class ArrowAnnotate {
         const { points, arrowFirst } = data.handles;
 
         let point;
+        let point2;
 
         if (arrowFirst) {
             point = points[0];
+            point2 = points[1];
         } else {
             point = points[1];
+            point2 = points[0];
         }
 
         const pointImage = worldToImageCoords(referencedImageId, point);
+        const pointImage2 = worldToImageCoords(referencedImageId, point2);
 
         const TID300RepresentationArguments = {
             points: [
                 {
                     x: pointImage[0],
                     y: pointImage[1]
+                },
+                {
+                    x: pointImage2[0],
+                    y: pointImage2[1]
                 }
             ],
             trackingIdentifierTextValue,
