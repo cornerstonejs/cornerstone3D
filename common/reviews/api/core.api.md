@@ -869,6 +869,9 @@ function decimate(list: unknown[], interleave: number, offset?: number): number[
 function deepClone(obj: unknown): unknown;
 
 // @public (undocumented)
+function deepEqual(obj1: unknown, obj2: unknown): boolean;
+
+// @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
@@ -3722,7 +3725,8 @@ declare namespace utilities {
         scaleArray,
         deepClone,
         splitImageIdsBy4DTags,
-        pointInShapeCallback
+        pointInShapeCallback,
+        deepEqual
     }
 }
 export { utilities }
