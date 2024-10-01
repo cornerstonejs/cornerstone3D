@@ -44,13 +44,13 @@ about this in the next section.
 import { segmentation } from '@cornerstonejs/tools';
 
 // segmentation state holding all segmentations and their toolGroup specific representations
-segmentations.state.XYZ;
+segmentation.state.XYZ;
 
 // active segmentation methods (set/get)
-segmentations.activeSegmentation.XYZ;
+segmentation.activeSegmentation.XYZ;
 
 // locking for a segment index (set/get)
-segmentations.locking.XYZ;
+segmentation.locking.XYZ;
 
 // segment index manipulations (set/get)
 segmentations.segmentIndex.XYZ;
