@@ -1098,7 +1098,6 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
-window.segs = () => defaultSegmentationStateManager.getState();
 
 export {
   internalConvertStackToVolumeLabelmap,

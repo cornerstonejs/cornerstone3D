@@ -448,6 +448,4 @@ class SegmentationStyle {
 
 const segmentationStyle = new SegmentationStyle();
 
-window.style = segmentationStyle;
-
 export { segmentationStyle };
