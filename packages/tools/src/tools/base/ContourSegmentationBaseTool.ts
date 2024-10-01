@@ -294,13 +294,16 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
   private _getSegmentationRepresentation(segmentationId) {
     const segmentationRepresentations =
-      segmentationState.getSegmentationRepresentations(this.toolGroupId);
+      segmentationState.getSegmentationRepresentations(this.toolGroupId) || [];
 
     const validSegmentationRepresentations = segmentationRepresentations.filter(
       (representation) => representation.segmentationId === segmentationId
     );
 
-    if (!validSegmentationRepresentations) {
+    if (
+      !validSegmentationRepresentations ||
+      validSegmentationRepresentations.length === 0
+    ) {
       console.warn(
         `No segmentation representation found for toolGroupId: ${this.toolGroupId}`
       );
