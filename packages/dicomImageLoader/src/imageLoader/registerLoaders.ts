@@ -1,4 +1,3 @@
-console.debug("dicom loader: link: init: 3DA675F2-86A1-41A1-9E15-A7019E085C0F");
 import wadouriRegister from './wadouri/register';
 import wadorsRegister from './wadors/register';
 

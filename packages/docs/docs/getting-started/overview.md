@@ -6,8 +6,6 @@ import Link from '@docusaurus/Link';
 
 # Overview
 
-This is new docs
-
 `Cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
 Using `Cornerstone3D` and its accompanying libraries such as `Cornerstone3DTools`, you can achieve a wide range of imaging tasks.
 

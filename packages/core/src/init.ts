@@ -1,4 +1,3 @@
-console.debug("core: link: init: 3DA675F2-86A1-41A1-9E15-A7019E085C0F");
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
