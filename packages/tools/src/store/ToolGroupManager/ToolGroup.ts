@@ -324,7 +324,10 @@ export default class ToolGroup implements IToolGroup {
     }
 
     if (mode === ToolModes.Passive) {
-      this.setToolPassive(toolName);
+      this.setToolPassive(
+        toolName,
+        options || this.restoreToolOptions[toolName]
+      );
       return;
     }
 
@@ -462,10 +465,14 @@ export default class ToolGroup implements IToolGroup {
    * @param options - Options used when setting the tool as passive
    *  - removeAllBindings: only the primary button bindings are removed but
    *  if this parameter is set to true all bindings are removed.
+   *  - bindings: Set additional bindings.
    */
   public setToolPassive(
     toolName: string,
-    options?: { removeAllBindings?: boolean | IToolBinding[] }
+    options?: {
+      removeAllBindings?: boolean | IToolBinding[];
+      bindings?: IToolBinding[];
+    }
   ): void {
     const toolInstance = this._toolInstances[toolName];
 
@@ -482,7 +489,7 @@ export default class ToolGroup implements IToolGroup {
     const prevToolOptions = this.getToolOptions(toolName);
     const toolOptions = Object.assign(
       {
-        bindings: prevToolOptions ? prevToolOptions.bindings : [],
+        bindings: options?.bindings || prevToolOptions?.bindings || [],
       },
       prevToolOptions,
       {
@@ -503,9 +510,18 @@ export default class ToolGroup implements IToolGroup {
         )
       //(binding.mouseButton !== defaultMousePrimary || binding.modifierKey)
     );
-    // If there are other bindings, set the tool to be active
+    // If there are other bindings, set the tool to be active.
+    // But if all bindings are for primary button, keep the binding passive. This
+    // can be used to keep extra primary mouse button + key combinations for a tool
+    // to each exhibit different behaviour of the same tool.
     let mode = Passive;
-    if (toolOptions.bindings.length !== 0) {
+    const primaryButton = this.getDefaultMousePrimary();
+    if (
+      toolOptions.bindings.length !== 0 &&
+      toolOptions.bindings.some(
+        (binding) => binding.mouseButton !== primaryButton
+      )
+    ) {
       mode = Active;
       toolOptions.mode = mode;
     }
