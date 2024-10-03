@@ -245,14 +245,14 @@ function getSegmentsVisibilityState() {
 }
 
 function updateSegmentationConfig(config) {
-  const { style } = segmentation.config.style.getStyle({
+  const style = segmentation.config.style.getStyle({
     segmentationId,
     type: csToolsEnums.SegmentationRepresentations.Contour,
   });
 
   const mergedConfig = { ...style, ...config };
 
-  segmentation.config.style.setSegmentationSpecificStyle(
+  segmentation.config.style.setStyle(
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

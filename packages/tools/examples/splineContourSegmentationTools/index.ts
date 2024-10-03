@@ -91,7 +91,7 @@ function getSegmentsVisibilityState() {
 }
 
 function updateSegmentationConfig(config) {
-  segmentation.config.style.setSegmentationSpecificStyle(
+  segmentation.config.style.setStyle(
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

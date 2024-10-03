@@ -214,7 +214,7 @@ async function run() {
     },
   ]);
 
-  segmentation.config.style.setViewportSpecificStyleForRepresentationType(
+  segmentation.config.style.setStyle(
     {
       viewportId: viewportId1,
       type: csToolsEnums.SegmentationRepresentations.Contour,

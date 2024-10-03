@@ -63,7 +63,7 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment1FillAlpha = Number(value) / 100;
 
-    segmentation.config.style.setSegmentationSpecificStyle(
+    segmentation.config.style.setStyle(
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -83,7 +83,7 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment2FillAlpha = Number(value) / 100;
 
-    segmentation.config.style.setSegmentationSpecificStyle(
+    segmentation.config.style.setStyle(
       {
         segmentationId: segmentationId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,

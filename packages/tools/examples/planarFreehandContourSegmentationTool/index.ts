@@ -143,7 +143,7 @@ function updateSegmentationConfig(config) {
 
   const mergedConfig = { ...currentConfig, ...config };
 
-  segmentation.config.style.setSegmentationSpecificStyle(
+  segmentation.config.style.setStyle(
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

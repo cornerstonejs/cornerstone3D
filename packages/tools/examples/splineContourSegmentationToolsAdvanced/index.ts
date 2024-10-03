@@ -214,14 +214,14 @@ elements.forEach((element) => {
 });
 
 function updateCurrentSegmentationConfig(config) {
-  const { style } = segmentation.config.style.getStyle({
+  const style = segmentation.config.style.getStyle({
     segmentationId: activeSegmentationId,
     type: csToolsEnums.SegmentationRepresentations.Contour,
   });
 
   const mergedConfig = { ...style, ...config };
 
-  segmentation.config.style.setSegmentationSpecificStyle(
+  segmentation.config.style.setStyle(
     {
       segmentationId: activeSegmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
