@@ -37,12 +37,12 @@ async function createAndCacheGeometry(
     return geometry;
   }
 
-  if (options.type === GeometryType.Contour) {
+  if (options.type === GeometryType.CONTOUR) {
     geometry = createContourSet(
       geometryId,
       options.geometryData as PublicContourSetData
     );
-  } else if (options.type === GeometryType.Surface) {
+  } else if (options.type === GeometryType.SURFACE) {
     geometry = createSurface(
       geometryId,
       options.geometryData as PublicSurfaceData

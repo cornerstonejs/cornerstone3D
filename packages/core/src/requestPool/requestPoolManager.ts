@@ -45,7 +45,7 @@ type RequestPool = {
  * ```javascript
  *
  * const priority = -5
- * const requestType = RequestType.Interaction
+ * const requestType = RequestType.INTERACTION
  * const additionalDetails = { imageId }
  * const options = {
  *   targetBuffer: {
@@ -282,15 +282,15 @@ class RequestPoolManager {
 
   protected startGrabbing(): void {
     const hasRemainingInteractionRequests = this.sendRequests(
-      RequestType.Interaction
+      RequestType.INTERACTION
     );
     const hasRemainingThumbnailRequests = this.sendRequests(
-      RequestType.Thumbnail
+      RequestType.THUMBNAIL
     );
     const hasRemainingPrefetchRequests = this.sendRequests(
-      RequestType.Prefetch
+      RequestType.PREFETCH
     );
-    const hasRemainingComputeRequests = this.sendRequests(RequestType.Compute);
+    const hasRemainingComputeRequests = this.sendRequests(RequestType.COMPUTE);
 
     if (
       !hasRemainingInteractionRequests &&

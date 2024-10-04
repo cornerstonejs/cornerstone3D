@@ -12,7 +12,7 @@ import { RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
 const PRIORITY = 0;
-const REQUEST_TYPE = RequestType.Prefetch;
+const REQUEST_TYPE = RequestType.PREFETCH;
 
 /**
  * It sets the default window level of an image volume based on the VOI.

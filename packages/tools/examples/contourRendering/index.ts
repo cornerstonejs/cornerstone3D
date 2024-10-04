@@ -134,7 +134,7 @@ async function run() {
     const geometryId = contourSet.id;
     geometryIds.push(geometryId);
     return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.Contour,
+      type: GeometryType.CONTOUR,
       geometryData: contourSet as Types.PublicContourSetData,
     });
   });

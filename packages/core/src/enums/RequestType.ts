@@ -3,13 +3,13 @@
  */
 enum RequestType {
   /** Highest priority for loading*/
-  Interaction = 'interaction',
+  INTERACTION = 'INTERACTION',
   /** Second highest priority for loading*/
-  Thumbnail = 'thumbnail',
+  THUMBNAIL = 'THUMBNAIL',
   /** Third highest priority for loading, usually used for image loading in the background*/
-  Prefetch = 'prefetch',
+  PREFETCH = 'PREFETCH',
   /** Lower priority, often used for background computations in the worker */
-  Compute = 'compute',
+  COMPUTE = 'COMPUTE',
 }
 
 export default RequestType;

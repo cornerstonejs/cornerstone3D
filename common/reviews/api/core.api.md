@@ -1049,6 +1049,8 @@ export enum EVENTS {
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
+    STACK_SCROLL_OUT_OF_BOUNDS = "STACK_SCROLL_OUT_OF_BOUNDS",
+    // (undocumented)
     STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
     // (undocumented)
     VIEWPORT_NEW_IMAGE_SET = "CORNERSTONE_VIEWPORT_NEW_IMAGE_SET",
@@ -2866,6 +2868,8 @@ type RangeRetrieveOptions = BaseRetrieveOptions & {
 // @public (undocumented)
 interface ReferenceCompatibleOptions {
     // (undocumented)
+    asNearbyProjection?: boolean;
+    // (undocumented)
     asOverlay?: boolean;
     // (undocumented)
     asVolume?: boolean;
@@ -3192,6 +3196,15 @@ interface StackNewImageEventDetail {
     // (undocumented)
     viewportId: string;
 }
+
+// @public (undocumented)
+type StackScrollOutOfBoundsEvent = CustomEvent_2<StackScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+type StackScrollOutOfBoundsEventDetail = {
+    imageIdIndex: number;
+    direction: number;
+};
 
 // @public (undocumented)
 export class StackViewport extends Viewport {

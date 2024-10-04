@@ -11,7 +11,7 @@ import RequestType from '../enums/RequestType';
  * ```javascript
  *
  * const priority = -5
- * const requestType = RequestType.Interaction
+ * const requestType = RequestType.INTERACTION
  * const additionalDetails = { imageId }
  * const options = {
  *   targetBuffer: {
@@ -33,8 +33,8 @@ const imageLoadPoolManager = new RequestPoolManager('imageLoadPool');
 
 imageLoadPoolManager.grabDelay = 0;
 
-imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 1000);
-imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 1000);
-imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 1000);
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.INTERACTION, 1000);
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.THUMBNAIL, 1000);
+imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.PREFETCH, 1000);
 
 export default imageLoadPoolManager;
