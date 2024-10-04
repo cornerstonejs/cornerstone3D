@@ -16,6 +16,7 @@ export function registerPolySegWorker() {
       new URL('../../../workers/polySegConverters', import.meta.url),
       {
         name: 'polySeg',
+        type: 'module',
       }
     );
   };

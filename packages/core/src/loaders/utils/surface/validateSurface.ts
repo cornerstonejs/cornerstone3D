@@ -1,4 +1,4 @@
-import { PublicSurfaceData } from '../../../types';
+import type { PublicSurfaceData } from '../../../types';
 
 export function validateSurface(contourSetData: PublicSurfaceData) {
   const { data } = contourSetData;

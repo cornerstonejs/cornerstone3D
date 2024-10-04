@@ -2,7 +2,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { getAnnotations } from '../stateManagement';
-import {
+import type {
   EventTypes,
   PublicToolProps,
   ToolProps,
@@ -11,18 +11,18 @@ import {
 } from '../types';
 import { point } from '../utilities/math';
 import { Events, ToolModes, AnnotationStyleStates } from '../enums';
-import { ToolGroupManager } from '../store';
 import { triggerAnnotationRenderForViewportIds } from '../utilities/triggerAnnotationRenderForViewportIds';
 import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
 import { triggerAnnotationModified } from '../stateManagement/annotation/helpers/state';
 import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
+import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 export type SculptData = {
   mousePoint: Types.Point3;
@@ -34,7 +34,7 @@ export type SculptData = {
 
 type CommonData = {
   activeAnnotationUID: string | null;
-  viewportIdsToRender: any[];
+  viewportIdsToRender: string[];
   isEditingOpenContour: boolean;
   canvasLocation: Types.Point2 | undefined;
 };
@@ -123,6 +123,7 @@ class SculptorTool extends BaseTool {
    * @param eventData - Data object associated with the event.
    * @param points - Array of points
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected sculpt(eventData: any, points: Array<Types.Point3>): void {
     const config = this.configuration;
     const element = eventData.element;
@@ -209,10 +210,7 @@ class SculptorTool extends BaseTool {
       cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
     }
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      this.commonData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportIds(this.commonData.viewportIdsToRender);
   }
 
   /**
@@ -228,10 +226,7 @@ class SculptorTool extends BaseTool {
     const { renderingEngineId, viewportId } = enabledElement;
     const sculptableAnnotations = [];
 
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
     const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 
@@ -329,6 +324,7 @@ class SculptorTool extends BaseTool {
    *
    * @param eventData - Data object associated with the event.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private selectFreehandTool(eventData: any): void {
     const closestAnnotationUID =
       this.getClosestFreehandToolOnElement(eventData);
@@ -346,6 +342,7 @@ class SculptorTool extends BaseTool {
    *
    * @param eventData - Data object associated with the event.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getClosestFreehandToolOnElement(eventData: any): string {
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -416,10 +413,7 @@ class SculptorTool extends BaseTool {
 
     const { renderingEngineId, viewportId } = enabledElement;
 
-    const toolGroup = ToolGroupManager.getToolGroupForViewport(
-      viewportId,
-      renderingEngineId
-    );
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
     const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
 

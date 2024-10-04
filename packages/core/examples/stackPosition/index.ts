@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -58,23 +58,21 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
   }
 
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
+  const { flipHorizontal } = viewport.getCamera();
+  const { rotation } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
   displayAreaInfo.innerText = `DisplayArea: ${JSON.stringify(displayArea)}`;
 });
-
-const counter = 0;
 
 function createDisplayArea(
   size,
@@ -155,9 +153,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     const { flipHorizontal } = viewport.getCamera();
     viewport.setCamera({ flipHorizontal: !flipHorizontal });
@@ -173,12 +171,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 30 });
+    const { rotation } = viewport.getViewPresentation();
+    viewport.setViewPresentation({ rotation: rotation + 30 });
 
     viewport.render();
   },
@@ -191,9 +189,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Resets the viewport's camera
     viewport.resetCamera();
@@ -230,14 +228,14 @@ async function run() {
     type: ViewportType.STACK,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.8, 0, 0.8],
+      background: [0.8, 0, 0.8] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
 
   // Set the stack on the viewport
   await viewport.setStack(imageIds);

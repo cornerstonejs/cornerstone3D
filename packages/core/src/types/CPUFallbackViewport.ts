@@ -1,8 +1,8 @@
-import CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
-import CPUFallbackColormap from './CPUFallbackColormap';
-import CPUFallbackLUT from './CPUFallbackLUT';
+import type CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
+import type CPUFallbackColormap from './CPUFallbackColormap';
+import type CPUFallbackLUT from './CPUFallbackLUT';
 
-type CPUFallbackViewport = {
+interface CPUFallbackViewport {
   scale?: number;
   parallelScale?: number;
   focalPoint?: number[];
@@ -24,6 +24,6 @@ type CPUFallbackViewport = {
   colormap?: CPUFallbackColormap;
   displayedArea?: CPUFallbackViewportDisplayedArea;
   modality?: string;
-};
+}
 
-export default CPUFallbackViewport;
+export type { CPUFallbackViewport as default };

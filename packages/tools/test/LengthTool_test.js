@@ -2,6 +2,10 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import {
+  encodeImageIdInfo,
+  createViewports,
+} from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -50,217 +54,82 @@ function calculateLength(pos1, pos2) {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-function createViewport(renderingEngine, viewportType, width, height) {
-  const element = document.createElement('div');
-
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
-
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: viewportType,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-        orientation: Enums.OrientationAxis.AXIAL,
-      },
-    },
-  ]);
-  return element;
-}
-
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+const volumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+});
 
 describe('LengthTool:', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
+  let testEnv;
+  let renderingEngine;
+
+  beforeEach(function () {
+    testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId: renderingEngineId,
+      toolGroupIds: ['stack'],
+      tools: [LengthTool],
+      toolActivations: {
+        [LengthTool.toolName]: {
+          bindings: [{ mouseButton: 1 }],
+        },
+      },
+      viewportIds: [viewportId],
+    });
+
+    renderingEngine = testEnv.renderingEngine;
   });
 
-  describe('Cornerstone Tools: -- Length ', () => {
-    beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(LengthTool);
-      cache.purgeCache();
-      this.DOMElements = [];
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId: renderingEngineId,
+      toolGroupIds: ['stack'],
+    });
+  });
 
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(LengthTool.toolName, {
-        configuration: { volumeId: volumeId },
-      });
-      this.stackToolGroup.setToolActive(LengthTool.toolName, {
-        bindings: [{ mouseButton: 1 }],
-      });
-
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
+  it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.ORTHOGRAPHIC,
+      width: 512,
+      height: 128,
+      viewportId: viewportId,
     });
 
-    afterEach(function () {
-      csTools3d.destroy();
-      eventTarget.reset();
-      cache.purgeCache();
+    const vp = renderingEngine.getViewport(viewportId);
 
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      imageLoader.unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup('stack');
+    let p1, p2;
 
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(1);
+
+        const lengthAnnotation = lengthAnnotations[0];
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+        expect(lengthAnnotation.invalidated).toBe(false);
+        expect(lengthAnnotation.highlighted).toBe(true);
+
+        const data = lengthAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
+
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+
+        done();
       });
-    });
+    };
 
-    it('Should successfully create a length tool on a canvas with mouse drag - 512 x 128', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
-
-      this.DOMElements.push(element);
-
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
-
-      let p1, p2;
-
-      const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
-
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
-
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
-        });
-      };
-
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const index1 = [32, 32, 0];
-        const index2 = [10, 1, 0];
-
-        const { imageData } = vp.getImageData();
-
-        const {
-          pageX: pageX1,
-          pageY: pageY1,
-          clientX: clientX1,
-          clientY: clientY1,
-          worldCoord: worldCoord1,
-        } = createNormalizedMouseEvent(imageData, index1, element, vp);
-        p1 = worldCoord1;
-
-        const {
-          pageX: pageX2,
-          pageY: pageY2,
-          clientX: clientX2,
-          clientY: clientY2,
-          worldCoord: worldCoord2,
-        } = createNormalizedMouseEvent(imageData, index2, element, vp);
-        p2 = worldCoord2;
-
-        // Mouse Down
-        let evt = new MouseEvent('mousedown', {
-          target: element,
-          buttons: 1,
-          clientX: clientX1,
-          clientY: clientY1,
-          pageX: pageX1,
-          pageY: pageY1,
-        });
-        element.dispatchEvent(evt);
-
-        // Mouse move to put the end somewhere else
-        evt = new MouseEvent('mousemove', {
-          target: element,
-          buttons: 1,
-          clientX: clientX2,
-          clientY: clientY2,
-          pageX: pageX2,
-          pageY: pageY2,
-        });
-        document.dispatchEvent(evt);
-
-        // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
-
-        // Since there is tool rendering happening for any mouse event
-        // we just attach a listener before the last one -> mouse up
-        addEventListenerForAnnotationRendered();
-        document.dispatchEvent(evt);
-      });
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
-    });
-
-    it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.ORTHOGRAPHIC,
-        512,
-        128
-      );
-      this.DOMElements.push(element);
-
-      const vp = this.renderingEngine.getViewport(viewportId);
-
-      let p1, p2;
-
-      const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
-
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.highlighted).toBe(true);
-
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
-
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
-
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
-        });
-      };
-
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      setTimeout(() => {
         const index1 = [32, 32, 4];
         const index2 = [10, 1, 4];
 
@@ -310,67 +179,75 @@ describe('LengthTool:', () => {
         evt = new MouseEvent('mouseup');
         addEventListenerForAnnotationRendered();
         document.dispatchEvent(evt);
-      });
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        volumeLoader
-          .createAndCacheVolume(volumeId, { imageIds: [] })
-          .then(() => {
-            setVolumesForViewports(
-              this.renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId]
-            );
-            vp.render();
-          });
-      } catch (e) {
-        done.fail(e);
-      }
+      }, 300);
     });
 
-    it('Should successfully create a length tool and modify its handle', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        256,
-        256
-      );
-      this.DOMElements.push(element);
+    try {
+      volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
+        setVolumesForViewports(
+          renderingEngine,
+          [{ volumeId: volumeId }],
+          [viewportId]
+        );
+        vp.render();
+      });
+    } catch (e) {
+      done.fail(e);
+    }
+  });
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
+  it('Should successfully create a length tool and modify its handle', function (done) {
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+      viewportId: viewportId,
+    });
 
-      let p2, p3;
+    const imageInfo1 = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    };
 
-      const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+    const imageId1 = encodeImageIdInfo(imageInfo1);
+    const vp = renderingEngine.getViewport(viewportId);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.highlighted).toBe(true);
+    let p2, p3;
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
+        const lengthAnnotation = lengthAnnotations[0];
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+        expect(lengthAnnotation.invalidated).toBe(false);
+        expect(lengthAnnotation.highlighted).toBe(true);
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
-        });
-      };
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        const data = lengthAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
+
+        expect(data[targets[0]].length).toBe(calculateLength(p3, p2));
+
+        done();
+      });
+    };
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      setTimeout(() => {
         const index1 = [50, 50, 0];
         const index2 = [5, 5, 0];
         const index3 = [33, 33, 0];
@@ -456,60 +333,70 @@ describe('LengthTool:', () => {
 
         addEventListenerForAnnotationRendered();
         document.dispatchEvent(evt);
-      });
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
+      }, 300);
     });
 
-    it('Should successfully create a length tool and select but not move it', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        256,
-        256
-      );
-      this.DOMElements.push(element);
+    try {
+      vp.setStack([imageId1], 0);
+      renderingEngine.render();
+    } catch (e) {
+      done.fail(e);
+    }
+  });
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
+  it('Should successfully create a length tool and select but not move it', function (done) {
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+      viewportId: viewportId,
+    });
 
-      let p1, p2;
+    const imageInfo1 = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    };
 
-      const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+    const imageId1 = encodeImageIdInfo(imageInfo1);
+    const vp = renderingEngine.getViewport(viewportId);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.highlighted).toBe(true);
+    let p1, p2;
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(1);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+        const lengthAnnotation = lengthAnnotations[0];
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+        expect(lengthAnnotation.invalidated).toBe(false);
+        expect(lengthAnnotation.highlighted).toBe(true);
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
-        });
-      };
+        const data = lengthAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+
+        done();
+      });
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      setTimeout(() => {
         const index1 = [20, 20, 0];
         const index2 = [20, 30, 0];
 
@@ -590,99 +477,106 @@ describe('LengthTool:', () => {
           null,
           false
         );
-      });
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
+      }, 300);
     });
 
-    it('Should successfully create a length tool and select AND move it', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        256,
-        256
-      );
-      this.DOMElements.push(element);
+    try {
+      vp.setStack([imageId1], 0);
+      renderingEngine.render();
+    } catch (e) {
+      done.fail(e);
+    }
+  });
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
+  it('Should successfully create a length tool and select AND move it', function (done) {
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+      viewportId: viewportId,
+    });
 
-      let p1, p2, p3, p4;
+    const imageInfo1 = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    };
 
-      const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+    const imageId1 = encodeImageIdInfo(imageInfo1);
+    const vp = renderingEngine.getViewport(viewportId);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
+    let p1, p2, p3, p4;
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(1);
 
-          // We don't expect the length to change on tool move
-          expect(data[targets[0]].length).toBeCloseTo(
-            calculateLength(p1, p2),
-            6
-          );
+        const lengthAnnotation = lengthAnnotations[0];
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+        expect(lengthAnnotation.invalidated).toBe(false);
 
-          const handles = lengthAnnotation.data.handles.points;
+        const data = lengthAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
 
-          const preMoveFirstHandle = p1;
-          const preMoveSecondHandle = p2;
-          const preMoveCenter = p3;
+        // We don't expect the length to change on tool move
+        expect(data[targets[0]].length).toBeCloseTo(calculateLength(p1, p2), 6);
 
-          const centerToHandle1 = [
-            preMoveCenter[0] - preMoveFirstHandle[0],
-            preMoveCenter[1] - preMoveFirstHandle[1],
-            preMoveCenter[2] - preMoveFirstHandle[2],
-          ];
+        const handles = lengthAnnotation.data.handles.points;
 
-          const centerToHandle2 = [
-            preMoveCenter[0] - preMoveSecondHandle[0],
-            preMoveCenter[1] - preMoveSecondHandle[1],
-            preMoveCenter[2] - preMoveSecondHandle[2],
-          ];
+        const preMoveFirstHandle = p1;
+        const preMoveSecondHandle = p2;
+        const preMoveCenter = p3;
 
-          const afterMoveCenter = p4;
+        const centerToHandle1 = [
+          preMoveCenter[0] - preMoveFirstHandle[0],
+          preMoveCenter[1] - preMoveFirstHandle[1],
+          preMoveCenter[2] - preMoveFirstHandle[2],
+        ];
 
-          const afterMoveFirstHandle = [
-            afterMoveCenter[0] - centerToHandle1[0],
-            afterMoveCenter[1] - centerToHandle1[1],
-            afterMoveCenter[2] - centerToHandle1[2],
-          ];
+        const centerToHandle2 = [
+          preMoveCenter[0] - preMoveSecondHandle[0],
+          preMoveCenter[1] - preMoveSecondHandle[1],
+          preMoveCenter[2] - preMoveSecondHandle[2],
+        ];
 
-          const afterMoveSecondHandle = [
-            afterMoveCenter[0] - centerToHandle2[0],
-            afterMoveCenter[1] - centerToHandle2[1],
-            afterMoveCenter[2] - centerToHandle2[2],
-          ];
+        const afterMoveCenter = p4;
 
-          // Expect handles are moved accordingly
-          expect(handles[0]).toEqual(afterMoveFirstHandle);
-          expect(handles[1]).toEqual(afterMoveSecondHandle);
+        const afterMoveFirstHandle = [
+          afterMoveCenter[0] - centerToHandle1[0],
+          afterMoveCenter[1] - centerToHandle1[1],
+          afterMoveCenter[2] - centerToHandle1[2],
+        ];
 
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
-        });
-      };
+        const afterMoveSecondHandle = [
+          afterMoveCenter[0] - centerToHandle2[0],
+          afterMoveCenter[1] - centerToHandle2[1],
+          afterMoveCenter[2] - centerToHandle2[2],
+        ];
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        // Expect handles are moved accordingly
+        expect(handles[0]).toEqual(afterMoveFirstHandle);
+        expect(handles[1]).toEqual(afterMoveSecondHandle);
+
+        done();
+      });
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      setTimeout(() => {
         const index1 = [20, 20, 0];
         const index2 = [20, 30, 0];
 
@@ -782,68 +676,77 @@ describe('LengthTool:', () => {
 
         addEventListenerForAnnotationRendered();
         document.dispatchEvent(evt);
-      });
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
+      }, 300);
     });
 
-    it('Should successfully create a length tool on a canvas and remove it after', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
+    try {
+      vp.setStack([imageId1], 0);
+      renderingEngine.render();
+    } catch (e) {
+      done.fail(e);
+    }
+  });
 
-      this.DOMElements.push(element);
+  it('Should successfully create a length tool on a canvas and remove it after', function (done) {
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      width: 512,
+      height: 128,
+      viewportId: viewportId,
+    });
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
+    const imageInfo1 = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    };
 
-      let p1, p2;
+    const imageId1 = encodeImageIdInfo(imageInfo1);
+    const vp = renderingEngine.getViewport(viewportId);
 
-      const addEventListenerForAnnotationRendered = () => {
-        element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+    let p1, p2;
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const lengthAnnotations = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
+        // Can successfully add Length tool to annotationManager
+        expect(lengthAnnotations).toBeDefined();
+        expect(lengthAnnotations.length).toBe(1);
 
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
+        const lengthAnnotation = lengthAnnotations[0];
+        expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+        expect(lengthAnnotation.invalidated).toBe(false);
 
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
+        const data = lengthAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
 
-          const annotationsAfterRemove = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
+        expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
 
-          expect(annotationsAfterRemove).toBeDefined();
-          expect(annotationsAfterRemove.length).toBe(0);
+        const annotationsAfterRemove = annotation.state.getAnnotations(
+          LengthTool.toolName,
+          element
+        );
 
-          done();
-        });
-      };
+        expect(annotationsAfterRemove).toBeDefined();
+        expect(annotationsAfterRemove.length).toBe(1);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        done();
+      });
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      setTimeout(() => {
         const index1 = [32, 32, 0];
         const index2 = [10, 1, 0];
 
@@ -896,341 +799,139 @@ describe('LengthTool:', () => {
         // we just attach a listener before the last one -> mouse up
         addEventListenerForAnnotationRendered();
         document.dispatchEvent(evt);
-      });
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
+      }, 300);
     });
+
+    try {
+      vp.setStack([imageId1], 0);
+      renderingEngine.render();
+    } catch (e) {
+      done.fail(e);
+    }
   });
 
-  describe('Should successfully cancel a LengthTool', () => {
-    beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(LengthTool);
-      cache.purgeCache();
-      this.DOMElements = [];
+  // it('Should cancel drawing of a LengthTool annotation', function (done) {
+  //   const element = createViewports(renderingEngine, {
+  //     viewportType: ViewportType.STACK,
+  //     width: 512,
+  //     height: 128,
+  //     viewportId: viewportId,
+  //   });
 
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(LengthTool.toolName, {
-        configuration: { volumeId: volumeId },
-      });
-      this.stackToolGroup.setToolActive(LengthTool.toolName, {
-        bindings: [{ mouseButton: 1 }],
-      });
+  //   const imageInfo1 = {
+  //     loader: 'fakeImageLoader',
+  //     name: 'imageURI',
+  //     rows: 64,
+  //     columns: 64,
+  //     barStart: 10,
+  //     barWidth: 5,
+  //     xSpacing: 1,
+  //     ySpacing: 1,
+  //     sliceIndex: 0,
+  //   };
 
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
-    });
+  //   const imageId1 = encodeImageIdInfo(imageInfo1);
+  //   const vp = renderingEngine.getViewport(viewportId);
 
-    afterEach(function () {
-      csTools3d.destroy();
-      eventTarget.reset();
-      cache.purgeCache();
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      imageLoader.unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup('stack');
+  //   let p1, p2;
 
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
-    });
+  //   element.addEventListener(Events.IMAGE_RENDERED, () => {
+  //     const index1 = [32, 32, 0];
+  //     const index2 = [10, 1, 0];
 
-    it('Should cancel drawing of a LengthTool annotation', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
-      this.DOMElements.push(element);
+  //     const { imageData } = vp.getImageData();
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
+  //     const {
+  //       pageX: pageX1,
+  //       pageY: pageY1,
+  //       clientX: clientX1,
+  //       clientY: clientY1,
+  //       worldCoord: worldCoord1,
+  //     } = createNormalizedMouseEvent(imageData, index1, element, vp);
+  //     p1 = worldCoord1;
 
-      let p1, p2;
+  //     const {
+  //       pageX: pageX2,
+  //       pageY: pageY2,
+  //       clientX: clientX2,
+  //       clientY: clientY2,
+  //       worldCoord: worldCoord2,
+  //     } = createNormalizedMouseEvent(imageData, index2, element, vp);
+  //     p2 = worldCoord2;
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const index1 = [32, 32, 0];
-        const index2 = [10, 1, 0];
+  //     // Mouse Down
+  //     let evt = new MouseEvent('mousedown', {
+  //       target: element,
+  //       buttons: 1,
+  //       clientX: clientX1,
+  //       clientY: clientY1,
+  //       pageX: pageX1,
+  //       pageY: pageY1,
+  //     });
+  //     element.dispatchEvent(evt);
 
-        const { imageData } = vp.getImageData();
+  //     // Mouse move to put the end somewhere else
+  //     evt = new MouseEvent('mousemove', {
+  //       target: element,
+  //       buttons: 1,
+  //       clientX: clientX2,
+  //       clientY: clientY2,
+  //       pageX: pageX2,
+  //       pageY: pageY2,
+  //     });
+  //     document.dispatchEvent(evt);
 
-        const {
-          pageX: pageX1,
-          pageY: pageY1,
-          clientX: clientX1,
-          clientY: clientY1,
-          worldCoord: worldCoord1,
-        } = createNormalizedMouseEvent(imageData, index1, element, vp);
-        p1 = worldCoord1;
+  //     // Cancel the drawing
+  //     let e = new KeyboardEvent('keydown', {
+  //       bubbles: true,
+  //       cancelable: true,
+  //       key: 'Esc',
+  //       char: 'Esc',
+  //     });
+  //     element.dispatchEvent(e);
 
-        const {
-          pageX: pageX2,
-          pageY: pageY2,
-          clientX: clientX2,
-          clientY: clientY2,
-          worldCoord: worldCoord2,
-        } = createNormalizedMouseEvent(imageData, index2, element, vp);
-        p2 = worldCoord2;
+  //     e = new KeyboardEvent('keyup', {
+  //       bubbles: true,
+  //       cancelable: true,
+  //     });
+  //     element.dispatchEvent(e);
+  //   });
 
-        // Mouse Down
-        let evt = new MouseEvent('mousedown', {
-          target: element,
-          buttons: 1,
-          clientX: clientX1,
-          clientY: clientY1,
-          pageX: pageX1,
-          pageY: pageY1,
-        });
-        element.dispatchEvent(evt);
+  //   const cancelToolDrawing = () => {
+  //     const canceledDataUID = cancelActiveManipulations(element);
+  //     expect(canceledDataUID).toBeDefined();
 
-        // Mouse move to put the end somewhere else
-        evt = new MouseEvent('mousemove', {
-          target: element,
-          buttons: 1,
-          clientX: clientX2,
-          clientY: clientY2,
-          pageX: pageX2,
-          pageY: pageY2,
-        });
-        document.dispatchEvent(evt);
+  //       const lengthAnnotations = annotation.state.getAnnotations(
+  //         LengthTool.toolName,
+  //         element
+  //       );
+  //       // Can successfully add Length tool to annotationManager
+  //       expect(lengthAnnotations).toBeDefined();
+  //       expect(lengthAnnotations.length).toBe(1);
 
-        // Cancel the drawing
-        let e = new KeyboardEvent('keydown', {
-          bubbles: true,
-          cancelable: true,
-          key: 'Esc',
-          char: 'Esc',
-        });
-        element.dispatchEvent(e);
+  //       const lengthAnnotation = lengthAnnotations[0];
+  //       expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+  //       expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+  //       expect(lengthAnnotation.invalidated).toBe(false);
+  //       expect(lengthAnnotation.data.handles.activeHandleIndex).toBe(null);
+  //       expect(lengthAnnotation.highlighted).toBe(false);
 
-        e = new KeyboardEvent('keyup', {
-          bubbles: true,
-          cancelable: true,
-        });
-        element.dispatchEvent(e);
-      });
+  //       const data = lengthAnnotation.data.cachedStats;
+  //       const targets = Array.from(Object.keys(data));
+  //       expect(targets.length).toBe(1);
 
-      const cancelToolDrawing = () => {
-        const canceledDataUID = cancelActiveManipulations(element);
-        expect(canceledDataUID).toBeDefined();
+  //       expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+  //       done();
+  //     }, 100);
+  //   };
 
-        setTimeout(() => {
-          const lengthAnnotations = annotation.state.getAnnotations(
-            LengthTool.toolName,
-            element
-          );
-          // Can successfully add Length tool to annotationManager
-          expect(lengthAnnotations).toBeDefined();
-          expect(lengthAnnotations.length).toBe(1);
+  //   element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
-          const lengthAnnotation = lengthAnnotations[0];
-          expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
-          expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-          expect(lengthAnnotation.invalidated).toBe(false);
-          expect(lengthAnnotation.data.handles.activeHandleIndex).toBe(null);
-          expect(lengthAnnotation.highlighted).toBe(false);
-
-          const data = lengthAnnotation.data.cachedStats;
-          const targets = Array.from(Object.keys(data));
-          expect(targets.length).toBe(1);
-
-          expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
-          annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-          done();
-        }, 100);
-      };
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        done.fail(e);
-      }
-    });
-  });
-
-  /** Test that the calibration works as expected when provided a calibrated
-   * scale value.
-   */
-  describe('Calibration ', () => {
-    const FOR = 'for';
-
-    beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(LengthTool);
-      cache.purgeCache();
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(LengthTool.toolName, {
-        configuration: {},
-      });
-      this.stackToolGroup.setToolActive(LengthTool.toolName, {
-        bindings: [{ mouseButton: 1 }],
-      });
-
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
-      metaData.addProvider(
-        utilities.calibratedPixelSpacingMetadataProvider.get.bind(
-          utilities.calibratedPixelSpacingMetadataProvider
-        ),
-        11000
-      );
-    });
-
-    afterEach(function () {
-      try {
-        csTools3d.destroy();
-        eventTarget.reset();
-        cache.purgeCache();
-        this.renderingEngine.destroy();
-        metaData.removeProvider(fakeMetaDataProvider);
-        imageLoader.unregisterAllImageLoaders();
-        ToolGroupManager.destroyToolGroup('stack');
-
-        if (!this.DOMElements) {
-          return;
-        }
-        this.DOMElements.forEach((el) => {
-          if (el.parentNode) {
-            el.parentNode.removeChild(el);
-          }
-        });
-      } catch (e) {
-        console.warn(e);
-      }
-    });
-
-    it('Should be able to calibrate an image and update the tool', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        256,
-        256
-      );
-
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_4_40_1_1_0_1';
-
-      const vp = this.renderingEngine.getViewport(viewportId);
-      const scale = 1.5;
-      const index1 = [32, 32, 0];
-      const index2 = [10, 1, 0];
-
-      const secondCallback = () => {
-        const lengthAnnotations = annotation.state.getAnnotations(
-          LengthTool.toolName,
-          element
-        );
-        //  Can successfully add Length tool to annotationManager
-        expect(lengthAnnotations).toBeDefined();
-        expect(lengthAnnotations.length).toBe(1);
-
-        const lengthAnnotation = lengthAnnotations[0];
-        expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
-        expect(lengthAnnotation.invalidated).toBe(false);
-        expect(lengthAnnotation.highlighted).toBe(true);
-
-        const data = lengthAnnotation.data.cachedStats;
-        const targets = Array.from(Object.keys(data));
-        expect(targets.length).toBe(1);
-
-        console.log('data', data, targets[0]);
-        expect(data[targets[0]].length).toBeCloseTo(
-          calculateLength(index1, index2) / scale,
-          0.05
-        );
-
-        annotation.state.removeAnnotation(lengthAnnotation.annotationUID);
-        done();
-      };
-
-      const firstCallback = () => {
-        element.removeEventListener(Events.IMAGE_RENDERED, firstCallback);
-        element.addEventListener(Events.IMAGE_RENDERED, secondCallback);
-
-        const { imageData } = vp.getImageData();
-
-        const {
-          pageX: pageX1,
-          pageY: pageY1,
-          clientX: clientX1,
-          clientY: clientY1,
-        } = createNormalizedMouseEvent(imageData, index1, element, vp);
-
-        const {
-          pageX: pageX2,
-          pageY: pageY2,
-          clientX: clientX2,
-          clientY: clientY2,
-        } = createNormalizedMouseEvent(imageData, index2, element, vp);
-
-        let evt = new MouseEvent('mousedown', {
-          target: element,
-          buttons: 1,
-          clientX: clientX1,
-          clientY: clientY1,
-          pageX: pageX1,
-          pageY: pageY1,
-        });
-        element.dispatchEvent(evt);
-
-        evt = new MouseEvent('mousemove', {
-          target: element,
-          buttons: 1,
-          clientX: clientX2,
-          clientY: clientY2,
-          pageX: pageX2,
-          pageY: pageY2,
-        });
-        document.dispatchEvent(evt);
-
-        // Mouse Up instantly after
-        evt = new MouseEvent('mouseup');
-
-        // Since there is tool rendering happening for any mouse event
-        // we just attach a listener before the last one -> mouse up
-        document.dispatchEvent(evt);
-
-        const imageId = this.renderingEngine
-          .getViewport(viewportId)
-          .getCurrentImageId();
-
-        console.log('Starting image calibration');
-        calibrateImageSpacing(imageId, this.renderingEngine, {
-          type: CalibrationTypes.USER,
-          scale,
-        });
-        console.log('Done image calibration');
-      };
-
-      element.addEventListener(Events.IMAGE_RENDERED, firstCallback);
-
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
-      try {
-        vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
-      } catch (e) {
-        console.warn('Calibrate failed:', e);
-        done.fail(e);
-      }
-    });
-  });
+  //   try {
+  //     vp.setStack([imageId1], 0);
+  //     renderingEngine.render();
+  //   } catch (e) {
+  //     done.fail(e);
+  //   }
+  // });
 });

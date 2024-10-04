@@ -1,5 +1,5 @@
 import now from './now';
-import { IImage } from '../../../../types';
+import type { IImage } from '../../../../types';
 
 /**
  * Converts stored RGBA color pixel values to display pixel values using a LUT.
@@ -17,7 +17,7 @@ export default function (
   canvasImageDataData: Uint8ClampedArray
 ): void {
   let start = now();
-  const pixelData = image.getPixelData();
+  const pixelData = image.voxelManager.getScalarData();
 
   image.stats.lastGetPixelDataTime = now() - start;
 

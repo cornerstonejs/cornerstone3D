@@ -13,4 +13,4 @@ type IDistance = {
   world: number;
 };
 
-export default IDistance;
+export type { IDistance as default };

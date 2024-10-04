@@ -2,6 +2,6 @@ import type { Types } from '@cornerstonejs/core';
 
 export type PolySegConversionOptions = {
   segmentIndices?: number[];
-  segmentationRepresentationUID?: string;
+  segmentationId?: string;
   viewport?: Types.IStackViewport | Types.IVolumeViewport;
 };

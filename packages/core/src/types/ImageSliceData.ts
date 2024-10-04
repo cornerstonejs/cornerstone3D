@@ -1,6 +1,6 @@
-type ImageSliceData = {
+interface ImageSliceData {
   numberOfSlices: number;
   imageIndex: number;
-};
+}
 
-export default ImageSliceData;
+export type { ImageSliceData as default };

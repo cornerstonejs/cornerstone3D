@@ -7,7 +7,7 @@ module.exports = function (config) {
     reporters: ['junit', 'coverage', 'spec'],
     client: {
       jasmine: {
-        // random: false, // don't randomize the order of tests
+        random: false, // don't randomize the order of tests
         stopOnFailure: false,
         failFast: false,
       },
@@ -16,6 +16,7 @@ module.exports = function (config) {
       captureConsole: true,
       clearContext: false,
     },
+    concurrency: 1,
     // Uncomment this out to capture all logging
     // browserConsoleLogOptions: {
     //   terminal: true,
@@ -63,12 +64,10 @@ module.exports = function (config) {
       },
     ],
     files: [
-      'packages/streaming-image-volume-loader/test/**/*_test.js',
       'packages/core/test/**/*_test.js',
       'packages/tools/test/**/*_test.js',
     ],
     preprocessors: {
-      'packages/streaming-image-volume-loader/test/**/*_test.js': ['webpack'],
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
     },
@@ -139,9 +138,6 @@ module.exports = function (config) {
         alias: {
           '@cornerstonejs/core': path.resolve('packages/core/src/index'),
           '@cornerstonejs/tools': path.resolve('packages/tools/src/index'),
-          '@cornerstonejs/streaming-image-volume-loader': path.resolve(
-            'packages/streaming-image-volume-loader/src/index'
-          ),
         },
       },
     },

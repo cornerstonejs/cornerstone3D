@@ -1,3 +1,7 @@
+import {
+  cleanupTestEnvironment,
+  setupTestEnvironment,
+} from '../../../utils/test/testUtils';
 import * as cornerstone3D from '../src';
 
 // import { User } from ... doesn't work right now since we don't have named exports set up
@@ -65,7 +69,11 @@ const metadataProvider2 = (type, imageId) => {
 
 describe('metaData Provider', function () {
   beforeEach(() => {
-    metaData.removeAllProviders();
+    setupTestEnvironment();
+  });
+
+  afterEach(() => {
+    cleanupTestEnvironment();
   });
 
   it('addProvider: can add provider to the list of providers', () => {

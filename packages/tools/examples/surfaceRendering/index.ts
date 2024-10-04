@@ -1,20 +1,18 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
   utilities,
   geometryLoader,
   CONSTANTS,
-  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   downloadSurfacesData,
-  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -25,13 +23,12 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -102,7 +99,6 @@ async function addSegmentationsToState() {
     {
       segmentationId,
       representation: {
-        // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Surface,
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
@@ -122,21 +118,17 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
-  toolGroup3d.addTool(SegmentationDisplayTool.toolName);
   toolGroup3d.addTool(ZoomTool.toolName);
   toolGroup3d.addTool(TrackballRotateTool.toolName, {
     configuration: { volumeId },
   });
-
-  toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup3d.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
@@ -214,10 +206,9 @@ async function run() {
     }
   );
 
-  await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+  await segmentation.addSurfaceRepresentationToViewport(viewportId2, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Surface,
     },
   ]);
 

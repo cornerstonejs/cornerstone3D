@@ -1,10 +1,10 @@
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core';
 
 async function decodeLittleEndian(
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   pixelData: ByteArray
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   let arrayBuffer = pixelData.buffer;
 
   let offset = pixelData.byteOffset;

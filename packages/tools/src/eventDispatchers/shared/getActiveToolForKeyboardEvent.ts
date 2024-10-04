@@ -1,8 +1,8 @@
-import { ToolGroupManager } from '../../store';
 import { ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 import { getMouseButton } from '../../eventListeners/mouse/mouseDownListener';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 const { Active } = ToolModes;
 
@@ -27,10 +27,7 @@ export default function getActiveToolForKeyboardEvent(
   // TODO - get the real modifier key
   const modifierKey = keyEventListener.getModifierKey();
 
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return null;

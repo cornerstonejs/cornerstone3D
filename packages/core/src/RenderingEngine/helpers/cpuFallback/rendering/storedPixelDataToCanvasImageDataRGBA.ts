@@ -1,5 +1,5 @@
 import now from './now';
-import { IImage } from '../../../../types';
+import type { IImage } from '../../../../types';
 
 /**
  * This function transforms stored pixel values into a canvas image data buffer
@@ -18,7 +18,7 @@ export default function (
   canvasImageDataData: Uint8ClampedArray
 ): void {
   let start = now();
-  const pixelData = image.getPixelData();
+  const pixelData = image.voxelManager.getScalarData();
 
   image.stats.lastGetPixelDataTime = now() - start;
 

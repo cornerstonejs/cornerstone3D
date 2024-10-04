@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Return the midpoint (think average) of all the provided points.

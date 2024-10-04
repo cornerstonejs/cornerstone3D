@@ -1,5 +1,5 @@
-import { ImageLoadListener } from '../types';
-import { ImageQualityStatus } from '../enums';
+import type { ImageLoadListener } from '../types';
+import type { ImageQualityStatus } from '../enums';
 
 /** Actually fills the nearby frames from the given frame */
 export function fillNearbyFrames(
@@ -38,6 +38,7 @@ export function fillNearbyFrames(
         continue;
       }
       const targetOptions = listener.getLoaderImageOptions(targetId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { offset: targetOffset } = targetOptions.targetBuffer as any;
       scalarData.set(src, targetOffset / bytesPerPixel);
       const nearbyImage = {

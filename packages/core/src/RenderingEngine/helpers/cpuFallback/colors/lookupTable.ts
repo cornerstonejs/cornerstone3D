@@ -1,4 +1,4 @@
-import { Point2, Point4, CPUFallbackLookupTable } from '../../../../types';
+import type { Point2, Point4, CPUFallbackLookupTable } from '../../../../types';
 
 // This code was created based on vtkLookupTable
 // http://www.vtk.org/doc/release/5.0/html/a01697.html
@@ -433,10 +433,26 @@ class LookupTable implements CPUFallbackLookupTable {
    * @returns {void}
    * @memberof Colors
    */
-  public setTableValue(index, rgba) {
-    // Check if it index, red, green, blue and alpha were passed as parameter
-    if (arguments.length === 5) {
-      rgba = Array.prototype.slice.call(arguments, 1);
+  public setTableValue(
+    index: number,
+    rgba: Point4 | number,
+    g?: number,
+    b?: number,
+    a?: number
+  ): void {
+    let colorArray: Point4;
+
+    if (
+      typeof rgba === 'number' &&
+      g !== undefined &&
+      b !== undefined &&
+      a !== undefined
+    ) {
+      colorArray = [rgba, g, b, a];
+    } else if (Array.isArray(rgba)) {
+      colorArray = rgba;
+    } else {
+      throw new Error('Invalid arguments for setTableValue');
     }
 
     // Check the index to make sure it is valid
@@ -447,12 +463,12 @@ class LookupTable implements CPUFallbackLookupTable {
     }
 
     if (index >= this.NumberOfColors) {
-      new Error(
+      throw new Error(
         `Index ${index} is greater than the number of colors ${this.NumberOfColors}`
       );
     }
 
-    this.Table[index] = rgba;
+    this.Table[index] = colorArray;
 
     if (index === 0 || index === this.NumberOfColors - 1) {
       // This is needed due to the way the special colors are stored in

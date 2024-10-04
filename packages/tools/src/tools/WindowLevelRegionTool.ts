@@ -9,7 +9,7 @@ import {
 } from '../stateManagement';
 import { triggerAnnotationCompleted } from '../stateManagement/annotation/helpers/state';
 import { drawRect as drawRectSvg } from '../drawingSvg';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {
@@ -18,14 +18,15 @@ import {
 } from '../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolProps,
   PublicToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../types';
-import { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 
 import { windowLevel } from '../utilities/voi';
 
@@ -43,7 +44,7 @@ class WindowLevelRegionTool extends AnnotationTool {
   static toolName;
 
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
   } | null;
   isDrawing: boolean;
@@ -69,13 +70,13 @@ class WindowLevelRegionTool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (evt: EventTypes.InteractionEventType): any => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
@@ -131,7 +132,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -146,14 +147,12 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const { renderingEngine } = getEnabledElement(element);
-
     this.editData = null;
     this.isDrawing = false;
 
     removeAnnotation(annotation.annotationUID);
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     triggerAnnotationCompleted(annotation);
 
@@ -197,9 +196,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     annotation.invalidated = true;
 
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   /**
@@ -333,7 +330,6 @@ class WindowLevelRegionTool extends AnnotationTool {
     top = clip(top, 0, imageData.height);
     width = Math.floor(Math.min(width, Math.abs(imageData.width - left)));
     height = Math.floor(Math.min(height, Math.abs(imageData.height - top)));
-
     // Get the pixel data in the rectangular region
     const pixelLuminanceData = windowLevel.getLuminanceFromRegion(
       imageData,

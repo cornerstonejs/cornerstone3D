@@ -1,6 +1,6 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import interpolateSegmentPoints from './interpolation/interpolateSegmentPoints';
 
 export type SmoothOptions = {

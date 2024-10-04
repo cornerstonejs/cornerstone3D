@@ -1,8 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
-import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
+import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/events/triggerSegmentationDataModified';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import {
+  getSegmentIndexColor,
+  setSegmentIndexColor,
+} from '../../../../stateManagement/segmentation/config/segmentationColor';
 
 function lightenColor(r, g, b, a, factor = 0.4) {
   return [
@@ -48,14 +51,8 @@ export default {
   },
 
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      toolGroupId,
-      segmentIndex,
-      segmentationRepresentationUID,
-      previewSegmentIndex,
-      previewColors,
-      preview,
-    } = operationData;
+    const { segmentIndex, previewSegmentIndex, previewColors, preview } =
+      operationData;
     if (previewColors === undefined) {
       return;
     }
@@ -72,9 +69,9 @@ export default {
     }
 
     const configColor = previewColors?.[segmentIndex];
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    const segmentColor = getSegmentIndexColor(
+      operationData.viewport.id,
+      operationData.segmentationId,
       segmentIndex
     );
     if (!configColor && !segmentColor) {
@@ -82,9 +79,9 @@ export default {
     }
     const previewColor = configColor || lightenColor(...segmentColor);
 
-    segmentationConfig.color.setColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    setSegmentIndexColor(
+      operationData.viewport.id,
+      operationData.segmentationId,
       previewSegmentIndex,
       previewColor as Types.Color
     );
@@ -94,7 +91,7 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
       preview,
@@ -118,7 +115,7 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfSlices()
+      tracking.getArrayOfModifiedSlices()
     );
     tracking.clear();
   },
@@ -128,7 +125,7 @@ export default {
   ) => {
     const {
       previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
     } = operationData;
     if (previewVoxelManager.modifiedSlices.size === 0) {
       return;
@@ -141,7 +138,7 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfSlices()
+      previewVoxelManager.getArrayOfModifiedSlices()
     );
     previewVoxelManager.clear();
   },

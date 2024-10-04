@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import drawTextBox from './drawTextBox';
 import drawLink from './drawLink';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 function drawLinkedTextBox(
   svgDrawingHelper: SVGDrawingHelper,

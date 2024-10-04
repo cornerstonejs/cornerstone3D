@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -18,19 +14,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 1,
-  outlineDashActive: 0,
-  outlineDashInactive: 1,
-};
-
 const {
-  SegmentationDisplayTool,
   PlanarFreehandContourSegmentationTool,
   PlanarFreehandROITool,
   SculptorTool,
@@ -50,7 +34,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
 let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //
@@ -137,17 +120,6 @@ addDropdownToToolbar({
   },
 });
 
-function initializeGlobalConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.CONTOUR,
-    DEFAULT_SEGMENTATION_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 /**
@@ -161,7 +133,6 @@ async function run() {
   cornerstoneTools.addTool(SculptorTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -171,7 +142,6 @@ async function run() {
   toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
   toolGroup.addTool(SculptorTool.toolName);
   toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   // Set the initial state of the tools.
   toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
     bindings: [
@@ -268,28 +238,17 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]);
-
-  // Store the segmentation representation that was just created
-  segmentationRepresentationUID = segmentationRepresentationUIDs[0];
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  // Create a segmentation representation associated to the viewportId
+  await segmentation.addSegmentationRepresentations(viewportIds[0], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
   updateActiveSegmentIndex(1);
-  initializeGlobalConfig();
 }
 
 run();

@@ -1,5 +1,5 @@
-import { ViewportProperties } from './ViewportProperties';
-import Point2 from './Point2';
+import type { ViewportProperties } from './ViewportProperties';
+import type Point2 from './Point2';
 
 /**
  * Stack Viewport Properties
@@ -12,4 +12,4 @@ type VideoViewportProperties = ViewportProperties & {
   scrollSpeed?: number;
 };
 
-export default VideoViewportProperties;
+export type { VideoViewportProperties as default };

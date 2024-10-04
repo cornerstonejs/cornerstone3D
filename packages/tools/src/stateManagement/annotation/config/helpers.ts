@@ -1,5 +1,5 @@
-import { StyleSpecifier } from '../../../types/AnnotationStyle';
-import { ToolModes, AnnotationStyleStates } from '../../../enums';
+import type { StyleSpecifier } from '../../../types/AnnotationStyle';
+import type { ToolModes, AnnotationStyleStates } from '../../../enums';
 import toolStyle from './ToolStyle';
 
 /**

@@ -1,8 +1,14 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type Point3 from './Point3';
 import type Metadata from './Metadata';
-import Mat3 from './Mat3';
-import { PixelDataTypedArray } from './PixelDataTypedArray';
+import type Mat3 from './Mat3';
+import type { VoxelManager } from '../utilities';
+import type {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
+import type RGB from './RGB';
+import type { IVoxelManager } from './IVoxelManager';
 
 /**
  * Properties required to instantiate a Volume object.
@@ -31,14 +37,23 @@ interface VolumeProps {
   /** Image data representing the volume */
   imageData?: vtkImageData;
 
-  /** Scalar data representing the volume's intensity values */
-  scalarData: PixelDataTypedArray | Array<PixelDataTypedArray>;
+  /**
+   * The new volume model which solely relies on the separate image data
+   * and do not cache the volume data at all
+   */
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
+  dataType: PixelDataTypedArrayString;
 
-  /** Size of the volume data in bytes (optional) */
+  /**
+   * To be deprecated scalarData and sizeInBytes
+   * which is the old model of allocating the volume data
+   * and caching it in the volume object
+   */
+  scalarData?: PixelDataTypedArray | PixelDataTypedArray[];
   sizeInBytes?: number;
 
   /** Property to store additional information */
-  additionalDetails?: Record<string, any>;
+  additionalDetails?: Record<string, unknown>;
 
   /** Scaling parameters if the volume contains scaled data (optional) */
   scaling?: {
@@ -52,6 +67,9 @@ interface VolumeProps {
 
   /** Optional ID of a referenced volume if this volume is derived from another */
   referencedVolumeId?: string;
+
+  /** Number of components for scalar data in the volume */
+  numberOfComponents?: number;
 }
 
-export { VolumeProps };
+export type { VolumeProps };

@@ -1,10 +1,10 @@
-import external from '../../externalModules';
 import { getOptions } from './options';
-import {
+import type {
   LoaderXhrRequestError,
   LoaderXhrRequestParams,
   LoaderXhrRequestPromise,
 } from '../../types';
+import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 function xhrRequest(
   url: string,
@@ -12,7 +12,6 @@ function xhrRequest(
   defaultHeaders: Record<string, string> = {},
   params: LoaderXhrRequestParams = {}
 ): LoaderXhrRequestPromise<ArrayBuffer> {
-  const { cornerstone } = external;
   const options = getOptions();
 
   const errorInterceptor = (xhr: XMLHttpRequest) => {
@@ -73,11 +72,7 @@ function xhrRequest(
           imageId,
         };
 
-        cornerstone.triggerEvent(
-          (cornerstone as any).events,
-          'cornerstoneimageloadstart',
-          eventData
-        );
+        triggerEvent(eventTarget, 'cornerstoneimageloadstart', eventData);
       };
 
       // Event triggered when downloading an image ends
@@ -93,11 +88,7 @@ function xhrRequest(
         };
 
         // Event
-        cornerstone.triggerEvent(
-          (cornerstone as any).events,
-          'cornerstoneimageloadend',
-          eventData
-        );
+        triggerEvent(eventTarget, 'cornerstoneimageloadend', eventData);
       };
 
       // handle response data

@@ -51,7 +51,7 @@ function createIsInSegment(
     return;
   }
 
-  const segData = vol.imageData.getPointData().getScalars().getData();
+  const voxelManager = vol.voxelManager;
   const width = vol.dimensions[0];
   const pixelsPerSlice = width * vol.dimensions[1];
 
@@ -65,7 +65,7 @@ function createIsInSegment(
       const ijk = vol.imageData.worldToIndex(point as vec3).map(Math.round);
       const [i, j, k] = ijk;
       const index = i + j * width + k * pixelsPerSlice;
-      const value = segData[index];
+      const value = voxelManager.getAtIndex(index) as number;
       return value === segmentIndex || containedSegmentIndices?.has(value);
     },
 
@@ -75,7 +75,7 @@ function createIsInSegment(
       const [i, j, k] = ijk;
       const index =
         Math.round(i) + Math.round(j) * width + Math.round(k) * pixelsPerSlice;
-      const value = segData[index];
+      const value = voxelManager.getAtIndex(index) as number;
       return value === segmentIndex || containedSegmentIndices?.has(value);
     },
   };

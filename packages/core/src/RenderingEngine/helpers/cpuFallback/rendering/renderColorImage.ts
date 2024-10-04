@@ -6,7 +6,7 @@ import setToPixelCoordinateSystem from './setToPixelCoordinateSystem';
 import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import initializeRenderCanvas from './initializeRenderCanvas';
 import saveLastRendered from './saveLastRendered';
-import {
+import type {
   IImage,
   CPUFallbackViewport,
   CPUFallbackEnabledElement,
@@ -61,8 +61,7 @@ function getRenderCanvas(
   image: IImage,
   invalidated: boolean
 ): HTMLCanvasElement {
-  const canvasWasColor =
-    enabledElement.renderingTools.lastRenderedIsColor === true;
+  const canvasWasColor = enabledElement.renderingTools.lastRenderedIsColor;
 
   if (!enabledElement.renderingTools.renderCanvas || !canvasWasColor) {
     enabledElement.renderingTools.renderCanvas =
@@ -78,7 +77,7 @@ function getRenderCanvas(
   if (
     (windowWidth === 256 || windowWidth === 255) &&
     (windowCenter === 128 || windowCenter === 127) &&
-    enabledElement.viewport.invert === false &&
+    !enabledElement.viewport.invert &&
     image.getCanvas &&
     image.getCanvas()
   ) {
@@ -86,10 +85,7 @@ function getRenderCanvas(
   }
 
   // Apply the lut to the stored pixel data onto the render canvas
-  if (
-    doesImageNeedToBeRendered(enabledElement, image) === false &&
-    invalidated !== true
-  ) {
+  if (!doesImageNeedToBeRendered(enabledElement, image) && !invalidated) {
     return renderCanvas;
   }
 

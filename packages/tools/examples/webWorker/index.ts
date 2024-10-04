@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getWebWorkerManager,
 } from '@cornerstonejs/core';
@@ -20,7 +20,7 @@ console.warn(
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   utilities,
   ToolGroupManager,
@@ -63,6 +63,7 @@ content.appendChild(sleepResult);
 const workerFn = () => {
   return new Worker(new URL('./heavyTask.js', import.meta.url), {
     name: 'test-worker', // name used by the browser to name the worker
+    type: 'module',
   });
 };
 
@@ -124,7 +125,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -133,7 +134,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
+  toolGroup.addTool(StackScrollTool.toolName, { loop: false });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -165,7 +166,13 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName, {});
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

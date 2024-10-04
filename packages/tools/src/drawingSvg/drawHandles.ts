@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 import drawHandle from './drawHandle';
 
 function drawHandles(

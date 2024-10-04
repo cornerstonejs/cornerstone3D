@@ -1,5 +1,5 @@
-import IGeometry from './IGeometry';
-import { IGeometryLoadObject } from './ILoadObject';
+import type IGeometry from './IGeometry';
+import type { IGeometryLoadObject } from './ILoadObject';
 
 interface ICachedGeometry {
   geometryId: string;
@@ -10,4 +10,4 @@ interface ICachedGeometry {
   geometry?: IGeometry;
 }
 
-export default ICachedGeometry;
+export type { ICachedGeometry as default };

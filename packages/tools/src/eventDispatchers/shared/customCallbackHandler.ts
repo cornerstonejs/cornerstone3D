@@ -1,5 +1,6 @@
-import { state, ToolGroupManager } from '../../store';
+import { state } from '../../store/state';
 import ToolModes from '../../enums/ToolModes';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 const { Active } = ToolModes;
 
@@ -28,10 +29,7 @@ export default function customCallbackHandler(
   }
 
   const { renderingEngineId, viewportId } = evt.detail;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return false;

@@ -1,7 +1,7 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 
 /**
  * If the `mouseDown` handler does not consume an event,

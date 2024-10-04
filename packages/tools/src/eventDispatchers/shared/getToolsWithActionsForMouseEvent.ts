@@ -1,9 +1,10 @@
-import { ToolGroupManager } from '../../store';
-import { ToolModes } from '../../enums';
-import { ToolAction, EventTypes } from '../../types';
+import type { ToolModes } from '../../enums';
+import type { ToolAction, EventTypes } from '../../types';
 
 import { keyEventListener } from '../../eventListeners';
 import getMouseModifier from './getMouseModifier';
+import type { BaseTool } from '../../tools';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 /**
  * Given the mouse event and a list of tool modes, find all tool instances
@@ -17,13 +18,10 @@ import getMouseModifier from './getMouseModifier';
 export default function getToolsWithActionsForMouseEvent(
   evt: EventTypes.MouseMoveEventType,
   toolModes: ToolModes[]
-): Map<any, ToolAction> {
+): Map<BaseTool, ToolAction> {
   const toolsWithActions = new Map();
   const { renderingEngineId, viewportId } = evt.detail;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return toolsWithActions;
@@ -47,6 +45,7 @@ export default function getToolsWithActionsForMouseEvent(
     }
 
     const action = actions.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (action: any) =>
         action.bindings.length &&
         action.bindings.some(

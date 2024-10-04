@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities, triggerEvent } from '@cornerstonejs/core';
 
 import {
   getAnnotationNearPoint,
@@ -21,12 +21,10 @@ import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderFor
 import triggerAnnotationRender from './triggerAnnotationRender';
 import jumpToSlice from './viewport/jumpToSlice';
 
-import pointInShapeCallback from './pointInShapeCallback';
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
-import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
 import {
   annotationHydration,
@@ -51,11 +49,8 @@ import * as dynamicVolume from './dynamicVolume';
 import * as polyDataUtils from './polyData/utils';
 import * as voi from './voi';
 import * as contourSegmentation from './contourSegmentation';
-
+import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCallback';
 const roundNumber = utilities.roundNumber;
-
-// Events
-import { triggerEvent } from '@cornerstonejs/core';
 
 export {
   math,
@@ -78,13 +73,11 @@ export {
   triggerAnnotationRenderForViewportIds,
   triggerAnnotationRenderForToolGroupIds,
   triggerAnnotationRender,
-  pointInShapeCallback,
   getSphereBoundsInfo,
   getAnnotationNearPoint,
   getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
   jumpToSlice,
-  pointInSurroundingSphereCallback,
   viewport,
   cine,
   clip,
@@ -102,4 +95,5 @@ export {
   contourSegmentation,
   annotationHydration,
   getClosestImageIdForStackViewport,
+  pointInSurroundingSphereCallback,
 };

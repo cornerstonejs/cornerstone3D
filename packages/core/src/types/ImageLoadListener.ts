@@ -1,4 +1,4 @@
-export type ImageLoadListener = {
+export interface ImageLoadListener {
   /**
    * Called when an image is loaded.  May be called multiple times with increasing
    * status values.
@@ -17,4 +17,4 @@ export type ImageLoadListener = {
    * @throws exception to prevent further loading of this image
    */
   getLoaderImageOptions?: (imageId) => Record<string, unknown>;
-};
+}

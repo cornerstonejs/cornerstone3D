@@ -1,4 +1,4 @@
-import CalibrationTypes from '../enums/CalibrationTypes';
+import type CalibrationTypes from '../enums/CalibrationTypes';
 
 /**
  * IImageCalibration is an object that stores information about the type
@@ -38,4 +38,4 @@ export interface IImageCalibration {
   sequenceOfUltrasoundRegions?: Record<string, unknown>[];
 }
 
-export default IImageCalibration;
+export type { IImageCalibration as default };

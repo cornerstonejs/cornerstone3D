@@ -1,6 +1,6 @@
 const path = require('path');
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require('prism-react-renderer').themes.github;
+const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
@@ -47,6 +47,11 @@ module.exports = {
           to: '/api',
           position: 'left',
           label: 'API',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
         },
         {
           to: 'docs/help',
@@ -167,6 +172,12 @@ module.exports = {
           // Please change this to your repo.
           editUrl:
             'https://github.com/cornerstonejs/cornerstone3D/edit/main/packages/docs/',
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: `${2.0} (Latest)`,
+            },
+          },
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -199,7 +210,7 @@ module.exports = {
       {
         projectRoot: path.join(__dirname, '../../'),
         packages: [
-          ...['core', 'tools', 'streaming-image-volume-loader'].map(
+          ...['core', 'tools', 'dicomImageLoader', 'nifti-volume-loader'].map(
             (pkg) => `packages/${pkg}`
           ),
         ],

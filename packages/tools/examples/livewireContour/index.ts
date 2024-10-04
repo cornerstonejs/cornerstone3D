@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -21,9 +17,7 @@ console.warn(
 
 const {
   LivewireContourTool,
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;

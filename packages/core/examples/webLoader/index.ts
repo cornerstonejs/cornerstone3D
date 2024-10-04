@@ -1,10 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   imageLoader,
   metaData,
   getRenderingEngine,
-  Types,
   setVolumesForViewports,
   volumeLoader,
 } from '@cornerstonejs/core';
@@ -103,9 +103,9 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     viewport.setImageIdIndex(valueAsNumber);
     viewport.render();
@@ -156,7 +156,7 @@ async function run() {
     },
   ];
 
-  const volumeId = 'COLOR_VOLUME';
+  const volumeId = 'cornerstoneStreamingImageVolume:COLOR_VOLUME';
 
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -167,13 +167,13 @@ async function run() {
   // render stack viewport
   renderingEngine.getStackViewports()[0].setStack(imageIds);
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
     ['COLOR_VOLUME_1', 'COLOR_VOLUME_2', 'COLOR_VOLUME_3']
   );
 
-  volume.load();
+  await volume.load();
 
   // render volume viewports
   renderingEngine.render();

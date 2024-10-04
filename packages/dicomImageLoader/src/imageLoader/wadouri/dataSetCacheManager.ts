@@ -1,13 +1,15 @@
-import { DataSet } from 'dicom-parser';
-import external from '../../externalModules';
+import type { DataSet } from 'dicom-parser';
+import * as dicomParser from 'dicom-parser';
 import { xhrRequest } from '../internal/index';
 import dataSetFromPartialContent from './dataset-from-partial-content';
-import {
+import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
 import multiframeDataset from './retrieveMultiframeDataset';
+import { loadedDataSets, purgeLoadedDataSets } from './loadedDataSets';
+import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;
@@ -26,9 +28,6 @@ export interface CornerstoneWadoLoaderCachedPromise
  * in a multiframe sop instance so it can create the imageId's correctly.
  */
 let cacheSizeInBytes = 0;
-
-let loadedDataSets: Record<string, { dataSet: DataSet; cacheCount: number }> =
-  {};
 
 let promises: Record<string, CornerstoneWadoLoaderCachedPromise> = {};
 
@@ -65,25 +64,19 @@ function update(uri: string, dataSet: DataSet) {
   loadedDataSet.dataSet = dataSet;
   cacheSizeInBytes += dataSet.byteArray.length;
 
-  external.cornerstone.triggerEvent(
-    (external.cornerstone as any).events,
-    'datasetscachechanged',
-    {
-      uri,
-      action: 'updated',
-      cacheInfo: getInfo(),
-    }
-  );
+  triggerEvent(eventTarget, 'datasetscachechanged', {
+    uri,
+    action: 'updated',
+    cacheInfo: getInfo(),
+  });
 }
 
 // loads the dicom dataset from the wadouri sp
 function load(
   uri: string,
-  loadRequest: LoadRequestFunction = xhrRequest,
+  loadRequest: LoadRequestFunction = xhrRequest as LoadRequestFunction,
   imageId: string
 ): CornerstoneWadoLoaderCachedPromise {
-  const { cornerstone, dicomParser } = external;
-
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
     // console.log('using loaded dataset ' + uri);
@@ -108,6 +101,7 @@ function load(
   const promise: CornerstoneWadoLoaderCachedPromise = new Promise(
     (resolve, reject) => {
       loadDICOMPromise
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then(async function (dicomPart10AsArrayBuffer: any /* , xhr*/) {
           const partialContent = {
             isPartialContent: false,
@@ -162,15 +156,11 @@ function load(
           cacheSizeInBytes += dataSet.byteArray.length;
           resolve(dataSet);
 
-          cornerstone.triggerEvent(
-            (cornerstone as any).events,
-            'datasetscachechanged',
-            {
-              uri,
-              action: 'loaded',
-              cacheInfo: getInfo(),
-            }
-          );
+          triggerEvent(eventTarget, 'datasetscachechanged', {
+            uri,
+            action: 'loaded',
+            cacheInfo: getInfo(),
+          });
         }, reject)
         .then(
           () => {
@@ -194,8 +184,6 @@ function load(
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
 function unload(uri: string): void {
-  const { cornerstone } = external;
-
   // console.log('unload for ' + uri);
   if (loadedDataSets[uri]) {
     loadedDataSets[uri].cacheCount--;
@@ -204,15 +192,11 @@ function unload(uri: string): void {
       cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
 
-      cornerstone.triggerEvent(
-        (cornerstone as any).events,
-        'datasetscachechanged',
-        {
-          uri,
-          action: 'unloaded',
-          cacheInfo: getInfo(),
-        }
-      );
+      triggerEvent(eventTarget, 'datasetscachechanged', {
+        uri,
+        action: 'unloaded',
+        cacheInfo: getInfo(),
+      });
     }
   }
 }
@@ -226,7 +210,7 @@ export function getInfo(): CornerstoneWadoLoaderCacheManagerInfoResponse {
 
 // removes all cached datasets from memory
 function purge(): void {
-  loadedDataSets = {};
+  purgeLoadedDataSets();
   promises = {};
   cacheSizeInBytes = 0;
 }

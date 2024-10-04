@@ -1,13 +1,12 @@
-import { ImageVolume } from './../cache/classes/ImageVolume';
+import type IImageVolume from './IImageVolume';
 
 /**
  * Cornerstone StreamingImageVolume which extends ImageVolume
  */
-export default interface IStreamingImageVolume extends ImageVolume {
+export default interface IStreamingImageVolume extends IImageVolume {
+  load(): void;
   /** method to load all the loading requests */
   clearLoadCallbacks(): void;
-  /** method to convert the volume data in the volume cache, to separate images in the image cache */
-  convertToCornerstoneImage(imageId: string, imageIdIndex: number): any;
   /** method to decache the volume from cache */
-  decache(completelyRemove: boolean): void;
+  decache(completelyRemove?: boolean): void;
 }

@@ -1,4 +1,4 @@
-import {
+import type {
   CPUFallbackEnabledElement,
   CPUFallbackRenderingTools,
 } from '../../../../types';

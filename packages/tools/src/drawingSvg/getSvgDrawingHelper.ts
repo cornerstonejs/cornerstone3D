@@ -1,6 +1,6 @@
-import { state } from '../store';
+import { state } from '../store/state';
 import { getEnabledElement } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 
@@ -41,7 +41,7 @@ function _getSvgLayer(element) {
 
   // Using :scope to make sure the right svg layer is selected otherwise it
   // may select one from a nested viewport (eg: AdvancedMagnifyTool).
-  const svgLayer = internalDivElement.querySelector(':scope > .svg-layer');
+  const svgLayer = internalDivElement?.querySelector(':scope > .svg-layer');
 
   return svgLayer;
 }

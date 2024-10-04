@@ -13,7 +13,7 @@ import {
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
 import { drawLine } from '../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
-import {
+import type {
   EventTypes,
   PublicToolProps,
   ToolProps,
@@ -21,10 +21,10 @@ import {
   Annotation,
   Annotations,
 } from '../types';
-import { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
+import type { ReferenceCursor } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { vec3 } from 'gl-matrix';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
@@ -47,9 +47,6 @@ import { getToolGroup } from '../store/ToolGroupManager';
  */
 class ReferenceCursors extends AnnotationDisplayTool {
   static toolName;
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
   isDrawing = false;
   isHandleOutsideImage = false;
   _elementWithCursor: null | HTMLDivElement = null;
@@ -212,7 +209,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
       false
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   getActiveAnnotation(element: HTMLDivElement): null | Annotation {
@@ -250,12 +247,11 @@ class ReferenceCursors extends AnnotationDisplayTool {
     if (!enabledElement) {
       return;
     }
-    const { renderingEngine } = enabledElement;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   }
 
   //checks if we need to update the annotation position due to camera changes
-  onCameraModified = (evt: any): void => {
+  onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     const eventDetail = evt.detail;
     const { element, previousCamera, camera } = eventDetail;
     const enabledElement = getEnabledElement(element);

@@ -1,4 +1,4 @@
-import { PublicContourSetData } from '../../../types';
+import type { PublicContourSetData } from '../../../types';
 
 export function validateContourSet(contourSetData: PublicContourSetData) {
   if (!contourSetData || contourSetData.data.length === 0) {

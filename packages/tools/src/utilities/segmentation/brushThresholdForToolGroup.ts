@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
 import { getRenderingEngine } from '@cornerstonejs/core';
-import { getBrushToolInstances } from './utilities';
+import { getBrushToolInstances } from './getBrushToolInstances';
 
 export function setBrushThresholdForToolGroup(
   toolGroupId: string,
@@ -43,7 +43,7 @@ export function setBrushThresholdForToolGroup(
 
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+  triggerAnnotationRenderForViewportIds(viewportIds);
 }
 
 export function getBrushThresholdForToolGroup(toolGroupId: string) {

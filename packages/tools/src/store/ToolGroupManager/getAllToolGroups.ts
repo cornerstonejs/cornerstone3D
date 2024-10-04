@@ -1,5 +1,5 @@
-import { state } from '../index';
-import { IToolGroup } from '../../types';
+import { state } from '../state';
+import type { IToolGroup } from '../../types';
 
 /**
  * Return the array of tool groups

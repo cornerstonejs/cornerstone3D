@@ -1,15 +1,19 @@
 import '@kitware/vtk.js/Rendering/Profiles/Geometry';
 
-import cache from '../cache';
+import cache from '../cache/cache';
 import { GeometryType } from '../enums';
-import { IGeometry, PublicContourSetData, PublicSurfaceData } from '../types';
+import type {
+  IGeometry,
+  PublicContourSetData,
+  PublicSurfaceData,
+} from '../types';
 import { createContourSet } from './utils/contourSet/createContourSet';
 import { createSurface } from './utils/surface/createSurface';
 
-type GeometryOptions = {
+interface GeometryOptions {
   type: GeometryType;
   geometryData: PublicContourSetData | PublicSurfaceData;
-};
+}
 
 /**
  * Todo: currently we are not targeting loading geometry from a file.
@@ -44,7 +48,7 @@ async function createAndCacheGeometry(
       options.geometryData as PublicSurfaceData
     );
   } else {
-    throw new Error('Unknown geometry type, Only CONTOUR is supported');
+    throw new Error('Unknown geometry type, Only Contour is supported');
   }
 
   const geometryLoadObject = {

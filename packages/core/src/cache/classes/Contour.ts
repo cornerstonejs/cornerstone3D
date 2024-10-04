@@ -1,12 +1,12 @@
-import { Point3, ContourData, IContour } from '../../types';
-import { ContourType } from '../../enums';
+import type { Point3, ContourData } from '../../types';
+import type { ContourType } from '../../enums';
 
-type ContourProps = {
+interface ContourProps {
   id: string;
   data: ContourData;
   color: Point3;
   segmentIndex: number;
-};
+}
 
 /**
  * The `Contour` class implements the `IContour` interface and represents a contour in 3D space.
@@ -14,7 +14,7 @@ type ContourProps = {
  * The class also provides methods to retrieve the points, color, and type of the contour.
  * Each Contour is part of a ContourSet, and each ContourSet is part of a Geometry.
  */
-export class Contour implements IContour {
+export class Contour {
   readonly id: string;
   readonly sizeInBytes: number;
   points: Point3[];

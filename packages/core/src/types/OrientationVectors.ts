@@ -1,4 +1,4 @@
-import { Point3 } from '../types';
+import type { Point3 } from './Point3';
 
 /**
  * - `viewUp` - An array of three floating point numbers describing a vector
@@ -26,11 +26,11 @@ import { Point3 } from '../types';
  *  }]);
  * ```
  */
-type OrientationVectors = {
+interface OrientationVectors {
   /** Slice Normal for the viewport - the normal that points in the opposite direction of the slice normal out of screen and is negative of direction of projection */
   viewPlaneNormal: Point3;
   /** viewUp direction for the viewport - the vector that points from bottom to top of the viewport */
   viewUp: Point3;
-};
+}
 
-export default OrientationVectors;
+export type { OrientationVectors as default };

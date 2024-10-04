@@ -1,5 +1,5 @@
 import calculateTransform from './calculateTransform';
-import {
+import type {
   CPUFallbackEnabledElement,
   CPUFallbackTransform,
 } from '../../../../types';

@@ -1,5 +1,5 @@
-import Point3 from './Point3';
-import Point2 from './Point2';
+import type Point3 from './Point3';
+import type Point2 from './Point2';
 
 /**
  * Camera Interface. See {@link https://kitware.github.io/vtk-examples/site/VTKBook/03Chapter3/#35-cameras} if you
@@ -25,6 +25,8 @@ interface ICamera {
   viewPlaneNormal?: Point3;
   /** Camera viewUp - the direction of viewUP in camera */
   viewUp?: Point3;
+  /** rotation  */
+  rotation?: number;
   /** flip Horizontal */
   flipHorizontal?: boolean;
   /** flip Vertical */
@@ -33,4 +35,4 @@ interface ICamera {
   clippingRange?: Point2;
 }
 
-export default ICamera;
+export type { ICamera as default };

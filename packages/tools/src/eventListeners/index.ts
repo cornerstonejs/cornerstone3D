@@ -4,8 +4,6 @@ import wheelEventListener from './wheel';
 import keyEventListener from './keyboard';
 import {
   segmentationDataModifiedEventListener,
-  segmentationRepresentationModifiedEventListener,
-  segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
   imageChangeEventListener,
 } from './segmentation';
@@ -22,9 +20,7 @@ export {
   touchEventListeners,
   wheelEventListener,
   keyEventListener,
-  segmentationRepresentationModifiedEventListener,
   segmentationModifiedListener,
-  segmentationRepresentationRemovedEventListener,
   segmentationDataModifiedEventListener,
   imageChangeEventListener,
   annotationCompletedListener,

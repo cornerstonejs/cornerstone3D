@@ -1,7 +1,4 @@
-import { CornerstoneSEG } from "../../Cornerstone";
-
-const { Segmentation } = CornerstoneSEG;
-const { generateToolState: generateToolStateCornerstoneLegacy } = Segmentation;
+import { generateToolState as generateToolStateCornerstoneLegacy } from "../../Cornerstone/Segmentation";
 
 /**
  * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
@@ -15,7 +12,7 @@ const { generateToolState: generateToolStateCornerstoneLegacy } = Segmentation;
  * @returns a list of array buffer for each labelMap
  *  an object from which the segment metadata can be derived
  *  list containing the track of segments per frame
- *  list containing the track of segments per frame for each labelMap                   (available only for the overlapping case).
+ *  list containing the track of segments per frame for each labelMap (available only for the overlapping case).
  */
 function generateToolState(
     imageIds,

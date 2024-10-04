@@ -43,7 +43,7 @@ function _createMultiframeSegmentationFromReferencedImages(
             // Todo: move to dcmjs tag style
             SOPClassUID: instance.SopClassUID || instance.SOPClassUID,
             SOPInstanceUID: instance.SopInstanceUID || instance.SOPInstanceUID,
-            PixelData: image.getPixelData(),
+            PixelData: image.voxelManager.getScalarData(),
             _vrMap: {
                 PixelData: "OW"
             },

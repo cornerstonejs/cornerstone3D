@@ -1,13 +1,13 @@
+import type { Types } from '@cornerstonejs/core';
 import {
-  Types,
   utilities,
   BaseVolumeViewport,
   StackViewport,
   cache,
   metaData,
 } from '@cornerstonejs/core';
-import { Annotation } from '../types';
-import { addAnnotation } from '../stateManagement';
+import type { Annotation } from '../types';
+import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
 
 function annotationHydration(
@@ -82,7 +82,7 @@ function getReferencedImageId(
 }
 
 function getTargetId(viewport: Types.IViewport): string | undefined {
-  const targetId = viewport.getReferenceId?.();
+  const targetId = viewport.getViewReferenceId?.();
   if (targetId) {
     return targetId;
   }

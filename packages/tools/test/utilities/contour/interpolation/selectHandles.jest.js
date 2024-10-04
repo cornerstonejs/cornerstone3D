@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities } from '../../../../../core/src';
 import { describe, it, expect } from '@jest/globals';
 import selectHandles, {
   createDotValues,

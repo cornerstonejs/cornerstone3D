@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import drawLine from './drawLine';
 import findClosestPoint from '../utilities/math/vec2/findClosestPoint';
-import { PlanarBoundingBox, SVGDrawingHelper } from '../types';
+import type { PlanarBoundingBox, SVGDrawingHelper } from '../types';
 
 /**
  * Draw a link between an annotation to a box.

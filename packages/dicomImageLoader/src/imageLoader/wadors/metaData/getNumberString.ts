@@ -1,4 +1,4 @@
-import { WADORSMetaDataElement } from '../../../types';
+import type { WADORSMetaDataElement } from '../../../types';
 import getValue from './getValue';
 
 /**
@@ -14,13 +14,13 @@ function getNumberString(
   index: number,
   defaultValue: number
 ): number {
-  const value = getValue<any>(element, index, defaultValue);
+  const value = getValue<string | number>(element, index, defaultValue);
 
   if (value === undefined) {
     return;
   }
 
-  return parseFloat(value);
+  return parseFloat(String(value));
 }
 
 export default getNumberString;

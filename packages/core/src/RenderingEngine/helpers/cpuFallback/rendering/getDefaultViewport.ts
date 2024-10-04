@@ -1,6 +1,6 @@
 import createViewport from './createViewport';
 import getImageFitScale from './getImageFitScale';
-import {
+import type {
   IImage,
   CPUFallbackColormap,
   CPUFallbackViewport,

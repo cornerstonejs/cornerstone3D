@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
@@ -18,7 +19,6 @@ const {
   PanTool,
   ZoomTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -199,7 +199,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for

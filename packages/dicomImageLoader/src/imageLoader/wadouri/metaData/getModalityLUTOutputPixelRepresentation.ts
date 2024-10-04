@@ -1,6 +1,6 @@
 /* eslint no-bitwise: 0 */
 
-import { DataSet } from 'dicom-parser';
+import type { DataSet } from 'dicom-parser';
 
 function getMinStoredPixelValue(dataSet: DataSet) {
   const pixelRepresentation = dataSet.uint16('x00280103');

@@ -1,3 +1,7 @@
+import {
+  cleanupTestEnvironment,
+  setupTestEnvironment,
+} from '../../../utils/test/testUtils';
 import * as csTools from '../src/index';
 import * as cornerstone3D from '@cornerstonejs/core';
 
@@ -58,18 +62,13 @@ function addAndReturnToolName1Annotation() {
 }
 
 describe('FrameOfReferenceSpecificAnnotationManager:', () => {
-  beforeAll(function () {
-    cornerstone3D.setUseCPURendering(false);
-    csTools.init();
-  });
-
-  afterAll(function () {
-    csTools.destroy();
+  afterEach(function () {
+    cleanupTestEnvironment();
   });
 
   beforeEach(() => {
     // Reset the annotationManager
-    annotationManager.restoreAnnotations({});
+    setupTestEnvironment();
   });
 
   it('should correctly add annotations and delete it', () => {

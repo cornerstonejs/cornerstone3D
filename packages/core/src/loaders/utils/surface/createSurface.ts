@@ -1,4 +1,4 @@
-import { IGeometry, PublicSurfaceData } from '../../../types';
+import type { IGeometry, PublicSurfaceData } from '../../../types';
 import { GeometryType } from '../../../enums';
 import { validateSurface } from './validateSurface';
 import { Surface } from '../../../cache/classes/Surface';

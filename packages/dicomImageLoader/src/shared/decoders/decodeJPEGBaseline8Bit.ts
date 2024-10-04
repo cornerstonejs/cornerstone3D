@@ -2,14 +2,17 @@ import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
-import { ByteArray } from 'dicom-parser';
-
+import type { ByteArray } from 'dicom-parser';
+// @ts-ignore
 import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
 
-// Webpack asset/resource copies this to our output folder
-import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm';
-
-import { ImageFrame } from '../../types';
+// @ts-ignore
+// import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm';
+const libjpegTurboWasm = new URL(
+  '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
+  import.meta.url
+);
+import type { Types } from '@cornerstonejs/core';
 
 const local: {
   codec: OpenJpegModule;
@@ -53,7 +56,7 @@ function initLibjpegTurbo(): Promise<void> {
 async function decodeAsync(
   compressedImageFrame,
   imageInfo
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   await initLibjpegTurbo();
   const decoder = local.decoder;
 

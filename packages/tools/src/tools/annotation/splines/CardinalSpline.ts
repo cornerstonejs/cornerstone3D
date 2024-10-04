@@ -1,5 +1,5 @@
 import { CubicSpline } from './CubicSpline';
-import { CardinalSplineProps } from '../../../types';
+import type { CardinalSplineProps } from '../../../types';
 
 class CardinalSpline extends CubicSpline {
   private _scale: number;

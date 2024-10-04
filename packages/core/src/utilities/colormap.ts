@@ -1,6 +1,6 @@
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
-import { ColormapPublic, ColormapRegistration } from '../types';
+import type { ColormapPublic, ColormapRegistration } from '../types';
 import isEqual from './isEqual';
 import { actorIsA } from './actorCheck';
 

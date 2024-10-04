@@ -20,7 +20,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawRedactionRect as drawRedactionRectSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as rectangle from '../../utilities/math/rectangle';
@@ -30,21 +30,20 @@ import {
 } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import { EventTypes, SVGDrawingHelper } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { Annotation, EventTypes, SVGDrawingHelper } from '../../types';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
-import { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 class VideoRedactionTool extends AnnotationTool {
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportUIDsToRender: string[];
     handleIndex?: number;
     newAnnotation?: boolean;
     hasMoved?: boolean;
   } | null;
-  _configuration: any;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -129,10 +128,7 @@ class VideoRedactionTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     return annotation;
   };
@@ -211,13 +207,7 @@ class VideoRedactionTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     evt.preventDefault();
   };
@@ -259,13 +249,7 @@ class VideoRedactionTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     evt.preventDefault();
   };
@@ -291,7 +275,6 @@ class VideoRedactionTool extends AnnotationTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     this.editData = null;
     this.isDrawing = false;
@@ -303,10 +286,7 @@ class VideoRedactionTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
   };
 
   _mouseDragCallback = (evt) => {
@@ -341,6 +321,7 @@ class VideoRedactionTool extends AnnotationTool {
       const { points } = data.handles;
 
       // Move this handle.
+      // @ts-expect-error
       points[handleIndex] = [...worldPos];
 
       let bottomLeftCanvas;
@@ -400,12 +381,8 @@ class VideoRedactionTool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
   };
 
   cancel(element) {
@@ -425,15 +402,10 @@ class VideoRedactionTool extends AnnotationTool {
     data.active = false;
     data.handles.activeHandleIndex = null;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      viewportUIDsToRender
-    );
+    triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     this.editData = null;
+    // @ts-expect-error
     return annotation.metadata.annotationUID;
   }
   /**

@@ -1,11 +1,16 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getRenderingEngine,
   getEnabledElement,
   Enums,
-  Types,
 } from '@cornerstonejs/core';
 
-import { ISynchronizerEventHandler } from '../../types';
+import type { ISynchronizerEventHandler } from '../../types';
+
+export type SynchronizerOptions = {
+  auxiliaryEventNames?: string[];
+  viewPresentation?: Types.ViewPresentation;
+};
 
 /**
  * Synchronizer is a class that listens to a specific event on a specific source
@@ -23,14 +28,14 @@ class Synchronizer {
   private _sourceViewports: Array<Types.IViewportId>;
   private _targetViewports: Array<Types.IViewportId>;
   private _viewportOptions: Record<string, Record<string, unknown>> = {};
-  private _options: any;
+  private _options: SynchronizerOptions;
   public id: string;
 
   constructor(
     synchronizerId: string,
     eventName: string,
     eventHandler: ISynchronizerEventHandler,
-    options?: any
+    options?: SynchronizerOptions
   ) {
     this._enabled = true;
     this._eventName = eventName;
@@ -231,7 +236,10 @@ class Synchronizer {
     });
   }
 
-  private fireEvent(sourceViewport: Types.IViewportId, sourceEvent: any): void {
+  private fireEvent(
+    sourceViewport: Types.IViewportId,
+    sourceEvent: unknown
+  ): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
       return;
     }
@@ -274,7 +282,7 @@ class Synchronizer {
     }
   }
 
-  private _onEvent = (evt: any): void => {
+  private _onEvent = (evt: Event): void => {
     if (this._ignoreFiredEvents === true) {
       return;
     }
@@ -288,7 +296,8 @@ class Synchronizer {
       return;
     }
 
-    const enabledElement = getEnabledElement(evt.currentTarget);
+    const currentTarget = evt.currentTarget as HTMLDivElement;
+    const enabledElement = getEnabledElement(currentTarget);
 
     if (!enabledElement) {
       return;

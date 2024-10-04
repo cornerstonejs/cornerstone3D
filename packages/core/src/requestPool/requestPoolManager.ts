@@ -1,20 +1,20 @@
 import RequestType from '../enums/RequestType';
-import { IImage } from '../types';
-import { uuidv4 } from '../utilities';
+import type { IImage } from '../types';
+import uuidv4 from '../utilities/uuidv4';
 
-type AdditionalDetails = {
+interface AdditionalDetails {
   imageId?: string;
   volumeId?: string;
-};
+}
 
-type RequestDetailsInterface = {
+interface RequestDetailsInterface {
   requestFn: () => Promise<IImage | void>;
   type: RequestType;
   additionalDetails: AdditionalDetails;
-};
+}
 
 type RequestPool = {
-  [name in RequestType]: { [key: number]: RequestDetailsInterface[] };
+  [name in RequestType]: Record<number, RequestDetailsInterface[]>;
 };
 
 /**
@@ -45,7 +45,7 @@ type RequestPool = {
  * ```javascript
  *
  * const priority = -5
- * const requestType = RequestType.Interaction
+ * const requestType = RequestType.INTERACTION
  * const additionalDetails = { imageId }
  * const options = {
  *   targetBuffer: {
@@ -53,9 +53,6 @@ type RequestPool = {
  *     offset: null,
  *     length: null,
  *   },
- *   preScale: {
- *      enabled: true,
- *    },
  * }
  *
  * imageLoadPoolManager.addRequest(
@@ -75,17 +72,17 @@ class RequestPoolManager {
   private awake: boolean;
   private requestPool: RequestPool;
   private numRequests = {
-    interaction: 0,
-    thumbnail: 0,
-    prefetch: 0,
-    compute: 0,
+    INTERACTION: 0,
+    THUMBNAIL: 0,
+    PREFETCH: 0,
+    COMPUTE: 0,
   };
   /* maximum number of requests of each type. */
   public maxNumRequests: {
-    interaction: number;
-    thumbnail: number;
-    prefetch: number;
-    compute: number;
+    INTERACTION: number;
+    THUMBNAIL: number;
+    PREFETCH: number;
+    COMPUTE: number;
   };
   /* A public property that is used to set the delay between requests. */
   public grabDelay: number;
@@ -100,33 +97,33 @@ class RequestPoolManager {
     this.id = id ? id : uuidv4();
 
     this.requestPool = {
-      interaction: { 0: [] },
-      thumbnail: { 0: [] },
-      prefetch: { 0: [] },
-      compute: { 0: [] },
+      INTERACTION: { 0: [] },
+      THUMBNAIL: { 0: [] },
+      PREFETCH: { 0: [] },
+      COMPUTE: { 0: [] },
     };
 
     this.grabDelay = 5;
     this.awake = false;
 
     this.numRequests = {
-      interaction: 0,
-      thumbnail: 0,
-      prefetch: 0,
-      compute: 0,
+      INTERACTION: 0,
+      THUMBNAIL: 0,
+      PREFETCH: 0,
+      COMPUTE: 0,
     };
 
     this.maxNumRequests = {
-      interaction: 6,
-      thumbnail: 6,
-      prefetch: 5,
+      INTERACTION: 6,
+      THUMBNAIL: 6,
+      PREFETCH: 5,
       // I believe there is a bug right now, where if there are two workers
       // and one wants to run a compute job 6 times and the limit is just 5, then
       // the other worker will never get a chance to run its compute job.
       // we should probably have a separate limit for compute jobs per worker
       // context as there is another layer of parallelism there. For this reason
       // I'm setting the limit to 1000 for now.
-      compute: 1000,
+      COMPUTE: 1000,
     };
   }
 
@@ -285,15 +282,15 @@ class RequestPoolManager {
 
   protected startGrabbing(): void {
     const hasRemainingInteractionRequests = this.sendRequests(
-      RequestType.Interaction
+      RequestType.INTERACTION
     );
     const hasRemainingThumbnailRequests = this.sendRequests(
-      RequestType.Thumbnail
+      RequestType.THUMBNAIL
     );
     const hasRemainingPrefetchRequests = this.sendRequests(
-      RequestType.Prefetch
+      RequestType.PREFETCH
     );
-    const hasRemainingComputeRequests = this.sendRequests(RequestType.Compute);
+    const hasRemainingComputeRequests = this.sendRequests(RequestType.COMPUTE);
 
     if (
       !hasRemainingInteractionRequests &&
@@ -325,7 +322,7 @@ class RequestPoolManager {
     }
   }
 
-  protected getSortedPriorityGroups(type: string): Array<number> {
+  protected getSortedPriorityGroups(type: string): number[] {
     const priorities = Object.keys(this.requestPool[type])
       .map(Number)
       .filter((priority) => this.requestPool[type][priority].length)

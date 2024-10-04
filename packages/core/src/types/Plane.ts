@@ -3,4 +3,4 @@
  */
 type Plane = [number, number, number, number];
 
-export default Plane;
+export type { Plane as default };

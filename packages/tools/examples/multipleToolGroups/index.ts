@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -14,7 +15,7 @@ console.warn(
 const {
   LengthTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -76,14 +77,14 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define tool group 1, used by viewport 1
   const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
 
   // Add tools to the tool group
   toolGroup1.addTool(WindowLevelTool.toolName);
-  toolGroup1.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup1.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools
   toolGroup1.setToolActive(WindowLevelTool.toolName, {
@@ -93,14 +94,16 @@ async function run() {
       },
     ],
   });
-  toolGroup1.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup1.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Define tool group 2, used by viewport 2
   const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
 
   // Add tools to the tool group
   toolGroup2.addTool(LengthTool.toolName);
-  toolGroup2.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup2.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools
   toolGroup2.setToolActive(LengthTool.toolName, {
@@ -110,7 +113,9 @@ async function run() {
       },
     ],
   });
-  toolGroup2.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup2.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const StudyInstanceUID =

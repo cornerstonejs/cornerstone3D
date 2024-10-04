@@ -1,6 +1,6 @@
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
-import { state } from '../../store';
-import { MouseDragEventType } from '../../types/EventTypes';
+import { state } from '../../store/state';
+import type { MouseDragEventType } from '../../types/EventTypes';
 
 /**
  * mouseDrag - Event handler for mouse drag events. Fires the `mouseDragCallback`

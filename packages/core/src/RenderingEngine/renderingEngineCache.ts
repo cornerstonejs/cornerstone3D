@@ -32,7 +32,7 @@ const renderingEngineCache = {
     return delete cache[id];
   },
 
-  getAll: (): Array<IRenderingEngine> => {
+  getAll: (): IRenderingEngine[] => {
     const renderingEngineIds = Object.keys(cache);
     const renderingEngines = renderingEngineIds.map((id) => cache[id]);
 

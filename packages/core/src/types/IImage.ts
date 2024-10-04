@@ -1,11 +1,22 @@
 import type CPUFallbackLUT from './CPUFallbackLUT';
+import type {
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
+} from './PixelDataTypedArray';
+import type { ImageQualityStatus } from '../enums';
+import type IImageCalibration from './IImageCalibration';
+import type RGB from './RGB';
+import type IImageFrame from './IImageFrame';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
+import type Mat3 from './Mat3';
+import type CPUFallbackViewport from './CPUFallbackViewport';
+import type CPUFallbackTransform from './CPUFallbackTransform';
 import type CPUFallbackColormap from './CPUFallbackColormap';
-import type CPUFallbackEnabledElement from './CPUFallbackEnabledElement';
-import type { PixelDataTypedArray } from './PixelDataTypedArray';
-import type VoxelManager from '../utilities/VoxelManager';
-import { ImageQualityStatus } from '../enums';
-import IImageCalibration from './IImageCalibration';
-import RGB from './RGB';
+import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
+import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { ImagePixelModule } from './ImagePixelModule';
+import type { IVoxelManager } from './IVoxelManager';
 
 /**
  * Cornerstone Image interface, it is used for both CPU and GPU rendering
@@ -65,7 +76,7 @@ interface IImage {
   /** is image rgb and alpha */
   rgba: boolean;
   /** number of components in the image */
-  numComps: number;
+  numberOfComponents: number;
   /** CPU: custom render method for the image */
   render?: (
     enabledElement: CPUFallbackEnabledElement,
@@ -117,15 +128,18 @@ interface IImage {
     windowCenter?: number | number[];
     invert?: boolean;
     lutArray?: Uint8ClampedArray;
-    modalityLUT?: unknown;
+    modalityLUT?: CPUFallbackLUT;
     voiLUT?: CPUFallbackLUT;
   };
 
   imageQualityStatus?: ImageQualityStatus;
   calibration?: IImageCalibration;
-  imageFrame?: any;
+  imageFrame?: IImageFrame;
 
-  voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
+  FrameOfReferenceUID?: string;
+  dataType: PixelDataTypedArrayString;
+
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
 
   bufferView?: {
     buffer: ArrayBuffer;
@@ -133,4 +147,35 @@ interface IImage {
   };
 }
 
-export default IImage;
+interface CPUFallbackEnabledElement {
+  scale?: number;
+  pan?: Point2;
+  zoom?: number;
+  rotation?: number;
+  image?: IImage;
+  canvas?: HTMLCanvasElement;
+  viewport?: CPUFallbackViewport;
+  colormap?: CPUFallbackColormap;
+  options?: {
+    [key: string]: unknown;
+    colormap?: CPUFallbackColormap;
+  };
+  renderingTools?: CPUFallbackRenderingTools;
+  transform?: CPUFallbackTransform;
+  invalid?: boolean;
+  needsRedraw?: boolean;
+  metadata?: {
+    direction?: Mat3;
+    /** Last index is always 1 for CPU */
+    dimensions?: Point3;
+    /** Last spacing is always EPSILON for CPU */
+    spacing?: Point3;
+    origin?: Point3;
+    imagePlaneModule?: ImagePlaneModule;
+    imagePixelModule?: ImagePixelModule;
+  };
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
+}
+
+export type { IImage as default };
+export type { CPUFallbackEnabledElement };

@@ -16,7 +16,7 @@ type NamedStatistics = {
   area?: Statistics & { name: 'area' };
   volume?: Statistics & { name: 'volume' };
   circumference?: Statistics & { name: 'circumference' };
-  pointsInShape?: Types.PointsManager<Types.Point3>;
+  pointsInShape?: Types.IPointsManager<Types.Point3>;
   array: Statistics[];
 };
 

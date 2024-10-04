@@ -1,8 +1,7 @@
-import triggerSegmentationRender from '../../utilities/segmentation/triggerSegmentationRender';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import * as SegmentationState from '../../stateManagement/segmentation/segmentationState';
-import { SegmentationDataModifiedEventType } from '../../types/EventTypes';
+import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
+import { triggerSegmentationRenderBySegmentationId } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -11,18 +10,13 @@ const onSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
   const { segmentationId } = evt.detail;
-  const { type } = SegmentationState.getSegmentation(segmentationId);
+  const { representationData } = getSegmentation(segmentationId);
 
-  const toolGroupIds =
-    SegmentationState.getToolGroupIdsWithSegmentation(segmentationId);
-
-  if (type === SegmentationRepresentations.Labelmap) {
+  if (representationData.Labelmap) {
     onLabelmapSegmentationDataModified(evt);
   }
 
-  toolGroupIds.forEach((toolGroupId) => {
-    triggerSegmentationRender(toolGroupId);
-  });
+  triggerSegmentationRenderBySegmentationId(segmentationId);
 };
 
 export default onSegmentationDataModified;

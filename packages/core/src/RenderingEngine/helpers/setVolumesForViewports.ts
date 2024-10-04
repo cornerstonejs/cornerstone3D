@@ -19,8 +19,8 @@ import type {
  */
 async function setVolumesForViewports(
   renderingEngine: IRenderingEngine,
-  volumeInputs: Array<IVolumeInput>,
-  viewportIds: Array<string>,
+  volumeInputs: IVolumeInput[],
+  viewportIds: string[],
   immediateRender = false,
   suppressEvents = false
 ): Promise<void> {

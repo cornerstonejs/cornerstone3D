@@ -1,69 +1,63 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
-  getEnabledElementByIds,
-  Types,
+  getEnabledElementByViewportId,
   VolumeViewport3D,
 } from '@cornerstonejs/core';
 
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import Representations from '../../../enums/SegmentationRepresentations';
-import { getToolGroup } from '../../../store/ToolGroupManager';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
-
+import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
-import { polySeg } from '../../../stateManagement/segmentation';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
+import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
+import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
  * @param toolGroupId - The toolGroupId of the toolGroup that the
- * segmentationRepresentation belongs to.
- * @param segmentationRepresentationUID - This is the unique identifier
- * for the segmentation representation.
+ * segmentation belongs to.
+ * @param segmentationId - This is the unique identifier
+ * for the segmentation.
  * @param renderImmediate - If true, the viewport will be rendered
  * immediately after the segmentation representation is removed.
  */
-function removeSegmentationRepresentation(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
+function removeRepresentation(
+  viewportId: string,
+  segmentationId: string,
   renderImmediate = false
 ): void {
-  _removeSurfaceFromToolGroupViewports(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-  SegmentationState.removeSegmentationRepresentation(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
-
-  if (renderImmediate) {
-    const viewportsInfo = getToolGroup(toolGroupId).getViewportsInfo();
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      enabledElement.viewport.render();
-    });
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+  if (!enabledElement) {
+    return;
   }
+
+  const { viewport } = enabledElement;
+
+  removeSurfaceFromElement(viewport.element, segmentationId);
+
+  if (!renderImmediate) {
+    return;
+  }
+
+  viewport.render();
 }
 
 /**
  * It renders the Surface  for the given segmentation
  * @param viewport - The viewport object
- * @param representation - ToolGroupSpecificRepresentation
+ * @param representation - SegmentationRepresentation
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: Types.IVolumeViewport,
-  representation: ToolGroupSpecificRepresentation
+  viewport: Types.IVolumeViewport | Types.IStackViewport,
+  representation: SegmentationRepresentation
 ): Promise<void> {
-  const { colorLUTIndex, segmentationId, segmentationRepresentationUID } =
-    representation;
+  const { segmentationId } = representation;
 
-  const segmentation = SegmentationState.getSegmentation(segmentationId);
+  const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
     return;
@@ -79,16 +73,13 @@ async function render(
 
   if (
     !SurfaceData &&
-    polySeg.canComputeRequestedRepresentation(segmentationRepresentationUID)
+    canComputeRequestedRepresentation(segmentationId, Representations.Surface)
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await polySeg.computeAndAddSurfaceRepresentation(
-      segmentationId,
-      {
-        segmentationRepresentationUID,
-      }
-    );
+    SurfaceData = await computeAndAddSurfaceRepresentation(segmentationId, {
+      viewport,
+    });
 
     if (!SurfaceData) {
       throw new Error(
@@ -105,7 +96,9 @@ async function render(
     );
   }
 
-  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+  const { colorLUTIndex } = representation;
+
+  const colorLUT = getColorLUT(colorLUTIndex);
 
   const surfaces = [];
   geometryIds.forEach((geometryId, segmentIndex) => {
@@ -125,7 +118,7 @@ async function render(
     addOrUpdateSurfaceToElement(
       viewport.element,
       surface as Types.ISurface,
-      segmentationRepresentationUID
+      segmentationId
     );
 
     surfaces.push(surface);
@@ -134,34 +127,9 @@ async function render(
   viewport.render();
 }
 
-function _removeSurfaceFromToolGroupViewports(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): void {
-  const toolGroup = getToolGroup(toolGroupId);
-
-  if (toolGroup === undefined) {
-    throw new Error(`ToolGroup with ToolGroupId ${toolGroupId} does not exist`);
-  }
-
-  const { viewportsInfo } = toolGroup;
-
-  for (const viewportInfo of viewportsInfo) {
-    const { viewportId, renderingEngineId } = viewportInfo;
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-    removeSurfaceFromElement(
-      enabledElement.viewport.element,
-      segmentationRepresentationUID
-    );
-  }
-}
-
 export default {
   render,
-  removeSegmentationRepresentation,
+  removeRepresentation,
 };
 
-export { render, removeSegmentationRepresentation };
+export { render, removeRepresentation };

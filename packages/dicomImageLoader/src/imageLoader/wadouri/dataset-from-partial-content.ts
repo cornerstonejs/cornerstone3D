@@ -1,6 +1,6 @@
-import { DataSet } from 'dicom-parser';
-import external from '../../externalModules';
-import {
+import type { DataSet } from 'dicom-parser';
+import * as dicomParser from 'dicom-parser';
+import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
@@ -29,7 +29,6 @@ function fixFragments(dataSet: DataSet) {
 }
 
 function parsePartialByteArray(byteArray: Uint8Array) {
-  const { dicomParser } = external;
   /**
    * First parse just up to pixelData. This will make sure the
    * metadata header is correctly parsed (assuming no other error is
@@ -57,6 +56,7 @@ function parsePartialByteArray(byteArray: Uint8Array) {
     // metadata header and regular datasets, so transfer syntax and
     // other metadata headers aren't included.
     pixelDataSet = dicomParser.parseDicom(byteArray);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     // Todo: This is probably invalid handling - it expects the only reason to
     //  fail is a partial dataset

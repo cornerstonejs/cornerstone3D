@@ -3,4 +3,4 @@
  */
 type InteractionTypes = 'Mouse' | 'Touch';
 
-export default InteractionTypes;
+export type { InteractionTypes as default };

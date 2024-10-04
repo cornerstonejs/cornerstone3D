@@ -1,12 +1,12 @@
-import { ViewportType } from '../enums';
-import Point2 from './Point2';
+import type { ViewportType } from '../enums';
+import type Point2 from './Point2';
 
-export type InternalVideoCamera = {
+export interface InternalVideoCamera {
   panWorld?: Point2;
   parallelScale?: number;
-};
+}
 
-export type VideoViewportInput = {
+export interface VideoViewportInput {
   id: string;
   renderingEngineId: string;
   type: ViewportType;
@@ -15,6 +15,6 @@ export type VideoViewportInput = {
   sy: number;
   sWidth: number;
   sHeight: number;
-  defaultOptions: any;
+  defaultOptions: unknown;
   canvas: HTMLCanvasElement;
-};
+}

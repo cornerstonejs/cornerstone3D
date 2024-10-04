@@ -1,7 +1,13 @@
-import { getEnabledElementByIds, VolumeViewport } from '@cornerstonejs/core';
+import {
+  getEnabledElementByIds,
+  getEnabledElement,
+  VolumeViewport,
+  type Types,
+  BaseVolumeViewport,
+} from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import { scroll } from '../utilities';
-import { PublicToolProps, ToolProps, EventTypes } from '../types';
+import type { PublicToolProps, ToolProps, EventTypes } from '../types';
 
 /**
  * The StackScrollTool is a tool that allows the user to scroll through a
@@ -25,6 +31,11 @@ class StackScrollTool extends BaseTool {
     this.deltaY = 1;
   }
 
+  mouseWheelCallback(evt: EventTypes.MouseWheelEventType) {
+    // based on configuration, we decide if we want to scroll or rotate
+    this._scroll(evt);
+  }
+
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);
   }
@@ -33,6 +44,10 @@ class StackScrollTool extends BaseTool {
   }
 
   _dragCallback(evt: EventTypes.InteractionEventType) {
+    this._scrollDrag(evt);
+  }
+
+  _scrollDrag(evt: EventTypes.InteractionEventType) {
     const { deltaPoints, viewportId, renderingEngineId } = evt.detail;
     const { viewport } = getEnabledElementByIds(viewportId, renderingEngineId);
     const { debounceIfNotLoaded, invert, loop } = this.configuration;
@@ -40,7 +55,7 @@ class StackScrollTool extends BaseTool {
 
     let volumeId;
     if (viewport instanceof VolumeViewport) {
-      volumeId = this.getTargetVolumeId(viewport);
+      volumeId = viewport.getVolumeId();
     }
 
     const pixelsPerImage = this._getPixelPerImage(viewport);
@@ -64,6 +79,28 @@ class StackScrollTool extends BaseTool {
     } else {
       this.deltaY = deltaY;
     }
+  }
+
+  /**
+   * Allows binding to the mouse wheel for performing stack scrolling.
+   */
+  _scroll(evt: EventTypes.MouseWheelEventType): void {
+    const { wheel, element } = evt.detail;
+    const { direction } = wheel;
+    const { invert } = this.configuration;
+    const { viewport } = getEnabledElement(element);
+    const delta = direction * (invert ? -1 : 1);
+
+    scroll(viewport, {
+      delta,
+      debounceLoading: this.configuration.debounceIfNotLoaded,
+      loop: this.configuration.loop,
+      volumeId:
+        viewport instanceof BaseVolumeViewport
+          ? viewport.getVolumeId()
+          : undefined,
+      scrollSlabs: this.configuration.scrollSlabs,
+    });
   }
 
   _getPixelPerImage(viewport) {

@@ -14,7 +14,6 @@ import {
 import {
   addTool,
   BrushTool,
-  SegmentationDisplayTool,
   BidirectionalTool,
   ToolGroupManager,
   WindowLevelTool,

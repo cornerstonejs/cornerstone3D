@@ -1,7 +1,7 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec2, vec3 } from 'gl-matrix';
-import { PlanarFreehandROICommonData } from './planarFreehandROIInternalTypes';
+import type { PlanarFreehandROICommonData } from './planarFreehandROIInternalTypes';
 
 /**
  * Adds one or more points to the array at a resolution defined by the underlying image.

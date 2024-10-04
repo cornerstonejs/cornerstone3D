@@ -1,6 +1,10 @@
-import { ByteArray, DataSet, ByteStream, readSequenceItem } from 'dicom-parser';
-import external from '../../externalModules';
-
+import type { ByteArray, DataSet } from 'dicom-parser';
+import {
+  ByteStream,
+  createJPEGBasicOffsetTable,
+  readEncapsulatedImageFrame,
+  readSequenceItem,
+} from 'dicom-parser';
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
  */
@@ -16,14 +20,12 @@ export default function getEncapsulatedImageFrame(
   dataSet: DataSet,
   frameIndex: number
 ): ByteArray {
-  const { dicomParser } = external;
-
   if (
     dataSet.elements.x7fe00010 &&
     dataSet.elements.x7fe00010.basicOffsetTable.length
   ) {
     // Basic Offset Table is not empty
-    return dicomParser.readEncapsulatedImageFrame(
+    return readEncapsulatedImageFrame(
       dataSet,
       dataSet.elements.x7fe00010,
       frameIndex
@@ -33,12 +35,12 @@ export default function getEncapsulatedImageFrame(
   // Empty basic offset table
 
   if (framesAreFragmented(dataSet)) {
-    const basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(
+    const basicOffsetTable = createJPEGBasicOffsetTable(
       dataSet,
       dataSet.elements.x7fe00010
     );
 
-    return dicomParser.readEncapsulatedImageFrame(
+    return readEncapsulatedImageFrame(
       dataSet,
       dataSet.elements.x7fe00010,
       frameIndex,

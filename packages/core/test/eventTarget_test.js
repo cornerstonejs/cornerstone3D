@@ -1,3 +1,4 @@
+import { cleanupTestEnvironment } from '../../../utils/test/testUtils';
 import * as cornerstone3D from '../src/index';
 
 const { eventTarget: events } = cornerstone3D;
@@ -12,6 +13,10 @@ function clearEventType(eventType) {
 describe('EventTarget', function () {
   beforeEach(function () {
     clearEventType(fakeEventName);
+  });
+
+  afterEach(function () {
+    cleanupTestEnvironment();
   });
 
   it('should trigger event properly', function (done) {

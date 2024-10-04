@@ -122,7 +122,7 @@ class PlanarFreehandROI {
             // Need to repeat the first point at the end of to have an explicitly closed contour.
             const firstPoint = points[0];
 
-            // Explicitly expand to avoid ciruclar references.
+            // Explicitly expand to avoid circular references.
             points.push([firstPoint[0], firstPoint[1]]);
         }
 

@@ -1,9 +1,12 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 function isWithinThreshold(
   index: number,
   imageScalarData: Types.PixelDataTypedArray,
-  strategySpecificConfiguration: any
+  strategySpecificConfiguration: {
+    THRESHOLD?: { threshold: number[] };
+    THRESHOLD_INSIDE_CIRCLE?: { threshold: number[] };
+  }
 ) {
   const { THRESHOLD, THRESHOLD_INSIDE_CIRCLE } = strategySpecificConfiguration;
 

@@ -1,12 +1,13 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import type { EventTypes } from '../../types';
 
 // Util
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
 import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
 import getToolsWithActionsForMouseEvent from '../shared/getToolsWithActionsForMouseEvent';
+import type { AnnotationTool } from '../../tools';
 
 const { Active, Passive } = ToolModes;
 
@@ -45,7 +46,7 @@ export default function mouseDownAnnotationAction(
   // Filter tools with annotations for this element
   const annotationToolsWithAnnotations = filterToolsWithAnnotationsForElement(
     element,
-    tools
+    tools as AnnotationTool[]
   );
 
   // Only moveable annotations (unlocked, visible and close to the canvas coordinates) may trigger actions

@@ -85,10 +85,10 @@ test.describe('Spline Contour Segmentation Tools', async () => {
   }) => {
     const canvas = await page.locator('canvas');
     const splineStyle = {
-      outlineWidthActive: 1.7,
+      outlineWidth: 1.7,
       outlineOpacity: 0.5,
       fillAlpha: 0,
-      outlineDashActive: 3,
+      outlineDash: 3,
     };
 
     await updateSplineStyleInputs({ page, splineStyle });

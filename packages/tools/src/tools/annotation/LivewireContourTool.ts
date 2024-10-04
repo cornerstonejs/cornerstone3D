@@ -14,7 +14,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import { resetElementCursor } from '../../cursors/elementCursor';
 import type {
@@ -26,15 +26,10 @@ import type {
   TextBoxHandle,
 } from '../../types';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
-import {
-  getCalibratedLengthUnitsAndScale,
-  math,
-  roundNumber,
-  throttle,
-  triggerAnnotationRenderForViewportIds,
-} from '../../utilities';
+import * as math from '../../utilities/math';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import findHandlePolylineIndex from '../../utilities/contours/findHandlePolylineIndex';
-import { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { LivewireContourAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import {
   triggerAnnotationModified,
@@ -45,8 +40,10 @@ import { LivewireScissors } from '../../utilities/livewire/LivewireScissors';
 import { LivewirePath } from '../../utilities/livewire/LiveWirePath';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import { AnnotationModifiedEventDetail } from '../../types/EventTypes';
+import type { AnnotationStyle } from '../../types/AnnotationStyle';
+import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
@@ -56,9 +53,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   /** The scissors from the next handle, used for editing */
   protected scissorsNext: LivewireScissors;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
     annotation: LivewireContourAnnotation;
     viewportIdsToRender: Array<string>;
@@ -177,11 +172,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { imageData: vtkImageData } = viewportImageData;
     let worldToSlice: (point: Types.Point3) => Types.Point2;
     let sliceToWorld: (point: Types.Point2) => Types.Point3;
-    let { scalarData } = viewportImageData;
     let width;
     let height;
+    let scalarData;
 
-    if (!(viewport instanceof VolumeViewport) && scalarData) {
+    if (!(viewport instanceof VolumeViewport)) {
       width = viewportImageData.dimensions[0];
       height = viewportImageData.dimensions[1];
 
@@ -200,6 +195,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       // coordinate from index space.
       sliceToWorld = (point: Types.Point2) =>
         csUtils.transformIndexToWorld(vtkImageData, [point[0], point[1], 0]);
+      scalarData = viewportImageData.scalarData;
     } else if (viewport instanceof VolumeViewport) {
       const sliceImageData = csUtils.getCurrentVolumeViewportSlice(viewport);
       const { sliceToIndexMatrix, indexToSliceMatrix } = sliceImageData;
@@ -303,7 +299,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { world: worldPos } = currentPoints;
-    const { renderingEngine } = getEnabledElement(element);
     const annotation = this.createAnnotation(evt);
     const contourHoleProcessingEnabled =
       getMouseModifierKey(evt.detail.event) ===
@@ -320,10 +315,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     this._activateDraw(element);
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(
-      renderingEngine,
-      this.editData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportIds(this.editData.viewportIdsToRender);
 
     return annotation;
   }
@@ -396,7 +388,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { renderingEngine } = enabledElement;
 
     this._activateModify(element);
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -439,7 +431,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -467,7 +459,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     if (
       (this.isHandleOutsideImage &&
@@ -476,14 +467,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     ) {
       removeAnnotation(annotation.annotationUID);
       this.clearEditData();
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       return;
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     const changeType = newAnnotation
       ? ChangeTypes.Completed
@@ -607,7 +595,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.scissors.startSearch(worldToSlice(worldPos));
 
     annotation.invalidated = true;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (this.editData.closed) {
       // Update the annotation because `editData` will be set to null
@@ -655,7 +643,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // Store the new path
     this.editData.currentPath = currentPath;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -792,7 +780,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -815,7 +803,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData = null;
     this.scissors = null;
@@ -928,7 +916,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     enabledElement: Types.IEnabledElement;
     targetId: string;
     annotation: LivewireContourAnnotation;
-    annotationStyle: Record<string, any>;
+    annotationStyle: AnnotationStyle;
     svgDrawingHelper: SVGDrawingHelper;
   }): boolean {
     const {
@@ -1020,7 +1008,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       if (!image) {
         continue;
@@ -1044,7 +1032,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
         image,
         () => {
           const {
@@ -1085,7 +1073,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        areaUnit: areaUnits,
+        areaUnit: areaUnit,
       };
     }
 
@@ -1211,7 +1199,7 @@ function defaultGetTextLines(data, targetId): string[] {
   const textLines: string[] = [];
 
   if (area) {
-    const areaLine = `Area: ${roundNumber(area)} ${areaUnit}`;
+    const areaLine = `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
 
     textLines.push(areaLine);
   }

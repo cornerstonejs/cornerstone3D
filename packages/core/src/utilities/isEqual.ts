@@ -24,12 +24,19 @@ function areArraysEqual(
   return true;
 }
 
-function isNumberType(value: any): value is number {
+function isNumberType(value: unknown): value is number {
   return typeof value === 'number';
 }
 
-function isNumberArrayLike(value: any): value is ArrayLike<number> {
-  return 'length' in value && typeof value[0] === 'number';
+function isNumberArrayLike(value: unknown): value is ArrayLike<number> {
+  return (
+    value &&
+    typeof value === 'object' &&
+    'length' in value &&
+    typeof (value as ArrayLike<number>).length === 'number' &&
+    (value as ArrayLike<number>).length > 0 &&
+    typeof (value as ArrayLike<number>)[0] === 'number'
+  );
 }
 
 /**

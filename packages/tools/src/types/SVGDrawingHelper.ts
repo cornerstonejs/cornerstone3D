@@ -7,4 +7,4 @@ type SVGDrawingHelper = {
   clearUntouched: () => void;
 };
 
-export default SVGDrawingHelper;
+export type { SVGDrawingHelper as default };

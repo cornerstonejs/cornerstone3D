@@ -1,5 +1,7 @@
 module.exports = (api) => {
-  api.cache(true);
+  if (api) {
+    api.cache(true);
+  }
 
   return {
     presets: [
@@ -12,6 +14,7 @@ module.exports = (api) => {
       '@babel/plugin-transform-runtime',
       '@babel/plugin-transform-typescript',
       '@babel/plugin-transform-class-static-block',
+      '@babel/plugin-transform-private-methods',
     ],
   };
 };

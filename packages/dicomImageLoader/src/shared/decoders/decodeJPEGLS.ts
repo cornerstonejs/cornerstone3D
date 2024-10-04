@@ -2,12 +2,17 @@ import type {
   CharlsModule,
   JpegLSDecoder,
 } from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
-
+// @ts-ignore
 import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
-import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
-
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+// @ts-ignore
+// import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
+const charlsWasm = new URL(
+  '@cornerstonejs/codec-charls/decodewasm',
+  import.meta.url
+);
+import type { ByteArray } from 'dicom-parser';
+import type { WebWorkerDecodeConfig } from '../../types';
+import type { Types } from '@cornerstonejs/core';
 
 const local: {
   codec: CharlsModule;
@@ -62,7 +67,7 @@ export function initialize(
 async function decodeAsync(
   compressedImageFrame,
   imageInfo
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   try {
     await initialize();
     const decoder = local.decoder;

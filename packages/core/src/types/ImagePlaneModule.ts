@@ -1,5 +1,5 @@
-import Point2 from './Point2';
-import Point3 from './Point3';
+import type Point2 from './Point2';
+import type Point3 from './Point3';
 
 export interface ImagePlaneModule {
   columnCosines?: Point3;

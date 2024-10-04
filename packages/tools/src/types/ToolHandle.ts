@@ -22,5 +22,5 @@ type TextBoxHandle = {
 /** Tool Handle type can be either AnnotationHandle or TextBoxHandle */
 type ToolHandle = AnnotationHandle | TextBoxHandle;
 
-export default ToolHandle;
 export type { AnnotationHandle, TextBoxHandle };
+export type { ToolHandle as default };

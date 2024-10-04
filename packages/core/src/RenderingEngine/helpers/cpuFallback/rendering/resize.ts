@@ -1,6 +1,6 @@
 import fitToWindow from './fitToWindow';
 import getImageSize from './getImageSize';
-import { CPUFallbackEnabledElement } from '../../../../types';
+import type { CPUFallbackEnabledElement } from '../../../../types';
 
 /**
  * This module is responsible for enabling an element to display images with cornerstone

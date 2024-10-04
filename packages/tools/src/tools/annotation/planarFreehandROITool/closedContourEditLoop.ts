@@ -1,7 +1,7 @@
 import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { state } from '../../../store';
+import { state } from '../../../store/state';
 import { Events } from '../../../enums';
 import {
   resetElementCursor,
@@ -210,7 +210,7 @@ function mouseDragClosedContourEditCallback(
     this.finishEditAndStartNewEdit(evt);
   }
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -252,7 +252,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     snapIndex: undefined,
   };
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -482,7 +482,7 @@ function completeClosedContourEdit(element: HTMLDivElement) {
   this.editData = undefined;
   this.commonData = undefined;
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
   this.deactivateClosedContourEdit(element);
 }

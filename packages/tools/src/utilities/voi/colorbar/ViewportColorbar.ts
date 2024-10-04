@@ -1,8 +1,8 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   eventTarget,
   VolumeViewport,
   StackViewport,
-  Types,
   Enums,
   utilities,
   getEnabledElement,
@@ -62,10 +62,8 @@ class ViewportColorbar extends Colorbar {
       viewport.render();
     } else if (viewport instanceof VolumeViewport) {
       const { _volumeId: volumeId } = this;
-      const viewportsContainingVolumeUID = utilities.getViewportsWithVolumeId(
-        volumeId,
-        viewport.renderingEngineId
-      );
+      const viewportsContainingVolumeUID =
+        utilities.getViewportsWithVolumeId(volumeId);
 
       viewport.setProperties({ voiRange }, volumeId);
       viewportsContainingVolumeUID.forEach((vp) => vp.render());
@@ -147,7 +145,7 @@ class ViewportColorbar extends Colorbar {
   private _imageVolumeModifiedCallback = (
     evt: Types.EventTypes.ImageVolumeModifiedEvent
   ) => {
-    const { volumeId } = evt.detail.imageVolume;
+    const { volumeId } = evt.detail;
 
     if (volumeId !== this._volumeId) {
       return;

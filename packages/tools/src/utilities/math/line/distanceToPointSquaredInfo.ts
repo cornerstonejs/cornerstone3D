@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import * as math from '../';
+import { distanceToPointSquared } from '../point';
 
 /**
  * Calculate the closest point and the squared distance between a reference point and a line segment.
@@ -22,7 +22,7 @@ export default function distanceToPointSquaredInfo(
   distanceSquared: number;
 } {
   let closestPoint: Types.Point2;
-  const distanceSquared = math.point.distanceToPointSquared(lineStart, lineEnd);
+  const distanceSquared = distanceToPointSquared(lineStart, lineEnd);
 
   // Check if lineStart equal to the lineEnd which means the closest point
   // is any of these two points
@@ -50,6 +50,6 @@ export default function distanceToPointSquaredInfo(
 
   return {
     point: [...closestPoint],
-    distanceSquared: math.point.distanceToPointSquared(point, closestPoint),
+    distanceSquared: distanceToPointSquared(point, closestPoint),
   };
 }

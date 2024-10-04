@@ -1,7 +1,8 @@
 import { SegmentationRepresentations } from '../../../enums';
-import {
+import type {
   SegmentationPublicInput,
   Segmentation,
+  Segment,
 } from '../../../types/SegmentationStateTypes';
 import type { ContourSegmentationData } from '../../../types/ContourTypes';
 
@@ -14,20 +15,15 @@ import type { ContourSegmentationData } from '../../../types/ContourTypes';
 function normalizeSegmentationInput(
   segmentationInput: SegmentationPublicInput
 ): Segmentation {
-  const { segmentationId, representation } = segmentationInput;
-  const isContourRepresentation =
-    representation.type === SegmentationRepresentations.Contour;
-  let data = representation.data ? { ...representation.data } : null;
-
-  // Contour representation data is defined internally
-  data = !data && isContourRepresentation ? {} : data;
+  const { segmentationId, representation, config } = segmentationInput;
+  const { type, data: inputData } = representation;
+  const data = inputData ? { ...inputData } : {};
 
   // Data cannot be undefined for labelmap and surface
   if (!data) {
     throw new Error('Segmentation representation data may not be undefined');
   }
-
-  if (isContourRepresentation) {
+  if (type === SegmentationRepresentations.Contour) {
     const contourData = <ContourSegmentationData>data;
 
     // geometryIds will be removed in a near future. It still exist in the
@@ -40,18 +36,26 @@ function normalizeSegmentationInput(
     contourData.annotationUIDsMap = contourData.annotationUIDsMap ?? new Map();
   }
 
+  const normalizedSegments = {} as { [key: number]: Segment };
+
+  Object.entries(config.segments).forEach(([segmentIndex, segment]) => {
+    normalizedSegments[segmentIndex] = {
+      segmentIndex: Number(segmentIndex),
+      label: segment.label ?? `Segment ${segmentIndex}`,
+      locked: segment.locked ?? false,
+      cachedStats: segment.cachedStats ?? {},
+      active: segment.active ?? false,
+    } as Segment;
+  });
+
   // Todo: we should be able to let the user pass in non-default values for
   // cachedStats, label, activeSegmentIndex, etc.
   return {
     segmentationId,
-    cachedStats: {},
-    segmentLabels: {},
-    label: null,
-    segmentsLocked: new Set(),
-    type: representation.type,
-    activeSegmentIndex: 1,
+    label: config.label ?? null,
+    segments: normalizedSegments,
     representationData: {
-      [representation.type]: {
+      [type]: {
         ...data,
       },
     },

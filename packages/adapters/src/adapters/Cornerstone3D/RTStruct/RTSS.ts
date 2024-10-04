@@ -182,6 +182,8 @@ function generateRTSSFromSegmentations(
     };
 
     dataset._meta = _meta;
+
+    // @ts-ignore
     dataset.SpecificCharacterSet = "ISO_IR 192";
 
     return dataset;
@@ -269,6 +271,7 @@ function generateRTSSFromAnnotations(
     };
 
     dataset._meta = _meta;
+    //@ts-ignore
     dataset.SpecificCharacterSet = "ISO_IR 192";
 
     return dataset;

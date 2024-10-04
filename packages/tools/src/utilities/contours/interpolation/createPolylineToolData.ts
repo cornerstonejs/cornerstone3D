@@ -1,5 +1,6 @@
-import { Types, utilities as csUtils } from '@cornerstonejs/core';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { Types } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
 /**
  * Creates a new annotation instance given the tool data, based on the referenced tool

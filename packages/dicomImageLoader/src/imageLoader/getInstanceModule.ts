@@ -5,11 +5,6 @@
  * @param types - An array of metadata types to retrieve.
  * @returns An object containing the retrieved metadata with capitalized keys.
  */
-function getInstanceModule(
-  imageId: string,
-  metaDataProvider: any,
-  types: string[]
-): object;
 function getInstanceModule(imageId, metaDataProvider, types) {
   const result = {};
   for (const t of types) {

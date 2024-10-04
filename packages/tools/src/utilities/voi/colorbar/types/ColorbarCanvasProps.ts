@@ -1,4 +1,4 @@
-import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import type { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { ColorbarImageRange } from './ColorbarImageRange';
 import type { ColorbarSize } from './ColorbarSize';
 import type { ColorbarVOIRange } from './ColorbarVOIRange';

@@ -1,6 +1,6 @@
 import { cache } from '@cornerstonejs/core';
-import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
-import {
+import type { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
@@ -22,13 +22,13 @@ function validateRepresentationData(
         `volumeId of ${segmentationRepresentationData.volumeId} not found in cache, you should load and cache volume before adding segmentation`
       );
     }
-  } else if ('imageIdReferenceMap' in segmentationRepresentationData) {
+  } else if ('imageIds' in segmentationRepresentationData) {
     segmentationRepresentationData =
       segmentationRepresentationData as LabelmapSegmentationDataStack;
 
-    if (!segmentationRepresentationData.imageIdReferenceMap) {
+    if (!segmentationRepresentationData.imageIds) {
       throw new Error(
-        'The segmentationInput.representationData.imageIdReferenceMap is undefined, please provide a valid representationData.imageIdReferenceMap'
+        'The segmentationInput.representationData.imageIds is undefined, please provide a valid representationData.imageIds for stack data'
       );
     }
   } else {

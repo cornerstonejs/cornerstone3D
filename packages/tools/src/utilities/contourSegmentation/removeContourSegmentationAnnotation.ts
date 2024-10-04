@@ -1,5 +1,5 @@
-import { state } from '../../stateManagement/segmentation';
-import { ContourSegmentationAnnotation } from '../../types';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import type { ContourSegmentationAnnotation } from '../../types';
 
 /**
  * Removes a contour segmentation annotation from the given annotation.
@@ -18,8 +18,8 @@ export function removeContourSegmentationAnnotation(
   }
 
   const { segmentationId, segmentIndex } = annotation.data.segmentation;
-  const segmentation = state.getSegmentation(segmentationId);
-  const { annotationUIDsMap } = segmentation?.representationData.CONTOUR || {};
+  const segmentation = getSegmentation(segmentationId);
+  const { annotationUIDsMap } = segmentation?.representationData.Contour || {};
   const annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
 
   if (!annotationsUIDsSet) {

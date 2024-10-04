@@ -1,4 +1,4 @@
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 
 export default function getVoiFromSigmoidRGBTransferFunction(
   cfun: vtkColorTransferFunction

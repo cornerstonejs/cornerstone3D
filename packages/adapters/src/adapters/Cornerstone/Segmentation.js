@@ -1,14 +1,6 @@
 import Segmentation_3X from "./Segmentation_3X";
 import Segmentation_4X from "./Segmentation_4X";
 
-const Segmentation = {
-    generateSegmentation,
-    generateToolState,
-    fillSegmentation
-};
-
-export default Segmentation;
-
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
  *
@@ -41,18 +33,18 @@ function generateSegmentation(
     }
 
     console.warn(
-        `No generateSegmentation adapater for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+        `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
     );
 }
 
 /**
- * generateToolState - Given a set of cornrstoneTools imageIds and a Segmentation buffer,
+ * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
  *
  * @param  {string[]} imageIds    An array of the imageIds.
  * @param  {ArrayBuffer} arrayBuffer The SEG arrayBuffer.
  * @param {*} metadataProvider
- * @param  {bool} skipOverlapping - skip checks for overlapping segs, default value false.
+ * @param  {boolean} skipOverlapping - skip checks for overlapping segs, default value false.
  * @param  {number} tolerance - default value 1.e-3.
  * @param  {number} cornerstoneToolsVersion - default value 4.
  *
@@ -86,7 +78,7 @@ function generateToolState(
     }
 
     console.warn(
-        `No generateToolState adapater for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+        `No generateToolState adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
     );
 }
 
@@ -113,6 +105,8 @@ function fillSegmentation(
     }
 
     console.warn(
-        `No generateSegmentation adapater for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+        `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
     );
 }
+
+export { generateSegmentation, generateToolState, fillSegmentation };

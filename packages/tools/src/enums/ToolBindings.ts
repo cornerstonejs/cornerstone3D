@@ -19,6 +19,14 @@ enum MouseBindings {
   Fourth_Button = 8,
   /** usually "Browser Forward" button */
   Fifth_Button = 16,
+
+  /**
+   * The wheel binding selects for the wheel rotation, and does not have
+   * separate down/up but only rotation
+   */
+  Wheel = 524_288,
+  /** Wheel rotation plus primary */
+  Wheel_Primary = 524_289,
 }
 
 enum KeyboardBindings {

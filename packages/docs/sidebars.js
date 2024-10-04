@@ -87,16 +87,6 @@ module.exports = {
         },
         {
           type: 'category',
-          label: 'Streaming Image Volume Loader',
-          collapsed: true,
-          link: { type: 'doc', id: 'concepts/streaming-image-volume/index' },
-          items: [
-            'concepts/streaming-image-volume/streaming',
-            'concepts/streaming-image-volume/re-order',
-          ],
-        },
-        {
-          type: 'category',
           label: 'Progressive Loading',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/progressive-loading/index' },
@@ -206,7 +196,18 @@ module.exports = {
         'contribute/linking',
       ],
     },
-    'migrationGuides',
+    {
+      type: 'category',
+      label: 'Migration Guides',
+      link: {
+        type: 'generated-index',
+        title: 'Migration Guides',
+        description:
+          'Guides to help you migrate to the latest version of cornerstone3D',
+      },
+      collapsed: true,
+      items: ['migration-guides/legacy-to-3d', 'migration-guides/2x'],
+    },
     'faq',
     'help',
     {

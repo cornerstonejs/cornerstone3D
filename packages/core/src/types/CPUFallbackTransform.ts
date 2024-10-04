@@ -1,5 +1,5 @@
-import Point2 from './Point2';
-import TransformMatrix2D from './TransformMatrix2D';
+import type Point2 from './Point2';
+import type TransformMatrix2D from './TransformMatrix2D';
 
 interface CPUFallbackTransform {
   reset: () => void;
@@ -13,4 +13,4 @@ interface CPUFallbackTransform {
   transformPoint: (point: Point2) => Point2;
 }
 
-export default CPUFallbackTransform;
+export type { CPUFallbackTransform as default };

@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums, CONSTANTS } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import { setTitleAndDescription } from '../../../../utils/demo/helpers';
 import { init as csRenderInit } from '@cornerstonejs/core';
 import { init as csToolsInit } from '@cornerstonejs/tools';
@@ -77,16 +78,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   const actor = getSphereActor({
     center: [0, 0, 0],

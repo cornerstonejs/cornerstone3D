@@ -1,5 +1,5 @@
-import AnnotationGroupSelector from './AnnotationGroupSelector';
-import {
+import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type {
   Annotation,
   Annotations,
   GroupSpecificAnnotations,
@@ -86,4 +86,4 @@ interface IAnnotationManager {
   getNumberOfAllAnnotations: () => number;
 }
 
-export default IAnnotationManager;
+export type { IAnnotationManager as default };

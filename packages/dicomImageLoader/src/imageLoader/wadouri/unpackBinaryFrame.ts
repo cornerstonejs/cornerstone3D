@@ -1,6 +1,6 @@
 /* eslint no-bitwise: 0 */
 
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 
 function isBitSet(byte: number, bitPos: number) {
   return byte & (1 << bitPos);

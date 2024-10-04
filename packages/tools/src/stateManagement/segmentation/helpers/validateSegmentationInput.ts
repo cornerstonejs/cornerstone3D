@@ -1,5 +1,5 @@
 import * as Enums from '../../../enums';
-import { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
+import type { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
 import { validatePublic as validatePublicLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap';
 
 /**

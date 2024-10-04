@@ -14,7 +14,7 @@
 # COMMENT: NODE_VERSION in root `.nvmrc` takes priority
 # COMMENT: Why we specify YARN_FLAGS: https://www.netlify.com/docs/build-gotchas/#yarn
 [build.environment]
-  NODE_VERSION = "18.16.1"
+  NODE_VERSION = "18.18.0"
   YARN_VERSION = "1.22.5"
   NETLIFY_USE_YARN = "true"
   YARN_FLAGS = "--no-ignore-optional --pure-lockfile"

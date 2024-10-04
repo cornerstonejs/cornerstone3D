@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  volumeLoader,
-  Enums,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, volumeLoader, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -19,7 +15,7 @@ console.warn(
 const {
   LengthTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -75,7 +71,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -83,7 +79,7 @@ async function run() {
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(LengthTool.toolName, { volumeId });
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -96,7 +92,9 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const volumeImageIds = await createImageIdsAndCacheMetaData({

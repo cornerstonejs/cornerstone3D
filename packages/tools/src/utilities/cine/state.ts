@@ -1,5 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { CINETypes } from '../../types';
+import type { CINETypes } from '../../types';
 
 const state: Record<string, CINETypes.ToolData> = {};
 

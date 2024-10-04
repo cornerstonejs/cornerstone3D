@@ -4,13 +4,14 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 
 import { AnnotationTool } from './base';
 
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElement,
   utilities as csUtils,
   Enums,
+  CONSTANTS,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 
 import {
   getToolGroup,
@@ -28,7 +29,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
 } from '../drawingSvg';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {
@@ -38,7 +39,7 @@ import {
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 
 import * as lineSegment from '../utilities/math/line';
-import {
+import type {
   Annotation,
   Annotations,
   EventTypes,
@@ -50,15 +51,14 @@ import {
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { CONSTANTS } from '@cornerstonejs/core';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
 interface CrosshairsAnnotation extends Annotation {
   data: {
     handles: {
-      rotationPoints: any[]; // rotation handles, used for rotation interactions
-      slabThicknessPoints: any[]; // slab thickness handles, used for setting the slab thickness
+      rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
+      slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
       activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3;
     };
@@ -110,7 +110,7 @@ class CrosshairsTool extends AnnotationTool {
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
   editData: {
-    annotation: any;
+    annotation: Annotation;
   } | null;
 
   constructor(
@@ -304,19 +304,19 @@ class CrosshairsTool extends AnnotationTool {
         viewportId,
         renderingEngineId
       );
-      const { viewport } = enabledElement;
+      const viewport = enabledElement.viewport as Types.IVolumeViewport;
       const resetPan = true;
       const resetZoom = true;
       const resetToCenter = true;
       const resetRotation = true;
       const suppressEvents = true;
-      viewport.resetCamera(
+      viewport.resetCamera({
         resetPan,
         resetZoom,
         resetToCenter,
         resetRotation,
-        suppressEvents
-      );
+        suppressEvents,
+      });
       (viewport as Types.IVolumeViewport).resetSlabThickness();
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
@@ -388,13 +388,8 @@ class CrosshairsTool extends AnnotationTool {
     this.toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane)
 
     // assuming all viewports are in the same rendering engine
-    const { renderingEngine } = getEnabledElementByIds(
-      viewportsInfo[0].viewportId,
-      viewportsInfo[0].renderingEngineId
-    );
 
     triggerAnnotationRenderForViewportIds(
-      renderingEngine,
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
   };
@@ -681,7 +676,7 @@ class CrosshairsTool extends AnnotationTool {
       requireSameOrientation
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   onResetCamera = (evt) => {
@@ -1478,7 +1473,7 @@ class CrosshairsTool extends AnnotationTool {
     return toolGroupAnnotations;
   };
 
-  _onNewVolume = (e: any) => {
+  _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     this.computeToolCenter(viewportsInfo);
   };
@@ -1996,9 +1991,6 @@ class CrosshairsTool extends AnnotationTool {
 
     this.editData = null;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     const requireSameOrientation = false;
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -2006,7 +1998,7 @@ class CrosshairsTool extends AnnotationTool {
       requireSameOrientation
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
@@ -2255,6 +2247,7 @@ class CrosshairsTool extends AnnotationTool {
             if (!viewportDraggableRotatable) {
               const { rotationPoints } = this.editData.annotation.data.handles;
               // Todo: what is a point uid?
+              // @ts-expect-error
               const otherViewportRotationPoints = rotationPoints.filter(
                 (point) => point[1].uid === otherViewport.id
               );

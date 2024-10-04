@@ -21,21 +21,15 @@ function extractImageDataVolume(viewport) {
     csUtils.getCurrentVolumeViewportSlice(viewport);
   const { min: minPixelValue, max: maxPixelValue } =
     csUtils.getMinMax(scalarData);
-  const volumeId = viewport.getVolumeId();
-  const volume = cache.getVolume(volumeId);
-  // @ts-ignore
-  const { metadata, cornerstoneImageMetaData } = volume;
-  const { Rows: rows, Columns: columns } = metadata;
-  const { color } = cornerstoneImageMetaData;
   return {
     scalarData,
-    width,
-    height,
     minPixelValue,
     maxPixelValue,
-    rows,
-    columns,
-    color,
+    width,
+    height,
+    rows: width,
+    columns: height,
+    // color,
   };
 }
 

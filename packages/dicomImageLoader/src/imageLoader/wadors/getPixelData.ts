@@ -1,11 +1,11 @@
+import type { Types } from '@cornerstonejs/core';
 import { xhrRequest } from '../internal/index';
 // import rangeRequest from '../internal/rangeRequest';
 import streamRequest from '../internal/streamRequest';
 import rangeRequest from '../internal/rangeRequest';
 import extractMultipart from './extractMultipart';
 import { getImageQualityStatus } from './getImageQualityStatus';
-import { CornerstoneWadoRsLoaderOptions } from './loadImage';
-import { RangeRetrieveOptions } from 'core/dist/types/types';
+import type { CornerstoneWadoRsLoaderOptions } from './loadImage';
 
 function getPixelData(
   uri: string,
@@ -13,7 +13,8 @@ function getPixelData(
   mediaType = 'application/octet-stream',
   options?: CornerstoneWadoRsLoaderOptions
 ) {
-  const { streamingData, retrieveOptions = {} } = options || {};
+  const { streamingData, retrieveOptions = {} as Types.RetrieveOptions } =
+    options || {};
   const headers = {
     Accept: mediaType,
   };
@@ -37,12 +38,14 @@ function getPixelData(
     options.streamingData = { url };
   }
 
-  if ((retrieveOptions as RangeRetrieveOptions).rangeIndex !== undefined) {
+  if (
+    (retrieveOptions as Types.RangeRetrieveOptions).rangeIndex !== undefined
+  ) {
     return rangeRequest(url, imageId, headers, options);
   }
 
   // Use the streaming parser only when configured to do so
-  if (retrieveOptions.streaming) {
+  if ((retrieveOptions as Types.StreamingRetrieveOptions).streaming) {
     return streamRequest(url, imageId, headers, options);
   }
 

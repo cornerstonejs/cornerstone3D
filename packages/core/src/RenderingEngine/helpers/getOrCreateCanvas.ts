@@ -64,8 +64,13 @@ export default function getOrCreateCanvas(
   const internalDiv =
     element.querySelector(viewportElement) || createViewportElement(element);
 
-  const canvas = (internalDiv.querySelector(canvasSelector) ||
-    createCanvas(internalDiv)) as HTMLCanvasElement;
+  const existingCanvas: HTMLCanvasElement | null =
+    internalDiv.querySelector(canvasSelector);
+  if (existingCanvas) {
+    return existingCanvas;
+  }
+
+  const canvas = createCanvas(internalDiv);
   // Fit the canvas into the div
   const rect = internalDiv.getBoundingClientRect();
   const devicePixelRatio = window.devicePixelRatio || 1;
@@ -82,8 +87,8 @@ export default function getOrCreateCanvas(
   // Reset the size of the canvas to be the number of physical pixels,
   // expressed as CSS pixels, with a tiny extra amount to prevent clipping
   // to the next lower size in the physical display.
-  canvas.style.width = (width + EPSILON) / devicePixelRatio + 'px';
-  canvas.style.height = (height + EPSILON) / devicePixelRatio + 'px';
+  // canvas.style.width = (width + EPSILON) / devicePixelRatio + 'px';
+  // canvas.style.height = (height + EPSILON) / devicePixelRatio + 'px';
 
   return canvas;
 }

@@ -3,6 +3,7 @@ import type {
   J2KDecoder,
   OpenJpegModule,
 } from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
+// @ts-ignore
 import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 
 // Webpack asset/resource copies this to our output folder
@@ -10,9 +11,15 @@ import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 // TODO: At some point maybe we can use this instead.
 // This is closer to what Webpack 5 wants but it doesn't seem to work now
 // const wasm = new URL('./blah.wasm', import.meta.url)
-import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
+// @ts-ignore
+// import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
+const openjpegWasm = new URL(
+  '@cornerstonejs/codec-openjpeg/decodewasm',
+  import.meta.url
+);
 
-import { ImageFrame, WebWorkerDecodeConfig } from '../../types';
+import type { Types } from '@cornerstonejs/core';
+import type { WebWorkerDecodeConfig } from '../../types';
 
 const local: {
   codec: OpenJpegModule;
@@ -56,7 +63,7 @@ export function initialize(
 async function decodeAsync(
   compressedImageFrame,
   imageInfo
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   await initialize();
   const decoder = local.decoder;
 

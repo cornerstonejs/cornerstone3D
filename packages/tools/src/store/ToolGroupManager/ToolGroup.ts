@@ -1,6 +1,5 @@
-import { MouseBindings, ToolModes } from '../../enums';
+import { MouseBindings, ToolModes, Events } from '../../enums';
 import get from 'lodash.get';
-import cloneDeep from 'lodash.clonedeep';
 import {
   triggerEvent,
   eventTarget,
@@ -9,14 +8,13 @@ import {
   getEnabledElementByIds,
   Settings,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-import { Events } from '../../enums';
-import {
+import { type Types, utilities } from '@cornerstonejs/core';
+import type {
   ToolActivatedEventDetail,
   ToolModeChangedEventDetail,
 } from '../../types/EventTypes';
-import { ToolGroupManager, state } from '../index';
-import {
+import { state } from '../state';
+import type {
   IToolBinding,
   IToolClassReference,
   IToolGroup,
@@ -27,6 +25,7 @@ import {
 
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
+import getToolGroup from './getToolGroup';
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -44,7 +43,7 @@ const PRIMARY_BINDINGS = [{ mouseButton: MouseBindings.Primary }];
  * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupId')
  * ```
  */
-export default class ToolGroup implements IToolGroup {
+export default class ToolGroup {
   id: string;
   viewportsInfo = [];
   toolOptions = {};
@@ -97,7 +96,7 @@ export default class ToolGroup implements IToolGroup {
    *
    * @returns A record containing the tool instances, where the keys are the tool names and the values are the tool instances.
    */
-  public getToolInstances(): Record<string, any> {
+  public getToolInstances(): Record<string, unknown> {
     return this._toolInstances;
   }
 
@@ -212,15 +211,10 @@ export default class ToolGroup implements IToolGroup {
       throw new Error('viewportId must be defined and be a string');
     }
 
-    const renderingEngines = getRenderingEngines();
-
-    if (!renderingEngineId && renderingEngines.length > 1) {
-      throw new Error(
-        'You must specify a renderingEngineId when there are multiple rendering engines.'
-      );
-    }
-
-    const renderingEngineUIDToUse = renderingEngineId || renderingEngines[0].id;
+    const renderingEngineUIDToUse = this._findRenderingEngine(
+      viewportId,
+      renderingEngineId
+    );
 
     // Don't overwrite if it already exists
     if (
@@ -751,7 +745,7 @@ export default class ToolGroup implements IToolGroup {
    * getToolConfiguration('LengthTool', 'firstLevel.secondLevel')
    * // get from LengthTool instance the configuration value as being LengthToolInstance[configuration][firstLevel][secondLevel]
    */
-  getToolConfiguration(toolName: string, configurationPath?: string): any {
+  getToolConfiguration(toolName: string, configurationPath?: string): unknown {
     if (this._toolInstances[toolName] === undefined) {
       console.warn(
         `Tool ${toolName} not present, can't set tool configuration.`
@@ -763,7 +757,7 @@ export default class ToolGroup implements IToolGroup {
       get(this._toolInstances[toolName].configuration, configurationPath) ||
       this._toolInstances[toolName].configuration;
 
-    return cloneDeep(_configuration);
+    return utilities.deepClone(_configuration);
   }
 
   /**
@@ -772,6 +766,23 @@ export default class ToolGroup implements IToolGroup {
    */
   public getPrevActivePrimaryToolName(): string {
     return this.prevActivePrimaryToolName;
+  }
+
+  /**
+   * Set Primary tool active
+   * Get the current active primary tool name and disable that
+   * And set the new tool active
+   */
+  public setActivePrimaryTool(toolName: string): void {
+    const activeToolName = this.getCurrentActivePrimaryToolName();
+    this.setToolDisabled(activeToolName);
+    this.setToolActive(toolName, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  }
+
+  public getCurrentActivePrimaryToolName(): string {
+    return this.currentActivePrimaryToolName;
   }
 
   /**
@@ -786,14 +797,16 @@ export default class ToolGroup implements IToolGroup {
     newToolGroupId,
     fnToolFilter: (toolName: string) => void = null
   ): IToolGroup {
-    let toolGroup = ToolGroupManager.getToolGroup(newToolGroupId);
+    let toolGroup = getToolGroup(newToolGroupId);
 
     if (toolGroup) {
-      console.warn(`ToolGroup ${newToolGroupId} already exists`);
+      console.debug(`ToolGroup ${newToolGroupId} already exists`);
       return toolGroup;
     }
 
-    toolGroup = ToolGroupManager.createToolGroup(newToolGroupId);
+    toolGroup = new ToolGroup(newToolGroupId);
+    state.toolGroups.push(toolGroup);
+
     fnToolFilter = fnToolFilter ?? (() => true);
 
     Object.keys(this._toolInstances)
@@ -857,6 +870,42 @@ export default class ToolGroup implements IToolGroup {
     };
 
     triggerEvent(eventTarget, Events.TOOL_MODE_CHANGED, eventDetail);
+  }
+
+  private _findRenderingEngine(
+    viewportId: string,
+    renderingEngineId?: string
+  ): string {
+    const renderingEngines = getRenderingEngines();
+
+    if (renderingEngines?.length === 0) {
+      throw new Error('No rendering engines found.');
+    }
+
+    if (renderingEngineId) {
+      return renderingEngineId;
+    }
+
+    const matchingEngines = renderingEngines.filter((engine) =>
+      engine.getViewport(viewportId)
+    );
+
+    if (matchingEngines.length === 0) {
+      if (renderingEngines.length === 1) {
+        return renderingEngines[0].id;
+      }
+      throw new Error(
+        'No rendering engines found that contain the viewport with the same viewportId, you must specify a renderingEngineId.'
+      );
+    }
+
+    if (matchingEngines.length > 1) {
+      throw new Error(
+        'Multiple rendering engines found that contain the viewport with the same viewportId, you must specify a renderingEngineId.'
+      );
+    }
+
+    return matchingEngines[0].id;
   }
 }
 

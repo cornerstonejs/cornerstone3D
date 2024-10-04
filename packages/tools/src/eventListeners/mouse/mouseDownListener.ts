@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import { MouseBindings } from '../../enums/ToolBindings';
 import mouseMoveListener from './mouseMoveListener';
-import { EventTypes, IPoints } from '../../types';
+import type { EventTypes, IPoints } from '../../types';
 import getMouseEventPoints from './getMouseEventPoints';
 
 const { MOUSE_DOWN, MOUSE_DOWN_ACTIVATE, MOUSE_CLICK, MOUSE_UP, MOUSE_DRAG } =
@@ -232,6 +232,10 @@ function _doMouseDown(evt: MouseEvent) {
  * @param evt - The mouse event.
  */
 function _onMouseDrag(evt: MouseEvent) {
+  const enabledElement = getEnabledElement(state.element);
+  if (!enabledElement?.viewport) {
+    return;
+  }
   const currentPoints = getMouseEventPoints(evt, state.element);
   const lastPoints = _updateMouseEventsLastPoints(
     state.element,
@@ -464,7 +468,11 @@ function _updateMouseEventsLastPoints(
   element: HTMLDivElement,
   lastPoints: IPoints
 ): IPoints {
-  const { viewport } = getEnabledElement(element);
+  const { viewport } = getEnabledElement(element) || {};
+
+  if (!viewport) {
+    return lastPoints;
+  }
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
   const world = viewport.canvasToWorld(lastPoints.canvas);
@@ -485,6 +493,15 @@ function _updateMouseEventsLastPoints(
  * @returns The difference in IPoints format
  */
 function _getDeltaPoints(currentPoints: IPoints, lastPoints: IPoints): IPoints {
+  if (!currentPoints || !lastPoints) {
+    return {
+      page: [0, 0],
+      client: [0, 0],
+      canvas: [0, 0],
+      world: [0, 0, 0],
+    };
+  }
+
   return {
     page: _subtractPoints2D(currentPoints.page, lastPoints.page),
     client: _subtractPoints2D(currentPoints.client, lastPoints.client),

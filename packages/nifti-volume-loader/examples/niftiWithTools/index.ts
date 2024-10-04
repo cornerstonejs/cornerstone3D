@@ -5,23 +5,24 @@ import {
   volumeLoader,
   setVolumesForViewports,
   eventTarget,
+  imageLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  cornerstoneNiftiImageVolumeLoader,
   Enums as NiftiEnums,
+  cornerstoneNiftiImageLoader,
+  createNiftiImageIdsAndCacheMetadata,
 } from '@cornerstonejs/nifti-volume-loader';
 
-import { addDropdownToToolbar } from '../../../../utils/demo/helpers';
+import { addDropdownToToolbar, initDemo } from '../../../../utils/demo/helpers';
 
 const {
   LengthTool,
   HeightTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   Enums: csToolsEnums,
-  init: csTools3dInit,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -34,7 +35,6 @@ const {
   ArrowAnnotateTool,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // This is for debugging purposes
@@ -126,20 +126,22 @@ addDropdownToToolbar({
   },
 });
 
+const niftiURL =
+  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${niftiURL}`; // VolumeId with loader id + volume id
+
 async function setup() {
-  await csInit();
-  await csTools3dInit();
+  await initDemo();
 
-  volumeLoader.registerVolumeLoader('nifti', cornerstoneNiftiImageVolumeLoader);
+  imageLoader.registerImageLoader('nifti', cornerstoneNiftiImageLoader);
 
-  const niftiURL =
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
-  const volumeId = 'nifti:' + niftiURL;
+  const imageIds = await createNiftiImageIdsAndCacheMetadata({ url: niftiURL });
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ZoomTool);
@@ -162,7 +164,7 @@ async function setup() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
@@ -200,7 +202,13 @@ async function setup() {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   toolGroup.setToolPassive(ProbeTool.toolName);
   toolGroup.setToolPassive(RectangleROITool.toolName);
@@ -273,7 +281,11 @@ async function setup() {
   );
 
   // This will load the nifti file, no need to call .load again for nifti
-  await volumeLoader.createAndCacheVolume(volumeId);
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  await volume.load();
 
   setVolumesForViewports(
     renderingEngine,

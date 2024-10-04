@@ -51,4 +51,4 @@ type ToolAction = {
   bindings: SetToolBindingsType[];
 };
 
-export default ToolAction;
+export type { ToolAction as default };

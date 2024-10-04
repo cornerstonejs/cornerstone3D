@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
 // Returns sign of number
-function sign(x: any) {
+function sign(x: number | string): number {
   return typeof x === 'number'
     ? x
       ? x < 0

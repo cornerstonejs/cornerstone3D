@@ -2,7 +2,7 @@ import getOrCreateCanvas, {
   EPSILON,
 } from '../RenderingEngine/helpers/getOrCreateCanvas';
 import { ViewportType, Events } from '../enums';
-import {
+import type {
   IImage,
   IStackViewport,
   IVolume,
@@ -13,7 +13,7 @@ import {
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
-import { CanvasLoadPosition } from './loadImageToCanvas';
+import type { CanvasLoadPosition } from './loadImageToCanvas';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation
@@ -50,7 +50,7 @@ export default function renderToCanvasGPU(
   const isVolume = !(imageOrVolume as IImage).imageId;
   const image = !isVolume && (imageOrVolume as IImage);
   const volume = isVolume && (imageOrVolume as IVolume);
-  const imageIdToPrint = image?.imageId || volume?.volumeId;
+  const imageIdToPrint = image.imageId || volume.volumeId;
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
   const element = document.createElement('div');
   const devicePixelRatio = window.devicePixelRatio || 1;

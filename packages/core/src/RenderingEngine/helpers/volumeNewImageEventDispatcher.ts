@@ -1,11 +1,8 @@
-import {
-  getImageSliceDataForVolumeViewport,
-  triggerEvent,
-} from '../../utilities';
-import { EventTypes } from '../../types';
+import getImageSliceDataForVolumeViewport from '../../utilities/getImageSliceDataForVolumeViewport';
+import triggerEvent from '../../utilities/triggerEvent';
+import type { EventTypes, IVolumeViewport } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';
-import BaseVolumeViewport from '../BaseVolumeViewport';
 
 // Keeping track of previous imageIndex for each viewportId
 type VolumeImageState = Record<string, number>;
@@ -35,9 +32,9 @@ function volumeNewImageEventDispatcher(
   const renderingEngine = getRenderingEngine(renderingEngineId);
   const viewport = renderingEngine.getViewport(viewportId);
 
-  if (!(viewport instanceof BaseVolumeViewport)) {
+  if (!('setVolumes' in viewport)) {
     throw new Error(
-      `volumeNewImageEventDispatcher: viewport is not a BaseVolumeViewport`
+      `volumeNewImageEventDispatcher: viewport does not have setVolumes method`
     );
   }
 
@@ -45,7 +42,9 @@ function volumeNewImageEventDispatcher(
     state[viewport.id] = 0;
   }
 
-  const sliceData = getImageSliceDataForVolumeViewport(viewport);
+  const sliceData = getImageSliceDataForVolumeViewport(
+    viewport as IVolumeViewport
+  );
 
   if (!sliceData) {
     console.warn(

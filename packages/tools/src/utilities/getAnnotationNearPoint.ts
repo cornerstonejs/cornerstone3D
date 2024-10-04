@@ -1,8 +1,8 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool, BaseTool } from '../tools';
-import { Annotation } from '../types';
+import type { AnnotationTool, BaseTool } from '../tools';
+import type { Annotation } from '../types';
 import { getAnnotations } from '../stateManagement/annotation/annotationState';
 import * as ToolGroupManager from '../store/ToolGroupManager';
 

@@ -1,4 +1,4 @@
-import Point4 from './Point4';
+import type Point4 from './Point4';
 
 interface CPUFallbackLookupTable {
   setNumberOfTableValues: (number: number) => void;
@@ -14,4 +14,4 @@ interface CPUFallbackLookupTable {
   setTableValue(index: number, rgba: Point4);
 }
 
-export default CPUFallbackLookupTable;
+export type { CPUFallbackLookupTable as default };

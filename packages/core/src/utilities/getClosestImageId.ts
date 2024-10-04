@@ -24,17 +24,24 @@ export default function getClosestImageId(
     return;
   }
 
-  const { direction, imageIds } = imageVolume;
+  const { direction } = imageVolume;
+  let { imageIds } = imageVolume;
 
-  if (!imageIds || !imageIds.length) {
+  if (!imageIds.length) {
     return;
+  }
+
+  // Important: this is huge performance gain for streaming dynamic image volumes
+  if ('getCurrentTimePointImageIds' in imageVolume) {
+    // @ts-ignore
+    imageIds = imageVolume.getCurrentTimePointImageIds();
   }
 
   // 1. Get ScanAxis vector
   const kVector = direction.slice(6, 9);
 
   // 2. Check if scanAxis is not parallel to camera viewPlaneNormal
-  const dotProducts = vec3.dot(kVector as Point3, <vec3>viewPlaneNormal);
+  const dotProducts = vec3.dot(kVector as Point3, viewPlaneNormal as vec3);
 
   // 2.a if imagePlane is not parallel to the camera: tool is not drawn on an
   // imaging plane, return

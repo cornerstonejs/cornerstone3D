@@ -2,6 +2,10 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { performMouseDownAndUp } from '../../../utils/test/testUtilsMouseEvents';
+import {
+  encodeImageIdInfo,
+  createViewports,
+} from '../../../utils/test/testUtils';
 
 const {
   cache,
@@ -47,30 +51,20 @@ function calculateLength(pos1, pos2) {
   return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-function createViewport(renderingEngine, viewportType, width, height) {
-  const element = document.createElement('div');
-
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
-
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: viewportType,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-        orientation: Enums.OrientationAxis.AXIAL,
-      },
-    },
-  ]);
-  return element;
-}
-
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
+const volumeId = testUtils.encodeVolumeIdInfo({
+  loader: 'fakeVolumeLoader',
+  name: 'volumeURI',
+  rows: 100,
+  columns: 100,
+  slices: 10,
+  xSpacing: 1,
+  ySpacing: 1,
+});
 
 describe('Bidirectional Tool (CPU): ', () => {
+  let renderingEngine;
+  let toolGroup;
+
   beforeAll(() => {
     setUseCPURendering(true);
   });
@@ -80,53 +74,53 @@ describe('Bidirectional Tool (CPU): ', () => {
   });
 
   beforeEach(function () {
-    csTools3d.init();
-    csTools3d.addTool(BidirectionalTool);
-    this.DOMElements = [];
-
-    cache.purgeCache();
-    this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-    this.stackToolGroup.addTool(BidirectionalTool.toolName, {
-      configuration: { volumeId: volumeId },
+    const testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+      viewportIds: [viewportId],
+      tools: [BidirectionalTool],
+      toolConfigurations: {
+        [BidirectionalTool.toolName]: {
+          configuration: { volumeId: volumeId },
+        },
+      },
+      toolActivations: {
+        [BidirectionalTool.toolName]: {
+          bindings: [{ mouseButton: 1 }],
+        },
+      },
     });
-    this.stackToolGroup.setToolActive(BidirectionalTool.toolName, {
-      bindings: [{ mouseButton: 1 }],
-    });
-
-    this.renderingEngine = new RenderingEngine(renderingEngineId);
-    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-    volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-    metaData.addProvider(fakeMetaDataProvider, 10000);
+    renderingEngine = testEnv.renderingEngine;
   });
 
   afterEach(function () {
-    csTools3d.destroy();
-    cache.purgeCache();
-    eventTarget.reset();
-
-    this.renderingEngine.destroy();
-    metaData.removeProvider(fakeMetaDataProvider);
-    imageLoader.unregisterAllImageLoaders();
-    ToolGroupManager.destroyToolGroup('stack');
-
-    this.DOMElements.forEach((el) => {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
     });
   });
 
   it('Should successfully create a Bidirectional tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      512,
-      128
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.STACK,
+      width: 512,
+      height: 128,
+    });
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const imageId = testUtils.encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    });
+
+    const vp = renderingEngine.getViewport(viewportId);
 
     let p1, p2;
 
@@ -212,10 +206,8 @@ describe('Bidirectional Tool (CPU): ', () => {
       document.dispatchEvent(evt);
     });
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     try {
-      vp.setStack([imageId1], 0);
+      vp.setStack([imageId], 0);
       vp.render();
     } catch (e) {
       done.fail(e);
@@ -223,16 +215,26 @@ describe('Bidirectional Tool (CPU): ', () => {
   });
 
   it('Should successfully create a bidirectional tool on a cpu stack viewport and modify its handle', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      256,
-      256
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+    });
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const imageId = testUtils.encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    });
+
+    const vp = renderingEngine.getViewport(viewportId);
 
     let p2, p3;
 
@@ -248,7 +250,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1
+          imageId
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -356,27 +358,35 @@ describe('Bidirectional Tool (CPU): ', () => {
       document.dispatchEvent(evt);
     });
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId], 0);
+      renderingEngine.render();
     } catch (e) {
       done.fail(e);
     }
   });
 
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select but not move it', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      256,
-      256
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+    });
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const imageId = testUtils.encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    });
+
+    const vp = renderingEngine.getViewport(viewportId);
 
     let p1, p2;
 
@@ -392,7 +402,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1
+          imageId
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -495,27 +505,35 @@ describe('Bidirectional Tool (CPU): ', () => {
       );
     });
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId], 0);
+      renderingEngine.render();
     } catch (e) {
       done.fail(e);
     }
   });
 
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select AND move it', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      256,
-      256
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+    });
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const imageId = testUtils.encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    });
+
+    const vp = renderingEngine.getViewport(viewportId);
 
     let p1, p2, p3, p4;
 
@@ -531,7 +549,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1
+          imageId
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -689,27 +707,35 @@ describe('Bidirectional Tool (CPU): ', () => {
       document.dispatchEvent(evt);
     });
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId], 0);
+      renderingEngine.render();
     } catch (e) {
       done.fail(e);
     }
   });
 
   it('Should successfully cancel drawing of a bidirectional on a cpu stack viewport', function (done) {
-    const element = createViewport(
-      this.renderingEngine,
-      ViewportType.STACK,
-      256,
-      256
-    );
-    this.DOMElements.push(element);
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.STACK,
+      width: 256,
+      height: 256,
+    });
 
-    const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-    const vp = this.renderingEngine.getViewport(viewportId);
+    const imageId = testUtils.encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    });
+
+    const vp = renderingEngine.getViewport(viewportId);
 
     let p1, p2;
 
@@ -725,7 +751,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX1,
         clientY: clientY1,
         worldCoord: worldCoord1,
-      } = createNormalizedMouseEvent(imageData, index1, element, vp);
+      } = testUtils.createNormalizedMouseEvent(imageData, index1, element, vp);
       p1 = worldCoord1;
 
       const {
@@ -734,7 +760,7 @@ describe('Bidirectional Tool (CPU): ', () => {
         clientX: clientX2,
         clientY: clientY2,
         worldCoord: worldCoord2,
-      } = createNormalizedMouseEvent(imageData, index2, element, vp);
+      } = testUtils.createNormalizedMouseEvent(imageData, index2, element, vp);
       p2 = worldCoord2;
 
       // Mouse Down
@@ -790,7 +816,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
         const bidirectionalAnnotation = bidirectionalAnnotations[0];
         expect(bidirectionalAnnotation.metadata.referencedImageId).toBe(
-          imageId1
+          imageId
         );
         expect(bidirectionalAnnotation.metadata.toolName).toBe(
           BidirectionalTool.toolName
@@ -811,12 +837,11 @@ describe('Bidirectional Tool (CPU): ', () => {
       }, 100);
     };
 
-    this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
     try {
-      vp.setStack([imageId1], 0);
-      this.renderingEngine.render();
+      vp.setStack([imageId], 0);
+      renderingEngine.render();
     } catch (e) {
       done.fail(e);
     }

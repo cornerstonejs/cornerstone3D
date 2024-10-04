@@ -1,4 +1,5 @@
-import { IImage, IImageLoadObject } from '../types';
+import type IImage from './IImage';
+import type { IImageLoadObject } from './ILoadObject';
 
 interface ICachedImage {
   image?: IImage;
@@ -10,4 +11,4 @@ interface ICachedImage {
   sizeInBytes: number;
 }
 
-export default ICachedImage;
+export type { ICachedImage as default };

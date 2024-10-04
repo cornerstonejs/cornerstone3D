@@ -1,6 +1,6 @@
 import getModalityLut from './getModalityLut';
 import getVOILUT from './getVOILut';
-import { IImage, CPUFallbackLUT } from '../../../../types';
+import type { IImage, CPUFallbackLUT } from '../../../../types';
 
 /**
  * Creates a LUT used while rendering to convert stored pixel values to
@@ -42,7 +42,7 @@ export default function (
   if (image.isPreScaled) {
     // if the image is already preScaled, it means that the slop and the intercept
     // are applied and there is no need for a modalityLut
-    if (invert === true) {
+    if (invert) {
       for (
         let storedValue = minPixelValue;
         storedValue <= maxPixelValue;
@@ -60,7 +60,7 @@ export default function (
       }
     }
   } else {
-    if (invert === true) {
+    if (invert) {
       for (
         let storedValue = minPixelValue;
         storedValue <= maxPixelValue;

@@ -1,6 +1,6 @@
 import { addProvider } from '../metaData';
 
-let state: Record<string, any> = {}; // Calibrated pixel spacing per imageId
+let state: Record<string, unknown> = {}; // Calibrated pixel spacing per imageId
 /**
  * Simple metadata provider that stores some sort of meta data for each imageId.
  */
@@ -12,7 +12,10 @@ const metadataProvider = {
    * @param imageId - the imageId for the metadata to store
    * @param payload - the payload
    */
-  add: (imageId: string, payload: { metadata: any; type: string }): void => {
+  add: (
+    imageId: string,
+    payload: { metadata: unknown; type: string }
+  ): void => {
     metadataProvider.addRaw(imageId, {
       ...payload,
       metadata: structuredClone(payload.metadata),
@@ -24,7 +27,7 @@ const metadataProvider = {
    * class inheritance values and member functions/proxy instances, but runs
    * the risk that the raw object can be modified through side affects.
    */
-  addRaw: (imageId: string, payload: { metadata: any; type: string }) => {
+  addRaw: (imageId: string, payload: { metadata: unknown; type: string }) => {
     const type = payload.type;
 
     if (!state[imageId]) {
@@ -40,7 +43,7 @@ const metadataProvider = {
    * @param type - the type of metadata to enquire about
    * @param imageId - the imageId to enquire about
    */
-  get: (type: string, imageId: string): any => {
+  get: (type: string, imageId: string): unknown => {
     return state[imageId]?.[type];
   },
 

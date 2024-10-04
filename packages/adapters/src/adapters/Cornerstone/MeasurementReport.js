@@ -18,7 +18,9 @@ const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
 const codeValueMatch = (group, code, oldCode) => {
     const { ConceptNameCodeSequence } = group;
-    if (!ConceptNameCodeSequence) return;
+    if (!ConceptNameCodeSequence) {
+        return;
+    }
     const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
     return (
         (CodingSchemeDesignator == code.CodingSchemeDesignator &&

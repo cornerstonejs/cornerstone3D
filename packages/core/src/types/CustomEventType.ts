@@ -1,8 +1,9 @@
-interface CustomEvent<T = any> extends Event {
+interface CustomEvent<T = unknown> extends Event {
   /**
    * Returns any custom data event was created with. Typically used for synthetic events.
    */
   readonly detail: T;
+  /** An over-ride for the buttons value to allow setting this internally. */
   initCustomEvent(
     typeArg: string,
     canBubbleArg: boolean,
@@ -11,4 +12,4 @@ interface CustomEvent<T = any> extends Event {
   ): void;
 }
 
-export default CustomEvent;
+export type { CustomEvent as default };

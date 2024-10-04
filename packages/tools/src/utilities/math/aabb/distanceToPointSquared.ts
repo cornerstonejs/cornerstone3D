@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Calculates the distance of a point to an AABB using 2D Box SDF (Signed Distance Field)

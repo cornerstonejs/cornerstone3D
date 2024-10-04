@@ -20,11 +20,6 @@ import {
   invalidateAnnotation,
 } from './annotation/annotationState';
 
-import {
-  addSegmentationRepresentations,
-  removeSegmentationsFromToolGroup,
-} from './segmentation';
-
 export {
   // annotations
   FrameOfReferenceSpecificAnnotationManager,
@@ -44,7 +39,4 @@ export {
   getAnnotationManager,
   resetAnnotationManager,
   invalidateAnnotation,
-  // segmentations
-  addSegmentationRepresentations,
-  removeSegmentationsFromToolGroup,
 };

@@ -3,23 +3,22 @@ import { Events } from '../enums';
 
 import { getEnabledElement, StackViewport } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { state } from '../store';
+import { state } from '../store/state';
 import { Enums } from '@cornerstonejs/core';
 
 import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
-import { IPoints } from '../types';
+import type { IPoints } from '../types';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
 class MagnifyTool extends BaseTool {
   static toolName;
-  _bounds: any;
   editData: {
     referencedImageId: string;
     viewportIdsToRender: string[];
@@ -96,7 +95,7 @@ class MagnifyTool extends BaseTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return true;
   };
@@ -197,7 +196,7 @@ class MagnifyTool extends BaseTool {
     });
 
     magnifyToolElement.style.display = 'block';
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {

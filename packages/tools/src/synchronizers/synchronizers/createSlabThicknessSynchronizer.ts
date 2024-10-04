@@ -1,7 +1,7 @@
 import { Enums } from '@cornerstonejs/core';
 import { createSynchronizer } from '../../store/SynchronizerManager';
 import slabThicknessSyncCallback from '../callbacks/slabThicknessSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
 const { CAMERA_MODIFIED } = Enums.Events;
 

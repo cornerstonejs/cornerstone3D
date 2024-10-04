@@ -1,4 +1,4 @@
-import {
+import type {
   IRetrieveConfiguration,
   IImagesLoader,
   IImage,
@@ -11,10 +11,12 @@ import singleRetrieveStages from './configuration/singleRetrieve';
 import sequentialRetrieveStages from './configuration/sequentialRetrieve';
 import interleavedRetrieveStages from './configuration/interleavedRetrieve';
 import { loadAndCacheImage } from './imageLoader';
-import { triggerEvent, ProgressiveIterator, decimate } from '../utilities';
+import triggerEvent from '../utilities/triggerEvent';
+import ProgressiveIterator from '../utilities/ProgressiveIterator';
+import decimate from '../utilities/decimate';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import { ImageQualityStatus, RequestType, Events } from '../enums';
-import cache from '../cache';
+import cache from '../cache/cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
 
@@ -24,7 +26,7 @@ export {
   singleRetrieveStages,
 };
 
-type StageStatus = {
+interface StageStatus {
   stageId: string;
   // startTime is the overall start of loading a given image id
   startTime?: number;
@@ -33,21 +35,21 @@ type StageStatus = {
   totalImageCount: number;
   imageLoadFailedCount: number;
   imageLoadPendingCount: number;
-};
+}
 
 /**
  * A nearby request is a request that can be fulfilled by copying another image
  */
-export type NearbyRequest = {
+export interface NearbyRequest {
   // The item id to fill
   itemId: string;
   linearId?: string;
   // The new status of the filled image (will only fill if the existing status
   // is less than this one)
   imageQualityStatus: ImageQualityStatus;
-};
+}
 
-export type ProgressiveRequest = {
+export interface ProgressiveRequest {
   imageId: string;
   stage: RetrieveStage;
   next?: ProgressiveRequest;
@@ -57,7 +59,7 @@ export type ProgressiveRequest = {
    * nearby data as a low-resolution alternative image.
    */
   nearbyRequests?: NearbyRequest[];
-};
+}
 
 /**
  * A progressive loader is given some number of images to load,
@@ -245,7 +247,7 @@ class ProgressiveRetrieveImagesInstance {
       streamingData,
     };
     const priority = stage.priority ?? -5;
-    const requestType = stage.requestType || RequestType.Interaction;
+    const requestType = stage.requestType || RequestType.INTERACTION;
     const additionalDetails = { imageId };
 
     imageLoadPoolManager.addRequest(
@@ -326,7 +328,9 @@ class ProgressiveRetrieveImagesInstance {
       const indices =
         stage.positions ||
         decimate(this.imageIds, stage.decimate || 1, stage.offset ?? 0);
-      indices.forEach((index) => addStageInstance(stage, index));
+      indices.forEach((index) => {
+        addStageInstance(stage, index);
+      });
     }
     return interleaved;
   }

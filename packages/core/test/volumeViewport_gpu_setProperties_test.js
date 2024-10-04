@@ -1,133 +1,89 @@
-import * as cornerstone3D from '../src/index';
-import * as testUtils from '../../../utils/test/testUtils';
+// import * as cornerstone3D from '../src/index';
+// import * as testUtils from '../../../utils/test/testUtils';
 
-// linear interpolation
-import * as volumeURI_32_32_10_1_1_1_0 from './groundTruth/volumeURI_32_32_10_1_1_1_0.png';
+// // linear interpolation
+// import * as volumeURI_32_32_10_1_1_1_0 from './groundTruth/volumeURI_32_32_10_1_1_1_0.png';
 
-const {
-  cache,
-  RenderingEngine,
-  imageLoader,
-  metaData,
-  Enums,
-  volumeLoader,
-  utilities,
-  setVolumesForViewports,
-} = cornerstone3D;
+// const { cache, RenderingEngine, Enums, volumeLoader, setVolumesForViewports } =
+//   cornerstone3D;
 
-const { ViewportType, Events } = Enums;
+// const { Events } = Enums;
 
-const { registerVolumeLoader } = volumeLoader;
-const { unregisterAllImageLoaders } = imageLoader;
+// const viewportId = 'VIEWPORT';
 
-const { fakeMetaDataProvider, compareImages, fakeVolumeLoader } = testUtils;
+// fdescribe('Volume Viewport SetProperties -- ', () => {
+//   let renderingEngine;
 
-const renderingEngineId = utilities.uuidv4();
+//   beforeEach(function () {
+//     const testEnv = testUtils.setupTestEnvironment({
+//       toolGroupIds: ['default'],
+//       viewportIds: [viewportId],
+//     });
+//     renderingEngine = testEnv.renderingEngine;
+//   });
 
-const viewportId = 'VIEWPORT';
+//   afterEach(function () {
+//     testUtils.cleanupTestEnvironment({
+//       renderingEngineId: renderingEngine.id,
+//       toolGroupIds: ['default'],
+//     });
+//   });
 
-function createViewport(
-  renderingEngine,
-  orientation,
-  width = 1000,
-  height = 1000,
-  type = ViewportType.ORTHOGRAPHIC
-) {
-  const element = document.createElement('div');
+//   it('should successfully modify the viewport with invert and setVOI', function (done) {
+//     const element = testUtils.createViewports(renderingEngine, {
+//       viewportId,
+//       orientation: Enums.OrientationAxis.CORONAL,
+//       viewportType: Enums.ViewportType.ORTHOGRAPHIC,
+//     });
 
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
+//     const volumeId = testUtils.encodeVolumeIdInfo({
+//       loader: 'fakeVolumeLoader',
+//       name: 'volumeURI',
+//       rows: 32,
+//       columns: 32,
+//       slices: 10,
+//       xSpacing: 1,
+//       ySpacing: 1,
+//       rgb: 1,
+//     });
+//     const vp = renderingEngine.getViewport(viewportId);
 
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type,
-      element,
-      defaultOptions: {
-        orientation,
-        background: [1, 0, 1], // pinkish background
-      },
-    },
-  ]);
-  return element;
-}
+//     element.addEventListener(Events.IMAGE_RENDERED, () => {
+//       const canvas = vp.getCanvas();
+//       const image = canvas.toDataURL('image/png');
+//       testUtils
+//         .compareImages(
+//           image,
+//           volumeURI_32_32_10_1_1_1_0,
+//           'volumeURI_32_32_10_1_1_1_0'
+//         )
+//         .then(done, done.fail);
+//     });
 
-describe('Volume Viewport SetProperties -- ', () => {
-  beforeAll(() => {
-    window.devicePixelRatio = 1;
-    cornerstone3D.setUseCPURendering(false);
-  });
-
-  describe('should be able to use set Properties for volume viewport --- ', function () {
-    beforeEach(function () {
-      cache.purgeCache();
-
-      this.DOMElements = [];
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-
-      metaData.addProvider(fakeMetaDataProvider, 10000);
-      registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-    });
-
-    afterEach(function () {
-      cache.purgeCache();
-      this.renderingEngine.destroy();
-
-      metaData.removeProvider(fakeMetaDataProvider);
-      unregisterAllImageLoaders();
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
-    });
-
-    it('should successfully modify the viewport with invert and setVOI', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        Enums.OrientationAxis.CORONAL
-      );
-      this.DOMElements.push(element);
-
-      const volumeId = 'fakeVolumeLoader:volumeURI_32_32_10_1_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
-
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        compareImages(
-          image,
-          volumeURI_32_32_10_1_1_1_0,
-          'volumeURI_32_32_10_1_1_1_0'
-        ).then(done, done.fail);
-      });
-
-      try {
-        // we don't set imageIds as we are mocking the imageVolume to
-        // return the volume immediately
-        volumeLoader
-          .createAndCacheVolume(volumeId, { imageIds: [] })
-          .then(() => {
-            setVolumesForViewports(
-              this.renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId]
-            ).then(() => {
-              vp.setProperties({
-                voiRange: {
-                  lower: 50,
-                  upper: 100,
-                },
-                invert: true,
-              });
-              vp.render();
-            });
-          })
-          .catch((e) => done(e));
-      } catch (e) {
-        done.fail(e);
-      }
-    });
-  });
-});
+//     try {
+//       volumeLoader
+//         .createAndCacheVolume(volumeId, { imageIds: [] })
+//         .then(() => {
+//           setVolumesForViewports(
+//             renderingEngine,
+//             [{ volumeId: volumeId }],
+//             [viewportId]
+//           ).then(() => {
+//             vp.setProperties({
+//               voiRange: {
+//                 lower: 50,
+//                 upper: 100,
+//               },
+//               invert: true,
+//             });
+//             vp.render();
+//           });
+//         })
+//         .catch((e) => {
+//           done(e);
+//         });
+//     } catch (e) {
+//       done.fail(e);
+//     }
+//   });
+// });

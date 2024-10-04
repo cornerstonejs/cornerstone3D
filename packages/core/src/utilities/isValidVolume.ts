@@ -1,4 +1,4 @@
-import { metaData } from '..';
+import * as metaData from '../metaData';
 import isEqual from './isEqual';
 
 /**

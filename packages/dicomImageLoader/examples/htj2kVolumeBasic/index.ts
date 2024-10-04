@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setVolumesForViewports,
@@ -30,7 +30,7 @@ const {
   WindowLevelTool,
   ZoomTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -78,8 +78,11 @@ const getOrCreateTiming = (id) => {
   timingIds.push(id);
   timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
   const p = document.getElementById(id);
+  // @ts-ignore
   p.style.lineHeight = 1;
+  // @ts-ignore
   p.style.marginTop = 0;
+  // @ts-ignore
   p.style.marginBottom = 0;
   return p;
 };
@@ -189,7 +192,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -200,7 +203,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName, { volumeId });
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
@@ -227,7 +230,13 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   const imageIdsCT = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
@@ -280,9 +289,9 @@ async function run() {
 
   const progressiveRendering = true;
 
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 6);
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.INTERACTION, 6);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.PREFETCH, 12);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.THUMBNAIL, 16);
 
   async function loadVolume(volumeId, imageIds, config, text) {
     cache.purgeCache();

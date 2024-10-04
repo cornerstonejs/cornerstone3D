@@ -1,3 +1,5 @@
+import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+
 /**
  * A utility that can be used to invert (in place) an RgbTransferFunction.
  *
@@ -18,7 +20,7 @@
  * @param rgbTransferFunction
  */
 export default function invertRgbTransferFunction(
-  rgbTransferFunction: any
+  rgbTransferFunction: vtkColorTransferFunction
 ): void {
   // cut in case there is no function at all
   if (!rgbTransferFunction) {

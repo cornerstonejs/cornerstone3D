@@ -1,3 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
+
 /**
  * Cornerstone Color LUT used for Segmentations
  */
@@ -257,6 +259,6 @@ const CORNERSTONE_COLOR_LUT = [
   [210, 95, 186, 255],
   [153, 217, 88, 255],
   [81, 111, 224, 255],
-];
+] as Types.Color[];
 
 export default CORNERSTONE_COLOR_LUT;

@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   mouseEventListeners,
   wheelEventListener,
@@ -16,8 +16,7 @@ import {
   cameraResetEventDispatcher,
 } from '../eventDispatchers';
 import { state } from './state';
-
-import { annotationRenderingEngine } from '../utilities/triggerAnnotationRender';
+import { annotationRenderingEngine } from '../stateManagement/annotation/AnnotationRenderingEngine';
 
 /**
  * When an element is "enabled", add event listeners and dispatchers to it

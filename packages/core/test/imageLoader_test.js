@@ -1,13 +1,18 @@
+import {
+  cleanupTestEnvironment,
+  setupTestEnvironment,
+} from '../../../utils/test/testUtils';
 import * as cornerstone3D from '../src/index';
 
 const { imageLoader, cache } = cornerstone3D;
 
 describe('imageLoader -- ', function () {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
+  afterEach(() => {
+    cleanupTestEnvironment();
   });
 
   beforeEach(function () {
+    setupTestEnvironment();
     const [rows1, columns1] = [100, 100];
     const scalarData1 = new Uint8Array(rows1[0] * columns1[1]);
     this.image1 = {
@@ -55,18 +60,9 @@ describe('imageLoader -- ', function () {
 
     this.exampleScheme1ImageId = `${this.exampleScheme1}://image1`;
     this.exampleScheme2ImageId = `${this.exampleScheme2}://image2`;
-
-    // this.options = {}
-  });
-
-  afterEach(function () {
-    cache.purgeCache();
   });
 
   describe('imageLoader registration module', function () {
-    afterEach(function () {
-      cache.purgeCache();
-    });
     it('allows registration of new image loader', async function () {
       imageLoader.registerImageLoader(
         this.exampleScheme1,
@@ -112,10 +108,6 @@ describe('imageLoader -- ', function () {
   });
 
   describe('imageLoader loading module', function () {
-    afterEach(function () {
-      cache.purgeCache();
-    });
-
     it('allows loading with storage in image cache (loadImage)', async function () {
       imageLoader.registerImageLoader(
         this.exampleScheme1,
@@ -158,10 +150,6 @@ describe('imageLoader -- ', function () {
   });
 
   describe('imageLoader cancelling images', function () {
-    afterEach(function () {
-      cache.purgeCache();
-    });
-
     it('allows loading with storage in image cache (imageLoader.loadAndCacheImage)', async function () {
       imageLoader.registerImageLoader(
         this.exampleScheme1,
@@ -174,10 +162,5 @@ describe('imageLoader -- ', function () {
 
       await expectAsync(imageLoadObject).toBeResolvedTo(this.image1);
     });
-  });
-
-  afterEach(() => {
-    imageLoader.unregisterAllImageLoaders();
-    cache.purgeCache();
   });
 });

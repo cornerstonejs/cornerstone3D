@@ -5,7 +5,7 @@
  * @param offset - where to start the interleave from
  */
 export default function decimate(
-  list: Array<unknown>,
+  list: unknown[],
   interleave: number,
   offset = 0
 ): number[] {

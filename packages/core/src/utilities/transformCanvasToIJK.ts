@@ -1,4 +1,4 @@
-import { IStackViewport, IVolumeViewport, Point2 } from '../types';
+import type { IViewport, Point2 } from '../types';
 import transformWorldToIndex from './transformWorldToIndex';
 
 /**
@@ -7,10 +7,7 @@ import transformWorldToIndex from './transformWorldToIndex';
  * @param ijkPoint - 2D point in canvas space
  * @returns 3D point in index (volume) space
  */
-export function transformCanvasToIJK(
-  viewport: IVolumeViewport | IStackViewport,
-  canvasPoint: Point2
-) {
+export function transformCanvasToIJK(viewport: IViewport, canvasPoint: Point2) {
   const { imageData: vtkImageData } = viewport.getImageData();
   const worldPoint = viewport.canvasToWorld(canvasPoint);
 

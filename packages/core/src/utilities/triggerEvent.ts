@@ -34,5 +34,5 @@ export default function triggerEvent(
     cancelable: true,
   });
 
-  return el.dispatchEvent(event);
+  return el?.dispatchEvent(event);
 }

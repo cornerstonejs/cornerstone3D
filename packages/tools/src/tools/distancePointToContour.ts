@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { ContourAnnotationData } from '../types';
+import type { ContourAnnotationData } from '../types';
 import { point } from '../utilities/math';
 
 /**

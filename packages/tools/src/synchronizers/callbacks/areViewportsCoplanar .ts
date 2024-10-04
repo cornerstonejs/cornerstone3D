@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 export default function areViewportsCoplanar(
   viewport1: Types.IStackViewport | Types.IVolumeViewport,

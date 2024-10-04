@@ -187,7 +187,8 @@ function debounce(func, wait, options) {
     const isInvoking = shouldInvoke(time);
 
     lastArgs = args;
-    lastThis = this; // eslint-disable-line consistent-this
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    lastThis = this;
     lastCallTime = time;
 
     if (isInvoking) {

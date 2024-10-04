@@ -1,8 +1,9 @@
+import type { SVGDrawingHelper } from '../types';
 import getSvgDrawingHelper from './getSvgDrawingHelper';
 
 function draw(
   element: HTMLDivElement,
-  fn: (svgDrawingElement: any) => any
+  fn: (svgDrawingElement: SVGDrawingHelper) => void
 ): void {
   const svgDrawingHelper = getSvgDrawingHelper(element);
 

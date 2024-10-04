@@ -1,4 +1,4 @@
-import { DataSet } from 'dicom-parser';
+import type { DataSet } from 'dicom-parser';
 
 export interface DICOMLoaderDataSetWithFetchMore extends DataSet {
   fetchMore?: (fetchOptions: {

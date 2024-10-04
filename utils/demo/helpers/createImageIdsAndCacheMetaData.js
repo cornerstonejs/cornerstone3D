@@ -87,6 +87,10 @@ export default async function createImageIdsAndCacheMetaData({
     let instanceMetaData =
       cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
 
+    if (!instanceMetaData) {
+      return;
+    }
+
     // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
     instanceMetaData = removeInvalidTags(instanceMetaData);
 

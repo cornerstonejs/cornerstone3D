@@ -40,12 +40,6 @@ module.exports = (env, argv) => {
           commonjs2: '@cornerstonejs/core',
           amd: '@cornerstonejs/core',
         },
-        '@cornerstonejs/streaming-image-volume-loader': {
-          root: 'cornerstoneStreamingImageVolumeLoader',
-          commonjs: '@cornerstonejs/streaming-image-volume-loader',
-          commonjs2: '@cornerstonejs/streaming-image-volume-loader',
-          amd: '@cornerstonejs/streaming-image-volume-loader',
-        },
         'gl-matrix': {
           root: 'window',
           commonjs: 'gl-matrix',

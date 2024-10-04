@@ -1,8 +1,10 @@
-import { BlendModes, OrientationAxis, Events } from '../enums';
 import { RENDERING_DEFAULTS } from '../constants';
-import cache from '../cache';
+import type { BlendModes } from '../enums';
+import { OrientationAxis, Events } from '../enums';
+import cache from '../cache/cache';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import { triggerEvent, isImageActor } from '../utilities';
+import triggerEvent from '../utilities/triggerEvent';
+import { isImageActor } from '../utilities/actorCheck';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
@@ -33,30 +35,39 @@ class VolumeViewport3D extends BaseVolumeViewport {
     }
   }
 
-  public resetCamera(
+  public resetCamera({
     resetPan = true,
     resetZoom = true,
-    resetToCenter = true
-  ): boolean {
-    super.resetCamera(resetPan, resetZoom, resetToCenter);
-    this.resetVolumeViewportClippingRange();
-    return;
+    resetToCenter = true,
+  } = {}): boolean {
+    super.resetCamera({ resetPan, resetZoom, resetToCenter });
+    const activeCamera = this.getVtkActiveCamera();
+
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+    return true;
   }
 
   getRotation = (): number => 0;
 
-  getCurrentImageIdIndex = (): number | undefined => {
-    return undefined;
+  getCurrentImageIdIndex = (): number => {
+    return 0;
   };
 
   getCurrentImageId = (): string => {
     return null;
   };
 
-  setSlabThickness(
-    slabThickness: number,
-    filterActorUIDs?: Array<string>
-  ): void {
+  setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void {
     return null;
   }
 
@@ -89,15 +100,16 @@ class VolumeViewport3D extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    const imageVolume = cache.getVolume(volumeActor.uid);
+    volumeId ||= this.getVolumeId();
+    const imageVolume = cache.getVolume(volumeId);
 
     if (!imageVolume) {
       throw new Error(
-        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
 
-    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
     if (isImageActor(volumeActor)) {
       const transferFunction = (volumeActor.actor as ImageActor)
@@ -116,6 +128,33 @@ class VolumeViewport3D extends BaseVolumeViewport {
       Events.VOI_MODIFIED,
       super.getVOIModifiedEventDetail(volumeId)
     );
+  }
+
+  public resetCameraForResize = (): boolean => {
+    return this.resetCamera({
+      resetPan: true,
+      resetZoom: true,
+      resetToCenter: true,
+    });
+  };
+
+  public getSliceIndex(): number {
+    return null;
+  }
+
+  protected setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
   }
 
   resetSlabThickness(): void {

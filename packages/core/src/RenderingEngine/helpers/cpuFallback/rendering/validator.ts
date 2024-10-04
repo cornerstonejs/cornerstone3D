@@ -1,12 +1,12 @@
 /**
- * Check if the supplied parameter is undefined and throws and error
- * @param {any} checkParam the parameter to validate for undefined
- * @param {any} errorMsg the error message to be thrown
+ * Check if the supplied parameter is undefined and throws an error
+ * @param {unknown} checkParam the parameter to validate for undefined
+ * @param {string} errorMsg the error message to be thrown
  * @returns {void}
  * @memberof internal
  */
 export function validateParameterUndefined(
-  checkParam: any | undefined,
+  checkParam: unknown,
   errorMsg: string
 ): void {
   if (checkParam === undefined) {
@@ -15,14 +15,14 @@ export function validateParameterUndefined(
 }
 
 /**
- * Check if the supplied parameter is undefined or null and throws and error
- * @param {any} checkParam the parameter to validate for undefined
- * @param {any} errorMsg the error message to be thrown
+ * Check if the supplied parameter is undefined or null and throws an error
+ * @param {unknown} checkParam the parameter to validate for undefined or null
+ * @param {string} errorMsg the error message to be thrown
  * @returns {void}
  * @memberof internal
  */
 export function validateParameterUndefinedOrNull(
-  checkParam: any | null | undefined,
+  checkParam: unknown,
   errorMsg: string
 ): void {
   if (checkParam === undefined || checkParam === null) {

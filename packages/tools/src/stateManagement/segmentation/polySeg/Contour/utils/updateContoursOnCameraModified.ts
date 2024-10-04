@@ -5,6 +5,7 @@ import { createAndAddContourSegmentationsFromClippedSurfaces } from './createAnd
 
 const currentViewportNormal = new Map();
 
+// Todo: this code is not used anywhere yet
 export function updateContoursOnCameraModified(
   surfacesInfo,
   viewport,

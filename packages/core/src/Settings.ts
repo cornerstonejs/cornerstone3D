@@ -87,7 +87,7 @@ export default class Settings {
       : Settings.getRuntimeSettings();
   }
 
-  static getDefaultSettings(subfield = null): Settings | any {
+  static getDefaultSettings(subfield = null): Settings | unknown {
     let defaultSettings = Settings[DEFAULT_SETTINGS];
     if (!(defaultSettings instanceof Settings)) {
       defaultSettings = new Settings();
@@ -113,6 +113,7 @@ export default class Settings {
   static getRuntimeSettings(): Settings {
     let runtimeSettings = Settings[RUNTIME_SETTINGS];
     if (!(runtimeSettings instanceof Settings)) {
+      // @ts-expect-error
       runtimeSettings = new Settings(Settings.getDefaultSettings());
       Settings[RUNTIME_SETTINGS] = runtimeSettings;
     }
@@ -297,4 +298,5 @@ function deepSet(context, key, value) {
 /**
  * Initial Settings for the repository
  */
+// @ts-expect-error
 Settings.getDefaultSettings().set('useCursors', true);

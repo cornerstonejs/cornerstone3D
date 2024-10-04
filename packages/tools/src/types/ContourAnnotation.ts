@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
+import type { Annotation } from './AnnotationTypes';
 
 /**
  * Polyline winding direction
