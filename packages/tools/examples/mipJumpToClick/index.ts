@@ -23,6 +23,7 @@ const { ViewportType, BlendModes } = Enums;
 const {
   ToolGroupManager,
   StackScrollTool,
+  VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -86,14 +87,10 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-
+  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
 
-  mipToolGroup.addTool(StackScrollTool.toolName, {
-    rotate: {
-      enabled: true,
-    },
-  });
+  mipToolGroup.addTool(VolumeRotateMouseWheelTool.toolName, {});
   mipToolGroup.addTool(MIPJumpToClickTool.toolName, {
     targetViewportIds: [viewportIds[0], viewportIds[1]],
   });

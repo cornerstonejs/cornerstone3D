@@ -97,10 +97,10 @@ class RequestPoolManager {
     this.id = id ? id : uuidv4();
 
     this.requestPool = {
-      interaction: { 0: [] },
-      thumbnail: { 0: [] },
-      prefetch: { 0: [] },
-      compute: { 0: [] },
+      INTERACTION: { 0: [] },
+      THUMBNAIL: { 0: [] },
+      PREFETCH: { 0: [] },
+      COMPUTE: { 0: [] },
     };
 
     this.grabDelay = 5;
