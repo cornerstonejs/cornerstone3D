@@ -91,6 +91,7 @@ import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
+import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -3026,7 +3027,38 @@ class StackViewport extends Viewport {
 
     const referencedImageURI = imageIdToURI(referencedImageId);
 
-    return referencedImageURI === imageURI;
+    const endsWith = referencedImageId?.endsWith(imageURI);
+    if (endsWith) {
+      return endsWith;
+    }
+
+    // if camera focal point is provided, we can use that as a point
+    // Todo: handle the case where the nearby project is not desired
+    const { cameraFocalPoint } = viewRef;
+
+    if (options.asNearbyProjection && cameraFocalPoint) {
+      const { spacing, direction, origin } = this.getImageData();
+
+      const viewPlaneNormal = direction.slice(6, 9) as Point3;
+
+      const sliceThickness = getSpacingInNormalDirection(
+        { direction, spacing },
+        viewPlaneNormal
+      );
+
+      // Project the cameraFocalPoint onto the image plane
+      const diff = vec3.subtract(vec3.create(), cameraFocalPoint, origin);
+      const distanceToPlane = vec3.dot(diff, viewPlaneNormal);
+
+      // Define a threshold (e.g., half the slice thickness)
+      const threshold = sliceThickness / 2;
+
+      if (Math.abs(distanceToPlane) <= threshold) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
