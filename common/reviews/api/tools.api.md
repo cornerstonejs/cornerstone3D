@@ -1727,7 +1727,7 @@ const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
 function createSynchronizer(synchronizerId: string, eventName: string, eventHandler: ISynchronizerEventHandler, options?: SynchronizerOptions): Synchronizer;
 
 // @public (undocumented)
-function createToolGroup(toolGroupId: string): ToolGroup;
+function createToolGroup(toolGroupId: string): ToolGroup | undefined;
 
 // @public (undocumented)
 function createVOISynchronizer(synchronizerName: string, options: VOISynchronizerOptions): Synchronizer;
@@ -5234,10 +5234,6 @@ export class StackScrollTool extends BaseTool {
     // (undocumented)
     mouseWheelCallback(evt: EventTypes_2.MouseWheelEventType): void;
     // (undocumented)
-    _rotate(evt: any): void;
-    // (undocumented)
-    _rotateDrag(evt: EventTypes_2.InteractionEventType): void;
-    // (undocumented)
     _scroll(evt: EventTypes_2.MouseWheelEventType): void;
     // (undocumented)
     _scrollDrag(evt: EventTypes_2.InteractionEventType): void;
@@ -6266,6 +6262,17 @@ declare namespace voi {
         colorbar,
         windowLevel_2 as windowLevel
     }
+}
+
+// @public (undocumented)
+export class VolumeRotateMouseWheelTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _configuration: any;
+    // (undocumented)
+    mouseWheelCallback(evt: MouseWheelEventType): void;
+    // (undocumented)
+    static toolName: any;
 }
 
 // @public (undocumented)
