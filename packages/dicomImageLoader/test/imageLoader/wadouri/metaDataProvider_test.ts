@@ -1,10 +1,8 @@
 /* eslint import/extensions: 0 */
 import { expect } from 'chai';
-import external from '../../../src/externalModules.js';
+import { metaData } from '@cornerstonejs/core';
 import { loadImage } from '../../../src/imageLoader/wadouri/loadImage.js';
-import configure from '../../../src/imageLoader/configure.js';
-
-external.cornerstone = window.cornerstone;
+import init from '../../../src/imageLoader/init.js';
 
 describe('#wadouri > metadataProvider', function () {
   // Initialize the web worker manager
@@ -18,7 +16,7 @@ describe('#wadouri > metadataProvider', function () {
     },
   };
 
-  configure({
+  init({
     strict: false,
     decodeConfig: {},
   });
@@ -29,10 +27,7 @@ describe('#wadouri > metadataProvider', function () {
   it('should return columnPixelSpacing undefined if pixelSpacing is undefined', function (done) {
     this.timeout(5000);
     loadImage(imageId).promise.then(() => {
-      const imagePlaneModule = external.cornerstone.metaData.get(
-        'imagePlaneModule',
-        imageId
-      );
+      const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
       const { columnPixelSpacing } = imagePlaneModule;
 
       try {
@@ -47,10 +42,7 @@ describe('#wadouri > metadataProvider', function () {
   it('should return rowPixelSpacing undefined if pixelSpacing is undefined', function (done) {
     this.timeout(5000);
     loadImage(imageId).promise.then(() => {
-      const imagePlaneModule = external.cornerstone.metaData.get(
-        'imagePlaneModule',
-        imageId
-      );
+      const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
       const { rowPixelSpacing } = imagePlaneModule;
 
       try {

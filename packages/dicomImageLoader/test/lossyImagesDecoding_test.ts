@@ -5,7 +5,7 @@ import xhrRequest from '../src/imageLoader/internal/xhrRequest.js';
 import dataSetCacheManager from '../src/imageLoader/wadouri/dataSetCacheManager.js';
 import parseImageId from '../src/imageLoader/wadouri/parseImageId.js';
 import createImage from '../src/imageLoader/createImage.js';
-import configure from '../src/imageLoader/configure.js';
+import init from '../src/imageLoader/init.js';
 
 const transferSyntaxes = {
   '1.2.840.10008.1.2.4.81': {
@@ -47,7 +47,7 @@ describe('Test lossy TransferSyntaxes decoding', function () {
     const imageId = `${url}${base}`;
     const parsedImageId = parseImageId(imageId);
 
-    configure({
+    init({
       // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
       beforeSend(/* xhr, imageId */) {},
       // callback allowing modification of newly created image objects

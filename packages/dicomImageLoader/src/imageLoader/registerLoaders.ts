@@ -7,9 +7,9 @@ import wadorsRegister from './wadors/register';
  *
  * @param cornerstone The Cornerstone Core library to register the image loaders with
  */
-function registerLoaders(cornerstone): void {
-  wadorsRegister(cornerstone);
-  wadouriRegister(cornerstone);
+function registerLoaders(): void {
+  wadorsRegister();
+  wadouriRegister();
 }
 
 export default registerLoaders;

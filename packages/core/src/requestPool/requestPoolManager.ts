@@ -72,17 +72,17 @@ class RequestPoolManager {
   private awake: boolean;
   private requestPool: RequestPool;
   private numRequests = {
-    interaction: 0,
-    thumbnail: 0,
-    prefetch: 0,
-    compute: 0,
+    INTERACTION: 0,
+    THUMBNAIL: 0,
+    PREFETCH: 0,
+    COMPUTE: 0,
   };
   /* maximum number of requests of each type. */
   public maxNumRequests: {
-    interaction: number;
-    thumbnail: number;
-    prefetch: number;
-    compute: number;
+    INTERACTION: number;
+    THUMBNAIL: number;
+    PREFETCH: number;
+    COMPUTE: number;
   };
   /* A public property that is used to set the delay between requests. */
   public grabDelay: number;
@@ -107,23 +107,23 @@ class RequestPoolManager {
     this.awake = false;
 
     this.numRequests = {
-      interaction: 0,
-      thumbnail: 0,
-      prefetch: 0,
-      compute: 0,
+      INTERACTION: 0,
+      THUMBNAIL: 0,
+      PREFETCH: 0,
+      COMPUTE: 0,
     };
 
     this.maxNumRequests = {
-      interaction: 6,
-      thumbnail: 6,
-      prefetch: 5,
+      INTERACTION: 6,
+      THUMBNAIL: 6,
+      PREFETCH: 5,
       // I believe there is a bug right now, where if there are two workers
       // and one wants to run a compute job 6 times and the limit is just 5, then
       // the other worker will never get a chance to run its compute job.
       // we should probably have a separate limit for compute jobs per worker
       // context as there is another layer of parallelism there. For this reason
       // I'm setting the limit to 1000 for now.
-      compute: 1000,
+      COMPUTE: 1000,
     };
   }
 

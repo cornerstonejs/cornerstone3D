@@ -8,7 +8,7 @@ import {
 
 import { default as wadouri } from './wadouri/index';
 import { default as wadors } from './wadors/index';
-import { default as configure } from './configure';
+import { default as init } from './init';
 import { default as convertColorSpace } from './convertColorSpace';
 import { default as createImage } from './createImage';
 import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor';
@@ -18,7 +18,6 @@ import { default as isColorImage } from '../shared/isColorImage';
 import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor';
 import { default as getPixelData } from './wadors/getPixelData';
 import { internal } from './internal/index';
-import { default as external } from '../externalModules';
 
 const cornerstoneDICOMImageLoader = {
   convertRGBColorByPixel,
@@ -28,7 +27,7 @@ const cornerstoneDICOMImageLoader = {
   convertPALETTECOLOR,
   wadouri,
   wadors,
-  configure,
+  init,
   convertColorSpace,
   createImage,
   decodeJPEGBaseline8BitColor,
@@ -38,7 +37,6 @@ const cornerstoneDICOMImageLoader = {
   isColorImage,
   isJPEGBaseline8BitColor,
   internal,
-  external,
 };
 
 export {
@@ -49,7 +47,7 @@ export {
   convertPALETTECOLOR,
   wadouri,
   wadors,
-  configure,
+  init,
   convertColorSpace,
   createImage,
   decodeJPEGBaseline8BitColor,
@@ -59,7 +57,6 @@ export {
   isColorImage,
   isJPEGBaseline8BitColor,
   internal,
-  external,
 };
 
 export default cornerstoneDICOMImageLoader;

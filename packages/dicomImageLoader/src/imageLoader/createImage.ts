@@ -1,9 +1,14 @@
 import type { ByteArray } from 'dicom-parser';
-import external from '../externalModules';
 import getMinMax from '../shared/getMinMax';
 import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
 import type { DICOMLoaderImageOptions, DICOMLoaderIImage } from '../types';
 import type { Types } from '@cornerstonejs/core';
+import {
+  canRenderFloatTextures,
+  Enums,
+  metaData,
+  utilities,
+} from '@cornerstonejs/core';
 import convertColorSpace from './convertColorSpace';
 import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
@@ -96,20 +101,16 @@ function createImage(
     return Promise.reject(new Error('The pixel data is missing'));
   }
 
-  const { cornerstone } = external;
-  const { MetadataModules } = cornerstone.Enums;
+  const { MetadataModules } = Enums;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
   imageFrame.decodeLevel = options.decodeLevel;
 
-  options.allowFloatRendering = cornerstone.canRenderFloatTextures();
+  options.allowFloatRendering = canRenderFloatTextures();
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
-    const scalingParameters = getScalingParameters(
-      cornerstone.metaData,
-      imageId
-    );
+    const scalingParameters = getScalingParameters(metaData, imageId);
 
     if (scalingParameters) {
       options.preScale = {
@@ -208,15 +209,15 @@ function createImage(
         }
 
         const imagePlaneModule: Types.ImagePlaneModuleMetadata =
-          cornerstone.metaData.get(MetadataModules.IMAGE_PLANE, imageId) || {};
+          metaData.get(MetadataModules.IMAGE_PLANE, imageId) || {};
         const voiLutModule =
-          cornerstone.metaData.get(MetadataModules.VOI_LUT, imageId) || {};
+          metaData.get(MetadataModules.VOI_LUT, imageId) || {};
         const modalityLutModule =
-          cornerstone.metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
+          metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
         const sopCommonModule: Types.SopCommonModuleMetadata =
-          cornerstone.metaData.get(MetadataModules.SOP_COMMON, imageId) || {};
+          metaData.get(MetadataModules.SOP_COMMON, imageId) || {};
         const calibrationModule =
-          cornerstone.metaData.get(MetadataModules.CALIBRATION, imageId) || {};
+          metaData.get(MetadataModules.CALIBRATION, imageId) || {};
         const { rows, columns } = imageFrame;
 
         if (isColorImage) {
@@ -275,13 +276,12 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
-        const voxelManager =
-          external.cornerstone.utilities.VoxelManager.createImageVoxelManager({
-            scalarData: imageFrame.pixelData,
-            width: imageFrame.columns,
-            height: imageFrame.rows,
-            numberOfComponents: imageFrame.samplesPerPixel,
-          });
+        const voxelManager = utilities.VoxelManager.createImageVoxelManager({
+          scalarData: imageFrame.pixelData,
+          width: imageFrame.columns,
+          height: imageFrame.rows,
+          numberOfComponents: imageFrame.samplesPerPixel,
+        });
 
         const image: DICOMLoaderIImage = {
           imageId,

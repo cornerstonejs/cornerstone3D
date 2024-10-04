@@ -1,5 +1,4 @@
 import initProviders from './initProviders';
-import initCornerstoneDICOMImageLoader from './initCornerstoneDICOMImageLoader';
 import initVolumeLoader from './initVolumeLoader';
 import {
   init as csRenderInit,
@@ -13,10 +12,12 @@ import {
   fakeImageLoader,
   fakeMetaDataProvider,
 } from '../../test/testUtilsImageLoader';
+import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 export default async function initDemo(config) {
   initProviders();
-  initCornerstoneDICOMImageLoader();
+  cornerstoneDICOMImageLoader.init();
+
   initVolumeLoader();
   await csRenderInit({
     peerImport,
