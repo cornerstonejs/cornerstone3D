@@ -157,6 +157,30 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
+# [1.86.0](https://github.com/dcmjs-org/dcmjs/compare/v1.85.1...v1.86.0) (2024-10-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.85.1](https://github.com/dcmjs-org/dcmjs/compare/v1.85.0...v1.85.1) (2024-10-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [1.85.0](https://github.com/dcmjs-org/dcmjs/compare/v1.84.4...v1.85.0) (2024-09-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.84.4](https://github.com/dcmjs-org/dcmjs/compare/v1.84.3...v1.84.4) (2024-09-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.84.3](https://github.com/dcmjs-org/dcmjs/compare/v1.84.2...v1.84.3) (2024-09-05)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [1.84.2](https://github.com/dcmjs-org/dcmjs/compare/v1.84.1...v1.84.2) (2024-08-30)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [1.84.1](https://github.com/dcmjs-org/dcmjs/compare/v1.84.0...v1.84.1) (2024-08-19)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

@@ -67,6 +67,10 @@ export interface ReferenceCompatibleOptions {
    * not need to be provided.
    */
   imageURI?: string;
+  /**
+   * As nearby projection
+   */
+  asNearbyProjection?: boolean;
 
   /**
    * To see if the reference could be overlayed (labelmap, fusion) on the viewport, set this to true.

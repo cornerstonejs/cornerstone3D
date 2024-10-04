@@ -207,6 +207,42 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 **Note:** Version bump only for package root
 
+# [1.86.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.85.1...v1.86.0) (2024-10-01)
+
+### Features
+
+- **viewReference:** add as nearby projection ([#1487](https://github.com/cornerstonejs/cornerstone3D/issues/1487)) ([358c296](https://github.com/cornerstonejs/cornerstone3D/commit/358c296492ed30aa79813a16b5179a9d67fb5fd4))
+
+## [1.85.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.85.0...v1.85.1) (2024-10-01)
+
+### Bug Fixes
+
+- **workflow:** use a fixed ubuntu version for the runner ([#1486](https://github.com/cornerstonejs/cornerstone3D/issues/1486)) ([b3d85a2](https://github.com/cornerstonejs/cornerstone3D/commit/b3d85a25b190cab883aca2323a921f1631013e47))
+
+# [1.85.0](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.4...v1.85.0) (2024-09-25)
+
+### Features
+
+- stack scroll out of bounds event ([#1465](https://github.com/cornerstonejs/cornerstone3D/issues/1465)) ([fbd0ca8](https://github.com/cornerstonejs/cornerstone3D/commit/fbd0ca8ae9e1df5b87200143d664553e05ea1851))
+
+## [1.84.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.3...v1.84.4) (2024-09-09)
+
+### Bug Fixes
+
+- Add HTTP headers from configuration for streaming image loading ([#1458](https://github.com/cornerstonejs/cornerstone3D/issues/1458)) ([b9c873f](https://github.com/cornerstonejs/cornerstone3D/commit/b9c873f680d29113635a39cdaf616dc95e4b88dd))
+
+## [1.84.3](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.2...v1.84.3) (2024-09-05)
+
+### Bug Fixes
+
+- Color conversion is required for RGB and planar configuration 1 ([#1457](https://github.com/cornerstonejs/cornerstone3D/issues/1457)) ([3bafe59](https://github.com/cornerstonejs/cornerstone3D/commit/3bafe5953c85e222545035d4542d6cbe1b837b66))
+
+## [1.84.2](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.1...v1.84.2) (2024-08-30)
+
+### Bug Fixes
+
+- Smooth annotations for off viewport destroyed coords ([#1447](https://github.com/cornerstonejs/cornerstone3D/issues/1447)) ([3e134ef](https://github.com/cornerstonejs/cornerstone3D/commit/3e134efec0e594c1086ad35fac32f9c26a88ba1a))
+
 ## [1.84.1](https://github.com/cornerstonejs/cornerstone3D/compare/v1.84.0...v1.84.1) (2024-08-19)
 
 ### Bug Fixes

@@ -41,6 +41,24 @@ export default function scroll(
   if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta, scrollSlabs);
   } else {
+    const imageIdIndex = viewport.getCurrentImageIdIndex();
+
+    if (
+      imageIdIndex + delta >
+        (viewport as Types.IStackViewport).getImageIds().length - 1 ||
+      imageIdIndex + delta < 0
+    ) {
+      const eventData: Types.EventTypes.StackScrollOutOfBoundsEventDetail = {
+        imageIdIndex,
+        direction: delta,
+      };
+      csUtils.triggerEvent(
+        eventTarget,
+        EVENTS.STACK_SCROLL_OUT_OF_BOUNDS,
+        eventData
+      );
+    }
+
     (viewport as Types.IStackViewport).scroll(
       delta,
       options.debounceLoading,

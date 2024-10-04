@@ -1126,6 +1126,8 @@ declare namespace EventTypes {
         StackViewportNewStackEventDetail,
         StackViewportScrollEvent,
         StackViewportScrollEventDetail,
+        StackScrollOutOfBoundsEvent,
+        StackScrollOutOfBoundsEventDetail,
         CameraResetEvent,
         CameraResetEventDetail
     }

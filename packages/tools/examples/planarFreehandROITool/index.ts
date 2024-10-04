@@ -4,6 +4,7 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
+  getEnabledElement,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -40,6 +41,7 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 // ======== Set up page ======== //
@@ -153,6 +155,25 @@ function addToggleInterpolationButton(toolGroup) {
   });
 }
 
+function addSmoothButton(toolGroup) {
+  addButtonToToolbar({
+    title: 'Smooth',
+    onClick: () => {
+      const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      annotations.forEach((annotation) => {
+        cornerstoneTools.utilities.planarFreehandROITool.smoothAnnotation(
+          <
+            cornerstoneTools.Types.ToolSpecificAnnotationTypes.PlanarFreehandROIAnnotation
+          >annotation,
+          { loop: 5 }
+        );
+      });
+      renderingEngine.renderViewports(viewportIds);
+    },
+  });
+}
+
 let shouldCalculateStats = false;
 function addToggleCalculateStatsButton(toolGroup) {
   addButtonToToolbar({
@@ -223,6 +244,7 @@ async function run() {
 
   // set up toggle interpolation tool button.
   addToggleInterpolationButton(toolGroup);
+  addSmoothButton(toolGroup);
 
   // set up toggle calculate stats tool button.
   addToggleCalculateStatsButton(toolGroup);
@@ -247,9 +269,6 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
   // Create a stack and a volume viewport
   const viewportInputArray = [
     {
@@ -270,6 +289,9 @@ async function run() {
       },
     },
   ];
+
+  // Instantiate a rendering engine
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   renderingEngine.setViewports(viewportInputArray);
 
