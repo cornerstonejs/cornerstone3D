@@ -284,24 +284,7 @@ export async function createAndCacheVolumeFromImages(
   const imageIdsToLoad = imageIds.filter((imageId) => !cache.getImage(imageId));
 
   if (imageIdsToLoad.length === 0) {
-    const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
-
-    const derivedVolume = new ImageVolume({
-      volumeId,
-      dataType: volumeProps.dataType,
-      metadata: structuredClone(volumeProps.metadata),
-      dimensions: volumeProps.dimensions,
-      spacing: volumeProps.spacing,
-      origin: volumeProps.origin,
-      direction: volumeProps.direction,
-      referencedVolumeId: volumeProps.referencedVolumeId,
-      imageIds: volumeProps.imageIds,
-      referencedImageIds: volumeProps.referencedImageIds,
-    }) as IImageVolume;
-
-    cache.putVolumeSync(volumeId, derivedVolume);
-
-    return derivedVolume;
+    return createAndCacheVolumeFromImagesSync(volumeId, imageIds);
   }
 
   const volume = (await createAndCacheVolume(volumeId, {
@@ -309,6 +292,48 @@ export async function createAndCacheVolumeFromImages(
   })) as IImageVolume;
 
   return volume;
+}
+
+export function createAndCacheVolumeFromImagesSync(
+  volumeId: string,
+  imageIds: string[]
+): IImageVolume {
+  if (imageIds === undefined) {
+    throw new Error(
+      'createAndCacheVolumeFromImagesSync: parameter imageIds must not be undefined'
+    );
+  }
+
+  if (volumeId === undefined) {
+    throw new Error(
+      'createAndCacheVolumeFromImagesSync: parameter volumeId must not be undefined'
+    );
+  }
+
+  const cachedVolume = cache.getVolume(volumeId);
+
+  if (cachedVolume) {
+    return cachedVolume;
+  }
+
+  const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
+
+  const derivedVolume = new ImageVolume({
+    volumeId,
+    dataType: volumeProps.dataType,
+    metadata: structuredClone(volumeProps.metadata),
+    dimensions: volumeProps.dimensions,
+    spacing: volumeProps.spacing,
+    origin: volumeProps.origin,
+    direction: volumeProps.direction,
+    referencedVolumeId: volumeProps.referencedVolumeId,
+    imageIds: volumeProps.imageIds,
+    referencedImageIds: volumeProps.referencedImageIds,
+  }) as IImageVolume;
+
+  cache.putVolumeSync(volumeId, derivedVolume);
+
+  return derivedVolume;
 }
 
 /**
@@ -346,7 +371,7 @@ export function createLocalVolume(
 
   const dataType = scalarData
     ? (scalarData.constructor.name as PixelDataTypedArrayString)
-    : targetBuffer?.type;
+    : targetBuffer?.type ?? 'Float32Array';
 
   const totalNumberOfVoxels = sliceLength * dimensions[2];
   let byteLength;
