@@ -6,7 +6,7 @@ import {
   getCurrentLabelmapImageIdForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { getSegmentationActor } from '../../stateManagement/segmentation/helpers';
+import { getSegmentationActorEntry } from '../../stateManagement/segmentation/helpers';
 import { SegmentationRepresentations } from '../../enums';
 
 type Options = {
@@ -74,11 +74,11 @@ export function getSegmentIndexAtLabelmapBorder(
   if (!image) {
     return;
   }
-  const segmentationActor = getSegmentationActor(viewport.id, {
+  const segmentationActorEntry = getSegmentationActorEntry(viewport.id, {
     segmentationId,
     type: SegmentationRepresentations.Labelmap,
   });
-  const imageData = segmentationActor?.getMapper().getInputData();
+  const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
   const dimensions = imageData.getDimensions();

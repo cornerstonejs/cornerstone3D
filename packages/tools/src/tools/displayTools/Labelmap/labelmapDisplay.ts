@@ -24,11 +24,12 @@ import { canComputeRequestedRepresentation } from '../../../stateManagement/segm
 import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import { getSegmentationActor } from '../../../stateManagement/segmentation/helpers';
+import { getSegmentationActorEntry } from '../../../stateManagement/segmentation/helpers';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -49,7 +50,6 @@ function removeRepresentation(
   renderImmediate = false
 ): void {
   const enabledElement = getEnabledElementByViewportId(viewportId);
-
   // Clean up the cache for this segmentation
   _cleanupLabelMapConfigCache(viewportId, segmentationId);
 
@@ -91,7 +91,7 @@ async function render(
   let labelmapData =
     segmentation.representationData[SegmentationRepresentations.Labelmap];
 
-  let labelmapActor = getSegmentationActor(viewport.id, {
+  let labelmapActorEntry = getSegmentationActorEntry(viewport.id, {
     segmentationId,
     type: SegmentationRepresentations.Labelmap,
   });
@@ -129,12 +129,12 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
-    if (!labelmapActor) {
+    if (!labelmapActorEntry) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
     }
 
-    labelmapActor = getSegmentationActor(viewport.id, {
+    labelmapActorEntry = getSegmentationActorEntry(viewport.id, {
       segmentationId,
       type: SegmentationRepresentations.Labelmap,
     });
@@ -151,27 +151,27 @@ async function render(
       return;
     }
 
-    if (!labelmapActor) {
+    if (!labelmapActorEntry) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
     }
 
-    labelmapActor = getSegmentationActor(viewport.id, {
+    labelmapActorEntry = getSegmentationActorEntry(viewport.id, {
       segmentationId,
       type: SegmentationRepresentations.Labelmap,
     });
   }
 
-  if (!labelmapActor) {
+  if (!labelmapActorEntry) {
     return;
   }
 
-  _setLabelmapColorAndOpacity(viewport.id, labelmapActor, representation);
+  _setLabelmapColorAndOpacity(viewport.id, labelmapActorEntry, representation);
 }
 
 function _setLabelmapColorAndOpacity(
   viewportId: string,
-  labelmapActor: Types.VolumeActor | Types.ImageActor,
+  labelmapActorEntry: Types.ActorEntry,
   segmentationRepresentation: SegmentationRepresentation
 ): void {
   const { segmentationId } = segmentationRepresentation;
@@ -238,7 +238,7 @@ function _setLabelmapColorAndOpacity(
       );
 
     const { forceOpacityUpdate, forceColorUpdate } =
-      _needsTransferFunctionUpdate(viewportId, segmentationId, segmentIndex, {
+      _needsTransferFunctionUpdate(labelmapActorEntry.uid, segmentIndex, {
         fillAlpha,
         renderFill,
         renderOutline,
@@ -272,6 +272,7 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
+  const labelmapActor = labelmapActorEntry.actor as vtkVolume;
   labelmapActor.getProperty().setRGBTransferFunction(0, cfun);
 
   ofun.setClamping(false);
@@ -370,7 +371,6 @@ function _getLabelmapConfig(
 }
 
 function _needsTransferFunctionUpdate(
-  viewportId: string,
   actorUID: string,
   segmentIndex: number,
   {
@@ -393,7 +393,7 @@ function _needsTransferFunctionUpdate(
     ofun: vtkPiecewiseFunction;
   }
 ) {
-  const cacheUID = `${viewportId}-${actorUID}-${segmentIndex}`;
+  const cacheUID = `${actorUID}-${segmentIndex}`;
   const oldConfig = labelMapConfigCache.get(cacheUID);
 
   if (!oldConfig) {
@@ -471,11 +471,19 @@ function _cleanupLabelMapConfigCache(
   viewportId: string,
   segmentationId: string
 ): void {
-  for (const key of labelMapConfigCache.keys()) {
-    if (key.startsWith(`${viewportId}-${segmentationId}-`)) {
+  const actorEntry = getSegmentationActorEntry(viewportId, {
+    segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  });
+
+  const uid = actorEntry.uid;
+
+  // clean up any key in the cache that includes the uid
+  labelMapConfigCache.forEach((value, key) => {
+    if (key.includes(uid)) {
       labelMapConfigCache.delete(key);
     }
-  }
+  });
 }
 
 export default {

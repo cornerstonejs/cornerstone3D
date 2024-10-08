@@ -467,9 +467,6 @@ class BrushTool extends BaseTool {
     const activeRepresentation = getActiveSegmentation(viewportId);
 
     if (!activeRepresentation) {
-      console.warn(
-        'No active segmentation detected, create one before using the brush tool'
-      );
       return;
     }
 

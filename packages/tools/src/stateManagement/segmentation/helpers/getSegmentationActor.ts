@@ -11,14 +11,14 @@ import { SegmentationRepresentations } from '../../../enums';
  * @returns The segmentation actor as a VolumeActor or ImageActor, or undefined if not found.
  * @throws Error if the segmentation type is Contour, as contours do not have actors.
  */
-export function getSegmentationActor(
+export function getSegmentationActorEntry(
   viewportId: string,
   specifier: {
     segmentationId: string;
     type: SegmentationRepresentations;
     segmentIndex?: number;
   }
-): Types.VolumeActor | Types.ImageActor | undefined {
+): Types.ActorEntry | undefined {
   if (specifier.type === SegmentationRepresentations.Contour) {
     throw new Error('Contours do not have actors');
   }
@@ -58,7 +58,7 @@ export function getSegmentationActor(
     return;
   }
 
-  return actor.actor as Types.VolumeActor | Types.ImageActor;
+  return actor;
 }
 
 export function getLabelmapActorUID(segmentationId: string) {

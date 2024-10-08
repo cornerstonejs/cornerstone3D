@@ -181,13 +181,13 @@ function _removeRepresentation(
     if (representation.type === SegmentationRepresentations.Labelmap) {
       labelmapDisplay.removeRepresentation(
         viewportId,
-        segmentationId,
+        representation.segmentationId,
         immediate
       );
     } else if (representation.type === SegmentationRepresentations.Contour) {
       contourDisplay.removeRepresentation(
         viewportId,
-        segmentationId,
+        representation.segmentationId,
         immediate
       );
     } else {

@@ -9,8 +9,8 @@ import {
 import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
-import { getSegmentationActor } from '../../../stateManagement/segmentation/helpers';
 import { SegmentationRepresentations } from '../../../enums';
+import { getSegmentationActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -137,12 +137,12 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
         return;
       }
 
-      const actor = getSegmentationActor(viewportId, {
+      const actorEntry = getSegmentationActorEntry(viewportId, {
         segmentationId,
         type: SegmentationRepresentations.Labelmap,
       });
 
-      const segImageData = actor.getMapper().getInputData();
+      const segImageData = actorEntry.actor.getMapper().getInputData();
 
       const currentSegmentationImageId =
         SegmentationState.getCurrentLabelmapImageIdForViewport(

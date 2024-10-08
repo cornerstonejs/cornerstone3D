@@ -1,4 +1,4 @@
 import validateSegmentationInput from './validateSegmentationInput';
-import { getSegmentationActor } from './getSegmentationActor';
+import { getSegmentationActorEntry } from './getSegmentationActor';
 
-export { validateSegmentationInput, getSegmentationActor };
+export { validateSegmentationInput, getSegmentationActorEntry };
