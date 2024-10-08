@@ -34,7 +34,6 @@ import type {
   StackViewportProperties,
   VOIRange,
   ViewReference,
-  ViewPresentation,
   VolumeActor,
 } from '../types';
 import {
@@ -46,6 +45,7 @@ import {
   actorIsA,
   colormap as colormapUtils,
   createSigmoidRGBTransferFunction,
+  getSpacingInNormalDirection,
   imageIdToURI,
   imageRetrieveMetadataProvider,
   invertRgbTransferFunction,
@@ -2893,6 +2893,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
 
   /**
    * Checks to see if this target is or could be shown in this viewport
+   *
+   * @param viewRef - view reference
+   * @param options - reference compatible options
+   * @returns boolean if reference is viewable
    */
   public isReferenceViewable(
     viewRef: ViewReference,
@@ -2922,7 +2926,39 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       const colonIndex = imageId.indexOf(':');
       imageURI = imageId.substring(colonIndex + 1);
     }
-    return referencedImageId?.endsWith(imageURI);
+
+    const endsWith = referencedImageId?.endsWith(imageURI);
+    if (endsWith) {
+      return endsWith;
+    }
+
+    // if camera focal point is provided, we can use that as a point
+    // Todo: handle the case where the nearby project is not desired
+    const { cameraFocalPoint } = viewRef;
+
+    if (options.asNearbyProjection && cameraFocalPoint) {
+      const { spacing, direction, origin } = this.getImageData();
+
+      const viewPlaneNormal = direction.slice(6, 9) as Point3;
+
+      const sliceThickness = getSpacingInNormalDirection(
+        { direction, spacing },
+        viewPlaneNormal
+      );
+
+      // Project the cameraFocalPoint onto the image plane
+      const diff = vec3.subtract(vec3.create(), cameraFocalPoint, origin);
+      const distanceToPlane = vec3.dot(diff, viewPlaneNormal);
+
+      // Define a threshold (e.g., half the slice thickness)
+      const threshold = sliceThickness / 2;
+
+      if (Math.abs(distanceToPlane) <= threshold) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
