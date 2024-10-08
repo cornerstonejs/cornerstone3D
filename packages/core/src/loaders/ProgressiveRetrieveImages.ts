@@ -247,7 +247,7 @@ class ProgressiveRetrieveImagesInstance {
       streamingData,
     };
     const priority = stage.priority ?? -5;
-    const requestType = stage.requestType || RequestType.INTERACTION;
+    const requestType = stage.requestType || RequestType.Interaction;
     const additionalDetails = { imageId };
 
     imageLoadPoolManager.addRequest(

@@ -65,7 +65,7 @@ function cornerstoneStreamingImageVolumeLoader(
                     reject(err);
                   });
               },
-              RequestType.PREFETCH,
+              RequestType.Prefetch,
               { volumeId },
               1 // priority
             );

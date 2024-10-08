@@ -25,15 +25,8 @@ function removeSegmentationRepresentation(
     type: SegmentationRepresentations;
   },
   immediate?: boolean
-): void {
-  const { segmentationId, type } = specifier;
-  _removeRepresentation(viewportId, segmentationId, type, immediate);
-
-  // remove representation from state
-  defaultSegmentationStateManager.removeSegmentationRepresentation(viewportId, {
-    segmentationId,
-    type,
-  });
+): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
+  return _removeSegmentationRepresentations(viewportId, specifier, immediate);
 }
 
 /**
@@ -57,13 +50,24 @@ function removeSegmentationRepresentations(
     type?: SegmentationRepresentations;
   },
   immediate?: boolean
-): void {
+): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
+  return _removeSegmentationRepresentations(viewportId, specifier, immediate);
+}
+
+function _removeSegmentationRepresentations(
+  viewportId: string,
+  specifier: {
+    segmentationId?: string;
+    type?: SegmentationRepresentations;
+  },
+  immediate?: boolean
+): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
   const { segmentationId, type } = specifier;
 
   _removeRepresentation(viewportId, segmentationId, type, immediate);
 
-  // remove representation from state
-  defaultSegmentationStateManager.removeSegmentationRepresentations(
+  // Remove representation from state
+  return defaultSegmentationStateManager.removeSegmentationRepresentations(
     viewportId,
     {
       segmentationId,

@@ -27,7 +27,7 @@ export interface IVolumeLoadObject {
 }
 
 export interface IGeometryLoadObject {
-  /** promise that resolves to an ImageVolume */
+  /** promise that resolves to an Geometry */
   promise: Promise<IGeometry>;
   /** optional cancel function for loading*/
   cancelFn?: () => void;

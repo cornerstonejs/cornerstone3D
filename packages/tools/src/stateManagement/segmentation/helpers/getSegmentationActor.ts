@@ -16,6 +16,7 @@ export function getSegmentationActor(
   specifier: {
     segmentationId: string;
     type: SegmentationRepresentations;
+    segmentIndex?: number;
   }
 ): Types.VolumeActor | Types.ImageActor | undefined {
   if (specifier.type === SegmentationRepresentations.Contour) {
@@ -31,10 +32,25 @@ export function getSegmentationActor(
 
   const actors = viewport.getActors();
 
-  const actorUID =
-    specifier.type === SegmentationRepresentations.Labelmap
-      ? getLabelmapActorUID(specifier.segmentationId)
-      : getSurfaceActorUID(specifier.segmentationId);
+  let actorUID: string;
+  switch (specifier.type) {
+    case SegmentationRepresentations.Labelmap:
+      actorUID = getLabelmapActorUID(specifier.segmentationId);
+      break;
+    case SegmentationRepresentations.Surface:
+      if (specifier.segmentIndex === undefined) {
+        throw new Error(
+          'Segment index must be provided for Surface representation'
+        );
+      }
+      actorUID = getSurfaceActorUID(
+        specifier.segmentationId,
+        specifier.segmentIndex
+      );
+      break;
+    default:
+      throw new Error('Invalid segmentation representation type');
+  }
 
   const actor = actors.find((actor) => actor.uid === actorUID);
 
@@ -49,6 +65,24 @@ export function getLabelmapActorUID(segmentationId: string) {
   return `${segmentationId}-${SegmentationRepresentations.Labelmap}`;
 }
 
-export function getSurfaceActorUID(segmentationId: string) {
-  return `${segmentationId}-${SegmentationRepresentations.Surface}`;
+export function getSurfaceActorUID(
+  segmentationId: string,
+  segmentIndex: number
+) {
+  return `${segmentationId}-${SegmentationRepresentations.Surface}-${segmentIndex}`;
+}
+
+/**
+ * Filters surface actors for a given segmentation ID.
+ *
+ * @param actors - Array of actor entries to filter.
+ * @param segmentationId - ID of the segmentation to filter by.
+ * @returns Filtered array of surface actors for the given segmentation.
+ */
+export function filterSurfaceActors(
+  actors: Types.ActorEntry[],
+  segmentationId: string
+): Types.ActorEntry[] {
+  const prefix = `${segmentationId}-${SegmentationRepresentations.Surface}-`;
+  return actors.filter((actor) => actor.uid.startsWith(prefix));
 }

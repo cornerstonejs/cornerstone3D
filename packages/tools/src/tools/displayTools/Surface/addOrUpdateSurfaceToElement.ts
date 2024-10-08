@@ -11,7 +11,7 @@ function addOrUpdateSurfaceToElement(
   surface: Types.ISurface,
   segmentationId: string
 ): void {
-  const actorUID = getSurfaceActorUID(segmentationId);
+  const actorUID = getSurfaceActorUID(segmentationId, surface.segmentIndex);
 
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
@@ -28,8 +28,8 @@ function addOrUpdateSurfaceToElement(
     // check if the new data is the same as the old data by checking the
     // length of the points and the length of the polys
 
-    const newPoints = surface.getPoints();
-    const newPolys = surface.getPolys();
+    const newPoints = surface.points;
+    const newPolys = surface.polys;
 
     const currentPoints = currentPolyData.getPoints().getData();
     const currentPolys = currentPolyData.getPolys().getData();
@@ -55,9 +55,7 @@ function addOrUpdateSurfaceToElement(
     surfaceMapper.setInputData(polyData);
     surfaceMapper.modified();
 
-    setTimeout(() => {
-      viewport.getRenderer().resetCameraClippingRange();
-    }, 0);
+    viewport.getRenderer().resetCameraClippingRange();
 
     return;
   }
@@ -65,9 +63,9 @@ function addOrUpdateSurfaceToElement(
   // Default to true since we are setting a new segmentation, however,
   // in the event listener, we will make other segmentations visible/invisible
   // based on the config
-  const points = surface.getPoints();
-  const polys = surface.getPolys();
-  const color = surface.getColor();
+  const points = surface.points;
+  const polys = surface.polys;
+  const color = surface.color;
 
   const surfacePolyData = vtkPolyData.newInstance();
   surfacePolyData.getPoints().setData(points, 3);
@@ -100,11 +98,8 @@ function addOrUpdateSurfaceToElement(
   });
 
   viewport.resetCamera();
+  viewport.getRenderer().resetCameraClippingRange();
   viewport.render();
-
-  setTimeout(() => {
-    viewport.getRenderer().resetCameraClippingRange();
-  }, 0);
 }
 
 export default addOrUpdateSurfaceToElement;

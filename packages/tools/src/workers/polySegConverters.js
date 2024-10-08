@@ -615,6 +615,7 @@ const polySegConverters = {
               points: loopOutput.getPoints().getData(),
               lines: loopOutput.getLines().getData(),
               numberOfCells: loopOutput.getLines().getNumberOfCells(),
+              segmentIndex,
             });
           }
         }

@@ -47,10 +47,10 @@ export function getPolyData(contourSet: Types.IContourSet) {
   // this variable will indicate the index of the first point in the current line
   // so we can correctly generate the point index list to add in the cellArray
   let pointIndex = 0;
-  contourSet.getContours().forEach((contour: Types.IContour) => {
-    const pointList = contour.getPoints();
-    const flatPoints = contour.getFlatPointsArray();
-    const type = contour.getType();
+  contourSet.contours.forEach((contour: Types.IContour) => {
+    const pointList = contour.points;
+    const flatPoints = contour.flatPointsArray;
+    const type = contour.type;
 
     // creating a point index list that defines a line
     const pointIndexes = pointList.map(

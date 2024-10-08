@@ -217,6 +217,9 @@ enum Events {
    */
   GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
 
+  // removed
+  GEOMETRY_CACHE_GEOMETRY_REMOVED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_REMOVED',
+
   /**
    * Triggers when the scroll function is called with a delta that is out of bounds.
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
@@ -255,6 +258,22 @@ enum Events {
    * Dynamic image volume time point index changed
    */
   DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when a geometry has successfully loaded by geometryLoaders
+   *
+   * Make use of {@link EventTypes.GeometryLoadedEvent | GeometryLoaded Event Type } for typing your event listeners for GEOMETRY_LOADED event,
+   * and see what event detail is included in {@link EventTypes.GeometryLoadedEventDetail | GeometryLoaded Event Detail }
+   */
+  GEOMETRY_LOADED = 'GEOMETRY_LOADED',
+
+  /**
+   * Triggers on the eventTarget when a geometry has failed loading by geometryLoaders
+   *
+   * Make use of {@link EventTypes.GeometryLoadedFailedEvent | GeometryLoadedFailed Event Type } for typing your event listeners for GEOMETRY_LOADED_FAILED event,
+   * and see what event detail is included in {@link EventTypes.GeometryLoadedFailedEventDetail | GeometryLoadedFailed Event Detail }
+   */
+  GEOMETRY_LOADED_FAILED = 'GEOMETRY_LOADED_FAILED',
 }
 
 export default Events;

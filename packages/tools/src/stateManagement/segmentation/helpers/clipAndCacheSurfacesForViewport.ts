@@ -117,7 +117,10 @@ export async function clipAndCacheSurfacesForViewport(
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
             polyDataResults.forEach((polyDataResult) => {
-              const actorUID = getSurfaceActorUID(segmentationId);
+              const actorUID = getSurfaceActorUID(
+                segmentationId,
+                polyDataResult.segmentIndex
+              );
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,

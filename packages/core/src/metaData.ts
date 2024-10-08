@@ -66,7 +66,7 @@ export function removeAllProviders(): void {
  *
  * @param type -  The type of metadata requested from the metadata store
  * @param query - The query for the metadata store, often imageId
- *        Some metadata providers support multi-valued strings, which are interpretted
+ *        Some metadata providers support multi-valued strings, which are interpreted
  *        as the provider chooses.
  *
  * @returns The metadata retrieved from the metadata store

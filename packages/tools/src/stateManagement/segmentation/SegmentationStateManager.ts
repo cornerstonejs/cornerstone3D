@@ -673,26 +673,16 @@ export default class SegmentationStateManager {
     });
   }
 
-  /**
-   * Removes all segmentations for a given viewport and segmentation.
-   * @param viewportId - The ID of the viewport.
-   * @param specifier - The specifier for the segmentation representation.
-   * @param specifier.segmentationId - The ID of the segmentation.
-   * @param specifier.type - The type of the segmentation representation.
-   *
-   * @remarks
-   * If no specifier is provided, all segmentation representations for the viewport are removed.
-   * If a segmentationId specifier is provided, only the segmentation representation with the specified segmentationId and type are removed.
-   * If a type specifier is provided, only the segmentation representation with the specified type are removed.
-   * If both a segmentationId and type specifier are provided, only the segmentation representation with the specified segmentationId and type are removed.
-   */
-  removeSegmentationRepresentations(
+  private removeSegmentationRepresentationsInternal(
     viewportId: string,
     specifier?: {
       segmentationId?: string;
       type?: SegmentationRepresentations;
     }
-  ): void {
+  ): Array<{
+    segmentationId: string;
+    type: SegmentationRepresentations;
+  }> {
     const removedRepresentations: Array<{
       segmentationId: string;
       type: SegmentationRepresentations;
@@ -705,6 +695,7 @@ export default class SegmentationStateManager {
 
       const currentRepresentations =
         state.viewportSegRepresentations[viewportId];
+      let activeRepresentationRemoved = false;
 
       if (
         !specifier ||
@@ -730,6 +721,9 @@ export default class SegmentationStateManager {
 
             if (shouldRemove) {
               removedRepresentations.push(representation);
+              if (representation.active) {
+                activeRepresentationRemoved = true;
+              }
             }
 
             return !shouldRemove;
@@ -738,9 +732,46 @@ export default class SegmentationStateManager {
         // If no representations left for the viewport, remove the viewport entry
         if (state.viewportSegRepresentations[viewportId].length === 0) {
           delete state.viewportSegRepresentations[viewportId];
+        } else if (activeRepresentationRemoved) {
+          // Set the first remaining representation as active
+          state.viewportSegRepresentations[viewportId][0].active = true;
         }
       }
+
+      // If all representations were removed and there was an active one among them,
+      // we don't need to set a new active representation as the viewport entry was deleted.
     });
+
+    return removedRepresentations;
+  }
+
+  /**
+   * Removes segmentation representations from a viewport based on the provided specifier.
+   *
+   * @param viewportId - The ID of the viewport.
+   * @param specifier - Optional. An object specifying which representations to remove.
+   * @param specifier.segmentationId - Optional. The ID of the segmentation to remove.
+   * @param specifier.type - Optional. The type of representation to remove.
+   * @returns An array of removed segmentation representations.
+   *
+   * @remarks
+   * If no specifier is provided, all segmentation representations for the viewport are removed.
+   * If only segmentationId is provided, all representations of that segmentation are removed.
+   * If only type is provided, all representations of that type are removed.
+   * If both segmentationId and type are provided, only the specific representation is removed.
+   */
+  removeSegmentationRepresentations(
+    viewportId: string,
+    specifier?: {
+      segmentationId?: string;
+      type?: SegmentationRepresentations;
+    }
+  ): Array<{
+    segmentationId: string;
+    type: SegmentationRepresentations;
+  }> {
+    const removedRepresentations =
+      this.removeSegmentationRepresentationsInternal(viewportId, specifier);
 
     // Trigger events for all removed representations
     removedRepresentations.forEach((representation) => {
@@ -750,46 +781,61 @@ export default class SegmentationStateManager {
         representation.type
       );
     });
+
+    // If there are remaining representations, trigger a modified event for the new active one
+    const remainingRepresentations =
+      this.getSegmentationRepresentations(viewportId);
+    if (
+      remainingRepresentations.length > 0 &&
+      remainingRepresentations[0].active
+    ) {
+      triggerSegmentationRepresentationModified(
+        viewportId,
+        remainingRepresentations[0].segmentationId,
+        remainingRepresentations[0].type
+      );
+    }
+
+    return removedRepresentations;
   }
 
   /**
-   * Removes a segmentation representation from the state.
-   * @param {string} viewportId - The ID of the viewport.
-   * @param {string} segmentationId - The ID of the segmentation.
-   * @param {SegmentationRepresentations} type - The type of segmentation representation.
+   * Removes a specific segmentation representation from a viewport.
+   *
+   * @param viewportId - The ID of the viewport.
+   * @param specifier - An object specifying which representation to remove.
+   * @param specifier.segmentationId - The ID of the segmentation to remove.
+   * @param specifier.type - The type of representation to remove.
+   * @param suppressEvent - Optional. If true, suppresses the removal event trigger.
+   * @returns An array of removed segmentation representations (usually containing one item).
+   *
+   * @remarks
+   * This method is more specific than removeSegmentationRepresentations as it requires both
+   * segmentationId and type to be provided. It's useful when you need to remove a particular
+   * representation without affecting others.
    */
   removeSegmentationRepresentation(
     viewportId: string,
     specifier: {
       segmentationId: string;
       type: SegmentationRepresentations;
+    },
+    suppressEvent?: boolean
+  ): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
+    const removedRepresentations =
+      this.removeSegmentationRepresentationsInternal(viewportId, specifier);
+
+    if (!suppressEvent) {
+      removedRepresentations.forEach(({ segmentationId, type }) => {
+        triggerSegmentationRepresentationRemoved(
+          viewportId,
+          segmentationId,
+          type
+        );
+      });
     }
-  ): void {
-    this.updateState((state) => {
-      const viewport = state.viewportSegRepresentations[viewportId];
 
-      if (!viewport) {
-        return;
-      }
-
-      const viewportRendering = viewport.find(
-        (segRep) =>
-          segRep.segmentationId === specifier.segmentationId &&
-          segRep.type === specifier.type
-      );
-
-      if (!viewportRendering) {
-        return;
-      }
-
-      viewport.splice(viewport.indexOf(viewportRendering), 1);
-    });
-
-    triggerSegmentationRepresentationRemoved(
-      viewportId,
-      specifier.segmentationId,
-      specifier.type
-    );
+    return removedRepresentations;
   }
 
   _setActiveSegmentation(

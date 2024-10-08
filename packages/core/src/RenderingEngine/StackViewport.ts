@@ -2092,7 +2092,7 @@ class StackViewport extends Viewport {
       }
 
       const priority = -5;
-      const requestType = RequestType.INTERACTION;
+      const requestType = RequestType.Interaction;
       const additionalDetails = { imageId, imageIdIndex };
       const options = {
         useRGBA: true,
@@ -2187,7 +2187,7 @@ class StackViewport extends Viewport {
       useRGBA: false,
       transferSyntaxUID,
       priority: 5,
-      requestType: RequestType.INTERACTION,
+      requestType: RequestType.Interaction,
       additionalDetails: { imageId, imageIdIndex },
     };
     return options;

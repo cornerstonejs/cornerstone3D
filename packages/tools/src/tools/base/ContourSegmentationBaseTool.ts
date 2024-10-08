@@ -196,7 +196,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   }): Record<string, unknown> {
     const annotation = context.annotation as ContourSegmentationAnnotation;
     const { segmentationId, segmentIndex } = annotation.data.segmentation;
-    const segmentation = getSegmentation(segmentationId);
     const { viewportId } = context.styleSpecifier;
     const segmentationRepresentations = getSegmentationRepresentations(
       viewportId,

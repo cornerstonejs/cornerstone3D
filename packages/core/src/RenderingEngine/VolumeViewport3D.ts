@@ -54,6 +54,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
         RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     }
+
+    // reset camera clipping range
+    const renderer = this.getRenderer();
+    renderer.resetCameraClippingRange();
     return true;
   }
 
@@ -140,6 +144,12 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
   public getSliceIndex(): number {
     return null;
+  }
+
+  public setCamera(props) {
+    super.setCamera(props);
+    this.getRenderer().resetCameraClippingRange();
+    this.render();
   }
 
   protected setCameraClippingRange() {

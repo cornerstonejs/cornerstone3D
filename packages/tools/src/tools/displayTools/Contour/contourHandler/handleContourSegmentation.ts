@@ -35,7 +35,7 @@ function updateContourSets(
     (acc, geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
-      const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
+      const segmentIndex = (contourSet as Types.IContourSet).segmentIndex;
       const segmentSpecificConfig = segmentationStyle.getStyle({
         viewportId: viewport.id,
         segmentationId,
@@ -71,7 +71,7 @@ function addContourSetsToElement(
       return;
     }
 
-    const segmentIndex = (geometry.data as Types.IContourSet).getSegmentIndex();
+    const segmentIndex = (geometry.data as Types.IContourSet).segmentIndex;
 
     validateGeometry(geometry);
 

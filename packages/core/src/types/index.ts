@@ -152,6 +152,8 @@ import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
 import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
 
+import type GeometryLoaderFn from './GeometryLoaderFn';
+
 export type {
   // config
   Cornerstone3DConfig,
@@ -293,4 +295,5 @@ export type {
   ViewportInput,
   ImageLoadRequests,
   IBaseVolumeViewport,
+  GeometryLoaderFn,
 };
