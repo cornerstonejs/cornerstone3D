@@ -1,4 +1,15 @@
 import validateSegmentationInput from './validateSegmentationInput';
-import { getSegmentationActorEntry } from './getSegmentationActor';
+import {
+  getLabelmapActorEntry,
+  getSurfaceActorEntry,
+  getLabelmapActorUID,
+  getSurfaceActorUID,
+} from './getSegmentationActor';
 
-export { validateSegmentationInput, getSegmentationActorEntry };
+export {
+  validateSegmentationInput,
+  getLabelmapActorEntry,
+  getSurfaceActorEntry,
+  getLabelmapActorUID,
+  getSurfaceActorUID,
+};

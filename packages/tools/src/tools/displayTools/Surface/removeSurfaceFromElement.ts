@@ -1,6 +1,6 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { filterSurfaceActors } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 /**
  * Remove the surface representation from the viewport's HTML Element.
@@ -21,9 +21,8 @@ function removeSurfaceFromElement(
 
   const actorEntries = (viewport as Types.IVolumeViewport).getActors();
 
-  const filteredSurfaceActors = filterSurfaceActors(
-    actorEntries,
-    segmentationId
+  const filteredSurfaceActors = actorEntries.filter((actor) =>
+    actor.uid.startsWith(getSurfaceActorUID(viewport.id, segmentationId, ''))
   );
 
   // remove actors whose id has the same prefix as the segmentationId

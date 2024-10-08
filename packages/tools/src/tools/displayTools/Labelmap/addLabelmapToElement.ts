@@ -65,9 +65,9 @@ async function addLabelmapToElement(
     const volumeInputs: Types.IVolumeInput[] = [
       {
         volumeId,
-        actorUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
         visibility,
         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
       },
     ];
 
@@ -90,7 +90,7 @@ async function addLabelmapToElement(
     const stackInputs: Types.IStackInput[] = [
       {
         imageId: segmentationImageId,
-        actorUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
       },
     ];
 

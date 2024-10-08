@@ -17,7 +17,7 @@ function removeLabelmapFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  viewport.removeActors([getLabelmapActorUID(segmentationId)]);
+  viewport.removeActors([getLabelmapActorUID(viewport.id, segmentationId)]);
 }
 
 export default removeLabelmapFromElement;

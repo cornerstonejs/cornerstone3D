@@ -1089,7 +1089,8 @@ abstract class BaseVolumeViewport extends Viewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, actorUID, slabThickness } = volumeInputArray[i];
+      const { volumeId, actorUID, slabThickness, ...rest } =
+        volumeInputArray[i];
 
       const actor = await createVolumeActor(
         volumeInputArray[i],
@@ -1109,6 +1110,7 @@ abstract class BaseVolumeViewport extends Viewport {
         actor,
         slabThickness,
         referencedId: volumeId,
+        ...rest,
       });
     }
 
@@ -1156,7 +1158,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, visibility, actorUID, slabThickness } =
+      const { volumeId, visibility, actorUID, slabThickness, ...rest } =
         volumeInputArray[i];
 
       const actor = await createVolumeActor(
@@ -1186,6 +1188,7 @@ abstract class BaseVolumeViewport extends Viewport {
         // and if later we need to grab the referenced volume from cache,
         // we can use the referencedId to get the volume from the cache
         referencedId: volumeId,
+        ...rest,
       });
     }
 

@@ -9,7 +9,7 @@ import {
 import { WorkerTypes } from '../../../enums';
 import { pointToString } from '../../../utilities/pointToString';
 import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
-import { getSurfaceActorUID } from './getSegmentationActor';
+import { getSurfaceActorEntry } from './getSegmentationActor';
 const workerManager = getWebWorkerManager();
 
 /**
@@ -117,10 +117,12 @@ export async function clipAndCacheSurfacesForViewport(
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
             polyDataResults.forEach((polyDataResult) => {
-              const actorUID = getSurfaceActorUID(
+              const actorEntry = getSurfaceActorEntry(
+                viewport.id,
                 segmentationId,
                 polyDataResult.segmentIndex
               );
+              const actorUID = actorEntry.uid;
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,

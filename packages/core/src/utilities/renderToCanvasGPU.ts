@@ -173,6 +173,7 @@ export default function renderToCanvasGPU(
 
     element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
     if (isVolume) {
+      // @ts-expect-error
       (viewport as IVolumeViewport).setVolumes([volume], false, true);
     } else {
       (viewport as IStackViewport).renderImageObject(imageOrVolume);

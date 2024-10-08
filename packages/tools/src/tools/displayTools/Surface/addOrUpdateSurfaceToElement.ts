@@ -11,10 +11,15 @@ function addOrUpdateSurfaceToElement(
   surface: Types.ISurface,
   segmentationId: string
 ): void {
-  const actorUID = getSurfaceActorUID(segmentationId, surface.segmentIndex);
-
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
+
+  const actorUID = getSurfaceActorUID(
+    viewport.id,
+    segmentationId,
+    surface.segmentIndex
+  );
+
   const surfaceActor = viewport.getActor(actorUID)?.actor as Types.Actor;
 
   if (surfaceActor) {

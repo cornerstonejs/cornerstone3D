@@ -24,12 +24,12 @@ import { canComputeRequestedRepresentation } from '../../../stateManagement/segm
 import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import { getSegmentationActorEntry } from '../../../stateManagement/segmentation/helpers';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
@@ -91,10 +91,7 @@ async function render(
   let labelmapData =
     segmentation.representationData[SegmentationRepresentations.Labelmap];
 
-  let labelmapActorEntry = getSegmentationActorEntry(viewport.id, {
-    segmentationId,
-    type: SegmentationRepresentations.Labelmap,
-  });
+  let labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
 
   if (
     !labelmapData &&
@@ -134,10 +131,7 @@ async function render(
       await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
     }
 
-    labelmapActorEntry = getSegmentationActorEntry(viewport.id, {
-      segmentationId,
-      type: SegmentationRepresentations.Labelmap,
-    });
+    labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
   } else {
     // stack segmentation
     const labelmapImageId = getCurrentLabelmapImageIdForViewport(
@@ -156,10 +150,7 @@ async function render(
       await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
     }
 
-    labelmapActorEntry = getSegmentationActorEntry(viewport.id, {
-      segmentationId,
-      type: SegmentationRepresentations.Labelmap,
-    });
+    labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
   }
 
   if (!labelmapActorEntry) {
@@ -471,10 +462,7 @@ function _cleanupLabelMapConfigCache(
   viewportId: string,
   segmentationId: string
 ): void {
-  const actorEntry = getSegmentationActorEntry(viewportId, {
-    segmentationId,
-    type: SegmentationRepresentations.Labelmap,
-  });
+  const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
 
   const uid = actorEntry.uid;
 

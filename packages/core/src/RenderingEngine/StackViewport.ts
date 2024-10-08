@@ -2337,7 +2337,7 @@ class StackViewport extends Viewport {
   public addImages(stackInputs: IStackInput[]) {
     const actors = [];
     stackInputs.forEach((stackInput) => {
-      const { imageId } = stackInput;
+      const { imageId, ...rest } = stackInput;
       const image = cache.getImage(imageId);
 
       const { origin, dimensions, direction, spacing, numberOfComponents } =
@@ -2351,13 +2351,13 @@ class StackViewport extends Viewport {
         numberOfComponents,
         pixelArray: image.voxelManager.getScalarData(),
       });
-
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
         actors.push({
           uid: stackInput.actorUID ?? uuidv4(),
           actor: imageActor,
           referencedId: imageId,
+          ...rest,
         });
         if (stackInput.callback) {
           stackInput.callback({ imageActor, imageId: stackInput.imageId });
