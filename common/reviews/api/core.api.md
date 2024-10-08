@@ -879,6 +879,8 @@ export enum EVENTS {
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
+    STACK_SCROLL_OUT_OF_BOUNDS = "STACK_SCROLL_OUT_OF_BOUNDS",
+    // (undocumented)
     STACK_VIEWPORT_NEW_STACK = "CORNERSTONE_STACK_VIEWPORT_NEW_STACK",
     // (undocumented)
     STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
@@ -956,6 +958,8 @@ declare namespace EventTypes {
         StackViewportNewStackEventDetail,
         StackViewportScrollEvent,
         StackViewportScrollEventDetail,
+        StackScrollOutOfBoundsEvent,
+        StackScrollOutOfBoundsEventDetail,
         CameraResetEvent,
         CameraResetEventDetail
     }
@@ -2793,6 +2797,7 @@ type ReferenceCompatibleOptions = {
     asVolume?: boolean;
     withOrientation?: boolean;
     imageURI?: string;
+    asNearbyProjection?: boolean;
 };
 
 // @public (undocumented)
@@ -3089,6 +3094,15 @@ type StackNewImageEventDetail = {
     imageIdIndex: number;
     viewportId: string;
     renderingEngineId: string;
+};
+
+// @public (undocumented)
+type StackScrollOutOfBoundsEvent = CustomEvent_2<StackScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+type StackScrollOutOfBoundsEventDetail = {
+    imageIdIndex: number;
+    direction: number;
 };
 
 // @public (undocumented)
