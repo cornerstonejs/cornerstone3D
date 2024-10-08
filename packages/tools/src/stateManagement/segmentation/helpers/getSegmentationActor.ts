@@ -14,6 +14,11 @@ function getActorEntry(
   filterFn: (actor: unknown) => boolean
 ) {
   const enabledElement = getEnabledElementByViewportId(viewportId);
+
+  if (!enabledElement) {
+    return;
+  }
+
   const { renderingEngine, viewport } = enabledElement;
 
   if (!renderingEngine || !viewport) {
@@ -68,7 +73,7 @@ export function getLabelmapActorEntry(
 export function getSurfaceActorEntry(
   viewportId: string,
   segmentationId: string,
-  segmentIndex = ''
+  segmentIndex?: number | string
 ) {
   return getActorEntry(viewportId, segmentationId, (actor) =>
     // @ts-expect-error

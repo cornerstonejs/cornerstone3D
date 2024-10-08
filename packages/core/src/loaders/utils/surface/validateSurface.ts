@@ -5,20 +5,12 @@ export function validateSurface(surfaceData: PublicSurfaceData): void {
     throw new Error('Surface must have an id');
   }
 
-  if (
-    !surfaceData.points ||
-    !Array.isArray(surfaceData.points) ||
-    surfaceData.points.length === 0
-  ) {
-    throw new Error('Surface must have points');
+  if (surfaceData.points?.length === 0) {
+    throw new Error('Surface must have non-empty points array');
   }
 
-  if (
-    !surfaceData.polys ||
-    !Array.isArray(surfaceData.polys) ||
-    surfaceData.polys.length === 0
-  ) {
-    throw new Error('Surface must have polys');
+  if (surfaceData.polys?.length === 0) {
+    throw new Error('Surface must have non-empty polys array');
   }
 
   if (!surfaceData.frameOfReferenceUID) {

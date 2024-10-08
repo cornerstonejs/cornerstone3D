@@ -464,14 +464,18 @@ function _cleanupLabelMapConfigCache(
 ): void {
   const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
 
-  const uid = actorEntry.uid;
+  const uid = actorEntry?.uid;
 
-  // clean up any key in the cache that includes the uid
-  labelMapConfigCache.forEach((value, key) => {
-    if (key.includes(uid)) {
-      labelMapConfigCache.delete(key);
-    }
-  });
+  if (uid) {
+    // clean up any key in the cache that includes the uid
+    labelMapConfigCache.forEach((value, key) => {
+      if (key.includes(uid)) {
+        labelMapConfigCache.delete(key);
+      }
+    });
+  } else {
+    labelMapConfigCache.clear();
+  }
 }
 
 export default {

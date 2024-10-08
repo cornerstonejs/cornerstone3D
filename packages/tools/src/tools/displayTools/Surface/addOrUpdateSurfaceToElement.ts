@@ -1,10 +1,13 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { getSurfaceActorUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import {
+  getSurfaceActorEntry,
+  getSurfaceActorUID,
+} from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 function addOrUpdateSurfaceToElement(
   element: HTMLDivElement,
@@ -14,13 +17,19 @@ function addOrUpdateSurfaceToElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  const actorUID = getSurfaceActorUID(
+  const representationUID = getSurfaceActorUID(
     viewport.id,
     segmentationId,
     surface.segmentIndex
   );
 
-  const surfaceActor = viewport.getActor(actorUID)?.actor as Types.Actor;
+  const surfaceActorEntry = getSurfaceActorEntry(
+    viewport.id,
+    segmentationId,
+    surface.segmentIndex
+  );
+
+  const surfaceActor = surfaceActorEntry?.actor as Types.Actor;
 
   if (surfaceActor) {
     // we already have an actor for this surface, we just need to update it
@@ -96,10 +105,10 @@ function addOrUpdateSurfaceToElement(
   actor.getProperty().setLineWidth(2);
 
   viewport.addActor({
-    // @ts-ignore
+    uid: utilities.uuidv4(),
     actor: actor as vtkActor,
-    uid: actorUID,
     clippingFilter,
+    representationUID,
   });
 
   viewport.resetCamera();
