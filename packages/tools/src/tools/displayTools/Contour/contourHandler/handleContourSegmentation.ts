@@ -9,7 +9,6 @@ import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { segmentationStyle } from '../../../../stateManagement/segmentation/SegmentationStyle';
-import { internalGetHiddenSegmentIndices } from '../../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -83,6 +82,7 @@ function addContourSetsToElement(
     });
 
     const contourSet = geometry.data as Types.IContourSet;
+    const viewPlaneNormal = viewport.getCamera().viewPlaneNormal;
 
     contourSet.contours.forEach((contour) => {
       const { points, color, id } = contour;
@@ -111,7 +111,7 @@ function addContourSetsToElement(
           referencedImageId: getClosestImageIdForStackViewport(
             viewport as StackViewport,
             points[0],
-            viewport.getCamera().viewPlaneNormal
+            viewPlaneNormal
           ),
           toolName: 'PlanarFreehandContourSegmentationTool',
           FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),

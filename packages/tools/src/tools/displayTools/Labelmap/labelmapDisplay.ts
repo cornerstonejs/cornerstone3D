@@ -229,7 +229,7 @@ function _setLabelmapColorAndOpacity(
       );
 
     const { forceOpacityUpdate, forceColorUpdate } =
-      _needsTransferFunctionUpdate(labelmapActorEntry.uid, segmentIndex, {
+      _needsTransferFunctionUpdate(viewportId, segmentationId, segmentIndex, {
         fillAlpha,
         renderFill,
         renderOutline,
@@ -362,7 +362,8 @@ function _getLabelmapConfig(
 }
 
 function _needsTransferFunctionUpdate(
-  actorUID: string,
+  viewportId: string,
+  segmentationId: string,
   segmentIndex: number,
   {
     fillAlpha,
@@ -384,7 +385,7 @@ function _needsTransferFunctionUpdate(
     ofun: vtkPiecewiseFunction;
   }
 ) {
-  const cacheUID = `${actorUID}-${segmentIndex}`;
+  const cacheUID = `${viewportId}-${segmentationId}-${segmentIndex}`;
   const oldConfig = labelMapConfigCache.get(cacheUID);
 
   if (!oldConfig) {

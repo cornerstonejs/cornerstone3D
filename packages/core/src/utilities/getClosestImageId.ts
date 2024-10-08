@@ -1,3 +1,4 @@
+import type { mat3 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
 import type { IImageVolume, Point3 } from '../types';
@@ -16,25 +17,16 @@ import { EPSILON } from '../constants';
  * @returns The imageId for the tool.
  */
 export default function getClosestImageId(
-  imageVolume: IImageVolume,
+  imageVolume:
+    | IImageVolume
+    | { direction: mat3; spacing: Point3; imageIds: string[] },
   worldPos: Point3,
   viewPlaneNormal: Point3
 ): string {
-  if (!imageVolume) {
-    return;
-  }
-
-  const { direction } = imageVolume;
-  let { imageIds } = imageVolume;
+  const { direction, spacing, imageIds } = imageVolume;
 
   if (!imageIds.length) {
     return;
-  }
-
-  // Important: this is huge performance gain for streaming dynamic image volumes
-  if ('getCurrentTimePointImageIds' in imageVolume) {
-    // @ts-ignore
-    imageIds = imageVolume.getCurrentTimePointImageIds();
   }
 
   // 1. Get ScanAxis vector
@@ -52,7 +44,7 @@ export default function getClosestImageId(
   // 3. Calculate Spacing the in the normal direction, this will get used to
   // check whether we are withing a slice
   const spacingInNormalDirection = getSpacingInNormalDirection(
-    imageVolume,
+    { direction, spacing },
     viewPlaneNormal
   );
 

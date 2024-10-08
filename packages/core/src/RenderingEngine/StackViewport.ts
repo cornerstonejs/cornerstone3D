@@ -92,6 +92,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
+import getClosestImageId from '../utilities/getClosestImageId';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -2782,6 +2783,24 @@ class StackViewport extends Viewport {
     }
 
     this._publishCalibratedEvent = false;
+  }
+
+  public jumpToWorld(worldPos: Point3): boolean {
+    const imageIds = this.getImageIds();
+    const imageData = this.getImageData();
+    const { direction, spacing } = imageData;
+
+    const imageId = getClosestImageId(
+      { direction: direction, spacing, imageIds },
+      worldPos,
+      this.getCamera().viewPlaneNormal
+    );
+
+    const index = imageIds.indexOf(imageId);
+    this.setImageIdIndex(index);
+    this.render();
+
+    return true;
   }
 
   private canvasToWorldCPU = (
