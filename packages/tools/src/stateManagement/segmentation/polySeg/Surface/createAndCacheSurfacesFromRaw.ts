@@ -48,6 +48,7 @@ export async function createAndCacheSurfacesFromRaw(
       frameOfReferenceUID: 'test-frameOfReferenceUID',
       points: rawSurfaceData.data.points,
       polys: rawSurfaceData.data.polys,
+      segmentIndex,
     };
 
     const geometryId = closedSurface.id;

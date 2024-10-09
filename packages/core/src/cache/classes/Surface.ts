@@ -26,7 +26,7 @@ export class Surface {
     this._polys = props.polys;
     this._color = props.color ?? this._color;
     this.frameOfReferenceUID = props.frameOfReferenceUID;
-    this._segmentIndex = props.segmentIndex ?? 1;
+    this._segmentIndex = props.segmentIndex;
     this.sizeInBytes = this._getSizeInBytes();
     this._updateCentroid();
   }

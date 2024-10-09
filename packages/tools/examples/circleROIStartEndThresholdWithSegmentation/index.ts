@@ -166,7 +166,6 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
 
-    console.debug(annotations);
     const labelmapVolume = cache.getVolume(segmentationId);
 
     annotations.map((annotation, i) => {

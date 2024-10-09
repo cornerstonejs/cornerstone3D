@@ -35,6 +35,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
     }
   }
 
+  public getNumberOfSlices = (): number => {
+    return 1;
+  };
+
   public resetCamera({
     resetPan = true,
     resetZoom = true,

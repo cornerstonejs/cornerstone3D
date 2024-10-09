@@ -51,7 +51,12 @@ function removeRepresentation(
 ): void {
   const enabledElement = getEnabledElementByViewportId(viewportId);
   // Clean up the cache for this segmentation
-  _cleanupLabelMapConfigCache(viewportId, segmentationId);
+
+  labelMapConfigCache.forEach((value, key) => {
+    if (key.includes(segmentationId)) {
+      labelMapConfigCache.delete(key);
+    }
+  });
 
   if (!enabledElement) {
     return;
@@ -457,26 +462,6 @@ async function _addLabelmapToViewport(
   segmentationId: string
 ): Promise<void> {
   await addLabelmapToElement(viewport.element, labelmapData, segmentationId);
-}
-
-function _cleanupLabelMapConfigCache(
-  viewportId: string,
-  segmentationId: string
-): void {
-  const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
-
-  const uid = actorEntry?.uid;
-
-  if (uid) {
-    // clean up any key in the cache that includes the uid
-    labelMapConfigCache.forEach((value, key) => {
-      if (key.includes(uid)) {
-        labelMapConfigCache.delete(key);
-      }
-    });
-  } else {
-    labelMapConfigCache.clear();
-  }
 }
 
 export default {

@@ -5,6 +5,7 @@ import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { surfaceDisplay } from '../../tools/displayTools/Surface';
 
 /**
  * Removes a segmentation representation from a viewport.
@@ -64,7 +65,7 @@ function _removeSegmentationRepresentations(
 ): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
   const { segmentationId, type } = specifier;
 
-  _removeRepresentation(viewportId, segmentationId, type, immediate);
+  _removeRepresentationObject(viewportId, segmentationId, type, immediate);
 
   // Remove representation from state
   return defaultSegmentationStateManager.removeSegmentationRepresentations(
@@ -166,7 +167,7 @@ function removeSurfaceRepresentation(
   );
 }
 
-function _removeRepresentation(
+function _removeRepresentationObject(
   viewportId: string,
   segmentationId: string,
   type?: SegmentationRepresentations,
@@ -190,9 +191,11 @@ function _removeRepresentation(
         representation.segmentationId,
         immediate
       );
-    } else {
-      throw new Error(
-        `The representation ${representation.type} is not supported yet`
+    } else if (representation.type === SegmentationRepresentations.Surface) {
+      surfaceDisplay.removeRepresentation(
+        viewportId,
+        representation.segmentationId,
+        immediate
       );
     }
   });

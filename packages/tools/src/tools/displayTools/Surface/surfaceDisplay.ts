@@ -64,9 +64,7 @@ async function render(
   }
 
   if (!(viewport instanceof VolumeViewport3D)) {
-    throw new Error(
-      'Surface rendering is only supported in 3D viewports, if you need to visualize the surface cuts in 2D viewports, you can use the Contour representation, see polySeg converters'
-    );
+    return;
   }
 
   let SurfaceData = segmentation.representationData[Representations.Surface];
