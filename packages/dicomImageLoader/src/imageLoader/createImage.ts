@@ -12,7 +12,6 @@ import {
   PixelDataTypedArray,
 } from '../types';
 import convertColorSpace from './convertColorSpace';
-import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
@@ -246,25 +245,23 @@ function createImage(
         cornerstone.metaData.get(MetadataModules.CALIBRATION, imageId) || {};
       const { rows, columns } = imageFrame;
 
-      if (isColorImage) {
-        if (isColorConversionRequired(imageFrame)) {
+      if (!isJPEGBaseline8BitColor(imageFrame, transferSyntax)) {
+        if (!alreadyTyped) {
+          setPixelDataType(imageFrame);
+        }
+
+        // convert color space
+        if (isColorImage) {
+          // setup the canvas context
           canvas.height = imageFrame.rows;
           canvas.width = imageFrame.columns;
+
           const context = canvas.getContext('2d');
-          let imageData = context.createImageData(
+          const imageData = context.createImageData(
             imageFrame.columns,
             imageFrame.rows
           );
-          if (!useRGBA) {
-            // Use a hard coded 3 samples per pixel for the destination, as the
-            // original samples per pixel may not be 3 for palette color
-            imageData = {
-              ...imageData,
-              data: new Uint8ClampedArray(
-                3 * imageFrame.columns * imageFrame.rows
-              ),
-            };
-          }
+
           convertColorSpace(imageFrame, imageData.data, useRGBA);
           imageFrame.imageData = imageData;
           imageFrame.pixelData = imageData.data;
@@ -432,3 +429,15 @@ function createImage(
 }
 
 export default createImage;
+
+function isJPEGBaseline8BitColor(imageFrame, transferSyntax) {
+  transferSyntax = transferSyntax || imageFrame.transferSyntax;
+
+  if (
+    imageFrame.bitsAllocated === 8 &&
+    transferSyntax === '1.2.840.10008.1.2.4.50' &&
+    (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)
+  ) {
+    return true;
+  }
+}
