@@ -429,7 +429,10 @@ export default class SegmentationStateManager {
 
       if (isBaseVolumeSegmentation) {
         // Volume Labelmap on Stack Viewport
-        // TODO: Implement
+        // convert the stack viewport to volume viewport
+        csUtils.convertStackToVolumeViewport({
+          viewport: enabledElement.viewport as Types.IStackViewport,
+        });
       } else {
         // Stack Labelmap on Stack Viewport
         this.updateLabelmapSegmentationImageReferences(

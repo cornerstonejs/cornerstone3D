@@ -139,6 +139,10 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
 
       const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
 
+      if (!actorEntry) {
+        return;
+      }
+
       const segImageData = actorEntry.actor.getMapper().getInputData();
 
       const currentSegmentationImageId =
