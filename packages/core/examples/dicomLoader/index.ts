@@ -4,10 +4,12 @@ import {
   Enums,
   imageLoader,
   metaData,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   setTitleAndDescription,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import createCustomImageLoader from './customImageLoader';
 import createImageDropArea from './imageDropArea';
@@ -55,8 +57,32 @@ const { imageLoadFunction, metadataProvider } = createCustomImageLoader(
 
 imageLoader.registerImageLoader(
   'custom',
-  imageLoadFunction as Types.ImageLoaderFn
+  imageLoadFunction as unknown as Types.ImageLoaderFn
 );
+
+// ============================= //
+
+addSliderToToolbar({
+  title: 'Slice Index',
+  range: [0, 9],
+  defaultValue: 0,
+  onSelectedValueChange: (value) => {
+    const valueAsNumber = Number(value);
+
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
+
+    if (valueAsNumber < viewport.getImageIds().length) {
+      viewport.setImageIdIndex(valueAsNumber);
+    }
+    viewport.render();
+  },
+});
 
 /**
  * Runs the demo
