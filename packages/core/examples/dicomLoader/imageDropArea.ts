@@ -92,6 +92,11 @@ function createImageDropArea(logFn: AddLogFn) {
         if (!sopInstanceUid) {
           throw new Error('DICOM instance must have a SOP instance UID');
         }
+        if (sopInstanceUid in bytes) {
+          // Prevent the SOP instance UID from being added to the series twice
+          logFn('ignoring duplicate drop of SOP instance UID ', sopInstanceUid);
+          continue;
+        }
         bytes[sopInstanceUid] = buffer;
 
         let seriesInstanceUid = dataset.string(SERIES_INSTANCE_UID_TAG);

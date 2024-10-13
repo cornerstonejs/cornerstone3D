@@ -90,24 +90,25 @@ async function run() {
   // render stack viewport
   setEmit((sopInstanceUids) => {
     const imageIds = sopInstanceUids.map((uid) => `custom:${uid}`);
-    renderingEngine.getStackViewports()[0].setStack(imageIds);
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
+    viewport.setStack(imageIds);
 
     sliderRemoveFn();
-    sliderRemoveFn = addSliderToToolbar({
-      title: 'Slice Index',
-      range: [0, imageIds.length - 1],
-      defaultValue: 0,
-      container: toolbar,
-      onSelectedValueChange: (value) => {
-        const valueAsNumber = Number(value);
-        const renderingEngine = getRenderingEngine(renderingEngineId);
-        const viewport = renderingEngine.getViewport(
-          viewportId
-        ) as Types.IStackViewport;
-        viewport.setImageIdIndex(valueAsNumber);
-        viewport.render();
-      },
-    });
+    if (imageIds.length > 1) {
+      sliderRemoveFn = addSliderToToolbar({
+        title: 'Slice Index',
+        range: [0, imageIds.length - 1],
+        defaultValue: 0,
+        container: toolbar,
+        onSelectedValueChange: (value) => {
+          const valueAsNumber = Number(value);
+          viewport.setImageIdIndex(valueAsNumber);
+          viewport.render();
+        },
+      });
+    }
   });
 
   // render volume viewports

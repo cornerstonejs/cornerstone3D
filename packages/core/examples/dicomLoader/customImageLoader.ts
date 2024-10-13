@@ -20,7 +20,7 @@ function _loadImageIntoBuffer(
   instanceToBytes: (instanceId: string) => Promise<ArrayBuffer>
 ): Types.IImageLoadObject {
   const sopInstanceUid = imageId.replace('custom:', '');
-  logFn('Custom loader is starting to load image: ', sopInstanceUid);
+  logFn('Loader: starting to load image: ', sopInstanceUid);
 
   const promise = async () => {
     try {
@@ -39,6 +39,8 @@ function _loadImageIntoBuffer(
         options as any
       );
 
+      logFn('Loader: done loading image: ', sopInstanceUid);
+
       if (
         !options?.targetBuffer ||
         !options.targetBuffer.length ||
@@ -50,7 +52,7 @@ function _loadImageIntoBuffer(
       (image as any).getPixelData(options.targetBuffer);
       return true;
     } catch (e) {
-      logFn('failed to load image ID', imageId, e);
+      logFn('Loader: failed to load image ID', imageId, e);
       return false;
     }
   };
@@ -58,9 +60,11 @@ function _loadImageIntoBuffer(
   return {
     promise: promise() as Promise<Types.IImage>,
     cancelFn: () => {
+      logFn('Loader: cancelling loading image: ', sopInstanceUid);
       dropFromCache(imageId);
     },
     decache: () => {
+      logFn('Loader: decaching loaded image: ', sopInstanceUid);
       dropFromCache(imageId);
     },
   };
@@ -74,7 +78,14 @@ function createCustomImageLoader(
     imageLoadFunction: (imageId: string, options: never) => {
       return _loadImageIntoBuffer(imageId, options, logFn, instanceToBytes);
     },
-    metadataProvider: (type, imageId) => {
+    metadataProvider: (type: string, imageId: string) => {
+      if (!imageId.startsWith('custom:')) {
+        return;
+      }
+
+      const sopInstanceUid = imageId.replace('custom:', '');
+      logFn('Loader: metadata request: ', type, sopInstanceUid);
+
       const dataset = getFromCache(imageId);
       if (dataset) {
         return cornerstoneDICOMImageLoader.wadouri.metaData.metadataForDataset(
