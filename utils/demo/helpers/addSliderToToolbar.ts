@@ -1,6 +1,7 @@
 import { utilities as csUtilities } from '@cornerstonejs/core';
 
-import createElement, { configElement } from './createElement';
+import type { configElement } from './createElement';
+import createElement from './createElement';
 import addLabelToToolbar from './addLabelToToolbar';
 
 interface configSlider extends configElement {
@@ -15,7 +16,9 @@ interface configSlider extends configElement {
   label?: configElement;
 }
 
-export default function addSliderToToolbar(config: configSlider): void {
+export type DeleteFn = () => void;
+
+export default function addSliderToToolbar(config: configSlider): DeleteFn {
   config = csUtilities.deepMerge(config, config.merge);
 
   config.container =
@@ -74,4 +77,9 @@ export default function addSliderToToolbar(config: configSlider): void {
   elInput.max = String(config.range[1]);
 
   elInput.value = String(config.defaultValue);
+
+  return () => {
+    elLabel.remove();
+    elInput.remove();
+  };
 }

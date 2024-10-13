@@ -38,6 +38,9 @@ const {
   getInstanceBytes,
 } = createImageDropArea(addLog);
 
+const toolbar = document.createElement('div');
+toolbar.id = 'toolbar';
+
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
 element.style.width = '500px';
@@ -45,6 +48,7 @@ element.style.height = '500px';
 
 content!.appendChild(logArea);
 content!.appendChild(imageDropArea);
+content!.appendChild(toolbar);
 content!.appendChild(element);
 
 const renderingEngineId = 'myRenderingEngine';
@@ -60,29 +64,7 @@ imageLoader.registerImageLoader(
   imageLoadFunction as unknown as Types.ImageLoaderFn
 );
 
-// ============================= //
-
-addSliderToToolbar({
-  title: 'Slice Index',
-  range: [0, 9],
-  defaultValue: 0,
-  onSelectedValueChange: (value) => {
-    const valueAsNumber = Number(value);
-
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
-
-    if (valueAsNumber < viewport.getImageIds().length) {
-      viewport.setImageIdIndex(valueAsNumber);
-    }
-    viewport.render();
-  },
-});
+let sliderRemoveFn = () => {};
 
 /**
  * Runs the demo
@@ -109,6 +91,23 @@ async function run() {
   setEmit((sopInstanceUids) => {
     const imageIds = sopInstanceUids.map((uid) => `custom:${uid}`);
     renderingEngine.getStackViewports()[0].setStack(imageIds);
+
+    sliderRemoveFn();
+    sliderRemoveFn = addSliderToToolbar({
+      title: 'Slice Index',
+      range: [0, imageIds.length - 1],
+      defaultValue: 0,
+      container: toolbar,
+      onSelectedValueChange: (value) => {
+        const valueAsNumber = Number(value);
+        const renderingEngine = getRenderingEngine(renderingEngineId);
+        const viewport = renderingEngine.getViewport(
+          viewportId
+        ) as Types.IStackViewport;
+        viewport.setImageIdIndex(valueAsNumber);
+        viewport.render();
+      },
+    });
   });
 
   // render volume viewports
