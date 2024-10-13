@@ -31,7 +31,7 @@ function _loadImageIntoBuffer(
       addToCache(imageId, dataSet);
       const pixelData =
         cornerstoneDICOMImageLoader.wadouri.getPixelData(dataSet);
-      const transferSyntax = dataSet.string('x00020010');
+      const transferSyntax = dataSet.string('x00020010') ?? '';
       const image = await cornerstoneDICOMImageLoader.createImage(
         imageId,
         pixelData,

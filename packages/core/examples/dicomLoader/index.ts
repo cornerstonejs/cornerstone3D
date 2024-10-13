@@ -4,12 +4,13 @@ import {
   Enums,
   imageLoader,
   metaData,
-  getRenderingEngine,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   setTitleAndDescription,
   addSliderToToolbar,
+  addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import createCustomImageLoader from './customImageLoader';
 import createImageDropArea from './imageDropArea';
@@ -65,6 +66,77 @@ imageLoader.registerImageLoader(
 );
 
 let sliderRemoveFn = () => {};
+let renderingEngine: RenderingEngine;
+
+function resetViewports(volume: boolean) {
+  const viewportInputArray: Types.PublicViewportInput[] = [];
+  if (!volume) {
+    viewportInputArray.push({
+      viewportId,
+      type: ViewportType.STACK,
+      element: element,
+    });
+  } else {
+    viewportInputArray.push({
+      viewportId,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
+    });
+  }
+  renderingEngine.setViewports(viewportInputArray);
+  renderImages();
+}
+
+let imageIds: string[] = [];
+
+async function renderImages() {
+  if (imageIds.length == 0) {
+    return;
+  }
+
+  const viewport = renderingEngine.getViewport(viewportId) as
+    | Types.IStackViewport
+    | Types.IVolumeViewport;
+  if ('setStack' in viewport) {
+    viewport.setStack(imageIds);
+  } else if ('setVolumes' in viewport) {
+    // TODO: In the current version of Cornerstone, we need to load all
+    // individual slices before we can load the volume.
+    for (let i = 0; i < imageIds.length; ++i) {
+      await imageLoader.loadImage(imageIds[i]);
+    }
+
+    const volumeId = `cornerstoneStreamingImageVolume:${imageIds[0]}`;
+    const volume = (await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds,
+    })) as Types.IStreamingImageVolume;
+
+    // Set the volume to load
+    volume.load();
+
+    viewport.setVolumes([{ volumeId }]);
+  }
+
+  sliderRemoveFn();
+  if (imageIds.length > 1) {
+    sliderRemoveFn = addSliderToToolbar({
+      title: 'Slice Index',
+      range: [0, imageIds.length - 1],
+      defaultValue: 0,
+      container: toolbar,
+      onSelectedValueChange: (value) => {
+        const valueAsNumber = Number(value);
+        if ('setImageIdIndex' in viewport) {
+          viewport.setImageIdIndex(valueAsNumber);
+        }
+        viewport.render();
+      },
+    });
+  }
+}
 
 /**
  * Runs the demo
@@ -76,39 +148,23 @@ async function run() {
   metaData.addProvider(metadataProvider, 10000);
 
   // Instantiate a rendering engine
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
-  const viewportInputArray: Types.PublicViewportInput[] = [
-    {
-      viewportId,
-      type: ViewportType.STACK,
-      element: element,
+  addToggleButtonToToolbar({
+    title: 'Toggle volume viewport',
+    defaultToggle: false,
+    container: toolbar,
+    onClick: (toggle) => {
+      resetViewports(toggle);
     },
-  ];
-  renderingEngine.setViewports(viewportInputArray);
+  });
+
+  resetViewports(false);
 
   // render stack viewport
   setEmit((sopInstanceUids) => {
-    const imageIds = sopInstanceUids.map((uid) => `custom:${uid}`);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
-    viewport.setStack(imageIds);
-
-    sliderRemoveFn();
-    if (imageIds.length > 1) {
-      sliderRemoveFn = addSliderToToolbar({
-        title: 'Slice Index',
-        range: [0, imageIds.length - 1],
-        defaultValue: 0,
-        container: toolbar,
-        onSelectedValueChange: (value) => {
-          const valueAsNumber = Number(value);
-          viewport.setImageIdIndex(valueAsNumber);
-          viewport.render();
-        },
-      });
-    }
+    imageIds = sopInstanceUids.map((uid) => `custom:${uid}`);
+    renderImages();
   });
 
   // render volume viewports
