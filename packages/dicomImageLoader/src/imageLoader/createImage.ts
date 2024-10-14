@@ -87,7 +87,7 @@ function createImage(
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
   // in cs3d
-  const useRGBA = options.useRGBA;
+  const useRGBA = true;
 
   // always preScale the pixel array unless it is asked not to
   options.preScale = {

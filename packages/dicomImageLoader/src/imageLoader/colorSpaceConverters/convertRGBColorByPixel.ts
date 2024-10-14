@@ -1,6 +1,10 @@
 import { ByteArray } from 'dicom-parser';
 
-export default function (imageFrame: ByteArray, colorBuffer: ByteArray): void {
+export default function (
+  imageFrame: ByteArray,
+  colorBuffer: ByteArray,
+  useRGBA: boolean
+): void {
   if (imageFrame === undefined) {
     throw new Error('decodeRGB: rgbBuffer must be defined');
   }
@@ -16,10 +20,17 @@ export default function (imageFrame: ByteArray, colorBuffer: ByteArray): void {
 
   let bufferIndex = 0;
 
-  for (let i = 0; i < numPixels; i++) {
-    colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // red
-    colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // green
-    colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // blue
-    colorBuffer[bufferIndex++] = 255; // alpha
+  if (useRGBA) {
+    for (let i = 0; i < numPixels; i++) {
+      colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // red
+      colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // green
+      colorBuffer[bufferIndex++] = imageFrame[rgbIndex++]; // blue
+      colorBuffer[bufferIndex++] = 255; // alpha
+    }
+
+    return;
   }
+
+  // if RGB buffer
+  colorBuffer.set(imageFrame);
 }
