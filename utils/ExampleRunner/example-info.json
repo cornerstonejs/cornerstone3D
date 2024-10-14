@@ -244,6 +244,10 @@
         "name": "Ultrasound Enhanced Region",
         "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
       },
+      "variationTool" : {
+        "name": "Variation Tool",
+        "description": "Here we demonstrate how to perform deformation operations on drawn contours"
+      },
       "windowLevelRegion": {
         "name": "Window Level Region",
         "description": "Demonstrates how to use the window level region tool to adjust the window level of an image"
