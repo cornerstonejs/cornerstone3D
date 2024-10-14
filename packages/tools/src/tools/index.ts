@@ -19,6 +19,7 @@ import ReferenceCursors from './ReferenceCursors';
 import ReferenceLines from './ReferenceLinesTool';
 import ScaleOverlayTool from './ScaleOverlayTool';
 import SculptorTool from './SculptorTool';
+import VariationTool from './annotation/VariationTool';
 
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
@@ -117,4 +118,5 @@ export {
   OrientationMarkerTool,
   SculptorTool,
   SegmentSelectTool,
+  VariationTool,
 };

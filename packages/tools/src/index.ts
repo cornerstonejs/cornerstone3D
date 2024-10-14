@@ -75,6 +75,7 @@ import {
   SculptorTool,
   SegmentSelectTool,
   WindowLevelRegionTool,
+  VariationTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -147,6 +148,7 @@ export {
   BrushTool,
   OrientationMarkerTool,
   SegmentSelectTool,
+  VariationTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

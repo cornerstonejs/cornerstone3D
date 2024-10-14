@@ -6366,6 +6366,69 @@ declare namespace utilities {
 }
 export { utilities }
 
+// @public (undocumented)
+export class VariationTool extends BaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _calculateCursor(element: any, centerCanvas?: any): void;
+    // (undocumented)
+    createHoverData(element: any, centerCanvas: any): {
+        brushCursor: {
+            metadata: {
+                viewPlaneNormal: Types_2.Point3;
+                viewUp: Types_2.Point3;
+                FrameOfReferenceUID: string;
+                referencedImageId: string;
+                toolName: string;
+                segmentColor: Types_2.Color;
+            };
+            data: {};
+        };
+        centerCanvas: any;
+        segmentIndex: number;
+        segmentationId: string;
+        segmentationRepresentationUID: string;
+        segmentColor: Types_2.Color;
+        viewportIdsToRender: string[];
+    };
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        segmentationId: string;
+        planeContours: any;
+        viewport: Types_2.IVolumeViewport | Types_2.IStackViewport;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    getSegmentationId(): string;
+    // (undocumented)
+    invalidateCursor(): void;
+    // (undocumented)
+    mouseMoveCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    onSetToolDisabled: () => void;
+    // (undocumented)
+    onSetToolEnabled: () => void;
+    // (undocumented)
+    onSetToolPassive: () => void;
+    // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    static toolName: string;
+    // (undocumented)
+    _triggerAnnotationRender(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport): void;
+    // (undocumented)
+    updateCursor(evt: EventTypes_2.InteractionEventType): void;
+}
+
 declare namespace vec2 {
     export {
         findClosestPoint,
