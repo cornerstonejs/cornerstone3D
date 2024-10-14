@@ -9,7 +9,7 @@ import {
 
 function convertRGB(imageFrame, colorBuffer, useRGBA) {
   if (imageFrame.planarConfiguration === 0) {
-    convertRGBColorByPixel(imageFrame.pixelData, colorBuffer);
+    convertRGBColorByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else {
     convertRGBColorByPlane(imageFrame.pixelData, colorBuffer, useRGBA);
   }
