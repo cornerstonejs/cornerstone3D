@@ -148,6 +148,10 @@
       }
     },
     "tools-basic": {
+      "etdrsGrid" : {
+        "name": "ETDRS Grid Tool",
+        "description": "Demonstrates how to use the ETDRS Grid tool. An ETDRS Grid (Early Treatment Diabetic Retinopathy Study Grid) is a standardized grid used in ophthalmology to assess macular thickness and retinal changes."
+      },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
