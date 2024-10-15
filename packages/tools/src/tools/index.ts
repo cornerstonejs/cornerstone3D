@@ -29,6 +29,7 @@ import DragProbeTool from './annotation/DragProbeTool';
 import RectangleROITool from './annotation/RectangleROITool';
 import EllipticalROITool from './annotation/EllipticalROITool';
 import CircleROITool from './annotation/CircleROITool';
+import ETDRSGridTool from './annotation/ETDRSGridTool';
 import SplineROITool from './annotation/SplineROITool';
 import SplineContourSegmentationTool from './annotation/SplineContourSegmentationTool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
@@ -87,6 +88,7 @@ export {
   RectangleROITool,
   EllipticalROITool,
   CircleROITool,
+  ETDRSGridTool,
   SplineROITool,
   PlanarFreehandROITool,
   PlanarFreehandContourSegmentationTool,
