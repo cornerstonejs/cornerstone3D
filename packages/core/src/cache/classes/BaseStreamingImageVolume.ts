@@ -7,7 +7,6 @@ import type {
   ImageLoadRequests,
   ImageVolumeProps,
   IStreamingVolumeProperties,
-  PixelDataTypedArrayString,
   PTScaling,
   ScalingParameters,
 } from '../../types';

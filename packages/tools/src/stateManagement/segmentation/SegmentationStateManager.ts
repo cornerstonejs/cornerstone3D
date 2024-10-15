@@ -379,7 +379,7 @@ export default class SegmentationStateManager {
    *
    * Each scenario requires different processing steps to ensure proper rendering and performance optimization.
    */
-  public processLabelmapRepresentationAddition(
+  public async processLabelmapRepresentationAddition(
     viewportId: string,
     segmentationId: string
   ) {
@@ -423,22 +423,43 @@ export default class SegmentationStateManager {
     const { representationData } = segmentation;
 
     const isBaseVolumeSegmentation = 'volumeId' in representationData.Labelmap;
-
+    const viewport = enabledElement.viewport;
     if (!volumeViewport) {
       // Stack Viewport
 
       if (isBaseVolumeSegmentation) {
         // Volume Labelmap on Stack Viewport
         // convert the stack viewport to volume viewport
-        csUtils.convertStackToVolumeViewport({
-          viewport: enabledElement.viewport as Types.IStackViewport,
+        await csUtils.convertStackToVolumeViewport({
+          viewport: viewport as Types.IStackViewport,
         });
       } else {
         // Stack Labelmap on Stack Viewport
-        this.updateLabelmapSegmentationImageReferences(
-          viewportId,
-          segmentation.segmentationId
-        );
+        if (
+          !this.updateLabelmapSegmentationImageReferences(
+            viewportId,
+            segmentation.segmentationId
+          )
+        ) {
+          // if not viewable maybe they are in the same referenced frame so we can
+          // convert the stack to volume viewport
+          const imageIds = this.getLabelmapImageIds(
+            segmentation.representationData
+          );
+          const frameOfReferenceUID = viewport.getFrameOfReferenceUID();
+          const segImage = cache.getImage(imageIds[0]);
+          if (segImage?.FrameOfReferenceUID === frameOfReferenceUID) {
+            await csUtils.convertStackToVolumeViewport({
+              viewport: viewport as Types.IStackViewport,
+            });
+
+            triggerSegmentationRepresentationModified(
+              viewportId,
+              segmentationId,
+              SegmentationRepresentations.Labelmap
+            );
+          }
+        }
       }
     } else {
       // Volume Viewport
@@ -447,7 +468,6 @@ export default class SegmentationStateManager {
       // a stack segmentation and still from the same FOR we are able to convert
       // the segmentation to a volume segmentation and render it on the volume viewport
       // as well
-
       const volumeViewport = enabledElement.viewport as Types.IVolumeViewport;
       const frameOfReferenceUID = volumeViewport.getFrameOfReferenceUID();
 
@@ -457,10 +477,10 @@ export default class SegmentationStateManager {
         );
         const segImage = cache.getImage(imageIds[0]);
         if (segImage?.FrameOfReferenceUID === frameOfReferenceUID) {
-          internalConvertStackToVolumeLabelmap(segmentation);
+          await internalConvertStackToVolumeLabelmap(segmentation);
         }
       } else {
-        // TODO: Implement Volume Labelmap on Volume Viewport
+        // Volume Labelmap on Volume Viewport is natively supported
       }
     }
   }
@@ -481,6 +501,7 @@ export default class SegmentationStateManager {
   ) {
     const currentImageId = viewport.getCurrentImageId();
 
+    let viewableLabelmapImageIdFound = false;
     for (const labelmapImageId of labelmapImageIds) {
       const viewableImageId = viewport.isReferenceViewable(
         { referencedImageId: labelmapImageId },
@@ -488,6 +509,7 @@ export default class SegmentationStateManager {
       );
 
       if (viewableImageId) {
+        viewableLabelmapImageIdFound = true;
         this._stackLabelmapImageIdReferenceMap
           .get(segmentationId)
           .set(currentImageId, labelmapImageId);
@@ -498,9 +520,11 @@ export default class SegmentationStateManager {
       updateCallback(viewport, segmentationId, labelmapImageIds);
     }
 
-    return this._stackLabelmapImageIdReferenceMap
-      .get(segmentationId)
-      .get(currentImageId);
+    return viewableLabelmapImageIdFound
+      ? this._stackLabelmapImageIdReferenceMap
+          .get(segmentationId)
+          .get(currentImageId)
+      : undefined;
   }
 
   /**

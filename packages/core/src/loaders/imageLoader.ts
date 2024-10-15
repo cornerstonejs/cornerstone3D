@@ -30,6 +30,7 @@ export interface ImageLoaderOptions {
 }
 
 interface LocalImageOptions {
+  frameOfReferenceUID?: string;
   scalarData?: PixelDataTypedArray;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
@@ -307,6 +308,7 @@ export function createAndCacheDerivedImage(
     ],
     origin: imagePlaneModule.imagePositionPatient,
     direction: imagePlaneModule.imageOrientationPatient,
+    frameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
   });
 
   localImage.referencedImageId = referencedImageId;
@@ -371,6 +373,7 @@ export function createAndCacheLocalImage(
     targetBuffer,
     skipCreateBuffer,
     onCacheAdd,
+    frameOfReferenceUID,
   } = options;
 
   const dimensions = options.dimensions;
@@ -388,6 +391,7 @@ export function createAndCacheLocalImage(
   const rowPixelSpacing = spacing[1];
 
   const imagePlaneModule = {
+    frameOfReferenceUID,
     rows: height,
     columns: width,
     imageOrientationPatient: direction ?? [1, 0, 0, 0, 1, 0],
