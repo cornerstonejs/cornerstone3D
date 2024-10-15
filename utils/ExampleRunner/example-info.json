@@ -188,6 +188,10 @@
         "name": "Annotation changing visibility",
         "description": "Demonstrates how to toggle the Visibility state for Annotations"
       },
+      "etdrsGrid" : {
+        "name": "ETDRS Grid Tool",
+        "description": "Demonstrates how to use the ETDRS Grid tool. An ETDRS Grid (Early Treatment Diabetic Retinopathy Study Grid) is a standardized grid used in ophthalmology to assess macular thickness and retinal changes."
+      },
       "modifierKeys": {
         "name": "Binding Tools with Modifier Keys",
         "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"
