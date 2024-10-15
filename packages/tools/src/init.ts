@@ -1,3 +1,4 @@
+console.debug("tools: link: init: 3DA675F2-86A1-41A1-9E15-A7019E085C0F");
 import { eventTarget, Enums } from '@cornerstonejs/core';
 import { getAnnotationManager } from './stateManagement/annotation/annotationState';
 import { Events as TOOLS_EVENTS } from './enums';
@@ -15,6 +16,7 @@ import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
 import { defaultSegmentationStateManager } from './stateManagement/segmentation/SegmentationStateManager';
+import segmentationRepresentationModifiedListener from './eventListeners/segmentation/segmentationRepresentationModifiedListener';
 
 let csToolsInitialized = false;
 
@@ -140,10 +142,10 @@ function _addCornerstoneToolsEventListeners() {
     segmentationDataModifiedEventListener
   );
 
-  // eventTarget.addEventListener(
-  //   TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
-  //   segmentationRepresentationRemovedListener
-  // );
+  eventTarget.addEventListener(
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
+    segmentationRepresentationModifiedListener
+  );
 }
 
 /**
@@ -185,6 +187,11 @@ function _removeCornerstoneToolsEventListeners() {
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
+  );
+
+  eventTarget.removeEventListener(
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
+    segmentationRepresentationModifiedListener
   );
 }
 

@@ -6,6 +6,7 @@ import {
   eventTarget,
   Enums,
   BaseVolumeViewport,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
@@ -49,7 +50,7 @@ import {
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 
 /**
@@ -227,7 +228,7 @@ class BrushTool extends BaseTool {
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
       const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referencedId ?? actorEntry.uid)
+        cache.getVolume(actorEntry.referencedId)
       );
 
       const segmentationVolume = cache.getVolume(volumeId);
@@ -255,64 +256,57 @@ class BrushTool extends BaseTool {
         return;
       }
 
+      // I hate this, but what can you do sometimes
       if (this.configuration.activeStrategy.includes('SPHERE')) {
         const referencedImageIds = viewport.getImageIds();
-        // Todo: This should get down to the sphere tool to validate the data
-        // it needs to work on, not here, this is so ugly
         const isValidVolumeForSphere =
           csUtils.isValidVolume(referencedImageIds);
+
         if (!isValidVolumeForSphere) {
           throw new Error(
             'Volume is not reconstructable for sphere manipulation'
           );
         }
 
-        // for optimization we can create the voxel manager here and pass down once
-        const labelmapImageIds = getStackSegmentationImageIdsForViewport(
-          viewport.id,
-          segmentationId
-        );
-
-        if (!labelmapImageIds || labelmapImageIds.length === 1) {
+        const volumeId = `${segmentationId}_${viewport.id}`;
+        const volume = cache.getVolume(volumeId);
+        if (volume) {
           return {
             imageId: segmentationImageId,
             segmentsLocked,
+            override: {
+              voxelManager: volume.voxelManager,
+              imageData: volume.imageData,
+            },
+          };
+        } else {
+          const labelmapImageIds = getStackSegmentationImageIdsForViewport(
+            viewport.id,
+            segmentationId
+          );
+
+          if (!labelmapImageIds || labelmapImageIds.length === 1) {
+            return {
+              imageId: segmentationImageId,
+              segmentsLocked,
+            };
+          }
+
+          // it will return the cached volume if it already exists
+          const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
+            volumeId,
+            labelmapImageIds
+          );
+
+          return {
+            imageId: segmentationImageId,
+            segmentsLocked,
+            override: {
+              voxelManager: volume.voxelManager,
+              imageData: volume.imageData,
+            },
           };
         }
-
-        const tempVolumeId = 'tempVolumeId';
-        const {
-          dimensions,
-          direction,
-          origin,
-          spacing,
-          numberOfComponents,
-          imageIds: sortedLabelmapImageIds,
-        } = csUtils.generateVolumePropsFromImageIds(
-          labelmapImageIds,
-          tempVolumeId
-        );
-
-        const newVoxelManager =
-          csUtils.VoxelManager.createImageVolumeVoxelManager({
-            dimensions,
-            imageIds: sortedLabelmapImageIds,
-            numberOfComponents,
-          });
-
-        const newImageData = vtkImageData.newInstance();
-        newImageData.setDimensions(dimensions);
-        newImageData.setSpacing(spacing);
-        newImageData.setDirection(direction);
-        newImageData.setOrigin(origin);
-        return {
-          imageId: segmentationImageId,
-          segmentsLocked,
-          override: {
-            voxelManager: newVoxelManager,
-            imageData: newImageData,
-          },
-        };
       } else {
         return {
           imageId: segmentationImageId,
@@ -415,10 +409,10 @@ class BrushTool extends BaseTool {
   };
 
   previewCallback = () => {
+    this._previewData.timer = null;
     if (this._previewData.preview) {
       return;
     }
-    this._previewData.timer = null;
     this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
@@ -467,14 +461,15 @@ class BrushTool extends BaseTool {
     const activeRepresentation = getActiveSegmentation(viewportId);
 
     if (!activeRepresentation) {
-      console.warn(
-        'No active segmentation detected, create one before using the brush tool'
-      );
       return;
     }
 
     const { segmentationId } = activeRepresentation;
     const segmentIndex = getActiveSegmentIndex(segmentationId);
+
+    if (!segmentIndex) {
+      return;
+    }
 
     const segmentColor = getSegmentIndexColor(
       viewportId,

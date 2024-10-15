@@ -70,6 +70,7 @@ import {
   SculptorTool,
   SegmentSelectTool,
   WindowLevelRegionTool,
+  VolumeRotateMouseWheelTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -160,4 +161,5 @@ export {
   // Utilities
   utilities,
   cursors,
+  VolumeRotateMouseWheelTool,
 };

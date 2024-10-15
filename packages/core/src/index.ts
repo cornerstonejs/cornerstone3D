@@ -17,7 +17,12 @@ import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import { ImageVolume, Surface } from './cache';
+import {
+  ImageVolume,
+  Surface,
+  StreamingDynamicImageVolume,
+  StreamingImageVolume,
+} from './cache';
 import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
@@ -151,4 +156,6 @@ export {
   ProgressiveRetrieveImages,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,
+  StreamingDynamicImageVolume,
+  StreamingImageVolume,
 };

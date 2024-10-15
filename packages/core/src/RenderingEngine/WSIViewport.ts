@@ -20,7 +20,6 @@ import { EPSILON } from '../constants';
 import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
-import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';

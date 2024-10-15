@@ -214,14 +214,14 @@ async function run() {
     },
   ]);
 
-  segmentation.config.style.setViewportSpecificStyleForRepresentationType(
+  segmentation.config.style.setStyle(
     {
       viewportId: viewportId1,
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
     {
-      outlineWidthActive: 5,
-      outlineDashActive: '10, 10',
+      outlineWidth: 5,
+      outlineDash: '10, 10',
     }
   );
 

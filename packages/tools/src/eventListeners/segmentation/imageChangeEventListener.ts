@@ -13,7 +13,7 @@ import { triggerSegmentationRender } from '../../stateManagement/segmentation/Se
 import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { SegmentationRepresentations } from '../../enums';
-import { getLabelmapActorUID } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 
 const enable = function (element: HTMLDivElement): void {
@@ -88,8 +88,7 @@ function _imageChangeEventListener(evt) {
 
   const labelmapActors = labelmapRepresentations
     .map((representation) => {
-      const actorUID = getLabelmapActorUID(representation.segmentationId);
-      return actors.find((actor) => actor.uid === actorUID);
+      return getLabelmapActorEntry(viewportId, representation.segmentationId);
     })
     .filter((actor) => actor !== undefined);
 
@@ -190,14 +189,14 @@ function _imageChangeEventListener(evt) {
       viewport.addImages([
         {
           imageId: derivedImageId,
-          actorUID: getLabelmapActorUID(segmentationId),
+          representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
           callback: ({ imageActor }) => {
             imageActor.getMapper().setInputData(imageData);
           },
         },
       ]);
 
-      triggerSegmentationRender();
+      triggerSegmentationRender(viewportId);
       return;
     } else {
       // if actor found

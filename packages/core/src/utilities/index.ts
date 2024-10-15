@@ -74,7 +74,7 @@ import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as color from './color';
-
+import { deepEqual } from './deepEqual';
 import type { IViewport } from '../types/IViewport';
 
 // solving the circular dependency issue
@@ -85,6 +85,9 @@ import autoLoad from './autoLoad';
 import scaleArray from './scaleArray';
 import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
 import { deepClone } from './deepClone';
+import { jumpToSlice } from './jumpToSlice';
+import scroll from './scroll';
+import clip from './clip';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -175,4 +178,8 @@ export {
   deepClone,
   splitImageIdsBy4DTags,
   pointInShapeCallback,
+  deepEqual,
+  jumpToSlice,
+  scroll,
+  clip,
 };

@@ -5,7 +5,6 @@ import addRepresentationData from '../internalAddRepresentationData';
 import { triggerSegmentationModified } from '../triggerSegmentationEvents';
 import debounce from '../../../utilities/debounce';
 import { registerPolySegWorker } from './registerPolySegWorker';
-import { defaultSegmentationStateManager } from '../SegmentationStateManager';
 
 const computedRepresentations = new Map<
   string,

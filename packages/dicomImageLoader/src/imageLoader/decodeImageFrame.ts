@@ -5,7 +5,7 @@ import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
 // too large.
 import type { ByteArray } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
-import external from '../externalModules';
+import { getWebWorkerManager } from '@cornerstonejs/core';
 import type { LoaderDecodeOptions } from '../types';
 
 function processDecodeTask(
@@ -23,7 +23,7 @@ function processDecodeTask(
   // although it can be passed to the decoder, it isn't needed and is slow
   delete options.streamingData;
 
-  const webWorkerManager = external.cornerstone.getWebWorkerManager();
+  const webWorkerManager = getWebWorkerManager();
   const priority = options.priority || undefined;
   const transferList = options.transferPixelData
     ? [pixelData.buffer]

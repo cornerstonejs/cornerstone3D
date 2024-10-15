@@ -10,11 +10,11 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addSliderToToolbar,
   addToggleButtonToToolbar,
+  createAndCacheGeometriesFromContours,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes
 console.debug(
@@ -116,28 +116,23 @@ addSliderToToolbar({
   range: [0.1, 10],
   defaultValue: 4,
   onSelectedValueChange: (value) => {
-    segmentation.config.style.setGlobalContourStyle({
-      outlineWidthActive: Number(value),
-    });
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+      {
+        outlineWidth: Number(value),
+      }
+    );
   },
 });
 
 async function addSegmentationsToState() {
-  const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
-
   // load the contour data
-  const geometryIds = [];
 
-  const promises = circle.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.Contour,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
+  const geometryIds = await createAndCacheGeometriesFromContours(
+    'CircleContour'
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([

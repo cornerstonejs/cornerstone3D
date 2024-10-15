@@ -13,7 +13,6 @@ import type {
   ContourSegmentationAnnotation,
 } from './ContourSegmentationAnnotation';
 import type * as EventTypes from './EventTypes';
-import type * as LabelmapTypes from './LabelmapTypes';
 import type IPoints from './IPoints';
 import type ITouchPoints from './ITouchPoints';
 import type IDistance from './IDistance';
@@ -36,8 +35,6 @@ import type {
   ToolConfiguration,
 } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
-import type JumpToSliceOptions from './JumpToSliceOptions';
-import type ScrollOptions from './ScrollOptions';
 import type BoundsIJK from './BoundsIJK';
 import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
@@ -45,6 +42,9 @@ import type {
   RepresentationData,
   RepresentationsData,
   Segmentation,
+  Segment,
+  SegmentationPublicInput,
+  SegmentationRepresentation,
   SegmentationState,
 } from './SegmentationStateTypes';
 import type { ISculptToolShape } from './ISculptToolShape';
@@ -55,7 +55,7 @@ import type {
   FloodFillResult,
 } from './FloodFillTypes';
 import type IToolClassReference from './IToolClassReference';
-import type { ContourSegmentationData } from './ContourTypes';
+import type { ContourSegmentationData, ContourStyle } from './ContourTypes';
 import type IAnnotationManager from './IAnnotationManager';
 import type AnnotationGroupSelector from './AnnotationGroupSelector';
 import type AnnotationRenderContext from './AnnotationRenderContext';
@@ -84,6 +84,9 @@ import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { PolySegConversionOptions } from './PolySeg';
 import type { IBaseTool } from './IBaseTool';
+import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
+import type { LabelmapStyle } from './LabelmapTypes';
+import type { SurfaceStyle } from './SurfaceTypes';
 
 export type {
   // AnnotationState
@@ -102,7 +105,6 @@ export type {
   AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
-  JumpToSliceOptions,
   AnnotationGroupSelector,
   // Rendering
   AnnotationRenderContext,
@@ -131,15 +133,14 @@ export type {
   TextBoxHandle,
   // Segmentation
   Segmentation,
+  SegmentationRepresentation,
   SegmentationState,
   RepresentationData,
   RepresentationsData,
-  LabelmapTypes,
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,
   // Scroll
-  ScrollOptions,
   // CINE
   CINETypes,
   BoundsIJK,
@@ -172,4 +173,10 @@ export type {
   // polySeg
   PolySegConversionOptions,
   IBaseTool,
+  RepresentationStyle,
+  Segment,
+  SegmentationPublicInput,
+  LabelmapStyle,
+  ContourStyle,
+  SurfaceStyle,
 };

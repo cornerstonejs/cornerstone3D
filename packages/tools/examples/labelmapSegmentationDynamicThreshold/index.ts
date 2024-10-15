@@ -195,6 +195,8 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  // Activate preview
+  labelmapTools.preview.enabled = true;
   addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM

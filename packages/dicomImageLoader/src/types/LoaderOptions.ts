@@ -5,8 +5,6 @@ import type {
 } from './XHRRequest';
 
 export interface LoaderOptions {
-  cornerstone?: unknown;
-  dicomParser?: unknown;
   maxWebWorkers?: number;
   // callback to open the object
   open?: (

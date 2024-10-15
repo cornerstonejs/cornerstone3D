@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "2.0.0-beta.28",
+    "version": "2.0.0-beta.29",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "main": "./dist/umd/adapters.umd.js",
     "module": "./dist/esm/index.js",
@@ -62,8 +62,7 @@
         "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
         "format-check": "npx eslint ./src --quiet",
-        "api-check": "yarn run format-check ",
-        "build:update-api": "yarn run build:esm && api-extractor run --local",
+        "api-check": "echo 'No API check for this package'",
         "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
         "lint": "eslint --fix ."
@@ -80,13 +79,13 @@
     "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
     "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
-        "@cornerstonejs/tools": "^2.0.0-beta.28",
+        "@cornerstonejs/tools": "^2.0.0-beta.29",
         "buffer": "^6.0.3",
         "dcmjs": "^0.29.8",
         "gl-matrix": "^3.4.3",
         "ndarray": "^1.0.19"
     },
     "devDependencies": {
-        "@cornerstonejs/core": "^2.0.0-beta.28"
+        "@cornerstonejs/core": "^2.0.0-beta.29"
     }
 }

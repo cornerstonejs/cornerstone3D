@@ -14,17 +14,6 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 1,
-  outlineDashActive: 0,
-  outlineDashInactive: 1,
-};
-
 const {
   PlanarFreehandContourSegmentationTool,
   PlanarFreehandROITool,

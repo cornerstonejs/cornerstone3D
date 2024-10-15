@@ -12,6 +12,7 @@ import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
+import type IVolumeViewport from './IVolumeViewport';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -242,6 +243,19 @@ interface PreStackNewImageEventDetail {
 }
 
 /**
+ * Volume Scroll Out of Bounds event detail
+ */
+type VolumeScrollOutOfBoundsEventDetail = {
+  volumeId: string;
+  viewport: IVolumeViewport;
+  desiredStepIndex: number;
+  currentStepIndex: number;
+  delta: number; // difference between the desired and current frame
+  numScrollSteps: number; // total scroll steps in the volume
+  currentImageId: string; // get ImageId (ImageIndex for in-plane acquisition)
+};
+
+/**
  * STACK_NEW_IMAGE Event's data
  */
 interface StackNewImageEventDetail {
@@ -306,6 +320,16 @@ interface StackViewportScrollEventDetail {
   /** direction of the scroll */
   direction: number;
 }
+
+/**
+ * Stack Scroll out of bounds event detail
+ */
+type StackScrollOutOfBoundsEventDetail = {
+  /** the current imageId index in the stack that we just scroll to */
+  imageIdIndex: number;
+  /** direction of the scroll */
+  direction: number;
+};
 
 /**
  * CameraModified Event type
@@ -428,7 +452,15 @@ type StackViewportNewStackEvent =
 
 type StackViewportScrollEvent = CustomEventType<StackViewportScrollEventDetail>;
 
+type StackScrollOutOfBoundsEvent =
+  CustomEventType<StackScrollOutOfBoundsEventDetail>;
+
+type VolumeScrollOutOfBoundsEvent =
+  CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+
 export type {
+  VolumeScrollOutOfBoundsEventDetail,
+  VolumeScrollOutOfBoundsEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,
@@ -475,6 +507,8 @@ export type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEvent,
   StackViewportScrollEventDetail,
+  StackScrollOutOfBoundsEvent,
+  StackScrollOutOfBoundsEventDetail,
   CameraResetEvent,
   CameraResetEventDetail,
 };

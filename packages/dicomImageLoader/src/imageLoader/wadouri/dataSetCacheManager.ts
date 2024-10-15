@@ -1,5 +1,5 @@
 import type { DataSet } from 'dicom-parser';
-import external from '../../externalModules';
+import * as dicomParser from 'dicom-parser';
 import { xhrRequest } from '../internal/index';
 import dataSetFromPartialContent from './dataset-from-partial-content';
 import type {
@@ -9,6 +9,7 @@ import type {
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
 import multiframeDataset from './retrieveMultiframeDataset';
 import { loadedDataSets, purgeLoadedDataSets } from './loadedDataSets';
+import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;
@@ -63,15 +64,11 @@ function update(uri: string, dataSet: DataSet) {
   loadedDataSet.dataSet = dataSet;
   cacheSizeInBytes += dataSet.byteArray.length;
 
-  external.cornerstone.triggerEvent(
-    external.cornerstone.events,
-    'datasetscachechanged',
-    {
-      uri,
-      action: 'updated',
-      cacheInfo: getInfo(),
-    }
-  );
+  triggerEvent(eventTarget, 'datasetscachechanged', {
+    uri,
+    action: 'updated',
+    cacheInfo: getInfo(),
+  });
 }
 
 // loads the dicom dataset from the wadouri sp
@@ -80,8 +77,6 @@ function load(
   loadRequest: LoadRequestFunction = xhrRequest as LoadRequestFunction,
   imageId: string
 ): CornerstoneWadoLoaderCachedPromise {
-  const { cornerstone, dicomParser } = external;
-
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
     // console.log('using loaded dataset ' + uri);
@@ -161,7 +156,7 @@ function load(
           cacheSizeInBytes += dataSet.byteArray.length;
           resolve(dataSet);
 
-          cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+          triggerEvent(eventTarget, 'datasetscachechanged', {
             uri,
             action: 'loaded',
             cacheInfo: getInfo(),
@@ -189,8 +184,6 @@ function load(
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
 function unload(uri: string): void {
-  const { cornerstone } = external;
-
   // console.log('unload for ' + uri);
   if (loadedDataSets[uri]) {
     loadedDataSets[uri].cacheCount--;
@@ -199,7 +192,7 @@ function unload(uri: string): void {
       cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
 
-      cornerstone.triggerEvent(cornerstone.events, 'datasetscachechanged', {
+      triggerEvent(eventTarget, 'datasetscachechanged', {
         uri,
         action: 'unloaded',
         cacheInfo: getInfo(),

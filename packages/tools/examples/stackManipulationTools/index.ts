@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import { eventTarget, RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -8,6 +8,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { KeyboardBindings } from '../../src/enums';
+import { StackScrollOutOfBoundsEvent } from 'core/src/types/EventTypes';
 
 // This is for debugging purposes
 console.warn(
@@ -28,7 +29,11 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const leftClickTools = [WindowLevelTool.toolName, PlanarRotateTool.toolName];
+const leftClickTools = [
+  WindowLevelTool.toolName,
+  PlanarRotateTool.toolName,
+  StackScrollTool.toolName,
+];
 const defaultLeftClickTool = leftClickTools[0];
 let currentLeftClickTool = leftClickTools[0];
 
@@ -78,6 +83,46 @@ addDropdownToToolbar({
     currentLeftClickTool = selectedValue;
   },
 });
+
+const lastEvents = [];
+const lastEventsDiv = document.createElement('div');
+
+content.appendChild(lastEventsDiv);
+
+function updateLastEvents(number, eventName, detail) {
+  if (lastEvents.length > 4) {
+    lastEvents.pop();
+  }
+
+  lastEvents.unshift({ number, eventName, detail });
+
+  // Display
+  lastEventsDiv.innerHTML = '';
+
+  lastEvents.forEach((le) => {
+    const element = document.createElement('p');
+
+    element.style.border = '1px solid black';
+    element.innerText = le.number + ' ' + le.eventName + '\n\n' + le.detail;
+
+    lastEventsDiv.appendChild(element);
+  });
+}
+
+let eventNumber = 1;
+
+const { STACK_SCROLL_OUT_OF_BOUNDS } = Enums.Events;
+
+eventTarget.addEventListener(STACK_SCROLL_OUT_OF_BOUNDS, ((
+  evt: StackScrollOutOfBoundsEvent
+) => {
+  updateLastEvents(
+    eventNumber,
+    STACK_SCROLL_OUT_OF_BOUNDS,
+    JSON.stringify(evt.detail)
+  );
+  eventNumber++;
+}) as EventListener);
 
 /**
  * Runs the demo

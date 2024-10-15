@@ -17,6 +17,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { VolumeRotateMouseWheelTool } from '@cornerstonejs/tools';
 
 const {
   ToolGroupManager,
@@ -408,14 +409,9 @@ function setUpToolGroups() {
 
   // MIP Tool Groups
   mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
-  mipToolGroup.addTool(StackScrollTool.toolName, {
+  mipToolGroup.addTool(VolumeRotateMouseWheelTool.toolName);
+  mipToolGroup.addTool(VolumeRotateMouseWheelTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
-    configuration: {
-      rotate: {
-        enabled: true,
-        rotateIncrementDegrees: 1,
-      },
-    },
   });
   mipToolGroup.addTool('MIPJumpToClickTool', {
     toolGroupId: ptToolGroupId,

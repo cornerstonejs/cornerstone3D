@@ -1,28 +1,24 @@
-import { getEnabledElementByViewportId, type Types } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
 
 /**
- * Retrieves the segmentation actor for a given viewport and segmentation specification.
- *
+ * Retrieves the actor entry based on the given criteria.
  * @param viewportId - The ID of the viewport.
- * @param specifier - An object containing the segmentation ID and type.
- * @param specifier.segmentationId - The ID of the segmentation.
- * @param specifier.type - The type of segmentation representation.
- * @returns The segmentation actor as a VolumeActor or ImageActor, or undefined if not found.
- * @throws Error if the segmentation type is Contour, as contours do not have actors.
+ * @param segmentationId - The ID of the segmentation.
+ * @param filterFn - A function to filter the actors.
+ * @returns The actor entry if found, undefined otherwise.
  */
-export function getSegmentationActor(
+function getActorEntry(
   viewportId: string,
-  specifier: {
-    segmentationId: string;
-    type: SegmentationRepresentations;
-  }
-): Types.VolumeActor | Types.ImageActor | undefined {
-  if (specifier.type === SegmentationRepresentations.Contour) {
-    throw new Error('Contours do not have actors');
+  segmentationId: string,
+  filterFn: (actor: unknown) => boolean
+) {
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+
+  if (!enabledElement) {
+    return;
   }
 
-  const enabledElement = getEnabledElementByViewportId(viewportId);
   const { renderingEngine, viewport } = enabledElement;
 
   if (!renderingEngine || !viewport) {
@@ -30,25 +26,77 @@ export function getSegmentationActor(
   }
 
   const actors = viewport.getActors();
+  const filteredActors = actors.filter(filterFn);
 
-  const actorUID =
-    specifier.type === SegmentationRepresentations.Labelmap
-      ? getLabelmapActorUID(specifier.segmentationId)
-      : getSurfaceActorUID(specifier.segmentationId);
-
-  const actor = actors.find((actor) => actor.uid === actorUID);
-
-  if (!actor) {
-    return;
-  }
-
-  return actor.actor as Types.VolumeActor | Types.ImageActor;
+  return filteredActors.length > 0 ? filteredActors[0] : undefined;
 }
 
-export function getLabelmapActorUID(segmentationId: string) {
-  return `${segmentationId}-${SegmentationRepresentations.Labelmap}`;
+/**
+ * Retrieves the UID of the labelmap actor for the given viewport and segmentation.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns The UID of the labelmap actor if found, undefined otherwise.
+ */
+export function getLabelmapActorUID(
+  viewportId: string,
+  segmentationId: string
+): string | undefined {
+  const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
+  return actorEntry?.uid;
 }
 
-export function getSurfaceActorUID(segmentationId: string) {
-  return `${segmentationId}-${SegmentationRepresentations.Surface}`;
+/**
+ * Retrieves the labelmap actor entry for the given viewport and segmentation.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns The labelmap actor entry if found, undefined otherwise.
+ */
+export function getLabelmapActorEntry(
+  viewportId: string,
+  segmentationId: string
+) {
+  return getActorEntry(viewportId, segmentationId, (actor) =>
+    // @ts-expect-error
+    actor.representationUID?.startsWith(
+      `${segmentationId}-${SegmentationRepresentations.Labelmap}`
+    )
+  );
+}
+
+/**
+ * Retrieves the surface actor entry for the given viewport, segmentation, and segment index.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param segmentIndex - The index of the segment.
+ * @returns The surface actor entry if found, undefined otherwise.
+ */
+export function getSurfaceActorEntry(
+  viewportId: string,
+  segmentationId: string,
+  segmentIndex?: number | string
+) {
+  return getActorEntry(viewportId, segmentationId, (actor) =>
+    // @ts-expect-error
+    actor.representationUID?.startsWith(
+      `${segmentationId}-${SegmentationRepresentations.Surface}-${segmentIndex}`
+    )
+  );
+}
+
+/**
+ * Retrieves the UID of the surface actor for the given viewport, segmentation, and segment index.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param segmentIndex - The index of the segment.
+ * @returns The UID of the surface actor if found, undefined otherwise.
+ */
+export function getSurfaceActorUID(
+  viewportId: string,
+  segmentationId: string,
+  segmentIndex?: number | string
+): string | undefined {
+  const segIndex = segmentIndex ? segmentIndex.toString() : '';
+
+  const actorEntry = getSurfaceActorEntry(viewportId, segmentationId, segIndex);
+  return actorEntry?.uid;
 }

@@ -1,5 +1,5 @@
 import type { DataSet } from 'dicom-parser';
-import external from '../../externalModules';
+import * as dicomParser from 'dicom-parser';
 import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
@@ -29,7 +29,6 @@ function fixFragments(dataSet: DataSet) {
 }
 
 function parsePartialByteArray(byteArray: Uint8Array) {
-  const { dicomParser } = external;
   /**
    * First parse just up to pixelData. This will make sure the
    * metadata header is correctly parsed (assuming no other error is

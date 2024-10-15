@@ -20,17 +20,6 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const DEFAULT_SEGMENTATION_CONFIG = {
-  fillAlpha: 0.5,
-  fillAlphaInactive: 0.3,
-  outlineOpacity: 1,
-  outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
-  outlineWidthInactive: 2,
-  outlineDashActive: undefined,
-  outlineDashInactive: undefined,
-};
-
 const {
   SplineContourSegmentationTool,
 
@@ -102,7 +91,7 @@ function getSegmentsVisibilityState() {
 }
 
 function updateSegmentationConfig(config) {
-  segmentation.config.style.setSegmentationSpecificStyle(
+  segmentation.config.style.setStyle(
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
@@ -204,13 +193,13 @@ addButtonToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineWidthActive',
+  id: 'outlineWidth',
   title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineWidthActive: Number(value) });
+    updateSegmentationConfig({ outlineWidth: Number(value) });
   },
 });
 
@@ -237,14 +226,14 @@ addSliderToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineDashActive',
+  id: 'outlineDash',
   title: 'Outline Dash',
   range: [0, 10],
   step: 1,
   defaultValue: 0,
   onSelectedValueChange: (value) => {
     const outlineDash = value === '0' ? undefined : `${value},${value}`;
-    updateSegmentationConfig({ outlineDashActive: outlineDash });
+    updateSegmentationConfig({ outlineDash: outlineDash });
   },
 });
 

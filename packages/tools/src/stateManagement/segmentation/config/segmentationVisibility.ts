@@ -5,7 +5,8 @@ import {
 import { setSegmentationRepresentationVisibility as _setSegmentationRepresentationVisibility } from '../setSegmentationRepresentationVisibility';
 import { getSegmentationRepresentationVisibility as _getSegmentationRepresentationVisibility } from '../getSegmentationRepresentationVisibility';
 import type { SegmentationRepresentations } from '../../../enums';
-import { triggerSegmentationModified } from '../triggerSegmentationEvents';
+import { triggerSegmentationRenderBySegmentationId } from '../SegmentationRenderingEngine';
+import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 
 /**
  * Sets the visibility of a segmentation representation for a given viewport.
@@ -47,8 +48,6 @@ function setSegmentationRepresentationVisibility(
       visibility
     );
   });
-
-  triggerSegmentationModified(specifier.segmentationId);
 }
 
 /**
@@ -100,14 +99,16 @@ function setSegmentIndexVisibility(
   }
 
   representations.forEach((representation) => {
-    const hiddenSegments = representation.segmentsHidden ?? new Set();
-
-    visibility
-      ? hiddenSegments.delete(segmentIndex)
-      : hiddenSegments.add(segmentIndex);
+    representation.segments[segmentIndex].visible = visibility;
   });
 
-  triggerSegmentationModified(specifier.segmentationId);
+  // Note: we should make sure to trigger here, since this does not go
+  // through the SegmentationStateManager
+  triggerSegmentationRenderBySegmentationId(specifier.segmentationId);
+  triggerSegmentationRepresentationModified(
+    viewportId,
+    specifier.segmentationId
+  );
 }
 
 /**
@@ -154,7 +155,17 @@ function getHiddenSegmentIndices(
     return new Set();
   }
 
-  return representation.segmentsHidden ?? new Set();
+  const segmentsHidden = Object.entries(representation.segments).reduce(
+    (acc, [segmentIndex, segment]) => {
+      if (!segment.visible) {
+        acc.add(Number(segmentIndex));
+      }
+      return acc;
+    },
+    new Set<number>()
+  );
+
+  return segmentsHidden;
 }
 
 export {

@@ -192,36 +192,47 @@ class SegmentationRenderingEngine {
           console.error(error);
         }
 
-        return Promise.resolve();
+        return Promise.resolve({
+          segmentationId: representation.segmentationId,
+          type: representation.type,
+        });
       }
     );
 
-    function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
-      const { element, viewportId } = evt.detail;
+    Promise.allSettled(segmentationRenderList).then((results) => {
+      const segmentationDetails = results
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => r.value);
 
-      element.removeEventListener(
-        Enums.Events.IMAGE_RENDERED,
-        onSegmentationRender as EventListener
-      );
+      function onSegmentationRender(evt: Types.EventTypes.ImageRenderedEvent) {
+        const { element, viewportId } = evt.detail;
 
-      const eventDetail: SegmentationRenderedEventDetail = {
-        viewportId,
-      };
+        element.removeEventListener(
+          Enums.Events.IMAGE_RENDERED,
+          onSegmentationRender as EventListener
+        );
 
-      triggerEvent(eventTarget, csToolsEvents.SEGMENTATION_RENDERED, {
-        ...eventDetail,
-      });
-    }
+        segmentationDetails.forEach((detail) => {
+          const eventDetail: SegmentationRenderedEventDetail = {
+            viewportId,
+            segmentationId: detail.segmentationId,
+            type: detail.type,
+          };
 
-    Promise.allSettled(segmentationRenderList).then(() => {
-      // for all viewports trigger a re-render
+          triggerEvent(eventTarget, csToolsEvents.SEGMENTATION_RENDERED, {
+            ...eventDetail,
+          });
+        });
+      }
+
+      // For all viewports, trigger a re-render
       const element = viewport.element;
       element.addEventListener(
         Enums.Events.IMAGE_RENDERED,
         onSegmentationRender as EventListener
       );
 
-      // viewport render
+      // Render the viewport
       viewport.render();
     });
   }

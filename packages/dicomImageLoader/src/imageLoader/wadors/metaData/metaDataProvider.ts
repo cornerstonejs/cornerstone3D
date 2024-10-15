@@ -1,4 +1,5 @@
-import external from '../../../externalModules';
+import * as dicomParser from 'dicom-parser';
+import { Enums, utilities } from '@cornerstonejs/core';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
@@ -23,8 +24,7 @@ import {
 import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = external.cornerstone.Enums;
-  const { dicomParser } = external;
+  const { MetadataModules } = Enums;
 
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
@@ -344,8 +344,7 @@ function metaDataProvider(type, imageId) {
 
 export function getImageUrlModule(imageId, metaData) {
   const { transferSyntaxUID } = getTransferSyntax(imageId, metaData);
-  const isVideo =
-    external.cornerstone.utilities.isVideoTransferSyntax(transferSyntaxUID);
+  const isVideo = utilities.isVideoTransferSyntax(transferSyntaxUID);
   const imageUrl = imageId.substring(7);
   const thumbnail = imageUrl.replace('/frames/', '/thumbnail/');
   let rendered = imageUrl.replace('/frames/', '/rendered/');

@@ -204,14 +204,24 @@ async function run() {
   _handleVolumeViewports(volumeImageIds, renderingEngine);
 
   // set the fillAlpha for the labelmap to 0
-  segmentation.config.style.setGlobalLabelmapStyle({
-    fillAlpha: 0.05,
-    activeSegmentOutlineWidthDelta: 3,
-  });
-  segmentation.config.style.setGlobalContourStyle({
-    fillAlpha: 0,
-    activeSegmentOutlineWidthDelta: 3,
-  });
+  segmentation.config.style.setStyle(
+    {
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+    {
+      fillAlpha: 0.05,
+      activeSegmentOutlineWidthDelta: 3,
+    }
+  );
+  segmentation.config.style.setStyle(
+    {
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+    {
+      fillAlpha: 0,
+      activeSegmentOutlineWidthDelta: 3,
+    }
+  );
 }
 
 run();

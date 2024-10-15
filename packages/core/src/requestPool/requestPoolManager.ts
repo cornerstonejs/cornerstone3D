@@ -72,17 +72,17 @@ class RequestPoolManager {
   private awake: boolean;
   private requestPool: RequestPool;
   private numRequests = {
-    interaction: 0,
-    thumbnail: 0,
-    prefetch: 0,
-    compute: 0,
-  };
+    [RequestType.Interaction]: 0,
+    [RequestType.Thumbnail]: 0,
+    [RequestType.Prefetch]: 0,
+    [RequestType.Compute]: 0,
+  } as Record<RequestType, number>;
   /* maximum number of requests of each type. */
   public maxNumRequests: {
-    interaction: number;
-    thumbnail: number;
-    prefetch: number;
-    compute: number;
+    [RequestType.Interaction]: number;
+    [RequestType.Thumbnail]: number;
+    [RequestType.Prefetch]: number;
+    [RequestType.Compute]: number;
   };
   /* A public property that is used to set the delay between requests. */
   public grabDelay: number;
@@ -97,33 +97,33 @@ class RequestPoolManager {
     this.id = id ? id : uuidv4();
 
     this.requestPool = {
-      interaction: { 0: [] },
-      thumbnail: { 0: [] },
-      prefetch: { 0: [] },
-      compute: { 0: [] },
+      [RequestType.Interaction]: { 0: [] },
+      [RequestType.Thumbnail]: { 0: [] },
+      [RequestType.Prefetch]: { 0: [] },
+      [RequestType.Compute]: { 0: [] },
     };
 
     this.grabDelay = 5;
     this.awake = false;
 
     this.numRequests = {
-      interaction: 0,
-      thumbnail: 0,
-      prefetch: 0,
-      compute: 0,
-    };
+      [RequestType.Interaction]: 0,
+      [RequestType.Thumbnail]: 0,
+      [RequestType.Prefetch]: 0,
+      [RequestType.Compute]: 0,
+    } as Record<RequestType, number>;
 
     this.maxNumRequests = {
-      interaction: 6,
-      thumbnail: 6,
-      prefetch: 5,
+      [RequestType.Interaction]: 6,
+      [RequestType.Thumbnail]: 6,
+      [RequestType.Prefetch]: 5,
       // I believe there is a bug right now, where if there are two workers
       // and one wants to run a compute job 6 times and the limit is just 5, then
       // the other worker will never get a chance to run its compute job.
       // we should probably have a separate limit for compute jobs per worker
       // context as there is another layer of parallelism there. For this reason
       // I'm setting the limit to 1000 for now.
-      compute: 1000,
+      [RequestType.Compute]: 1000,
     };
   }
 

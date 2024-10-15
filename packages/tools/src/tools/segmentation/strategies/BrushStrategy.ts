@@ -194,12 +194,12 @@ export default class BrushStrategy {
       segmentationVoxelManager.getArrayOfModifiedSlices()
     );
 
-    // reset the modified slices since we are done
-    segmentationVoxelManager.resetModifiedSlices();
-
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
     if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
+      // reset the modified slices since we are done
+      segmentationVoxelManager.resetModifiedSlices();
+
       return null;
     }
     // Use the original initialized data set to preserve preview info

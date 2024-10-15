@@ -869,6 +869,9 @@ function decimate(list: unknown[], interleave: number, offset?: number): number[
 function deepClone(obj: unknown): unknown;
 
 // @public (undocumented)
+function deepEqual(obj1: unknown, obj2: unknown): boolean;
+
+// @public (undocumented)
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
@@ -1046,6 +1049,8 @@ export enum EVENTS {
     // (undocumented)
     STACK_NEW_IMAGE = "CORNERSTONE_STACK_NEW_IMAGE",
     // (undocumented)
+    STACK_SCROLL_OUT_OF_BOUNDS = "STACK_SCROLL_OUT_OF_BOUNDS",
+    // (undocumented)
     STACK_VIEWPORT_SCROLL = "CORNERSTONE_STACK_VIEWPORT_SCROLL",
     // (undocumented)
     VIEWPORT_NEW_IMAGE_SET = "CORNERSTONE_VIEWPORT_NEW_IMAGE_SET",
@@ -1123,6 +1128,8 @@ declare namespace EventTypes {
         StackViewportNewStackEventDetail,
         StackViewportScrollEvent,
         StackViewportScrollEventDetail,
+        StackScrollOutOfBoundsEvent,
+        StackScrollOutOfBoundsEventDetail,
         CameraResetEvent,
         CameraResetEventDetail
     }
@@ -1372,9 +1379,9 @@ interface ICache {
     // (undocumented)
     purgeCache: () => void;
     // (undocumented)
-    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject, updateCache?: boolean) => void;
+    putImageLoadObject: (imageId: string, imageLoadObject: IImageLoadObject, updateCache?: boolean) => Promise<void>;
     // (undocumented)
-    putVolumeLoadObject: (volumeId: string, volumeLoadObject: IVolumeLoadObject) => void;
+    putVolumeLoadObject: (volumeId: string, volumeLoadObject: IVolumeLoadObject) => Promise<void>;
     // (undocumented)
     setMaxCacheSize: (maxCacheSize: number) => void;
 }
@@ -2861,6 +2868,8 @@ type RangeRetrieveOptions = BaseRetrieveOptions & {
 // @public (undocumented)
 interface ReferenceCompatibleOptions {
     // (undocumented)
+    asNearbyProjection?: boolean;
+    // (undocumented)
     asOverlay?: boolean;
     // (undocumented)
     asVolume?: boolean;
@@ -3027,7 +3036,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;
     // (undocumented)
-    protected getRLE(i: number, j: number, k?: number): RLERun<T>;
+    protected getRLE(i: number, j: number, k?: number): RLERun<T> | undefined;
     // (undocumented)
     getRun: (j: number, k: number) => RLERun<T>[];
     // (undocumented)
@@ -3187,6 +3196,15 @@ interface StackNewImageEventDetail {
     // (undocumented)
     viewportId: string;
 }
+
+// @public (undocumented)
+type StackScrollOutOfBoundsEvent = CustomEvent_2<StackScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+type StackScrollOutOfBoundsEventDetail = {
+    imageIdIndex: number;
+    direction: number;
+};
 
 // @public (undocumented)
 export class StackViewport extends Viewport {
@@ -3393,6 +3411,73 @@ interface StackViewportScrollEventDetail {
     imageId: string;
     // (undocumented)
     newImageIdIndex: number;
+}
+
+// @public (undocumented)
+export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implements IDynamicImageVolume {
+    constructor(imageVolumeProperties: ImageVolumeProps & {
+        splittingTag: string;
+        imageIdGroups: string[][];
+    }, streamingProperties: IStreamingVolumeProperties);
+    // (undocumented)
+    flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
+    // (undocumented)
+    flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
+    // (undocumented)
+    getCurrentTimePointImageIds(): string[];
+    // (undocumented)
+    getImageIdsToLoad(): string[];
+    // (undocumented)
+    getImageLoadRequests: (priority: number) => {
+        callLoadImage: (imageId: any, imageIdIndex: any, options: any) => any;
+        imageId: string;
+        imageIdIndex: number;
+        options: {
+            targetBuffer: {
+                type: PixelDataTypedArrayString;
+                rows: any;
+                columns: any;
+            };
+            allowFloatRendering: boolean;
+            preScale: {
+                enabled: boolean;
+                scalingParameters: ScalingParameters;
+            };
+            transferPixelData: boolean;
+            requestType: RequestType;
+            transferSyntaxUID: any;
+            additionalDetails: {
+                imageId: string;
+                imageIdIndex: number;
+                volumeId: string;
+            };
+        };
+        priority: number;
+        requestType: RequestType;
+        additionalDetails: {
+            volumeId: string;
+        };
+    }[];
+    // (undocumented)
+    numTimePoints: number;
+    // (undocumented)
+    scroll(delta: number): void;
+    // (undocumented)
+    get splittingTag(): string;
+    // (undocumented)
+    get timePointIndex(): number;
+    set timePointIndex(index: number);
+}
+
+// @public (undocumented)
+export class StreamingImageVolume extends BaseStreamingImageVolume {
+    constructor(imageVolumeProperties: ImageVolumeProps, streamingProperties: IStreamingVolumeProperties);
+    // (undocumented)
+    getImageIdsToLoad: () => string[];
+    // (undocumented)
+    getImageLoadRequests(priority: number): ImageLoadRequests[];
+    // (undocumented)
+    getScalarData(): PixelDataTypedArray;
 }
 
 // @public (undocumented)
@@ -3722,7 +3807,8 @@ declare namespace utilities {
         scaleArray,
         deepClone,
         splitImageIdsBy4DTags,
-        pointInShapeCallback
+        pointInShapeCallback,
+        deepEqual
     }
 }
 export { utilities }

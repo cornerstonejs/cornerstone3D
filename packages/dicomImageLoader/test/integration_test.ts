@@ -1,7 +1,7 @@
 /* eslint import/extensions: 0 */
 import { expect } from 'chai';
 import { loadImage } from '../src/imageLoader/wadouri/loadImage.js';
-import configure from '../src/imageLoader/configure.js';
+import init from '../src/imageLoader/init.js';
 
 // See https://www.dicomlibrary.com/dicom/transfer-syntax/
 const transferSyntaxes = {
@@ -42,8 +42,7 @@ describe('loadImage', function () {
       },
     };
 
-    configure({
-      strict: false,
+    init({
       decodeConfig: {},
     });
   });

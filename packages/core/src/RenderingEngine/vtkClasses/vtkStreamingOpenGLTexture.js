@@ -1,6 +1,7 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import cache from '../../cache/cache';
+import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 
 /**
  * vtkStreamingOpenGLTexture - A derived class of the core vtkOpenGLTexture.
@@ -158,15 +159,22 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     // @ts-expect-error
     const imageIds = volume.getCurrentTimePointImageIds();
 
+    let constructor;
+
     for (let i = 0; i < imageIds.length; i++) {
       const imageId = imageIds[i];
       const image = cache.getImage(imageId);
 
+      let data;
       if (!image) {
-        continue;
+        // if there is no data we should set zero
+        constructor = getConstructorFromType(volume.dataType, true);
+        data = new constructor(model.width * model.height);
+      } else {
+        data = image.voxelManager.getScalarData();
+        constructor = data.constructor;
       }
 
-      const data = image.voxelManager.getScalarData();
       const gl = model.context;
 
       const dataType = data.constructor.name;

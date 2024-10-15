@@ -46,17 +46,16 @@ export async function createAndCacheSurfacesFromRaw(
       id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
       color,
       frameOfReferenceUID: 'test-frameOfReferenceUID',
-      data: {
-        points: rawSurfaceData.data.points,
-        polys: rawSurfaceData.data.polys,
-      },
+      points: rawSurfaceData.data.points,
+      polys: rawSurfaceData.data.polys,
+      segmentIndex,
     };
 
     const geometryId = closedSurface.id;
     geometryIds.set(segmentIndex, geometryId);
 
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: Enums.GeometryType.Surface,
+    return geometryLoader.createAndCacheLocalGeometry(geometryId, {
+      type: Enums.GeometryType.SURFACE,
       geometryData: closedSurface as unknown as Types.PublicSurfaceData,
     });
   });

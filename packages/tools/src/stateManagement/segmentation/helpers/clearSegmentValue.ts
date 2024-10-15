@@ -1,5 +1,4 @@
 import { cache } from '@cornerstonejs/core';
-import { SegmentationRepresentations } from '../../../enums';
 import { getSegmentation } from '../getSegmentation';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
 

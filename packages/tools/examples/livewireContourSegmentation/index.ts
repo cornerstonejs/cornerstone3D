@@ -25,9 +25,9 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   fillAlphaInactive: 0.3,
   outlineOpacity: 1,
   outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
+  outlineWidth: 3,
   outlineWidthInactive: 2,
-  outlineDashActive: undefined,
+  outlineDash: undefined,
   outlineDashInactive: undefined,
 };
 
@@ -180,13 +180,13 @@ addButtonToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineWidthActive',
+  id: 'outlineWidth',
   title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineWidthActive: Number(value) });
+    updateSegmentationConfig({ outlineWidth: Number(value) });
   },
 });
 
@@ -213,14 +213,14 @@ addSliderToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineDashActive',
+  id: 'outlineDash',
   title: 'Outline Dash',
   range: [0, 10],
   step: 1,
   defaultValue: 0,
   onSelectedValueChange: (value) => {
     const outlineDash = value === '0' ? undefined : `${value},${value}`;
-    updateSegmentationConfig({ outlineDashActive: outlineDash });
+    updateSegmentationConfig({ outlineDash: outlineDash });
   },
 });
 
@@ -245,14 +245,14 @@ function getSegmentsVisibilityState() {
 }
 
 function updateSegmentationConfig(config) {
-  const { style } = segmentation.config.style.getStyle({
+  const style = segmentation.config.style.getStyle({
     segmentationId,
     type: csToolsEnums.SegmentationRepresentations.Contour,
   });
 
   const mergedConfig = { ...style, ...config };
 
-  segmentation.config.style.setSegmentationSpecificStyle(
+  segmentation.config.style.setStyle(
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,

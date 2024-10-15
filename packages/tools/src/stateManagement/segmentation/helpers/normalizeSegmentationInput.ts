@@ -2,8 +2,11 @@ import { SegmentationRepresentations } from '../../../enums';
 import type {
   SegmentationPublicInput,
   Segmentation,
+  Segment,
 } from '../../../types/SegmentationStateTypes';
 import type { ContourSegmentationData } from '../../../types/ContourTypes';
+import { cache } from '@cornerstonejs/core';
+import type { SurfaceSegmentationData } from '../../../types/SurfaceTypes';
 
 /**
  * It takes in a segmentation input and returns a segmentation with default values
@@ -14,7 +17,7 @@ import type { ContourSegmentationData } from '../../../types/ContourTypes';
 function normalizeSegmentationInput(
   segmentationInput: SegmentationPublicInput
 ): Segmentation {
-  const { segmentationId, representation } = segmentationInput;
+  const { segmentationId, representation, config } = segmentationInput;
   const { type, data: inputData } = representation;
   const data = inputData ? { ...inputData } : {};
 
@@ -35,15 +38,32 @@ function normalizeSegmentationInput(
     contourData.annotationUIDsMap = contourData.annotationUIDsMap ?? new Map();
   }
 
-  // Todo: we should be able to let the user pass in non-default values for
-  // cachedStats, label, activeSegmentIndex, etc.
+  const normalizedSegments = {} as { [key: number]: Segment };
+  if (config?.segments) {
+    Object.entries(config.segments).forEach(([segmentIndex, segment]) => {
+      normalizedSegments[segmentIndex] = {
+        segmentIndex: Number(segmentIndex),
+        label: segment.label ?? `Segment ${segmentIndex}`,
+        locked: segment.locked ?? false,
+        cachedStats: segment.cachedStats ?? {},
+        active: segment.active ?? false,
+      } as Segment;
+    });
+  } else if (type === SegmentationRepresentations.Surface) {
+    const { geometryIds } = data as SurfaceSegmentationData;
+    geometryIds.forEach((geometryId) => {
+      const geometry = cache.getGeometry(geometryId);
+      if (geometry?.data) {
+        const { segmentIndex } = geometry.data;
+        normalizedSegments[segmentIndex] = { segmentIndex } as Segment;
+      }
+    });
+  }
+
   return {
     segmentationId,
-    cachedStats: {},
-    segmentLabels: {},
-    label: null,
-    segmentsLocked: new Set(),
-    activeSegmentIndex: 1,
+    label: config?.label ?? null,
+    segments: normalizedSegments,
     representationData: {
       [type]: {
         ...data,

@@ -5,14 +5,13 @@ import {
   setVolumesForViewports,
   volumeLoader,
   utilities,
-  geometryLoader,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  downloadSurfacesData,
+  createAndCacheGeometriesFromSurfaces,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -76,23 +75,8 @@ let surfaces;
 async function addSegmentationsToState() {
   // Download the surface data. Please note that this is a large file
   // and may take a while to download
-  surfaces = await downloadSurfacesData();
 
-  const geometriesInfo = surfaces.reduce(
-    (acc: Map<number, string>, surface, index) => {
-      const geometryId = surface.closedSurface.id;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: GeometryType.Surface,
-        geometryData: surface.closedSurface as Types.PublicSurfaceData,
-      });
-
-      const segmentIndex = index + 1;
-      acc.set(segmentIndex, geometryId);
-
-      return acc;
-    },
-    new Map()
-  );
+  const geometriesInfo = await createAndCacheGeometriesFromSurfaces();
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -100,8 +84,6 @@ async function addSegmentationsToState() {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Surface,
-        // The actual segmentation data, in the case of contour geometry
-        // this is a reference to the geometry data
         data: {
           geometryIds: geometriesInfo,
         },

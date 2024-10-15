@@ -52,6 +52,10 @@
    * Determines how the TypeScript compiler engine will be invoked by API Extractor.
    */
   "compiler": {
+    /**
+    * this is very important since We are overriding a TypeScript file since for development we use path
+    * to cross-reference the monorepor libraries. Here we should override it to not use for the API creation.
+    */
     "overrideTsconfig": {
       "paths": {}
     }

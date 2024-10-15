@@ -31,6 +31,8 @@ interface IVolumeInput {
   blendMode?: BlendModes;
   /** Slab thickness of the volume - by default it is 0.05*/
   slabThickness?: number;
+  /** other metadata that is needed for the volume */
+  [key: string]: unknown;
 }
 
 export type { IVolumeInput, VolumeInputCallback };

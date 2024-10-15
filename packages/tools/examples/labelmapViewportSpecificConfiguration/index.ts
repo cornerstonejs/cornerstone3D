@@ -78,7 +78,7 @@ instructions.innerText = `
 addToggleButtonToToolbar({
   title: 'toggle outline rendering for left viewport',
   onClick: (toggle) => {
-    segmentation.config.style.setViewportSpecificStyleForRepresentationType(
+    segmentation.config.style.setStyle(
       {
         viewportId: viewportId1,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
