@@ -135,7 +135,6 @@ class ProgressiveRetrieveImagesInstance {
   outstandingRequests = 0;
 
   stageStatusMap = new Map<string, StageStatus>();
-  imageQualityStatusMap = new Map<string, ImageQualityStatus>();
   displayedIterator = new ProgressiveIterator<void | IImage>('displayed');
 
   constructor(configuration: IRetrieveConfiguration, imageIds, listener) {
@@ -177,7 +176,7 @@ class ProgressiveRetrieveImagesInstance {
 
     uncompressedIterator
       .forEach(async (image, done) => {
-        const oldStatus = this.imageQualityStatusMap.get(imageId);
+        const oldStatus = cache.getImageQuality(imageId);
         if (!image) {
           console.warn('No image retrieved', imageId);
           return;
@@ -186,29 +185,34 @@ class ProgressiveRetrieveImagesInstance {
         complete ||= imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
         if (oldStatus !== undefined && oldStatus > imageQualityStatus) {
           // We already have a better status, so don't update it
+          console.log(
+            'Already have better status',
+            imageId,
+            oldStatus,
+            imageQualityStatus
+          );
           this.updateStageStatus(request.stage, null, true);
           return;
         }
 
         this.listener.successCallback(imageId, image);
-        this.imageQualityStatusMap.set(imageId, imageQualityStatus);
+        console.warn('Check that image cache instance was updated here: TODO');
+        // this.imageQualityStatusMap.set(imageId, imageQualityStatus);
         this.displayedIterator.add(image);
         if (done) {
           this.updateStageStatus(request.stage);
         }
-        fillNearbyFrames(
-          this.listener,
-          this.imageQualityStatusMap,
-          request,
-          image,
-          options
-        );
+        fillNearbyFrames(this.listener, request, image);
       }, errorCallback)
       .finally(() => {
         if (!complete && next) {
-          if (cache.getImageLoadObject(imageId)) {
-            cache.removeImageLoadObject(imageId);
-          }
+          // Updates the image cache to contain a partial image in whatever
+          // the current status (none possibly), and remove the image load
+          // instance but not the actual image cached value.
+          cache.setPartialImage(imageId);
+          // After the update, the image can still be fetched in the old version
+          // but a new request will be run and will replace the old version as
+          // appropriate
           this.addRequest(next, options.streamingData);
         } else {
           if (!complete) {
@@ -228,7 +232,7 @@ class ProgressiveRetrieveImagesInstance {
     return doneLoad.catch((e) => null);
   }
 
-  /** Adds a rquest to the image load pool manager */
+  /** Adds a request to the image load pool manager */
   protected addRequest(request, streamingData = {}) {
     const { imageId, stage } = request;
     const baseOptions = this.listener.getLoaderImageOptions(imageId);

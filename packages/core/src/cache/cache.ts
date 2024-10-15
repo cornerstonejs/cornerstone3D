@@ -15,6 +15,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import imageIdToURI from '../utilities/imageIdToURI';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import { ImageQualityStatus } from '../enums';
 
 const ONE_GB = 1073741824;
 
@@ -34,9 +35,6 @@ class Cache {
   private readonly _volumeCache = new Map<string, ICachedVolume>();
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
-
-  // Used to store temporary lower resolution/quality/duplicated images
-  private readonly temporaryCache = new Map<string, IImage>();
 
   private _imageCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
@@ -134,11 +132,11 @@ class Cache {
     const { imageLoadObject } = cachedImage;
 
     // Cancel any in-progress loading
-    if (imageLoadObject.cancelFn) {
+    if (imageLoadObject?.cancelFn) {
       imageLoadObject.cancelFn();
     }
 
-    if (imageLoadObject.decache) {
+    if (imageLoadObject?.decache) {
       imageLoadObject.decache();
     }
 
@@ -201,7 +199,6 @@ class Cache {
    *
    */
   public purgeCache = (): void => {
-    this.temporaryCache.clear();
     const imageIterator = this._imageCache.keys();
 
     // need to purge volume cache first to avoid issues with image cache
@@ -352,7 +349,7 @@ class Cache {
     image: IImage,
     cachedImage: ICachedImage
   ): void {
-    if (!this._imageCache.get(imageId)) {
+    if (!this._imageCache.has(imageId)) {
       console.warn(
         'The image was purged from the cache before it completed loading.'
       );
@@ -382,8 +379,6 @@ class Cache {
     this.decacheIfNecessaryUntilBytesAvailable(image.sizeInBytes);
 
     cachedImage.loaded = true;
-    console.log('********* Deleting temporary', imageId);
-    this.temporaryCache.delete(imageId);
 
     cachedImage.image = image;
     cachedImage.sizeInBytes = image.sizeInBytes;
@@ -432,7 +427,8 @@ class Cache {
       );
     }
 
-    if (this._imageCache.has(imageId)) {
+    const alreadyCached = this._imageCache.get(imageId);
+    if (alreadyCached?.imageLoadObject) {
       console.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
       throw new Error('putImageLoadObject: imageId already in cache');
     }
@@ -449,7 +445,10 @@ class Cache {
       );
     }
 
+    // Starts with an existing cached image and extend it with information
+    // about being loaded.
     const cachedImage: ICachedImage = {
+      ...alreadyCached,
       loaded: false,
       imageId,
       sharedCacheKey: undefined,
@@ -480,14 +479,6 @@ class Cache {
         this._imageCache.delete(imageId);
         throw error; // Re-throw the error to be caught by the caller
       });
-  }
-
-  public putTemporaryImage(imageId: string, image: IImage): void {
-    if (this.isLoaded(imageId)) {
-      console.log('Not putting temporary because already laoded', imageId);
-      return;
-    }
-    this.temporaryCache.set(imageId, image);
   }
 
   /**
@@ -538,9 +529,8 @@ class Cache {
     }
 
     const cachedImage = this._imageCache.get(imageId);
-
     if (!cachedImage) {
-      return this.temporary;
+      return;
     }
 
     // Bump time stamp for cached image
@@ -1063,9 +1053,13 @@ class Cache {
    * Returns the image associated with the imageId
    *
    * @param imageId - image ID
+   * @param minQuality - the minimum image quality to fetch
    * @returns Image
    */
-  public getImage = (imageId: string): IImage | undefined => {
+  public getImage = (
+    imageId: string,
+    minQuality = ImageQualityStatus.FAR_REPLICATE
+  ): IImage | undefined => {
     if (imageId === undefined) {
       throw new Error('getImage: imageId must not be undefined');
     }
@@ -1073,19 +1067,69 @@ class Cache {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
-      // Use a temporary alternative if there is one, to allow low resolution
-      // versions to be used for initial render
-      if (this.temporaryCache.has(imageId)) {
-        console.log('Temporary cache contains a copy of', imageId);
-      }
-      return this.temporaryCache.get(imageId);
+      return;
     }
-
     // Bump time stamp for cached volume (not used for anything for now)
     cachedImage.timeStamp = Date.now();
 
+    if (cachedImage.image?.imageQualityStatus < minQuality) {
+      console.log(
+        'Not using image for',
+        imageId,
+        'because quality is too low',
+        cachedImage.image.imageQualityStatus,
+        '<',
+        minQuality
+      );
+      return;
+    }
+
     return cachedImage.image;
   };
+
+  /**
+   * Sets a partial image qualty to use, allowing another load to occur.
+   * If the partialImage is not defined, will use any current image defined.
+   * This will ONLY replace the current image if the quality is at least as
+   * good.
+   * This will not cancel any in flight requests, but will remove any partial
+   * loaded requests.
+   *
+   * @param imageId - image ID
+   * @param partialImage - partial image to use
+   */
+  public setPartialImage(imageId: string, partialImage?: IImage) {
+    const cachedImage = this._imageCache.get(imageId);
+    if (!cachedImage) {
+      if (partialImage) {
+        this._imageCache.set(imageId, {
+          image: partialImage,
+          imageId,
+          loaded: false,
+          timeStamp: Date.now(),
+          sizeInBytes: 0,
+        });
+      }
+      return;
+    }
+    if (cachedImage.loaded) {
+      cachedImage.loaded = false;
+      cachedImage.imageLoadObject = null;
+      this.incrementImageCacheSize(-cachedImage.sizeInBytes);
+      cachedImage.sizeInBytes = 0;
+      cachedImage.image = partialImage;
+    } else {
+      cachedImage.image = partialImage;
+    }
+  }
+
+  /** Gets the current image quality for the given image id */
+  public getImageQuality(imageId: string) {
+    const image = this._imageCache.get(imageId)?.image;
+    return image
+      ? image.imageQualityStatus || ImageQualityStatus.FULL_RESOLUTION
+      : undefined;
+  }
 
   /**
    * Returns the volume associated with the volumeId
