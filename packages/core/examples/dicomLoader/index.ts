@@ -103,8 +103,7 @@ async function renderImages() {
   if ('setStack' in viewport) {
     viewport.setStack(imageIds);
   } else if ('setVolumes' in viewport) {
-    // TODO: In the current version of Cornerstone, we need to load all
-    // individual slices before we can load the volume.
+    // TODO: https://github.com/cornerstonejs/cornerstone3D/issues/889
     for (let i = 0; i < imageIds.length; ++i) {
       await imageLoader.loadImage(imageIds[i]);
     }
