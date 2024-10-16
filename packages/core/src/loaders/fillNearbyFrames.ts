@@ -26,7 +26,7 @@ export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
       cache.setPartialImage(targetId, nearbyImage);
       listener.successCallback(targetId, nearbyImage);
     } catch (e) {
-      console.log("**** Couldn't fill nearby item ", nearbyItem.itemId, e);
+      console.warn("Couldn't fill nearby item ", nearbyItem.itemId, e);
     }
   }
 }
