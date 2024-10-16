@@ -166,8 +166,6 @@ const configHtj2k = {
   ...interleavedRetrieveStages,
 };
 
-console.log("********** interleavedRetrieveStages=", interleavedRetrieveStages);
-
 const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {

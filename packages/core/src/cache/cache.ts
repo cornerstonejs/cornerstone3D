@@ -1073,14 +1073,6 @@ class Cache {
     cachedImage.timeStamp = Date.now();
 
     if (cachedImage.image?.imageQualityStatus < minQuality) {
-      console.log(
-        'Not using image for',
-        imageId,
-        'because quality is too low',
-        cachedImage.image.imageQualityStatus,
-        '<',
-        minQuality
-      );
       return;
     }
 
@@ -1117,9 +1109,9 @@ class Cache {
       cachedImage.imageLoadObject = null;
       this.incrementImageCacheSize(-cachedImage.sizeInBytes);
       cachedImage.sizeInBytes = 0;
-      cachedImage.image = partialImage;
+      cachedImage.image = partialImage || cachedImage.image;
     } else {
-      cachedImage.image = partialImage;
+      cachedImage.image = partialImage || cachedImage.image;
     }
   }
 

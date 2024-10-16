@@ -547,7 +547,6 @@ export default class BaseStreamingImageVolume
     this.loadStatus.loading = true;
 
     const imageIds = [...this.getImageIdsToLoad()];
-    imageIds.reverse();
 
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;

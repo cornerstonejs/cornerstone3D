@@ -43,6 +43,7 @@ interface StageStatus {
 export interface NearbyRequest {
   // The item id to fill
   itemId: string;
+  index?: number;
   linearId?: string;
   // The new status of the filled image (will only fill if the existing status
   // is less than this one)
@@ -51,6 +52,7 @@ export interface NearbyRequest {
 
 export interface ProgressiveRequest {
   imageId: string;
+  index?: number;
   stage: RetrieveStage;
   next?: ProgressiveRequest;
   /**
@@ -185,19 +187,11 @@ class ProgressiveRetrieveImagesInstance {
         complete ||= imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
         if (oldStatus !== undefined && oldStatus > imageQualityStatus) {
           // We already have a better status, so don't update it
-          console.log(
-            'Already have better status',
-            imageId,
-            oldStatus,
-            imageQualityStatus
-          );
           this.updateStageStatus(request.stage, null, true);
           return;
         }
 
         this.listener.successCallback(imageId, image);
-        console.warn('Check that image cache instance was updated here: TODO');
-        // this.imageQualityStatusMap.set(imageId, imageQualityStatus);
         this.displayedIterator.add(image);
         if (done) {
           this.updateStageStatus(request.stage);
@@ -316,6 +310,7 @@ class ProgressiveRetrieveImagesInstance {
       const request: ProgressiveRequest = {
         imageId,
         stage,
+        index,
         nearbyRequests: this.findNearbyRequests(index, stage),
       };
       this.addStageStatus(stage);
@@ -359,6 +354,7 @@ class ProgressiveRetrieveImagesInstance {
       nearby.push({
         itemId: this.imageIds[nearbyIndex],
         imageQualityStatus: nearbyItem.imageQualityStatus,
+        index: nearbyIndex,
       });
     }
 

@@ -13,13 +13,6 @@ export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
       const { itemId: targetId, imageQualityStatus } = nearbyItem;
       const currentStatus = cache.getImageQuality(targetId);
       if (currentStatus !== undefined && currentStatus >= imageQualityStatus) {
-        console.log(
-          'Already have delivered image at quality',
-          imageQualityStatus,
-          currentStatus,
-          cache.getImage(targetId)?.imageQualityStatus,
-          cache.getImage
-        );
         continue;
       }
       const nearbyImage = {
@@ -28,12 +21,12 @@ export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
         imageQualityStatus,
       };
 
-      // Somehow this should put the object in as a direct deliverable
-      console.log('Filling temporary frame for', targetId);
+      // This will deliver the partial image as something that can be
+      // immediate rendered, but won't replace any future fetches.
       cache.setPartialImage(targetId, nearbyImage);
       listener.successCallback(targetId, nearbyImage);
     } catch (e) {
-      console.log("Couldn't fill nearby item ", nearbyItem.itemId, e);
+      console.log("**** Couldn't fill nearby item ", nearbyItem.itemId, e);
     }
   }
 }
