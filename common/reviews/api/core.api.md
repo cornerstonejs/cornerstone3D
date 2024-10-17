@@ -866,14 +866,11 @@ interface CustomEvent_2<T = unknown> extends Event {
 }
 
 // @public (undocumented)
-interface DataSetOptions {
-    // (undocumented)
+type DataSetOptions = {
     groupId?: string;
-    // (undocumented)
-    viewReference?: ViewReferenceSpecifier;
-    // (undocumented)
     viewSelector?: ViewPresentationSelector;
-}
+    viewReference?: ViewReferenceSpecifier;
+};
 
 // @public (undocumented)
 function decimate(list: unknown[], interleave: number, offset?: number): number[];
@@ -4937,6 +4934,8 @@ function worldToImageCoords(imageId: string, worldCoords: Point3): Point2 | unde
 export class WSIViewport extends Viewport {
     constructor(props: ViewportInput);
     // (undocumented)
+    static addMiniNavigationOverlayCss(): void;
+    // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -4956,6 +4955,8 @@ export class WSIViewport extends Viewport {
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(): CPUIImageData;
+    // (undocumented)
+    getImageIds: () => Array<string>;
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
@@ -5003,7 +5004,10 @@ export class WSIViewport extends Viewport {
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)
-    setDataIds(imageIds: string[]): Promise<void>;
+    setDataIds(imageIds: string[], options?: DataSetOptions & {
+        miniNavigationOverlay?: boolean;
+        webClient: unknown;
+    }): Promise<void>;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)
