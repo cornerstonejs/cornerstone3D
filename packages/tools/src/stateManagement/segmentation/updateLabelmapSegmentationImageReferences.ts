@@ -3,9 +3,9 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
 export function updateLabelmapSegmentationImageReferences(
   viewportId: string,
   segmentationId: string
-) {
+): string | undefined {
   const segmentationStateManager = defaultSegmentationStateManager;
-  segmentationStateManager.updateLabelmapSegmentationImageReferences(
+  return segmentationStateManager.updateLabelmapSegmentationImageReferences(
     viewportId,
     segmentationId
   );

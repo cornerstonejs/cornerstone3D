@@ -35,6 +35,7 @@ function normalizeSegmentationInput(
   return {
     segmentationId,
     label: config?.label ?? null,
+    cachedStats: config?.cachedStats ?? {},
     segments: normalizedSegments,
     representationData: {
       [type]: {

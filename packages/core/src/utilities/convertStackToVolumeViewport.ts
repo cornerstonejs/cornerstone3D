@@ -112,10 +112,10 @@ async function convertStackToVolumeViewport({
 
   addVolumeViewportNewVolumeListener();
 
-  volumeViewport.render();
-
   volumeViewport.setViewPresentation(prevViewPresentation);
   volumeViewport.setViewReference(prevViewReference);
+
+  volumeViewport.render();
 
   return volumeViewport;
 }

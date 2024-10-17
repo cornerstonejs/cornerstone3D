@@ -2,6 +2,7 @@ import type SegmentationRepresentations from '../../../enums/SegmentationReprese
 import type { ContourStyle } from '../../../types/ContourTypes';
 import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 import type { SurfaceStyle } from '../../../types/SurfaceTypes';
+import { getViewportSegmentations } from '../getViewportSegmentations';
 import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import { segmentationStyle } from '../SegmentationStyle';
 import type { RepresentationStyle } from '../SegmentationStyle';
@@ -78,6 +79,16 @@ function setRenderInactiveSegmentations(
   );
 
   triggerSegmentationRender(viewportId);
+
+  // get all the segmentations for the viewport
+  const segmentations = getViewportSegmentations(viewportId);
+
+  segmentations.forEach((segmentation) => {
+    triggerSegmentationRepresentationModified(
+      viewportId,
+      segmentation.segmentationId
+    );
+  });
 }
 
 /**
