@@ -142,7 +142,7 @@ function getAnnotationForSelection(
     (toolsWithMovableHandles.length > 1 &&
       toolsWithMovableHandles.find(
         (item) =>
-          !isAnnotationLocked(item.annotation) &&
+          !isAnnotationLocked(item.annotation.annotationUID) &&
           isAnnotationVisible(item.annotation.annotationUID)
       )) ||
     toolsWithMovableHandles[0]

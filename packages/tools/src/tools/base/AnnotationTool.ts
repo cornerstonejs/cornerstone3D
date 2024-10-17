@@ -209,7 +209,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     for (const annotation of filteredAnnotations) {
       // Do not do anything if the annotation is locked or hidden.
       if (
-        isAnnotationLocked(annotation) ||
+        isAnnotationLocked(annotation.annotationUID) ||
         !isAnnotationVisible(annotation.annotationUID)
       ) {
         continue;
@@ -399,7 +399,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       this.getStyle(property, styleSpecifier, annotation);
     const { annotationUID } = annotation;
     const visibility = isAnnotationVisible(annotationUID);
-    const locked = isAnnotationLocked(annotation);
+    const locked = isAnnotationLocked(annotationUID);
 
     const lineWidth = getStyle('lineWidth') as number;
     const lineDash = getStyle('lineDash') as string;

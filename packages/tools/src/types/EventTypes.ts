@@ -165,11 +165,11 @@ type AnnotationSelectionChangeEventDetail = {
  */
 type AnnotationLockChangeEventDetail = {
   // List of instances changed to locked state by the last operation.
-  added: Array<Annotation>;
+  added: Array<string>;
   // List of instances removed from locked state by the last operation.
-  removed: Array<Annotation>;
+  removed: Array<string>;
   // Updated list of currently locked instances
-  locked: Array<Annotation>;
+  locked: Array<string>;
 };
 
 type AnnotationVisibilityChangeEventDetail = {

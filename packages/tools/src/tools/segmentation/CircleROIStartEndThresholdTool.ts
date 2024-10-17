@@ -419,7 +419,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         continue;
       }
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null &&
         isMiddleSlice

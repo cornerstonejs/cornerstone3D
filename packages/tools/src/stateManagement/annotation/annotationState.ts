@@ -8,21 +8,27 @@ import {
   triggerAnnotationAddedForFOR,
   triggerAnnotationRemoved,
 } from './helpers/state';
-import { checkAndDefineIsLockedProperty } from './annotationLocking';
+import { checkAndSetAnnotationLocked } from './annotationLocking';
 import {
   checkAndDefineCachedStatsProperty,
   checkAndDefineTextBoxProperty,
 } from './utilities/defineProperties';
-import { checkAndDefineIsVisibleProperty } from './annotationVisibility';
+import { checkAndSetAnnotationVisibility } from './annotationVisibility';
 
 // our default annotation manager
 let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
 
 const preprocessingFn = (annotation: Annotation) => {
-  checkAndDefineIsLockedProperty(annotation);
-  checkAndDefineTextBoxProperty(annotation);
-  checkAndDefineIsVisibleProperty(annotation);
-  checkAndDefineCachedStatsProperty(annotation);
+  annotation = checkAndDefineTextBoxProperty(annotation);
+  annotation = checkAndDefineCachedStatsProperty(annotation);
+
+  const uid = annotation.annotationUID;
+  const isLocked = checkAndSetAnnotationLocked(uid);
+  annotation.isLocked = isLocked;
+
+  const isVisible = checkAndSetAnnotationVisibility(uid);
+  annotation.isVisible = isVisible;
+
   return annotation;
 };
 
