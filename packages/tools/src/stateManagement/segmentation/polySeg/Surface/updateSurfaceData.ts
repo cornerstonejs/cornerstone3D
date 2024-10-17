@@ -28,8 +28,8 @@ export async function updateSurfaceData(segmentationId) {
     geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const surface = geometry.data as Types.ISurface;
-      surface.setPoints([]);
-      surface.setPolys([]);
+      surface.points = [];
+      surface.polys = [];
     });
 
     triggerSegmentationModified(segmentationId);
@@ -75,12 +75,12 @@ export async function updateSurfaceData(segmentationId) {
       // if the geometry already exists and the segmentIndex is
       // still present, update the geometry data
       const surface = geometry.data as Types.ISurface;
-      surface.setPoints(data.points);
-      surface.setPolys(data.polys);
+      surface.points = data.points;
+      surface.polys = data.polys;
     } else {
       const surface = geometry.data as Types.ISurface;
-      surface.setPoints([]);
-      surface.setPolys([]);
+      surface.points = [];
+      surface.polys = [];
     }
   });
 

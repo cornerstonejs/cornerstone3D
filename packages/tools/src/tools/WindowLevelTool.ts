@@ -36,7 +36,7 @@ class WindowLevelTool extends BaseTool {
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     let volumeId,
       lower,

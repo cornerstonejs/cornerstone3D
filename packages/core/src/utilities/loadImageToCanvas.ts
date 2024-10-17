@@ -104,7 +104,7 @@ export default function loadImageToCanvas(
     canvas,
     imageId,
     viewReference,
-    requestType = RequestType.THUMBNAIL,
+    requestType = RequestType.Thumbnail,
     priority = -5,
     renderingEngineId = '_thumbnails',
     useCPURendering = false,

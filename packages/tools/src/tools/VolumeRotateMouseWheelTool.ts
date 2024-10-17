@@ -21,7 +21,7 @@ const DIRECTIONS = {
  */
 class VolumeRotateMouseWheelTool extends BaseTool {
   static toolName;
-  _configuration: any;
+  _configuration: unknown;
 
   constructor(
     toolProps: PublicToolProps = {},

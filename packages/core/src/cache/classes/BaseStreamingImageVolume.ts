@@ -7,7 +7,6 @@ import type {
   ImageLoadRequests,
   ImageVolumeProps,
   IStreamingVolumeProperties,
-  PixelDataTypedArrayString,
   PTScaling,
   ScalingParameters,
 } from '../../types';
@@ -22,7 +21,7 @@ import ImageVolume from './ImageVolume';
 import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
 import { canRenderFloatTextures } from '../../init';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
-const requestTypeDefault = RequestType.PREFETCH;
+const requestTypeDefault = RequestType.Prefetch;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.

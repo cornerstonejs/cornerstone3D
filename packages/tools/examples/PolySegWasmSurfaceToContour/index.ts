@@ -19,6 +19,7 @@ import {
   addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { createAndCacheGeometriesFromSurfaces } from '../../../../utils/demo/helpers/createAndCacheGeometriesFromSurfaces';
 
 // This is for debugging purposes
 console.warn(
@@ -92,11 +93,6 @@ addButtonToToolbar({
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -189,23 +185,7 @@ async function run() {
     [viewportId2]
   );
 
-  const surfaces = await downloadSurfacesData();
-
-  const geometriesInfo = surfaces.reduce(
-    (acc: Map<number, string>, surface, index) => {
-      const geometryId = surface.closedSurface.id;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: Enums.GeometryType.SURFACE,
-        geometryData: surface.closedSurface as Types.PublicSurfaceData,
-      });
-
-      const segmentIndex = index + 1;
-      acc.set(segmentIndex, geometryId);
-
-      return acc;
-    },
-    new Map()
-  );
+  const geometryIds = await createAndCacheGeometriesFromSurfaces();
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -217,7 +197,7 @@ async function run() {
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
         data: {
-          geometryIds: geometriesInfo,
+          geometryIds,
         },
       },
     },

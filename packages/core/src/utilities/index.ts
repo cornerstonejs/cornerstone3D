@@ -85,6 +85,9 @@ import autoLoad from './autoLoad';
 import scaleArray from './scaleArray';
 import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
 import { deepClone } from './deepClone';
+import { jumpToSlice } from './jumpToSlice';
+import scroll from './scroll';
+import clip from './clip';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -176,4 +179,7 @@ export {
   splitImageIdsBy4DTags,
   pointInShapeCallback,
   deepEqual,
+  jumpToSlice,
+  scroll,
+  clip,
 };

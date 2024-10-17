@@ -20,5 +20,6 @@ export function actorIsA(
 ): boolean {
   const actorToCheck = 'isA' in actorEntry ? actorEntry : actorEntry.actor;
 
+  // @ts-expect-error
   return !!actorToCheck.isA(actorType);
 }

@@ -9,7 +9,6 @@ import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { segmentationStyle } from '../../../../stateManagement/segmentation/SegmentationStyle';
-import { internalGetHiddenSegmentIndices } from '../../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -35,7 +34,7 @@ function updateContourSets(
     (acc, geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const { data: contourSet } = geometry;
-      const segmentIndex = (contourSet as Types.IContourSet).getSegmentIndex();
+      const segmentIndex = (contourSet as Types.IContourSet).segmentIndex;
       const segmentSpecificConfig = segmentationStyle.getStyle({
         viewportId: viewport.id,
         segmentationId,
@@ -71,7 +70,7 @@ function addContourSetsToElement(
       return;
     }
 
-    const segmentIndex = (geometry.data as Types.IContourSet).getSegmentIndex();
+    const segmentIndex = (geometry.data as Types.IContourSet).segmentIndex;
 
     validateGeometry(geometry);
 
@@ -83,6 +82,7 @@ function addContourSetsToElement(
     });
 
     const contourSet = geometry.data as Types.IContourSet;
+    const viewPlaneNormal = viewport.getCamera().viewPlaneNormal;
 
     contourSet.contours.forEach((contour) => {
       const { points, color, id } = contour;
@@ -111,7 +111,7 @@ function addContourSetsToElement(
           referencedImageId: getClosestImageIdForStackViewport(
             viewport as StackViewport,
             points[0],
-            viewport.getCamera().viewPlaneNormal
+            viewPlaneNormal
           ),
           toolName: 'PlanarFreehandContourSegmentationTool',
           FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),

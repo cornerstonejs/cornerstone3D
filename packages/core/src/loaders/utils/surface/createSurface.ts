@@ -5,26 +5,25 @@ import { Surface } from '../../../cache/classes/Surface';
 
 export function createSurface(
   geometryId: string,
-  SurfaceData: PublicSurfaceData
+  surfaceData: PublicSurfaceData
 ) {
-  // validate the data to make sure it is a valid contour set
-  validateSurface(SurfaceData);
+  // validate the data to make sure it is a valid surface
+  validateSurface(surfaceData);
 
   const surface = new Surface({
-    id: SurfaceData.id,
-    color: SurfaceData.color,
-    frameOfReferenceUID: SurfaceData.frameOfReferenceUID,
-    data: {
-      points: SurfaceData.data.points,
-      polys: SurfaceData.data.polys,
-    },
+    id: surfaceData.id,
+    points: surfaceData.points,
+    polys: surfaceData.polys,
+    color: surfaceData.color,
+    frameOfReferenceUID: surfaceData.frameOfReferenceUID,
+    segmentIndex: surfaceData.segmentIndex ?? 1,
   });
 
   const geometry: IGeometry = {
     id: geometryId,
     type: GeometryType.SURFACE,
     data: surface,
-    sizeInBytes: surface.getSizeInBytes(),
+    sizeInBytes: surface.sizeInBytes,
   };
 
   return geometry;

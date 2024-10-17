@@ -224,7 +224,7 @@ export interface ViewPresentationSelector {
   paletteLut?: boolean;
 }
 
-export interface DataSetOptions {
+export type DataSetOptions = {
   /**
    * The group id is a volume, display set or other identification for the
    * overall set of data.  If set, then two sets of images can be compared for
@@ -234,7 +234,7 @@ export interface DataSetOptions {
   groupId?: string;
   viewSelector?: ViewPresentationSelector;
   viewReference?: ViewReferenceSpecifier;
-}
+};
 
 type IViewport = Viewport;
 

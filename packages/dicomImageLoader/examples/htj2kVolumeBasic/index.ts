@@ -289,9 +289,9 @@ async function run() {
 
   const progressiveRendering = true;
 
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.INTERACTION, 6);
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.PREFETCH, 12);
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.THUMBNAIL, 16);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 6);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
 
   async function loadVolume(volumeId, imageIds, config, text) {
     cache.purgeCache();

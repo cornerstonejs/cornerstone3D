@@ -114,7 +114,7 @@ class CentralizedWorkerManager {
    * @param {string} methodName - The name of the method to execute on the worker.
    * @param {object} [args={}] - The arguments to pass to the method.
    * @param {object} [options] - An object containing options for the request.
-   * @param {RequestType} [options.requestType=RequestType.COMPUTE] - The type of the request.
+   * @param {RequestType} [options.requestType=RequestType.Compute] - The type of the request.
    * @param {number} [options.priority=0] - The priority of the request.
    * @param {object} [options.options] - Additional options for the request.
    * @param {Function[]} [options.callbacks=[]] - Callback functions.
@@ -125,7 +125,7 @@ class CentralizedWorkerManager {
     methodName,
     args = {},
     {
-      requestType = RequestType.COMPUTE,
+      requestType = RequestType.Compute,
       priority = 0,
       options = {},
       callbacks = [],

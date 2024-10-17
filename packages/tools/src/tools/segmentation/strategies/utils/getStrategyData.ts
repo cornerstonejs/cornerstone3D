@@ -6,8 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import type { LabelmapToolOperationDataStack } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
-import { getSegmentationActor } from '../../../../stateManagement/segmentation/helpers';
-import { SegmentationRepresentations } from '../../../../enums';
+import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
 
 function getStrategyData({ operationData, viewport }) {
   let segmentationImageData, segmentationScalarData, imageScalarData;
@@ -61,16 +60,14 @@ function getStrategyData({ operationData, viewport }) {
       return;
     }
 
-    const actor = getSegmentationActor(viewport.id, {
-      segmentationId,
-      type: SegmentationRepresentations.Labelmap,
-    });
-    if (!actor) {
+    const actorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+
+    if (!actorEntry) {
       return;
     }
 
     const currentSegImage = cache.getImage(labelmapImageId);
-    segmentationImageData = actor.getMapper().getInputData();
+    segmentationImageData = actorEntry.actor.getMapper().getInputData();
     segmentationVoxelManager = currentSegImage.voxelManager;
     const currentSegmentationImageId = operationData.imageId;
 

@@ -1,9 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  getRenderingEngine,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, WSIViewport } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
@@ -186,7 +182,7 @@ async function run() {
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
   // Set the stack on the viewport
-  await viewport.setWSI(imageIds, client);
+  await viewport.setDataIds(imageIds, { webClient: client });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

@@ -9,7 +9,6 @@ import {
 import debounce from './debounce';
 import throttle from './throttle';
 import isObject from './isObject';
-import clip from './clip';
 import calibrateImageSpacing from './calibrateImageSpacing';
 import {
   getCalibratedLengthUnitsAndScale,
@@ -19,10 +18,8 @@ import {
 import triggerAnnotationRenderForViewportIds from './triggerAnnotationRenderForViewportIds';
 import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderForToolGroupIds';
 import triggerAnnotationRender from './triggerAnnotationRender';
-import jumpToSlice from './viewport/jumpToSlice';
 
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
-import scroll from './scroll';
 import { pointToString } from './pointToString';
 import annotationFrameRange from './annotationFrameRange';
 import getViewportForAnnotation from './getViewportForAnnotation';
@@ -77,16 +74,13 @@ export {
   getAnnotationNearPoint,
   getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
-  jumpToSlice,
   viewport,
   cine,
-  clip,
   boundingBox,
   rectangleROITool,
   planarFreehandROITool,
   stackPrefetch,
   stackContextPrefetch,
-  scroll,
   roundNumber,
   pointToString,
   polyDataUtils,

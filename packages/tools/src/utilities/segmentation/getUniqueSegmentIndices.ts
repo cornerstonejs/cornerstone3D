@@ -93,7 +93,7 @@ function handleContourSegmentation(segmentation) {
   const indices = new Set([...annotationUIDsMap.keys()]);
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
-    indices.add((geometry.data as Types.IContourSet).getSegmentIndex());
+    indices.add((geometry.data as Types.IContourSet).segmentIndex);
   });
 
   return Array.from(indices).sort((a, b) => a - b);

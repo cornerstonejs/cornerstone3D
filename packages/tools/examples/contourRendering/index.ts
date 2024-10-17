@@ -4,14 +4,13 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  geometryLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  createAndCacheGeometriesFromContours,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -124,22 +123,10 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  const contour = await fetch(assetsURL.SampleContour).then((res) =>
-    res.json()
+
+  const geometriesInfo = await createAndCacheGeometriesFromContours(
+    'SampleContour'
   );
-
-  // load the contour data
-  const geometryIds = [];
-  const promises = contour.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -147,14 +134,13 @@ async function run() {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        // The actual segmentation data, in the case of contour geometry
-        // this is a reference to the geometry data
         data: {
-          geometryIds,
+          geometryIds: geometriesInfo,
         },
       },
     },
   ]);
+
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);

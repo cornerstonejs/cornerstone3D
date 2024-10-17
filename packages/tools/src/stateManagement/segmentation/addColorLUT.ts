@@ -26,6 +26,15 @@ export function addColorLUT(colorLUT: Types.ColorLUT, index?: number): number {
     colorLUTToUse = [[0, 0, 0, 0], ...colorLUTToUse];
   }
 
+  // Ensure each color in the LUT has 4 elements (RGBA)
+  colorLUTToUse = colorLUTToUse.map((color) => {
+    // @ts-expect-error - color.length is not always 3
+    if (color.length === 3) {
+      return [color[0], color[1], color[2], 255] as Types.Color;
+    }
+    return color as Types.Color;
+  });
+
   // Ensure the colorLUT has at least 255 entries
   if (colorLUTToUse.length < 255) {
     const missingColorLUTs = CORNERSTONE_COLOR_LUT.slice(colorLUTToUse.length);

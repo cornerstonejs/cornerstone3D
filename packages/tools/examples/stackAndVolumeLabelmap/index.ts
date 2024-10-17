@@ -1,4 +1,4 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -6,12 +6,11 @@ import {
   initDemo,
   addDropdownToToolbar,
   setTitleAndDescription,
-  addButtonToToolbar,
   addBrushSizeSlider,
   labelmapTools,
   addManipulationBindings,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -66,7 +65,7 @@ element2.style.height = size;
 
 viewportGrid.appendChild(element2);
 
-content.appendChild(viewportGrid);
+content?.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
@@ -76,7 +75,7 @@ instructions.innerText = `
   Mouse wheel: Scroll Stack
   `;
 
-content.append(instructions);
+content?.append(instructions);
 
 addDropdownToToolbar({
   id: 'LABELMAP_TOOLS_DROPDOWN',
@@ -90,13 +89,13 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the currently active tool disabled
-    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
+    const toolName = toolGroup?.getActivePrimaryMouseButtonTool();
 
     if (toolName) {
-      toolGroup.setToolDisabled(toolName);
+      toolGroup?.setToolDisabled(toolName);
     }
 
-    toolGroup.setToolActive(tool, {
+    toolGroup?.setToolActive(tool, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
   },
@@ -110,25 +109,22 @@ const segmentationId = 'SEGMENTATION';
 addBrushSizeSlider({
   toolGroupId: toolGroupId,
 });
-// ============================= //
 
-const thresholdOptions = ['CT Fat: (-150, -70)', 'CT Bone: (200, 1000)'];
-
-addDropdownToToolbar({
-  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-
-    let threshold;
-    if (name === thresholdOptions[0]) {
-      threshold = [-150, -70];
-    } else if (name == thresholdOptions[1]) {
-      threshold = [100, 1000];
-    }
-
-    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
+// Add button to toolbar
+addButtonToToolbar({
+  id: 'add-segmentation-to-stack',
+  title: 'Add Segmentation to Stack',
+  onClick: async () => {
+    await segmentation.addSegmentationRepresentations(viewportId2, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+    renderingEngine.render();
   },
 });
+// ============================= //
 
 /**
  * Runs the demo
@@ -140,12 +136,20 @@ async function run() {
 
   addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
 
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const ptImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+
+  const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -169,23 +173,20 @@ async function run() {
   ];
   renderingEngine.setViewports(viewportInputArray);
 
-  toolGroup.addViewport(viewportId1);
-  toolGroup.addViewport(viewportId2);
+  toolGroup?.addViewport(viewportId1);
+  toolGroup?.addViewport(viewportId2);
 
   viewport1 = renderingEngine.getViewport(viewportId1);
   const viewport2 = renderingEngine.getViewport(viewportId2);
 
-  const imageId = imageIds[80];
-  const imageIdsArray = [imageId, imageIds[81]];
-
   const volumeId = 'VOLUME_ID';
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
+    imageIds: ctImageIds,
   });
 
-  volume.load();
+  await volume.load();
 
-  await viewport2.setStack(imageIdsArray, 0);
+  await viewport2.setStack(ptImageIds, 70);
 
   viewport1.setVolumes([{ volumeId }]);
 
@@ -209,7 +210,7 @@ async function run() {
     },
   ]);
 
-  // Add the segmentation representation to both viewports
+  // Add the segmentation representation to the volume viewport
   const segmentationRepresentation = {
     segmentationId,
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -217,7 +218,6 @@ async function run() {
 
   await segmentation.addLabelmapRepresentationToViewportMap({
     [viewportId1]: [segmentationRepresentation],
-    [viewportId2]: [segmentationRepresentation],
   });
 }
 

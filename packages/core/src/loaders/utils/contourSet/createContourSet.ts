@@ -22,7 +22,7 @@ export function createContourSet(
     id: geometryId,
     type: GeometryType.CONTOUR,
     data: contourSet,
-    sizeInBytes: contourSet.getSizeInBytes(),
+    sizeInBytes: contourSet.sizeInBytes,
   };
 
   return geometry;

@@ -155,7 +155,6 @@ async function computeContourFromSurfaceSegmentation(
 
   const segmentation = getSegmentation(segmentationId);
   const representationData = segmentation.representationData.Surface;
-
   const surfacesInfo = [];
   representationData.geometryIds.forEach((geometryId, segmentIndex) => {
     if (segmentIndices.includes(segmentIndex)) {
@@ -164,8 +163,9 @@ async function computeContourFromSurfaceSegmentation(
       if (surface) {
         surfacesInfo.push({
           id: geometryId,
-          points: surface.getPoints(),
-          polys: surface.getPolys(),
+          points: surface.points,
+          polys: surface.polys,
+          segmentIndex,
         });
       }
     }
@@ -180,8 +180,7 @@ async function computeContourFromSurfaceSegmentation(
     viewport as Types.IVolumeViewport,
     segmentationId
   );
-
-  const rawResults = extractContourData(polyDataCache, surfaceIdToSegmentIndex);
+  const rawResults = extractContourData(polyDataCache);
 
   return rawResults;
 }

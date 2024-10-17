@@ -35,8 +35,6 @@ import type {
   ToolConfiguration,
 } from './ToolProps';
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
-import type JumpToSliceOptions from './JumpToSliceOptions';
-import type ScrollOptions from './ScrollOptions';
 import type BoundsIJK from './BoundsIJK';
 import type SVGDrawingHelper from './SVGDrawingHelper';
 import type * as CINETypes from './CINETypes';
@@ -107,7 +105,6 @@ export type {
   AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
-  JumpToSliceOptions,
   AnnotationGroupSelector,
   // Rendering
   AnnotationRenderContext,
@@ -144,7 +141,6 @@ export type {
   SVGCursorDescriptor,
   SVGPoint,
   // Scroll
-  ScrollOptions,
   // CINE
   CINETypes,
   BoundsIJK,

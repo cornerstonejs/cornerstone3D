@@ -64,9 +64,7 @@ async function render(
   }
 
   if (!(viewport instanceof VolumeViewport3D)) {
-    throw new Error(
-      'Surface rendering is only supported in 3D viewports, if you need to visualize the surface cuts in 2D viewports, you can use the Contour representation, see polySeg converters'
-    );
+    return;
   }
 
   let SurfaceData = segmentation.representationData[Representations.Surface];
@@ -101,7 +99,7 @@ async function render(
   const colorLUT = getColorLUT(colorLUTIndex);
 
   const surfaces = [];
-  geometryIds.forEach((geometryId, segmentIndex) => {
+  geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
     if (!geometry?.data) {
       console.warn(
@@ -109,11 +107,12 @@ async function render(
       );
       return;
     }
+    const segmentIndex = geometry.data.segmentIndex;
 
     const surface = geometry.data as Types.ISurface;
 
     const color = colorLUT[segmentIndex];
-    surface.setColor(color.slice(0, 3) as Types.Point3);
+    surface.color = color.slice(0, 3) as Types.Point3;
 
     addOrUpdateSurfaceToElement(
       viewport.element,

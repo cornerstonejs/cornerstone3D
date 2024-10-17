@@ -1,9 +1,7 @@
-import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   CONSTANTS,
-  geometryLoader,
   eventTarget,
 } from '@cornerstonejs/core';
 import {
@@ -15,6 +13,7 @@ import {
   downloadSurfacesData,
   addManipulationBindings,
   addLabelToToolbar,
+  createAndCacheGeometriesFromSurfaces,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -184,21 +183,7 @@ async function run() {
 
   const surfaces = await downloadSurfacesData();
 
-  const geometriesInfo = surfaces.reduce(
-    (acc: Map<number, string>, surface, index) => {
-      const geometryId = surface.closedSurface.id;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: Enums.GeometryType.SURFACE,
-        geometryData: surface.closedSurface as Types.PublicSurfaceData,
-      });
-
-      const segmentIndex = index + 1;
-      acc.set(segmentIndex, geometryId);
-
-      return acc;
-    },
-    new Map()
-  );
+  const geometriesInfo = createAndCacheGeometriesFromSurfaces(surfaces);
 
   // Add the segmentations to state
   segmentation.addSegmentations([

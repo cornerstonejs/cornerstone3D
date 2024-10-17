@@ -1089,7 +1089,8 @@ abstract class BaseVolumeViewport extends Viewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, actorUID, slabThickness } = volumeInputArray[i];
+      const { volumeId, actorUID, slabThickness, ...rest } =
+        volumeInputArray[i];
 
       const actor = await createVolumeActor(
         volumeInputArray[i],
@@ -1109,6 +1110,7 @@ abstract class BaseVolumeViewport extends Viewport {
         actor,
         slabThickness,
         referencedId: volumeId,
+        ...rest,
       });
     }
 
@@ -1156,7 +1158,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     // One actor per volume
     for (let i = 0; i < volumeInputArray.length; i++) {
-      const { volumeId, visibility, actorUID, slabThickness } =
+      const { volumeId, visibility, actorUID, slabThickness, ...rest } =
         volumeInputArray[i];
 
       const actor = await createVolumeActor(
@@ -1181,11 +1183,11 @@ abstract class BaseVolumeViewport extends Viewport {
         actor,
         slabThickness,
         // although the actor UID is defined, we need to use the volumeId for the
-        // referencedId, since the actor UID is used to reference the actor in the
-        // viewport, however, the actor is created from its volumeId
+        // referencedId, since the actor is created from its volumeId
         // and if later we need to grab the referenced volume from cache,
         // we can use the referencedId to get the volume from the cache
         referencedId: volumeId,
+        ...rest,
       });
     }
 
@@ -1262,6 +1264,10 @@ abstract class BaseVolumeViewport extends Viewport {
       const actorEntry = actorEntries.find(
         (actor) => actor.referencedId === volumeId
       );
+
+      if (!actorEntry) {
+        return;
+      }
 
       return {
         volumeActor: actorEntry.actor as vtkVolume,
@@ -1808,6 +1814,15 @@ abstract class BaseVolumeViewport extends Viewport {
   abstract resetSlabThickness(): void;
 
   abstract resetProperties(volumeId?: string): void;
+
+  /**
+   * Returns an array of all volumeIds currently in the viewport.
+   *
+   * @returns An array of strings representing all volumeIds.
+   */
+  public getAllVolumeIds(): string[] {
+    return Array.from(this.volumeIds);
+  }
 }
 
 export default BaseVolumeViewport;

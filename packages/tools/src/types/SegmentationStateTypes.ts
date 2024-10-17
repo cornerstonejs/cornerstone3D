@@ -49,6 +49,11 @@ export type Segmentation = {
    * only labelmap representation is supported)
    */
   representationData: RepresentationsData;
+  /**
+   * Segmentation level stats, Note each segment can have its own stats
+   * This is used for caching stats for the segmentation level
+   */
+  cachedStats: { [key: string]: unknown };
 };
 
 export type LabelmapRenderingConfig = {
@@ -119,6 +124,8 @@ export type SegmentationPublicInput = {
       [segmentIndex: number]: Partial<Segment>;
     };
     label?: string;
+    // segmentation level stats
+    cachedStats?: { [key: string]: unknown };
   };
 };
 

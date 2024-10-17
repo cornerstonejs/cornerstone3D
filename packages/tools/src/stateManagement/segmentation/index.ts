@@ -31,7 +31,7 @@ import * as polySegManager from './polySeg';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 import { removeSegment } from './removeSegment';
-
+import { getLabelmapImageIds } from './getLabelmapImageIds';
 const helpers = {
   clearSegmentValue,
   convertStackToVolumeLabelmap,
@@ -66,4 +66,5 @@ export {
   helpers,
   polySegManager as polySeg,
   removeSegment,
+  getLabelmapImageIds,
 };

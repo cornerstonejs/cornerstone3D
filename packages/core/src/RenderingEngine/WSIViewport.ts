@@ -20,6 +20,8 @@ import { EPSILON } from '../constants';
 import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
+import microscopyViewportCss from '../constants/microscopyViewportCss';
+import type { DataSetOptions } from '../types/IViewport';
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -87,6 +89,7 @@ class WSIViewport extends Viewport {
     // use absolute positioning internally.
     this.element.style.position = 'relative';
     this.microscopyElement = document.createElement('div');
+    this.microscopyElement.setAttribute('class', 'DicomMicroscopyViewer');
     this.microscopyElement.id = uuidv4();
     this.microscopyElement.innerText = 'Initial';
     this.microscopyElement.style.background = 'grey';
@@ -99,6 +102,12 @@ class WSIViewport extends Viewport {
     cs3dElement.insertBefore(this.microscopyElement, cs3dElement.childNodes[1]);
 
     this.addEventListeners();
+    this.addWidget('DicomMicroscopyViewer', {
+      getEnabled: () => !!this.viewer,
+      setEnabled: () => {
+        this.elementDisabledHandler();
+      },
+    });
     this.resize();
   }
 
@@ -122,6 +131,11 @@ class WSIViewport extends Viewport {
 
   private elementDisabledHandler() {
     this.removeEventListeners();
+    this.viewer?.cleanup();
+    this.viewer = null;
+    const cs3dElement = this.element.firstElementChild;
+    cs3dElement.removeChild(this.microscopyElement);
+    this.microscopyElement = null;
   }
 
   private getImageDataMetadata(imageIndex = 0) {
@@ -476,11 +490,19 @@ class WSIViewport extends Viewport {
   /**
    * This is a wrapper for setWSI to allow generic behaviour
    */
-  public setDataIds(imageIds: string[]) {
-    const webClient = metaData.get(
-      MetadataModules.WADO_WEB_CLIENT,
-      imageIds[0]
-    );
+  public setDataIds(
+    imageIds: string[],
+    options?: DataSetOptions & {
+      miniNavigationOverlay?: boolean;
+      webClient: unknown;
+    }
+  ) {
+    if (options?.miniNavigationOverlay !== false) {
+      WSIViewport.addMiniNavigationOverlayCss();
+    }
+    const webClient =
+      options?.webClient ||
+      metaData.get(MetadataModules.WADO_WEB_CLIENT, imageIds[0]);
     if (!webClient) {
       throw new Error(
         `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
@@ -541,7 +563,8 @@ class WSIViewport extends Viewport {
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client,
       metadata: volumeImages,
-      controls: [],
+      controls: ['overview', 'position'],
+      retrieveRendered: false,
       bindings: {},
     });
 
@@ -678,6 +701,15 @@ class WSIViewport extends Viewport {
   }
 
   /**
+   * Returns the list of image Ids for the viewport.  Currently only
+   * returns the first/primary image id.
+   * @returns list of strings for image Ids
+   */
+  public getImageIds = (): Array<string> => {
+    return [this.imageIds[0]];
+  };
+
+  /**
    * The transform here is from index to canvas points, so this takes
    * into account the scaling applied and the center location, but nothing to do
    * with world coordinate transforms.  Note that the 'index' values are often negative values with respect to the overall
@@ -708,6 +740,18 @@ class WSIViewport extends Viewport {
 
   public getCurrentImageIdIndex() {
     return 0;
+  }
+
+  private static overlayCssId = 'overlayCss';
+
+  public static addMiniNavigationOverlayCss() {
+    if (document.getElementById(this.overlayCssId)) {
+      return;
+    }
+    const overlayCss = document.createElement('style');
+    overlayCss.innerText = microscopyViewportCss;
+    overlayCss.setAttribute('id', this.overlayCssId);
+    document.getElementsByTagName('head')[0].append(overlayCss);
   }
 }
 

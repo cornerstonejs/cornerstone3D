@@ -26,4 +26,6 @@ export interface ActorEntry {
   /** clipping filter applied to actor surfaces*/
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clippingFilter?: any;
+  /**  */
+  [key: string]: unknown;
 }

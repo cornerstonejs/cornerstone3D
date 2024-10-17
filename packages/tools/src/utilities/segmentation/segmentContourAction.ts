@@ -1,11 +1,10 @@
-import { getEnabledElement, type Types } from '@cornerstonejs/core';
+import { getEnabledElement, type Types, utilities } from '@cornerstonejs/core';
 
 import type { Annotation } from '../../types/AnnotationTypes';
 import {
   state as annotationState,
   config as annotationConfig,
 } from '../../stateManagement/annotation';
-import { jumpToSlice } from '../viewport';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
 import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
@@ -131,7 +130,7 @@ export default function segmentContourAction(
     const imageIds = enabledElement.viewport.getImageIds();
 
     // TODO - figure out why this is reversed
-    jumpToSlice(element, {
+    utilities.jumpToSlice(element, {
       imageIndex: imageIds.length - 1 - sliceIndex,
     });
     enabledElement.viewport.render();
