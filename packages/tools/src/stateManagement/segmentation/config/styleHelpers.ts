@@ -2,6 +2,7 @@ import type SegmentationRepresentations from '../../../enums/SegmentationReprese
 import type { ContourStyle } from '../../../types/ContourTypes';
 import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 import type { SurfaceStyle } from '../../../types/SurfaceTypes';
+import { getSegmentations } from '../getSegmentations';
 import { getViewportSegmentations } from '../getViewportSegmentations';
 import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import { segmentationStyle } from '../SegmentationStyle';
@@ -56,6 +57,14 @@ function setStyle(
   style: RepresentationStyle
 ): void {
   segmentationStyle.setStyle(specifier, style);
+
+  // if only type is provided, we need to trigger a render for all segmentations in the viewport
+  if (!specifier.viewportId && !specifier.segmentationId) {
+    const segmentations = getSegmentations();
+    segmentations.forEach((segmentation) => {
+      triggerSegmentationRender(segmentation.segmentationId);
+    });
+  }
 
   triggerSegmentationRepresentationModified(
     specifier.viewportId,

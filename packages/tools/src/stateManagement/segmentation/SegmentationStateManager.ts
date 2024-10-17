@@ -215,17 +215,16 @@ export default class SegmentationStateManager {
    */
   removeSegmentation(segmentationId: string): void {
     this.updateState((state) => {
-      state.segmentations = state.segmentations.filter(
+      // Use Array.prototype.filter to create a new array instead of reassigning
+      const filteredSegmentations = state.segmentations.filter(
         (segmentation) => segmentation.segmentationId !== segmentationId
       );
 
-      // remove the segmentation representation from all viewports
-      Object.values(state.viewportSegRepresentations).forEach(
-        (representations) => {
-          representations = representations.filter(
-            (representation) => representation.segmentationId !== segmentationId
-          );
-        }
+      // Update the state with the new filtered array
+      state.segmentations.splice(
+        0,
+        state.segmentations.length,
+        ...filteredSegmentations
       );
     });
 
