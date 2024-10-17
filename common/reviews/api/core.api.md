@@ -1442,7 +1442,7 @@ interface ICachedImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
-    imageLoadObject: IImageLoadObject;
+    imageLoadObject?: IImageLoadObject;
     // (undocumented)
     loaded: boolean;
     // (undocumented)

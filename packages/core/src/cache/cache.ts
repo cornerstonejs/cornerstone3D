@@ -15,6 +15,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import imageIdToURI from '../utilities/imageIdToURI';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import { ImageQualityStatus } from '../enums';
 
 const ONE_GB = 1073741824;
 
@@ -131,11 +132,11 @@ class Cache {
     const { imageLoadObject } = cachedImage;
 
     // Cancel any in-progress loading
-    if (imageLoadObject.cancelFn) {
+    if (imageLoadObject?.cancelFn) {
       imageLoadObject.cancelFn();
     }
 
-    if (imageLoadObject.decache) {
+    if (imageLoadObject?.decache) {
       imageLoadObject.decache();
     }
 
@@ -348,7 +349,7 @@ class Cache {
     image: IImage,
     cachedImage: ICachedImage
   ): void {
-    if (!this._imageCache.get(imageId)) {
+    if (!this._imageCache.has(imageId)) {
       console.warn(
         'The image was purged from the cache before it completed loading.'
       );
@@ -426,7 +427,8 @@ class Cache {
       );
     }
 
-    if (this._imageCache.has(imageId)) {
+    const alreadyCached = this._imageCache.get(imageId);
+    if (alreadyCached?.imageLoadObject) {
       console.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
       throw new Error('putImageLoadObject: imageId already in cache');
     }
@@ -443,7 +445,10 @@ class Cache {
       );
     }
 
+    // Starts with an existing cached image and extend it with information
+    // about being loaded.
     const cachedImage: ICachedImage = {
+      ...alreadyCached,
       loaded: false,
       imageId,
       sharedCacheKey: undefined,
@@ -524,7 +529,6 @@ class Cache {
     }
 
     const cachedImage = this._imageCache.get(imageId);
-
     if (!cachedImage) {
       return;
     }
@@ -1049,9 +1053,13 @@ class Cache {
    * Returns the image associated with the imageId
    *
    * @param imageId - image ID
+   * @param minQuality - the minimum image quality to fetch
    * @returns Image
    */
-  public getImage = (imageId: string): IImage | undefined => {
+  public getImage = (
+    imageId: string,
+    minQuality = ImageQualityStatus.FAR_REPLICATE
+  ): IImage | undefined => {
     if (imageId === undefined) {
       throw new Error('getImage: imageId must not be undefined');
     }
@@ -1061,12 +1069,59 @@ class Cache {
     if (!cachedImage) {
       return;
     }
-
     // Bump time stamp for cached volume (not used for anything for now)
     cachedImage.timeStamp = Date.now();
 
+    if (cachedImage.image?.imageQualityStatus < minQuality) {
+      return;
+    }
+
     return cachedImage.image;
   };
+
+  /**
+   * Sets a partial image qualty to use, allowing another load to occur.
+   * If the partialImage is not defined, will use any current image defined.
+   * This will ONLY replace the current image if the quality is at least as
+   * good.
+   * This will not cancel any in flight requests, but will remove any partial
+   * loaded requests.
+   *
+   * @param imageId - image ID
+   * @param partialImage - partial image to use
+   */
+  public setPartialImage(imageId: string, partialImage?: IImage) {
+    const cachedImage = this._imageCache.get(imageId);
+    if (!cachedImage) {
+      if (partialImage) {
+        this._imageCache.set(imageId, {
+          image: partialImage,
+          imageId,
+          loaded: false,
+          timeStamp: Date.now(),
+          sizeInBytes: 0,
+        });
+      }
+      return;
+    }
+    if (cachedImage.loaded) {
+      cachedImage.loaded = false;
+      cachedImage.imageLoadObject = null;
+      this.incrementImageCacheSize(-cachedImage.sizeInBytes);
+      cachedImage.sizeInBytes = 0;
+      cachedImage.image = partialImage || cachedImage.image;
+    } else {
+      cachedImage.image = partialImage || cachedImage.image;
+    }
+  }
+
+  /** Gets the current image quality for the given image id */
+  public getImageQuality(imageId: string) {
+    const image = this._imageCache.get(imageId)?.image;
+    return image
+      ? image.imageQualityStatus || ImageQualityStatus.FULL_RESOLUTION
+      : undefined;
+  }
 
   /**
    * Returns the volume associated with the volumeId
