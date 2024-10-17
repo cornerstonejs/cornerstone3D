@@ -46,7 +46,12 @@ export default function streamRequest(
   // Make the request for the streamable image frame (i.e. HTJ2K)
   const loadIterator = new ProgressiveIterator('streamRequest');
   loadIterator.generate(async (iterator, reject) => {
-    const beforeSendHeaders = globalOptions.beforeSend?.(null, url, defaultHeaders, {});
+    const beforeSendHeaders = globalOptions.beforeSend?.(
+      null,
+      url,
+      defaultHeaders,
+      {}
+    );
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     Object.keys(headers).forEach(function (key) {
