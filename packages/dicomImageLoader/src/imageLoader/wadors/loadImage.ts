@@ -116,7 +116,7 @@ export interface CornerstoneWadoRsLoaderOptions
 // const mediaType = 'multipart/related; type="image/x-jls"';
 // const mediaType = 'multipart/related; type="application/octet-stream"; transfer-syntax="image/x-jls"';
 const mediaType =
-  'multipart/related; type=application/octet-stream; transfer-syntax=*';
+  'multipart/related; type="application/octet-stream"; transfer-syntax=*';
 
 function loadImage(
   imageId: string,
