@@ -52,6 +52,15 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Disable Viewport',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine?.disableElement(viewportId);
+  },
+});
+
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
@@ -116,7 +125,7 @@ async function run() {
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
   // Set the stack on the viewport
-  await viewport.setWSI(imageIds, client);
+  await viewport.setDataIds(imageIds, { webClient: client });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

@@ -822,18 +822,18 @@ export class BrushTool extends BaseTool {
     } | {
         imageId: string;
         segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
         override: {
             voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
             imageData: vtkImageData;
         };
         volumeId?: undefined;
         referencedVolumeId?: undefined;
+    } | {
+        imageId: string;
+        segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
     };
     // (undocumented)
     protected getOperationData(element?: any): {
@@ -882,9 +882,12 @@ export class BrushTool extends BaseTool {
         preview: unknown;
         imageId: string;
         segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
         volumeId?: undefined;
         referencedVolumeId?: undefined;
-        override?: undefined;
     } | {
         points: any;
         segmentIndex: number;
@@ -897,12 +900,9 @@ export class BrushTool extends BaseTool {
         preview: unknown;
         imageId: string;
         segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
         volumeId?: undefined;
         referencedVolumeId?: undefined;
+        override?: undefined;
     };
     // (undocumented)
     invalidateBrushCursor(): void;
@@ -1288,9 +1288,6 @@ function clearParentAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
 function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
-
-// @public (undocumented)
-function clip_2(val: number, low: number, high: number): number;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
@@ -2379,9 +2376,7 @@ declare namespace EventTypes_2 {
         MouseDoubleClickEventDetail,
         MouseDoubleClickEventType,
         MouseWheelEventDetail,
-        MouseWheelEventType,
-        VolumeScrollOutOfBoundsEventDetail,
-        VolumeScrollOutOfBoundsEventType
+        MouseWheelEventType
     }
 }
 
@@ -3147,19 +3142,6 @@ type ITouchPoints = IPoints & {
         rotationAngle: number;
     };
 };
-
-// @public (undocumented)
-function jumpToSlice(element: HTMLDivElement, options?: JumpToSliceOptions): Promise<void>;
-
-// @public (undocumented)
-type JumpToSliceOptions = {
-    imageIndex: number;
-    debounceLoading?: boolean;
-    volumeId?: string;
-};
-
-// @public (undocumented)
-function jumpToWorld(viewport: Types_2.IVolumeViewport, jumpWorld: Types_2.Point3): true | undefined;
 
 // @public (undocumented)
 enum KeyboardBindings {
@@ -4570,13 +4552,19 @@ function removeSegmentation(segmentationId: string): void;
 function removeSegmentationRepresentation(viewportId: string, specifier: {
     segmentationId: string;
     type: SegmentationRepresentations;
-}, immediate?: boolean): void;
+}, immediate?: boolean): Array<{
+    segmentationId: string;
+    type: SegmentationRepresentations;
+}>;
 
 // @public (undocumented)
 function removeSegmentationRepresentations(viewportId: string, specifier: {
     segmentationId?: string;
     type?: SegmentationRepresentations;
-}, immediate?: boolean): void;
+}, immediate?: boolean): Array<{
+    segmentationId: string;
+    type: SegmentationRepresentations;
+}>;
 
 // @public (undocumented)
 function removeSurfaceRepresentation(viewportId: string, segmentationId: string, immediate?: boolean): void;
@@ -4683,18 +4671,6 @@ export class ScaleOverlayTool extends AnnotationDisplayTool {
     // (undocumented)
     static toolName: any;
 }
-
-// @public (undocumented)
-function scroll_2(viewport: Types_2.IViewport | Types_2.IVideoViewport, options: ScrollOptions_2): void;
-
-// @public (undocumented)
-type ScrollOptions_2 = {
-    delta: number;
-    volumeId?: string;
-    debounceLoading?: boolean;
-    loop?: boolean;
-    scrollSlabs?: boolean;
-};
 
 // @public (undocumented)
 export class SculptorTool extends BaseTool {
@@ -5866,7 +5842,6 @@ declare namespace Types {
         AnnotationState,
         AnnotationStyle_2 as AnnotationStyle,
         ToolSpecificAnnotationTypes,
-        JumpToSliceOptions,
         AnnotationGroupSelector,
         AnnotationRenderContext,
         PlanarBoundingBox,
@@ -5895,7 +5870,6 @@ declare namespace Types {
         RepresentationsData,
         SVGCursorDescriptor,
         SVGPoint_2 as SVGPoint,
-        ScrollOptions_2 as ScrollOptions,
         CINETypes,
         BoundsIJK_2 as BoundsIJK,
         SVGDrawingHelper,
@@ -6083,16 +6057,13 @@ declare namespace utilities {
         getAnnotationNearPoint,
         getViewportForAnnotation,
         getAnnotationNearPointOnEnabledElement,
-        jumpToSlice,
         viewport,
         cine,
-        clip_2 as clip,
         boundingBox,
         rectangleROITool,
         planarFreehandROITool,
         stackPrefetch,
         stackContextPrefetch,
-        scroll_2 as scroll,
         roundNumber,
         pointToString,
         polyDataUtils,
@@ -6204,9 +6175,7 @@ export class VideoRedactionTool extends AnnotationTool {
 
 declare namespace viewport {
     export {
-        isViewportPreScaled,
-        jumpToSlice,
-        jumpToWorld
+        isViewportPreScaled
     }
 }
 
@@ -6274,20 +6243,6 @@ export class VolumeRotateMouseWheelTool extends BaseTool {
     // (undocumented)
     static toolName: any;
 }
-
-// @public (undocumented)
-type VolumeScrollOutOfBoundsEventDetail = {
-    volumeId: string;
-    viewport: Types_2.IVolumeViewport;
-    desiredStepIndex: number;
-    currentStepIndex: number;
-    delta: number;
-    numScrollSteps: number;
-    currentImageId: string;
-};
-
-// @public (undocumented)
-type VolumeScrollOutOfBoundsEventType = Types_2.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
 declare namespace windowLevel_2 {
     export {
