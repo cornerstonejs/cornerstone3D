@@ -2927,9 +2927,13 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       imageURI = imageId.substring(colonIndex + 1);
     }
 
-    const endsWith = referencedImageId?.endsWith(imageURI);
-    if (endsWith) {
-      return endsWith;
+    const referenceColonIndex = referencedImageId.indexOf(':');
+    const referencedImageURI = referencedImageId.substring(
+      referenceColonIndex + 1
+    );
+
+    if (referencedImageURI === imageURI) {
+      return true;
     }
 
     // if camera focal point is provided, we can use that as a point
