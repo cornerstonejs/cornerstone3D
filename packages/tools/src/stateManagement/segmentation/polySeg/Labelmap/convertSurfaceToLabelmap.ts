@@ -71,7 +71,7 @@ export async function convertSurfaceToVolumeLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
   voxelManager.setCompleteScalarDataArray(newScalarData);
 

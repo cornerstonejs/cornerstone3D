@@ -138,7 +138,7 @@ export async function clipAndCacheSurfacesForViewport(
       console.error(error);
     });
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
   return polyDataCache;
 }
