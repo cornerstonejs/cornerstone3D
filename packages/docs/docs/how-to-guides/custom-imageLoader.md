@@ -41,7 +41,7 @@ function loadImage(imageId) {
   // Create a new Promise
   const promise = new Promise((resolve, reject) => {
     // Inside the Promise Constructor, make
-    // the request for the DICOM data
+    // the request for the image data
     const oReq = new XMLHttpRequest();
     oReq.open('get', url, true);
     oReq.responseType = 'arraybuffer';
@@ -49,6 +49,8 @@ function loadImage(imageId) {
       if (oReq.readyState === 4) {
         if (oReq.status == 200) {
           // Request succeeded, Create an image object (logic omitted)
+          // This may require decoding the image into raw pixel data, determining
+          // rows/cols, pixel spacing, etc.
           const image = createImageObject(oReq.response);
 
           // Return the image object by resolving the Promise
