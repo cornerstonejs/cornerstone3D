@@ -4,7 +4,12 @@ id: custom-image-loader
 
 # Custom Image Loader
 
-In this how-to guide we will show you how to create a custom image loader.
+In this how-to guide we will show you how to create a custom image loader. You should be familiar with
+the following core concepts:
+
+- [Image Loaders](../concepts/cornerstone-core/imageLoader.md)
+- [Image Objects](../concepts/cornerstone-core/images.md)
+- [Metadata Providers](../concepts/cornerstone-core/metadataProvider.md)
 
 ## Introduction
 
@@ -67,7 +72,15 @@ function loadImage(imageId) {
 }
 ```
 
-### Step 2: Registration of Image Loader
+### Step 2: Ensure Image metadata is also available
+
+Our image loader returns an `imageLoadObject` containing pixel data and related
+information, but Cornerstone may also need [additional
+metadata](../concepts/cornerstone-core/metadataProvider.md) in order to display
+the image. See the [custom metadata provider](custom-metadata-provider.md) documentation
+for how to do this.
+
+### Step 3: Registration of Image Loader
 
 After you implement your image loader, you need to register it with Cornerstone. First
 you need to decide which URL scheme your image loader supports. Let's say your image loader

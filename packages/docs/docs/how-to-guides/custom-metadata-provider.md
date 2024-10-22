@@ -4,7 +4,12 @@ id: custom-metadata-provider
 
 # Custom Metadata Provider
 
-In this how-to guide we will show you how to create a custom metadata provider.
+In this how-to guide we will show you how to create a custom metadata provider. You should be familiar with
+the following core concepts:
+
+- [Image Loaders](../concepts/cornerstone-core/imageLoader.md)
+- [Image Objects](../concepts/cornerstone-core/images.md)
+- [Metadata Providers](../concepts/cornerstone-core/metadataProvider.md)
 
 ## Introduction
 
