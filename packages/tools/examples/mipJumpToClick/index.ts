@@ -23,7 +23,7 @@ const { ViewportType, BlendModes } = Enums;
 const {
   ToolGroupManager,
   StackScrollTool,
-  VolumeRotateMouseWheelTool,
+  VolumeRotateTool,
   MIPJumpToClickTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -87,16 +87,23 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+  cornerstoneTools.addTool(VolumeRotateTool);
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
 
-  mipToolGroup.addTool(VolumeRotateMouseWheelTool.toolName, {});
+  mipToolGroup.addTool(VolumeRotateTool.toolName);
   mipToolGroup.addTool(MIPJumpToClickTool.toolName, {
     targetViewportIds: [viewportIds[0], viewportIds[1]],
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
+  mipToolGroup.setToolActive(VolumeRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel, // Left Click
+      },
+    ],
+  });
   mipToolGroup.setToolActive(MIPJumpToClickTool.toolName, {
     bindings: [
       {

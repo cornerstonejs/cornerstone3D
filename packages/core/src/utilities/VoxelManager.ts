@@ -671,6 +671,12 @@ export default class VoxelManager<T> {
     function getPixelInfo(index) {
       const sliceIndex = Math.floor(index / pixelsPerSlice);
       const imageId = imageIds[sliceIndex];
+
+      if (!imageId) {
+        console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
+        return { pixelData: null, pixelIndex: null };
+      }
+
       const image = cache.getImage(imageId);
 
       if (!image) {

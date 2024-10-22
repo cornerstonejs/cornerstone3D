@@ -15,7 +15,7 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
 import setPetTransferFunction from '../../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
-import { VolumeRotateMouseWheelTool } from '@cornerstonejs/tools';
+import { VolumeRotateTool } from '@cornerstonejs/tools';
 
 async function getImageStacks() {
   const wadoRsRoot1 = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';
@@ -173,8 +173,8 @@ async function run() {
   ptToolGroup.addTool(ZoomTool.toolName);
   ptToolGroup.addTool(PanTool.toolName);
   ptToolGroup.addTool(StackScrollTool.toolName);
-  ptToolGroup.addTool(VolumeRotateMouseWheelTool.toolName);
-  ptToolGroup.setToolActive(VolumeRotateMouseWheelTool.toolName, {
+  ptToolGroup.addTool(VolumeRotateTool.toolName);
+  ptToolGroup.setToolActive(VolumeRotateTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Wheel,
