@@ -58,8 +58,7 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
-  viewport: Types.IVolumeViewport,
-  segmentationId: string
+  viewport: Types.IVolumeViewport
 ) {
   registerPolySegWorker();
   // All planes is an array of planes pairs for each slice, so we should loop over them and

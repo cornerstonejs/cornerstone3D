@@ -58,6 +58,13 @@ function addContourSetsToElement(
 
     contourSet.contours.forEach((contour) => {
       const { points, color, id } = contour;
+
+      const referencedImageId = getClosestImageIdForStackViewport(
+        viewport as StackViewport,
+        points[0],
+        viewPlaneNormal
+      );
+
       const contourSegmentationAnnotation = {
         annotationUID: utilities.uuidv4(),
         data: {
@@ -80,11 +87,7 @@ function addContourSetsToElement(
         isLocked: true,
         isVisible: true,
         metadata: {
-          referencedImageId: getClosestImageIdForStackViewport(
-            viewport as StackViewport,
-            points[0],
-            viewPlaneNormal
-          ),
+          referencedImageId,
           toolName: 'PlanarFreehandContourSegmentationTool',
           FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
           viewPlaneNormal: viewport.getCamera().viewPlaneNormal,

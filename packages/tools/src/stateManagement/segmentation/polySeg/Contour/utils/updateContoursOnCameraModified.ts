@@ -30,8 +30,7 @@ export function updateContoursOnCameraModified(
 
     const polyDataCache = await clipAndCacheSurfacesForViewport(
       surfacesInfo,
-      viewport as Types.IVolumeViewport,
-      segmentationRepresentationUID
+      viewport as Types.IVolumeViewport
     );
 
     const results = extractContourData(polyDataCache);
