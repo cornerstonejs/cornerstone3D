@@ -250,6 +250,24 @@ export default class SegmentationStateManager {
       return;
     }
 
+    // Check if a representation of this type already exists in the viewport
+    const existingRepresentations = this.getSegmentationRepresentations(
+      viewportId,
+      {
+        type: type,
+      }
+    );
+
+    if (existingRepresentations.length > 0) {
+      console.debug(
+        'A segmentation representation of type',
+        type,
+        'already exists in viewport',
+        viewportId
+      );
+      return;
+    }
+
     this.updateState((state) => {
       if (!state.viewportSegRepresentations[viewportId]) {
         state.viewportSegRepresentations[viewportId] = [];
@@ -1118,6 +1136,7 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
 }
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
+window.segs = () => defaultSegmentationStateManager.state;
 
 export {
   internalConvertStackToVolumeLabelmap,
