@@ -2797,6 +2797,11 @@ class StackViewport extends Viewport {
     );
 
     const index = imageIds.indexOf(imageId);
+
+    if (index === -1) {
+      return false;
+    }
+
     this.setImageIdIndex(index);
     this.render();
 

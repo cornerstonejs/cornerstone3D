@@ -20,7 +20,11 @@ export default function createImageSliceSynchronizer(
     STACK_NEW_IMAGE,
     imageSliceSyncCallback,
     {
-      auxiliaryEventNames: [VOLUME_NEW_IMAGE],
+      auxiliaryEvents: [
+        {
+          name: 'VOLUME_NEW_IMAGE',
+        },
+      ],
     }
   );
 

@@ -17,38 +17,10 @@ function handleContourSegmentation(
   contourRepresentation: ContourRepresentation
 ) {
   if (annotationUIDsMap.size) {
-    updateContourSets(viewport, geometryIds, contourRepresentation);
+    viewport.render();
   } else {
     addContourSetsToElement(viewport, geometryIds, contourRepresentation);
   }
-}
-
-function updateContourSets(
-  viewport: Types.IVolumeViewport | StackViewport,
-  geometryIds: string[],
-  contourRepresentation: ContourRepresentation
-) {
-  const { segmentationId } = contourRepresentation;
-
-  const { segmentSpecificConfigs } = geometryIds.reduce(
-    (acc, geometryId) => {
-      const geometry = cache.getGeometry(geometryId);
-      const { data: contourSet } = geometry;
-      const segmentIndex = (contourSet as Types.IContourSet).segmentIndex;
-      const segmentSpecificConfig = segmentationStyle.getStyle({
-        viewportId: viewport.id,
-        segmentationId,
-        type: SegmentationRepresentations.Contour,
-        segmentIndex,
-      });
-      acc.segmentSpecificConfigs[segmentIndex] = segmentSpecificConfig ?? {};
-
-      return acc;
-    },
-    { contourSets: [], segmentSpecificConfigs: {} }
-  );
-
-  viewport.render();
 }
 
 function addContourSetsToElement(
@@ -134,8 +106,4 @@ function addContourSetsToElement(
   viewport.render();
 }
 
-export {
-  handleContourSegmentation,
-  updateContourSets,
-  addContourSetsToElement,
-};
+export { handleContourSegmentation, addContourSetsToElement };

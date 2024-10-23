@@ -13,7 +13,7 @@ type eventSource = 'element' | 'eventTarget';
 
 type auxiliaryEvent = {
   name: string;
-  source: eventSource;
+  source?: eventSource;
 };
 
 export type SynchronizerOptions = {
