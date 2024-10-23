@@ -29,7 +29,6 @@ function normalizeSegmentationInput(
   if (type === SegmentationRepresentations.Contour) {
     normalizeContourData(data as ContourSegmentationData);
   }
-
   const normalizedSegments = normalizeSegments(config?.segments, type, data);
 
   return {
@@ -83,8 +82,8 @@ function normalizeSegments(
       normalizedSegments,
       data as SurfaceSegmentationData
     );
-  } else if (type === SegmentationRepresentations.Labelmap) {
-    normalizedSegments[1] = createDefaultLabelmapSegment();
+  } else {
+    normalizedSegments[1] = createDefaultSegment();
   }
 
   return normalizedSegments;
@@ -113,7 +112,7 @@ function normalizeSurfaceSegments(
  * Create a default labelmap segment.
  * @returns A default Segment object for Labelmap representation.
  */
-function createDefaultLabelmapSegment(): Segment {
+function createDefaultSegment(): Segment {
   return {
     segmentIndex: 1,
     label: 'Segment 1',

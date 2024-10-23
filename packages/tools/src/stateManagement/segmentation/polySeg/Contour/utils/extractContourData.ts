@@ -10,20 +10,19 @@ import type { RawContourData } from '../contourComputationStrategies';
 export function extractContourData(polyDataCache: PolyDataClipCacheType) {
   const rawResults = new Map() as RawContourData;
 
-  for (const [cacheId, intersectionInfo] of polyDataCache) {
-    const splits = cacheId.split('-');
-    const segmentIndex = Number(splits[splits.length - 1]);
+  for (const [segmentIndex, intersectionInfo] of polyDataCache) {
+    const segmentIndexNumber = Number(segmentIndex);
 
     for (const [_, result] of intersectionInfo) {
       if (!result) {
         continue;
       }
 
-      if (!rawResults.has(segmentIndex)) {
-        rawResults.set(segmentIndex, []);
+      if (!rawResults.has(segmentIndexNumber)) {
+        rawResults.set(segmentIndexNumber, []);
       }
 
-      rawResults.get(segmentIndex).push(result);
+      rawResults.get(segmentIndexNumber).push(result);
     }
   }
   return rawResults;

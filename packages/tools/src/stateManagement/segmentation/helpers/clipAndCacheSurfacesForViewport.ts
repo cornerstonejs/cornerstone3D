@@ -31,7 +31,7 @@ export type SurfaceClipResult = {
   numberOfCells: number;
 };
 
-export type PolyDataClipCacheType = Map<string, Map<string, SurfaceClipResult>>;
+export type PolyDataClipCacheType = Map<number, Map<string, SurfaceClipResult>>;
 
 /**
  * a cache from actorUID to cacheId to SurfaceClipResult
@@ -116,19 +116,14 @@ export async function clipAndCacheSurfacesForViewport(
           },
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
-            polyDataResults.forEach((polyDataResult) => {
-              const actorEntry = getSurfaceActorEntry(
-                viewport.id,
-                segmentationId,
-                polyDataResult.segmentIndex
-              );
-              const actorUID = actorEntry.uid;
+            polyDataResults.forEach((polyDataResult, segmentIndex) => {
+              const segmentIndexNumber = Number(segmentIndex);
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,
                 sliceIndex
               );
-              updatePolyDataCache(actorUID, cacheId, polyDataResult);
+              updatePolyDataCache(segmentIndexNumber, cacheId, polyDataResult);
             });
           },
         ],
@@ -187,16 +182,16 @@ export function generateCacheId(viewport, viewPlaneNormal, sliceIndex) {
 
 // Helper function to update PolyData cache
 export function updatePolyDataCache(
-  actorUID: string,
+  segmentIndex: number,
   cacheId: string,
   polyDataResult: SurfaceClipResult
 ) {
   const { points, lines, numberOfCells } = polyDataResult;
 
-  let actorCache = polyDataCache.get(actorUID);
-  if (!actorCache) {
-    actorCache = new Map<string, SurfaceClipResult>();
-    polyDataCache.set(actorUID, actorCache);
+  let segmentCache = polyDataCache.get(segmentIndex);
+  if (!segmentCache) {
+    segmentCache = new Map<string, SurfaceClipResult>();
+    polyDataCache.set(segmentIndex, segmentCache);
   }
-  actorCache.set(cacheId, { points, lines, numberOfCells });
+  segmentCache.set(cacheId, { points, lines, numberOfCells });
 }

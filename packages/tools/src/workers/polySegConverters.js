@@ -611,7 +611,7 @@ const polySegConverters = {
 
           const loopOutput = loopExtraction.getOutputData();
           if (polyData) {
-            polyDataResults.set(id, {
+            polyDataResults.set(segmentIndex, {
               points: loopOutput.getPoints().getData(),
               lines: loopOutput.getLines().getData(),
               numberOfCells: loopOutput.getLines().getNumberOfCells(),

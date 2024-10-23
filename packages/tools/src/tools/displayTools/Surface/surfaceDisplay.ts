@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
-  VolumeViewport3D,
+  Enums,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
@@ -14,6 +14,7 @@ import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
 
+const { ViewportType } = Enums;
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
@@ -60,10 +61,6 @@ async function render(
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
-    return;
-  }
-
-  if (!(viewport instanceof VolumeViewport3D)) {
     return;
   }
 
@@ -114,16 +111,22 @@ async function render(
     const color = colorLUT[segmentIndex];
     surface.color = color.slice(0, 3) as Types.Point3;
 
-    addOrUpdateSurfaceToElement(
-      viewport.element,
-      surface as Types.ISurface,
-      segmentationId
-    );
-
     surfaces.push(surface);
   });
 
-  viewport.render();
+  if (viewport.type !== ViewportType.VOLUME_3D) {
+    viewport.render();
+  } else {
+    surfaces.forEach((surface) => {
+      addOrUpdateSurfaceToElement(
+        viewport.element,
+        surface as Types.ISurface,
+        segmentationId
+      );
+    });
+
+    viewport.render();
+  }
 }
 
 export default {
