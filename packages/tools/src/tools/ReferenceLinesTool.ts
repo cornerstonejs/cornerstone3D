@@ -41,6 +41,7 @@ class ReferenceLines extends AnnotationDisplayTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         sourceViewportId: '',
+        enforceSameFrameOfReference: false,
         showFullDimension: false,
       },
     }
@@ -170,6 +171,14 @@ class ReferenceLines extends AnnotationDisplayTool {
     }
 
     if (!annotation || !annotation?.data?.handles?.points) {
+      return renderStatus;
+    }
+
+    if (
+      this.configuration.enforceSameFrameOfReference &&
+      sourceViewport.getFrameOfReferenceUID() !==
+        targetViewport.getFrameOfReferenceUID()
+    ) {
       return renderStatus;
     }
 
