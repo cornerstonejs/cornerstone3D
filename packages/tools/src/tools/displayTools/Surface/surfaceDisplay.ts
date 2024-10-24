@@ -112,21 +112,14 @@ async function render(
     surface.color = color.slice(0, 3) as Types.Point3;
 
     surfaces.push(surface);
+    addOrUpdateSurfaceToElement(
+      viewport.element,
+      surface as Types.ISurface,
+      segmentationId
+    );
   });
 
-  if (viewport.type !== ViewportType.VOLUME_3D) {
-    viewport.render();
-  } else {
-    surfaces.forEach((surface) => {
-      addOrUpdateSurfaceToElement(
-        viewport.element,
-        surface as Types.ISurface,
-        segmentationId
-      );
-    });
-
-    viewport.render();
-  }
+  viewport.render();
 }
 
 export default {

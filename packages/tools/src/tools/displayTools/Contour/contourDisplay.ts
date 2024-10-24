@@ -8,8 +8,17 @@ import { canComputeRequestedRepresentation } from '../../../stateManagement/segm
 import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
+import { getAnnotation } from '../../../stateManagement';
+import { convertContourToSurface } from '../../../stateManagement/segmentation/polySeg/Surface/convertContourToSurface';
+import { getUniqueSegmentIndices } from '../../../utilities/segmentation';
+import { registerPolySegWorker } from '../../../stateManagement/segmentation/polySeg/registerPolySegWorker';
+import { clipAndCacheSurfacesForViewport } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport';
+import { extractContourData } from '../../../stateManagement/segmentation/polySeg/Contour/utils/extractContourData';
+import { createAndAddContourSegmentationsFromClippedSurfaces } from '../../../stateManagement/segmentation/polySeg/Contour/utils/createAndAddContourSegmentationsFromClippedSurfaces';
 
 let polySegConversionInProgress = false;
+
+const processedViewportSegmentations = new Map<string, Set<string>>();
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -29,6 +38,15 @@ function removeRepresentation(
   }
 
   const { viewport } = enabledElement;
+
+  // Remove the segmentation from the viewport's processed set
+  // const viewportProcessed = processedViewportSegmentations.get(viewportId);
+  // if (viewportProcessed) {
+  //   viewportProcessed.delete(segmentationId);
+  //   if (viewportProcessed.size === 0) {
+  //     processedViewportSegmentations.delete(viewportId);
+  //   }
+  // }
 
   if (!renderImmediate) {
     return;
@@ -71,21 +89,131 @@ async function render(
     contourData = await computeAndAddContourRepresentation(segmentationId, {
       viewport,
     });
+
+    polySegConversionInProgress = false;
   }
 
   if (!contourData) {
     return;
   }
 
-  if (contourData?.geometryIds?.length) {
-    handleContourSegmentation(
-      viewport,
-      contourData.geometryIds,
-      contourData.annotationUIDsMap,
-      contourRepresentation
-    );
+  if (!contourData.geometryIds?.length) {
+    return;
   }
+
+  // here we need to check if the contour data matches the viewport really.
+  // let hasContourDataButNotMatchingViewport = false;
+
+  // if (contourData.annotationUIDsMap) {
+  //   const viewportNormal = viewport.getCamera().viewPlaneNormal;
+  //   hasContourDataButNotMatchingViewport = !_checkContourNormalsMatchViewport(
+  //     contourData.annotationUIDsMap,
+  //     viewportNormal
+  //   );
+  // }
+
+  // // Get or create the set of processed segmentations for this viewport
+  // const viewportProcessed =
+  //   processedViewportSegmentations.get(viewport.id) || new Set();
+
+  // // Modify the condition to include viewport-segmentation check
+  // if (
+  //   hasContourDataButNotMatchingViewport &&
+  //   !polySegConversionInProgress &&
+  //   !viewportProcessed.has(segmentationId)
+  // ) {
+  //   polySegConversionInProgress = true;
+  //   const segmentIndices = getUniqueSegmentIndices(segmentationId);
+
+  //   registerPolySegWorker();
+  //   const pointsAndPolys = [];
+
+  //   for (const segmentIndex of segmentIndices) {
+  //     const surfacesInfo = await convertContourToSurface(
+  //       contourData,
+  //       segmentIndex
+  //     );
+
+  //     pointsAndPolys.push({
+  //       points: surfacesInfo.points,
+  //       polys: surfacesInfo.polys,
+  //       segmentIndex,
+  //       id: segmentIndex.toString(),
+  //     });
+  //   }
+
+  //   const polyDataCache = await clipAndCacheSurfacesForViewport(
+  //     pointsAndPolys,
+  //     viewport as Types.IVolumeViewport
+  //   );
+
+  //   const rawResults = extractContourData(polyDataCache);
+
+  //   const annotationUIDsMap =
+  //     createAndAddContourSegmentationsFromClippedSurfaces(
+  //       rawResults,
+  //       viewport,
+  //       segmentationId
+  //     );
+
+  //   polySegConversionInProgress = false;
+  //   // grab the contour data from the clipped surfaces of the contours
+
+  //   // merge with previous annotationUIDsMap
+  //   contourData.annotationUIDsMap = new Map([
+  //     ...contourData.annotationUIDsMap,
+  //     ...annotationUIDsMap,
+  //   ]);
+
+  //   // Add the segmentation to the viewport's processed set
+  //   viewportProcessed.add(segmentationId);
+  //   processedViewportSegmentations.set(viewport.id, viewportProcessed);
+  // }
+
+  handleContourSegmentation(
+    viewport,
+    contourData.geometryIds,
+    contourData.annotationUIDsMap,
+    contourRepresentation
+  );
 }
+
+// function _checkContourNormalsMatchViewport(
+//   annotationUIDsMap: Map<number, Set<string>>,
+//   viewportNormal: Types.Point3
+// ): boolean {
+//   const annotationUIDs = Array.from(annotationUIDsMap.values())
+//     .flat()
+//     .map((uidSet) => Array.from(uidSet))
+//     .flat();
+
+//   // Take up to 3 random annotations to check
+//   const sampleSize = Math.min(3, annotationUIDs.length);
+//   const randomAnnotationUIDs = [];
+//   for (let i = 0; i < sampleSize; i++) {
+//     const randomIndex = Math.floor(Math.random() * annotationUIDs.length);
+//     randomAnnotationUIDs.push(annotationUIDs[randomIndex]);
+//   }
+
+//   for (const annotationUID of randomAnnotationUIDs) {
+//     const annotation = getAnnotation(annotationUID);
+//     if (annotation?.metadata?.viewPlaneNormal) {
+//       const annotationNormal = annotation.metadata.viewPlaneNormal;
+//       // Check if normals are parallel or anti-parallel (dot product close to 1 or -1)
+//       const dotProduct = Math.abs(
+//         viewportNormal[0] * annotationNormal[0] +
+//           viewportNormal[1] * annotationNormal[1] +
+//           viewportNormal[2] * annotationNormal[2]
+//       );
+
+//       if (Math.abs(dotProduct - 1) > 0.01) {
+//         return false;
+//       }
+//     }
+//   }
+
+//   return true;
+// }
 
 export default {
   render,
