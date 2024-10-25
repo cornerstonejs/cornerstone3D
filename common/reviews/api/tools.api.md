@@ -4529,6 +4529,9 @@ function removeAllAnnotations(): void;
 function removeAllSegmentationRepresentations(): void;
 
 // @public (undocumented)
+function removeAllSegmentations(): void;
+
+// @public (undocumented)
 function removeAnnotation(annotationUID: string): void;
 
 // @public (undocumented)
@@ -4735,6 +4738,8 @@ declare namespace segmentation {
         removeContourRepresentation,
         removeLabelmapRepresentation,
         removeSurfaceRepresentation,
+        removeAllSegmentations,
+        removeSegmentation,
         removeSegmentationRepresentations,
         addLabelmapRepresentationToViewport,
         addLabelmapRepresentationToViewportMap,
@@ -5275,6 +5280,7 @@ declare namespace state_3 {
         removeSurfaceRepresentation,
         removeSegmentationRepresentation,
         removeAllSegmentationRepresentations,
+        removeAllSegmentations,
         addColorLUT,
         addSegmentations,
         updateLabelmapSegmentationImageReferences,

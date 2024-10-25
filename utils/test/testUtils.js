@@ -106,6 +106,7 @@ function cleanupTestEnvironment(options = {}) {
     cleanupDOMElements = true,
   } = options;
   segmentation.state.removeAllSegmentationRepresentations();
+  segmentation.state.removeAllSegmentations();
 
   // Clear the cache
   cache.purgeCache();

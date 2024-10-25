@@ -1,7 +1,10 @@
 import { getSegmentation } from './getSegmentation';
 import { getSegmentations } from './getSegmentations';
 import { addSegmentations } from './addSegmentations';
-import { removeSegmentation } from './removeSegmentation';
+import {
+  removeAllSegmentations,
+  removeSegmentation,
+} from './removeSegmentation';
 import {
   removeLabelmapRepresentation,
   removeContourRepresentation,
@@ -50,6 +53,7 @@ export {
   removeSurfaceRepresentation,
   removeSegmentationRepresentation,
   removeAllSegmentationRepresentations,
+  removeAllSegmentations,
   // add
   addColorLUT,
   addSegmentations,

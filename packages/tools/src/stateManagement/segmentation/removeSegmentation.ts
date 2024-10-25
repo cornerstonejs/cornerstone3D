@@ -31,3 +31,21 @@ export function removeSegmentation(segmentationId: string): void {
   // Trigger the removal event
   triggerSegmentationRemoved(segmentationId);
 }
+
+/**
+ * Removes all segmentations from the segmentation state manager and their representations from all viewports
+ *
+ * @triggers SEGMENTATION_REMOVED for each segmentation
+ */
+export function removeAllSegmentations(): void {
+  const segmentationStateManager = defaultSegmentationStateManager;
+  const segmentations = segmentationStateManager.getState().segmentations;
+
+  // Remove each segmentation
+  segmentations.forEach((segmentation) => {
+    removeSegmentation(segmentation.segmentationId);
+  });
+
+  // Clear the state
+  segmentationStateManager.resetState();
+}

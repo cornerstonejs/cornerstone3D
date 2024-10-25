@@ -32,6 +32,12 @@ import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 import { removeSegment } from './removeSegment';
 import { getLabelmapImageIds } from './getLabelmapImageIds';
+
+import {
+  removeAllSegmentations,
+  removeSegmentation,
+} from './removeSegmentation';
+
 const helpers = {
   clearSegmentValue,
   convertStackToVolumeLabelmap,
@@ -45,6 +51,8 @@ export {
   removeContourRepresentation,
   removeLabelmapRepresentation,
   removeSurfaceRepresentation,
+  removeAllSegmentations,
+  removeSegmentation,
   removeSegmentationRepresentations,
   addLabelmapRepresentationToViewport,
   addLabelmapRepresentationToViewportMap,
