@@ -17,7 +17,7 @@ type VolumeInputCallback = (params: {
  * mandatory `volumeId` but other options such as `visibility`, `blendMode`,
  * `slabThickness` and `callback` can also be provided
  */
-interface IVolumeInput {
+type IVolumeInput = {
   /** Volume ID of the volume in the cache */
   volumeId: string;
   // actorUID for segmentations, since two segmentations with the same volumeId
@@ -33,6 +33,6 @@ interface IVolumeInput {
   slabThickness?: number;
   /** other metadata that is needed for the volume */
   [key: string]: unknown;
-}
+};
 
 export type { IVolumeInput, VolumeInputCallback };

@@ -54,7 +54,7 @@ export async function createAndCacheSurfacesFromRaw(
     const geometryId = closedSurface.id;
     geometryIds.set(segmentIndex, geometryId);
 
-    return geometryLoader.createAndCacheLocalGeometry(geometryId, {
+    return geometryLoader.createAndCacheGeometry(geometryId, {
       type: Enums.GeometryType.SURFACE,
       geometryData: closedSurface as unknown as Types.PublicSurfaceData,
     });

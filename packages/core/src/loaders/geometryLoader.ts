@@ -115,7 +115,7 @@ export function loadGeometry(
  *
  * @returns Geometry Loader Object
  */
-export async function createAndCacheGeometry(
+export async function loadAndCacheGeometry(
   geometryId: string,
   options?: GeometryOptions
 ): Promise<IGeometry> {
@@ -146,13 +146,13 @@ export async function createAndCacheGeometry(
  *
  * @returns IGeometry
  */
-export function createAndCacheLocalGeometry(
+export function createAndCacheGeometry(
   geometryId: string,
   options: GeometryOptions
 ): IGeometry {
   if (geometryId === undefined) {
     throw new Error(
-      'createAndCacheLocalGeometry: parameter geometryId must not be undefined'
+      'createAndCacheGeometry: parameter geometryId must not be undefined'
     );
   }
 

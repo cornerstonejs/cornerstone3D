@@ -23,6 +23,9 @@ export class Contour {
   readonly sizeInBytes: number;
 
   /** Array of 3D points defining the contour */
+  // Todo: we should use PointsManager: the efficiency of the contour access is
+  // better because you can just get references to particular points, and the size
+  // is just the native data type times the number of values total
   private _points: Point3[];
 
   /** Color of the contour */

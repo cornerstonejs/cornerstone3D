@@ -22,7 +22,7 @@ export async function createAndCacheGeometriesFromSurfaces(): Promise<
 
   return surfaces.reduce((acc: Map<number, string>, surface, index) => {
     const geometryId = surface.closedSurface.id;
-    geometryLoader.createAndCacheLocalGeometry(geometryId, {
+    geometryLoader.createAndCacheGeometry(geometryId, {
       type: Enums.GeometryType.SURFACE,
       geometryData: {
         points: surface.closedSurface.data.points,

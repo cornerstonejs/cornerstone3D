@@ -501,7 +501,7 @@ function _createDynamicVolumeViewportCinePlayContext(
       return volume.timePointIndex;
     },
     get frameTimeVectorEnabled(): boolean {
-      // Looping thought time does not uses frameTimeVector
+      // Looping though time does not uses frameTimeVector
       return false;
     },
     scroll(delta: number): void {

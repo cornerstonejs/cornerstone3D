@@ -16,7 +16,7 @@ export async function createAndCacheGeometriesFromContours(
   data.contourSets.forEach((contourSet) => {
     const geometryId = contourSet.id;
     geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheLocalGeometry(geometryId, {
+    return geometryLoader.createAndCacheGeometry(geometryId, {
       type: Enums.GeometryType.CONTOUR,
       geometryData: contourSet,
     });
