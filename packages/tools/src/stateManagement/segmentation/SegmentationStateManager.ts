@@ -255,6 +255,7 @@ export default class SegmentationStateManager {
       viewportId,
       {
         type: type,
+        segmentationId,
       }
     );
 
@@ -263,7 +264,9 @@ export default class SegmentationStateManager {
         'A segmentation representation of type',
         type,
         'already exists in viewport',
-        viewportId
+        viewportId,
+        'for segmentation',
+        segmentationId
       );
       return;
     }

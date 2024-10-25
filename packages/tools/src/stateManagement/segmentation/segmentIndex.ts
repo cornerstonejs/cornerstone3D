@@ -32,6 +32,16 @@ function setActiveSegmentIndex(
     segment.active = false;
   });
 
+  if (!segmentation.segments[segmentIndex]) {
+    segmentation.segments[segmentIndex] = {
+      segmentIndex,
+      label: '',
+      locked: false,
+      cachedStats: {},
+      active: false,
+    };
+  }
+
   if (segmentation.segments[segmentIndex].active !== true) {
     segmentation.segments[segmentIndex].active = true;
 

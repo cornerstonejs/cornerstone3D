@@ -27,6 +27,7 @@ const { fakeMetaDataProvider, compareImages } = testUtils;
 const renderingEngineId = 'renderingEngineId-stackSegmentation_test';
 const toolGroupId = 'toolGroupId-stackSegmentation_test';
 const segmentationId = 'segmentationId-stackSegmentation_test';
+const segmentationId2 = 'segmentationId2-stackSegmentation_test';
 
 const viewportId1 = 'STACK_VIEWPORT';
 
@@ -162,7 +163,7 @@ describe('Stack Segmentation Rendering:', () => {
           imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked,
           'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
         ).then(done, done.fail);
-      }, 500);
+      }, 700);
     });
 
     try {
@@ -171,29 +172,6 @@ describe('Stack Segmentation Rendering:', () => {
           imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         const segImage2 =
           imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
-
-        segmentation.addSegmentations([
-          {
-            segmentationId,
-            representation: {
-              type: csToolsEnums.SegmentationRepresentations.Labelmap,
-              data: {
-                imageIds: [segImage1.imageId],
-              },
-            },
-          },
-        ]);
-        segmentation.addSegmentations([
-          {
-            segmentationId: 'seg2',
-            representation: {
-              type: csToolsEnums.SegmentationRepresentations.Labelmap,
-              data: {
-                imageIds: [segImage2.imageId],
-              },
-            },
-          },
-        ]);
 
         testUtils.fillStackSegmentationWithMockData({
           imageIds: [imageId1],
@@ -209,6 +187,29 @@ describe('Stack Segmentation Rendering:', () => {
           cornerstone: cornerstone3D,
         });
 
+        segmentation.addSegmentations([
+          {
+            segmentationId,
+            representation: {
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              data: {
+                imageIds: [segImage1.imageId],
+              },
+            },
+          },
+        ]);
+        segmentation.addSegmentations([
+          {
+            segmentationId: segmentationId2,
+            representation: {
+              type: csToolsEnums.SegmentationRepresentations.Labelmap,
+              data: {
+                imageIds: [segImage2.imageId],
+              },
+            },
+          },
+        ]);
+
         addSegmentationRepresentations(viewportId1, [
           {
             segmentationId,
@@ -217,7 +218,7 @@ describe('Stack Segmentation Rendering:', () => {
         ]);
         addSegmentationRepresentations(viewportId1, [
           {
-            segmentationId: 'seg2',
+            segmentationId: segmentationId2,
             type: csToolsEnums.SegmentationRepresentations.Labelmap,
           },
         ]);

@@ -99,7 +99,9 @@ describe('Segmentation State:', () => {
       expect(globalState).toBeDefined();
 
       expect(globalState.segmentationId).toBe(segVolumeId);
-      expect(globalState.activeSegmentIndex).toBe(1);
+      const segments = globalState.segments;
+      expect(Object.keys(segments).length).toBe(1);
+      expect(segments[1].active).toBe(true);
     });
 
     eventTarget.addEventListener(
@@ -197,11 +199,12 @@ describe('Segmentation State:', () => {
     const vp = renderingEngine.getViewport(viewportId);
 
     eventTarget.addEventListener(Events.SEGMENTATION_MODIFIED, (evt) => {
-      const globalConfig = segmentation.config.getGlobalConfig();
+      const globalConfig = segmentation.config.style.getStyle({
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      });
 
-      expect(globalConfig.renderInactiveRepresentations).toBe(true);
-      expect(globalConfig.representations).toBeDefined();
-      expect(globalConfig.representations[Labelmap]).toBeDefined();
+      expect(globalConfig).toBeDefined();
+      expect(globalConfig.fillAlpha).toBe(0.5);
     });
 
     eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
