@@ -5,6 +5,7 @@
 /static/_headers
 /static/_redirects
 /static/.nojekyll
+static/dicom-microscopy-viewer
 
 # Production
 /build
