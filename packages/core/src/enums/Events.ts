@@ -260,6 +260,11 @@ enum Events {
   DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
 
   /**
+   * Dynamic image volume time point loaded
+   */
+  DYNAMIC_VOLUME_TIME_POINT_LOADED = 'DYNAMIC_VOLUME_TIME_POINT_LOADED',
+
+  /**
    * Triggers on the eventTarget when a geometry has successfully loaded by geometryLoaders
    *
    * Make use of {@link EventTypes.GeometryLoadedEvent | GeometryLoaded Event Type } for typing your event listeners for GEOMETRY_LOADED event,

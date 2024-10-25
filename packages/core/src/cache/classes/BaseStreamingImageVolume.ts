@@ -215,11 +215,16 @@ export default class BaseStreamingImageVolume
     }
 
     // if it is not a cached image or volume
-    return this.updateTextureAndTriggerEvents(
+    this.updateTextureAndTriggerEvents(
       imageIdIndex,
       imageId,
       imageQualityStatus
     );
+
+    // Check if this completes a timepoint (for dynamic volumes)
+    if (this.isDynamicVolume()) {
+      this.checkTimePointCompletion(imageIdIndex);
+    }
   }
 
   public errorCallback(imageId, permanent, error) {
@@ -586,4 +591,6 @@ export default class BaseStreamingImageVolume
 
     this.scaling = { PT: petScaling };
   }
+
+  protected checkTimePointCompletion(imageIdIndex: number): void {}
 }

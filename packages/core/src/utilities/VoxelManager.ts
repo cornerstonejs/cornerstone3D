@@ -745,8 +745,11 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager._getConstructor = () => {
-      const { pixelData } = getPixelInfo(0);
-      return pixelData.constructor;
+      const pixelInfo = getPixelInfo(0);
+      if (!pixelInfo.pixelData) {
+        return null;
+      }
+      return pixelInfo.pixelData.constructor;
     };
 
     voxelManager.getMiddleSliceData = () => {
@@ -792,6 +795,11 @@ export default class VoxelManager<T> {
      */
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
+
+      if (!ScalarDataConstructor) {
+        return new Uint8Array(0);
+      }
+
       const dataLength = voxelManager.getScalarDataLength();
       // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
