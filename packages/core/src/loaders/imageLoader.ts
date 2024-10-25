@@ -84,6 +84,8 @@ function loadImageFromImageLoader(
   const cachedImageLoadObject = cache.getImageLoadObject(imageId);
 
   if (cachedImageLoadObject) {
+    // This is an in-progress image, which someone else is loading, so just
+    // handle the response directly.
     handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
     return cachedImageLoadObject;
   }
