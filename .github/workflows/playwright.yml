@@ -7,7 +7,7 @@ on:
 jobs:
   playwright-tests:
     timeout-minutes: 60
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -18,12 +18,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Install dependencies playwright
+      - name: Install dependencies
         run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Run Playwright tests
-        run: export NODE_OPTIONS="--max_old_space_size=8192" && npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        run:
+          export NODE_OPTIONS="--max_old_space_size=8192" && npx playwright test --shard=${{
+          matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
@@ -36,7 +38,6 @@ jobs:
   merge-reports:
     if: ${{ !cancelled() }}
     needs: [playwright-tests]
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
