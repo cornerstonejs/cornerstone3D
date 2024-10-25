@@ -62,6 +62,16 @@ function metaDataProvider(type, imageId) {
     return;
   }
 
+  return metadataForDataset(type, imageId, dataSet);
+}
+
+export function metadataForDataset(
+  type,
+  imageId,
+  dataSet: dicomParser.DataSet
+) {
+  const { MetadataModules } = Enums;
+
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
       studyDescription: dataSet.string('x00081030'),
