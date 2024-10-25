@@ -141,7 +141,6 @@ addDropdownToToolbar({
 
     toolGroup.setToolConfiguration(ReferenceLinesTool.toolName, {
       sourceViewportId: selectedViewportId,
-      enforceSameFrameOfReference: true,
     });
 
     toolGroup.setToolEnabled(ReferenceLinesTool.toolName);
@@ -180,7 +179,6 @@ async function run() {
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(ReferenceLinesTool.toolName, {
     sourceViewportId: selectedViewportId,
-    enforceSameFrameOfReference: true,
   });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollMouseWheelTool.toolName);

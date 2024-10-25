@@ -41,7 +41,7 @@ class ReferenceLines extends AnnotationDisplayTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         sourceViewportId: '',
-        enforceSameFrameOfReference: false,
+        enforceSameFrameOfReference: true,
         showFullDimension: false,
       },
     }
