@@ -15,11 +15,9 @@ Therefore, an initial call to fetch images metadata is required for this loader.
 not only we can pre-allocate and cache a `Volume` in memory, but we also can render the volume
 as the 2D images are being loaded (progressive loading).
 
-<div style={{textAlign: 'center'}}>
 
 ![](../../assets/volume-building.png)
 
-</div>
 
 By pre-fetching the metadata from all images (`imageIds`), we don't need to create
 the [`Image`](../cornerstone-core/images.md) object for each imageId. Instead, we can

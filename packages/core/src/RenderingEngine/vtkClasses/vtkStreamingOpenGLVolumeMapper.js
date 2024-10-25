@@ -106,9 +106,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // visible artifacts. High values of opacity quickly terminate without
       // artifacts.
       if (
-        model._openGLRenderWindow.getWebgl2() ||
-        (model.context.getExtension('OES_texture_float') &&
-          model.context.getExtension('OES_texture_float_linear'))
+        model._openGLRenderWindow.getWebgl2() &&
+        model.context.getExtension('OES_texture_float') &&
+        model.context.getExtension('OES_texture_float_linear')
       ) {
         model.opacityTexture.create2DFromRaw(
           oWidth,
