@@ -11,7 +11,6 @@ import htmlSetup from '../local/htmlSetup';
 import uids from '../local/uids';
 
 import initProviders from '../../../../utils/demo/helpers/initProviders';
-import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
 import initVolumeLoader from './../../../../utils/demo/helpers/initVolumeLoader';
 
 const {
@@ -67,7 +66,6 @@ document
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initCornerstoneDICOMImageLoader();
   await initVolumeLoader();
   await initProviders();
 

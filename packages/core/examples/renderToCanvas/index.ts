@@ -227,7 +227,7 @@ async function run() {
       ) as Types.IVolumeViewport;
       await viewport.setVolumes([{ volumeId }]);
       if (sliceIndex !== undefined) {
-        await csTools.utilities.jumpToSlice(viewport.element, {
+        await utilities.jumpToSlice(viewport.element, {
           imageIndex: sliceIndex,
         });
       }

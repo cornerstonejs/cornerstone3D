@@ -7,7 +7,7 @@ const csRenderBasePath = path.resolve('./packages/core/src/index');
 const csToolsBasePath = path.resolve('./packages/tools/src/index');
 const csAdaptersBasePath = path.resolve('./packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
-  'packages/dicomImageLoader/dist/esm/src/imageLoader/index'
+  'packages/dicomImageLoader/src/index'
 );
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
