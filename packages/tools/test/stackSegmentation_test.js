@@ -153,17 +153,24 @@ describe('Stack Segmentation Rendering:', () => {
     const imageId1 = encodeImageIdInfo(imageInfo1);
     const vp = renderingEngine.getViewport(viewportId1);
 
-    eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
-      setTimeout(() => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
+    let renderCount = 0;
+    const expectedRenderCount = 2; // We expect two segmentations to be rendered
 
-        compareImages(
-          image,
-          imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked,
-          'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
-        ).then(done, done.fail);
-      }, 700);
+    eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
+      renderCount++;
+
+      if (renderCount === expectedRenderCount) {
+        setTimeout(() => {
+          const canvas = vp.getCanvas();
+          const image = canvas.toDataURL('image/png');
+
+          compareImages(
+            image,
+            imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked,
+            'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
+          ).then(done, done.fail);
+        }, 700);
+      }
     });
 
     try {
