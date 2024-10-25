@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { Events, ImageQualityStatus } from '../../enums';
 import eventTarget from '../../eventTarget';
 import type {
   IDynamicImageVolume,
@@ -19,6 +19,7 @@ export default class StreamingDynamicImageVolume
   private _timePointIndex = 0;
   private _splittingTag: string;
   private _imageIdGroups: string[][];
+  private _loadedTimePoints: Set<number> = new Set();
 
   public numTimePoints: number;
 
@@ -152,4 +153,41 @@ export default class StreamingDynamicImageVolume
     const imageIds = this.getImageIdsToLoad();
     return this._getImageIdRequests(imageIds, priority);
   };
+
+  /**
+   * Checks if a specific timepoint is fully loaded
+   * @param timePointIndex - The index of the timepoint to check
+   * @returns boolean indicating if the timepoint is fully loaded
+   */
+  public isTimePointLoaded(timePointIndex: number): boolean {
+    return this._loadedTimePoints.has(timePointIndex);
+  }
+
+  /**
+   * Marks a timepoint as fully loaded
+   * @param timePointIndex - The index of the timepoint to mark as loaded
+   */
+  private markTimePointAsLoaded(timePointIndex: number): void {
+    this._loadedTimePoints.add(timePointIndex);
+
+    // Trigger an event to notify that a timepoint has been fully loaded
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_LOADED, {
+      volumeId: this.volumeId,
+      timePointIndex,
+    });
+  }
+
+  protected checkTimePointCompletion(imageIdIndex: number): void {
+    const timePointIndex = this.flatImageIdIndexToTimePointIndex(imageIdIndex);
+    const imageIdsInTimePoint = this._imageIdGroups[timePointIndex];
+
+    const allLoaded = imageIdsInTimePoint.every((imageId) => {
+      const index = this.getImageIdIndex(imageId);
+      return this.cachedFrames[index] === ImageQualityStatus.FULL_RESOLUTION;
+    });
+
+    if (allLoaded && !this.isTimePointLoaded(timePointIndex)) {
+      this.markTimePointAsLoaded(timePointIndex);
+    }
+  }
 }

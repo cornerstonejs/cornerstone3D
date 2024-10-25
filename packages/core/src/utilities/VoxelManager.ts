@@ -671,6 +671,12 @@ export default class VoxelManager<T> {
     function getPixelInfo(index) {
       const sliceIndex = Math.floor(index / pixelsPerSlice);
       const imageId = imageIds[sliceIndex];
+
+      if (!imageId) {
+        console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
+        return { pixelData: null, pixelIndex: null };
+      }
+
       const image = cache.getImage(imageId);
 
       if (!image) {
@@ -739,8 +745,11 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager._getConstructor = () => {
-      const { pixelData } = getPixelInfo(0);
-      return pixelData.constructor;
+      const pixelInfo = getPixelInfo(0);
+      if (!pixelInfo.pixelData) {
+        return null;
+      }
+      return pixelInfo.pixelData.constructor;
     };
 
     voxelManager.getMiddleSliceData = () => {
@@ -786,6 +795,11 @@ export default class VoxelManager<T> {
      */
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
+
+      if (!ScalarDataConstructor) {
+        return new Uint8Array(0);
+      }
+
       const dataLength = voxelManager.getScalarDataLength();
       // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);

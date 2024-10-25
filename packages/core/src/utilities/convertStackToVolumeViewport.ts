@@ -11,6 +11,7 @@ import {
 } from '../loaders/volumeLoader';
 import type { OrientationAxis } from '../enums';
 import { Events, ViewportType } from '../enums';
+import uuidv4 from './uuidv4';
 
 /**
  * Converts a stack viewport to a volume viewport.
@@ -25,11 +26,11 @@ import { Events, ViewportType } from '../enums';
  */
 async function convertStackToVolumeViewport({
   viewport,
-  options,
+  options = {},
 }: {
   viewport: IStackViewport;
-  options: {
-    volumeId: string;
+  options?: {
+    volumeId?: string;
     viewportId?: string;
     background?: Point3;
     orientation?: OrientationAxis;
@@ -37,11 +38,11 @@ async function convertStackToVolumeViewport({
 }): Promise<IVolumeViewport> {
   const renderingEngine = viewport.getRenderingEngine();
 
-  let { volumeId } = options;
+  let volumeId = options.volumeId || `${uuidv4()}`;
 
   // if there is no loader schema for the volume Id, we will use the default one
   // which we can get from the volume loader
-  if (volumeId.split(':').length === 1) {
+  if (volumeId.split(':').length === 0) {
     const schema = getUnknownVolumeLoaderSchema();
     volumeId = `${schema}:${volumeId}`;
   }
@@ -52,7 +53,8 @@ async function convertStackToVolumeViewport({
   const imageIds = viewport.getImageIds();
 
   // It is important to keep the camera before enabling the viewport
-  const prevView = viewport.getViewReference();
+  const prevViewPresentation = viewport.getViewPresentation();
+  const prevViewReference = viewport.getViewReference();
 
   // this will disable the stack viewport and remove it from the toolGroup
   renderingEngine.enableElement({
@@ -93,7 +95,6 @@ async function convertStackToVolumeViewport({
   );
 
   const volumeViewportNewVolumeHandler = () => {
-    volumeViewport.setViewReference(prevView);
     volumeViewport.render();
 
     element.removeEventListener(
@@ -110,6 +111,9 @@ async function convertStackToVolumeViewport({
   };
 
   addVolumeViewportNewVolumeListener();
+
+  volumeViewport.setViewPresentation(prevViewPresentation);
+  volumeViewport.setViewReference(prevViewReference);
 
   volumeViewport.render();
 

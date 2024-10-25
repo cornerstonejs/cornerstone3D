@@ -46,10 +46,9 @@ export async function createAndCacheSurfacesFromRaw(
       id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
       color,
       frameOfReferenceUID: 'test-frameOfReferenceUID',
-      data: {
-        points: rawSurfaceData.data.points,
-        polys: rawSurfaceData.data.polys,
-      },
+      points: rawSurfaceData.data.points,
+      polys: rawSurfaceData.data.polys,
+      segmentIndex,
     };
 
     const geometryId = closedSurface.id;

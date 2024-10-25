@@ -694,7 +694,7 @@ class CrosshairsTool extends AnnotationTool {
     for (let i = 0; i < filteredToolAnnotations.length; i++) {
       const annotation = filteredToolAnnotations[i] as CrosshairsAnnotation;
 
-      if (isAnnotationLocked(annotation)) {
+      if (isAnnotationLocked(annotation.annotationUID)) {
         continue;
       }
 

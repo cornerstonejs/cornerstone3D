@@ -7,7 +7,6 @@ import type {
   ImageLoadRequests,
   ImageVolumeProps,
   IStreamingVolumeProperties,
-  PixelDataTypedArrayString,
   PTScaling,
   ScalingParameters,
 } from '../../types';
@@ -22,7 +21,7 @@ import ImageVolume from './ImageVolume';
 import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
 import { canRenderFloatTextures } from '../../init';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
-const requestTypeDefault = RequestType.PREFETCH;
+const requestTypeDefault = RequestType.Prefetch;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -216,11 +215,16 @@ export default class BaseStreamingImageVolume
     }
 
     // if it is not a cached image or volume
-    return this.updateTextureAndTriggerEvents(
+    this.updateTextureAndTriggerEvents(
       imageIdIndex,
       imageId,
       imageQualityStatus
     );
+
+    // Check if this completes a timepoint (for dynamic volumes)
+    if (this.isDynamicVolume()) {
+      this.checkTimePointCompletion(imageIdIndex);
+    }
   }
 
   public errorCallback(imageId, permanent, error) {
@@ -547,7 +551,6 @@ export default class BaseStreamingImageVolume
     this.loadStatus.loading = true;
 
     const imageIds = [...this.getImageIdsToLoad()];
-    imageIds.reverse();
 
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
@@ -587,4 +590,6 @@ export default class BaseStreamingImageVolume
 
     this.scaling = { PT: petScaling };
   }
+
+  protected checkTimePointCompletion(imageIdIndex: number): void {}
 }

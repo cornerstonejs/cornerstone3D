@@ -1,20 +1,20 @@
-import type { Types } from '@cornerstonejs/core';
-import {
-  getEnabledElement,
-  StackViewport,
-  VolumeViewport,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
-import type JumpToSliceOptions from '../../types/JumpToSliceOptions';
-import clip from '../clip';
-import scroll from '../scroll';
-
+import clip from './clip';
+import type {
+  ImageSliceData,
+  IStackViewport,
+  IVolumeViewport,
+  JumpToSliceOptions,
+} from '../types';
+import scroll from './scroll';
+import getEnabledElement from '../getEnabledElement';
+import StackViewport from '../RenderingEngine/StackViewport';
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
  * It works for both Stack and Volume viewports. In VolumeViewports, the imageIndex
  * should be given with respect to the index in the 3D image in the view direction
  * (i.e. the index of the slice in Axial, Sagittal, Coronal, or Oblique).
  *
+import type { JumpToSliceOptions } from '../types';
  * @param element - the HTML Div element scrolling inside
  * @param options - the options used for jumping to a slice
  * @returns Promise that resolves to ImageIdIndex
@@ -44,9 +44,9 @@ async function jumpToSlice(
 }
 
 function _getImageSliceData(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: IStackViewport | IVolumeViewport,
   debounceLoading?: boolean
-): Types.ImageSliceData {
+): ImageSliceData {
   if (viewport instanceof StackViewport) {
     return {
       numberOfSlices: viewport.getImageIds().length,
@@ -70,4 +70,4 @@ function _getImageIndexToJump(
   return clip(imageIndex, 0, lastSliceIndex);
 }
 
-export default jumpToSlice;
+export { jumpToSlice };

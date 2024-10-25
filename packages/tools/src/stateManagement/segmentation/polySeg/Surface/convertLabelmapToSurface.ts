@@ -16,10 +16,11 @@ import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
-const triggerWorkerProgress = (eventTarget, progress) => {
+const triggerWorkerProgress = (eventTarget, progress, id) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
     progress,
     type: WorkerTypes.POLYSEG_LABELMAP_TO_SURFACE,
+    id,
   });
 };
 
@@ -53,7 +54,7 @@ export async function convertLabelmapToSurface(
   const scalarData = volume.voxelManager.getCompleteScalarDataArray();
   const { dimensions, spacing, origin, direction } = volume;
 
-  triggerWorkerProgress(eventTarget, 0);
+  triggerWorkerProgress(eventTarget, 0, segmentIndex);
 
   const results = await workerManager.executeTask(
     'polySeg',
@@ -69,13 +70,13 @@ export async function convertLabelmapToSurface(
     {
       callbacks: [
         (progress) => {
-          triggerWorkerProgress(eventTarget, progress);
+          triggerWorkerProgress(eventTarget, progress, segmentIndex);
         },
       ],
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100, segmentIndex);
 
   return results;
 }

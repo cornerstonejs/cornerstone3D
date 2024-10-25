@@ -431,16 +431,14 @@ async function generateToolState(
     const centroidXYZ = new Map();
 
     segmentsPixelIndices.forEach((imageIdIndexBufferIndex, segmentIndex) => {
-        const { xAcc, yAcc, zAcc, count } = calculateCentroid(
+        const centroids = calculateCentroid(
             imageIdIndexBufferIndex,
-            multiframe
+            multiframe,
+            metadataProvider,
+            imageIds
         );
 
-        centroidXYZ.set(segmentIndex, {
-            x: Math.floor(xAcc / count),
-            y: Math.floor(yAcc / count),
-            z: Math.floor(zAcc / count)
-        });
+        centroidXYZ.set(segmentIndex, centroids);
     });
 
     return {
@@ -1627,10 +1625,18 @@ function getUnpackedOffsetAndLength(chunks, offset, length) {
     };
 }
 
-function calculateCentroid(imageIdIndexBufferIndex, multiframe) {
+function calculateCentroid(
+    imageIdIndexBufferIndex,
+    multiframe,
+    metadataProvider,
+    imageIds
+) {
     let xAcc = 0;
     let yAcc = 0;
     let zAcc = 0;
+    let worldXAcc = 0;
+    let worldYAcc = 0;
+    let worldZAcc = 0;
     let count = 0;
 
     for (const [imageIdIndex, bufferIndices] of Object.entries(
@@ -1642,19 +1648,75 @@ function calculateCentroid(imageIdIndexBufferIndex, multiframe) {
             continue;
         }
 
+        // Get metadata for this slice
+        const imageId = imageIds[z];
+        const imagePlaneModule = metadataProvider.get(
+            "imagePlaneModule",
+            imageId
+        );
+
+        if (!imagePlaneModule) {
+            console.debug(
+                "Missing imagePlaneModule metadata for centroid calculation"
+            );
+            continue;
+        }
+
+        const {
+            imagePositionPatient,
+            rowCosines,
+            columnCosines,
+            rowPixelSpacing,
+            columnPixelSpacing
+        } = imagePlaneModule;
+
         for (const bufferIndex of bufferIndices) {
             const y = Math.floor(bufferIndex / multiframe.Rows);
             const x = bufferIndex % multiframe.Rows;
 
+            // Image coordinates
             xAcc += x;
             yAcc += y;
             zAcc += z;
+
+            // Calculate world coordinates
+            // P(world) = P(image) * IOP * spacing + IPP
+            const worldX =
+                imagePositionPatient[0] +
+                x * rowCosines[0] * columnPixelSpacing +
+                y * columnCosines[0] * rowPixelSpacing;
+
+            const worldY =
+                imagePositionPatient[1] +
+                x * rowCosines[1] * columnPixelSpacing +
+                y * columnCosines[1] * rowPixelSpacing;
+
+            const worldZ =
+                imagePositionPatient[2] +
+                x * rowCosines[2] * columnPixelSpacing +
+                y * columnCosines[2] * rowPixelSpacing;
+
+            worldXAcc += worldX;
+            worldYAcc += worldY;
+            worldZAcc += worldZ;
 
             count++;
         }
     }
 
-    return { xAcc, yAcc, zAcc, count };
+    return {
+        image: {
+            x: Math.floor(xAcc / count),
+            y: Math.floor(yAcc / count),
+            z: Math.floor(zAcc / count)
+        },
+        world: {
+            x: worldXAcc / count,
+            y: worldYAcc / count,
+            z: worldZAcc / count
+        },
+        count
+    };
 }
 
 const Segmentation = {

@@ -165,11 +165,11 @@ type AnnotationSelectionChangeEventDetail = {
  */
 type AnnotationLockChangeEventDetail = {
   // List of instances changed to locked state by the last operation.
-  added: Array<Annotation>;
+  added: Array<string>;
   // List of instances removed from locked state by the last operation.
-  removed: Array<Annotation>;
+  removed: Array<string>;
   // Updated list of currently locked instances
-  locked: Array<Annotation>;
+  locked: Array<string>;
 };
 
 type AnnotationVisibilityChangeEventDetail = {
@@ -450,19 +450,6 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail &
     points: IPoints;
   };
 
-/**
- * Volume Scroll Out of Bounds event detail
- */
-type VolumeScrollOutOfBoundsEventDetail = {
-  volumeId: string;
-  viewport: Types.IVolumeViewport;
-  desiredStepIndex: number;
-  currentStepIndex: number;
-  delta: number; // difference between the desired and current frame
-  numScrollSteps: number; // total scroll steps in the volume
-  currentImageId: string; // get ImageId (ImageIndex for in-plane acquisition)
-};
-
 /////////////////////////////
 //
 //
@@ -691,12 +678,6 @@ type MouseDoubleClickEventType =
  */
 type MouseWheelEventType = Types.CustomEventType<MouseWheelEventDetail>;
 
-/**
- * Event for volume scroll out of bounds
- */
-type VolumeScrollOutOfBoundsEventType =
-  Types.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
-
 export type {
   InteractionStartType,
   InteractionEndType,
@@ -775,6 +756,4 @@ export type {
   MouseDoubleClickEventType,
   MouseWheelEventDetail,
   MouseWheelEventType,
-  VolumeScrollOutOfBoundsEventDetail,
-  VolumeScrollOutOfBoundsEventType,
 };

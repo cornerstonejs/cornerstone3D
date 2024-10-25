@@ -5,6 +5,7 @@ import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { surfaceDisplay } from '../../tools/displayTools/Surface';
 
 /**
  * Removes a segmentation representation from a viewport.
@@ -25,15 +26,8 @@ function removeSegmentationRepresentation(
     type: SegmentationRepresentations;
   },
   immediate?: boolean
-): void {
-  const { segmentationId, type } = specifier;
-  _removeRepresentation(viewportId, segmentationId, type, immediate);
-
-  // remove representation from state
-  defaultSegmentationStateManager.removeSegmentationRepresentation(viewportId, {
-    segmentationId,
-    type,
-  });
+): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
+  return _removeSegmentationRepresentations(viewportId, specifier, immediate);
 }
 
 /**
@@ -57,13 +51,24 @@ function removeSegmentationRepresentations(
     type?: SegmentationRepresentations;
   },
   immediate?: boolean
-): void {
+): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
+  return _removeSegmentationRepresentations(viewportId, specifier, immediate);
+}
+
+function _removeSegmentationRepresentations(
+  viewportId: string,
+  specifier: {
+    segmentationId?: string;
+    type?: SegmentationRepresentations;
+  },
+  immediate?: boolean
+): Array<{ segmentationId: string; type: SegmentationRepresentations }> {
   const { segmentationId, type } = specifier;
 
-  _removeRepresentation(viewportId, segmentationId, type, immediate);
+  _removeRepresentationObject(viewportId, segmentationId, type, immediate);
 
-  // remove representation from state
-  defaultSegmentationStateManager.removeSegmentationRepresentations(
+  // Remove representation from state
+  return defaultSegmentationStateManager.removeSegmentationRepresentations(
     viewportId,
     {
       segmentationId,
@@ -162,7 +167,7 @@ function removeSurfaceRepresentation(
   );
 }
 
-function _removeRepresentation(
+function _removeRepresentationObject(
   viewportId: string,
   segmentationId: string,
   type?: SegmentationRepresentations,
@@ -177,18 +182,20 @@ function _removeRepresentation(
     if (representation.type === SegmentationRepresentations.Labelmap) {
       labelmapDisplay.removeRepresentation(
         viewportId,
-        segmentationId,
+        representation.segmentationId,
         immediate
       );
     } else if (representation.type === SegmentationRepresentations.Contour) {
       contourDisplay.removeRepresentation(
         viewportId,
-        segmentationId,
+        representation.segmentationId,
         immediate
       );
-    } else {
-      throw new Error(
-        `The representation ${representation.type} is not supported yet`
+    } else if (representation.type === SegmentationRepresentations.Surface) {
+      surfaceDisplay.removeRepresentation(
+        viewportId,
+        representation.segmentationId,
+        immediate
       );
     }
   });

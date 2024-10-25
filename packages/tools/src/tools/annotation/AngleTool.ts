@@ -653,7 +653,7 @@ class AngleTool extends AnnotationTool {
       let activeHandleCanvasCoords;
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotation.annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {

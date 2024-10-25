@@ -5,18 +5,15 @@
 ```ts
 
 import type { ByteArray } from 'dicom-parser';
-import type ColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { DataSet } from 'dicom-parser';
+import * as dicomParser from 'dicom-parser';
 import type { Element as Element_2 } from 'dicom-parser';
 import { ImageQualityStatus as ImageQualityStatus_2 } from 'packages/core/dist/esm/enums';
-import type { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
-import { PromiseIterator as PromiseIterator_2 } from 'packages/core/dist/esm/utilities/ProgressiveIterator';
+import { PromiseIterator } from 'packages/core/dist/esm/utilities/ProgressiveIterator';
 import type { Range as Range_2 } from '@kitware/vtk.js/types';
-import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
-import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
@@ -24,10 +21,6 @@ import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-
-// @public (undocumented)
-export function configure(options: LoaderOptions): void;
 
 declare namespace constants {
     export {
@@ -69,6 +62,7 @@ const cornerstoneDICOMImageLoader: {
             getModalityLUTOutputPixelRepresentation: getModalityLUTOutputPixelRepresentation;
             getNumberValues: getNumberValues;
             metaDataProvider: metaDataProvider;
+            metadataForDataset: metadataForDataset;
         };
         dataSetCacheManager: {
             isLoaded: (uri: string) => boolean;
@@ -90,6 +84,7 @@ const cornerstoneDICOMImageLoader: {
         loadFileRequest: loadFileRequest;
         loadImageFromPromise: loadImageFromPromise;
         getLoaderForScheme: getLoaderForScheme;
+        getPixelData: getPixelData_2;
         loadImage: loadImage;
         parseImageId: parseImageId;
         unpackBinaryFrame: unpackBinaryFrame;
@@ -105,7 +100,7 @@ const cornerstoneDICOMImageLoader: {
         };
         findIndexOfString: findIndexOfString;
         getPixelData: typeof getPixelData;
-        loadImage: loadImage_3;
+        loadImage: loadImage_2;
         metaDataManager: {
             add: (imageId: string, metadata: Types.WADORSMetaData) => void;
             get: (imageId: string) => Types.WADORSMetaData;
@@ -114,7 +109,7 @@ const cornerstoneDICOMImageLoader: {
         };
         register: default_3;
     };
-    configure: typeof configure;
+    init: typeof init;
     convertColorSpace: typeof convertColorSpace;
     createImage: typeof createImage;
     decodeJPEGBaseline8BitColor: typeof decodeJPEGBaseline8BitColor;
@@ -128,10 +123,6 @@ const cornerstoneDICOMImageLoader: {
         streamRequest: streamRequest;
         setOptions: setOptions;
         getOptions: getOptions;
-    };
-    external: {
-        cornerstone: any;
-        dicomParser: any;
     };
 };
 export default cornerstoneDICOMImageLoader;
@@ -204,13 +195,6 @@ interface DICOMLoaderImageOptions {
 }
 
 // @public (undocumented)
-const external_2: {
-    cornerstone: any;
-    dicomParser: any;
-};
-export { external_2 as external }
-
-// @public (undocumented)
 export function getImageFrame(imageId: string): Types_2.IImageFrame;
 
 // @public (undocumented)
@@ -220,7 +204,7 @@ export function getMinMax(storedPixelData: Types_2.PixelDataTypedArray): {
 };
 
 // @public (undocumented)
-export function getPixelData(uri: string, imageId: string, mediaType?: string, options?: CornerstoneWadoRsLoaderOptions): PromiseIterator_2<unknown> | LoaderXhrRequestPromise<    {
+export function getPixelData(uri: string, imageId: string, mediaType?: string, options?: CornerstoneWadoRsLoaderOptions): PromiseIterator<unknown> | LoaderXhrRequestPromise<    {
 contentType: string;
 pixelData: Uint8Array;
 imageQualityStatus: ImageQualityStatus_2;
@@ -244,6 +228,9 @@ percentComplete: number;
     pixelData: any;
     imageQualityStatus?: undefined;
 }>;
+
+// @public (undocumented)
+export function init(options: LoaderOptions): void;
 
 // @public (undocumented)
 export const internal: {
@@ -270,11 +257,7 @@ interface LoaderOptions {
     // (undocumented)
     beforeSend?: (xhr: XMLHttpRequest, imageId: string, defaultHeaders: Record<string, string>, params: LoaderXhrRequestParams) => Record<string, string> | void;
     // (undocumented)
-    cornerstone?: unknown;
-    // (undocumented)
     decodeConfig?: LoaderDecodeOptions;
-    // (undocumented)
-    dicomParser?: unknown;
     // (undocumented)
     errorInterceptor?: (error: LoaderXhrRequestError) => void;
     // (undocumented)
@@ -470,7 +453,7 @@ export const wadors: {
     };
     findIndexOfString: typeof findIndexOfString;
     getPixelData: typeof getPixelData;
-    loadImage: typeof loadImage_3;
+    loadImage: typeof loadImage_2;
     metaDataManager: {
         add: (imageId: string, metadata: WADORSMetaData) => void;
         get: (imageId: string) => WADORSMetaData;
@@ -497,6 +480,7 @@ export const wadouri: {
         getModalityLUTOutputPixelRepresentation: typeof getModalityLUTOutputPixelRepresentation;
         getNumberValues: typeof getNumberValues;
         metaDataProvider: typeof metaDataProvider;
+        metadataForDataset: typeof metadataForDataset;
     };
     dataSetCacheManager: {
         isLoaded: (uri: string) => boolean;
@@ -518,6 +502,7 @@ export const wadouri: {
     loadFileRequest: typeof loadFileRequest;
     loadImageFromPromise: typeof loadImageFromPromise;
     getLoaderForScheme: typeof getLoaderForScheme;
+    getPixelData: typeof getPixelData_2;
     loadImage: typeof loadImage;
     parseImageId: typeof parseImageId;
     unpackBinaryFrame: typeof unpackBinaryFrame;

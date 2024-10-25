@@ -14,7 +14,6 @@ import type { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState, getToolStateByViewportId } from './state';
 import type { CINETypes } from '../../types';
-import scroll from '../scroll';
 
 const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
@@ -390,7 +389,7 @@ function _createStackViewportCinePlayContext(
         return;
       }
       this.waitForRenderedCount = 0;
-      scroll(viewport, { delta, debounceLoading: debounced });
+      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
     },
   };
 }
@@ -420,7 +419,7 @@ function _createVideoViewportCinePlayContext(
         return;
       }
       this.waitForRenderedCount = 0;
-      scroll(viewport, { delta, debounceLoading: debounced });
+      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
     },
     play(fps?: number): number {
       if (fps) {
@@ -486,7 +485,7 @@ function _createVolumeViewportCinePlayContext(
     },
     scroll(delta: number): void {
       getScrollInfo().currentStepIndex += delta;
-      scroll(viewport, { delta });
+      csUtils.scroll(viewport, { delta });
     },
   };
 }
@@ -502,7 +501,7 @@ function _createDynamicVolumeViewportCinePlayContext(
       return volume.timePointIndex;
     },
     get frameTimeVectorEnabled(): boolean {
-      // Looping throught time does not uses frameTimeVector
+      // Looping though time does not uses frameTimeVector
       return false;
     },
     scroll(delta: number): void {

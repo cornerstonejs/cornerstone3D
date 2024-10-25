@@ -55,6 +55,8 @@ type Actor = vtkActor;
 // @public (undocumented)
 interface ActorEntry {
     // (undocumented)
+    [key: string]: unknown;
+    // (undocumented)
     actor: Actor | VolumeActor | ImageActor | ICanvasActor;
     // (undocumented)
     clippingFilter?: any;
@@ -146,6 +148,8 @@ export abstract class BaseVolumeViewport extends Viewport {
     clearDefaultProperties(volumeId?: string): void;
     // (undocumented)
     flip(flipDirection: FlipDirection): void;
+    // (undocumented)
+    getAllVolumeIds(): string[];
     // (undocumented)
     getBounds(): number[];
     // (undocumented)
@@ -331,6 +335,9 @@ export function canRenderFloatTextures(): boolean;
 function clamp(value: number, min: number, max: number): number;
 
 // @public (undocumented)
+function clip(val: number, low: number, high: number): number;
+
+// @public (undocumented)
 type Color = [number, number, number, number];
 
 declare namespace color {
@@ -435,8 +442,8 @@ enum ContourType {
 // @public (undocumented)
 function convertStackToVolumeViewport({ viewport, options, }: {
     viewport: StackViewport;
-    options: {
-        volumeId: string;
+    options?: {
+        volumeId?: string;
         viewportId?: string;
         background?: Point3;
         orientation?: OrientationAxis;
@@ -815,7 +822,7 @@ function createAndCacheDerivedLabelmapVolume(referencedVolumeId: string, options
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): IImageVolume;
 
 // @public (undocumented)
-function createAndCacheGeometry(geometryId: string, options: GeometryOptions): Promise<IGeometry>;
+function createAndCacheGeometry(geometryId: string, options: GeometryOptions): IGeometry;
 
 // @public (undocumented)
 function createAndCacheLocalImage(imageId: string, options: LocalImageOptions): IImage;
@@ -825,6 +832,9 @@ function createAndCacheVolume(volumeId: string, options?: VolumeLoaderOptions): 
 
 // @public (undocumented)
 function createAndCacheVolumeFromImages(volumeId: string, imageIds: string[]): Promise<IImageVolume>;
+
+// @public (undocumented)
+function createAndCacheVolumeFromImagesSync(volumeId: string, imageIds: string[]): IImageVolume;
 
 // @public (undocumented)
 function createLinearRGBTransferFunction(voiRange: VOIRange): vtkColorTransferFunction;
@@ -853,14 +863,11 @@ interface CustomEvent_2<T = unknown> extends Event {
 }
 
 // @public (undocumented)
-interface DataSetOptions {
-    // (undocumented)
+type DataSetOptions = {
     groupId?: string;
-    // (undocumented)
-    viewReference?: ViewReferenceSpecifier;
-    // (undocumented)
     viewSelector?: ViewPresentationSelector;
-}
+    viewReference?: ViewReferenceSpecifier;
+};
 
 // @public (undocumented)
 function decimate(list: unknown[], interleave: number, offset?: number): number[];
@@ -1015,6 +1022,8 @@ export enum EVENTS {
     // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED",
     // (undocumented)
+    DYNAMIC_VOLUME_TIME_POINT_LOADED = "DYNAMIC_VOLUME_TIME_POINT_LOADED",
+    // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
@@ -1022,6 +1031,12 @@ export enum EVENTS {
     ERROR_EVENT = "CORNERSTONE_ERROR",
     // (undocumented)
     GEOMETRY_CACHE_GEOMETRY_ADDED = "CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED",
+    // (undocumented)
+    GEOMETRY_CACHE_GEOMETRY_REMOVED = "CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_REMOVED",
+    // (undocumented)
+    GEOMETRY_LOADED = "GEOMETRY_LOADED",
+    // (undocumented)
+    GEOMETRY_LOADED_FAILED = "GEOMETRY_LOADED_FAILED",
     // (undocumented)
     IMAGE_CACHE_IMAGE_ADDED = "CORNERSTONE_IMAGE_CACHE_IMAGE_ADDED",
     // (undocumented)
@@ -1082,6 +1097,8 @@ export const eventTarget: CornerstoneEventTarget;
 declare namespace EventTypes {
     export {
         ImageLoadStageEventDetail,
+        VolumeScrollOutOfBoundsEventDetail,
+        VolumeScrollOutOfBoundsEvent,
         CameraModifiedEventDetail,
         CameraModifiedEvent,
         VoiModifiedEvent,
@@ -1177,17 +1194,28 @@ function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): 
 
 declare namespace geometryLoader {
     export {
-        createAndCacheGeometry
+        loadGeometry,
+        loadAndCacheGeometry,
+        createAndCacheGeometry,
+        registerGeometryLoader,
+        registerUnknownGeometryLoader
     }
 }
 export { geometryLoader }
 
 // @public (undocumented)
+type GeometryLoaderFn = (geometryId: string, options?: Record<string, unknown>) => {
+    promise: Promise<IGeometry>;
+    cancelFn?: () => void | undefined;
+    decache?: () => void | undefined;
+};
+
+// @public (undocumented)
 enum GeometryType {
     // (undocumented)
-    Contour = "Contour",
+    CONTOUR = "CONTOUR",
     // (undocumented)
-    Surface = "Surface"
+    SURFACE = "SURFACE"
 }
 
 // @public (undocumented)
@@ -1199,7 +1227,11 @@ function getBufferConfiguration(targetBufferType: PixelDataTypedArrayString, len
 };
 
 // @public (undocumented)
-function getClosestImageId(imageVolume: IImageVolume, worldPos: Point3, viewPlaneNormal: Point3): string;
+function getClosestImageId(imageVolume: IImageVolume | {
+    direction: mat3;
+    spacing: Point3;
+    imageIds: string[];
+}, worldPos: Point3, viewPlaneNormal: Point3): string;
 
 // @public (undocumented)
 function getClosestStackImageIndexForPoint(point: Point3, viewport: StackViewport): number | null;
@@ -1409,7 +1441,7 @@ interface ICachedImage {
     // (undocumented)
     imageId: string;
     // (undocumented)
-    imageLoadObject: IImageLoadObject;
+    imageLoadObject?: IImageLoadObject;
     // (undocumented)
     loaded: boolean;
     // (undocumented)
@@ -2323,6 +2355,8 @@ const isPTPrescaledWithSUV: (image: IImage) => number;
 // @public (undocumented)
 interface IStackInput {
     // (undocumented)
+    [key: string]: unknown;
+    // (undocumented)
     actorUID?: string;
     // (undocumented)
     callback?: StackInputCallback;
@@ -2383,20 +2417,15 @@ interface IViewportId {
 type IVolume = ImageVolumeProps;
 
 // @public (undocumented)
-interface IVolumeInput {
-    // (undocumented)
-    actorUID?: string;
-    // (undocumented)
-    blendMode?: BlendModes;
-    // (undocumented)
-    callback?: VolumeInputCallback;
-    // (undocumented)
-    slabThickness?: number;
-    // (undocumented)
-    visibility?: boolean;
-    // (undocumented)
+type IVolumeInput = {
     volumeId: string;
-}
+    actorUID?: string;
+    visibility?: boolean;
+    callback?: VolumeInputCallback;
+    blendMode?: BlendModes;
+    slabThickness?: number;
+    [key: string]: unknown;
+};
 
 // @public (undocumented)
 interface IVolumeLoadObject {
@@ -2418,13 +2447,29 @@ type IVoxelManager<T> = VoxelManager<T>;
 type IWSIViewport = WSIViewport;
 
 // @public (undocumented)
+function jumpToSlice(element: HTMLDivElement, options?: JumpToSliceOptions): Promise<void>;
+
+// @public (undocumented)
+type JumpToSliceOptions = {
+    imageIndex: number;
+    debounceLoading?: boolean;
+    volumeId?: string;
+};
+
+// @public (undocumented)
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3;
+
+// @public (undocumented)
+function loadAndCacheGeometry(geometryId: string, options?: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
 function loadAndCacheImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
 
 // @public (undocumented)
 function loadAndCacheImages(imageIds: string[], options?: ImageLoaderOptions): Promise<IImage>[];
+
+// @public (undocumented)
+function loadGeometry(geometryId: string, options?: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
 function loadImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
@@ -2836,16 +2881,7 @@ interface PTScaling {
 type PublicContourSetData = ContourSetData;
 
 // @public (undocumented)
-interface PublicSurfaceData {
-    // (undocumented)
-    color?: Point3;
-    // (undocumented)
-    data: SurfaceData;
-    // (undocumented)
-    frameOfReferenceUID: string;
-    // (undocumented)
-    id: string;
-}
+type PublicSurfaceData = SurfaceData;
 
 // @public (undocumented)
 interface PublicViewportInput {
@@ -2885,7 +2921,13 @@ interface ReferenceCompatibleOptions {
 function registerColormap(colormap: ColormapRegistration): void;
 
 // @public (undocumented)
+function registerGeometryLoader(scheme: string, geometryLoader: GeometryLoaderFn): void;
+
+// @public (undocumented)
 export function registerImageLoader(scheme: string, imageLoader: ImageLoaderFn): void;
+
+// @public (undocumented)
+function registerUnknownGeometryLoader(geometryLoader: GeometryLoaderFn): GeometryLoaderFn | undefined;
 
 // @public (undocumented)
 function registerUnknownImageLoader(imageLoader: ImageLoaderFn): ImageLoaderFn;
@@ -3092,6 +3134,18 @@ interface ScalingParameters {
     // (undocumented)
     suvlbm?: number;
 }
+
+// @public (undocumented)
+function scroll_2(viewport: IViewport | IVideoViewport, options: ScrollOptions_2): void;
+
+// @public (undocumented)
+type ScrollOptions_2 = {
+    delta: number;
+    volumeId?: string;
+    debounceLoading?: boolean;
+    loop?: boolean;
+    scrollSlabs?: boolean;
+};
 
 // @public (undocumented)
 export function setConfiguration(c: Cornerstone3DConfig): void;
@@ -3318,6 +3372,8 @@ export class StackViewport extends Viewport {
     // (undocumented)
     isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
+    jumpToWorld(worldPos: Point3): boolean;
+    // (undocumented)
     loadImages(imageIds: string[], listener: ImageLoadListener): Promise<unknown>;
     // (undocumented)
     modality: string;
@@ -3420,6 +3476,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         imageIdGroups: string[][];
     }, streamingProperties: IStreamingVolumeProperties);
     // (undocumented)
+    protected checkTimePointCompletion(imageIdIndex: number): void;
+    // (undocumented)
     flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
@@ -3459,6 +3517,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         };
     }[];
     // (undocumented)
+    isTimePointLoaded(timePointIndex: number): boolean;
+    // (undocumented)
     numTimePoints: number;
     // (undocumented)
     scroll(delta: number): void;
@@ -3489,35 +3549,44 @@ type StreamingRetrieveOptions = BaseRetrieveOptions & {
 export class Surface {
     constructor(props: SurfaceProps);
     // (undocumented)
+    get centroid(): Point3;
+    // (undocumented)
+    get color(): RGB;
+    set color(color: RGB);
+    // (undocumented)
+    get flatPointsArray(): number[];
+    // (undocumented)
     readonly frameOfReferenceUID: string;
-    // (undocumented)
-    getColor(): RGB;
-    // (undocumented)
-    getPoints(): number[];
-    // (undocumented)
-    getPolys(): number[];
-    // (undocumented)
-    getSizeInBytes(): number;
-    // (undocumented)
-    _getSizeInBytes(): number;
     // (undocumented)
     readonly id: string;
     // (undocumented)
-    setColor(color: RGB): void;
+    get points(): number[];
+    set points(points: number[]);
     // (undocumented)
-    setPoints(points: number[]): void;
+    get polys(): number[];
+    set polys(polys: number[]);
     // (undocumented)
-    setPolys(polys: number[]): void;
+    get segmentIndex(): number;
     // (undocumented)
     readonly sizeInBytes: number;
+    // (undocumented)
+    get totalNumberOfPoints(): number;
 }
 
 // @public (undocumented)
 interface SurfaceData {
     // (undocumented)
+    color?: Point3;
+    // (undocumented)
+    frameOfReferenceUID: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
     points: number[];
     // (undocumented)
     polys: number[];
+    // (undocumented)
+    segmentIndex?: number;
 }
 
 // @public (undocumented)
@@ -3710,7 +3779,10 @@ declare namespace Types {
         RLERun,
         ViewportInput,
         ImageLoadRequests,
-        IBaseVolumeViewport
+        IBaseVolumeViewport,
+        GeometryLoaderFn,
+        ScrollOptions_2 as ScrollOptions,
+        JumpToSliceOptions
     }
 }
 export { Types }
@@ -3808,7 +3880,10 @@ declare namespace utilities {
         deepClone,
         splitImageIdsBy4DTags,
         pointInShapeCallback,
-        deepEqual
+        deepEqual,
+        jumpToSlice,
+        scroll_2 as scroll,
+        clip
     }
 }
 export { utilities }
@@ -4497,6 +4572,7 @@ declare namespace volumeLoader {
         createAndCacheVolume,
         createAndCacheDerivedVolume,
         createAndCacheVolumeFromImages,
+        createAndCacheVolumeFromImagesSync,
         createLocalVolume,
         registerVolumeLoader,
         getVolumeLoaderSchemes,
@@ -4573,6 +4649,20 @@ interface VolumeProps {
 }
 
 // @public (undocumented)
+type VolumeScrollOutOfBoundsEvent = CustomEvent_2<VolumeScrollOutOfBoundsEventDetail>;
+
+// @public (undocumented)
+type VolumeScrollOutOfBoundsEventDetail = {
+    volumeId: string;
+    viewport: IVolumeViewport;
+    desiredStepIndex: number;
+    currentStepIndex: number;
+    delta: number;
+    numScrollSteps: number;
+    currentImageId: string;
+};
+
+// @public (undocumented)
 export class VolumeViewport extends BaseVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
@@ -4612,6 +4702,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
     // (undocumented)
+    jumpToWorld(worldPos: Point3): boolean;
+    // (undocumented)
     resetCamera(options?: any): boolean;
     // (undocumented)
     resetCameraForResize: () => boolean;
@@ -4639,6 +4731,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
+    getNumberOfSlices: () => number;
+    // (undocumented)
     getRotation: () => number;
     // (undocumented)
     getSliceIndex(): number;
@@ -4656,6 +4750,8 @@ export class VolumeViewport3D extends BaseVolumeViewport {
     resetSlabThickness(): void;
     // (undocumented)
     setBlendMode(blendMode: BlendModes, filterActorUIDs?: string[], immediate?: boolean): void;
+    // (undocumented)
+    setCamera(props: any): void;
     // (undocumented)
     protected setCameraClippingRange(): void;
     // (undocumented)
@@ -4837,6 +4933,8 @@ function worldToImageCoords(imageId: string, worldCoords: Point3): Point2 | unde
 export class WSIViewport extends Viewport {
     constructor(props: ViewportInput);
     // (undocumented)
+    static addMiniNavigationOverlayCss(): void;
+    // (undocumented)
     protected canvasToIndex: (canvasPos: Point2) => Point2;
     // (undocumented)
     canvasToWorld: (canvasPos: Point2) => Point3;
@@ -4856,6 +4954,8 @@ export class WSIViewport extends Viewport {
     getFrameOfReferenceUID: () => string;
     // (undocumented)
     getImageData(): CPUIImageData;
+    // (undocumented)
+    getImageIds: () => Array<string>;
     // (undocumented)
     getNumberOfSlices: () => number;
     // (undocumented)
@@ -4903,7 +5003,10 @@ export class WSIViewport extends Viewport {
     // (undocumented)
     setCamera(camera: ICamera): void;
     // (undocumented)
-    setDataIds(imageIds: string[]): Promise<void>;
+    setDataIds(imageIds: string[], options?: DataSetOptions & {
+        miniNavigationOverlay?: boolean;
+        webClient: unknown;
+    }): Promise<void>;
     // (undocumented)
     setFrameNumber(frame: number): Promise<void>;
     // (undocumented)

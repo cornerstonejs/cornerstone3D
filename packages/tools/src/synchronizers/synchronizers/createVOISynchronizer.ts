@@ -34,7 +34,11 @@ export default function createVOISynchronizer(
     Enums.Events.VOI_MODIFIED,
     voiSyncCallback,
     {
-      auxiliaryEventNames: [Enums.Events.COLORMAP_MODIFIED],
+      auxiliaryEvents: [
+        {
+          name: Enums.Events.COLORMAP_MODIFIED,
+        },
+      ],
       ...options,
     }
   );

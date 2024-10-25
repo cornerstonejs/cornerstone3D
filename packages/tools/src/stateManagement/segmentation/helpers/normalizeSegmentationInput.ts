@@ -3,8 +3,11 @@ import type {
   SegmentationPublicInput,
   Segmentation,
   Segment,
+  RepresentationData,
 } from '../../../types/SegmentationStateTypes';
 import type { ContourSegmentationData } from '../../../types/ContourTypes';
+import { cache } from '@cornerstonejs/core';
+import type { SurfaceSegmentationData } from '../../../types/SurfaceTypes';
 
 /**
  * It takes in a segmentation input and returns a segmentation with default values
@@ -19,40 +22,19 @@ function normalizeSegmentationInput(
   const { type, data: inputData } = representation;
   const data = inputData ? { ...inputData } : {};
 
-  // Data cannot be undefined for labelmap and surface
   if (!data) {
     throw new Error('Segmentation representation data may not be undefined');
   }
+
   if (type === SegmentationRepresentations.Contour) {
-    const contourData = <ContourSegmentationData>data;
-
-    // geometryIds will be removed in a near future. It still exist in the
-    // code for compatibility only but it is optional from now on.
-    contourData.geometryIds = contourData.geometryIds ?? [];
-
-    // Make sure annotationUIDsMap is defined because an empty contour is
-    // created before adding contour annotations to the map. Also it prevents
-    // breaking legacy code after moving from geometryIds to annotationUIDsMap.
-    contourData.annotationUIDsMap = contourData.annotationUIDsMap ?? new Map();
+    normalizeContourData(data as ContourSegmentationData);
   }
+  const normalizedSegments = normalizeSegments(config?.segments, type, data);
 
-  const normalizedSegments = {} as { [key: number]: Segment };
-
-  Object.entries(config.segments).forEach(([segmentIndex, segment]) => {
-    normalizedSegments[segmentIndex] = {
-      segmentIndex: Number(segmentIndex),
-      label: segment.label ?? `Segment ${segmentIndex}`,
-      locked: segment.locked ?? false,
-      cachedStats: segment.cachedStats ?? {},
-      active: segment.active ?? false,
-    } as Segment;
-  });
-
-  // Todo: we should be able to let the user pass in non-default values for
-  // cachedStats, label, activeSegmentIndex, etc.
   return {
     segmentationId,
-    label: config.label ?? null,
+    label: config?.label ?? null,
+    cachedStats: config?.cachedStats ?? {},
     segments: normalizedSegments,
     representationData: {
       [type]: {
@@ -60,6 +42,84 @@ function normalizeSegmentationInput(
       },
     },
   };
+}
+
+/**
+ * Normalize contour segmentation data to ensure compatibility and default values.
+ * @param contourData - ContourSegmentationData to be normalized.
+ */
+function normalizeContourData(contourData: ContourSegmentationData): void {
+  contourData.geometryIds = contourData.geometryIds ?? [];
+  contourData.annotationUIDsMap = contourData.annotationUIDsMap ?? new Map();
+}
+
+/**
+ * Normalize segments based on the segmentation type and provided configuration.
+ * @param segmentsConfig - Configured segments, if any.
+ * @param type - Segmentation representation type.
+ * @param data - Representation data used for segment creation if needed.
+ * @returns A normalized segments object.
+ */
+function normalizeSegments(
+  segmentsConfig: { [key: number]: Partial<Segment> } | undefined,
+  type: SegmentationRepresentations,
+  data: RepresentationData
+): { [key: number]: Segment } {
+  const normalizedSegments: { [key: number]: Segment } = {};
+
+  if (segmentsConfig) {
+    Object.entries(segmentsConfig).forEach(([segmentIndex, segment]) => {
+      normalizedSegments[segmentIndex] = {
+        segmentIndex: Number(segmentIndex),
+        label: segment.label ?? `Segment ${segmentIndex}`,
+        locked: segment.locked ?? false,
+        cachedStats: segment.cachedStats ?? {},
+        active: segment.active ?? false,
+      } as Segment;
+    });
+  } else if (type === SegmentationRepresentations.Surface) {
+    normalizeSurfaceSegments(
+      normalizedSegments,
+      data as SurfaceSegmentationData
+    );
+  } else {
+    normalizedSegments[1] = createDefaultSegment();
+  }
+
+  return normalizedSegments;
+}
+
+/**
+ * Normalize surface segmentation segments using geometry data from cache.
+ * @param normalizedSegments - The object to store normalized segments.
+ * @param surfaceData - SurfaceSegmentationData to extract geometry information.
+ */
+function normalizeSurfaceSegments(
+  normalizedSegments: { [key: number]: Segment },
+  surfaceData: SurfaceSegmentationData
+): void {
+  const { geometryIds } = surfaceData;
+  geometryIds.forEach((geometryId) => {
+    const geometry = cache.getGeometry(geometryId);
+    if (geometry?.data) {
+      const { segmentIndex } = geometry.data;
+      normalizedSegments[segmentIndex] = { segmentIndex } as Segment;
+    }
+  });
+}
+
+/**
+ * Create a default labelmap segment.
+ * @returns A default Segment object for Labelmap representation.
+ */
+function createDefaultSegment(): Segment {
+  return {
+    segmentIndex: 1,
+    label: 'Segment 1',
+    locked: false,
+    cachedStats: {},
+    active: true,
+  } as Segment;
 }
 
 export default normalizeSegmentationInput;

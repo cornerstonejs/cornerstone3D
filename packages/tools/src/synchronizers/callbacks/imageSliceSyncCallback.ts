@@ -7,7 +7,6 @@ import {
   VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
-import { jumpToSlice } from '../../utilities';
 import areViewportsCoplanar from './areViewportsCoplanar ';
 
 const getSpatialRegistration = (targetId, sourceId) =>
@@ -22,7 +21,7 @@ const getSpatialRegistration = (targetId, sourceId) =>
  * target viewports closest image in its stack.
  *
  * This synchronizer does a setup (which can already be predefined as required)
- * to register the target and soruce viewports.  The registration will default
+ * to register the target and source viewports.  The registration will default
  * to the identity registration if the same FOR is present in both viewports,
  * unless the option `useInitialPosition` is set in the target viewport.
  *
@@ -128,7 +127,7 @@ export default async function imageSliceSyncCallback(
     closestImageIdIndex2.index !== -1 &&
     tViewport.getCurrentImageIdIndex() !== closestImageIdIndex2.index
   ) {
-    await jumpToSlice(tViewport.element, {
+    await utilities.jumpToSlice(tViewport.element, {
       imageIndex: imageIndexToSet,
     });
   }

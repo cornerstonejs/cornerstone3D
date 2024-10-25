@@ -1,13 +1,17 @@
-import type { Types } from '@cornerstonejs/core';
-import {
-  StackViewport,
-  VolumeViewport,
-  eventTarget,
-  EVENTS,
-  utilities as csUtils,
-  getEnabledElement,
-} from '@cornerstonejs/core';
-import type { ScrollOptions, EventTypes } from '../types';
+import { Events } from '../enums';
+import { StackViewport, VolumeViewport } from '../RenderingEngine';
+import type {
+  ScrollOptions,
+  EventTypes,
+  IViewport,
+  IVideoViewport,
+  IStackViewport,
+} from '../types';
+import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
+import snapFocalPointToSlice from './snapFocalPointToSlice';
+import getEnabledElement from '../getEnabledElement';
+import triggerEvent from './triggerEvent';
+import eventTarget from '../eventTarget';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -19,7 +23,7 @@ import type { ScrollOptions, EventTypes } from '../types';
  * @returns
  */
 export default function scroll(
-  viewport: Types.IViewport | Types.IVideoViewport,
+  viewport: IViewport | IVideoViewport,
   options: ScrollOptions
 ): void {
   // check if viewport is disabled then throw error
@@ -45,21 +49,17 @@ export default function scroll(
 
     if (
       imageIdIndex + delta >
-        (viewport as Types.IStackViewport).getImageIds().length - 1 ||
+        (viewport as IStackViewport).getImageIds().length - 1 ||
       imageIdIndex + delta < 0
     ) {
-      const eventData: Types.EventTypes.StackScrollOutOfBoundsEventDetail = {
+      const eventData: EventTypes.StackScrollOutOfBoundsEventDetail = {
         imageIdIndex,
         direction: delta,
       };
-      csUtils.triggerEvent(
-        eventTarget,
-        EVENTS.STACK_SCROLL_OUT_OF_BOUNDS,
-        eventData
-      );
+      triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
     }
 
-    (viewport as Types.IStackViewport).scroll(
+    (viewport as IStackViewport).scroll(
       delta,
       options.debounceLoading,
       options.loop
@@ -76,7 +76,7 @@ export function scrollVolume(
   const useSlabThickness = scrollSlabs;
 
   const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
-    csUtils.getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
+    getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
 
   if (!sliceRangeInfo) {
     return;
@@ -85,7 +85,7 @@ export function scrollVolume(
   const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
   const { focalPoint, viewPlaneNormal, position } = camera;
 
-  const { newFocalPoint, newPosition } = csUtils.snapFocalPointToSlice(
+  const { newFocalPoint, newPosition } = snapFocalPointToSlice(
     focalPoint,
     position,
     sliceRange,
@@ -115,20 +115,20 @@ export function scrollVolume(
 
   if (
     (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
-    viewport.getCurrentImageId() // Check that we are in the plane of acquistion
+    viewport.getCurrentImageId() // Check that we are in the plane of acquisition
   ) {
     // One common use case of this trigger might be to load the next
     // volume in a time series or the next segment of a partially loaded volume.
 
-    csUtils.triggerEvent(
+    triggerEvent(
       eventTarget,
-      EVENTS.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
+      Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
       VolumeScrollEventDetail
     );
   } else {
-    csUtils.triggerEvent(
+    triggerEvent(
       eventTarget,
-      EVENTS.VOLUME_VIEWPORT_SCROLL,
+      Events.VOLUME_VIEWPORT_SCROLL,
       VolumeScrollEventDetail
     );
   }

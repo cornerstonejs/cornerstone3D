@@ -151,6 +151,10 @@ import type { IVoxelManager } from './IVoxelManager';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
 import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
+import type ScrollOptions from './ScrollOptions';
+import type JumpToSliceOptions from './JumpToSliceOptions';
+
+import type GeometryLoaderFn from './GeometryLoaderFn';
 
 export type {
   // config
@@ -293,4 +297,7 @@ export type {
   ViewportInput,
   ImageLoadRequests,
   IBaseVolumeViewport,
+  GeometryLoaderFn,
+  ScrollOptions,
+  JumpToSliceOptions,
 };

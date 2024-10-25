@@ -223,7 +223,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       }
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {

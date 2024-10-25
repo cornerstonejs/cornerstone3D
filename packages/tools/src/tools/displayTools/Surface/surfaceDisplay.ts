@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
-  VolumeViewport3D,
+  Enums,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
@@ -14,6 +14,7 @@ import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
 
+const { ViewportType } = Enums;
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
@@ -63,12 +64,6 @@ async function render(
     return;
   }
 
-  if (!(viewport instanceof VolumeViewport3D)) {
-    throw new Error(
-      'Surface rendering is only supported in 3D viewports, if you need to visualize the surface cuts in 2D viewports, you can use the Contour representation, see polySeg converters'
-    );
-  }
-
   let SurfaceData = segmentation.representationData[Representations.Surface];
 
   if (
@@ -101,7 +96,7 @@ async function render(
   const colorLUT = getColorLUT(colorLUTIndex);
 
   const surfaces = [];
-  geometryIds.forEach((geometryId, segmentIndex) => {
+  geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
     if (!geometry?.data) {
       console.warn(
@@ -109,19 +104,19 @@ async function render(
       );
       return;
     }
+    const segmentIndex = geometry.data.segmentIndex;
 
     const surface = geometry.data as Types.ISurface;
 
     const color = colorLUT[segmentIndex];
-    surface.setColor(color.slice(0, 3) as Types.Point3);
+    surface.color = color.slice(0, 3) as Types.Point3;
 
+    surfaces.push(surface);
     addOrUpdateSurfaceToElement(
       viewport.element,
       surface as Types.ISurface,
       segmentationId
     );
-
-    surfaces.push(surface);
   });
 
   viewport.render();

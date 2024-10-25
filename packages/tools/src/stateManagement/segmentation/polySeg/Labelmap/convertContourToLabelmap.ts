@@ -82,7 +82,7 @@ export async function convertContourToVolumeLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
   voxelManager.setCompleteScalarDataArray(newScalarData);
 
@@ -216,7 +216,7 @@ export async function convertContourToStackLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
   const segImageIds = [];
   newSegmentationsScalarData.forEach(({ scalarData }, referencedImageId) => {

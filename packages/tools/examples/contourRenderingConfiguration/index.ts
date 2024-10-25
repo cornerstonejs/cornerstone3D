@@ -10,11 +10,11 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addSliderToToolbar,
   addToggleButtonToToolbar,
+  createAndCacheGeometriesFromContours,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes
 console.debug(
@@ -128,21 +128,11 @@ addSliderToToolbar({
 });
 
 async function addSegmentationsToState() {
-  const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
-
   // load the contour data
-  const geometryIds = [];
 
-  const promises = circle.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
+  const geometryIds = await createAndCacheGeometriesFromContours(
+    'CircleContour'
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([

@@ -150,7 +150,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
     SOPInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.260509337872681089220763036630',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIds2 = await createImageIdsAndCacheMetaData({
@@ -160,7 +160,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
     SOPInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.483828432025129950375795590895',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIds3 = await createImageIdsAndCacheMetaData({
@@ -170,7 +170,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
     SOPInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.258716376345918859336299957175',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIds4 = await createImageIdsAndCacheMetaData({
@@ -180,7 +180,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
     SOPInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.391530379841424362796442074081',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIds5 = await createImageIdsAndCacheMetaData({
@@ -188,7 +188,7 @@ async function run() {
     SeriesInstanceUID:
       '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
     SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.1.20110323.110042.375',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIds6 = await createImageIdsAndCacheMetaData({
@@ -196,7 +196,7 @@ async function run() {
     SeriesInstanceUID:
       '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
     SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.4.20110323.110138.828',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIds7 = await createImageIdsAndCacheMetaData({
@@ -204,7 +204,7 @@ async function run() {
     SeriesInstanceUID:
       '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
     SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.11.20110323.110511.281',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // const imageIds = [usSeries1[10]];

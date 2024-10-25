@@ -16,7 +16,7 @@ import SegmentationIntersectionTool from './SegmentationIntersectionTool';
 import ReferenceCursors from './ReferenceCursors';
 import ScaleOverlayTool from './ScaleOverlayTool';
 import SculptorTool from './SculptorTool';
-import VolumeRotateMouseWheelTool from './VolumeRotateMouseWheelTool';
+import VolumeRotateTool from './VolumeRotateTool';
 
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
@@ -109,5 +109,5 @@ export {
   OrientationMarkerTool,
   SculptorTool,
   SegmentSelectTool,
-  VolumeRotateMouseWheelTool,
+  VolumeRotateTool,
 };

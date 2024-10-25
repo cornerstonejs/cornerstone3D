@@ -33,7 +33,7 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     // and 0 is first image, -1 is last image
     positions: [0.5, 0, -1],
     retrieveType: 'default',
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     priority: 5,
     nearbyFrames,
   },
@@ -41,7 +41,7 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     id: 'quarterThumb',
     decimate: 4,
     offset: 3,
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFast',
     priority: 6,
     nearbyFrames,
@@ -51,7 +51,7 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     decimate: 4,
     offset: 1,
     priority: 7,
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFast',
     nearbyFrames,
   },
@@ -60,7 +60,7 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     decimate: 4,
     offset: 2,
     priority: 8,
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFinal',
   },
   {
@@ -68,7 +68,7 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     decimate: 4,
     offset: 0,
     priority: 9,
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFinal',
   },
   {
@@ -76,7 +76,7 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     decimate: 4,
     offset: 1,
     priority: 10,
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFinal',
   },
   {
@@ -84,13 +84,13 @@ const interleavedRetrieveConfiguration: RetrieveStage[] = [
     decimate: 4,
     offset: 3,
     priority: 11,
-    requestType: RequestType.THUMBNAIL,
+    requestType: RequestType.Thumbnail,
     retrieveType: 'multipleFinal',
   },
-  // {
-  //   // This goes back to basic retrieve to recover from retrieving against
-  //   // servers returning errors for any of the above requests.
-  //   id: 'errorRetrieve',
-  // },
+  {
+    // This goes back to basic retrieve to recover from retrieving against
+    // servers returning errors for any of the above requests.
+    id: 'errorRetrieve',
+  },
 ];
 export default interleavedRetrieveConfiguration;

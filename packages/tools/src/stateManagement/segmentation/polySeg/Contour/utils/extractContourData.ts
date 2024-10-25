@@ -7,32 +7,22 @@ import type { RawContourData } from '../contourComputationStrategies';
  * @param segmentIndexMap - Optional map for mapping surface IDs to segment indices.
  * @returns A map of segment indices to an array of contour results.
  */
-export function extractContourData(
-  polyDataCache: PolyDataClipCacheType,
-  segmentIndexMap?: Map<string, number>
-) {
+export function extractContourData(polyDataCache: PolyDataClipCacheType) {
   const rawResults = new Map() as RawContourData;
 
-  for (const [cacheId, intersectionInfo] of polyDataCache) {
-    // Todo; fix this
-    let segmentIndex;
-    const surfaceId = cacheId.split('-')[1];
-    if (!segmentIndexMap) {
-      segmentIndex = Number(surfaceId.split('_')[1]);
-    } else {
-      segmentIndex = segmentIndexMap.get(surfaceId.split('_')[1]);
-    }
+  for (const [segmentIndex, intersectionInfo] of polyDataCache) {
+    const segmentIndexNumber = Number(segmentIndex);
 
     for (const [_, result] of intersectionInfo) {
       if (!result) {
         continue;
       }
 
-      if (!rawResults.has(segmentIndex)) {
-        rawResults.set(segmentIndex, []);
+      if (!rawResults.has(segmentIndexNumber)) {
+        rawResults.set(segmentIndexNumber, []);
       }
 
-      rawResults.get(segmentIndex).push(result);
+      rawResults.get(segmentIndexNumber).push(result);
     }
   }
   return rawResults;

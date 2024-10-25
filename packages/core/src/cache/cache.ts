@@ -15,6 +15,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import imageIdToURI from '../utilities/imageIdToURI';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
+import { ImageQualityStatus } from '../enums';
 
 const ONE_GB = 1073741824;
 
@@ -37,6 +38,7 @@ class Cache {
 
   private _imageCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
+  private _geometryCacheSize = 0;
 
   /**
    * Set the maximum cache Size
@@ -130,11 +132,11 @@ class Cache {
     const { imageLoadObject } = cachedImage;
 
     // Cancel any in-progress loading
-    if (imageLoadObject.cancelFn) {
+    if (imageLoadObject?.cancelFn) {
       imageLoadObject.cancelFn();
     }
 
-    if (imageLoadObject.decache) {
+    if (imageLoadObject?.decache) {
       imageLoadObject.decache();
     }
 
@@ -347,7 +349,7 @@ class Cache {
     image: IImage,
     cachedImage: ICachedImage
   ): void {
-    if (!this._imageCache.get(imageId)) {
+    if (!this._imageCache.has(imageId)) {
       console.warn(
         'The image was purged from the cache before it completed loading.'
       );
@@ -425,7 +427,8 @@ class Cache {
       );
     }
 
-    if (this._imageCache.has(imageId)) {
+    const alreadyCached = this._imageCache.get(imageId);
+    if (alreadyCached?.imageLoadObject) {
       console.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
       throw new Error('putImageLoadObject: imageId already in cache');
     }
@@ -442,7 +445,10 @@ class Cache {
       );
     }
 
+    // Starts with an existing cached image and extend it with information
+    // about being loaded.
     const cachedImage: ICachedImage = {
+      ...alreadyCached,
       loaded: false,
       imageId,
       sharedCacheKey: undefined,
@@ -523,7 +529,6 @@ class Cache {
     }
 
     const cachedImage = this._imageCache.get(imageId);
-
     if (!cachedImage) {
       return;
     }
@@ -781,8 +786,171 @@ class Cache {
     return cachedVolume.volumeLoadObject;
   };
 
+  /**
+   * Common logic for putting a geometry into the cache
+   *
+   * @param geometryId - GeometryId for the geometry
+   * @param geometry - The loaded geometry
+   * @param cachedGeometry - The CachedGeometry object
+   */
+  private _putGeometryCommon(
+    geometryId: string,
+    geometry: IGeometry,
+    cachedGeometry: ICachedGeometry
+  ): void {
+    if (!this._geometryCache.get(geometryId)) {
+      console.warn(
+        'The geometry was purged from the cache before it completed loading.'
+      );
+      return;
+    }
+
+    if (!geometry) {
+      console.warn('Geometry is undefined');
+      return;
+    }
+
+    if (
+      geometry.sizeInBytes === undefined ||
+      Number.isNaN(geometry.sizeInBytes)
+    ) {
+      throw new Error(
+        '_putGeometryCommon: geometry.sizeInBytes must not be undefined'
+      );
+    }
+    if (geometry.sizeInBytes.toFixed === undefined) {
+      throw new Error(
+        '_putGeometryCommon: geometry.sizeInBytes is not a number'
+      );
+    }
+
+    // check if there is enough space in unallocated + geometry Cache
+    if (!this.isCacheable(geometry.sizeInBytes)) {
+      throw new Error(Events.CACHE_SIZE_EXCEEDED);
+    }
+
+    // if there is, decache if necessary
+    this.decacheIfNecessaryUntilBytesAvailable(geometry.sizeInBytes);
+
+    cachedGeometry.loaded = true;
+    cachedGeometry.geometry = geometry;
+    cachedGeometry.sizeInBytes = geometry.sizeInBytes;
+    this.incrementGeometryCacheSize(cachedGeometry.sizeInBytes);
+
+    const eventDetails = {
+      geometry: cachedGeometry,
+    };
+
+    triggerEvent(
+      eventTarget,
+      Events.GEOMETRY_CACHE_GEOMETRY_ADDED,
+      eventDetails
+    );
+  }
+
+  /**
+   * Puts a new geometry directly into the cache (synchronous version)
+   *
+   * @param geometryId - GeometryId for the geometry
+   * @param geometry - The loaded geometry
+   */
+  public putGeometrySync(geometryId: string, geometry: IGeometry): void {
+    if (geometryId === undefined) {
+      throw new Error('putGeometrySync: geometryId must not be undefined');
+    }
+
+    if (this._geometryCache.has(geometryId)) {
+      throw new Error('putGeometrySync: geometryId already in cache');
+    }
+
+    const cachedGeometry: ICachedGeometry = {
+      loaded: false,
+      geometryId,
+      geometryLoadObject: {
+        promise: Promise.resolve(geometry),
+      },
+      timeStamp: Date.now(),
+      sizeInBytes: 0,
+    };
+
+    this._geometryCache.set(geometryId, cachedGeometry);
+
+    try {
+      this._putGeometryCommon(geometryId, geometry, cachedGeometry);
+    } catch (error) {
+      this._geometryCache.delete(geometryId);
+      throw error;
+    }
+  }
+
+  public putGeometryLoadObject = (
+    geometryId: string,
+    geometryLoadObject: IGeometryLoadObject
+  ): Promise<void> => {
+    if (geometryId === undefined) {
+      throw new Error(
+        'putGeometryLoadObject: geometryId must not be undefined'
+      );
+    }
+
+    if (geometryLoadObject.promise === undefined) {
+      throw new Error(
+        'putGeometryLoadObject: geometryLoadObject.promise must not be undefined'
+      );
+    }
+
+    if (this._geometryCache.has(geometryId)) {
+      throw new Error(
+        'putGeometryLoadObject: geometryId already present in geometryCache'
+      );
+    }
+
+    if (
+      geometryLoadObject.cancelFn &&
+      typeof geometryLoadObject.cancelFn !== 'function'
+    ) {
+      throw new Error(
+        'putGeometryLoadObject: geometryLoadObject.cancel must be a function'
+      );
+    }
+
+    const cachedGeometry: ICachedGeometry = {
+      loaded: false,
+      geometryId,
+      geometryLoadObject,
+      timeStamp: Date.now(),
+      sizeInBytes: 0,
+    };
+
+    this._geometryCache.set(geometryId, cachedGeometry);
+
+    return geometryLoadObject.promise
+      .then((geometry: IGeometry) => {
+        try {
+          this._putGeometryCommon(geometryId, geometry, cachedGeometry);
+        } catch (error) {
+          console.debug(
+            `Error in _putGeometryCommon for geometry ${geometryId}:`,
+            error
+          );
+          throw error;
+        }
+      })
+      .catch((error) => {
+        console.debug(`Error caching geometry ${geometryId}:`, error);
+        this._geometryCache.delete(geometryId);
+        throw error;
+      });
+  };
+
+  /**
+   * Returns the geometry associated with the geometryId
+   *
+   * @param geometryId - Geometry ID
+   * @returns Geometry
+   */
   public getGeometry = (geometryId: string): IGeometry | undefined => {
-    if (geometryId == null) {
+    if (geometryId === undefined) {
       throw new Error('getGeometry: geometryId must not be undefined');
     }
 
@@ -792,19 +960,106 @@ class Cache {
       return;
     }
 
-    // Bump time stamp for cached geometry (not used for anything for now)
+    // Bump time stamp for cached geometry
     cachedGeometry.timeStamp = Date.now();
 
     return cachedGeometry.geometry;
   };
 
   /**
+   * Removes the geometry loader associated with a given Id from the cache
+   *
+   * It increases the cache size after removing the geometry.
+   *
+   * @fires Events.GEOMETRY_CACHE_GEOMETRY_REMOVED
+   *
+   * @param geometryId - Geometry ID
+   */
+  public removeGeometryLoadObject = (geometryId: string): void => {
+    if (geometryId === undefined) {
+      throw new Error(
+        'removeGeometryLoadObject: geometryId must not be undefined'
+      );
+    }
+
+    const cachedGeometry = this._geometryCache.get(geometryId);
+
+    if (!cachedGeometry) {
+      throw new Error(
+        'removeGeometryLoadObject: geometryId was not present in geometryCache'
+      );
+    }
+
+    this.decrementGeometryCacheSize(cachedGeometry.sizeInBytes);
+
+    const eventDetails = {
+      geometry: cachedGeometry,
+      geometryId,
+    };
+
+    triggerEvent(
+      eventTarget,
+      Events.GEOMETRY_CACHE_GEOMETRY_REMOVED,
+      eventDetails
+    );
+    this._decacheGeometry(geometryId);
+  };
+
+  /**
+   * Deletes the geometryId from the geometry cache
+   *
+   * @param geometryId - geometryId
+   */
+  private _decacheGeometry = (geometryId: string) => {
+    const cachedGeometry = this._geometryCache.get(geometryId);
+
+    if (!cachedGeometry) {
+      return;
+    }
+
+    const { geometryLoadObject } = cachedGeometry;
+
+    // Cancel any in-progress loading
+    if (geometryLoadObject.cancelFn) {
+      geometryLoadObject.cancelFn();
+    }
+
+    if (geometryLoadObject.decache) {
+      geometryLoadObject.decache();
+    }
+
+    this._geometryCache.delete(geometryId);
+  };
+
+  /**
+   * Increases the geometry cache size with the provided increment
+   *
+   * @param increment - bytes length
+   */
+  public incrementGeometryCacheSize = (increment: number) => {
+    this._geometryCacheSize += increment;
+  };
+
+  /**
+   * Decreases the geometry cache size with the provided decrement
+   *
+   * @param decrement - bytes length
+   */
+  public decrementGeometryCacheSize = (decrement: number) => {
+    this._geometryCacheSize -= decrement;
+  };
+
+  /**
    * Returns the image associated with the imageId
    *
    * @param imageId - image ID
+   * @param minQuality - the minimum image quality to fetch
    * @returns Image
    */
-  public getImage = (imageId: string): IImage | undefined => {
+  public getImage = (
+    imageId: string,
+    minQuality = ImageQualityStatus.FAR_REPLICATE
+  ): IImage | undefined => {
     if (imageId === undefined) {
       throw new Error('getImage: imageId must not be undefined');
     }
@@ -814,12 +1069,59 @@ class Cache {
     if (!cachedImage) {
       return;
     }
-
     // Bump time stamp for cached volume (not used for anything for now)
     cachedImage.timeStamp = Date.now();
 
+    if (cachedImage.image?.imageQualityStatus < minQuality) {
+      return;
+    }
+
     return cachedImage.image;
   };
+
+  /**
+   * Sets a partial image qualty to use, allowing another load to occur.
+   * If the partialImage is not defined, will use any current image defined.
+   * This will ONLY replace the current image if the quality is at least as
+   * good.
+   * This will not cancel any in flight requests, but will remove any partial
+   * loaded requests.
+   *
+   * @param imageId - image ID
+   * @param partialImage - partial image to use
+   */
+  public setPartialImage(imageId: string, partialImage?: IImage) {
+    const cachedImage = this._imageCache.get(imageId);
+    if (!cachedImage) {
+      if (partialImage) {
+        this._imageCache.set(imageId, {
+          image: partialImage,
+          imageId,
+          loaded: false,
+          timeStamp: Date.now(),
+          sizeInBytes: 0,
+        });
+      }
+      return;
+    }
+    if (cachedImage.loaded) {
+      cachedImage.loaded = false;
+      cachedImage.imageLoadObject = null;
+      this.incrementImageCacheSize(-cachedImage.sizeInBytes);
+      cachedImage.sizeInBytes = 0;
+      cachedImage.image = partialImage || cachedImage.image;
+    } else {
+      cachedImage.image = partialImage || cachedImage.image;
+    }
+  }
+
+  /** Gets the current image quality for the given image id */
+  public getImageQuality(imageId: string) {
+    const image = this._imageCache.get(imageId)?.image;
+    return image
+      ? image.imageQualityStatus || ImageQualityStatus.FULL_RESOLUTION
+      : undefined;
+  }
 
   /**
    * Returns the volume associated with the volumeId
@@ -938,74 +1240,6 @@ class Cache {
     this._decacheVolume(volumeId);
   };
 
-  putGeometryLoadObject = (
-    geometryId: string,
-    geometryLoadObject: IGeometryLoadObject
-  ): Promise<void> => {
-    if (geometryId == undefined) {
-      throw new Error(
-        'putGeometryLoadObject: geometryId must not be undefined'
-      );
-    }
-
-    if (this._geometryCache.has(geometryId)) {
-      throw new Error(
-        'putGeometryLoadObject: geometryId already present in geometryCache'
-      );
-    }
-
-    const cachedGeometry: ICachedGeometry = {
-      geometryId,
-      geometryLoadObject,
-      loaded: false,
-      timeStamp: Date.now(),
-      sizeInBytes: 0,
-    };
-
-    this._geometryCache.set(geometryId, cachedGeometry);
-
-    return geometryLoadObject.promise
-      .then((geometry: IGeometry) => {
-        if (!this._geometryCache.has(geometryId)) {
-          console.warn(
-            'putGeometryLoadObject: geometryId was removed from geometryCache'
-          );
-          return;
-        }
-
-        if (Number.isNaN(geometry.sizeInBytes)) {
-          throw new Error(
-            'putGeometryLoadObject: geometry.sizeInBytes is not a number'
-          );
-        }
-
-        // Todo: fix is cacheable
-
-        cachedGeometry.loaded = true;
-        cachedGeometry.geometry = geometry;
-        cachedGeometry.sizeInBytes = geometry.sizeInBytes;
-
-        // this._incrementGeometryCacheSize(geometry.sizeInBytes);
-
-        const eventDetails = {
-          geometry,
-          geometryId,
-        };
-
-        triggerEvent(
-          eventTarget,
-          Events.GEOMETRY_CACHE_GEOMETRY_ADDED,
-          eventDetails
-        );
-
-        return;
-      })
-      .catch((error) => {
-        this._geometryCache.delete(geometryId);
-        throw error;
-      });
-  };
-
   /**
    * Increases the image cache size with the provided increment
    *
@@ -1022,6 +1256,26 @@ class Cache {
    */
   public decrementImageCacheSize = (decrement: number) => {
     this._imageCacheSize -= decrement;
+  };
+
+  public getGeometryLoadObject = (
+    geometryId: string
+  ): IGeometryLoadObject | undefined => {
+    if (geometryId === undefined) {
+      throw new Error(
+        'getGeometryLoadObject: geometryId must not be undefined'
+      );
+    }
+
+    const cachedGeometry = this._geometryCache.get(geometryId);
+
+    if (!cachedGeometry) {
+      return;
+    }
+
+    cachedGeometry.timeStamp = Date.now();
+
+    return cachedGeometry.geometryLoadObject;
   };
 }
 

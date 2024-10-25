@@ -443,7 +443,6 @@ class ArrowAnnotateTool extends AnnotationTool {
     annotation.data.text = updatedText;
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -665,7 +664,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       let activeHandleCanvasCoords;
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {

@@ -122,6 +122,40 @@ class VolumeViewport extends BaseVolumeViewport {
     return super.addVolumes(volumeInputArray, immediate, suppressEvents);
   }
 
+  public jumpToWorld(worldPos: Point3): boolean {
+    const { focalPoint } = this.getCamera();
+
+    const delta: Point3 = [0, 0, 0];
+    vec3.sub(delta, worldPos, focalPoint);
+
+    const camera = this.getCamera();
+    const normal = camera.viewPlaneNormal;
+
+    const dotProd = vec3.dot(delta, normal);
+    const projectedDelta = vec3.fromValues(normal[0], normal[1], normal[2]);
+
+    vec3.scale(projectedDelta, projectedDelta, dotProd);
+
+    if (
+      Math.abs(projectedDelta[0]) > 1e-3 ||
+      Math.abs(projectedDelta[1]) > 1e-3 ||
+      Math.abs(projectedDelta[2]) > 1e-3
+    ) {
+      const newFocalPoint: Point3 = [0, 0, 0];
+      const newPosition: Point3 = [0, 0, 0];
+
+      vec3.add(newFocalPoint, camera.focalPoint, projectedDelta);
+      vec3.add(newPosition, camera.position, projectedDelta);
+
+      this.setCamera({
+        focalPoint: newFocalPoint,
+        position: newPosition,
+      });
+      this.render();
+    }
+    return true;
+  }
+
   /**
    * It sets the orientation for the camera, the orientation can be one of the
    * following: axial, sagittal, coronal, default. Use the Enums.OrientationAxis

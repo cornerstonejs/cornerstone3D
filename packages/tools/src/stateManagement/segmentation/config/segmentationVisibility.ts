@@ -10,8 +10,6 @@ import { triggerSegmentationRepresentationModified } from '../triggerSegmentatio
 
 /**
  * Sets the visibility of a segmentation representation for a given viewport.
- * It fires a SEGMENTATION_REPRESENTATION_MODIFIED event. Visibility true will show all segments
- * and visibility false will hide all segments.
  *
  * @param viewportId - The ID of the viewport that the segmentation representation belongs to.
  * @param specifier - The specifier for the segmentation representation.

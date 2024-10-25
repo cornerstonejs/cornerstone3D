@@ -1,15 +1,49 @@
 import type { Types } from '@cornerstonejs/core';
 import { Enums } from '@cornerstonejs/core';
 
+/**
+ * Helper function to sum scalar data over specified frames.
+ */
+function sumOverFrames(voxelManager, frames) {
+  const arrayLength = voxelManager.getScalarDataLength();
+  const resultArray = new Float32Array(arrayLength);
+
+  for (const timepoint of frames) {
+    const scalarData = voxelManager.getTimePointScalarData(timepoint);
+    for (let i = 0; i < arrayLength; i++) {
+      resultArray[i] += scalarData[i];
+    }
+  }
+
+  return resultArray;
+}
+
+/**
+ * Helper function to average scalar data over specified frames.
+ */
+function averageOverFrames(voxelManager, frames) {
+  const sumArray = sumOverFrames(voxelManager, frames);
+  const numFrames = frames.length;
+
+  for (let i = 0; i < sumArray.length; i++) {
+    sumArray[i] /= numFrames;
+  }
+
+  return sumArray;
+}
+
 const operationFunctions = {
   [Enums.GenerateImageType.SUM]: (voxelManager, frames, callback) => {
-    const arrayLength = voxelManager.getScalarDataLength();
-    for (let j = 0; j < arrayLength; j++) {
-      let sum = 0;
-      for (const timepoint of frames) {
-        sum += voxelManager.getAtIndexAndTimePoint(j, timepoint);
-      }
-      callback(j, sum);
+    const resultArray = sumOverFrames(voxelManager, frames);
+    for (let i = 0; i < resultArray.length; i++) {
+      callback(i, resultArray[i]);
+    }
+  },
+
+  [Enums.GenerateImageType.AVERAGE]: (voxelManager, frames, callback) => {
+    const resultArray = averageOverFrames(voxelManager, frames);
+    for (let i = 0; i < resultArray.length; i++) {
+      callback(i, resultArray[i]);
     }
   },
 
@@ -19,23 +53,12 @@ const operationFunctions = {
     }
 
     const arrayLength = voxelManager.getScalarDataLength();
-    for (let j = 0; j < arrayLength; j++) {
-      const difference =
-        voxelManager.getAtIndexAndTimePoint(j, frames[0]) -
-        voxelManager.getAtIndexAndTimePoint(j, frames[1]);
-      callback(j, difference);
-    }
-  },
+    const scalarData1 = voxelManager.getTimePointScalarData(frames[0]);
+    const scalarData2 = voxelManager.getTimePointScalarData(frames[1]);
 
-  [Enums.GenerateImageType.AVERAGE]: (voxelManager, frames, callback) => {
-    const arrayLength = voxelManager.getScalarDataLength();
-    for (let j = 0; j < arrayLength; j++) {
-      let sum = 0;
-      for (const timepoint of frames) {
-        sum += voxelManager.getAtIndexAndTimePoint(j, timepoint);
-      }
-      const average = sum / frames.length;
-      callback(j, average);
+    for (let i = 0; i < arrayLength; i++) {
+      const difference = scalarData1[i] - scalarData2[i];
+      callback(i, difference);
     }
   },
 };

@@ -38,8 +38,8 @@ export async function convertSurfaceToVolumeLabelmap(
   geometryIds.forEach((geometryId, segmentIndex) => {
     const geometry = cache.getGeometry(geometryId);
     const geometryData = geometry.data as Types.ISurface;
-    const points = geometryData.getPoints();
-    const polys = geometryData.getPolys();
+    const points = geometryData.points;
+    const polys = geometryData.polys;
 
     segmentsInfo.set(segmentIndex, {
       points,
@@ -71,7 +71,7 @@ export async function convertSurfaceToVolumeLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
   voxelManager.setCompleteScalarDataArray(newScalarData);
 

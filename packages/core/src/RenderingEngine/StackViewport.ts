@@ -92,6 +92,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
+import getClosestImageId from '../utilities/getClosestImageId';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -2092,7 +2093,7 @@ class StackViewport extends Viewport {
       }
 
       const priority = -5;
-      const requestType = RequestType.INTERACTION;
+      const requestType = RequestType.Interaction;
       const additionalDetails = { imageId, imageIdIndex };
       const options = {
         useRGBA: true,
@@ -2187,7 +2188,7 @@ class StackViewport extends Viewport {
       useRGBA: false,
       transferSyntaxUID,
       priority: 5,
-      requestType: RequestType.INTERACTION,
+      requestType: RequestType.Interaction,
       additionalDetails: { imageId, imageIdIndex },
     };
     return options;
@@ -2337,7 +2338,7 @@ class StackViewport extends Viewport {
   public addImages(stackInputs: IStackInput[]) {
     const actors = [];
     stackInputs.forEach((stackInput) => {
-      const { imageId } = stackInput;
+      const { imageId, ...rest } = stackInput;
       const image = cache.getImage(imageId);
 
       const { origin, dimensions, direction, spacing, numberOfComponents } =
@@ -2351,13 +2352,13 @@ class StackViewport extends Viewport {
         numberOfComponents,
         pixelArray: image.voxelManager.getScalarData(),
       });
-
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
         actors.push({
           uid: stackInput.actorUID ?? uuidv4(),
           actor: imageActor,
           referencedId: imageId,
+          ...rest,
         });
         if (stackInput.callback) {
           stackInput.callback({ imageActor, imageId: stackInput.imageId });
@@ -2782,6 +2783,29 @@ class StackViewport extends Viewport {
     }
 
     this._publishCalibratedEvent = false;
+  }
+
+  public jumpToWorld(worldPos: Point3): boolean {
+    const imageIds = this.getImageIds();
+    const imageData = this.getImageData();
+    const { direction, spacing } = imageData;
+
+    const imageId = getClosestImageId(
+      { direction: direction, spacing, imageIds },
+      worldPos,
+      this.getCamera().viewPlaneNormal
+    );
+
+    const index = imageIds.indexOf(imageId);
+
+    if (index === -1) {
+      return false;
+    }
+
+    this.setImageIdIndex(index);
+    this.render();
+
+    return true;
   }
 
   private canvasToWorldCPU = (

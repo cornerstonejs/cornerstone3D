@@ -29,7 +29,7 @@ function getState(annotation?: Annotation): AnnotationStyleStates {
     }
 
     // Todo: make annotation lock api not to rely on the annotation itself
-    if (isAnnotationLocked(annotation)) {
+    if (isAnnotationLocked(annotation.annotationUID)) {
       return AnnotationStyleStates.Locked;
     }
 
