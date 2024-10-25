@@ -8,13 +8,6 @@ import { canComputeRequestedRepresentation } from '../../../stateManagement/segm
 import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
-import { getAnnotation } from '../../../stateManagement';
-import { convertContourToSurface } from '../../../stateManagement/segmentation/polySeg/Surface/convertContourToSurface';
-import { getUniqueSegmentIndices } from '../../../utilities/segmentation';
-import { registerPolySegWorker } from '../../../stateManagement/segmentation/polySeg/registerPolySegWorker';
-import { clipAndCacheSurfacesForViewport } from '../../../stateManagement/segmentation/helpers/clipAndCacheSurfacesForViewport';
-import { extractContourData } from '../../../stateManagement/segmentation/polySeg/Contour/utils/extractContourData';
-import { createAndAddContourSegmentationsFromClippedSurfaces } from '../../../stateManagement/segmentation/polySeg/Contour/utils/createAndAddContourSegmentationsFromClippedSurfaces';
 
 let polySegConversionInProgress = false;
 

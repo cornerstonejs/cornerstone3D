@@ -822,10 +822,7 @@ function createAndCacheDerivedLabelmapVolume(referencedVolumeId: string, options
 function createAndCacheDerivedVolume(referencedVolumeId: string, options: DerivedVolumeOptions): IImageVolume;
 
 // @public (undocumented)
-function createAndCacheGeometry(geometryId: string, options?: GeometryOptions): Promise<IGeometry>;
-
-// @public (undocumented)
-function createAndCacheLocalGeometry(geometryId: string, options: GeometryOptions): IGeometry;
+function createAndCacheGeometry(geometryId: string, options: GeometryOptions): IGeometry;
 
 // @public (undocumented)
 function createAndCacheLocalImage(imageId: string, options: LocalImageOptions): IImage;
@@ -1025,6 +1022,8 @@ export enum EVENTS {
     // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED",
     // (undocumented)
+    DYNAMIC_VOLUME_TIME_POINT_LOADED = "DYNAMIC_VOLUME_TIME_POINT_LOADED",
+    // (undocumented)
     ELEMENT_DISABLED = "CORNERSTONE_ELEMENT_DISABLED",
     // (undocumented)
     ELEMENT_ENABLED = "CORNERSTONE_ELEMENT_ENABLED",
@@ -1196,8 +1195,8 @@ function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): 
 declare namespace geometryLoader {
     export {
         loadGeometry,
+        loadAndCacheGeometry,
         createAndCacheGeometry,
-        createAndCacheLocalGeometry,
         registerGeometryLoader,
         registerUnknownGeometryLoader
     }
@@ -2418,22 +2417,15 @@ interface IViewportId {
 type IVolume = ImageVolumeProps;
 
 // @public (undocumented)
-interface IVolumeInput {
-    // (undocumented)
-    [key: string]: unknown;
-    // (undocumented)
-    actorUID?: string;
-    // (undocumented)
-    blendMode?: BlendModes;
-    // (undocumented)
-    callback?: VolumeInputCallback;
-    // (undocumented)
-    slabThickness?: number;
-    // (undocumented)
-    visibility?: boolean;
-    // (undocumented)
+type IVolumeInput = {
     volumeId: string;
-}
+    actorUID?: string;
+    visibility?: boolean;
+    callback?: VolumeInputCallback;
+    blendMode?: BlendModes;
+    slabThickness?: number;
+    [key: string]: unknown;
+};
 
 // @public (undocumented)
 interface IVolumeLoadObject {
@@ -2466,6 +2458,9 @@ type JumpToSliceOptions = {
 
 // @public (undocumented)
 function linePlaneIntersection(p0: Point3, p1: Point3, plane: Plane): Point3;
+
+// @public (undocumented)
+function loadAndCacheGeometry(geometryId: string, options?: GeometryOptions): Promise<IGeometry>;
 
 // @public (undocumented)
 function loadAndCacheImage(imageId: string, options?: ImageLoaderOptions): Promise<IImage>;
@@ -3481,6 +3476,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         imageIdGroups: string[][];
     }, streamingProperties: IStreamingVolumeProperties);
     // (undocumented)
+    protected checkTimePointCompletion(imageIdIndex: number): void;
+    // (undocumented)
     flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
@@ -3519,6 +3516,8 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
             volumeId: string;
         };
     }[];
+    // (undocumented)
+    isTimePointLoaded(timePointIndex: number): boolean;
     // (undocumented)
     numTimePoints: number;
     // (undocumented)

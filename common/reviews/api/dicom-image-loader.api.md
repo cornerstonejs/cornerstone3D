@@ -6,6 +6,7 @@
 
 import type { ByteArray } from 'dicom-parser';
 import { DataSet } from 'dicom-parser';
+import * as dicomParser from 'dicom-parser';
 import type { Element as Element_2 } from 'dicom-parser';
 import { ImageQualityStatus as ImageQualityStatus_2 } from 'packages/core/dist/esm/enums';
 import { mat4 } from 'gl-matrix';
@@ -61,6 +62,7 @@ const cornerstoneDICOMImageLoader: {
             getModalityLUTOutputPixelRepresentation: getModalityLUTOutputPixelRepresentation;
             getNumberValues: getNumberValues;
             metaDataProvider: metaDataProvider;
+            metadataForDataset: metadataForDataset;
         };
         dataSetCacheManager: {
             isLoaded: (uri: string) => boolean;
@@ -82,6 +84,7 @@ const cornerstoneDICOMImageLoader: {
         loadFileRequest: loadFileRequest;
         loadImageFromPromise: loadImageFromPromise;
         getLoaderForScheme: getLoaderForScheme;
+        getPixelData: getPixelData_2;
         loadImage: loadImage;
         parseImageId: parseImageId;
         unpackBinaryFrame: unpackBinaryFrame;
@@ -477,6 +480,7 @@ export const wadouri: {
         getModalityLUTOutputPixelRepresentation: typeof getModalityLUTOutputPixelRepresentation;
         getNumberValues: typeof getNumberValues;
         metaDataProvider: typeof metaDataProvider;
+        metadataForDataset: typeof metadataForDataset;
     };
     dataSetCacheManager: {
         isLoaded: (uri: string) => boolean;
@@ -498,6 +502,7 @@ export const wadouri: {
     loadFileRequest: typeof loadFileRequest;
     loadImageFromPromise: typeof loadImageFromPromise;
     getLoaderForScheme: typeof getLoaderForScheme;
+    getPixelData: typeof getPixelData_2;
     loadImage: typeof loadImage;
     parseImageId: typeof parseImageId;
     unpackBinaryFrame: typeof unpackBinaryFrame;
