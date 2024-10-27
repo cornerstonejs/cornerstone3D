@@ -899,106 +899,99 @@ class CircleROITool extends AnnotationTool {
       pos2Index[1] = Math.floor(pos2Index[1]);
       pos2Index[2] = Math.floor(pos2Index[2]);
 
-      // Check if one of the indexes are inside the volume, this then gives us
-      // Some area to do stats over.
+      const iMin = Math.min(pos1Index[0], pos2Index[0]);
+      const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
-      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
+      const jMin = Math.min(pos1Index[1], pos2Index[1]);
+      const jMax = Math.max(pos1Index[1], pos2Index[1]);
 
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
+      const kMin = Math.min(pos1Index[2], pos2Index[2]);
+      const kMax = Math.max(pos1Index[2], pos2Index[2]);
 
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
+      const boundsIJK = [
+        [iMin, iMax],
+        [jMin, jMax],
+        [kMin, kMax],
+      ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
+      const center = [
+        (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+        (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+        (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+      ] as Types.Point3;
 
-        const center = [
-          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
-          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
-          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
-        ] as Types.Point3;
+      const ellipseObj = {
+        center,
+        xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+        yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+        zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+      };
 
-        const ellipseObj = {
-          center,
-          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-        };
+      const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
+        viewPlaneNormal,
+        viewUp,
+        worldPos1,
+        worldPos2
+      );
+      const isEmptyArea = worldWidth === 0 && worldHeight === 0;
+      const handles = [pos1Index, pos2Index];
+      const { scale, units, areaUnits } = getCalibratedLengthUnitsAndScale(
+        image,
+        handles
+      );
+      const aspect = getCalibratedAspect(image);
+      const area = Math.abs(
+        Math.PI * (worldWidth / scale / 2) * (worldHeight / aspect / scale / 2)
+      );
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        );
-        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const handles = [pos1Index, pos2Index];
-        const { scale, units, areaUnits } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
-        const aspect = getCalibratedAspect(image);
-        const area = Math.abs(
-          Math.PI *
-            (worldWidth / scale / 2) *
-            (worldHeight / aspect / scale / 2)
-        );
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
-        const modalityUnitOptions = {
-          isPreScaled: isViewportPreScaled(viewport, targetId),
-          isSuvScaled: this.isSuvScaled(
-            viewport,
-            targetId,
-            annotation.metadata.referencedImageId
-          ),
-        };
+      const modalityUnit = getModalityUnit(
+        metadata.Modality,
+        annotation.metadata.referencedImageId,
+        modalityUnitOptions
+      );
 
-        const modalityUnit = getModalityUnit(
-          metadata.Modality,
-          annotation.metadata.referencedImageId,
-          modalityUnitOptions
-        );
+      const pointsInShape = pointInShapeCallback(
+        imageData,
+        (pointLPS) =>
+          pointInEllipse(ellipseObj, pointLPS, {
+            fast: true,
+          }),
+        this.configuration.statsCalculator.statsCallback,
+        boundsIJK
+      );
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          (pointLPS) =>
-            pointInEllipse(ellipseObj, pointLPS, {
-              fast: true,
-            }),
-          this.configuration.statsCalculator.statsCallback,
-          boundsIJK
-        );
+      const stats = this.configuration.statsCalculator.getStatistics();
 
-        const stats = this.configuration.statsCalculator.getStatistics();
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        mean: stats.mean?.value,
+        max: stats.max?.value,
+        stdDev: stats.stdDev?.value,
+        statsArray: stats.array,
+        pointsInShape: pointsInShape,
+        isEmptyArea,
+        areaUnit: areaUnits,
+        radius: worldWidth / 2 / scale,
+        radiusUnit: units,
+        perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
+        modalityUnit,
+      };
 
-        cachedStats[targetId] = {
-          Modality: metadata.Modality,
-          area,
-          mean: stats.mean?.value,
-          max: stats.max?.value,
-          stdDev: stats.stdDev?.value,
-          statsArray: stats.array,
-          pointsInShape: pointsInShape,
-          isEmptyArea,
-          areaUnit: areaUnits,
-          radius: worldWidth / 2 / scale,
-          radiusUnit: units,
-          perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
-          modalityUnit,
-        };
-      } else {
-        this.isHandleOutsideImage = true;
-
-        cachedStats[targetId] = {
-          Modality: metadata.Modality,
-        };
-      }
+      this.isHandleOutsideImage = !this._isInsideVolume(
+        pos1Index,
+        pos2Index,
+        dimensions
+      );
     }
 
     annotation.invalidated = false;
