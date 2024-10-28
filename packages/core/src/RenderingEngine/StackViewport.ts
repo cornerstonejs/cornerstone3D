@@ -3089,7 +3089,7 @@ class StackViewport extends Viewport {
    * Gets a standard target to show this image instance.
    * Returns undefined if the requested slice index is not available.
    *
-   * <b>Warning<b>If using sliceIndex for requesting a specific reference, the slice index MUST come
+   * If using sliceIndex for requesting a specific reference, the slice index MUST come
    * from the stack of image ids.  Using slice index from a volume or from a different
    * stack of images ids, EVEN if they contain the same set of images will result in
    * random images being chosen.

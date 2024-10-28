@@ -194,8 +194,6 @@ class Cache {
    * Relevant events are fired for each decached image (IMAGE_CACHE_IMAGE_REMOVED) and
    * the decached volume (VOLUME_CACHE_VOLUME_REMOVED).
    *
-   * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
-   * @fires Events.VOLUME_CACHE_VOLUME_REMOVED
    *
    */
   public purgeCache = (): void => {
@@ -255,7 +253,7 @@ class Cache {
    * re-fetched, but we must do this not to straddle over the given memory
    * limit, even for a short time, as this may crash the application.
    *
-   * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
+   * fires Events.IMAGE_CACHE_IMAGE_REMOVED
    *
    * @param numBytes - Number of bytes for the image/volume that is
    * going to be stored inside the cache
@@ -403,8 +401,8 @@ class Cache {
    * iterates over the imageCache and decache them one by one until the cache
    * size becomes less than the maximum allowed cache size
    *
-   * @fires Events.IMAGE_CACHE_IMAGE_ADDED
-   * @fires Events.CACHE_SIZE_EXCEEDED if the cache size exceeds the maximum
+   * fires Events.IMAGE_CACHE_IMAGE_ADDED
+   * fires Events.CACHE_SIZE_EXCEEDED if the cache size exceeds the maximum
    *
    * @param imageId - ImageId for the image
    * @param imageLoadObject - The object that is loading or loaded the image
@@ -701,7 +699,7 @@ class Cache {
    * iterates over the imageCache (not volumeCache) and decache them one by one
    * until the cache size becomes less than the maximum allowed cache size
    *
-   * @fires Events.VOLUME_CACHE_VOLUME_ADDED
+   * fires Events.VOLUME_CACHE_VOLUME_ADDED
    *
    * @param volumeId - volumeId of the volume
    * @param volumeLoadObject - The object that is loading or loaded the volume
@@ -971,7 +969,7 @@ class Cache {
    *
    * It increases the cache size after removing the geometry.
    *
-   * @fires Events.GEOMETRY_CACHE_GEOMETRY_REMOVED
+   * fires Events.GEOMETRY_CACHE_GEOMETRY_REMOVED
    *
    * @param geometryId - Geometry ID
    */
@@ -1181,7 +1179,7 @@ class Cache {
    *
    * It increases the cache size after removing the image.
    *
-   * @fires Events.IMAGE_CACHE_IMAGE_REMOVED
+   * fires Events.IMAGE_CACHE_IMAGE_REMOVED
    *
    * @param imageId - Image ID
    */
@@ -1214,7 +1212,7 @@ class Cache {
    *
    * It increases the cache size after removing the image.
    *
-   * @fires Events.VOLUME_CACHE_VOLUME_REMOVED
+   * fires Events.VOLUME_CACHE_VOLUME_REMOVED
    *
    * @param imageId - ImageId
    */

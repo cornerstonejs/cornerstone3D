@@ -130,9 +130,9 @@ abstract class BaseTool {
   /**
    * Get the image that is displayed for the targetId in the cachedStats
    * which can be
-   * * imageId:<imageId>
-   * * volumeId:<volumeId>
-   * * videoId:<basePathForVideo>/frames/<frameSpecifier>
+   * * `imageId:<imageId>`
+   * * `volumeId:<volumeId>`
+   * * `videoId:<basePathForVideo>/frames/<frameSpecifier>`
    *
    * @param targetId - annotation targetId stored in the cached stats
    * @returns The image data for the target.

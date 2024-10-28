@@ -133,7 +133,7 @@ class RenderingEngine {
    * })
    * ```
    *
-   * @fires Events.ELEMENT_ENABLED
+   * fires Events.ELEMENT_ENABLED
    *
    * @param viewportInputEntry - viewport specifications
    */
@@ -189,7 +189,7 @@ class RenderingEngine {
    * 3) resetting the viewport to remove the canvas attributes and canvas data
    * 4) resize the offScreen appropriately (if using vtk.js driven rendering pipeline)
    *
-   * @fires Events.ELEMENT_ENABLED
+   * fires Events.ELEMENT_ENABLED
    *
    * @param viewportId - viewport Id
    *
@@ -270,7 +270,7 @@ class RenderingEngine {
    * ])
    * ```
    *
-   * @fires Events.ELEMENT_ENABLED
+   * fires Events.ELEMENT_ENABLED
    *
    * @param viewportInputEntries - Array<PublicViewportInput>
    */
@@ -424,7 +424,7 @@ class RenderingEngine {
   /**
    * Renders all viewports on the next animation frame.
    *
-   * @fires Events.IMAGE_RENDERED
+   * fires Events.IMAGE_RENDERED
    */
   public render(): void {
     const viewports = this.getViewports();

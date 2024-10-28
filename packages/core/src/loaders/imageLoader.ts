@@ -649,7 +649,7 @@ export function unregisterAllImageLoaders(): void {
  * always until we have a better solution.
  *
  * @param referencedImageIds - An array of referenced image IDs.
- * @param options - The options for creating the derived images (default: { targetBuffer: { type: 'Uint8Array' } }).
+ * @param options - The options for creating the derived images (`default: { targetBuffer: { type: 'Uint8Array' } }`).
  * @returns The derived images.
  */
 export function createAndCacheDerivedLabelmapImages(
@@ -669,7 +669,7 @@ export function createAndCacheDerivedLabelmapImages(
  * always until we have a better solution.
  *
  * @param referencedImageId The ID of the referenced image.
- * @param options The options for creating the derived image (default: { targetBuffer: { type: 'Uint8Array' } }).
+ * @param options The options for creating the derived image (`default: { targetBuffer: { type: 'Uint8Array' } }`).
  * @returns A promise that resolves to the created derived segmentation image.
  */
 export function createAndCacheDerivedLabelmapImage(

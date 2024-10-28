@@ -239,14 +239,14 @@ export default class PointsManager<T> {
   }
 
   /**
-   * Create a PointsManager<Point3> instance with available capacity of initialSize
+   * Create a `PointsManager<Point3>` instance with available capacity of initialSize
    */
   public static create3(initialSize = 128) {
     return new PointsManager<Point3>({ initialSize, dimensions: 3 });
   }
 
   /**
-   * Create a PointsManager<Point2> instance with available capacity of initialSize
+   * Create a `PointsManager<Point2>` instance with available capacity of initialSize
    */
   public static create2(initialSize = 128) {
     return new PointsManager<Point2>({ initialSize, dimensions: 2 });

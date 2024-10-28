@@ -178,18 +178,17 @@ export async function createAndCacheVolume(
 
   return volumeLoadObject.promise;
 }
-
 /**
- * Based on a referencedVolumeId, it will build and cache a new volume. If
- * no scalarData is specified in the options, an empty derived volume will be
- * created that matches the image metadata of the referenceVolume. If scalarData
- * is given, it will be used to generate the intensity values for the derivedVolume.
- * Finally, it will save the volume in the cache.
- * @param referencedVolumeId - the volumeId from which the new volume will get its metadata
- * @param options - DerivedVolumeOptions {uid: derivedVolumeUID, targetBuffer: { type: Float32Array | Uint8Array |
- * Uint16Array | Uint32Array  }, scalarData: if provided}
+ * Creates and caches a new volume based on a reference volume's metadata.
  *
- * @returns ImageVolume
+ * @param referencedVolumeId - The volumeId from which the new volume will get its metadata
+ * @param options - Configuration options for the derived volume
+ * @param options.volumeId - Optional custom ID for the derived volume. If not provided, a UUID will be generated
+ * @param options.targetBuffer - Specifies the data type of the volume buffer
+ * @param options.targetBuffer.type - The array type to use: Float32Array | Uint8Array | Uint16Array | Uint32Array
+ * @param options.scalarData - Optional scalar data to populate the volume. If not provided, an empty volume is created
+ * @returns The created {@link IImageVolume} instance
+ * @throws Error if the referenced volume does not exist in the cache
  */
 export function createAndCacheDerivedVolume(
   referencedVolumeId: string,

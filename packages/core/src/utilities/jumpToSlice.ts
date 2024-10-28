@@ -14,7 +14,6 @@ import StackViewport from '../RenderingEngine/StackViewport';
  * should be given with respect to the index in the 3D image in the view direction
  * (i.e. the index of the slice in Axial, Sagittal, Coronal, or Oblique).
  *
-import type { JumpToSliceOptions } from '../types';
  * @param element - the HTML Div element scrolling inside
  * @param options - the options used for jumping to a slice
  * @returns Promise that resolves to ImageIdIndex
