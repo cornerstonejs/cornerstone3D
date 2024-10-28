@@ -1,4 +1,4 @@
-import { Locator } from 'playwright';
+import type { Locator } from 'playwright';
 
 /**
  *

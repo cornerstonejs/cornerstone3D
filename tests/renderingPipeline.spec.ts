@@ -1,4 +1,5 @@
-import { test, Page, Locator, expect } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import {
   checkForScreenshot,
   visitExample,
@@ -20,6 +21,9 @@ test.describe('Rendering Pipelines for GPU', async () => {
       page,
     }) => {
       await selectRenderingOption(page, option.name);
+
+      // Wait 5 seconds for rendering to complete
+      await page.waitForTimeout(5000);
 
       const canvases = await getCanvases(page);
 

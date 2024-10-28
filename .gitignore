@@ -32,6 +32,7 @@ package-lock.json
 
 # Example output
 .static-examples
+.static-examples-playwright
 
 # Docs output
 packages/docs/dist/

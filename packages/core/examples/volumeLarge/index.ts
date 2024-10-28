@@ -119,7 +119,6 @@ async function loadImage16Float() {
       ...currentConfig,
       rendering: {
         ...currentConfig.rendering,
-        useNorm16Texture: true,
       },
     });
 

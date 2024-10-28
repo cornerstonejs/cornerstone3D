@@ -12,7 +12,6 @@ const defaultConfig: Cornerstone3DConfig = {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
   /**
@@ -106,18 +105,12 @@ function init(configuration = config): boolean {
   config = deepMerge(defaultConfig, configuration);
 
   if (isIOS()) {
-    // iOS devices don't have support for OES_texture_float_linear
-    // and thus we should use native data type if we are on iOS
-    config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
-
-    if (!config.rendering.useNorm16Texture) {
-      if (configuration.rendering.preferSizeOverAccuracy) {
-        config.rendering.preferSizeOverAccuracy = true;
-      } else {
-        console.log(
-          'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
-        );
-      }
+    if (configuration.rendering.preferSizeOverAccuracy) {
+      config.rendering.preferSizeOverAccuracy = true;
+    } else {
+      console.log(
+        'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
+      );
     }
   }
 
