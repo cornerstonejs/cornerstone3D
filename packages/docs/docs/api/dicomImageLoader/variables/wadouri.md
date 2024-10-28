@@ -392,4 +392,4 @@ Function to deal with unpacking a binary frame
 
 ## Defined in
 
-[packages/dicomImageLoader/src/imageLoader/wadouri/index.ts:34](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/imageLoader/wadouri/index.ts#L34)
+[packages/dicomImageLoader/src/imageLoader/wadouri/index.ts:34](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/imageLoader/wadouri/index.ts#L34)

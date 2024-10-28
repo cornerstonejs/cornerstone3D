@@ -142,7 +142,7 @@ packages/core/dist/esm/types/IImage.d.ts:42
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:8](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L8)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:8](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L8)
 
 ***
 
@@ -170,7 +170,7 @@ packages/core/dist/esm/types/IImage.d.ts:88
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:4](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L4)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:4](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L4)
 
 ***
 
@@ -180,7 +180,7 @@ packages/core/dist/esm/types/IImage.d.ts:88
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:5](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L5)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:5](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L5)
 
 ***
 
@@ -258,7 +258,7 @@ packages/core/dist/esm/types/IImage.d.ts:43
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:9](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L9)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:9](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L9)
 
 ***
 
@@ -342,7 +342,7 @@ packages/core/dist/esm/types/IImage.d.ts:21
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:6](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L6)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:6](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L6)
 
 ***
 
@@ -672,7 +672,7 @@ packages/core/dist/esm/types/IImage.d.ts:68
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:7](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L7)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:7](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L7)
 
 ***
 
@@ -682,7 +682,7 @@ packages/core/dist/esm/types/IImage.d.ts:68
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:11](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L11)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:11](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L11)
 
 ***
 
@@ -710,7 +710,7 @@ packages/core/dist/esm/types/IImage.d.ts:56
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:10](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L10)
+[packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts:10](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/DICOMLoaderIImage.ts#L10)
 
 ***
 

@@ -8,7 +8,7 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:77](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L77)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:77](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L77)
 
 ***
 
@@ -18,7 +18,7 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:78](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L78)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:78](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L78)
 
 ***
 
@@ -28,7 +28,7 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:75](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L75)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:75](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L75)
 
 ***
 
@@ -38,7 +38,7 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:74](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L74)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:74](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L74)
 
 ***
 
@@ -48,4 +48,4 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:76](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L76)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:76](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L76)

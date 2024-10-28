@@ -8,7 +8,7 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:52](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L52)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:52](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L52)
 
 ***
 
@@ -18,7 +18,7 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:50](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L50)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:50](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L50)
 
 ***
 
@@ -28,4 +28,4 @@
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:51](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L51)
+[packages/dicomImageLoader/src/types/WebWorkerTypes.ts:51](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/WebWorkerTypes.ts#L51)

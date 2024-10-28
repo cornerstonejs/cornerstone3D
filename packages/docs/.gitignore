@@ -30,3 +30,8 @@ static/dicom-microscopy-viewer
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+docs/api/dicomImageLoader
+docs/api/nifti-volume-loader
+docs/api/adapters
+docs/api/tools
+docs/api/core

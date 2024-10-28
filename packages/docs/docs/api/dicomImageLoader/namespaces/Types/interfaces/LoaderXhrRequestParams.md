@@ -36,7 +36,7 @@ mutable object
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/XHRRequest.ts:12](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/XHRRequest.ts#L12)
+[packages/dicomImageLoader/src/types/XHRRequest.ts:12](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/XHRRequest.ts#L12)
 
 ***
 
@@ -46,7 +46,7 @@ mutable object
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/XHRRequest.ts:16](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/XHRRequest.ts#L16)
+[packages/dicomImageLoader/src/types/XHRRequest.ts:16](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/XHRRequest.ts#L16)
 
 ***
 
@@ -56,4 +56,4 @@ mutable object
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/XHRRequest.ts:11](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/XHRRequest.ts#L11)
+[packages/dicomImageLoader/src/types/XHRRequest.ts:11](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/XHRRequest.ts#L11)

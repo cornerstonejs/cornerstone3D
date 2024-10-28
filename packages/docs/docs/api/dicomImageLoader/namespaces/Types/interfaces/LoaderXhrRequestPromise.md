@@ -30,7 +30,7 @@ node\_modules/typescript/lib/lib.es2015.symbol.wellknown.d.ts:176
 
 #### Defined in
 
-[packages/dicomImageLoader/src/types/XHRRequest.ts:20](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/types/XHRRequest.ts#L20)
+[packages/dicomImageLoader/src/types/XHRRequest.ts:20](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/types/XHRRequest.ts#L20)
 
 ## Methods
 

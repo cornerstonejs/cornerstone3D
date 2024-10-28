@@ -216,4 +216,4 @@ The default value to return if the element does not exist
 
 ## Defined in
 
-[packages/dicomImageLoader/src/imageLoader/wadors/index.ts:20](https://github.com/cornerstonejs/cornerstone3D/blob/5addf8e516390235f8a3d16ccc818957013f098f/packages/dicomImageLoader/src/imageLoader/wadors/index.ts#L20)
+[packages/dicomImageLoader/src/imageLoader/wadors/index.ts:20](https://github.com/cornerstonejs/cornerstone3D/blob/ca63091460d8bdfd067d14a09b3105a6b4852ade/packages/dicomImageLoader/src/imageLoader/wadors/index.ts#L20)

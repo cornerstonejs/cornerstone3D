@@ -47,9 +47,31 @@ module.exports = {
           label: 'Community',
         },
         {
-          to: '/api',
-          position: 'left',
+          type: 'dropdown',
           label: 'API',
+          position: 'left',
+          items: [
+            {
+              label: 'Core',
+              to: '/docs/api/core',
+            },
+            {
+              label: 'Tools',
+              to: '/docs/api/tools',
+            },
+            {
+              label: 'DICOM Image Loader',
+              to: '/docs/api/dicomImageLoader',
+            },
+            {
+              label: 'NIFTI Volume Loader',
+              to: '/docs/api/nifti-volume-loader',
+            },
+            {
+              label: 'Adapters',
+              to: '/docs/api/adapters',
+            },
+          ],
         },
         {
           type: 'docsVersionDropdown',
@@ -208,51 +230,28 @@ module.exports = {
   },
   plugins: [
     require.resolve('./webpackConfigurationPlugin'),
-    // [
-    //   'docusaurus-plugin-typedoc-api',
-    //   {
-    //     projectRoot: path.join(__dirname, '../../'),
-    //     packages: [
-    //       ...['core', 'tools', 'dicomImageLoader', 'nifti-volume-loader'].map(
-    //         (pkg) => `packages/${pkg}`
-    //       ),
-    //     ],
-    //     url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
-    //     removeScopes: ['cornerstonejs'],
-    //     minimal: false,
-    //     readmes: true,
-    //     tsconfigName: 'tsconfig.json',
-    //   },
-    // ],
-    // [
-    //   'docusaurus-plugin-typedoc',
-    //   {
-    //     id: 'api-core',
-    //     out: './docs/api/core',
-    //     entryPoints: ['../core/src/index.ts'],
-    //     tsconfig: '../core/tsconfig.json',
-    //     watch: process.env.TYPEDOC_WATCH,
-    //   },
-    // ],
-    // [
-    //   'docusaurus-plugin-typedoc',
-    //   {
-    //     id: 'api-tools',
-    //     out: './api/tools',
-    //     entryPoints: ['../tools/src/index.ts'],
-    //     tsconfig: '../tools/tsconfig.json',
-    //     watch: process.env.TYPEDOC_WATCH,
-    //   },
-    // ],
-    [
-      'docusaurus-plugin-typedoc',
-      {
-        id: 'api-dicomImageLoader',
-        out: './docs/api/dicomImageLoader',
-        entryPoints: ['../dicomImageLoader/src/index.ts'],
-        tsconfig: '../dicomImageLoader/tsconfig.json',
-        entryFileName: 'index.md',
-      },
-    ],
+    ...(() => {
+      const packages = [
+        'core',
+        'tools',
+        'dicomImageLoader',
+        'nifti-volume-loader',
+        'adapters',
+      ];
+
+      const plugins = [];
+      for (const pkg of packages) {
+        plugins.push([
+          'docusaurus-plugin-typedoc',
+          {
+            id: `api-${pkg}`,
+            out: `./docs/api/${pkg}`,
+            entryPoints: [`../${pkg}/src/index.ts`],
+            tsconfig: `../${pkg}/tsconfig.json`,
+          },
+        ]);
+      }
+      return plugins;
+    })(),
   ],
 };
