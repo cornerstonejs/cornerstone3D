@@ -4,6 +4,9 @@ const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
+  future: {
+    experimental_faster: true,
+  },
   title: 'Cornerstone.js',
   tagline: 'Medical Imaging, Simplified',
   url: 'https://cornerstonejs.org',
@@ -205,20 +208,50 @@ module.exports = {
   },
   plugins: [
     require.resolve('./webpackConfigurationPlugin'),
+    // [
+    //   'docusaurus-plugin-typedoc-api',
+    //   {
+    //     projectRoot: path.join(__dirname, '../../'),
+    //     packages: [
+    //       ...['core', 'tools', 'dicomImageLoader', 'nifti-volume-loader'].map(
+    //         (pkg) => `packages/${pkg}`
+    //       ),
+    //     ],
+    //     url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
+    //     removeScopes: ['cornerstonejs'],
+    //     minimal: false,
+    //     readmes: true,
+    //     tsconfigName: 'tsconfig.json',
+    //   },
+    // ],
+    // [
+    //   'docusaurus-plugin-typedoc',
+    //   {
+    //     id: 'api-core',
+    //     out: './docs/api/core',
+    //     entryPoints: ['../core/src/index.ts'],
+    //     tsconfig: '../core/tsconfig.json',
+    //     watch: process.env.TYPEDOC_WATCH,
+    //   },
+    // ],
+    // [
+    //   'docusaurus-plugin-typedoc',
+    //   {
+    //     id: 'api-tools',
+    //     out: './api/tools',
+    //     entryPoints: ['../tools/src/index.ts'],
+    //     tsconfig: '../tools/tsconfig.json',
+    //     watch: process.env.TYPEDOC_WATCH,
+    //   },
+    // ],
     [
-      'docusaurus-plugin-typedoc-api',
+      'docusaurus-plugin-typedoc',
       {
-        projectRoot: path.join(__dirname, '../../'),
-        packages: [
-          ...['core', 'tools', 'dicomImageLoader', 'nifti-volume-loader'].map(
-            (pkg) => `packages/${pkg}`
-          ),
-        ],
-        url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
-        removeScopes: ['cornerstonejs'],
-        minimal: false,
-        readmes: true,
-        tsconfigName: 'tsconfig.json',
+        id: 'api-dicomImageLoader',
+        out: './docs/api/dicomImageLoader',
+        entryPoints: ['../dicomImageLoader/src/index.ts'],
+        tsconfig: '../dicomImageLoader/tsconfig.json',
+        entryFileName: 'index.md',
       },
     ],
   ],
