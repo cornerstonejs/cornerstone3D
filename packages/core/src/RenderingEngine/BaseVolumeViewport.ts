@@ -61,13 +61,14 @@ import isEqual, { isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
+
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
  * use SharedVolumeMappers behind the scene, memory footprint of visualizations
  * of the same volume in different orientations is very small.
  *
- * For setting volumes on viewports you need to use {@link addVolumesToViewports}
+ * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
 abstract class BaseVolumeViewport extends Viewport {
@@ -214,8 +215,8 @@ abstract class BaseVolumeViewport extends Viewport {
    * Sets the VOILUTFunction property for the volume viewport on the volume
    *
    * @param VOILUTFunction - Sets the voi mode (LINEAR or SAMPLED_SIGMOID)
-   * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
-   * @param suppressEvents - If true, the viewport will not emit events
+   * @param volumeId - The volume id to set the properties for (if `undefined`, the first volume)
+   * @param suppressEvents - If `true`, the viewport will not emit events
    */
   private setVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType,
@@ -559,7 +560,7 @@ abstract class BaseVolumeViewport extends Viewport {
   /**
    * Update the default properties for the volume viewport on the volume
    * @param ViewportProperties - The properties to set
-   * @param volumeId - The volume id to set the default properties for (if undefined, we set the global default viewport properties)
+   * @param volumeId - The volume id to set the default properties for (if `undefined`, we set the global default viewport properties)
    */
   public setDefaultProperties(
     ViewportProperties: VolumeViewportProperties,
@@ -1026,8 +1027,8 @@ abstract class BaseVolumeViewport extends Viewport {
    * those in the predefined vtk colormap presets. Upon finding a matching set of r, g, b values, the function identifies and selects the
    * corresponding colormap.
    *
-   * Next, the function extracts an array of opacity points, formatted as a sequence of [x,y] pairs, where 'x' represents a value and
-   * 'y' represents its opacity. It iterates through this array to construct an opacity object that maps each value to its opacity.
+   * Next, the function extracts an array of opacity points, formatted as a sequence of `[x,y]` pairs, where `x` represents a value and
+   * `y` represents its opacity. It iterates through this array to construct an opacity object that maps each value to its opacity.
    *
    * The function returns an object that includes the name of the identified colormap and the constructed opacity object.
    * @param applicableVolumeActorInfo  - The volume actor information for the volume
@@ -1220,7 +1221,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
   /**
    * It sets the orientation for the camera, the orientation can be one of the
-   * following: axial, sagittal, coronal, default. Use the Enums.OrientationAxis
+   * following: axial, sagittal, coronal, default. Use the `Enums.OrientationAxis`
    * to set the orientation. The "default" orientation is the orientation that
    * the volume was acquired in (scan axis)
    *
@@ -1412,7 +1413,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * argument.
    *
    * @param volumeId - The volumeId of the volume to get the image for.
-   * @returns IImageData: {dimensions, direction, scalarData, vtkImageData, metadata, scaling}
+   * @returns IImageData
    */
   public getImageData(volumeId?: string): IImageData | undefined {
     const defaultActor = this.getDefaultActor();
@@ -1566,7 +1567,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
-     * NOTE: this is necessary because we want the coordinate trasformation
+     * NOTE: this is necessary because we want the coordinate transformation
      * respect to the view plane (plane orthogonal to the camera and passing to
      * the focal point).
      *
@@ -1622,7 +1623,7 @@ abstract class BaseVolumeViewport extends Viewport {
   /*
    * Checking if the imageURI is in the volumes that are being
    * rendered by the viewport. imageURI is the imageId without the schema
-   * for instance for the imageId of wadors:http://..., the http://... is the imageURI.
+   * for instance for the imageId of `wadors:http://...`, the `http://...` is the imageURI.
    * Why we don't check the imageId is because the same image can be shown in
    * another viewport (StackViewport) with a different schema
    *

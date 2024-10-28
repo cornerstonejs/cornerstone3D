@@ -39,7 +39,7 @@ import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
  * use SharedVolumeMappers behind the scene, memory footprint of visualizations
  * of the same volume in different orientations is very small.
  *
- * For setting volumes on viewports you need to use {@link addVolumesToViewports}
+ * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport extends BaseVolumeViewport {
@@ -158,7 +158,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
   /**
    * It sets the orientation for the camera, the orientation can be one of the
-   * following: axial, sagittal, coronal, default. Use the Enums.OrientationAxis
+   * following: axial, sagittal, coronal, default. Use the `Enums.OrientationAxis`
    * to set the orientation. The "default" orientation is the orientation that
    * the volume was acquired in (scan axis)
    *
@@ -442,7 +442,7 @@ class VolumeViewport extends BaseVolumeViewport {
   /**
    * Returns the imageId index of the current slice in the volume viewport.
    * Note: this is not guaranteed to be the same as the slice index in the view
-   * To get the slice index in the view (scroll position), use getSliceIndex()
+   * To get the slice index in the view (scroll position), use `getSliceIndex()`
    *
    * In future we will even delete this method as it should not be used
    * at all.

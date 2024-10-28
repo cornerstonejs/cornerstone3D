@@ -15,7 +15,7 @@ import BaseVolumeViewport from './BaseVolumeViewport';
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
  * 3D volumes in their entirety, and not just load a single slice at a time.
  *
- * For setting volumes on viewports you need to use {@link addVolumesToViewports}
+ * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport3D extends BaseVolumeViewport {

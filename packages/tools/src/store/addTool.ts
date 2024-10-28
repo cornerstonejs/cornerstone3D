@@ -4,11 +4,12 @@ import { state } from './state';
  * Adds the tool class to the cornerstoneTools to be used later. This function
  * should be called before creating the toolGroups and adding tools and setting their mode.
  * The flow is:
+ * ```
  * - addTool(ToolClass) // where ToolClass is the tool constructor imported from CornerstoneTools or created by a 3rd party
  * - createToolGroup(toolGroupId)
  * - toolGroup.addTool(${toolName}) // NOT THE TOOL CLASS
  * - toolGroup.setToolActive(${toolName})
- *
+ *```
  * @param ToolClass - A tool calls to instantiate.
  * @param toolOptions - The tool-specific configuration options for the tool.
  * @returns
@@ -22,7 +23,7 @@ export function addTool(ToolClass): void {
     throw new Error(`No Tool Found for the ToolClass ${ToolClass.name}`);
   }
 
-  // Stores the toolNames and ToolClass to be instantiated in the toolGroup on toolGroup.addTool
+  // Stores the toolNames and ToolClass to be instantiated in the toolGroup on `toolGroup.addTool`
   state.tools[toolName] = {
     toolClass: ToolClass,
   };
@@ -31,7 +32,7 @@ export function addTool(ToolClass): void {
 /**
  * Check if a given tool is already registered
  * @param ToolClass - A tool class to check
- * @returns True if the tool is alredy registered or false otherwise
+ * @returns True if the tool is already registered or false otherwise
  */
 export function hasTool(ToolClass): boolean {
   const toolName = ToolClass.toolName;

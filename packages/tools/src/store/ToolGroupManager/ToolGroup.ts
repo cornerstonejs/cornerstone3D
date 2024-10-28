@@ -39,9 +39,8 @@ const PRIMARY_BINDINGS = [{ mouseButton: MouseBindings.Primary }];
  * in a toolGroup. You should not directly instantiate a ToolGroup. You need to use
  * ToolGroupManager helpers to create a new toolGroup or get a reference to an existing toolGroup.
  *
- * ```js
- * const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupId')
- * ```
+ *
+ * `const toolGroup = csTools.ToolGroupManager.createToolGroup('toolGroupId')`
  */
 export default class ToolGroup {
   id: string;
@@ -68,7 +67,7 @@ export default class ToolGroup {
   }
 
   /**
-   * Returns the toolGroup viewports info which is an array of {viewportId, renderingEngineId}
+   * Returns the toolGroup viewports info which is an array of `{viewportId, renderingEngineId}`
    */
   getViewportsInfo(): Array<Types.IViewportId> {
     return this.viewportsInfo.slice();
@@ -193,9 +192,6 @@ export default class ToolGroup {
     this.addTool(ToolClassToUse.toolName, configuration);
   }
 
-  //   class InstanceTool extends parentClass;
-  // InstanceTool.constructor.toolName = name;
-  // addTool(InstanceTool,configuration)
   /**
    * Add a viewport to the ToolGroup. It accepts viewportId and optional
    * renderingEngineId parameter. If renderingEngineId is not provided,
@@ -513,7 +509,7 @@ export default class ToolGroup {
     this._renderViewports();
 
     // It would make sense to use `toolInstance.mode` as mode when setting a tool
-    // as passive because it can still be actived in the end but `Passive` must
+    // as passive because it can still be active in the end but `Passive` must
     // be used when synchronizing ToolGroups so that other ToolGroups can take the
     // same action (update tool bindings). Should the event have two different modes
     // to handle this special case?

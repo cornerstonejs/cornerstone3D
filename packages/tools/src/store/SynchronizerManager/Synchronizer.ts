@@ -73,7 +73,7 @@ class Synchronizer {
   /**
    * Sets the options for the viewport id.  This can be used to
    * provide configuration on a viewport basis for things like offsets
-   * to the general synchronization, or turn on/off synchronization of certain
+   * to the general synchronization, or turn `on/off` synchronization of certain
    * attributes.
    */
   public setOptions(
@@ -155,16 +155,16 @@ class Synchronizer {
   }
 
   /**
-   * Get the list of source viewports (as {viewportId, renderingEngineId} objects)
-   * @returns An array of {viewportId, renderingEngineId} objects.
+   * Get the list of source viewports (as `{viewportId, renderingEngineId}` objects)
+   * @returns An array of `{viewportId, renderingEngineId}` objects.
    */
   public getSourceViewports(): Array<Types.IViewportId> {
     return this._sourceViewports;
   }
 
   /**
-   * Get the list of target viewports (as {viewportId, renderingEngineId} objects)
-   * @returns An array of {viewportId, renderingEngineId} objects.
+   * Get the list of target viewports (as `{viewportId, renderingEngineId}` objects)
+   * @returns An array of `{viewportId, renderingEngineId}` objects.
    */
   public getTargetViewports(): Array<Types.IViewportId> {
     return this._targetViewports;

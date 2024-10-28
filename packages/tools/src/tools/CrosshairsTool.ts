@@ -340,7 +340,7 @@ class CrosshairsTool extends AnnotationTool {
    * will be an exact point in space; however, with two viewports, because the
    * intersection of two planes is a line, it assumes the last view is between the centre
    * of the two rendering viewports.
-   * @param viewportsInfo Array of viewportInputs which each item containing {viewportId, renderingEngineId}
+   * @param viewportsInfo Array of viewportInputs which each item containing `{viewportId, renderingEngineId}`
    */
   computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo.length || viewportsInfo.length === 1) {

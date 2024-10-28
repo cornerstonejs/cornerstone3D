@@ -340,9 +340,8 @@ export function createAndCacheVolumeFromImagesSync(
  * dimensions, spacing, origin, direction, metadata, scalarData. It should be noted that
  * scalarData should be provided for this function to work. If a volume with the same
  * Id exists in the cache it returns it immediately.
- * @param options - {scalarData, metadata, dimensions, spacing, origin, direction }
  * @param volumeId - Id of the generated volume
- *
+ * @param options - Object containing scalarData, metadata, dimensions, spacing, origin, direction
  * @returns ImageVolume
  */
 export function createLocalVolume(
