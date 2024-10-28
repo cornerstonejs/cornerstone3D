@@ -6,6 +6,7 @@ import { getTransferFunctionHash } from '@kitware/vtk.js/Rendering/OpenGL/Render
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -271,6 +272,11 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           dataType,
         });
 
+        // const emptyDataTypeOfType = getConstructorFromType(dataType);
+        // const emptyData = new emptyDataTypeOfType(dims[0] * dims[1] * dims[2]);
+
+        // There are some bugs in mac for texStorage3D so basically here
+        // we let the vtk.js decide if it wants to use it or not
         model.scalarTexture.create3DFromRaw(
           dims[0],
           dims[1],
@@ -278,6 +284,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           numIComps,
           dataType,
           null
+          // emptyData
         );
 
         // do an initial update since some data may be already

@@ -14,6 +14,7 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import { SegmentationRepresentations } from '../../src/enums';
+import { triggerSegmentationDataModified } from '../../src/stateManagement/segmentation/triggerSegmentationEvents';
 
 // This is for debugging purposes
 console.warn(
@@ -180,6 +181,8 @@ async function run() {
     [viewportIds[1]]: [segmentationRepresentation],
     [viewportIds[2]]: [segmentationRepresentation],
   });
+
+  triggerSegmentationDataModified(segmentationId);
 }
 
 run();

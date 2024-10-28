@@ -15,6 +15,7 @@ import {
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { removeLabelmapRepresentation } from '../../src/stateManagement/segmentation';
+import { triggerSegmentationDataModified } from '../../src/stateManagement/segmentation/triggerSegmentationEvents';
 
 // This is for debugging purposes
 console.warn(
@@ -76,6 +77,8 @@ addButtonToToolbar({
         },
       ]);
 
+      triggerSegmentationDataModified(segmentationId2);
+
       segmentationDisplayed = segmentationId2;
     } else {
       removeLabelmapRepresentation(viewportId, segmentationId2, true);
@@ -85,6 +88,8 @@ addButtonToToolbar({
           segmentationId: segmentationId1,
         },
       ]);
+
+      triggerSegmentationDataModified(segmentationId1);
 
       segmentationDisplayed = segmentationId1;
     }
@@ -205,6 +210,8 @@ async function run() {
       segmentationId: segmentationId1,
     },
   ]);
+
+  triggerSegmentationDataModified(segmentationId1);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);
