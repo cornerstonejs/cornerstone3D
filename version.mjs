@@ -59,11 +59,12 @@ async function run() {
     // if commit message starts with feat bump the minor version, otherwise bump the patch version
     const isBumpMinor = lastCommitMessage.trim().startsWith('feat');
 
-    if (isBumpMinor) {
-      nextVersion = semver.inc(currentVersion, 'minor');
-    } else {
-      nextVersion = semver.inc(currentVersion, 'patch');
-    }
+    // if (isBumpMinor) {
+    //   nextVersion = semver.inc(currentVersion, 'minor');
+    // } else {
+    //   nextVersion = semver.inc(currentVersion, 'patch');
+    // }
+    nextVersion = '2.0.0';
   }
 
   if (!nextVersion) {
