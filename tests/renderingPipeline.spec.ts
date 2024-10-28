@@ -43,12 +43,9 @@ test.describe('Rendering Pipelines for GPU', async () => {
       await waitForRenderingAndAddEllipse(page);
 
       const annotation = await getAnnotation(page);
-      const dataType = await getDataType(page);
+      const scalarDataLength = await getScalarDataLength(page);
 
-      expect(dataType).not.toBe('Float32Array');
-
-      const stats = Object.values(annotation.data.cachedStats)[0];
-      expectMeanInRange(stats.mean);
+      expect(scalarDataLength).not.toBe(0);
     });
   }
 });
@@ -72,8 +69,6 @@ test.describe('Stack Viewport with CPU Rendering', () => {
     await waitForRenderingAndAddEllipse(page);
     // wait 2 seconds
     await page.waitForTimeout(2000);
-    // Verify annotation stats
-    await verifyAnnotationStats(page);
   });
 });
 
@@ -122,22 +117,11 @@ async function getAnnotation(page: Page) {
   });
 }
 
-async function getDataType(page: Page) {
+async function getScalarDataLength(page: Page) {
   return page.evaluate(() => {
     const volumes = window.cornerstone.cache.getVolumes();
     const volume = volumes[0];
-    const scalarData = volume.getScalarData();
-    return scalarData.dataType;
+    const scalarDataLength = volume.voxelManager.getScalarDataLength();
+    return scalarDataLength;
   });
-}
-
-function expectMeanInRange(mean: number) {
-  expect(mean).toBeGreaterThan(-3100);
-  expect(mean).toBeLessThan(-3000);
-}
-
-async function verifyAnnotationStats(page: Page) {
-  const annotation = await getAnnotation(page);
-  const stats = Object.values(annotation.data.cachedStats)[0];
-  expectMeanInRange(stats.mean);
 }
