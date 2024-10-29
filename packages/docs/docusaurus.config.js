@@ -74,7 +74,7 @@ module.exports = {
           ],
         },
         {
-          to: '/docs/migration-guides/1.x-to-2.x',
+          to: '/docs/migration-guides/intro',
           label: '2.0 Migration Guides',
           position: 'left',
           className: 'new-badge',

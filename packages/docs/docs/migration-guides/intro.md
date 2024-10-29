@@ -17,7 +17,8 @@ In the end, we chose progress over convenience—because it isn’t always the e
 
 <div style={{ textAlign: 'right' }}>
   <i>
-    Alireza Sedghi, PhD
+    Alireza Sedghi, PhD<br/>
+    October 2024
   </i>
 
 </div>
