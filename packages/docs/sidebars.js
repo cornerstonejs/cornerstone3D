@@ -76,6 +76,7 @@ module.exports = {
         'getting-started/scope',
         'getting-started/related-libraries',
         'getting-started/installation',
+        'getting-started/vue-angular-react-etc',
       ],
     },
     {
