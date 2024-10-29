@@ -74,6 +74,12 @@ module.exports = {
           ],
         },
         {
+          to: '/docs/migration-guides/intro',
+          label: '2.0 Migration Guides',
+          position: 'left',
+          className: 'new-badge',
+        },
+        {
           type: 'docsVersionDropdown',
           position: 'right',
           dropdownItemsAfter: [

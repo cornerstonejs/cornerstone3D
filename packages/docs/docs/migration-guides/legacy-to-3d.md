@@ -5,7 +5,7 @@ id: legacy-to-3d
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Migration Guides
+# Legacy to 1.0
 
 As we are moving to the `Cornerstone3D` library, we are introducing a new set of APIs that are not backwards compatible with the old `Cornerstone` library. In this page, we will provide a migration guide for users who are already using the old `Cornerstone` library.
 
