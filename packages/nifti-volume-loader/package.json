@@ -60,8 +60,10 @@
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^2.0.1",
     "nifti-reader-js": "^0.6.8"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": "^2.0.1"
   },
   "contributors": [
     {

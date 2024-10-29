@@ -9927,7 +9927,7 @@ dicom-microscopy-viewer@^0.46.1:
     ol "^7.1"
     uuid "^9.0"
 
-dicom-parser@^1.8.21, dicom-parser@^1.8.9:
+dicom-parser@^1.8.21:
   version "1.8.21"
   resolved "https://registry.yarnpkg.com/dicom-parser/-/dicom-parser-1.8.21.tgz#916fdc77776367976b8457cad462b5b7cf74eaea"
   integrity sha512-lYCweHQDsC8UFpXErPlg86Px2A8bay0HiUY+wzoG3xv5GzgqVHU3lziwSc/Gzn7VV7y2KeP072SzCviuOoU02w==
