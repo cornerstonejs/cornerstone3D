@@ -3,7 +3,8 @@ id: dynamic-volume
 title: '4D or Dynamic Volume'
 ---
 
-
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 # 4D Or Dynamic Volume
 
