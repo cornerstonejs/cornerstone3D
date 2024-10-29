@@ -114,7 +114,7 @@
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.5",
-    "@cornerstonejs/core": "^2.0.0-beta.30",
+    "@cornerstonejs/core": "^2.0.0",
     "comlink": "^4.4.1",
     "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
