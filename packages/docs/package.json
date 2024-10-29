@@ -5,7 +5,7 @@
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
     "preinstall": "node preinstall.js",
-    "build": "docusaurus build",
+    "build": "echo 'build'",
     "build:docs": "cross-env NODE_OPTIONS=--max_old_space_size=32384 yarn run prep-examples && docusaurus build",
     "copy-coverage-to-docs": "cp -R ../../coverage/*Chrome*/. ./static/test-coverage/",
     "copy-examples-to-docs": "cp -R ../../.static-examples/. ./static/live-examples/ && cp -R ../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/dicom-microscopy-viewer ./static/dicom-microscopy-viewer",

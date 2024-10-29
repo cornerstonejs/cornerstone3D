@@ -76,6 +76,16 @@ module.exports = {
         {
           type: 'docsVersionDropdown',
           position: 'right',
+          dropdownItemsAfter: [
+            {
+              type: 'html',
+              value: '<hr class="dropdown-separator">',
+            },
+            {
+              href: 'https://v1.cornerstonejs.org/',
+              label: '1.0',
+            },
+          ],
           dropdownActiveClassDisabled: true,
         },
         {
@@ -194,13 +204,13 @@ module.exports = {
         docs: {
           breadcrumbs: false,
           sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
           editUrl:
             'https://github.com/cornerstonejs/cornerstone3D/edit/main/packages/docs/',
           lastVersion: 'current',
+          onlyIncludeVersions: ['current'],
           versions: {
             current: {
-              label: `${2.0} (Latest)`,
+              label: `2.0 (Latest)`,
             },
           },
         },
