@@ -402,3 +402,17 @@ a.card > h2 {
 html[data-theme='light'] .tsd-signature > span {
   font-weight: normal;
 } */
+
+/* Version Dropdown styling */
+.dropdown__link {
+  padding: 0.4rem 0.8rem !important;
+}
+
+.dropdown-separator {
+  margin: 0.2rem 0;
+}
+
+/* External link icon alignment */
+.dropdown__link svg {
+  margin-left: 0.3rem;
+}

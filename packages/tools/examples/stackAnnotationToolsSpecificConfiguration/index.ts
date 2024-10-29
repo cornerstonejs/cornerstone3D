@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -12,7 +12,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { Statistics } from '../../src/types';
+import type { Statistics } from '../../src/types';
 import { Calculator } from '../../src/utilities/math/basic';
 
 // This is for debugging purposes
@@ -132,21 +132,24 @@ addDropdownToToolbar({
 //Here are the function with all your custom text to show
 function getTextLinesLength(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { length, unit } = cachedVolumeStats;
+  const { length, lengthUnits } = cachedVolumeStats;
 
   // Can be null on load
   if (length === undefined || length === null || isNaN(length)) {
     return;
   }
 
-  const textLines = [`${Math.round(length)} ${unit}`, `(your custom text)`];
+  const textLines = [
+    `${Math.round(length)} ${lengthUnits}`,
+    `(your custom text)`,
+  ];
 
   return textLines;
 }
 
 function getTextLinesRectangle(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, areaUnit, modalityUnit } = cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -162,7 +165,7 @@ function getTextLinesRectangle(data, targetId): string[] {
 
 function getTextLinesProbe(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, modalityUnit } = cachedVolumeStats;
+  const { index, value } = cachedVolumeStats;
 
   if (value === undefined) {
     return;

@@ -1,38 +1,8 @@
-import { Types, cache } from '@cornerstonejs/core';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { isVolumeSegmentation } from '../../tools/segmentation/strategies/utils/stackVolumeCheck';
+import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
-
-const segmentIndicesCache = new Map<
-  string,
-  { indices: number[]; isDirty: boolean }
->();
-
-/**
- * Sets the segmentation as dirty, indicating that it needs to be updated.
- * @param segmentationId - The ID of the segmentation.
- */
-export const setSegmentationDirty = (segmentationId: string) => {
-  const cached = segmentIndicesCache.get(segmentationId);
-  if (cached) {
-    cached.isDirty = true;
-  }
-};
-
-export const setSegmentationClean = (segmentationId: string) => {
-  const cached = segmentIndicesCache.get(segmentationId);
-  if (cached) {
-    cached.isDirty = false;
-  }
-};
-
-function getCachedSegmentIndices(segmentationId) {
-  const cached = segmentIndicesCache.get(segmentationId);
-  if (cached && !cached.isDirty) {
-    return cached.indices;
-  }
-  return null;
-}
+import { getCachedSegmentIndices, setCachedSegmentIndices } from './utilities';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 
 /**
  * Retrieves the unique segment indices from a given segmentation.
@@ -56,22 +26,21 @@ function getUniqueSegmentIndices(segmentationId) {
   }
 
   let indices;
-  switch (segmentation.type) {
-    case SegmentationRepresentations.Labelmap:
-      indices = handleLabelmapSegmentation(segmentation, segmentationId);
-      break;
-    case SegmentationRepresentations.Contour:
-      indices = handleContourSegmentation(segmentation);
-      break;
-    case SegmentationRepresentations.Surface:
-      indices = handleSurfaceSegmentation(segmentation);
-      break;
-    default:
-      throw new Error(`Unsupported segmentation type: ${segmentation.type}`);
+  if (segmentation.representationData.Labelmap) {
+    indices = handleLabelmapSegmentation(segmentation, segmentationId);
+  } else if (segmentation.representationData.Contour) {
+    indices = handleContourSegmentation(segmentation);
+  } else if (segmentation.representationData.Surface) {
+    indices = handleSurfaceSegmentation(segmentation);
+  } else {
+    throw new Error(
+      `Unsupported segmentation type: ${segmentation.representationData}`
+    );
   }
 
   // Update cache
-  segmentIndicesCache.set(segmentationId, { indices, isDirty: false });
+  setCachedSegmentIndices(segmentationId, indices);
+
   return indices;
 }
 
@@ -80,10 +49,10 @@ function handleLabelmapSegmentation(segmentation, segmentationId) {
     segmentation.representationData[SegmentationRepresentations.Labelmap];
   const keySet = new Set();
 
-  if (isVolumeSegmentation(labelmapData)) {
-    addVolumeSegmentIndices(keySet, segmentationId);
+  if (labelmapData.imageIds) {
+    addImageSegmentIndices(keySet, labelmapData.imageIds);
   } else {
-    addImageSegmentIndices(keySet, labelmapData.imageIdReferenceMap);
+    addVolumeSegmentIndices(keySet, segmentationId);
   }
 
   return Array.from(keySet)
@@ -93,18 +62,17 @@ function handleLabelmapSegmentation(segmentation, segmentationId) {
 
 function addVolumeSegmentIndices(keySet, segmentationId) {
   const volume = cache.getVolume(segmentationId);
-  const scalarData = volume.getScalarData();
-  scalarData.forEach((segmentIndex) => {
-    if (segmentIndex !== 0) {
-      keySet.add(segmentIndex);
+  volume.voxelManager.forEach(({ value }) => {
+    if (value !== 0) {
+      keySet.add(value);
     }
   });
 }
 
-function addImageSegmentIndices(keySet, imageIdReferenceMap) {
-  imageIdReferenceMap.forEach((segmentationImageId) => {
+function addImageSegmentIndices(keySet, imageIds) {
+  imageIds.forEach((segmentationImageId) => {
     const image = cache.getImage(segmentationImageId);
-    const scalarData = image.getPixelData();
+    const scalarData = image.voxelManager.getScalarData();
     scalarData.forEach((segmentIndex) => {
       if (segmentIndex !== 0) {
         keySet.add(segmentIndex);
@@ -115,7 +83,7 @@ function addImageSegmentIndices(keySet, imageIdReferenceMap) {
 
 function handleContourSegmentation(segmentation) {
   const { annotationUIDsMap, geometryIds } =
-    segmentation.representationData.CONTOUR || {};
+    segmentation.representationData.Contour || {};
   if (!geometryIds) {
     throw new Error(
       `No geometryIds found for segmentationId ${segmentation.segmentationId}`
@@ -125,7 +93,7 @@ function handleContourSegmentation(segmentation) {
   const indices = new Set([...annotationUIDsMap.keys()]);
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
-    indices.add((geometry.data as Types.IContourSet).getSegmentIndex());
+    indices.add((geometry.data as Types.IContourSet).segmentIndex);
   });
 
   return Array.from(indices).sort((a, b) => a - b);
@@ -133,7 +101,7 @@ function handleContourSegmentation(segmentation) {
 
 function handleSurfaceSegmentation(segmentation) {
   const geometryIds =
-    segmentation.representationData.SURFACE?.geometryIds ?? [];
+    segmentation.representationData.Surface?.geometryIds ?? [];
   return Array.from(geometryIds.keys())
     .map(Number)
     .sort((a, b) => a - b);

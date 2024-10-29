@@ -11,9 +11,9 @@ import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
-import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import type { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 
 const { EPSILON } = CONSTANTS;
@@ -24,14 +24,12 @@ const { EPSILON } = CONSTANTS;
 class ReferenceLines extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    renderingEngine: any;
+    renderingEngine: Types.IRenderingEngine;
     sourceViewportId: string;
     annotation: ReferenceLineAnnotation;
-  } | null = {} as any;
+  } | null = null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -80,7 +78,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     const sourceViewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(sourceViewport);
 
-    let annotation = this.editData.annotation;
+    let annotation = this.editData?.annotation;
     const FrameOfReferenceUID = sourceViewport.getFrameOfReferenceUID();
 
     if (!annotation) {
@@ -115,7 +113,6 @@ class ReferenceLines extends AnnotationDisplayTool {
     };
 
     triggerAnnotationRenderForViewportIds(
-      renderingEngine,
       viewports
         .filter((viewport) => viewport.id !== sourceViewport.id)
         .map((viewport) => viewport.id)
@@ -151,6 +148,11 @@ class ReferenceLines extends AnnotationDisplayTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     const { viewport: targetViewport } = enabledElement;
+
+    if (!this.editData) {
+      return false;
+    }
+
     const { annotation, sourceViewportId } = this.editData;
 
     let renderStatus = false;
@@ -303,7 +305,7 @@ class ReferenceLines extends AnnotationDisplayTool {
   ) {
     const renderingEngine = targetViewport.getRenderingEngine();
     const targetId = this.getTargetId(targetViewport);
-    const targetImage = this.getTargetIdImage(targetId, renderingEngine);
+    const targetImage = this.getTargetImageData(targetId);
 
     const referencedImageId = this.getReferencedImageId(
       targetViewport,

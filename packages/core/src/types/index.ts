@@ -1,4 +1,3 @@
-// @see: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#-type-only-imports-and-export
 import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
@@ -13,6 +12,7 @@ import type VolumeLoaderFn from './VolumeLoaderFn';
 import type IRegisterImageLoader from './IRegisterImageLoader';
 import type IStreamingVolumeProperties from './IStreamingVolumeProperties';
 import type CustomEventType from './CustomEventType';
+import type { LocalVolumeOptions } from './../loaders/volumeLoader';
 import type {
   IViewport,
   PublicViewportInput,
@@ -22,6 +22,7 @@ import type {
   ViewReference,
   ViewPresentation,
   ViewPresentationSelector,
+  ViewportInput,
 } from './IViewport';
 import type {
   VolumeActor,
@@ -74,7 +75,7 @@ import type CPUFallbackViewport from './CPUFallbackViewport';
 import type CPUFallbackTransform from './CPUFallbackTransform';
 import type CPUFallbackColormapData from './CPUFallbackColormapData';
 import type CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
-import type CPUFallbackColormapsData from './CPUFallbackColormapsData';
+import type { CPUFallbackColormapsData } from './CPUFallbackColormapsData';
 import type CPUFallbackColormap from './CPUFallbackColormap';
 import type TransformMatrix2D from './TransformMatrix2D';
 import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
@@ -97,7 +98,7 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
-import { ColormapPublic, ColormapRegistration } from './Colormap';
+import type { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
 import type {
   PixelDataTypedArray,
@@ -119,20 +120,41 @@ import type { ImageLoadListener } from './ImageLoadListener';
 import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type WSIViewportProperties from './WSIViewportProperties';
-import type IVideoViewport from './IVideoViewport';
+import type { IVideoViewport } from './IVideoViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
-import { WSIViewportInput } from './WSIViewportTypes';
-import { ISurface } from './ISurface';
+import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
 import type { VolumeProps } from './VolumeProps';
-import type BoundsLPS from './BoundsLPS';
+import type { BoundsLPS } from './BoundsLPS';
 // Sometimes the type is needed rather than the class, so import
 // the type only here.
-import type PointsManager from '../utilities/PointsManager';
+import type {
+  IPointsManager,
+  PolyDataPointConfiguration,
+} from './IPointsManager';
+import type IImageFrame from './IImageFrame';
+import type {
+  DicomDateObject,
+  DicomTimeObject,
+  GeneralSeriesModuleMetadata,
+  ImagePlaneModuleMetadata,
+  SopCommonModuleMetadata,
+  ImagePixelModuleMetadata,
+  PatientStudyModuleMetadata,
+  TransferSyntaxMetadata,
+} from './MetadataModuleTypes';
+import type { IVoxelManager } from './IVoxelManager';
+import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
+import type ImageLoadRequests from './ImageLoadRequests';
+import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
+import type ScrollOptions from './ScrollOptions';
+import type JumpToSliceOptions from './JumpToSliceOptions';
+
+import type GeometryLoaderFn from './GeometryLoaderFn';
 
 export type {
   // config
@@ -153,7 +175,8 @@ export type {
   IRenderingEngine,
   ScalingParameters,
   PTScaling,
-  PointsManager,
+  IPointsManager,
+  PolyDataPointConfiguration,
   Scaling,
   IStreamingImageVolume,
   IImage,
@@ -253,10 +276,28 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
-  WSIViewportInput,
   BoundsIJK,
   BoundsLPS,
   Color,
   ColorLUT,
   VolumeProps,
+  IImageFrame,
+  DicomDateObject,
+  DicomTimeObject,
+  GeneralSeriesModuleMetadata,
+  ImagePlaneModuleMetadata,
+  SopCommonModuleMetadata,
+  ImagePixelModuleMetadata,
+  PatientStudyModuleMetadata,
+  TransferSyntaxMetadata,
+  LocalVolumeOptions,
+  IVoxelManager,
+  IRLEVoxelMap,
+  RLERun,
+  ViewportInput,
+  ImageLoadRequests,
+  IBaseVolumeViewport,
+  GeometryLoaderFn,
+  ScrollOptions,
+  JumpToSliceOptions,
 };

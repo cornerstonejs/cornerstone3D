@@ -1,17 +1,17 @@
-import { ImageQualityStatus } from '../enums';
+import type { ImageQualityStatus } from '../enums';
 
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */
-  imageIds: Array<string>;
+  imageIds: string[];
 
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus: {
     loaded: boolean;
     loading: boolean;
     cancelled: boolean;
-    cachedFrames: Array<ImageQualityStatus>;
-    callbacks: Array<() => void>;
+    cachedFrames: ImageQualityStatus[];
+    callbacks: (() => void)[];
   };
 }
 
-export default IStreamingVolumeProperties;
+export type { IStreamingVolumeProperties as default };

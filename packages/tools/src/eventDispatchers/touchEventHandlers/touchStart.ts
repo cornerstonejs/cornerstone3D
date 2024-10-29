@@ -1,7 +1,7 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
-import {
+import type { EventTypes } from '../../types';
+import type {
   ToolAnnotationPair,
   ToolsWithMoveableHandles,
 } from '../../types/InternalToolTypes';
@@ -142,7 +142,7 @@ function getAnnotationForSelection(
     (toolsWithMovableHandles.length > 1 &&
       toolsWithMovableHandles.find(
         (item) =>
-          !isAnnotationLocked(item.annotation) &&
+          !isAnnotationLocked(item.annotation.annotationUID) &&
           isAnnotationVisible(item.annotation.annotationUID)
       )) ||
     toolsWithMovableHandles[0]

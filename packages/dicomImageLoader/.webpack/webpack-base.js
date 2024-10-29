@@ -55,20 +55,6 @@ module.exports = {
         type: 'asset/resource',
       },
       {
-        test: /\.worker\.(mjs|js|ts)$/,
-        use: [
-          {
-            loader: 'worker-loader',
-            options: {
-              filename: '[name].[contenthash].worker.js',
-            },
-          },
-          // {
-          //   loader: 'babel-loader',
-          // },
-        ],
-      },
-      {
         test: /\.(mjs|js|ts)$/,
         exclude: [/(node_modules)/, /(codecs)/],
         use: {

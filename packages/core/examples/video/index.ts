@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -54,16 +54,16 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
   }
 
   const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
+  const { rotation } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
@@ -77,9 +77,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVideoViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVideoViewport;
 
     // Set a range to highlight bones
     viewport.play();
@@ -93,9 +93,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVideoViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVideoViewport;
 
     // Set a range to highlight bones
     viewport.pause();
@@ -114,12 +114,12 @@ async function run() {
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
+  const videoId = imageIds.find((it) =>
+    it.includes('2.25.179478223177027022014772769075050874231')
   );
 
   // Instantiate a rendering engine
@@ -132,16 +132,16 @@ async function run() {
     type: ViewportType.VIDEO,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVideoViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVideoViewport;
 
   // Set the stack on the viewport
   await viewport.setVideo(videoId);

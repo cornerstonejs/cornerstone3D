@@ -1,12 +1,12 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
-  Types,
   cache,
   eventTarget,
   getWebWorkerManager,
   triggerEvent,
 } from '@cornerstonejs/core';
-import { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
+import type { SurfaceSegmentationData } from '../../../../types/SurfaceTypes';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
@@ -38,8 +38,8 @@ export async function convertSurfaceToVolumeLabelmap(
   geometryIds.forEach((geometryId, segmentIndex) => {
     const geometry = cache.getGeometry(geometryId);
     const geometryData = geometry.data as Types.ISurface;
-    const points = geometryData.getPoints();
-    const polys = geometryData.getPolys();
+    const points = geometryData.points;
+    const polys = geometryData.polys;
 
     segmentsInfo.set(segmentIndex, {
       points,
@@ -47,7 +47,8 @@ export async function convertSurfaceToVolumeLabelmap(
     });
   });
 
-  const { dimensions, direction, origin, spacing } = segmentationVolume;
+  const { dimensions, direction, origin, spacing, voxelManager } =
+    segmentationVolume;
 
   triggerWorkerProgress(eventTarget, 0);
 
@@ -70,13 +71,9 @@ export async function convertSurfaceToVolumeLabelmap(
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
-  segmentationVolume.imageData
-    .getPointData()
-    .getScalars()
-    .setData(newScalarData);
-  segmentationVolume.imageData.modified();
+  voxelManager.setCompleteScalarDataArray(newScalarData);
 
   // update the scalarData in the volume as well
   segmentationVolume.modified();

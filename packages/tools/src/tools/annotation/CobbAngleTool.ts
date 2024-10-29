@@ -25,7 +25,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -35,7 +35,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -43,19 +43,18 @@ import {
   ToolProps,
   InteractionTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
   angleStartedNotYetCompleted: boolean;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -175,7 +174,7 @@ class CobbAngleTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -254,7 +253,7 @@ class CobbAngleTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -299,7 +298,7 @@ class CobbAngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   }
@@ -347,7 +346,7 @@ class CobbAngleTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -474,7 +473,7 @@ class CobbAngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -502,7 +501,7 @@ class CobbAngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -707,7 +706,7 @@ class CobbAngleTool extends AnnotationTool {
       let activeHandleCanvasCoords;
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {

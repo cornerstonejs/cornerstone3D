@@ -1,6 +1,66 @@
-//import useBaseUrl from '@docusaurus/useBaseUrl';
+import typedocSidebarDicomImageLoader from './docs/api/typedoc-sidebar-dicom-image-loader.cjs';
+import typedocSidebarCore from './docs/api/typedoc-sidebar-core.cjs';
+import typedocSidebarTools from './docs/api/typedoc-sidebar-tools.cjs';
+import typedocSidebarNiftiVolumeLoader from './docs/api/typedoc-sidebar-nifti-volume-loader.cjs';
+import typedocSidebarAdapters from './docs/api/typedoc-sidebar-adapters.cjs';
 
 module.exports = {
+  typedocSidebar2: [
+    {
+      type: 'category',
+      label: 'Core API',
+      link: {
+        type: 'doc',
+        id: 'api/core/index',
+      },
+      items: typedocSidebarCore,
+    },
+  ],
+  typedocSidebar22: [
+    {
+      type: 'category',
+      label: 'Tools API',
+      link: {
+        type: 'doc',
+        id: 'api/tools/index',
+      },
+      items: typedocSidebarTools,
+    },
+  ],
+  typedocSidebar: [
+    {
+      type: 'category',
+      label: 'DICOM Image Loader API',
+      link: {
+        type: 'doc',
+        id: 'api/dicomImageLoader/index',
+      },
+      items: typedocSidebarDicomImageLoader,
+    },
+  ],
+
+  typedocSidebar3: [
+    {
+      type: 'category',
+      label: 'NIFTI Volume Loader API',
+      link: {
+        type: 'doc',
+        id: 'api/nifti-volume-loader/index',
+      },
+      items: typedocSidebarNiftiVolumeLoader,
+    },
+  ],
+  typedocSidebar4: [
+    {
+      type: 'category',
+      label: 'Adapters API',
+      link: {
+        type: 'doc',
+        id: 'api/adapters/index',
+      },
+      items: typedocSidebarAdapters,
+    },
+  ],
   docs: [
     {
       type: 'category',
@@ -83,16 +143,6 @@ module.exports = {
             'concepts/cornerstone-core/renderingEngine',
             'concepts/cornerstone-core/requestPoolManager',
             'concepts/cornerstone-core/webWorker',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Streaming Image Volume Loader',
-          collapsed: true,
-          link: { type: 'doc', id: 'concepts/streaming-image-volume/index' },
-          items: [
-            'concepts/streaming-image-volume/streaming',
-            'concepts/streaming-image-volume/re-order',
           ],
         },
         {
@@ -206,7 +256,18 @@ module.exports = {
         'contribute/linking',
       ],
     },
-    'migrationGuides',
+    {
+      type: 'category',
+      label: 'Migration Guides',
+      link: {
+        type: 'generated-index',
+        title: 'Migration Guides',
+        description:
+          'Guides to help you migrate to the latest version of cornerstone3D',
+      },
+      collapsed: true,
+      items: ['migration-guides/legacy-to-3d', 'migration-guides/1.x-to-2.x'],
+    },
     'faq',
     'help',
     {

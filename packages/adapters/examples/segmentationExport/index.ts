@@ -1,6 +1,7 @@
+/* eslint-disable */
+import type { Types } from "@cornerstonejs/core";
 import {
     RenderingEngine,
-    Types,
     Enums,
     setVolumesForViewports,
     volumeLoader,
@@ -27,8 +28,6 @@ console.warn(
 const { Cornerstone3D } = adaptersSEG;
 
 const {
-    SegmentationDisplayTool,
-    StackScrollMouseWheelTool,
     ToolGroupManager,
     Enums: csToolsEnums,
     segmentation
@@ -122,8 +121,7 @@ addButtonToToolbar({
         // Generate fake metadata as an example
         labelmapObj.metadata = [];
         labelmapObj.segmentsOnLabelmap.forEach(segmentIndex => {
-            const color = segmentation.config.color.getColorForSegmentIndex(
-                toolGroupId,
+            const color = segmentation.config.color.getSegmentIndexColor(
                 segUID,
                 segmentIndex
             );
@@ -184,10 +182,12 @@ function createMockEllipsoidSegmentation(
 
 async function addSegmentationsToState() {
     // Create a segmentation of the same resolution as the source data
-    segmentationVolume =
-        await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    segmentationVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
+        volumeId,
+        {
             volumeId: segmentationId
-        });
+        }
+    );
 
     // Add the segmentations to state
     segmentation.addSegmentations([
@@ -221,17 +221,8 @@ async function run() {
     // Init Cornerstone and related libraries
     await initDemo();
 
-    // Add tools to Cornerstone3D
-    cornerstoneTools.addTool(SegmentationDisplayTool);
-    cornerstoneTools.addTool(StackScrollMouseWheelTool);
-
     // Define tool groups to add the segmentation display tool to
     const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
     // Get Cornerstone imageIds for the source data and fetch metadata into RAM
     const imageIds = await createImageIdsAndCacheMetaData({
@@ -294,20 +285,32 @@ async function run() {
     volume.load();
 
     // Set volumes on the viewports
-    await setVolumesForViewports(
+    setVolumesForViewports(
         renderingEngine,
         [{ volumeId }],
         [viewportId1, viewportId2, viewportId3]
     );
 
-    // // Add the segmentation representation to the toolgroup
+    // // Add the segmentation representation to the viewport
     segmentationRepresentationUID =
-        await segmentation.addSegmentationRepresentations(toolGroupId, [
+        await segmentation.addSegmentationRepresentations(viewportId1, [
             {
                 segmentationId,
                 type: csToolsEnums.SegmentationRepresentations.Labelmap
             }
         ]);
+    await segmentation.addSegmentationRepresentations(viewportId2, [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+    await segmentation.addSegmentationRepresentations(viewportId3, [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
 
     // Render the image
     renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

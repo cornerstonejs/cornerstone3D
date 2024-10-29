@@ -1,9 +1,0 @@
-{
-  "extends": "../../api-extractor.json",
-  "projectFolder": ".",
-  "mainEntryPointFilePath": "<projectFolder>/dist/cjs/index.d.ts",
-  "apiReport": {
-    "reportFileName": "<unscopedPackageName>.api.md",
-    "reportFolder": "../../common/reviews/api"
-  }
-}

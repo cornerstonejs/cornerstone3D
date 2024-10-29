@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -49,6 +49,7 @@ const viewportIds = [
   viewportId4,
   viewportId5,
 ];
+
 let viewport;
 const viewports = [];
 const renderingEngineId = 'myRenderingEngine';
@@ -278,7 +279,7 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    viewport.setProperties({ rotation: value });
+    viewport.setViewPresentation({ rotation: value });
     viewport.render();
   },
 });

@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -19,7 +19,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { IStackViewport } from 'core/dist/types/types';
+import type { IStackViewport } from 'core/dist/esm/types';
 
 // This is for debugging purposes
 console.warn(
@@ -277,7 +277,7 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    viewport.setProperties({ rotation: value });
+    viewport.setViewPresentation({ rotation: value });
     viewport.render();
   },
 });

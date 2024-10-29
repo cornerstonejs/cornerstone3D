@@ -1,4 +1,4 @@
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 
 export default function (
   imageFrame: ByteArray,

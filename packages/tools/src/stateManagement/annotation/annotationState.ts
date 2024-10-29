@@ -1,16 +1,38 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
-import { Annotations, Annotation } from '../../types/AnnotationTypes';
-import { AnnotationGroupSelector } from '../../types';
-
+import type { Annotations, Annotation } from '../../types/AnnotationTypes';
+import type { AnnotationGroupSelector } from '../../types';
+import { getAnnotation } from './getAnnotation';
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
   triggerAnnotationRemoved,
 } from './helpers/state';
+import { checkAndSetAnnotationLocked } from './annotationLocking';
+import {
+  checkAndDefineCachedStatsProperty,
+  checkAndDefineTextBoxProperty,
+} from './utilities/defineProperties';
+import { checkAndSetAnnotationVisibility } from './annotationVisibility';
 
 // our default annotation manager
 let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
+
+const preprocessingFn = (annotation: Annotation) => {
+  annotation = checkAndDefineTextBoxProperty(annotation);
+  annotation = checkAndDefineCachedStatsProperty(annotation);
+
+  const uid = annotation.annotationUID;
+  const isLocked = checkAndSetAnnotationLocked(uid);
+  annotation.isLocked = isLocked;
+
+  const isVisible = checkAndSetAnnotationVisibility(uid);
+  annotation.isVisible = isVisible;
+
+  return annotation;
+};
+
+defaultManager.setPreprocessingFn(preprocessingFn);
 
 /**
  * It returns the default annotations manager.
@@ -167,7 +189,7 @@ function addAnnotation(
     // if no element is provided, render all viewports that have the
     // same frame of reference.
     // Todo: we should do something else here for other types of annotation managers.
-    manager.addAnnotation(annotation);
+    manager.addAnnotation(annotation, undefined);
     triggerAnnotationAddedForFOR(annotation);
   }
 
@@ -221,17 +243,6 @@ function removeAnnotation(annotationUID: string): void {
   manager.removeAnnotation(annotationUID);
 
   triggerAnnotationRemoved({ annotation, annotationManagerUID: manager.uid });
-}
-
-/**
- * Get the Annotation object by its UID
- * @param annotationUID - The unique identifier of the annotation.
- */
-function getAnnotation(annotationUID: string): Annotation {
-  const manager = getAnnotationManager();
-  const annotation = manager.getAnnotation(annotationUID);
-
-  return annotation;
 }
 
 /**
@@ -296,7 +307,6 @@ export {
   addChildAnnotation,
   getNumberOfAnnotations,
   addAnnotation,
-  getAnnotation,
   removeAnnotation,
   removeAnnotations,
   removeAllAnnotations,
@@ -305,4 +315,5 @@ export {
   getAnnotationManager,
   resetAnnotationManager,
   invalidateAnnotation,
+  getAnnotation,
 };

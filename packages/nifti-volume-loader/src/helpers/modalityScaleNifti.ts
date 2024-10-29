@@ -1,17 +1,6 @@
-import {
-  cache,
-  Enums,
-  getShouldUseSharedArrayBuffer,
-  utilities,
-  Types,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { cache, Enums } from '@cornerstonejs/core';
 import * as NIFTICONSTANTS from './niftiConstants';
-const {
-  createFloat32SharedArray,
-  createInt16SharedArray,
-  createUint8SharedArray,
-  createUint16SharedArray,
-} = utilities;
 /**
  * Given a pixel array, rescale the pixel values using the rescale slope and
  * intercept
@@ -135,43 +124,32 @@ function allocateScalarData(
 ): Types.PixelDataTypedArray {
   let bitsAllocated;
   let scalarData;
-  const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
   const nVox = niiBuffer.length;
   switch (types) {
     case 'Float32Array':
       bitsAllocated = 32;
       checkCacheAvailable(bitsAllocated, nVox);
-      scalarData = useSharedArrayBuffer
-        ? createFloat32SharedArray(nVox)
-        : new Float32Array(nVox);
+      scalarData = new Float32Array(nVox);
       break;
     case 'Int16Array':
       bitsAllocated = 16;
       checkCacheAvailable(bitsAllocated, nVox);
-      scalarData = useSharedArrayBuffer
-        ? createInt16SharedArray(nVox)
-        : new Int16Array(nVox);
+      scalarData = new Int16Array(nVox);
       break;
     case 'Int8Array':
       bitsAllocated = 8;
       checkCacheAvailable(bitsAllocated, nVox);
-      scalarData = useSharedArrayBuffer
-        ? createInt16SharedArray(nVox)
-        : new Int16Array(nVox);
+      scalarData = new Int16Array(nVox);
       break;
     case 'Uint16Array':
       bitsAllocated = 16;
       checkCacheAvailable(bitsAllocated, nVox);
-      scalarData = useSharedArrayBuffer
-        ? createUint16SharedArray(nVox)
-        : new Uint16Array(nVox);
+      scalarData = new Uint16Array(nVox);
       break;
     case 'Uint8Array':
       bitsAllocated = 8;
       checkCacheAvailable(bitsAllocated, nVox);
-      scalarData = useSharedArrayBuffer
-        ? createUint8SharedArray(nVox)
-        : new Uint8Array(nVox);
+      scalarData = new Uint8Array(nVox);
       break;
     default:
       throw new Error(`TypedArray ${types} is not yet supported`);

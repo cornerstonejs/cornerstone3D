@@ -195,10 +195,10 @@ enum Events {
 
   /**
    * Triggers on the event target when a new stack is set on its stack viewport.
-   * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for STACK_VIEWPORT_NEW_STACK event,
+   * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for VIEWPORT_NEW_IMAGE_SET event,
    * and see what event detail is included in {@link EventTypes.StackViewportNewStackEventDetail | StackViewportNewStack Event Detail }
    */
-  STACK_VIEWPORT_NEW_STACK = 'CORNERSTONE_STACK_VIEWPORT_NEW_STACK',
+  VIEWPORT_NEW_IMAGE_SET = 'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET',
 
   /**
    * Triggers on the element when the underlying StackViewport is scrolled.
@@ -217,11 +217,14 @@ enum Events {
    */
   GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
 
+  // removed
+  GEOMETRY_CACHE_GEOMETRY_REMOVED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_REMOVED',
+
   /**
    * Triggers when the scroll function is called with a delta that is out of bounds.
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
    */
-  VOLUME_SCROLL_OUT_OF_BOUNDS = 'VOLUME_SCROLL_OUT_OF_BOUNDS',
+  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS = 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
 
   /**
    * Triggers when the scroll function is called on a volume.
@@ -250,6 +253,32 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
    */
   COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
+
+  /**
+   * Dynamic image volume time point index changed
+   */
+  DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
+
+  /**
+   * Dynamic image volume time point loaded
+   */
+  DYNAMIC_VOLUME_TIME_POINT_LOADED = 'DYNAMIC_VOLUME_TIME_POINT_LOADED',
+
+  /**
+   * Triggers on the eventTarget when a geometry has successfully loaded by geometryLoaders
+   *
+   * Make use of {@link EventTypes.GeometryLoadedEvent | GeometryLoaded Event Type } for typing your event listeners for GEOMETRY_LOADED event,
+   * and see what event detail is included in {@link EventTypes.GeometryLoadedEventDetail | GeometryLoaded Event Detail }
+   */
+  GEOMETRY_LOADED = 'GEOMETRY_LOADED',
+
+  /**
+   * Triggers on the eventTarget when a geometry has failed loading by geometryLoaders
+   *
+   * Make use of {@link EventTypes.GeometryLoadedFailedEvent | GeometryLoadedFailed Event Type } for typing your event listeners for GEOMETRY_LOADED_FAILED event,
+   * and see what event detail is included in {@link EventTypes.GeometryLoadedFailedEventDetail | GeometryLoadedFailed Event Detail }
+   */
+  GEOMETRY_LOADED_FAILED = 'GEOMETRY_LOADED_FAILED',
 }
 
 export default Events;

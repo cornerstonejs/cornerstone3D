@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 
 import {
   getEnabledElement,
@@ -23,10 +23,9 @@ import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { roundNumber } from '../../utilities';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -34,19 +33,17 @@ import {
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import {
-  ModalityUnitOptions,
-  getModalityUnit,
-} from '../../utilities/getModalityUnit';
+import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -97,10 +94,8 @@ const { transformWorldToIndex } = csUtils;
 class ProbeTool extends AnnotationTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     newAnnotation?: boolean;
   } | null;
@@ -149,7 +144,7 @@ class ProbeTool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
     const camera = viewport.getCamera();
@@ -158,8 +153,7 @@ class ProbeTool extends AnnotationTool {
     const referencedImageId = this.getReferencedImageId(
       viewport,
       worldPos,
-      viewPlaneNormal,
-      viewUp
+      viewPlaneNormal
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -199,7 +193,7 @@ class ProbeTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -265,7 +259,7 @@ class ProbeTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   }
@@ -296,7 +290,7 @@ class ProbeTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -312,13 +306,13 @@ class ProbeTool extends AnnotationTool {
     const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
-    data.handles.points[0] = [...worldPos];
+    data.handles.points[0] = [...worldPos] as Types.Point3;
     annotation.invalidated = true;
 
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -334,12 +328,7 @@ class ProbeTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -537,7 +526,7 @@ class ProbeTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const modalityUnitOptions = {
+      const pixelUnitsOptions = {
         isPreScaled: isViewportPreScaled(viewport, targetId),
         isSuvScaled: this.isSuvScaled(
           viewport,
@@ -546,7 +535,7 @@ class ProbeTool extends AnnotationTool {
         ),
       };
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -555,78 +544,57 @@ class ProbeTool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata } = image;
-      const scalarData =
-        'getScalarData' in image ? image.getScalarData() : image.scalarData;
+      const { dimensions, imageData, metadata, voxelManager } = image;
 
       const modality = metadata.Modality;
-      const index = transformWorldToIndex(imageData, worldPos);
+      let ijk = transformWorldToIndex(imageData, worldPos);
 
-      index[0] = Math.round(index[0]);
-      index[1] = Math.round(index[1]);
-      index[2] = Math.round(index[2]);
+      ijk = vec3.round(ijk, ijk);
 
-      const samplesPerPixel =
-        scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
-
-      if (csUtils.indexWithinDimensions(index, dimensions)) {
+      if (csUtils.indexWithinDimensions(ijk, dimensions)) {
         this.isHandleOutsideImage = false;
-        const yMultiple = dimensions[0] * samplesPerPixel;
-        const zMultiple = dimensions[0] * dimensions[1] * samplesPerPixel;
 
-        const baseIndex =
-          index[2] * zMultiple +
-          index[1] * yMultiple +
-          index[0] * samplesPerPixel;
-        let value =
-          samplesPerPixel > 2
-            ? [
-                scalarData[baseIndex],
-                scalarData[baseIndex + 1],
-                scalarData[baseIndex + 2],
-              ]
-            : scalarData[baseIndex];
+        let value = voxelManager.getAtIJKPoint(ijk);
 
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index
         if (targetId.startsWith('imageId:')) {
           const imageId = targetId.split('imageId:')[1];
           const imageURI = csUtils.imageIdToURI(imageId);
-          const viewports = csUtils.getViewportsWithImageURI(
-            imageURI,
-            renderingEngineId
-          );
+          const viewports = csUtils.getViewportsWithImageURI(imageURI);
 
           const viewport = viewports[0];
 
-          index[2] = viewport.getCurrentImageIdIndex();
+          ijk[2] = viewport.getCurrentImageIdIndex();
         }
 
         let modalityUnit;
 
         if (modality === 'US') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
-            index,
+            ijk,
           ]);
 
           const hasEnhancedRegionValues = calibratedResults.values.every(
             (value) => value !== null
           );
 
-          value = hasEnhancedRegionValues ? calibratedResults.values : value;
+          value = (
+            hasEnhancedRegionValues ? calibratedResults.values : value
+          ) as number;
           modalityUnit = hasEnhancedRegionValues
             ? calibratedResults.units
             : 'raw';
         } else {
-          modalityUnit = getModalityUnit(
+          modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
-            modalityUnitOptions
+            pixelUnitsOptions
           );
         }
 
         cachedStats[targetId] = {
-          index,
+          index: ijk,
           value,
           Modality: modality,
           modalityUnit,
@@ -634,7 +602,7 @@ class ProbeTool extends AnnotationTool {
       } else {
         this.isHandleOutsideImage = true;
         cachedStats[targetId] = {
-          index,
+          index: ijk,
           Modality: modality,
         };
       }
@@ -663,10 +631,10 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (value instanceof Array && modalityUnit instanceof Array) {
     for (let i = 0; i < value.length; i++) {
-      textLines.push(`${roundNumber(value[i])} ${modalityUnit[i]}`);
+      textLines.push(`${csUtils.roundNumber(value[i])} ${modalityUnit[i]}`);
     }
   } else {
-    textLines.push(`${roundNumber(value)} ${modalityUnit}`);
+    textLines.push(`${csUtils.roundNumber(value)} ${modalityUnit}`);
   }
 
   return textLines;

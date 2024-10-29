@@ -2,8 +2,7 @@ import {
   RenderingEngine,
   Enums,
   CONSTANTS,
-  Types,
-  geometryLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,6 +12,8 @@ import {
   createInfoSection,
   downloadSurfacesData,
   addManipulationBindings,
+  addLabelToToolbar,
+  createAndCacheGeometriesFromSurfaces,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -22,7 +23,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -92,7 +92,7 @@ addButtonToToolbar({
   title: 'Convert surface to labelmap',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addSegmentationRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -106,6 +106,21 @@ addButtonToToolbar({
   },
 });
 
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
+});
+
 /**
  * Runs the demo
  */
@@ -114,7 +129,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -125,12 +139,6 @@ async function run() {
   addManipulationBindings(toolGroup2);
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   let imageIds = await createImageIdsAndCacheMetaData({
@@ -175,21 +183,7 @@ async function run() {
 
   const surfaces = await downloadSurfacesData();
 
-  const geometriesInfo = surfaces.reduce(
-    (acc: Map<number, string>, surface, index) => {
-      const geometryId = surface.closedSurface.id;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: Enums.GeometryType.SURFACE,
-        geometryData: surface.closedSurface as Types.PublicSurfaceData,
-      });
-
-      const segmentIndex = index + 1;
-      acc.set(segmentIndex, geometryId);
-
-      return acc;
-    },
-    new Map()
-  );
+  const geometriesInfo = createAndCacheGeometriesFromSurfaces(surfaces);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -207,8 +201,8 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,

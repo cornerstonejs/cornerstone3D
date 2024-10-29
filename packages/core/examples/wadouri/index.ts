@@ -1,16 +1,15 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
+  init as csRenderInit,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   setTitleAndDescription,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
-import initCornerstoneDICOMImageLoader from '../../../../utils/demo/helpers/initCornerstoneDICOMImageLoader';
-import { init as csRenderInit } from '@cornerstonejs/core';
 
 // This is for debugging purposes
 console.warn(
@@ -72,9 +71,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     viewport.setStack([ctImageId]);
   },
@@ -87,9 +86,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     viewport.setStack([ptImageId]);
   },
@@ -99,7 +98,6 @@ addButtonToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  initCornerstoneDICOMImageLoader();
   await csRenderInit();
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -110,16 +108,16 @@ async function run() {
     type: ViewportType.STACK,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   // Define a stack containing a single image
   const stack = [ctImageId];

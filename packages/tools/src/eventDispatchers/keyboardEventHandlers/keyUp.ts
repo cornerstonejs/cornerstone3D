@@ -1,7 +1,7 @@
 import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener';
-import { ToolGroupManager } from '../../store';
 import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
-import { KeyDownEventType } from '../../types/EventTypes';
+import type { KeyDownEventType } from '../../types/EventTypes';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 /**
  * KeyDown event listener to handle viewport cursor icon changes
@@ -18,10 +18,7 @@ export default function keyUp(evt: KeyDownEventType): void {
 
   const { renderingEngineId, viewportId } = evt.detail;
 
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   // Reset the modifier key
   resetModifierKey();

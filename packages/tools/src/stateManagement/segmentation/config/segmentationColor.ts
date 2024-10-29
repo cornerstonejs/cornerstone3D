@@ -1,101 +1,91 @@
-import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
+import { addColorLUT as _addColorLUT } from '../addColorLUT';
+import { getColorLUT as _getColorLUT } from '../getColorLUT';
+import { getSegmentationRepresentations } from '../getSegmentationRepresentation';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
  * If no colorLUT is provided, a new color LUT is generated.
  *
- * @param colorLUTIndex - the index of the colorLUT in the state
  * @param colorLUT - An array of The colorLUT to set.
- * @returns
+ * @param colorLUTIndex - the index of the colorLUT in the state
+ * @returns The index of the color LUT that was added.
  */
-function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex: number): void {
+function addColorLUT(colorLUT: Types.ColorLUT, colorLUTIndex?: number): number {
   if (!colorLUT) {
     throw new Error('addColorLUT: colorLUT is required');
   }
 
-  // Append the "zero" (no label) color to the front of the LUT, if necessary.
-  if (!utilities.isEqual(colorLUT[0], [0, 0, 0, 0])) {
-    console.warn(
-      'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
-    );
-    colorLUT.unshift([0, 0, 0, 0]);
-  }
-
-  SegmentationState.addColorLUT(colorLUT, colorLUTIndex);
+  return _addColorLUT(colorLUT, colorLUTIndex);
 }
 
 /**
- * It sets the toolGroup's segmentationRepresentation to use the provided
- * colorLUT at the given colorLUTIndex.
- * @param toolGroupId - the id of the toolGroup that renders the representation
- * @param segmentationRepresentationUID - the representationUID for the segmentation
- * @param colorLUTIndex - the index of the colorLUT to use
+ * Sets the color LUT index for a segmentation in a specific viewport.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param colorLUTIndex - The index of the color LUT to set.
  */
 function setColorLUT(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
-  colorLUTIndex: number
+  viewportId: string,
+  segmentationId: string,
+  colorLUTsIndex: number
 ): void {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationUID
-    );
-
-  if (!segRepresentation) {
+  if (!_getColorLUT(colorLUTsIndex)) {
     throw new Error(
-      `setColorLUT: could not find segmentation representation with UID ${segmentationRepresentationUID}`
+      `setColorLUT: could not find colorLUT with index ${colorLUTsIndex}`
     );
   }
 
-  if (!SegmentationState.getColorLUT(colorLUTIndex)) {
-    throw new Error(
-      `setColorLUT: could not find colorLUT with index ${colorLUTIndex}`
-    );
-  }
-
-  segRepresentation.colorLUTIndex = colorLUTIndex;
-
-  triggerSegmentationRepresentationModified(
-    toolGroupId,
-    segmentationRepresentationUID
+  const segmentationRepresentations = getSegmentationRepresentations(
+    viewportId,
+    { segmentationId }
   );
+
+  if (!segmentationRepresentations) {
+    throw new Error(
+      `viewport specific state for viewport ${viewportId} does not exist`
+    );
+  }
+
+  segmentationRepresentations.forEach((segmentationRepresentation) => {
+    segmentationRepresentation.colorLUTIndex = colorLUTsIndex;
+  });
+
+  triggerSegmentationRepresentationModified(viewportId, segmentationId);
 }
 
 /**
- * Given a tool group UID, a segmentation representationUID, and a segment index, return the
+ * Given a segmentation representationUID and a segment index, return the
  * color for that segment. It can be used for segmentation tools that need to
  * display the color of their annotation.
  *
- * @param toolGroupId - The Id of the tool group that owns the segmentation representation.
- * @param segmentationRepresentationUID - The uid of the segmentation representation
+ * @param viewportId - The id of the viewport
+ * @param segmentationId - The id of the segmentation
  * @param segmentIndex - The index of the segment in the segmentation
  * @returns A color.
  */
-function getColorForSegmentIndex(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
+function getSegmentIndexColor(
+  viewportId: string,
+  segmentationId: string,
   segmentIndex: number
 ): Types.Color {
-  const segmentationRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationUID
-    );
+  const representations = getSegmentationRepresentations(viewportId, {
+    segmentationId,
+  });
 
-  if (!segmentationRepresentation) {
+  if (!representations) {
     throw new Error(
-      `segmentation representation with UID ${segmentationRepresentationUID} does not exist for tool group ${toolGroupId}`
+      `segmentation representation with segmentationId ${segmentationId} does not exist`
     );
   }
 
-  const { colorLUTIndex } = segmentationRepresentation;
+  const representation = representations[0];
+
+  const { colorLUTIndex } = representation;
 
   // get colorLUT
-  const colorLUT = SegmentationState.getColorLUT(colorLUTIndex);
+  const colorLUT = _getColorLUT(colorLUTIndex);
   let colorValue = colorLUT[segmentIndex];
   if (!colorValue) {
     if (typeof segmentIndex !== 'number') {
@@ -106,16 +96,36 @@ function getColorForSegmentIndex(
   return colorValue;
 }
 
-function setColorForSegmentIndex(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
+/**
+ * Sets the color for a specific segment in a segmentation.
+ *
+ * @param viewportId - The ID of the viewport containing the segmentation.
+ * @param segmentationId - The ID of the segmentation to modify.
+ * @param segmentIndex - The index of the segment to change the color for.
+ * @param color - The new color to set for the segment.
+ *
+ * @remarks
+ * This function modifies the color of a specific segment in the color lookup table (LUT)
+ * for the given segmentation. It directly updates the color reference in the LUT,
+ * ensuring that all representations of this segmentation will reflect the new color.
+ * After updating the color, it triggers a segmentation modified event to notify
+ * listeners of the change.
+ *
+ * @example
+ * ```typescript
+ * setSegmentIndexColor('viewport1', 'segmentation1', 2, [255, 0, 0, 255]);
+ * ```
+ */
+function setSegmentIndexColor(
+  viewportId: string,
+  segmentationId: string,
   segmentIndex: number,
   color: Types.Color
 ): void {
   // Get the reference to the color in the colorLUT.
-  const colorReference = getColorForSegmentIndex(
-    toolGroupId,
-    segmentationRepresentationUID,
+  const colorReference = getSegmentIndexColor(
+    viewportId,
+    segmentationId,
     segmentIndex
   );
 
@@ -124,15 +134,7 @@ function setColorForSegmentIndex(
     colorReference[i] = color[i];
   }
 
-  triggerSegmentationRepresentationModified(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
+  triggerSegmentationRepresentationModified(viewportId, segmentationId);
 }
 
-export {
-  getColorForSegmentIndex,
-  addColorLUT,
-  setColorLUT,
-  setColorForSegmentIndex,
-};
+export { getSegmentIndexColor, addColorLUT, setColorLUT, setSegmentIndexColor };

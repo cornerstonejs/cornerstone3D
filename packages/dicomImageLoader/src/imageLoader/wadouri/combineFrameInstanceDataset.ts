@@ -38,7 +38,9 @@ function getFrameInformation(
   (SharedFunctionalGroupsSequence
     ? Object.values(SharedFunctionalGroupsSequence.items[0].dataSet.elements)
     : []
-  ).map((it: any) => (shared[it.tag] = it));
+  )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((it: any) => (shared[it.tag] = it));
 
   const perFrame = {};
 
@@ -47,7 +49,9 @@ function getFrameInformation(
         PerFrameFunctionalGroupsSequence.items[frameNumber - 1].dataSet.elements
       )
     : []
-  ).map((it: any) => (perFrame[it.tag] = it));
+  )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((it: any) => (perFrame[it.tag] = it));
 
   return {
     shared,

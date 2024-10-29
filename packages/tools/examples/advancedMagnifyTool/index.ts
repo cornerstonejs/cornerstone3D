@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   cache,
   volumeLoader,
@@ -13,7 +13,7 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -23,7 +23,7 @@ console.warn(
 
 const {
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   LengthTool,
   HeightTool,
   ProbeTool,
@@ -36,7 +36,6 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   AdvancedMagnifyTool,
-  SegmentationDisplayTool,
   segmentation,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -175,10 +174,12 @@ async function addSegmentationsToState(volumeId: string) {
   }
 
   // Create a segmentation of the same resolution as the source data
-  segmentationVolume =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  segmentationVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
+    volumeId,
+    {
       volumeId: segmentationId,
-    });
+    }
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -197,7 +198,7 @@ async function addSegmentationsToState(volumeId: string) {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume.volumeId,
     cornerstone,
   });
@@ -270,7 +271,7 @@ async function initializeViewport(
     );
 
     // Add the segmentation representations to toolgroup1
-    await segmentation.addSegmentationRepresentations(toolGroup.id, [
+    await segmentation.addSegmentationRepresentations(viewport.id, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -294,7 +295,7 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
 
   // Add the tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
@@ -306,11 +307,6 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(AdvancedMagnifyTool.toolName);
-
-  if (segmentationEnabled) {
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  }
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -350,7 +346,13 @@ function initializeToolGroup(toolGroupId, segmentationEnabled = true) {
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
@@ -374,11 +376,8 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-
-  // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);

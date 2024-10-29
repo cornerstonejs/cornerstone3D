@@ -1,7 +1,7 @@
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
-import {
+import type { EventTypes } from '../../types';
+import type {
   ToolAnnotationPair,
   ToolsWithMoveableHandles,
 } from '../../types/InternalToolTypes';
@@ -72,7 +72,7 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
   const activeToolsWithEventBinding = getToolsWithModesForMouseEvent(
     evt,
     [Active],
-    evt.detail.event.buttons
+    evt.detail.event.buttons as number
   );
   const passiveToolsIfEventWasPrimaryMouseButton = isPrimaryClick
     ? getToolsWithModesForMouseEvent(evt, [Passive])
@@ -171,15 +171,19 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
 function getAnnotationForSelection(
   toolsWithMovableHandles: ToolAnnotationPair[]
 ): ToolAnnotationPair {
-  return (
-    (toolsWithMovableHandles.length > 1 &&
-      toolsWithMovableHandles.find(
-        (item) =>
-          !isAnnotationLocked(item.annotation) &&
-          isAnnotationVisible(item.annotation.annotationUID)
-      )) ||
-    toolsWithMovableHandles[0]
-  );
+  if (toolsWithMovableHandles.length > 1) {
+    const unlockAndVisibleAnnotation = toolsWithMovableHandles.find((item) => {
+      const isUnlocked = !isAnnotationLocked(item.annotation.annotationUID);
+      const isVisible = isAnnotationVisible(item.annotation.annotationUID);
+      return isUnlocked && isVisible;
+    });
+
+    if (unlockAndVisibleAnnotation) {
+      return unlockAndVisibleAnnotation;
+    }
+  }
+
+  return toolsWithMovableHandles[0];
 }
 
 /**

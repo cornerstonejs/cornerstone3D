@@ -1,10 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  getRenderingEngine,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
@@ -13,7 +12,7 @@ import {
   setTitleAndDescription,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -22,7 +21,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -38,7 +36,6 @@ const segmentationId1 = 'SEGMENTATION_ID_1';
 const toolGroupId = 'MY_ TOOL_GROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_AXIAL_STACK';
-let segmentationRepresentationUID;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -66,15 +63,14 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment1FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentSpecificConfig(
-      toolGroupId,
-      segmentationRepresentationUID,
+    segmentation.config.style.setStyle(
       {
-        1: {
-          LABELMAP: {
-            fillAlpha: segment1FillAlpha,
-          },
-        },
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        segmentIndex: 1,
+      },
+      {
+        fillAlpha: segment1FillAlpha,
       }
     );
   },
@@ -87,15 +83,14 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     segment2FillAlpha = Number(value) / 100;
 
-    segmentation.config.setSegmentSpecificConfig(
-      toolGroupId,
-      segmentationRepresentationUID,
+    segmentation.config.style.setStyle(
       {
-        2: {
-          LABELMAP: {
-            fillAlpha: segment2FillAlpha,
-          },
-        },
+        segmentationId: segmentationId1,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        segmentIndex: 2,
+      },
+      {
+        fillAlpha: segment2FillAlpha,
       }
     );
   },
@@ -106,7 +101,7 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId1,
     });
 
@@ -127,7 +122,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume1.volumeId,
     cornerstone,
   });
@@ -141,13 +136,9 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -192,14 +183,13 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // // Add the segmentation representations to the toolgroup
-  [segmentationRepresentationUID] =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
-      {
-        segmentationId: segmentationId1,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+  // // Add the segmentation representations to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId, [
+    {
+      segmentationId: segmentationId1,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   // Render the image
   renderingEngine.renderViewports([viewportId]);

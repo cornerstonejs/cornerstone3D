@@ -10,7 +10,7 @@ import Angle from "./Angle";
 import RectangleRoi from "./RectangleRoi";
 
 // Segmentation
-import Segmentation from "./Segmentation";
+import * as Segmentation from "./Segmentation";
 
 // Parametric Map
 import ParametricMap from "./ParametricMap";

@@ -1,4 +1,4 @@
-import { ScalingParameters } from '../types';
+import type { ScalingParameters } from '../types';
 
 /**
  * Checks if the scaling parameters contain a float rescale value.

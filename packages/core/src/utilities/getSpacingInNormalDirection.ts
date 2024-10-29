@@ -1,5 +1,6 @@
-import { mat3, vec3 } from 'gl-matrix';
-import { IImageVolume, Point3 } from '../types';
+import type { mat3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
+import type { IImageVolume, Point3 } from '../types';
 
 /**
  * Given an `imageVolume` and a normal direction (`viewPlaneNormal`), calculates
@@ -24,9 +25,9 @@ export default function getSpacingInNormalDirection(
   const kVector = direction.slice(6, 9) as Point3;
 
   const dotProducts = [
-    vec3.dot(iVector, <vec3>viewPlaneNormal),
-    vec3.dot(jVector, <vec3>viewPlaneNormal),
-    vec3.dot(kVector, <vec3>viewPlaneNormal),
+    vec3.dot(iVector, viewPlaneNormal as vec3),
+    vec3.dot(jVector, viewPlaneNormal as vec3),
+    vec3.dot(kVector, viewPlaneNormal as vec3),
   ];
 
   const projectedSpacing = vec3.create();

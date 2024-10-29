@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -12,7 +12,9 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
+import { SegmentationRepresentations } from '../../src/enums';
+import { triggerSegmentationDataModified } from '../../src/stateManagement/segmentation/triggerSegmentationEvents';
 
 // This is for debugging purposes
 console.warn(
@@ -20,7 +22,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -65,37 +66,6 @@ viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
-// ============================= //
-
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
-    volumeId: segmentationId,
-  });
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        // The type of segmentation
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
-        data: {
-          volumeId: segmentationId,
-        },
-      },
-    },
-  ]);
-
-  // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
-    volumeId: segmentationId,
-    cornerstone,
-  });
-}
-
 /**
  * Runs the demo
  */
@@ -103,14 +73,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -125,9 +89,6 @@ async function run() {
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
-
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -177,23 +138,51 @@ async function run() {
   // Set the volume to load
   volume.load();
 
+  const viewportIds = [viewportId1, viewportId2, viewportId3];
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2, viewportId3]
-  );
-
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+
+  // Add some segmentations based on the source data volume
+  // ============================= //
+
+  // Create a segmentation of the same resolution as the source data
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add some data to the segmentations
+  fillVolumeLabelmapWithMockData({
+    volumeId: segmentationId,
+    cornerstone,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: SegmentationRepresentations.Labelmap,
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+
+  const segmentationRepresentation = {
+    segmentationId,
+  };
+
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportIds[0]]: [segmentationRepresentation],
+    [viewportIds[1]]: [segmentationRepresentation],
+    [viewportIds[2]]: [segmentationRepresentation],
+  });
+
+  triggerSegmentationDataModified(segmentationId);
 }
 
 run();

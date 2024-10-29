@@ -46,7 +46,6 @@ jobs:
           paths:
             - packages/core/dist
             - packages/tools/dist
-            - packages/streaming-image-volume-loader/dist
             - packages/adapters/dist
             - packages/dicomImageLoader/dist
             - packages/nifti-volume-loader/dist
@@ -60,6 +59,12 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run: yarn run api-check
+  FORMAT_CHECK:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: yarn run format-check
 
   # https://circleci.com/docs/2.0/collect-test-data/#karma
   TEST:
@@ -129,6 +134,9 @@ workflows:
       - BUILD:
           requires:
             - CHECKOUT
+      - FORMAT_CHECK:
+          requires:
+            - BUILD
       - API_CHECK:
           requires:
             - BUILD
@@ -144,16 +152,19 @@ workflows:
             branches:
               only:
                 - main
-                - beta
+                # - beta
       - BUILD:
           requires:
             - CHECKOUT
+      - HOLD_FOR_APPROVAL:
+          type: approval
+          requires:
+            - BUILD
       - TEST:
           requires:
             - CHECKOUT
       - NPM_PUBLISH:
           requires:
-            - BUILD
-            - TEST
+            - HOLD_FOR_APPROVAL
 
 # VS Code Extension Version: 1.5.1

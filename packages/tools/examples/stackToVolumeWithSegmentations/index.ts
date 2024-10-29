@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
   utilities as csUtils,
@@ -23,10 +23,10 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  SegmentationDisplayTool,
+
   ToolGroupManager,
   BrushTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   segmentation,
   Enums: csToolsEnums,
   utilities,
@@ -86,8 +86,6 @@ addButtonToToolbar({
 
     let newViewport;
     if (viewport.type === ViewportType.STACK) {
-      segmentation.state.removeSegmentationRepresentations(volumeToolGroupId);
-
       newViewport = await csUtils.convertStackToVolumeViewport({
         viewport: viewport as Types.IStackViewport,
         options: {
@@ -99,14 +97,6 @@ addButtonToToolbar({
       if (volumeToolGroup) {
         volumeToolGroup.addViewport(newViewport.id, renderingEngineId);
       }
-
-      segmentation.convertStackToVolumeSegmentation({
-        segmentationId,
-        options: {
-          toolGroupId: volumeToolGroupId,
-          volumeId: `cornerstoneStreamingImageVolume:segMyVolume`,
-        },
-      });
 
       if (volumeToolGroup) {
         volumeToolGroup.addViewport(newViewport.id, renderingEngineId);
@@ -121,19 +111,10 @@ addButtonToToolbar({
         });
       }
     } else {
-      segmentation.state.removeSegmentationRepresentations(stackToolGroupId);
-
       newViewport = await csUtils.convertVolumeToStackViewport({
         viewport: viewport as Types.IVolumeViewport,
         options: {
           background: <Types.Point3>[0.4, 0, 0.4],
-        },
-      });
-
-      segmentation.convertVolumeToStackSegmentation({
-        segmentationId,
-        options: {
-          toolGroupId: stackToolGroupId,
         },
       });
 
@@ -215,10 +196,9 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -228,10 +208,9 @@ async function run() {
 
   [stackToolGroup, volumeToolGroup].forEach((toolGroup) => {
     // Add the tools to the tool group
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
     toolGroup.addToolInstance('CircularBrush', BrushTool.toolName, {
       activeStrategy: 'FILL_INSIDE_CIRCLE',
     });
@@ -254,8 +233,9 @@ async function run() {
         },
       ],
     });
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Wheel }],
+    });
 
     utilities.segmentation.setBrushSizeForToolGroup(
       toolGroup.id,
@@ -329,12 +309,9 @@ async function _startFromVolume(
 
   renderingEngine.render();
 
-  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
-    volumeId,
-    {
-      volumeId: segmentationVolumeId,
-    }
-  );
+  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationVolumeId,
+  });
 
   await segmentation.addSegmentations([
     {
@@ -347,29 +324,23 @@ async function _startFromVolume(
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
+  // Add the segmentation representation to the viewport
   await segmentation.addSegmentationRepresentations(volumeToolGroupId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender(volumeToolGroupId);
 }
 
 async function _startFromStack(
   imageIds: string[],
   renderingEngine: RenderingEngine
 ) {
-  stackToolGroup.setToolActive('CircularBrush', {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-  const { imageIds: segmentationImageIds } =
+  const derivedImages =
     await cornerstone.imageLoader.createAndCacheDerivedImages(imageIds);
+
+  const segmentationImageIds = derivedImages.map((image) => image.imageId);
 
   // Instantiate a rendering engine
   // Create a stack viewport
@@ -410,21 +381,25 @@ async function _startFromStack(
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: utilities.segmentation.createImageIdReferenceMap(
-            imageIds,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(stackToolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-  utilities.segmentation.triggerSegmentationRender(stackToolGroupId);
+
+  stackToolGroup.setToolActive('CircularBrush', {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
 }

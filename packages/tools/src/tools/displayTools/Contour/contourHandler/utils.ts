@@ -1,41 +1,8 @@
-import { Enums, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import { ToolGroupSpecificContourRepresentation } from '../../../../types';
-
-/**
- * If the segment specific config exists for the given segment id, it returns
- * the segment specific config. Otherwise, it looks for the segment specific
- * config for the given index. If it doesn't exist, it returns null.
- *
- * @param contourRepresentation -  The representation object that is passed
- * to the tool.
- * @param segmentId -  The id of the segment.
- * @param index -  The index of the segment in the list of segments.
- * @returns the segment specific config for the given segment id.
- *
- */
-export function getSegmentSpecificConfig(
-  contourRepresentation: ToolGroupSpecificContourRepresentation,
-  segmentId: string,
-  index: number
-) {
-  let segmentSpecificConfig =
-    contourRepresentation.segmentSpecificConfig?.[segmentId];
-
-  if (!segmentSpecificConfig) {
-    // try the index
-    segmentSpecificConfig =
-      contourRepresentation.segmentSpecificConfig?.[index];
-  }
-
-  if (!segmentSpecificConfig) {
-    return null;
-  }
-
-  return segmentSpecificConfig.CONTOUR;
-}
 
 /**
  * takes a geometry object as an argument
@@ -80,10 +47,10 @@ export function getPolyData(contourSet: Types.IContourSet) {
   // this variable will indicate the index of the first point in the current line
   // so we can correctly generate the point index list to add in the cellArray
   let pointIndex = 0;
-  contourSet.getContours().forEach((contour: Types.IContour) => {
-    const pointList = contour.getPoints();
-    const flatPoints = contour.getFlatPointsArray();
-    const type = contour.getType();
+  contourSet.contours.forEach((contour: Types.IContour) => {
+    const pointList = contour.points;
+    const flatPoints = contour.flatPointsArray;
+    const type = contour.type;
 
     // creating a point index list that defines a line
     const pointIndexes = pointList.map(

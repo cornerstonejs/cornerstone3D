@@ -1,5 +1,5 @@
 import type { IViewport } from '../../types/IViewport';
-import type { ICanvasActor } from '../../types/IActor';
+
 import CanvasProperties from './CanvasProperties';
 import CanvasMapper from './CanvasMapper';
 
@@ -10,7 +10,7 @@ import CanvasMapper from './CanvasMapper';
  * or be an RLE based one.  The RLE based ones are significantly faster to
  * render as they only render the area actually relevant.
  */
-export default class CanvasActor implements ICanvasActor {
+export default class CanvasActor {
   private image;
   private derivedImage;
   private canvasProperties = new CanvasProperties(this);
@@ -118,7 +118,8 @@ export default class CanvasActor implements ICanvasActor {
     const { voxelManager } = image;
     if (voxelManager) {
       if (voxelManager.map.getRun) {
-        return this.renderRLE(viewport, context, voxelManager);
+        this.renderRLE(viewport, context, voxelManager);
+        return;
       }
     }
     let { canvas } = this;

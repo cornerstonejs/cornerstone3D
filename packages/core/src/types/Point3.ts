@@ -6,10 +6,10 @@ export type Point3 = [number, number, number];
 /**
  * Some algorithms use separated values
  */
-export type PointsXYZ = {
+export interface PointsXYZ {
   x: number[];
   y: number[];
   z: number[];
-};
+}
 
-export default Point3;
+export type { Point3 as default };

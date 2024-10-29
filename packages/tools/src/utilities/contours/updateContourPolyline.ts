@@ -1,12 +1,12 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import type { ContourAnnotation } from '../../types';
 import type { ContourWindingDirection } from '../../types/ContourAnnotation';
 import * as math from '../math';
 import {
   getParentAnnotation,
   invalidateAnnotation,
-} from '../../stateManagement';
+} from '../../stateManagement/annotation/annotationState';
 
 /**
  * Update the contour polyline data
@@ -86,6 +86,10 @@ export default function updateContourPolyline(
 
   if (windingDirection !== currentPolylineWindingDirection) {
     polyline.reverse();
+  }
+
+  if (!data.handles?.points?.length) {
+    return;
   }
 
   const handlePoints = data.handles.points.map((p) => worldToCanvas(p));

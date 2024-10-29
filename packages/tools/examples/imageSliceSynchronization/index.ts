@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setVolumesForViewports,
@@ -22,7 +22,7 @@ const {
   WindowLevelTool,
   ZoomTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
   synchronizers,
   SynchronizerManager,
@@ -104,7 +104,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -115,7 +115,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName, { volumeId });
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
@@ -142,7 +142,9 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Create synchronizers
   createImageSliceSynchronizer(imageSliceSync);

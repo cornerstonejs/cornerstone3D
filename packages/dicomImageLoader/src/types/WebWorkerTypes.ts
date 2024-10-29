@@ -1,7 +1,7 @@
-import { ByteArray } from 'dicom-parser';
-import ImageFrame from './ImageFrame';
-import { LoaderOptions } from './LoaderOptions';
-import { LoaderDecodeOptions } from './LoaderDecodeOptions';
+import type { ByteArray } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core';
+import type { LoaderOptions } from './LoaderOptions';
+import type { LoaderDecodeOptions } from './LoaderDecodeOptions';
 
 export interface WebWorkerOptions {
   maxWebWorkers?: number;
@@ -19,9 +19,9 @@ export interface WebWorkerTaskOptions {
   decodeTask: WebWorkerDecodeConfig;
 }
 
-export interface WebWorkerDeferredObject<T = any> {
+export interface WebWorkerDeferredObject<T = unknown> {
   resolve: (arg: T | PromiseLike<T>) => void;
-  reject: (err: any) => void;
+  reject: (err) => void;
 }
 export type WorkerTaskTypes = 'decodeTask' | 'loadWebWorkerTask' | 'initialize';
 
@@ -39,7 +39,7 @@ export interface WorkerTask {
 }
 
 export interface WebWorkerDecodeTaskData {
-  imageFrame: ImageFrame;
+  imageFrame: Types.IImageFrame;
   transferSyntax: string;
   pixelData: ByteArray;
   options: LoaderOptions;
@@ -74,6 +74,6 @@ export interface WebWorkerResponse {
   taskType: WorkerTaskTypes;
   status: 'failed' | 'success';
   workerIndex: number;
-  data?: ImageFrame;
-  result: string | ImageFrame;
+  data?: Types.IImageFrame;
+  result: string | Types.IImageFrame;
 }

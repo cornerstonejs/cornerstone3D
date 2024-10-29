@@ -1,9 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   volumeLoader,
   Enums,
   setVolumesForViewports,
-  Types,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -22,7 +22,8 @@ const { ViewportType, BlendModes } = Enums;
 
 const {
   ToolGroupManager,
-  VolumeRotateMouseWheelTool,
+  StackScrollTool,
+  VolumeRotateTool,
   MIPJumpToClickTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -84,19 +85,26 @@ async function run() {
   const mipToolGroupUID = 'MIP_TOOL_GROUP_UID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-
+  cornerstoneTools.addTool(VolumeRotateTool);
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
 
-  mipToolGroup.addTool('VolumeRotateMouseWheel');
-  mipToolGroup.addTool('MIPJumpToClickTool', {
+  mipToolGroup.addTool(VolumeRotateTool.toolName);
+  mipToolGroup.addTool(MIPJumpToClickTool.toolName, {
     targetViewportIds: [viewportIds[0], viewportIds[1]],
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  mipToolGroup.setToolActive('MIPJumpToClickTool', {
+  mipToolGroup.setToolActive(VolumeRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel, // Left Click
+      },
+    ],
+  });
+  mipToolGroup.setToolActive(MIPJumpToClickTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -105,7 +113,13 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  mipToolGroup.setToolActive('VolumeRotateMouseWheel');
+  mipToolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const StudyInstanceUID =

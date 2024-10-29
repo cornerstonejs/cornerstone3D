@@ -1,5 +1,5 @@
-import { ByteArray } from 'dicom-parser';
-import { ImageFrame } from '../../types';
+import type { ByteArray } from 'dicom-parser';
+import type { Types } from '@cornerstonejs/core';
 
 /* eslint no-bitwise: 0 */
 function swap16(val) {
@@ -7,9 +7,9 @@ function swap16(val) {
 }
 
 async function decodeBigEndian(
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   pixelData: ByteArray
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
 

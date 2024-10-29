@@ -10,17 +10,21 @@ import {
   Enums,
 } from '@cornerstonejs/core';
 
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState, getToolStateByViewportId } from './state';
-import { CINETypes } from '../../types';
-import scroll from '../scroll';
+import type { CINETypes } from '../../types';
 
 const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
 
 const debounced = true;
 const dynamicVolumesPlayingMap = new Map();
+
+type StopClipOptions = {
+  stopDynamicCine: boolean;
+  viewportId?: string;
+};
 
 /**
  * Starts playing a clip or adjusts the frame rate of an already playing clip.  framesPerSecond is
@@ -211,7 +215,10 @@ function playClip(
  * Stops an already playing clip.
  * @param element - HTML Element
  */
-function stopClip(element: HTMLDivElement, options = {} as any): void {
+function stopClip(
+  element: HTMLDivElement,
+  options = {} as StopClipOptions
+): void {
   _stopClip(element, {
     stopDynamicCine: true,
     ...options,
@@ -220,7 +227,7 @@ function stopClip(element: HTMLDivElement, options = {} as any): void {
 
 function _stopClip(
   element: HTMLDivElement,
-  options = { stopDynamicCine: true, viewportId: undefined }
+  options: StopClipOptions = { stopDynamicCine: true, viewportId: undefined }
 ) {
   const { stopDynamicCine, viewportId } = options;
   const enabledElement = getEnabledElement(element);
@@ -243,7 +250,7 @@ function _stopClip(
   }
 
   if (viewport instanceof VideoViewport) {
-    viewport.pause();
+    (viewport as Types.IVideoViewport).pause();
   } else if (stopDynamicCine && viewport instanceof BaseVolumeViewport) {
     _stopDynamicVolumeCine(element);
   }
@@ -344,7 +351,7 @@ function _stopClipWithData(playClipData) {
 function _getVolumesFromViewport(viewport): Types.IImageVolume[] {
   return viewport
     .getActors()
-    .map((actor) => cache.getVolume(actor.uid))
+    .map((actor) => cache.getVolume(viewport.getVolumeId()))
     .filter((volume) => !!volume);
 }
 
@@ -382,7 +389,7 @@ function _createStackViewportCinePlayContext(
         return;
       }
       this.waitForRenderedCount = 0;
-      scroll(viewport, { delta, debounceLoading: debounced });
+      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
     },
   };
 }
@@ -412,7 +419,7 @@ function _createVideoViewportCinePlayContext(
         return;
       }
       this.waitForRenderedCount = 0;
-      scroll(viewport, { delta, debounceLoading: debounced });
+      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
     },
     play(fps?: number): number {
       if (fps) {
@@ -478,7 +485,7 @@ function _createVolumeViewportCinePlayContext(
     },
     scroll(delta: number): void {
       getScrollInfo().currentStepIndex += delta;
-      scroll(viewport, { delta });
+      csUtils.scroll(viewport, { delta });
     },
   };
 }
@@ -494,12 +501,12 @@ function _createDynamicVolumeViewportCinePlayContext(
       return volume.timePointIndex;
     },
     get frameTimeVectorEnabled(): boolean {
-      // Looping throught time does not uses frameTimeVector
+      // Looping though time does not uses frameTimeVector
       return false;
     },
     scroll(delta: number): void {
       // Updating this property (setter) makes it move to the desired time point
-      volume.timePointIndex += delta;
+      volume.scroll(delta);
     },
   };
 }

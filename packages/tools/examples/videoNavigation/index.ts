@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
@@ -18,7 +19,6 @@ const {
   PanTool,
   ZoomTool,
   VideoRedactionTool,
-  StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -172,7 +172,7 @@ async function run() {
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // The default DICOMweb loader splits up the video into one image id per frame,
@@ -188,7 +188,6 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(VideoRedactionTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -200,8 +199,6 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
       {
@@ -235,7 +232,6 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 

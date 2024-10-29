@@ -292,7 +292,7 @@
       },
       "wsi": {
         "name": "Whole Slide Imaging",
-        "description": "Dispaly WSI Series"
+        "description": "Display WSI Series"
       },
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
@@ -324,7 +324,7 @@
         "name": "Contour rendering configuration ",
         "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
       },
-      "labelmapToolGroupSpecificConfiguration": {
+      "labelmapViewportSpecificConfiguration": {
         "name": "ToolGroup Specific Labelmap Segmentation Configuration",
         "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
       },
@@ -338,7 +338,7 @@
       },
       "labelmapSegmentationDynamicThreshold": {
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
-        "description": "Demonstrates how to use dynamic threshold with prevview to modify the segmentation data"
+        "description": "Demonstrates how to use dynamic threshold with preview to modify the segmentation data"
       },
       "labelmapSegmentColorChange": {
         "name": "Labelmap Segment Color Change",
@@ -356,8 +356,8 @@
         "name": "Rectangle ROI Threshold Segmentation",
         "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
       },
-      "stackSegmentation": {
-        "name": "Segmentation Labelmap creation/edit for stack viewports",
+      "stackLabelmapSegmentation": {
+        "name": "Stack Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
       },
       "splineROITools": {
@@ -395,6 +395,10 @@
       "livewireContourSegmentation": {
         "name": "Livewire Segmentation Tool",
         "description": "Demonstrates how to create contour segmentations using livewireContour tool"
+      },
+      "sculptorTool": {
+        "name": "sculptorTool Tool",
+        "description": "Demonstrates how to have similar brush tool effects on the contour"
       }
     },
     "tools-advanced": {
@@ -427,12 +431,8 @@
         "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
       },
       "stackToVolumeWithAnnotations": {
-        "name": "StackViewport <--> VolumeViewport ",
+        "name": "StackViewport to and from VolumeViewport ",
         "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
-      },
-      "stackToVolumeWithSegmentations": {
-        "name": "Stack Segmentation <--> Volume Segmentation ",
-        "description": "Demonstrates how you can convert stack to volume segmentation and vice versa while the data is preserved and memory is optimized"
       },
       "volumeViewportSynchronization": {
         "name": "Volume Viewport Synchronization",

@@ -1,4 +1,4 @@
-import { RetrieveStage, NearbyFrames } from '../../types';
+import type { RetrieveStage, NearbyFrames } from '../../types';
 import { RequestType, ImageQualityStatus } from '../../enums';
 
 // Defines some nearby frames to replicate to

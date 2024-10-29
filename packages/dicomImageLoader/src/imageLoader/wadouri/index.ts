@@ -4,6 +4,7 @@ import {
   getModalityLUTOutputPixelRepresentation,
   getNumberValues,
   metaDataProvider,
+  metadataForDataset,
 } from './metaData/index';
 
 import dataSetCacheManager from './dataSetCacheManager';
@@ -11,6 +12,7 @@ import fileManager from './fileManager';
 import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
 import getUncompressedImageFrame from './getUncompressedImageFrame';
 import loadFileRequest from './loadFileRequest';
+import getPixelData from './getPixelData';
 import {
   loadImageFromPromise,
   getLoaderForScheme,
@@ -26,6 +28,7 @@ const metaData = {
   getModalityLUTOutputPixelRepresentation,
   getNumberValues,
   metaDataProvider,
+  metadataForDataset,
 };
 
 export default {
@@ -37,6 +40,7 @@ export default {
   loadFileRequest,
   loadImageFromPromise,
   getLoaderForScheme,
+  getPixelData,
   loadImage,
   parseImageId,
   unpackBinaryFrame,

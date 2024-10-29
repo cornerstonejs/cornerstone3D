@@ -16,7 +16,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
-
     await simulateClicksOnElement({
       locator: firstCanvas,
       points: [

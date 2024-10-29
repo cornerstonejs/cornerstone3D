@@ -1,4 +1,4 @@
-import { DataSet } from 'dicom-parser';
+import type { DataSet } from 'dicom-parser';
 
 export default function getOverlayPlaneModule(dataSet: DataSet) {
   const overlays = [];

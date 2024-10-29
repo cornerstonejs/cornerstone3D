@@ -3,7 +3,6 @@ import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -24,7 +23,7 @@ import {
   drawHeight as drawHeightSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -34,16 +33,17 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -85,11 +85,9 @@ const { transformWorldToIndex } = csUtils;
 class HeightTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -100,8 +98,6 @@ class HeightTool extends AnnotationTool {
   isHandleOutsideImage: boolean;
 
   //Lines to generate height
-  endfirstLine: Types.Point2;
-  endsecondLine: Types.Point2;
   //Middle lines:
   midX: number;
 
@@ -205,7 +201,7 @@ class HeightTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -283,9 +279,8 @@ class HeightTool extends AnnotationTool {
     hideElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -329,7 +324,7 @@ class HeightTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   }
@@ -364,7 +359,7 @@ class HeightTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -423,7 +418,7 @@ class HeightTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -441,12 +436,8 @@ class HeightTool extends AnnotationTool {
       data.handles.activeHandleIndex = null;
 
       const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
 
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -668,7 +659,7 @@ class HeightTool extends AnnotationTool {
       }
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -815,7 +806,7 @@ class HeightTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -829,13 +820,12 @@ class HeightTool extends AnnotationTool {
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const handles = [index1, index2];
-      const { scale, units } = getCalibratedLengthUnitsAndScale(image, handles);
+      const { scale, unit } = getCalibratedLengthUnitsAndScale(image, handles);
 
       const height = this._calculateHeight(worldPos1, worldPos2) / scale;
 
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      const outside = this._isInsideVolume(index1, index2, dimensions);
+      this.isHandleOutsideImage = outside;
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
@@ -844,7 +834,7 @@ class HeightTool extends AnnotationTool {
       // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         height,
-        unit: units,
+        unit,
       };
     }
 
@@ -873,7 +863,7 @@ function defaultGetTextLines(data, targetId): string[] {
     return;
   }
 
-  const textLines = [`${roundNumber(height)} ${unit}`];
+  const textLines = [`${csUtils.roundNumber(height)} ${unit}`];
 
   return textLines;
 }

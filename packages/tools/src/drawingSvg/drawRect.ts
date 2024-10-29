@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 
 import _getHash from './_getHash';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 import drawRectByCoordinates from './drawRectByCoordinates';
 
 // This method is obsolete due to not supporting rotation tool. Please use drawRectByCoordinates instead.

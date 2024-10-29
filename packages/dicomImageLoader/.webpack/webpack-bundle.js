@@ -16,7 +16,6 @@ module.exports = {
   context,
   entry: {
     cornerstoneDICOMImageLoader: './imageLoader/index.ts',
-    cornerstoneDICOMImageLoaderNoWebWorkers: './imageLoader/index-noWorkers.ts',
   },
   target: 'web',
   output: {
@@ -60,18 +59,6 @@ module.exports = {
       {
         test: /\.wasm/,
         type: 'asset/inline',
-      },
-      {
-        test: /\.worker\.(mjs|js|ts)$/,
-        use: [
-          {
-            loader: 'worker-loader',
-            options: { inline: 'fallback' },
-          },
-          {
-            loader: 'babel-loader',
-          },
-        ],
       },
       {
         test: /\.(mjs|js|ts)$/,

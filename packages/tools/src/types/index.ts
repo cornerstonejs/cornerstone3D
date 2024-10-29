@@ -1,123 +1,77 @@
-// AnnotationState
-import type * as AnnotationStyle from './AnnotationStyle';
-import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
-import type AnnotationGroupSelector from './AnnotationGroupSelector';
-import type IAnnotationManager from './IAnnotationManager';
-import type JumpToSliceOptions from './JumpToSliceOptions';
-import type {
-  AcceptInterpolationSelector,
-  ImageInterpolationData,
-  InterpolationViewportData,
-} from './InterpolationTypes';
 import type {
   Annotation,
-  AnnotationState,
   Annotations,
+  AnnotationState,
   GroupSpecificAnnotations,
 } from './AnnotationTypes';
-import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import type {
-  ContourAnnotation,
   ContourAnnotationData,
-  ContourWindingDirection,
+  ContourAnnotation,
 } from './ContourAnnotation';
 import type {
-  ContourSegmentationAnnotation,
   ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
 } from './ContourSegmentationAnnotation';
-
-// Rendering
-import type AnnotationRenderContext from './AnnotationRenderContext';
-
-// Geometry
+import type * as EventTypes from './EventTypes';
+import type IPoints from './IPoints';
+import type ITouchPoints from './ITouchPoints';
+import type IDistance from './IDistance';
 import type PlanarBoundingBox from './PlanarBoundingBox';
+import type {
+  SetToolBindingsType,
+  IToolBinding,
+  ToolOptionsType,
+} from './ISetToolModeOptions';
+import type IToolGroup from '../store/ToolGroupManager/ToolGroup';
+import type * as ToolSpecificAnnotationTypes from './ToolSpecificAnnotationTypes';
+import type * as AnnotationStyle from './AnnotationStyle';
+import type ToolHandle from './ToolHandle';
+import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
+import type InteractionTypes from './InteractionTypes';
+import type ToolAction from './ToolAction';
 import type {
   ToolProps,
   PublicToolProps,
   ToolConfiguration,
 } from './ToolProps';
-
-// Event data
-import type * as EventTypes from './EventTypes';
-import type IDistance from './IDistance';
-import type IPoints from './IPoints';
-import type ITouchPoints from './ITouchPoints';
-
-// ToolBindings
-import type InteractionTypes from './InteractionTypes';
-import type ToolAction from './ToolAction';
-import type {
-  IToolBinding,
-  SetToolBindingsType,
-  ToolOptionsType,
-} from './ISetToolModeOptions';
-
-//
-import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
-import type IToolClassReference from './IToolClassReference';
-import type IToolGroup from '../store/ToolGroupManager/ToolGroup';
-import type ToolHandle from './ToolHandle';
-import type { AnnotationHandle, TextBoxHandle } from './ToolHandle';
-import { ISculptToolShape } from './ISculptToolShape';
-
-// Segmentation
-import type * as LabelmapTypes from './LabelmapTypes';
-import type {
-  RepresentationConfig,
-  RepresentationPublicInput,
-  RepresentationPublicInputOptions,
-  SegmentSpecificRepresentationConfig,
-  Segmentation,
-  SegmentationPublicInput,
-  SegmentationRepresentationConfig,
-  SegmentationRepresentationData,
-  SegmentationState,
-  ToolGroupSpecificContourRepresentation,
-  ToolGroupSpecificLabelmapRepresentation,
-  ToolGroupSpecificRepresentation,
-  ToolGroupSpecificRepresentationState,
-  ToolGroupSpecificRepresentations,
-  ToolGroupSpecificSurfaceRepresentation,
-} from './SegmentationStateTypes';
-
-// Cursors
 import type { SVGCursorDescriptor, SVGPoint } from './CursorTypes';
-
-// Scroll
-import type ScrollOptions from './ScrollOptions';
-
-// Cine
 import type BoundsIJK from './BoundsIJK';
-import type * as CINETypes from './CINETypes';
 import type SVGDrawingHelper from './SVGDrawingHelper';
-
-// FloodFill
+import type * as CINETypes from './CINETypes';
+import type {
+  RepresentationData,
+  RepresentationsData,
+  Segmentation,
+  Segment,
+  SegmentationPublicInput,
+  SegmentationRepresentation,
+  SegmentationState,
+} from './SegmentationStateTypes';
+import type { ISculptToolShape } from './ISculptToolShape';
+import type ISynchronizerEventHandler from './ISynchronizerEventHandler';
 import type {
   FloodFillGetter,
   FloodFillOptions,
   FloodFillResult,
 } from './FloodFillTypes';
-
-// Contour
+import type IToolClassReference from './IToolClassReference';
+import type { ContourSegmentationData, ContourStyle } from './ContourTypes';
+import type IAnnotationManager from './IAnnotationManager';
+import type AnnotationGroupSelector from './AnnotationGroupSelector';
+import type AnnotationRenderContext from './AnnotationRenderContext';
+import type { Statistics, NamedStatistics } from './CalculatorTypes';
+import type { CanvasCoordinates } from '../utilities/math/ellipse/getCanvasEllipseCorners';
 import type {
-  ContourConfig,
-  ContourRenderingConfig,
-  ContourSegmentationData,
-} from './ContourTypes';
-
-// Statistics
-import type { NamedStatistics, Statistics } from './CalculatorTypes';
-
-// Labelmap
-import {
   LabelmapToolOperationData,
-  LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from './LabelmapToolOperationData';
+import type {
+  InterpolationViewportData,
+  ImageInterpolationData,
+} from './InterpolationTypes';
 
 // Splines
-import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { CardinalSplineProps } from './CardinalSplineProps';
 import type { ClosestControlPoint } from './ClosestControlPoint';
 import type { ClosestPoint } from './ClosestPoint';
@@ -127,97 +81,83 @@ import type { ISpline } from './ISpline';
 import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
-
-// PolySeg
+import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { PolySegConversionOptions } from './PolySeg';
+import type { IBaseTool } from './IBaseTool';
+import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
+import type { LabelmapStyle } from './LabelmapTypes';
+import type { SurfaceStyle } from './SurfaceTypes';
 
 export type {
   // AnnotationState
-  AcceptInterpolationSelector,
   Annotation,
-  AnnotationGroupSelector,
-  AnnotationState,
-  AnnotationStyle,
   Annotations,
+  ContourAnnotationData,
+  ContourAnnotation,
+  ContourSegmentationAnnotationData,
+  ContourSegmentationAnnotation,
   BidirectionalData,
   CanvasCoordinates,
-  ContourAnnotation,
-  ContourAnnotationData,
-  ContourSegmentationAnnotation,
-  ContourSegmentationAnnotationData,
-  ContourWindingDirection,
-  GroupSpecificAnnotations,
   IAnnotationManager,
-  ImageInterpolationData,
   InterpolationViewportData,
-  JumpToSliceOptions,
+  ImageInterpolationData,
+  GroupSpecificAnnotations,
+  AnnotationState,
+  AnnotationStyle,
   ToolSpecificAnnotationTypes,
+  AnnotationGroupSelector,
   // Rendering
   AnnotationRenderContext,
   // Geometry
   PlanarBoundingBox,
+  ToolProps,
   PublicToolProps,
   ToolConfiguration,
-  ToolProps,
   // Event data
   EventTypes,
-  IDistance,
   IPoints,
   ITouchPoints,
+  IDistance,
   // ToolBindings
   IToolBinding,
-  InteractionTypes,
   SetToolBindingsType,
-  ToolAction,
   ToolOptionsType,
+  InteractionTypes,
+  ToolAction,
   //
-  AnnotationHandle,
-  ISculptToolShape,
-  ISynchronizerEventHandler,
-  IToolClassReference,
   IToolGroup,
-  TextBoxHandle,
+  IToolClassReference,
+  ISynchronizerEventHandler,
   ToolHandle,
+  AnnotationHandle,
+  TextBoxHandle,
   // Segmentation
-  LabelmapTypes,
-  RepresentationConfig,
-  RepresentationPublicInput,
-  RepresentationPublicInputOptions,
-  SegmentSpecificRepresentationConfig,
   Segmentation,
-  SegmentationPublicInput,
-  SegmentationRepresentationConfig,
-  SegmentationRepresentationData,
+  SegmentationRepresentation,
   SegmentationState,
-  ToolGroupSpecificContourRepresentation,
-  ToolGroupSpecificLabelmapRepresentation,
-  ToolGroupSpecificRepresentation,
-  ToolGroupSpecificRepresentationState,
-  ToolGroupSpecificRepresentations,
-  ToolGroupSpecificSurfaceRepresentation,
+  RepresentationData,
+  RepresentationsData,
   // Cursors
   SVGCursorDescriptor,
   SVGPoint,
   // Scroll
-  ScrollOptions,
-  // Cine
-  BoundsIJK,
+  // CINE
   CINETypes,
+  BoundsIJK,
   SVGDrawingHelper,
   // FloodFill
+  FloodFillResult,
   FloodFillGetter,
   FloodFillOptions,
-  FloodFillResult,
   // Contour
-  ContourConfig,
-  ContourRenderingConfig,
   ContourSegmentationData,
-  // Statistics
-  NamedStatistics,
+  ISculptToolShape,
+  //Statistics
   Statistics,
-  // Labelmap
+  NamedStatistics,
+
+  // Labelmap data
   LabelmapToolOperationData,
-  LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
   // Splines
@@ -230,6 +170,13 @@ export type {
   SplineCurveSegment,
   SplineLineSegment,
   SplineProps,
-  // PolySeg
+  // polySeg
   PolySegConversionOptions,
+  IBaseTool,
+  RepresentationStyle,
+  Segment,
+  SegmentationPublicInput,
+  LabelmapStyle,
+  ContourStyle,
+  SurfaceStyle,
 };

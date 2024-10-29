@@ -7,5 +7,25 @@
       }
     }
   },
-  "targetDefaults": {}
+  "namedInputs": {
+    "noMarkdown": ["!{projectRoot}/**/*.md"]
+  },
+  "targetDefaults": {
+    "build": {
+      "inputs": ["noMarkdown"],
+      "dependsOn": ["^build"]
+    },
+    "build:all": {
+      "inputs": ["noMarkdown"],
+      "dependsOn": ["^build"]
+    },
+    "build:esm": {
+      "inputs": ["noMarkdown"],
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "inputs": ["noMarkdown"],
+      "dependsOn": ["^build"]
+    }
+  }
 }

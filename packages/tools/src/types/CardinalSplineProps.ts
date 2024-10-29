@@ -1,4 +1,4 @@
-import { SplineProps } from './SplineProps';
+import type { SplineProps } from './SplineProps';
 
 /**
  * Cardinal spline properties
