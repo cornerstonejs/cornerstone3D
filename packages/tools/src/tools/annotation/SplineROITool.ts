@@ -714,7 +714,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
           closed: data.contour.closed,
           targetWindingDirection: ContourWindingDirection.Clockwise,
         },
-        viewport
+        viewport,
+        { updateWindingDirection: data.contour.closed }
       );
     });
 
@@ -1121,7 +1122,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
     const targetIds = Object.keys(cachedStats);

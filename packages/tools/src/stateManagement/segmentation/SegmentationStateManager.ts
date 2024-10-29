@@ -1072,6 +1072,34 @@ export default class SegmentationStateManager {
       })
     );
   }
+
+  /**
+   * Retrieves all segmentation representations that reference a given segmentation ID.
+   * @param {string} segmentationId - The ID of the segmentation.
+   * @returns {SegmentationRepresentation[]} An array of segmentation representations.
+   */
+  getSegmentationRepresentationsBySegmentationId(
+    segmentationId: string
+  ): { viewportId: string; representations: SegmentationRepresentation[] }[] {
+    const result: {
+      viewportId: string;
+      representations: SegmentationRepresentation[];
+    }[] = [];
+
+    Object.entries(this.state.viewportSegRepresentations).forEach(
+      ([viewportId, viewportReps]) => {
+        const filteredReps = viewportReps.filter(
+          (representation) => representation.segmentationId === segmentationId
+        );
+
+        if (filteredReps.length > 0) {
+          result.push({ viewportId, representations: filteredReps });
+        }
+      }
+    );
+
+    return result;
+  }
 }
 
 async function internalComputeVolumeLabelmapFromStack({

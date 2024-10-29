@@ -63,3 +63,18 @@ export function getSegmentationRepresentation(
 
   return representations?.[0];
 }
+
+/**
+ * Retrieves the segmentation representations associated with a given segmentation ID.
+ *
+ * @param segmentationId - The unique identifier for the segmentation.
+ * @returns An array of `SegmentationRepresentation` objects associated with the specified segmentation ID.
+ */
+export function getSegmentationRepresentationsBySegmentationId(
+  segmentationId: string
+): { viewportId: string; representations: SegmentationRepresentation[] }[] {
+  const segmentationStateManager = defaultSegmentationStateManager;
+  return segmentationStateManager.getSegmentationRepresentationsBySegmentationId(
+    segmentationId
+  );
+}

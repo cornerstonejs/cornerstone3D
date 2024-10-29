@@ -33,6 +33,7 @@ export default function updateContourPolyline(
     worldToCanvas: (point: Types.Point3) => Types.Point2;
   },
   options?: {
+    updateWindingDirection?: boolean;
     decimate?: {
       enabled?: boolean;
       epsilon?: number;
@@ -43,6 +44,7 @@ export default function updateContourPolyline(
   const { data } = annotation;
   const { targetWindingDirection } = polylineData;
   let { points: polyline } = polylineData;
+  let windingDirection = math.polyline.getWindingDirection(polyline);
 
   // Decimate the polyline to reduce tha amount of points
   if (options?.decimate?.enabled) {
@@ -75,32 +77,32 @@ export default function updateContourPolyline(
     closed = currentClosedState;
   }
 
-  // It must be in the opposite direction if it is a child annotation (hole)
-  let windingDirection = parentAnnotation
-    ? parentAnnotation.data.contour.windingDirection * -1
-    : targetWindingDirection;
+  if (options?.updateWindingDirection !== false) {
+    // It must be in the opposite direction if it is a child annotation (hole)
+    let updatedWindingDirection = parentAnnotation
+      ? parentAnnotation.data.contour.windingDirection * -1
+      : targetWindingDirection;
 
-  if (windingDirection === undefined) {
-    windingDirection = currentPolylineWindingDirection;
-  }
-
-  if (windingDirection !== currentPolylineWindingDirection) {
-    polyline.reverse();
-  }
-
-  if (!data.handles?.points?.length) {
-    return;
-  }
-
-  const handlePoints = data.handles.points.map((p) => worldToCanvas(p));
-
-  if (handlePoints.length > 2) {
-    const currentHandlesWindingDirection =
-      math.polyline.getWindingDirection(handlePoints);
-
-    if (currentHandlesWindingDirection !== windingDirection) {
-      data.handles.points.reverse();
+    if (updatedWindingDirection === undefined) {
+      updatedWindingDirection = windingDirection;
     }
+
+    if (updatedWindingDirection !== windingDirection) {
+      polyline.reverse();
+    }
+
+    const handlePoints = data.handles.points.map((p) => worldToCanvas(p));
+
+    if (handlePoints.length > 2) {
+      const currentHandlesWindingDirection =
+        math.polyline.getWindingDirection(handlePoints);
+
+      if (currentHandlesWindingDirection !== updatedWindingDirection) {
+        data.handles.points.reverse();
+      }
+    }
+
+    windingDirection = updatedWindingDirection;
   }
 
   for (let i = 0; i < numPoints; i++) {

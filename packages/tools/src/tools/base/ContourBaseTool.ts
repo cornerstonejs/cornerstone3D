@@ -220,6 +220,9 @@ abstract class ContourBaseTool extends AnnotationTool {
     transforms: {
       canvasToWorld: (point: Types.Point2) => Types.Point3;
       worldToCanvas: (point: Types.Point3) => Types.Point2;
+    },
+    options?: {
+      updateWindingDirection?: boolean;
     }
   ) {
     const decimateConfig = this.configuration?.decimate || {};
@@ -229,6 +232,7 @@ abstract class ContourBaseTool extends AnnotationTool {
         enabled: !!decimateConfig.enabled,
         epsilon: decimateConfig.epsilon,
       },
+      updateWindingDirection: options?.updateWindingDirection,
     });
   }
 
