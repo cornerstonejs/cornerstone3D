@@ -475,7 +475,6 @@ interface Cornerstone3DConfig {
     // (undocumented)
     rendering: {
         preferSizeOverAccuracy: boolean;
-        useNorm16Texture: boolean;
         useCPURendering: boolean;
         strictZSpacingForVolumeViewport: boolean;
     };
