@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "2.0.0-beta.30",
+  "version": "2.0.0",
   "private": true,
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
@@ -39,10 +39,10 @@
     "@cornerstonejs/nifti-volume-loader": "^2.0.0",
     "@cornerstonejs/tools": "^2.0.0",
     "@docusaurus/core": "3.5.2-canary-6125",
+    "@docusaurus/faster": "3.5.2-canary-6125",
     "@docusaurus/module-type-aliases": "3.5.2-canary-6125",
     "@docusaurus/plugin-google-gtag": "3.5.2-canary-6125",
     "@docusaurus/preset-classic": "3.5.2-canary-6125",
-    "@docusaurus/faster": "3.5.2-canary-6125",
     "@kitware/vtk.js": "32.1.0",
     "@mdx-js/react": "^3.0.1",
     "@svgr/webpack": "^8.1.0",
@@ -51,7 +51,6 @@
     "dicom-parser": "^1.8.21",
     "dicomweb-client": "0.10.4",
     "docusaurus-plugin-copy": "0.1.1",
-    "typedoc-plugin-markdown": "4.2.9",
     "docusaurus-plugin-typedoc": "1.0.5",
     "file-loader": "^6.2.0",
     "gl-matrix": "^3.4.3",
@@ -61,6 +60,7 @@
     "react-dom": "18.3.1",
     "react-resize-detector": "11.0.1",
     "react-router-dom": "6.23.1",
+    "typedoc-plugin-markdown": "4.2.9",
     "url-loader": "^4.1.1"
   },
   "browserslist": {
