@@ -53,6 +53,12 @@ function _createMultiframeSegmentationFromReferencedImages(
 
     const multiframe = Normalizer.normalizeToDataset(datasets);
 
+    if (!multiframe) {
+        throw new Error(
+            "Failed to normalize the multiframe dataset, the data is not multi-frame."
+        );
+    }
+
     return new SegmentationDerivation([multiframe], options);
 }
 

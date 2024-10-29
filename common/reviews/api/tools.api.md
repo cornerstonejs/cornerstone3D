@@ -2223,7 +2223,7 @@ export class ETDRSGridTool extends AnnotationTool {
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ETDRSGridAnnotation;
     // (undocumented)
-    cancel: (element: HTMLDivElement) => any;
+    cancel: (element: HTMLDivElement) => string;
     // (undocumented)
     _deactivateDraw: (element: any) => void;
     // (undocumented)
@@ -2236,7 +2236,7 @@ export class ETDRSGridTool extends AnnotationTool {
     _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     editData: {
-        annotation: any;
+        annotation: Annotation;
         viewportIdsToRender: Array<string>;
         newAnnotation?: boolean;
         hasMoved?: boolean;
@@ -2252,7 +2252,7 @@ export class ETDRSGridTool extends AnnotationTool {
     // (undocumented)
     isPointNearTool: (element: HTMLDivElement, annotation: ETDRSGridAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
-    mouseDragCallback: any;
+    mouseDragCallback: unknown;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -2260,7 +2260,7 @@ export class ETDRSGridTool extends AnnotationTool {
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: ETDRSGridAnnotation) => void;
     // (undocumented)
-    touchDragCallback: any;
+    touchDragCallback: unknown;
     // (undocumented)
     worldMeasureToCanvas(measurement: any, viewport: any): number;
 }
@@ -2779,6 +2779,12 @@ function getSegmentationRepresentations(viewportId: string, specifier?: {
     segmentationId?: string;
     type?: SegmentationRepresentations;
 }): SegmentationRepresentation[] | [];
+
+// @public (undocumented)
+function getSegmentationRepresentationsBySegmentationId(segmentationId: string): {
+    viewportId: string;
+    representations: SegmentationRepresentation[];
+}[];
 
 // @public (undocumented)
 function getSegmentationRepresentationVisibility(viewportId: string, specifier: {
@@ -5336,6 +5342,7 @@ declare namespace state_3 {
         addColorLUT,
         addSegmentations,
         updateLabelmapSegmentationImageReferences,
+        getSegmentationRepresentationsBySegmentationId,
         destroy_4 as destroy
     }
 }
@@ -6081,6 +6088,7 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
     canvasToWorld: (point: Types_2.Point2) => Types_2.Point3;
     worldToCanvas: (point: Types_2.Point3) => Types_2.Point2;
 }, options?: {
+    updateWindingDirection?: boolean;
     decimate?: {
         enabled?: boolean;
         epsilon?: number;
