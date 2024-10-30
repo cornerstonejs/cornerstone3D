@@ -3046,15 +3046,9 @@ class StackViewport extends Viewport {
 
     if (!imageURI) {
       // Remove the dataLoader scheme since that can change
-      imageURI = imageIdToURI(currentImageId);
-    }
-
-    const referenceColonIndex = referencedImageId.indexOf(':');
-    const referencedImageURI = referencedImageId.substring(
-      referenceColonIndex + 1
-    );
-
-    if (referencedImageURI === imageURI) {
+      imageURI = imageIdToURI(referencedImageId);
+      return true;
+    } else if (imageIdToURI(referencedImageId) === imageURI) {
       return true;
     }
 
