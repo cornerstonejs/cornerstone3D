@@ -3042,13 +3042,11 @@ class StackViewport extends Viewport {
       }
     }
 
-    let { imageURI } = options;
+    const { imageURI } = options;
 
-    if (!imageURI) {
-      // Remove the dataLoader scheme since that can change
-      imageURI = imageIdToURI(referencedImageId);
-      return true;
-    } else if (imageIdToURI(referencedImageId) === imageURI) {
+    // Direct URI match check
+    const currentImageURI = imageIdToURI(referencedImageId);
+    if (!imageURI || currentImageURI === imageURI) {
       return true;
     }
 
