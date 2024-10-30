@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.0...v2.1.1) (2024-10-30)
+
+### Bug Fixes
+
+- orientation marker ([#1467](https://github.com/cornerstonejs/cornerstone3D/issues/1467)) ([430ef5e](https://github.com/cornerstonejs/cornerstone3D/commit/430ef5ebc661cfea6ce107c8e8210ad09b2d9be5))
+
 # [2.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.0.5...v2.1.0) (2024-10-29)
 
 ### Features
