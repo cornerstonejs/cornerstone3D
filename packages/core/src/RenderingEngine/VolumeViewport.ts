@@ -204,7 +204,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const activeCamera = this.getVtkActiveCamera();
     if (activeCamera.getParallelProjection()) {
       activeCamera.setClippingRange(
-        activeCamera.getDistance(),
+        activeCamera.getDistance() - this.getSlabThickness(),
         activeCamera.getDistance() + this.getSlabThickness()
       );
     } else {

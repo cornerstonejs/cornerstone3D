@@ -763,7 +763,8 @@ export default class VoxelManager<T> {
     // Todo: need a way to make it understand dirty status if pixel data is changed
     voxelManager.getRange = () => {
       // get all the pixel data
-      let minValue, maxValue;
+      let minValue = Infinity;
+      let maxValue = -Infinity;
       for (const imageId of imageIds) {
         const image = cache.getImage(imageId);
 

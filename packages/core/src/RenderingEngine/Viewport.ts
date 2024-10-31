@@ -29,6 +29,7 @@ import type {
   ViewPresentation,
   ViewReference,
   ViewportProperties,
+  ImageActor,
 } from '../types';
 import type {
   ViewportInput,
@@ -469,6 +470,28 @@ class Viewport {
    */
   public getActor(actorUID: string): ActorEntry {
     return this._actors.get(actorUID);
+  }
+
+  /**
+   * Retrieves an image actor from the viewport actors.
+   *
+   * @param volumeId - Optional. The ID of the volume to find the corresponding image actor.
+   * @returns The image actor if found, otherwise null.
+   */
+  public getImageActor(volumeId?: string): ImageActor | null {
+    const actorEntries = this.getActors();
+
+    let actorEntry = actorEntries[0];
+    if (volumeId) {
+      actorEntry = actorEntries.find((a) => a.referencedId === volumeId);
+    }
+
+    if (!actorEntry || !isImageActor(actorEntry)) {
+      return null;
+    }
+
+    const actor = actorEntry.actor as ImageActor;
+    return actor;
   }
 
   /**
@@ -1282,12 +1305,34 @@ class Viewport {
   protected getCameraNoRotation(): ICamera {
     const vtkCamera = this.getVtkActiveCamera();
 
+    // Helper function to replace NaN vectors with defaults
+    const sanitizeVector = (vector: Point3, defaultValue: Point3): Point3 => {
+      return vector.some((v) => isNaN(v)) ? defaultValue : vector;
+    };
+
+    const viewUp = sanitizeVector(
+      [...vtkCamera.getViewUp()] as Point3,
+      [0, 1, 0]
+    );
+    const viewPlaneNormal = sanitizeVector(
+      [...vtkCamera.getViewPlaneNormal()] as Point3,
+      [0, 0, -1]
+    );
+    const position = sanitizeVector(
+      [...vtkCamera.getPosition()] as Point3,
+      [0, 0, 1]
+    );
+    const focalPoint = sanitizeVector(
+      [...vtkCamera.getFocalPoint()] as Point3,
+      [0, 0, 0]
+    );
+
     // Always return a new instance for optimization
     return {
-      viewUp: [...vtkCamera.getViewUp()] as Point3,
-      viewPlaneNormal: [...vtkCamera.getViewPlaneNormal()] as Point3,
-      position: [...vtkCamera.getPosition()] as Point3,
-      focalPoint: [...vtkCamera.getFocalPoint()] as Point3,
+      viewUp,
+      viewPlaneNormal,
+      position,
+      focalPoint,
       parallelProjection: vtkCamera.getParallelProjection(),
       parallelScale: vtkCamera.getParallelScale(),
       viewAngle: vtkCamera.getViewAngle(),

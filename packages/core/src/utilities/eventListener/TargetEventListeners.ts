@@ -193,7 +193,7 @@ class TargetEventListeners {
     callback?: EventListener,
     options?: EventListenerOptions
   ): void {
-    const useCapture = options.capture ?? false;
+    const useCapture = options?.capture ?? false;
     const listenerPhase = useCapture
       ? EventListenerPhases.Capture
       : EventListenerPhases.Bubble;

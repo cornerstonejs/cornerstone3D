@@ -19,8 +19,8 @@ import type { Point3 } from './Point3';
  *    defaultOptions: {
  *      orientation: {
  *       viewUp: [0, 0, 1],
- *      viewPlaneNormal: [1, 0, 0],
- *     },
+ *       viewPlaneNormal: [1, 0, 0],
+ *      },
  *      background: [1, 0, 0],
  *    },
  *  }]);
