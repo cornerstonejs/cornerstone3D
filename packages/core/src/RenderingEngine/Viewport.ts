@@ -46,6 +46,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkProp from '@kitware/vtk.js/Rendering/Core/Prop';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import { deepClone } from '../utilities';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -152,13 +153,12 @@ class Viewport {
       this.renderingEngineId
     );
 
-    //this.defaultOptions = structuredClone(props.defaultOptions);
-    this.defaultOptions = JSON.parse(JSON.stringify(props.defaultOptions));
+    this.defaultOptions = deepClone(props.defaultOptions);
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
     //this.options = structuredClone(props.defaultOptions);
-    this.options = JSON.parse(JSON.stringify(props.defaultOptions));
+    this.options = deepClone(props.defaultOptions);
     this.isDisabled = false;
   }
 
