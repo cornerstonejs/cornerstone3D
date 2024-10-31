@@ -8,7 +8,7 @@ import {
 
 import { default as wadouri } from './wadouri/index';
 import { default as wadors } from './wadors/index';
-import { default as init } from './init';
+import { default as init } from '../init';
 import { default as convertColorSpace } from './convertColorSpace';
 import { default as createImage } from './createImage';
 import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor';

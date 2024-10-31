@@ -1,6 +1,6 @@
-import { setOptions, getOptions } from './internal/index';
-import type { LoaderOptions } from '../types';
-import registerLoaders from './registerLoaders';
+import { setOptions } from './imageLoader/internal/index';
+import type { LoaderOptions } from './types';
+import registerLoaders from './imageLoader/registerLoaders';
 import { getWebWorkerManager } from '@cornerstonejs/core';
 
 const workerFn = () => {
