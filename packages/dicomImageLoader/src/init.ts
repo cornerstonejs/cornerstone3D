@@ -4,8 +4,10 @@ import registerLoaders from './imageLoader/registerLoaders';
 import { getWebWorkerManager } from '@cornerstonejs/core';
 
 const workerFn = () => {
-  const path = new URL('./decodeImageFrameWorker.js', import.meta.url);
-  const instance = new Worker(path, { type: 'module' });
+  const instance = new Worker(
+    new URL('./decodeImageFrameWorker.js', import.meta.url),
+    { type: 'module' }
+  );
   return instance;
 };
 
