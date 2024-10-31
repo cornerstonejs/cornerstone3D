@@ -25,6 +25,7 @@ import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationI
 import {
   getSegmentationRepresentation,
   getSegmentationRepresentations,
+  getSegmentationRepresentationsBySegmentationId,
 } from './getSegmentationRepresentation';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
@@ -59,6 +60,7 @@ export {
   addSegmentations,
   // update
   updateLabelmapSegmentationImageReferences,
+  getSegmentationRepresentationsBySegmentationId,
   destroy,
   // style
 };

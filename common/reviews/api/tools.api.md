@@ -2214,6 +2214,58 @@ export class EraserTool extends BaseTool {
 }
 
 // @public (undocumented)
+export class ETDRSGridTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: any) => void;
+    // (undocumented)
+    _activateModify: (element: any) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ETDRSGridAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => string;
+    // (undocumented)
+    _deactivateDraw: (element: any) => void;
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
+    // (undocumented)
+    _dragDrawCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragHandle: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    _dragModifyCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: Annotation;
+        viewportIdsToRender: Array<string>;
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: ETDRSGridAnnotation) => void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: ETDRSGridAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    mouseDragCallback: unknown;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: ETDRSGridAnnotation) => void;
+    // (undocumented)
+    touchDragCallback: unknown;
+    // (undocumented)
+    worldMeasureToCanvas(measurement: any, viewport: any): number;
+}
+
+// @public (undocumented)
 enum Events {
     // (undocumented)
     ANNOTATION_ADDED = "CORNERSTONE_TOOLS_ANNOTATION_ADDED",
@@ -2727,6 +2779,12 @@ function getSegmentationRepresentations(viewportId: string, specifier?: {
     segmentationId?: string;
     type?: SegmentationRepresentations;
 }): SegmentationRepresentation[] | [];
+
+// @public (undocumented)
+function getSegmentationRepresentationsBySegmentationId(segmentationId: string): {
+    viewportId: string;
+    representations: SegmentationRepresentation[];
+}[];
 
 // @public (undocumented)
 function getSegmentationRepresentationVisibility(viewportId: string, specifier: {
@@ -3728,6 +3786,8 @@ export class OrientationMarkerTool extends BaseTool {
     static toolName: any;
     // (undocumented)
     _unsubscribeToViewportNewVolumeSet(): void;
+    // (undocumented)
+    updatingOrientationMarker: any;
     // (undocumented)
     static VTPFILE: number;
 }
@@ -5284,6 +5344,7 @@ declare namespace state_3 {
         addColorLUT,
         addSegmentations,
         updateLabelmapSegmentationImageReferences,
+        getSegmentationRepresentationsBySegmentationId,
         destroy_4 as destroy
     }
 }
@@ -6029,6 +6090,7 @@ function updateContourPolyline(annotation: ContourAnnotation, polylineData: {
     canvasToWorld: (point: Types_2.Point2) => Types_2.Point3;
     worldToCanvas: (point: Types_2.Point3) => Types_2.Point2;
 }, options?: {
+    updateWindingDirection?: boolean;
     decimate?: {
         enabled?: boolean;
         epsilon?: number;

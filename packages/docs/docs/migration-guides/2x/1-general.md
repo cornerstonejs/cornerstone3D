@@ -7,6 +7,22 @@ import TabItem from '@theme/TabItem';
 
 # General
 
+## Video Guide
+
+Watch this video guide for a [visual walkthrough](https://www.youtube.com/embed/tkQiVLftpuI?si=HbFitXWowvlndI0i) of the migration process:
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/tkQiVLftpuI?si=HbFitXWowvlndI0i"
+  title="YouTube video player"
+  frameborder="0"
+  loading="lazy"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
 ## Typescript Version
 
 We have upgraded the typescript version from 4.6 to 5.5 in the 2.0 version of the cornerstone3D.
