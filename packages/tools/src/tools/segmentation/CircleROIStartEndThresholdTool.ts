@@ -58,7 +58,6 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
-import cloneDeep from 'lodash.clonedeep';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 
@@ -560,7 +559,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const startIJK = transformWorldToIndex(imageData, points[0]);
     const endIJK = transformWorldToIndex(imageData, points[0]);
 
-    const handlesToStart = cloneDeep(points);
+    const handlesToStart = csUtils.deepClone(points) as typeof points;
 
     const startWorld = vec3.create();
     imageData.indexToWorldVec3(startIJK, startWorld);
