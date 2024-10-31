@@ -2,7 +2,7 @@
   "name": "@externals/polyseg-wasm",
   "description": "External reference to @icr/polyseg-wasm",
   "private": true,
-  "version": "2.1.4",
+  "version": "2.1.5",
   "license": "MIT",
   "engines": {
     "node": ">=18",
