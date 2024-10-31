@@ -1,13 +1,11 @@
-import { setOptions, getOptions } from './internal/index';
-import type { LoaderOptions } from '../types';
-import registerLoaders from './registerLoaders';
+import { setOptions } from './imageLoader/internal/index';
+import type { LoaderOptions } from './types';
+import registerLoaders from './imageLoader/registerLoaders';
 import { getWebWorkerManager } from '@cornerstonejs/core';
 
 const workerFn = () => {
-  const instance = new Worker(
-    new URL('../decodeImageFrameWorker.js', import.meta.url),
-    { type: 'module' }
-  );
+  const path = new URL('./decodeImageFrameWorker.js', import.meta.url);
+  const instance = new Worker(path, { type: 'module' });
   return instance;
 };
 
