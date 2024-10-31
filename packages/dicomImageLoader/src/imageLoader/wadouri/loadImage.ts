@@ -158,7 +158,7 @@ function loadImageFromDataSet(
 }
 
 function getLoaderForScheme(scheme: string): LoadRequestFunction {
-  if (scheme === 'dicomweb' || scheme === 'wadouri') {
+  if (scheme === 'dicomweb' || scheme === 'wadouri' || scheme === 'wadors') {
     return xhrRequest;
   } else if (scheme === 'dicomfile') {
     return loadFileRequest;

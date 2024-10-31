@@ -8,6 +8,8 @@ import {
 } from '../../types';
 import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
 import multiframeDataset from './retrieveMultiframeDataset';
+import findIndexOfString from '../wadors/findIndexOfString';
+import { findBoundary, uint8ArrayToString } from '../wadors/extractMultipart';
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;
@@ -40,7 +42,7 @@ function isLoaded(uri: string): boolean {
 function get(uri: string): DataSet {
   let dataSet;
 
-  if (uri.includes('&frame=')) {
+  if (uri.includes('&frame=') || uri.includes('/frames/')) {
     const { frame, dataSet: multiframeDataSet } =
       multiframeDataset.retrieveMultiframeDataset(uri);
 
@@ -131,7 +133,7 @@ function load(
             dicomPart10AsArrayBuffer = dicomPart10AsArrayBuffer.arrayBuffer;
           }
 
-          const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+          const byteArray = extractBoundedByteArray(dicomPart10AsArrayBuffer);
 
           // Reject the promise if parsing the dicom file fails
           let dataSet: DataSet | DICOMLoaderDataSetWithFetchMore;
@@ -229,6 +231,28 @@ function purge(): void {
   loadedDataSets = {};
   promises = {};
   cacheSizeInBytes = 0;
+}
+
+/**
+ * Converts Array Buffer to Uint8Array.
+ * Checks whether it contains a boundary (as it's the case for multipart/related types).
+ * If so, it extracts the data without the boundary.
+ */
+function extractBoundedByteArray(
+  dicomPart10AsArrayBuffer: ArrayBuffer
+): Uint8Array {
+  const byteArray = new Uint8Array(dicomPart10AsArrayBuffer);
+  const tokenIndex = findIndexOfString(byteArray, '\r\n\r\n');
+  const header = uint8ArrayToString(byteArray, 0, tokenIndex).split('\r\n');
+  const boundary = findBoundary(header);
+  const offset = tokenIndex + 4; // skip over the \r\n\r\n
+
+  if (boundary) {
+    const endIndex = findIndexOfString(byteArray, boundary, offset);
+    return byteArray.slice(offset, endIndex - 2); // Trim end boundary
+  }
+
+  return byteArray;
 }
 
 export default {

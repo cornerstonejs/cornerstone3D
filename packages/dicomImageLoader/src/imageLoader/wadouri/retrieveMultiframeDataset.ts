@@ -26,7 +26,9 @@ function _isMultiframeDataset(dataSet) {
 }
 
 function retrieveFrameParameterIndex(uri) {
-  return uri.indexOf('&frame=');
+  return uri.indexOf('&frame=') !== -1
+    ? uri.indexOf('&frame=')
+    : uri.indexOf('frames/');
 }
 
 function retrieveMultiframeDataset(uri) {
