@@ -152,11 +152,13 @@ class Viewport {
       this.renderingEngineId
     );
 
-    this.defaultOptions = structuredClone(props.defaultOptions);
+    //this.defaultOptions = structuredClone(props.defaultOptions);
+    this.defaultOptions = JSON.parse(JSON.stringify(props.defaultOptions));
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    this.options = structuredClone(props.defaultOptions);
+    //this.options = structuredClone(props.defaultOptions);
+    this.options = JSON.parse(JSON.stringify(props.defaultOptions));
     this.isDisabled = false;
   }
 
