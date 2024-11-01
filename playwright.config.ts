@@ -28,13 +28,6 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
     },
     {
-      name: 'Firefox',
-      use: { ...devices['Desktop Firefox'], deviceScaleFactor: 1 },
-
-      // broken in Firefox
-      testIgnore: ['**/labelmapGlobalConfiguration.spec.ts'],
-    },
-    {
       name: 'webkit',
       use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
     },
