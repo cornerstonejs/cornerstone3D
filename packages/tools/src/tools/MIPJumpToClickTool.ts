@@ -2,8 +2,7 @@ import { BaseTool } from './base';
 import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
 import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
-import jumpToWorld from '../utilities/viewport/jumpToWorld';
-import { PublicToolProps, ToolProps } from '../types';
+import type { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 /**
@@ -14,8 +13,6 @@ import { getToolGroupForViewport } from '../store/ToolGroupManager';
  */
 class MIPJumpToClickTool extends BaseTool {
   static toolName;
-
-  _bounds: any;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -43,10 +40,13 @@ class MIPJumpToClickTool extends BaseTool {
 
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport, renderingEngine } = enabledElement as {
+      viewport: Types.IVolumeViewport;
+      renderingEngine: Types.IRenderingEngine;
+    };
 
     // 2. Getting the target volume that is clicked on
-    const volumeId = this.getTargetVolumeId(viewport);
+    const volumeId = viewport.getVolumeId();
 
     if (!volumeId) {
       throw new Error(
@@ -93,7 +93,7 @@ class MIPJumpToClickTool extends BaseTool {
       // Todo: current limitation is that we cannot jump in viewports
       // that don't belong to the renderingEngine of the source clicked viewport
       if (viewport instanceof VolumeViewport) {
-        jumpToWorld(viewport, brightestPoint);
+        viewport.jumpToWorld(brightestPoint);
       } else {
         console.warn(
           'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'

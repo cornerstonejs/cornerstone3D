@@ -1,9 +1,3 @@
-/**
- * WARNING
- * DO NOT REMOVE ANY OF THE BELOW IMPORT STATEMENTS
- * SOME ARE USED FOR SOME OF THE TUTORIALS, AND WILL BREAK IF REMOVED
- */
-
 import {
   RenderingEngine,
   Types,
@@ -14,7 +8,6 @@ import {
 import {
   addTool,
   BrushTool,
-  SegmentationDisplayTool,
   BidirectionalTool,
   ToolGroupManager,
   WindowLevelTool,
@@ -41,33 +34,44 @@ setTitleAndDescription(
 );
 
 const { ViewportType } = Enums;
-/**
- * Runs the demo
- */
+
+const content = document.getElementById('content');
+const element = document.createElement('div');
+
+element.style.width = '500px';
+element.style.height = '500px';
+
+content.appendChild(element);
+
+const renderingEngineId = 'myRenderingEngine';
+
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+  const viewportId = 'CT_AXIAL_STACK';
 
-  /**
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   * Copy-paste the code from tutorials below to try them locally.
-   * You can run the tutorial after by running `yarn run example tutorial` when
-   * you are at the root of the tools package directory.
-   *
-   *
-   *
-   *
-   *
-   *
-   *
-   */
+  const viewportInput = {
+    viewportId,
+    element,
+    type: ViewportType.STACK,
+  };
+
+  renderingEngine.enableElement(viewportInput);
+
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
+
+  const viewport = renderingEngine.getViewport(viewportId);
+
+  viewport.setStack(imageIds, 60);
+
+  viewport.render();
 }
 
 run();

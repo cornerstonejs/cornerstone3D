@@ -1,5 +1,8 @@
 import { vtkSharedVolumeMapper } from '../vtkClasses';
 import { getConfiguration } from '../../init';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
  * from which various volume actors can be created.
@@ -11,9 +14,9 @@ import { getConfiguration } from '../../init';
  * @returns The volume mapper.
  */
 export default function createVolumeMapper(
-  imageData: any,
-  vtkOpenGLTexture: any
-): any {
+  imageData: vtkImageData,
+  vtkOpenGLTexture: vtkOpenGLTexture
+): vtkVolumeMapper {
   const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
   if (getConfiguration().rendering.preferSizeOverAccuracy) {

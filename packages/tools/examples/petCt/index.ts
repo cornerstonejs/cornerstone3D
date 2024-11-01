@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -17,6 +17,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { VolumeRotateTool } from '@cornerstonejs/tools';
 
 const {
   ToolGroupManager,
@@ -24,10 +25,9 @@ const {
   WindowLevelTool,
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   synchronizers,
   MIPJumpToClickTool,
-  VolumeRotateMouseWheelTool,
   CrosshairsTool,
   TrackballRotateTool,
 } = cornerstoneTools;
@@ -324,9 +324,8 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
@@ -352,7 +351,7 @@ function setUpToolGroups() {
   [ctToolGroup, ptToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
       getReferenceLineControllable,
@@ -363,7 +362,7 @@ function setUpToolGroups() {
 
   fusionToolGroup.addTool(PanTool.toolName);
   fusionToolGroup.addTool(ZoomTool.toolName);
-  fusionToolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  fusionToolGroup.addTool(StackScrollTool.toolName);
   fusionToolGroup.addTool(CrosshairsTool.toolName, {
     getReferenceLineColor,
     getReferenceLineControllable,
@@ -402,13 +401,18 @@ function setUpToolGroups() {
       ],
     });
 
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Wheel }],
+    });
     toolGroup.setToolPassive(CrosshairsTool.toolName);
   });
 
   // MIP Tool Groups
   mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
-  mipToolGroup.addTool('VolumeRotateMouseWheel');
+  mipToolGroup.addTool(VolumeRotateTool.toolName);
+  mipToolGroup.setToolActive(VolumeRotateTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
   mipToolGroup.addTool('MIPJumpToClickTool', {
     toolGroupId: ptToolGroupId,
   });

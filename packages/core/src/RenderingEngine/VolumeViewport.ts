@@ -1,9 +1,11 @@
+import { mat4, vec3 } from 'gl-matrix';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import cache from '../cache';
-import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import { BlendModes, OrientationAxis, Events } from '../enums';
+import cache from '../cache/cache';
+import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
+import type { BlendModes } from '../enums';
+import { OrientationAxis, Events } from '../enums';
 import type {
   ActorEntry,
   IImageVolume,
@@ -15,21 +17,21 @@ import type {
   ViewReferenceSpecifier,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import {
-  actorIsA,
-  getClosestImageId,
-  getSliceRange,
-  getSpacingInNormalDirection,
-  isImageActor,
-  snapFocalPointToSlice,
-  triggerEvent,
-} from '../utilities';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import getClosestImageId from '../utilities/getClosestImageId';
+import getSliceRange from '../utilities/getSliceRange';
+import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
+import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
+import triggerEvent from '../utilities/triggerEvent';
+
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import { ImageActor } from '../types/IActor';
+import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
-import { vec3 } from 'gl-matrix';
+import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
+import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
+import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -37,7 +39,7 @@ import { vec3 } from 'gl-matrix';
  * use SharedVolumeMappers behind the scene, memory footprint of visualizations
  * of the same volume in different orientations is very small.
  *
- * For setting volumes on viewports you need to use {@link addVolumesToViewports}
+ * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport extends BaseVolumeViewport {
@@ -66,7 +68,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async setVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
@@ -100,7 +102,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @param immediate - Whether the `Viewport` should be rendered as soon as volumes are added.
    */
   public async addVolumes(
-    volumeInputArray: Array<IVolumeInput>,
+    volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
@@ -120,9 +122,43 @@ class VolumeViewport extends BaseVolumeViewport {
     return super.addVolumes(volumeInputArray, immediate, suppressEvents);
   }
 
+  public jumpToWorld(worldPos: Point3): boolean {
+    const { focalPoint } = this.getCamera();
+
+    const delta: Point3 = [0, 0, 0];
+    vec3.sub(delta, worldPos, focalPoint);
+
+    const camera = this.getCamera();
+    const normal = camera.viewPlaneNormal;
+
+    const dotProd = vec3.dot(delta, normal);
+    const projectedDelta = vec3.fromValues(normal[0], normal[1], normal[2]);
+
+    vec3.scale(projectedDelta, projectedDelta, dotProd);
+
+    if (
+      Math.abs(projectedDelta[0]) > 1e-3 ||
+      Math.abs(projectedDelta[1]) > 1e-3 ||
+      Math.abs(projectedDelta[2]) > 1e-3
+    ) {
+      const newFocalPoint: Point3 = [0, 0, 0];
+      const newPosition: Point3 = [0, 0, 0];
+
+      vec3.add(newFocalPoint, camera.focalPoint, projectedDelta);
+      vec3.add(newPosition, camera.position, projectedDelta);
+
+      this.setCamera({
+        focalPoint: newFocalPoint,
+        position: newPosition,
+      });
+      this.render();
+    }
+    return true;
+  }
+
   /**
    * It sets the orientation for the camera, the orientation can be one of the
-   * following: axial, sagittal, coronal, default. Use the Enums.OrientationAxis
+   * following: axial, sagittal, coronal, default. Use the `Enums.OrientationAxis`
    * to set the orientation. The "default" orientation is the orientation that
    * the volume was acquired in (scan axis)
    *
@@ -164,6 +200,21 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
+  protected setCameraClippingRange() {
+    const activeCamera = this.getVtkActiveCamera();
+    if (activeCamera.getParallelProjection()) {
+      activeCamera.setClippingRange(
+        activeCamera.getDistance(),
+        activeCamera.getDistance() + this.getSlabThickness()
+      );
+    } else {
+      activeCamera.setClippingRange(
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
+      );
+    }
+  }
+
   private _getAcquisitionPlaneOrientation(): OrientationVectors {
     const actorEntry = this.getDefaultActor();
 
@@ -173,7 +224,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     // Todo: fix this after we add the volumeId reference to actorEntry later
     // in the segmentation refactor
-    const volumeId = actorEntry.uid;
+    const volumeId = this.getVolumeId();
 
     const imageVolume = cache.getVolume(volumeId);
 
@@ -239,28 +290,37 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
+  public resetCameraForResize = (): boolean => {
+    return this.resetCamera({
+      resetPan: true,
+      resetZoom: true,
+      resetToCenter: true,
+      resetRotation: false,
+      suppressEvents: true,
+    });
+  };
+
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(
-    resetPan = true,
-    resetZoom = true,
-    resetToCenter = true,
-    resetRotation = false,
-    supressEvents = false,
-    resetOrientation = true
-  ): boolean {
+  public resetCamera(options?): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetRotation = true,
+      resetToCenter = true,
+      suppressEvents = false,
+      resetOrientation = true,
+    } = options || {};
     const { orientation } = this.viewportProperties;
     if (orientation && resetOrientation) {
       this.applyViewOrientation(orientation, false);
     }
-    super.resetCamera(resetPan, resetZoom, resetToCenter);
-
-    this.resetVolumeViewportClippingRange();
+    super.resetCamera({ resetPan, resetZoom, resetToCenter });
 
     const activeCamera = this.getVtkActiveCamera();
-    const viewPlaneNormal = <Point3>activeCamera.getViewPlaneNormal();
-    const focalPoint = <Point3>activeCamera.getFocalPoint();
+    const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
+    const focalPoint = activeCamera.getFocalPoint() as Point3;
 
     // always add clipping planes for the volume viewport. If a use case
     // arises where we don't want clipping planes, you should use the volume_3d
@@ -270,7 +330,7 @@ class VolumeViewport extends BaseVolumeViewport {
       if (!actorEntry.actor) {
         return;
       }
-      const mapper = actorEntry.actor.getMapper();
+      const mapper = actorEntry.actor.getMapper() as vtkMapper;
       const vtkPlanes = mapper.getClippingPlanes();
 
       if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {
@@ -295,7 +355,7 @@ class VolumeViewport extends BaseVolumeViewport {
       }
     });
 
-    //Only reset the rotation of the camera if wanted (so we don't reset everytime resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
+    //Only reset the rotation of the camera if wanted (so we don't reset every time resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
     if (
       resetRotation &&
       MPR_CAMERA_VALUES[this.viewportProperties.orientation] !== undefined
@@ -308,7 +368,7 @@ class VolumeViewport extends BaseVolumeViewport {
       });
     }
 
-    if (!supressEvents) {
+    if (!suppressEvents) {
       const eventDetail: EventTypes.CameraResetEventDetail = {
         viewportId: this.id,
         camera: this.getCamera(),
@@ -352,6 +412,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const currentCamera = this.getCamera();
     this.updateClippingPlanesForActors(currentCamera);
+    // reset camera clipping range as well
     this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
     this.viewportProperties.slabThickness = slabThickness;
   }
@@ -381,7 +442,7 @@ class VolumeViewport extends BaseVolumeViewport {
   /**
    * Returns the imageId index of the current slice in the volume viewport.
    * Note: this is not guaranteed to be the same as the slice index in the view
-   * To get the slice index in the view (scroll position), use getSliceIndex()
+   * To get the slice index in the view (scroll position), use `getSliceIndex()`
    *
    * In future we will even delete this method as it should not be used
    * at all.
@@ -428,6 +489,156 @@ class VolumeViewport extends BaseVolumeViewport {
   };
 
   /**
+   * Returns detailed information about the current slice view in the volume viewport.
+   * This method provides comprehensive data about the slice's position, orientation,
+   * and dimensions within the volume.
+   *
+   * @returns An object containing the following properties:
+   * @property sliceIndex - The current slice index in the view direction.
+   * @property slicePlane - The axis along which the slicing is performed (0 for X, 1 for Y, 2 for Z).
+   * @property width - The width of the slice in voxels.
+   * @property height - The height of the slice in voxels.
+   * @property sliceToIndexMatrix - A 4x4 matrix for transforming from slice coordinates to volume index coordinates.
+   * @property indexToSliceMatrix - A 4x4 matrix for transforming from volume index coordinates to slice coordinates.
+   *
+   * @throws {Error} If the view is oblique or if the slice axis cannot be determined.
+   */
+  public getSliceViewInfo(): {
+    sliceIndex: number;
+    slicePlane: number;
+    width: number;
+    height: number;
+    sliceToIndexMatrix: mat4;
+    indexToSliceMatrix: mat4;
+  } {
+    const { width: canvasWidth, height: canvasHeight } = this.getCanvas();
+
+    // Get three points from the canvas to help us identify the orientation of
+    // the slice. Using canvas width/height to get point far away for each other
+    // because points such as (0,0), (1,0) and (0,1) may be converted to the same
+    // ijk index when the image is zoomed in.
+    const ijkOriginPoint = transformCanvasToIJK(this, [0, 0]);
+    const ijkRowPoint = transformCanvasToIJK(this, [canvasWidth - 1, 0]);
+    const ijkColPoint = transformCanvasToIJK(this, [0, canvasHeight - 1]);
+
+    // Subtract the points to get the row and column vectors in index space
+    const ijkRowVec = vec3.sub(vec3.create(), ijkRowPoint, ijkOriginPoint);
+    const ijkColVec = vec3.sub(vec3.create(), ijkColPoint, ijkOriginPoint);
+    const ijkSliceVec = vec3.cross(vec3.create(), ijkRowVec, ijkColVec);
+
+    vec3.normalize(ijkRowVec, ijkRowVec);
+    vec3.normalize(ijkColVec, ijkColVec);
+    vec3.normalize(ijkSliceVec, ijkSliceVec);
+
+    const { dimensions } = this.getImageData();
+    const [sx, sy, sz] = dimensions;
+
+    // All eight volume corners in index space
+    // prettier-ignore
+    const ijkCorners: Point3[] = [
+      [     0,        0,        0], // top-left-front
+      [sx - 1,        0,        0], // top-right-front
+      [     0,   sy - 1,        0], // bottom-left-front
+      [sx - 1,   sy - 1,        0], // bottom-right-front
+      [     0,        0,   sz - 1], // top-left-back
+      [sx - 1,        0,   sz - 1], // top-right-back
+      [     0,   sy - 1,   sz - 1], // bottom-left-back
+      [sx - 1,   sy - 1,   sz - 1], // bottom-right-back
+    ];
+
+    // Project the volume corners onto the canvas
+    const canvasCorners = ijkCorners.map((ijkCorner) =>
+      transformIJKToCanvas(this, ijkCorner)
+    );
+
+    // Calculate the AABB from the corners project onto the canvas
+    const canvasAABB = canvasCorners.reduce(
+      (aabb, canvasPoint) => {
+        aabb.minX = Math.min(aabb.minX, canvasPoint[0]);
+        aabb.minY = Math.min(aabb.minY, canvasPoint[1]);
+        aabb.maxX = Math.max(aabb.maxX, canvasPoint[0]);
+        aabb.maxY = Math.max(aabb.maxY, canvasPoint[1]);
+
+        return aabb;
+      },
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+    );
+
+    // Get the top-left, bottom-right and the diagonal vector of
+    // the slice in index space
+    const ijkTopLeft = transformCanvasToIJK(this, [
+      canvasAABB.minX,
+      canvasAABB.minY,
+    ]);
+
+    // prettier-ignore
+    const sliceToIndexMatrix = mat4.fromValues(
+      ijkRowVec[0],   ijkRowVec[1],   ijkRowVec[2],  0,
+      ijkColVec[0],   ijkColVec[1],   ijkColVec[2],  0,
+     ijkSliceVec[0], ijkSliceVec[1], ijkSliceVec[2],  0,
+     ijkTopLeft[0],  ijkTopLeft[1],  ijkTopLeft[2],  1
+    );
+
+    const ijkBottomRight = transformCanvasToIJK(this, [
+      canvasAABB.maxX,
+      canvasAABB.maxY,
+    ]);
+    const ijkDiagonal = vec3.sub(vec3.create(), ijkBottomRight, ijkTopLeft);
+
+    const indexToSliceMatrix = mat4.invert(mat4.create(), sliceToIndexMatrix);
+
+    const { viewPlaneNormal } = this.getCamera();
+
+    // Check if the view is oblique
+    const isOblique =
+      viewPlaneNormal.filter((component) => Math.abs(component) > EPSILON)
+        .length > 1;
+
+    if (isOblique) {
+      throw new Error('getSliceInfo is not supported for oblique views');
+    }
+
+    // Find the primary axis
+    const sliceAxis = viewPlaneNormal.findIndex(
+      (component) => Math.abs(component) > 1 - EPSILON
+    );
+
+    if (sliceAxis === -1) {
+      throw new Error('Unable to determine slice axis');
+    }
+
+    // Dot the diagonal with row/column to find the image width/height
+    const sliceWidth = vec3.dot(ijkRowVec, ijkDiagonal) + 1;
+    const sliceHeight = vec3.dot(ijkColVec, ijkDiagonal) + 1;
+
+    return {
+      sliceIndex: this.getSliceIndex(),
+      width: sliceWidth,
+      height: sliceHeight,
+      slicePlane: sliceAxis,
+      sliceToIndexMatrix,
+      indexToSliceMatrix,
+    };
+  }
+
+  /**
+   * Retrieves the pixel data for the current slice being displayed in the viewport.
+   *
+   * Note: this method cannot return the oblique planes pixel data as they
+   * are interpolated in the gpu side
+   *
+   * @returns The pixel data for the current slice, which can be in any of the axial, sagittal
+   * or coronal directions
+   *
+   */
+  public getCurrentSlicePixelData() {
+    const { voxelManager } = this.getImageData();
+
+    const sliceData = voxelManager.getSliceData(this.getSliceViewInfo());
+    return sliceData;
+  }
+
+  /**
    * Uses viewport camera and volume actor to decide if the viewport
    * is looking at the volume in the direction of acquisition (imageIds).
    * If so, it uses the origin and focalPoint to find which imageId is
@@ -442,8 +653,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return;
     }
 
-    const { uid } = actorEntry;
-    const volume = cache.getVolume(uid);
+    const volume = cache.getVolume(this.getVolumeId());
 
     if (!volume) {
       return;
@@ -504,13 +714,14 @@ class VolumeViewport extends BaseVolumeViewport {
       this.updateClippingPlanesForActors(this.getCamera());
     }
 
-    const imageVolume = cache.getVolume(volumeActor.uid);
+    volumeId ||= this.getVolumeId();
+    const imageVolume = cache.getVolume(volumeId);
     if (!imageVolume) {
       throw new Error(
-        `imageVolume with id: ${volumeActor.uid} does not exist in cache`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
-    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume, false);
+    setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
     if (isImageActor(volumeActor)) {
       const transferFunction = (volumeActor.actor as ImageActor)
@@ -531,7 +742,12 @@ class VolumeViewport extends BaseVolumeViewport {
     const resetZoom = true;
     const resetToCenter = true;
     const resetCameraRotation = true;
-    this.resetCamera(resetPan, resetZoom, resetToCenter, resetCameraRotation);
+    this.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetCameraRotation,
+    });
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
   }
@@ -540,13 +756,13 @@ class VolumeViewport extends BaseVolumeViewport {
    * Retrieves the clipping planes for the slices in the volume viewport.
    * @returns An array of vtkPlane objects representing the clipping planes, or an array of objects with normal and origin properties if raw is true.
    */
-  getSlicesClippingPlanes(): Array<{
+  getSlicesClippingPlanes(): {
     sliceIndex: number;
-    planes: Array<{
+    planes: {
       normal: Point3;
       origin: Point3;
-    }>;
-  }> {
+    }[];
+  }[] {
     const focalPoints = this.getSlicePlaneCoordinates();
     const { viewPlaneNormal } = this.getCamera();
     const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
@@ -580,10 +796,10 @@ class VolumeViewport extends BaseVolumeViewport {
    *
    * @returns An array of Point3 representing the slice plane coordinates.
    */
-  public getSlicePlaneCoordinates = (): Array<{
+  public getSlicePlaneCoordinates = (): {
     sliceIndex: number;
     point: Point3;
-  }> => {
+  }[] => {
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry?.actor) {
@@ -591,7 +807,7 @@ class VolumeViewport extends BaseVolumeViewport {
       return [];
     }
 
-    const volumeId = actorEntry.uid;
+    const volumeId = this.getVolumeId();
     const imageVolume = cache.getVolume(volumeId);
 
     const camera = this.getCamera();

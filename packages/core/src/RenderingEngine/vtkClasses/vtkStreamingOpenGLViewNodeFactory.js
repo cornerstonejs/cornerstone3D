@@ -51,7 +51,7 @@ function vtkStreamingOpenGLViewNodeFactory(publicAPI, model) {
     let isObject = false;
     const keys = Object.keys(model.overrides);
     while (className && !isObject) {
-      if (keys.indexOf(className) !== -1) {
+      if (keys.includes(className)) {
         isObject = true;
       } else {
         className = dataObject.getClassName(cpt++);

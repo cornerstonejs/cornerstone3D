@@ -28,7 +28,7 @@ interface IImage {
   width: number
   color: boolean
   rgba: boolean
-  numComps: number
+  numberOfComponents: number
   columnPixelSpacing: number
   rowPixelSpacing: number
   sliceThickness?: number

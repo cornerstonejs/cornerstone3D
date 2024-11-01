@@ -1,15 +1,24 @@
-import { Enums, Types, eventTarget, triggerEvent } from '@cornerstonejs/core';
-import { getWebWorkerManager } from '@cornerstonejs/core';
-import { ContourSegmentationData } from '../../../../types';
+import type { Types } from '@cornerstonejs/core';
+import {
+  Enums,
+  eventTarget,
+  triggerEvent,
+  getWebWorkerManager,
+} from '@cornerstonejs/core';
+import type {
+  ContourSegmentationAnnotation,
+  ContourSegmentationData,
+} from '../../../../types';
 import { getAnnotation } from '../../../annotation/annotationState';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
-const triggerWorkerProgress = (eventTarget, progress) => {
+const triggerWorkerProgress = (eventTarget, progress, id) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
     progress,
     type: WorkerTypes.POLYSEG_CONTOUR_TO_SURFACE,
+    id,
   });
 };
 
@@ -33,12 +42,13 @@ export async function convertContourToSurface(
 
   for (const annotationUID of annotationUIDs) {
     const annotation = getAnnotation(annotationUID);
-    const { polyline } = annotation.data.contour;
+    const { polyline } = (annotation as ContourSegmentationAnnotation).data
+      .contour;
     numPointsArray.push(polyline.length);
     polyline.forEach((polyline) => polylines.push(...polyline));
   }
 
-  triggerWorkerProgress(eventTarget, 0);
+  triggerWorkerProgress(eventTarget, 0, segmentIndex);
 
   const results = await workerManager.executeTask(
     'polySeg',
@@ -50,13 +60,13 @@ export async function convertContourToSurface(
     {
       callbacks: [
         (progress) => {
-          triggerWorkerProgress(eventTarget, progress);
+          triggerWorkerProgress(eventTarget, progress, segmentIndex);
         },
       ],
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100, segmentIndex);
 
   return results;
 }

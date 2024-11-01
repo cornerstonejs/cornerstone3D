@@ -1,4 +1,5 @@
-import { Enums, RenderingEngine, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
@@ -27,14 +28,13 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   fillAlphaInactive: 0.3,
   outlineOpacity: 1,
   outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
+  outlineWidth: 3,
   outlineWidthInactive: 2,
-  outlineDashActive: undefined,
+  outlineDash: undefined,
   outlineDashInactive: undefined,
 };
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -45,7 +45,6 @@ const { ViewportType } = Enums;
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 
@@ -91,13 +90,11 @@ createInfoSection(content, { ordered: true })
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
   const segmentationConfig = getSegmentationConfig(toolGroupId);
-  const contourConfig = segmentationConfig.CONTOUR;
+  const contourConfig = segmentationConfig.Contour;
 
-  (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineWidthActive ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineWidthActive
-    );
+  (document.getElementById('outlineWidth') as HTMLInputElement).value = String(
+    contourConfig.outlineWidth ?? DEFAULT_SEGMENTATION_CONFIG.outlineWidth
+  );
 
   (document.getElementById('outlineOpacity') as HTMLInputElement).value =
     String(
@@ -121,18 +118,17 @@ function getSegmentsVisibilityState() {
 }
 
 function getSegmentationConfig(
-  toolGroupdId: string
+  toolGroupId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
-      toolGroupdId,
+    segmentation.config.getSegmentationRepresentationConfig(
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add Contour object because it
   // can return an empty object
-  if (!segmentationConfig.CONTOUR) {
-    segmentationConfig.CONTOUR = {};
+  if (!segmentationConfig.Contour) {
+    segmentationConfig.Contour = {};
   }
 
   return segmentationConfig;
@@ -141,10 +137,9 @@ function getSegmentationConfig(
 function updateSegmentationConfig(config) {
   const segmentationConfig = getSegmentationConfig(toolGroupId);
 
-  Object.assign(segmentationConfig.CONTOUR, config);
+  Object.assign(segmentationConfig.Contour, config);
 
-  segmentation.config.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  segmentation.config.setSegmentationRepresentationConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -176,9 +171,12 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setSegmentationVisibility(
-      toolGroupId,
-      segmentationRepresentationUID,
+    segmentation.config.visibility.setSegmentationRepresentationVisibility(
+      viewportId,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
 
@@ -193,8 +191,8 @@ addButtonToToolbar({
     const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    segmentation.config.visibility.setSegmentVisibility(
-      toolGroupId,
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -205,13 +203,13 @@ addButtonToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineWidthActive',
+  id: 'outlineWidth',
   title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineWidthActive: Number(value) });
+    updateSegmentationConfig({ outlineWidth: Number(value) });
   },
 });
 
@@ -248,15 +246,12 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
@@ -303,9 +298,9 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
+  // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+    await segmentation.addSegmentationRepresentations(viewportId, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,

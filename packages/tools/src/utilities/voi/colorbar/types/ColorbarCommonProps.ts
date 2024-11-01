@@ -1,4 +1,4 @@
-import { ColorbarRangeTextPosition } from '../enums/ColorbarRangeTextPosition';
+import type { ColorbarRangeTextPosition } from '../enums/ColorbarRangeTextPosition';
 import type {
   ColorbarImageRange,
   ColorbarTicksStyle,

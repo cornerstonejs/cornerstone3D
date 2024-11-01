@@ -1,10 +1,9 @@
 {
-  "version": "1.84.4",
+  "version": "2.1.5",
   "packages": [
-    "packages/adapters",
     "packages/core",
     "packages/tools",
-    "packages/streaming-image-volume-loader",
+    "packages/adapters",
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader"
   ],

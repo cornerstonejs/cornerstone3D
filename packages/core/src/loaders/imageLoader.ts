@@ -1,14 +1,12 @@
 import cache from '../cache/cache';
-import { ImageVolume } from '../cache';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
-import {
-  genericMetadataProvider,
-  getBufferConfiguration,
-  triggerEvent,
-  uuidv4,
-} from '../utilities';
-import {
+import genericMetadataProvider from '../utilities/genericMetadataProvider';
+import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
+import triggerEvent from '../utilities/triggerEvent';
+import uuidv4 from '../utilities/uuidv4';
+import VoxelManager from '../utilities/VoxelManager';
+import type {
   IImage,
   ImageLoaderFn,
   IImageLoadObject,
@@ -18,9 +16,11 @@ import {
   Mat3,
   PixelDataTypedArrayString,
   PixelDataTypedArray,
+  ImagePlaneModuleMetadata,
+  ImagePixelModuleMetadata,
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import { metaData } from '../';
+import * as metaData from '../metaData';
 
 export interface ImageLoaderOptions {
   priority: number;
@@ -29,16 +29,14 @@ export interface ImageLoaderOptions {
   ignoreCache?: boolean;
 }
 
-interface DerivedImages {
-  imageIds: Array<string>;
-  promises: Array<Promise<IImage>>;
-}
-
-type LocalImageOptions = {
+interface LocalImageOptions {
+  frameOfReferenceUID?: string;
   scalarData?: PixelDataTypedArray;
-  targetBufferType?: PixelDataTypedArrayString;
+  targetBuffer?: {
+    type: PixelDataTypedArrayString;
+  };
   dimensions?: Point2;
-  spacing?: Point3;
+  spacing?: Point2;
   origin?: Point3;
   direction?: Mat3;
   /**
@@ -54,11 +52,11 @@ type LocalImageOptions = {
    * such as a VoxelManager.
    */
   onCacheAdd?: (image: IImage) => void;
-};
+}
 
 type DerivedImageOptions = LocalImageOptions & {
   imageId?: string;
-  targetBufferType?: PixelDataTypedArrayString;
+  instanceNumber?: number;
 };
 
 /**
@@ -82,86 +80,65 @@ function loadImageFromImageLoader(
   imageId: string,
   options: ImageLoaderOptions
 ): IImageLoadObject {
-  // Extract the image loader scheme: wadors:https://image1 => wadors
-  const colonIndex = imageId.indexOf(':');
-  const scheme = imageId.substring(0, colonIndex);
-  const loader = imageLoaders[scheme];
-  if (loader === undefined || loader === null) {
-    if (unknownImageLoader !== undefined) {
-      return unknownImageLoader(imageId);
-    }
-    throw new Error('loadImageFromImageLoader: no image loader for imageId');
+  // Attempt to retrieve the image from cache
+  const cachedImageLoadObject = cache.getImageLoadObject(imageId);
+
+  if (cachedImageLoadObject) {
+    // This is an in-progress image, which someone else is loading, so just
+    // handle the response directly.
+    handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
+    return cachedImageLoadObject;
   }
-  // Load using the registered loader
+
+  // Determine the appropriate image loader based on the image scheme
+  const scheme = imageId.split(':')[0];
+  const loader = imageLoaders[scheme] || unknownImageLoader;
+
+  if (!loader) {
+    throw new Error(
+      `loadImageFromImageLoader: No image loader found for scheme '${scheme}'`
+    );
+  }
+
+  // Load the image using the selected loader
   const imageLoadObject = loader(imageId, options);
-  // Broadcast an image loaded event once the image is loaded
-  imageLoadObject.promise.then(
-    function (image) {
-      triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
-    },
-    function (error) {
-      const errorObject: EventTypes.ImageLoadedFailedEventDetail = {
-        imageId,
-        error,
-      };
-      triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorObject);
-    }
-  );
+  handleImageLoadPromise(imageLoadObject.promise, imageId);
+
   return imageLoadObject;
 }
 
-/**
- * Gets the imageLoadObject by 1) Looking in to the cache to see if the
- * imageLoadObject has already been cached, 2) Checks inside the volume cache
- * to see if there is a volume that contains the same imageURI for the requested
- * imageID 3) Checks inside the imageCache for similar imageURI that might have
- * been stored as a result of decaching a volume 4) Finally if none were found
- * it request it from the registered imageLoaders.
- *
- * @param imageId - A Cornerstone Image Object's imageId
- * @param options - Options to be passed to the Image Loader
- *
- * @returns An Object which can be used to act after an image is loaded or loading fails
- */
-function loadImageFromCacheOrVolume(
-  imageId: string,
-  options: ImageLoaderOptions
-): IImageLoadObject {
-  if (options.ignoreCache) {
-    return loadImageFromImageLoader(imageId, options);
-  }
+function handleImageLoadPromise(
+  imagePromise: Promise<IImage>,
+  imageId: string
+): void {
+  Promise.resolve(imagePromise)
+    .then((image: IImage) => {
+      ensureVoxelManager(image);
+      triggerEvent(eventTarget, Events.IMAGE_LOADED, { image });
+    })
+    .catch((error) => {
+      const errorDetails: EventTypes.ImageLoadedFailedEventDetail = {
+        imageId,
+        error,
+      };
+      triggerEvent(eventTarget, Events.IMAGE_LOAD_FAILED, errorDetails);
+    });
+}
 
-  // 1. Check inside the image cache for imageId
-  let imageLoadObject = cache.getImageLoadObject(imageId);
-  if (imageLoadObject !== undefined) {
-    return imageLoadObject;
-  }
-  // 2. Check if there exists a volume in the cache containing the imageId,
-  // we copy the pixelData over.
-  const cachedVolumeInfo = cache.getVolumeContainingImageId(imageId);
-  if (cachedVolumeInfo?.volume?.loadStatus?.loaded) {
-    // 2.1 Convert the volume at the specific slice to a cornerstoneImage object.
-    // this will copy the pixel data over.
-    const { volume, imageIdIndex } = cachedVolumeInfo;
+function ensureVoxelManager(image: IImage): void {
+  if (!image.voxelManager) {
+    const { width, height, numberOfComponents } = image;
+    const voxelManager = VoxelManager.createImageVoxelManager({
+      scalarData: image.getPixelData(),
+      width,
+      height,
+      numberOfComponents,
+    });
 
-    if (volume instanceof ImageVolume) {
-      imageLoadObject = volume.convertToCornerstoneImage(imageId, imageIdIndex);
-    }
-    return imageLoadObject;
+    image.voxelManager = voxelManager;
+    image.getPixelData = () => voxelManager.getScalarData();
+    delete image.imageFrame.pixelData;
   }
-  // 3. If no volume found, we search inside the imageCache for the imageId
-  // that has the same URI which had been cached if the volume was converted
-  // to an image
-  const cachedImage = cache.getCachedImageBasedOnImageURI(imageId);
-  if (cachedImage) {
-    imageLoadObject = cachedImage.imageLoadObject;
-    return imageLoadObject;
-  }
-  // 4. if not in image cache nor inside the volume cache, we request the
-  // image loaders to load it
-  imageLoadObject = loadImageFromImageLoader(imageId, options);
-
-  return imageLoadObject;
 }
 
 /**
@@ -183,7 +160,7 @@ export function loadImage(
     throw new Error('loadImage: parameter imageId must not be undefined');
   }
 
-  return loadImageFromCacheOrVolume(imageId, options).promise;
+  return loadImageFromImageLoader(imageId, options).promise;
 }
 
 /**
@@ -205,13 +182,11 @@ export function loadAndCacheImage(
       'loadAndCacheImage: parameter imageId must not be undefined'
     );
   }
-  const imageLoadObject = loadImageFromCacheOrVolume(imageId, options);
+  const imageLoadObject = loadImageFromImageLoader(imageId, options);
 
   // if not inside cache, store it
   if (!cache.getImageLoadObject(imageId)) {
-    cache.putImageLoadObject(imageId, imageLoadObject).catch((err) => {
-      console.warn(err);
-    });
+    cache.putImageLoadObject(imageId, imageLoadObject);
   }
 
   return imageLoadObject.promise;
@@ -225,7 +200,7 @@ export function loadAndCacheImage(
  *
  */
 export function loadAndCacheImages(
-  imageIds: Array<string>,
+  imageIds: string[],
   options: ImageLoaderOptions = { priority: 0, requestType: 'prefetch' }
 ): Promise<IImage>[] {
   if (!imageIds || imageIds.length === 0) {
@@ -253,9 +228,8 @@ export function loadAndCacheImages(
  */
 export function createAndCacheDerivedImage(
   referencedImageId: string,
-  options: DerivedImageOptions = {},
-  preventCache = false
-): Promise<IImage> {
+  options: DerivedImageOptions = {}
+): IImage {
   if (referencedImageId === undefined) {
     throw new Error(
       'createAndCacheDerivedImage: parameter imageId must not be undefined'
@@ -273,7 +247,7 @@ export function createAndCacheDerivedImage(
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
 
   const { TypedArrayConstructor } = getBufferConfiguration(
-    options.targetBufferType,
+    options.targetBuffer?.type,
     length
   );
 
@@ -282,16 +256,34 @@ export function createAndCacheDerivedImage(
     skipCreateBuffer ? 1 : length
   );
   const derivedImageId = imageId;
+  const referencedImagePlaneMetadata = metaData.get(
+    'imagePlaneModule',
+    referencedImageId
+  );
 
-  ['imagePlaneModule', 'generalSeriesModule'].forEach((type) => {
-    genericMetadataProvider.add(derivedImageId, {
-      type,
-      metadata: metaData.get(type, referencedImageId),
-    });
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'imagePlaneModule',
+    metadata: referencedImagePlaneMetadata,
+  });
+
+  const referencedImageGeneralSeriesMetadata = metaData.get(
+    'generalSeriesModule',
+    referencedImageId
+  );
+
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'generalSeriesModule',
+    metadata: referencedImageGeneralSeriesMetadata,
+  });
+
+  genericMetadataProvider.add(derivedImageId, {
+    type: 'generalImageModule',
+    metadata: {
+      instanceNumber: options.instanceNumber,
+    },
   });
 
   const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
-  // TODO - add a general way to specify this
   genericMetadataProvider.add(derivedImageId, {
     type: 'imagePixelModule',
     metadata: {
@@ -304,20 +296,31 @@ export function createAndCacheDerivedImage(
     },
   });
 
-  const localImage = createAndCacheLocalImage(
-    { scalarData: imageScalarData, onCacheAdd, skipCreateBuffer },
-    imageId,
-    true
-  );
+  const localImage = createAndCacheLocalImage(imageId, {
+    scalarData: imageScalarData,
+    onCacheAdd,
+    skipCreateBuffer,
+    targetBuffer: {
+      type: imageScalarData.constructor.name as PixelDataTypedArrayString,
+    },
+    dimensions: [imagePlaneModule.columns, imagePlaneModule.rows],
+    spacing: [
+      imagePlaneModule.columnPixelSpacing,
+      imagePlaneModule.rowPixelSpacing,
+    ],
+    origin: imagePlaneModule.imagePositionPatient,
+    direction: imagePlaneModule.imageOrientationPatient,
+    frameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
+  });
 
-  const imageLoadObject = {
-    promise: Promise.resolve(localImage),
-  };
+  localImage.referencedImageId = referencedImageId;
 
-  if (!preventCache) {
-    cache.putImageLoadObject(derivedImageId, imageLoadObject);
+  // 3. Caching the image
+  if (!cache.getImageLoadObject(imageId)) {
+    cache.putImageSync(imageId, localImage);
   }
-  return imageLoadObject.promise;
+
+  return localImage;
 }
 
 /**
@@ -326,109 +329,198 @@ export function createAndCacheDerivedImage(
  * @param referencedImageIds - list of imageIds
  * @param options
  * @param options.getDerivedImageId - function to get the derived imageId
- * @param options.targetBufferType - target buffer type
+ * @param options.targetBuffer - target buffer type
  * @param options.skipBufferCreate - avoid creating the buffer
  */
 export function createAndCacheDerivedImages(
-  referencedImageIds: Array<string>,
+  referencedImageIds: string[],
   options: DerivedImageOptions & {
     getDerivedImageId?: (referencedImageId: string) => string;
-    targetBufferType?: PixelDataTypedArrayString;
+    targetBuffer?: {
+      type: PixelDataTypedArrayString;
+    };
   } = {}
-): DerivedImages {
-  if (referencedImageIds?.length === 0) {
+): IImage[] {
+  if (referencedImageIds.length === 0) {
     throw new Error(
       'createAndCacheDerivedImages: parameter imageIds must be list of image Ids'
     );
   }
-
   const derivedImageIds = [];
-  const allPromises = referencedImageIds.map((referencedImageId) => {
+  const images = referencedImageIds.map((referencedImageId, index) => {
     const newOptions: DerivedImageOptions = {
       imageId:
-        options.getDerivedImageId?.(referencedImageId) || `derived:${uuidv4()}`,
+        options?.getDerivedImageId?.(referencedImageId) ||
+        `derived:${uuidv4()}`,
       ...options,
     };
     derivedImageIds.push(newOptions.imageId);
-    return createAndCacheDerivedImage(referencedImageId, newOptions);
+    return createAndCacheDerivedImage(referencedImageId, {
+      ...newOptions,
+      instanceNumber: index + 1,
+    });
   });
 
-  return { imageIds: derivedImageIds, promises: allPromises };
+  return images;
 }
 
 export function createAndCacheLocalImage(
-  options: LocalImageOptions,
   imageId: string,
-  preventCache = false
+  options: LocalImageOptions
 ): IImage {
-  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+  const {
+    scalarData,
+    origin,
+    direction,
+    targetBuffer,
+    skipCreateBuffer,
+    onCacheAdd,
+    frameOfReferenceUID,
+  } = options;
 
-  const length = imagePlaneModule.rows * imagePlaneModule.columns;
+  const dimensions = options.dimensions;
+  const spacing = options.spacing;
+
+  if (!dimensions || !spacing) {
+    throw new Error(
+      'createAndCacheLocalImage: dimensions and spacing are required'
+    );
+  }
+
+  const width = dimensions[0];
+  const height = dimensions[1];
+  const columnPixelSpacing = spacing[0];
+  const rowPixelSpacing = spacing[1];
+
+  const imagePlaneModule = {
+    frameOfReferenceUID,
+    rows: height,
+    columns: width,
+    imageOrientationPatient: direction ?? [1, 0, 0, 0, 1, 0],
+    rowCosines: direction ? direction.slice(0, 3) : [1, 0, 0],
+    columnCosines: direction ? direction.slice(3, 6) : [0, 1, 0],
+    imagePositionPatient: origin ?? [0, 0, 0],
+    pixelSpacing: [rowPixelSpacing, columnPixelSpacing],
+    rowPixelSpacing: rowPixelSpacing,
+    columnPixelSpacing: columnPixelSpacing,
+  } as ImagePlaneModuleMetadata;
+
+  const length = width * height;
+  const numberOfComponents = scalarData.length / length;
+
+  let scalarDataToUse;
+  if (scalarData) {
+    if (
+      !(
+        scalarData instanceof Uint8Array ||
+        scalarData instanceof Float32Array ||
+        scalarData instanceof Uint16Array ||
+        scalarData instanceof Int16Array
+      )
+    ) {
+      throw new Error(
+        'createAndCacheLocalImage: scalarData must be of type Uint8Array, Uint16Array, Int16Array or Float32Array'
+      );
+    }
+
+    scalarDataToUse = scalarData;
+  } else if (!skipCreateBuffer) {
+    // Todo: need to handle numberOfComponents > 1
+    const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
+      targetBuffer?.type,
+      length
+    );
+
+    const imageScalarData = new TypedArrayConstructor(length);
+
+    scalarDataToUse = imageScalarData;
+  }
+
+  // Determine bit depth based on scalarData type
+  let bitsAllocated, bitsStored, highBit;
+  if (scalarDataToUse instanceof Uint8Array) {
+    bitsAllocated = 8;
+    bitsStored = 8;
+    highBit = 7;
+  } else if (scalarDataToUse instanceof Uint16Array) {
+    bitsAllocated = 16;
+    bitsStored = 16;
+    highBit = 15;
+  } else if (scalarDataToUse instanceof Int16Array) {
+    bitsAllocated = 16;
+    bitsStored = 16;
+    highBit = 15;
+  } else if (scalarDataToUse instanceof Float32Array) {
+    bitsAllocated = 32;
+    bitsStored = 32;
+    highBit = 31;
+  } else {
+    throw new Error('Unsupported scalarData type');
+  }
+
+  // Prepare ImagePixelModuleMetadata
+  const imagePixelModule = {
+    samplesPerPixel: 1,
+    photometricInterpretation:
+      scalarDataToUse.length > dimensions[0] * dimensions[1]
+        ? 'RGB'
+        : 'MONOCHROME2', // or 1
+    rows: height,
+    columns: width,
+    bitsAllocated,
+    bitsStored,
+    highBit,
+  } as ImagePixelModuleMetadata;
+
+  const metadata = {
+    imagePlaneModule,
+    imagePixelModule,
+  };
+
+  // Add metadata to genericMetadataProvider
+  ['imagePlaneModule', 'imagePixelModule'].forEach((type) => {
+    genericMetadataProvider.add(imageId, {
+      type,
+      metadata: metadata[type] || {},
+    });
+  });
+
+  const voxelManager = VoxelManager.createImageVoxelManager({
+    height,
+    width,
+    numberOfComponents,
+    scalarData: scalarDataToUse,
+  });
 
   const image = {
     imageId: imageId,
     intercept: 0,
     windowCenter: 0,
     windowWidth: 0,
-    color: false,
-    numComps: 1,
+    color: imagePixelModule.photometricInterpretation === 'RGB',
+    numberOfComponents: imagePixelModule.samplesPerPixel,
+    dataType: targetBuffer?.type,
     slope: 1,
     minPixelValue: 0,
-    maxPixelValue: 255,
-    voiLUTFunction: undefined,
-    rows: imagePlaneModule.rows,
-    columns: imagePlaneModule.columns,
-    getCanvas: undefined, // todo: which canvas?
-    height: imagePlaneModule.rows,
-    width: imagePlaneModule.columns,
-    rgba: undefined, // todo: how
+    maxPixelValue: Math.pow(2, imagePixelModule.bitsStored) - 1,
+    rows: imagePixelModule.rows,
+    columns: imagePixelModule.columns,
+    getCanvas: undefined,
+    height: imagePixelModule.rows,
+    width: imagePixelModule.columns,
+    rgba: undefined,
     columnPixelSpacing: imagePlaneModule.columnPixelSpacing,
     rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
+    FrameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
     invert: false,
+    getPixelData: () => voxelManager.getScalarData(),
+    voxelManager,
+    sizeInBytes: scalarData.byteLength,
   } as IImage;
 
-  if (options.scalarData) {
-    const imageScalarData = options.scalarData;
+  onCacheAdd?.(image);
 
-    if (
-      !(
-        imageScalarData instanceof Uint8Array ||
-        imageScalarData instanceof Float32Array ||
-        imageScalarData instanceof Uint16Array ||
-        imageScalarData instanceof Int16Array
-      )
-    ) {
-      throw new Error(
-        'To use createLocalVolume you should pass scalarData of type Uint8Array, Uint16Array, Int16Array or Float32Array'
-      );
-    }
-
-    image.sizeInBytes = imageScalarData.byteLength;
-    image.getPixelData = () => imageScalarData;
-  } else if (options.skipCreateBuffer !== true) {
-    const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
-      options.targetBufferType,
-      length
-    );
-
-    const imageScalarData = new TypedArrayConstructor(length);
-
-    image.sizeInBytes = numBytes;
-    image.getPixelData = () => imageScalarData;
-  }
-
-  // The onCacheAdd may modify the size in bytes for this image, which is ok,
-  // as this is used after resolution for cache storage.  It may also do
-  // thinks like adding alternative representations such as VoxelManager
-  options.onCacheAdd?.(image);
-
-  const imageLoadObject = {
-    promise: Promise.resolve(image),
-  };
-
-  if (!preventCache) {
-    cache.putImageLoadObject(image.imageId, imageLoadObject);
-  }
+  cache.putImageSync(image.imageId, image);
 
   return image;
 }
@@ -472,8 +564,10 @@ export function cancelLoadImage(imageId: string): void {
  * @param imageIds - Array of Cornerstone Image Object's imageIds
  *
  */
-export function cancelLoadImages(imageIds: Array<string>): void {
-  imageIds.forEach((imageId) => cancelLoadImage(imageId));
+export function cancelLoadImages(imageIds: string[]): void {
+  imageIds.forEach((imageId) => {
+    cancelLoadImage(imageId);
+  });
 }
 
 /**
@@ -489,7 +583,7 @@ export function cancelLoadAll(): void {
 
     Object.keys(requests).forEach((priority) => {
       const requestDetails = requests[priority].pop();
-      const additionalDetails = requestDetails.additionalDetails as any;
+      const additionalDetails = requestDetails.additionalDetails;
       const { imageId, volumeId } = additionalDetails;
 
       let loadObject;
@@ -555,16 +649,17 @@ export function unregisterAllImageLoaders(): void {
  * always until we have a better solution.
  *
  * @param referencedImageIds - An array of referenced image IDs.
- * @param options - The options for creating the derived images (default: { targetBufferType: 'Uint8Array' }).
+ * @param options - The options for creating the derived images (`default: { targetBuffer: { type: 'Uint8Array' } }`).
  * @returns The derived images.
  */
-export function createAndCacheDerivedSegmentationImages(
-  referencedImageIds: Array<string>,
-  options: DerivedImageOptions = {
-    targetBufferType: 'Uint8Array',
-  }
-): DerivedImages {
-  return createAndCacheDerivedImages(referencedImageIds, options);
+export function createAndCacheDerivedLabelmapImages(
+  referencedImageIds: string[],
+  options = {} as DerivedImageOptions
+): IImage[] {
+  return createAndCacheDerivedImages(referencedImageIds, {
+    ...options,
+    targetBuffer: { type: 'Uint8Array' },
+  });
 }
 
 /**
@@ -574,14 +669,15 @@ export function createAndCacheDerivedSegmentationImages(
  * always until we have a better solution.
  *
  * @param referencedImageId The ID of the referenced image.
- * @param options The options for creating the derived image (default: { targetBufferType: 'Uint8Array' }).
+ * @param options The options for creating the derived image (`default: { targetBuffer: { type: 'Uint8Array' } }`).
  * @returns A promise that resolves to the created derived segmentation image.
  */
-export function createAndCacheDerivedSegmentationImage(
+export function createAndCacheDerivedLabelmapImage(
   referencedImageId: string,
-  options: DerivedImageOptions = {
-    targetBufferType: 'Uint8Array',
-  }
-): Promise<IImage> {
-  return createAndCacheDerivedImage(referencedImageId, options);
+  options = {} as DerivedImageOptions
+): IImage {
+  return createAndCacheDerivedImage(referencedImageId, {
+    ...options,
+    targetBuffer: { type: 'Uint8Array' },
+  });
 }

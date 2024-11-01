@@ -17,16 +17,15 @@ import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
-import { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import {
   drawHandle as drawHandleSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { roundNumber } from '../../utilities';
 import { distanceToPoint } from '../../utilities/math/point';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
@@ -35,7 +34,7 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
@@ -45,7 +44,7 @@ import {
   Annotation,
   InteractionTypes,
 } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 const { transformWorldToIndex } = csUtils;
 
@@ -57,12 +56,10 @@ const { transformWorldToIndex } = csUtils;
 class UltrasoundDirectionalTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
   startedDrawing: boolean;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -189,7 +186,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -261,7 +258,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   }
@@ -305,7 +302,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -364,7 +361,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -381,13 +378,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -796,7 +787,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -870,24 +861,24 @@ function defaultGetTextLines(data, targetId, configuration): string[] {
   const { xValues, yValues, units, isUnitless, isHorizontal } = cachedStats;
 
   if (isUnitless) {
-    return [`${roundNumber(xValues[0])} px`];
+    return [`${csUtils.roundNumber(xValues[0])} px`];
   }
 
   if (configuration.displayBothAxesDistances) {
     const dist1 = Math.abs(xValues[1] - xValues[0]);
     const dist2 = Math.abs(yValues[1] - yValues[0]);
     return [
-      `${roundNumber(dist1)} ${units[0]}`,
-      `${roundNumber(dist2)} ${units[1]}`,
+      `${csUtils.roundNumber(dist1)} ${units[0]}`,
+      `${csUtils.roundNumber(dist2)} ${units[1]}`,
     ];
   }
 
   if (isHorizontal) {
     const dist = Math.abs(xValues[1] - xValues[0]);
-    return [`${roundNumber(dist)} ${units[0]}`];
+    return [`${csUtils.roundNumber(dist)} ${units[0]}`];
   } else {
     const dist = Math.abs(yValues[1] - yValues[0]);
-    return [`${roundNumber(dist)} ${units[1]}`];
+    return [`${csUtils.roundNumber(dist)} ${units[1]}`];
   }
 }
 

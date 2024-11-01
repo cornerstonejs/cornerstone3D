@@ -5,6 +5,7 @@ import { createAndAddContourSegmentationsFromClippedSurfaces } from './createAnd
 
 const currentViewportNormal = new Map();
 
+// Todo: this code is not used anywhere yet
 export function updateContoursOnCameraModified(
   surfacesInfo,
   viewport,
@@ -29,8 +30,7 @@ export function updateContoursOnCameraModified(
 
     const polyDataCache = await clipAndCacheSurfacesForViewport(
       surfacesInfo,
-      viewport as Types.IVolumeViewport,
-      segmentationRepresentationUID
+      viewport as Types.IVolumeViewport
     );
 
     const results = extractContourData(polyDataCache);

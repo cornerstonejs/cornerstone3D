@@ -1,11 +1,11 @@
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { IImage, PixelDataTypedArray } from '../types';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { IImage, PixelDataTypedArray } from '../types';
 
 function updateVTKImageDataWithCornerstoneImage(
   sourceImageData: vtkImageData,
   image: IImage
 ) {
-  const pixelData = image.getPixelData();
+  const pixelData = image.voxelManager.getScalarData();
   if (!sourceImageData.getPointData) {
     // This happens for a CanvasActor, that doesn't have the getPointData
     return;
@@ -18,6 +18,7 @@ function updateVTKImageDataWithCornerstoneImage(
   // if the color image is loaded with CPU previously, it loads it
   // with RGBA, and here we need to remove the A channel from the
   // pixel data.
+  // Todo: use voxel manager for this as well
   if (image.color && image.rgba) {
     const newPixelData = new Uint8Array(image.columns * image.rows * 3);
     for (let i = 0; i < image.columns * image.rows; i++) {

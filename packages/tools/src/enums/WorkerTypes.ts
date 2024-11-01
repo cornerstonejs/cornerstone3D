@@ -2,15 +2,15 @@
  * Worker Types are used to define the types the worker that is getting performed
  */
 enum ChangeTypes {
-  POLYSEG_CONTOUR_TO_LABELMAP = 'polySeg/convertContourToVolumeLabelmap',
+  POLYSEG_CONTOUR_TO_LABELMAP = 'Converting Contour to Labelmap',
 
-  POLYSEG_SURFACE_TO_LABELMAP = 'polySeg/convertSurfacesToVolumeLabelmap',
+  POLYSEG_SURFACE_TO_LABELMAP = 'Converting Surfaces to Labelmap',
 
-  POLYSEG_CONTOUR_TO_SURFACE = 'polySeg/convertContourToSurface',
+  POLYSEG_CONTOUR_TO_SURFACE = 'Converting Contour to Surface',
 
-  POLYSEG_LABELMAP_TO_SURFACE = 'polySeg/convertLabelmapToSurface',
+  POLYSEG_LABELMAP_TO_SURFACE = 'Converting Labelmap to Surface',
 
-  SURFACE_CLIPPING = 'surfaceClipping',
+  SURFACE_CLIPPING = 'Clipping Surfaces',
 }
 
 export default ChangeTypes;

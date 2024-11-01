@@ -14,32 +14,30 @@ import {
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
 import { drawArrow as drawArrowSvg } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 import { resetElementCursor } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
 } from '../../types';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { Annotation } from '../../types';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { Annotation } from '../../types';
 
 type Point2 = Types.Point2;
 
 class KeyImageTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -102,15 +100,12 @@ class KeyImageTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.configuration.getTextCallback((text) => {
       if (!text) {
         removeAnnotation(annotation.annotationUID);
-        triggerAnnotationRenderForViewportIds(
-          renderingEngine,
-          viewportIdsToRender
-        );
+        triggerAnnotationRenderForViewportIds(viewportIdsToRender);
         this.isDrawing = false;
         return;
       }
@@ -118,10 +113,7 @@ class KeyImageTool extends AnnotationTool {
 
       triggerAnnotationCompleted(annotation);
 
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     });
 
     return annotation;
@@ -247,7 +239,7 @@ class KeyImageTool extends AnnotationTool {
       element,
       this.getToolName()
     );
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     // Dispatching annotation modified
     triggerAnnotationModified(annotation, element);

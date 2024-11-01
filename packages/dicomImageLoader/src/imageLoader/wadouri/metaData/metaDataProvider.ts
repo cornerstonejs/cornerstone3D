@@ -1,4 +1,5 @@
-import external from '../../../externalModules';
+import { Enums } from '@cornerstonejs/core';
+import * as dicomParser from 'dicom-parser';
 import getNumberValues from './getNumberValues';
 import parseImageId from '../parseImageId';
 import dataSetCacheManager from '../dataSetCacheManager';
@@ -23,8 +24,7 @@ import {
 import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = external.cornerstone.Enums;
-  const { dicomParser } = external;
+  const { MetadataModules } = Enums;
 
   // Several providers use array queries
   if (Array.isArray(imageId)) {
@@ -61,6 +61,16 @@ function metaDataProvider(type, imageId) {
   if (!dataSet) {
     return;
   }
+
+  return metadataForDataset(type, imageId, dataSet);
+}
+
+export function metadataForDataset(
+  type,
+  imageId,
+  dataSet: dicomParser.DataSet
+) {
+  const { MetadataModules } = Enums;
 
   if (type === MetadataModules.GENERAL_STUDY) {
     return {

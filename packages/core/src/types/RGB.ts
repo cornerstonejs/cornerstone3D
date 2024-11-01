@@ -3,4 +3,4 @@
  */
 type RGB = [number, number, number];
 
-export default RGB;
+export type { RGB as default };

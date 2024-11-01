@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -22,15 +22,14 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
   CircleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
   annotation,
+  StackScrollTool,
 } = cornerstoneTools;
 
 const { selection } = annotation;
@@ -167,14 +166,7 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
 
-    console.debug(annotations);
     const labelmapVolume = cache.getVolume(segmentationId);
-    const scalarData = labelmapVolume.getScalarData();
-
-    //We set the segmentation to 0
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
-    }
 
     annotations.map((annotation, i) => {
       // @ts-ignore
@@ -182,7 +174,10 @@ addButtonToToolbar({
       for (let i = 0; i < pointsInVolume.length; i++) {
         for (let j = 0; j < pointsInVolume[i].length; j++) {
           if (pointsInVolume[i][j].value > 2) {
-            scalarData[pointsInVolume[i][j].index] = 1;
+            labelmapVolume.voxelManager.setAtIndex(
+              pointsInVolume[i][j].index,
+              1
+            );
           }
         }
       }
@@ -197,7 +192,7 @@ addButtonToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -228,8 +223,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -238,15 +232,13 @@ async function run() {
   // Manipulation Tools
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: true,
   });
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -268,7 +260,13 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -335,20 +333,23 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
+  const viewportIds = [viewportId1, viewportId2, viewportId3];
+
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+    viewportIds
   );
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  viewportIds.map(async (viewportId) => {
+    // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  });
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);

@@ -6,7 +6,6 @@ import {
     derivations
 } from "dcmjs";
 import ndarray from "ndarray";
-import cloneDeep from "lodash.clonedeep";
 import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
 import checkOrientation from "../helpers/checkOrientation";
 import compareArrays from "../helpers/compareArrays";
@@ -226,7 +225,7 @@ function _createSegFromImages(images, isMultiframe, options) {
 }
 
 /**
- * generateToolState - Given a set of cornrstoneTools imageIds and a Segmentation buffer,
+ * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
  *
  * @param  {string[]} imageIds - An array of the imageIds.
@@ -432,16 +431,14 @@ async function generateToolState(
     const centroidXYZ = new Map();
 
     segmentsPixelIndices.forEach((imageIdIndexBufferIndex, segmentIndex) => {
-        const { xAcc, yAcc, zAcc, count } = calculateCentroid(
+        const centroids = calculateCentroid(
             imageIdIndexBufferIndex,
-            multiframe
+            multiframe,
+            metadataProvider,
+            imageIds
         );
 
-        centroidXYZ.set(segmentIndex, {
-            x: Math.floor(xAcc / count),
-            y: Math.floor(yAcc / count),
-            z: Math.floor(zAcc / count)
-        });
+        centroidXYZ.set(segmentIndex, centroids);
     });
 
     return {
@@ -903,7 +900,7 @@ function insertOverlappingPixelDataPlanar(
     let tempBuffer = labelmapBufferArray[m].slice(0);
 
     // temp list for checking overlaps
-    let tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
+    let tempSegmentsOnFrame = structuredClone(segmentsOnFrameArray[m]);
 
     /** split overlapping SEGs algorithm for each segment:
      *  A) copy the labelmapBuffer in the array with index 0
@@ -1029,7 +1026,7 @@ function insertOverlappingPixelDataPlanar(
                             M++;
                         }
                         tempBuffer = labelmapBufferArray[m].slice(0);
-                        tempSegmentsOnFrame = cloneDeep(
+                        tempSegmentsOnFrame = structuredClone(
                             segmentsOnFrameArray[m]
                         );
 
@@ -1058,12 +1055,12 @@ function insertOverlappingPixelDataPlanar(
         }
 
         labelmapBufferArray[m] = tempBuffer.slice(0);
-        segmentsOnFrameArray[m] = cloneDeep(tempSegmentsOnFrame);
+        segmentsOnFrameArray[m] = structuredClone(tempSegmentsOnFrame);
 
         // reset temp variables/buffers for new segment
         m = 0;
         tempBuffer = labelmapBufferArray[m].slice(0);
-        tempSegmentsOnFrame = cloneDeep(segmentsOnFrameArray[m]);
+        tempSegmentsOnFrame = structuredClone(segmentsOnFrameArray[m]);
     }
 }
 
@@ -1285,7 +1282,7 @@ function unpackPixelData(multiframe, options) {
     }
 
     if (data === undefined) {
-        log.error("This segmentation pixeldata is undefined.");
+        log.error("This segmentation pixelData is undefined.");
     }
 
     if (segType === "BINARY") {
@@ -1628,10 +1625,18 @@ function getUnpackedOffsetAndLength(chunks, offset, length) {
     };
 }
 
-function calculateCentroid(imageIdIndexBufferIndex, multiframe) {
+function calculateCentroid(
+    imageIdIndexBufferIndex,
+    multiframe,
+    metadataProvider,
+    imageIds
+) {
     let xAcc = 0;
     let yAcc = 0;
     let zAcc = 0;
+    let worldXAcc = 0;
+    let worldYAcc = 0;
+    let worldZAcc = 0;
     let count = 0;
 
     for (const [imageIdIndex, bufferIndices] of Object.entries(
@@ -1643,19 +1648,75 @@ function calculateCentroid(imageIdIndexBufferIndex, multiframe) {
             continue;
         }
 
+        // Get metadata for this slice
+        const imageId = imageIds[z];
+        const imagePlaneModule = metadataProvider.get(
+            "imagePlaneModule",
+            imageId
+        );
+
+        if (!imagePlaneModule) {
+            console.debug(
+                "Missing imagePlaneModule metadata for centroid calculation"
+            );
+            continue;
+        }
+
+        const {
+            imagePositionPatient,
+            rowCosines,
+            columnCosines,
+            rowPixelSpacing,
+            columnPixelSpacing
+        } = imagePlaneModule;
+
         for (const bufferIndex of bufferIndices) {
             const y = Math.floor(bufferIndex / multiframe.Rows);
             const x = bufferIndex % multiframe.Rows;
 
+            // Image coordinates
             xAcc += x;
             yAcc += y;
             zAcc += z;
+
+            // Calculate world coordinates
+            // P(world) = P(image) * IOP * spacing + IPP
+            const worldX =
+                imagePositionPatient[0] +
+                x * rowCosines[0] * columnPixelSpacing +
+                y * columnCosines[0] * rowPixelSpacing;
+
+            const worldY =
+                imagePositionPatient[1] +
+                x * rowCosines[1] * columnPixelSpacing +
+                y * columnCosines[1] * rowPixelSpacing;
+
+            const worldZ =
+                imagePositionPatient[2] +
+                x * rowCosines[2] * columnPixelSpacing +
+                y * columnCosines[2] * rowPixelSpacing;
+
+            worldXAcc += worldX;
+            worldYAcc += worldY;
+            worldZAcc += worldZ;
 
             count++;
         }
     }
 
-    return { xAcc, yAcc, zAcc, count };
+    return {
+        image: {
+            x: Math.floor(xAcc / count),
+            y: Math.floor(yAcc / count),
+            z: Math.floor(zAcc / count)
+        },
+        world: {
+            x: worldXAcc / count,
+            y: worldYAcc / count,
+            z: worldZAcc / count
+        },
+        count
+    };
 }
 
 const Segmentation = {

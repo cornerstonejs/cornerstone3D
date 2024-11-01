@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -12,7 +12,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -21,7 +21,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -71,8 +70,8 @@ instructions.innerText = `
   In this example we demonstrate how to change a color for each
   segmentation representation in two different viewports. Notice that
   here we are depicting the same segmentation in two different viewports
-  on two different toolgroups. This is to demonstrate that the color
-  change is specific to the toolgroup and viewport.
+  on two different viewports. This is to demonstrate that the color
+  change is specific to the viewport and viewport.
 `;
 
 let segRep1;
@@ -90,11 +89,11 @@ const getRandomRGBA = () => [
 addButtonToToolbar({
   title: 'change segment 1 color left viewport',
   onClick: () => {
-    segmentation.config.color.setColorForSegmentIndex(
-      toolGroupId1,
-      segRep1,
+    segmentation.config.color.setSegmentIndexColor(
+      viewportId1,
+      segmentationId1,
       1,
-      [...(getRandomRGBA() as cornerstoneTools.Types.Color)]
+      getRandomRGBA()
     );
   },
 });
@@ -102,11 +101,11 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'change segment 2 color right viewport',
   onClick: () => {
-    segmentation.config.color.setColorForSegmentIndex(
-      toolGroupId2,
-      segRep2,
+    segmentation.config.color.setSegmentIndexColor(
+      viewportId2,
+      segmentationId1,
       2,
-      [...(getRandomRGBA() as cornerstoneTools.Types.Color)]
+      getRandomRGBA()
     );
   },
 });
@@ -116,7 +115,7 @@ addButtonToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
 
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId1,
   });
 
@@ -137,7 +136,7 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationId1,
     cornerstone,
   });
@@ -151,17 +150,10 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
   const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
-
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -223,12 +215,12 @@ async function run() {
   );
 
   // // Add the segmentation representations to toolgroup1
-  [segRep1] = await segmentation.addSegmentationRepresentations(toolGroupId1, [
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      options: {
-        colorLUTOrIndex: [
+      config: {
+        colorLUT: [
           [0, 0, 0, 0],
           [125, 152, 180, 255],
           [125, 152, 20, 255],
@@ -237,7 +229,7 @@ async function run() {
     },
   ]);
 
-  [segRep2] = await segmentation.addSegmentationRepresentations(toolGroupId2, [
+  await segmentation.addSegmentationRepresentations(viewportId2, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

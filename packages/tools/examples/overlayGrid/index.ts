@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setVolumesForViewports,
@@ -23,7 +23,7 @@ const {
   OverlayGridTool,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -81,7 +81,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(OverlayGridTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
@@ -173,7 +173,7 @@ async function run() {
   toolGroup.addViewport(viewportIds[2], renderingEngine.id);
 
   // Manipulation Tools
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
 
@@ -183,7 +183,9 @@ async function run() {
 
   toolGroup.setToolEnabled(OverlayGridTool.toolName);
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {

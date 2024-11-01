@@ -1,7 +1,7 @@
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   setVolumesForViewports,
@@ -25,7 +25,7 @@ console.warn(
 const {
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   CrosshairsTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -240,7 +240,7 @@ async function createVolume(numTimePoints: number): any {
       '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
     SeriesInstanceUID:
       '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const NUM_IMAGES_PER_TIME_POINT = 235;
@@ -293,7 +293,7 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
 function initCornerstoneTools() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 }
 
 function initCrosshairsTool(toolGroup) {
@@ -315,7 +315,7 @@ function initTools(toolGroup, options?) {
   // Add the tools to the tool group
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Auxiliary }],
@@ -325,7 +325,9 @@ function initTools(toolGroup, options?) {
     bindings: [{ mouseButton: MouseBindings.Secondary }],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   if ((options ?? {}).initCrosshairsTool === true) {
     initCrosshairsTool(toolGroup);

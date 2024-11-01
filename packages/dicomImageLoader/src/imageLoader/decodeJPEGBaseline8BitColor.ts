@@ -1,6 +1,6 @@
-import { ByteArray } from 'dicom-parser';
+import type { ByteArray } from 'dicom-parser';
 import getMinMax from '../shared/getMinMax';
-import { ImageFrame } from '../types';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Special decoder for 8 bit jpeg that leverages the browser's built in JPEG decoder for increased performance
@@ -30,10 +30,10 @@ function binaryToString(binary: string) {
 }
 
 function decodeJPEGBaseline8BitColor(
-  imageFrame: ImageFrame,
+  imageFrame: Types.IImageFrame,
   pixelData: ByteArray,
   canvas: HTMLCanvasElement
-): Promise<ImageFrame> {
+): Promise<Types.IImageFrame> {
   const start = new Date().getTime();
   const imgBlob = new Blob([pixelData], { type: 'image/jpeg' });
 
@@ -59,6 +59,7 @@ function decodeJPEGBaseline8BitColor(
         /**
          * @todo check this context
          */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         context.drawImage(this as any, 0, 0);
         const imageData = context.getImageData(0, 0, img.width, img.height);
         const end = new Date().getTime();
@@ -68,7 +69,7 @@ function decodeJPEGBaseline8BitColor(
         imageFrame.decodeTimeInMS = end - start;
 
         // calculate smallest and largest PixelValue
-        const minMax = getMinMax(imageFrame.pixelData as any);
+        const minMax = getMinMax(imageFrame.pixelData);
 
         imageFrame.smallestPixelValue = minMax.min;
         imageFrame.largestPixelValue = minMax.max;

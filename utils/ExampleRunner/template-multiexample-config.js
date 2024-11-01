@@ -6,11 +6,8 @@ const path = require('path');
 const csRenderBasePath = path.resolve('./packages/core/src/index');
 const csToolsBasePath = path.resolve('./packages/tools/src/index');
 const csAdaptersBasePath = path.resolve('./packages/adapters/src/index');
-const csStreamingBasePath = path.resolve(
-  './packages/streaming-image-volume-loader/src/index'
-);
 const csDICOMImageLoaderDistPath = path.resolve(
-  './packages/dicomImageLoader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js'
+  'packages/dicomImageLoader/src/index'
 );
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
@@ -79,11 +76,6 @@ module.exports = {
   )}" },
       {
         from:
-          '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
-        to: '${destPath.replace(/\\/g, '/')}',
-      },
-      {
-        from:
         '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
         to: '${destPath.replace(/\\/g, '/')}',
         noErrorOnMissing: true,
@@ -109,12 +101,6 @@ module.exports = {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/adapters': '${csAdaptersBasePath.replace(/\\/g, '/')}',
-      '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
-        /\\/g,
-        '/'
-      )}',
-      // We use this alias and the CopyPlugin to support using the dynamic-import version
-      // of WADO Image Loader
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'

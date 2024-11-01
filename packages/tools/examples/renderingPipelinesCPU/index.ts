@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setUseCPURendering,
   getShouldUseCPURendering,
@@ -22,7 +22,6 @@ console.warn(
 
 const {
   PanTool,
-  StackScrollMouseWheelTool,
   ZoomTool,
   EllipticalROITool,
   ToolGroupManager,
@@ -59,7 +58,6 @@ content.append(instructions);
 
 cornerstoneTools.addTool(PanTool);
 cornerstoneTools.addTool(EllipticalROITool);
-cornerstoneTools.addTool(StackScrollMouseWheelTool);
 cornerstoneTools.addTool(ZoomTool);
 
 const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -67,7 +65,6 @@ const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 toolGroup.addTool(EllipticalROITool.toolName);
 toolGroup.addTool(PanTool.toolName);
 toolGroup.addTool(ZoomTool.toolName);
-toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
 
 toolGroup.setToolActive(EllipticalROITool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -78,7 +75,6 @@ toolGroup.setToolActive(PanTool.toolName, {
 toolGroup.setToolActive(ZoomTool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Secondary }],
 });
-toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
 // ============================= //
 

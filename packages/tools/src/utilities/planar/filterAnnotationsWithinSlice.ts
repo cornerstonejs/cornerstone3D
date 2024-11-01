@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { CONSTANTS, metaData } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { Annotations, Annotation } from '../../types';
+import type { Annotations, Annotation } from '../../types';
 
 const { EPSILON } = CONSTANTS;
 

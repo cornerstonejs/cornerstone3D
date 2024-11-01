@@ -5,9 +5,9 @@ import {
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
 import { Events, ChangeTypes } from '../../../enums';
-import { Annotation } from '../../../types/AnnotationTypes';
+import type { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
-import {
+import type {
   AnnotationAddedEventDetail,
   AnnotationModifiedEventDetail,
   AnnotationCompletedEventDetail,

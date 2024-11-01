@@ -1,5 +1,6 @@
-type CPUFallbackLUT = {
+interface CPUFallbackLUT {
   lut: number[];
-};
+  id?: string;
+}
 
-export default CPUFallbackLUT;
+export type { CPUFallbackLUT as default };

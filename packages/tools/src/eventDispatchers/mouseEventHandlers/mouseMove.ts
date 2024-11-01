@@ -1,12 +1,12 @@
 // // State
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { ToolModes } from '../../enums';
 
 // // Util
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
-import { MouseMoveEventType } from '../../types/EventTypes';
+import type { MouseMoveEventType } from '../../types/EventTypes';
 import { initElementCursor } from '../../cursors/elementCursor';
 
 const { Active, Passive } = ToolModes;

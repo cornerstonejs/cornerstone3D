@@ -1,10 +1,4 @@
-import {
-  getEnabledElement,
-  StackViewport,
-  Enums,
-  VideoViewport,
-  WSIViewport,
-} from '@cornerstonejs/core';
+import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
 import { getToolState } from './state';
 
 export const requestType = Enums.RequestType.Prefetch;
@@ -102,8 +96,8 @@ export function getPromiseRemovedHandler(element) {
 
     if (
       !stackPrefetchData ||
-      !stackPrefetchData.data ||
-      !stackPrefetchData.data.length
+      !stackPrefetchData.indicesToRequest ||
+      !stackPrefetchData.indicesToRequest.length
     ) {
       return;
     }

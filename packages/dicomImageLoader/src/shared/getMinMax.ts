@@ -1,4 +1,4 @@
-import { PixelDataTypedArray } from '../types';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Calculate the minimum and maximum values in an Array
@@ -6,7 +6,7 @@ import { PixelDataTypedArray } from '../types';
  * @param {Number[]} storedPixelData
  * @return {{min: Number, max: Number}}
  */
-function getMinMax(storedPixelData: PixelDataTypedArray): {
+function getMinMax(storedPixelData: Types.PixelDataTypedArray): {
   min: number;
   max: number;
 } {

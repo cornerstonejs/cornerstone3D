@@ -10,9 +10,10 @@ import {
 } from '../../../../utils/demo/helpers';
 import {
   fillStackSegmentationWithMockData,
-  fillVolumeSegmentationWithMockData,
+  fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
+import type { IStreamingImageVolume } from '@cornerstonejs/core/types';
 
 // This is for debugging purposes
 console.warn(
@@ -21,7 +22,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   Enums: csToolsEnums,
   SegmentSelectTool,
   segmentation,
@@ -99,7 +100,6 @@ const viewportId4 = 'viewport4';
 
 // ============================= //
 
-cornerstoneTools.addTool(SegmentationDisplayTool);
 cornerstoneTools.addTool(SegmentSelectTool);
 cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
@@ -116,10 +116,8 @@ function setupTools(toolGroupId, isContour = false) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(SegmentSelectTool.toolName);
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
   toolGroup.setToolActive(SegmentSelectTool.toolName);
 
   if (isContour) {
@@ -152,7 +150,7 @@ async function run() {
     SeriesInstanceUID:
       '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
     SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const volumeImageIds = await createImageIdsAndCacheMetaData({
@@ -160,7 +158,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -206,36 +204,38 @@ async function run() {
   _handleVolumeViewports(volumeImageIds, renderingEngine);
 
   // set the fillAlpha for the labelmap to 0
-  const globalConfig = segmentation.config.getGlobalConfig();
-  segmentation.config.setGlobalRepresentationConfig(
-    cornerstoneTools.Enums.SegmentationRepresentations.Labelmap,
+  segmentation.config.style.setStyle(
     {
-      ...globalConfig.representations.LABELMAP,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+    {
       fillAlpha: 0.05,
+      activeSegmentOutlineWidthDelta: 3,
     }
   );
-  segmentation.config.setGlobalRepresentationConfig(
-    cornerstoneTools.Enums.SegmentationRepresentations.Contour,
+  segmentation.config.style.setStyle(
     {
-      ...globalConfig.representations.CONTOUR,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+    {
       fillAlpha: 0,
+      activeSegmentOutlineWidthDelta: 3,
     }
   );
-
-  const config = segmentation.config.getGlobalConfig();
-  config.representations.LABELMAP.activeSegmentOutlineWidthDelta = 3;
-  config.representations.CONTOUR.activeSegmentOutlineWidthDelta = 3;
 }
 
 run();
 
 async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
-  const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: volumeImageIds,
-  });
+  const volume = (await cornerstone.volumeLoader.createAndCacheVolume(
+    volumeId,
+    {
+      imageIds: volumeImageIds,
+    }
+  )) as IStreamingImageVolume;
 
   // Set the volume to load
-  volume.load();
+  await volume.load();
 
   // Set volumes on the viewports
   await cornerstone.setVolumesForViewports(
@@ -245,14 +245,11 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   );
 
   // Create a segmentation of the same resolution as the source data
-  await cornerstone.volumeLoader.createAndCacheDerivedSegmentationVolume(
-    volumeId,
-    {
-      volumeId: volumeSegLabelmapId,
-    }
-  );
+  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: volumeSegLabelmapId,
+  });
 
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: volumeSegLabelmapId,
     cornerstone,
   });
@@ -273,8 +270,8 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  segmentation.addSegmentationRepresentations(volumeSegLabelmapToolGroupId, [
+  // Add the segmentation representation to the viewport
+  segmentation.addSegmentationRepresentations(viewportId2, [
     {
       segmentationId: volumeSegLabelmapId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
@@ -290,16 +287,13 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    volumeSegContourToolGroupId,
-    [
-      {
-        segmentationId: volumeSegContourId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId4, [
+    {
+      segmentationId: volumeSegContourId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
@@ -324,8 +318,11 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const imageIdsArray = [stackImageIds[0]];
 
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedSegmentationImages(imageIdsArray);
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+    imageIdsArray
+  );
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   await viewport1.setStack(imageIdsArray, 0);
   await viewport3.setStack(imageIdsArray, 0);
@@ -342,25 +339,19 @@ async function _handleStackViewports(stackImageIds: string[]) {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            imageIdsArray,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegLabelmapToolGroupId,
-    [
-      {
-        segmentationId: stackSegLabelmapId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId1, [
+    {
+      segmentationId: stackSegLabelmapId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
 
   segmentation.addSegmentations([
     {
@@ -371,16 +362,13 @@ async function _handleStackViewports(stackImageIds: string[]) {
     },
   ]);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(
-    stackSegContourToolGroupId,
-    [
-      {
-        segmentationId: stackSegContourId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId3, [
+    {
+      segmentationId: stackSegContourId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   addMockContourSegmentation({
     segmentationId: stackSegContourId,

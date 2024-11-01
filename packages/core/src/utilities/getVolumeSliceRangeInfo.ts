@@ -1,6 +1,6 @@
 import getSliceRange from './getSliceRange';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
-import {
+import type {
   ActorSliceRange,
   IVolumeViewport,
   ICamera,
