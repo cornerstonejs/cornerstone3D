@@ -65,6 +65,9 @@ async function simulateDrawPath(
     }
 
     await page.mouse.move(currentPoint[0], currentPoint[1], { steps });
+    await locator.click({
+      position: { x: currentPoint[0], y: currentPoint[1] },
+    });
     previousPoint = currentPoint;
   }
 

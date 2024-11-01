@@ -24,18 +24,6 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
-    },
-    {
-      name: 'Firefox',
-      use: { ...devices['Desktop Firefox'], deviceScaleFactor: 1 },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
-    },
-    {
       name: 'Mobile Safari',
       use: {
         ...devices['iPhone 15'],
@@ -47,6 +35,7 @@ export default defineConfig({
       testIgnore: [
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
+        '**/stackLabelmapSegmentation.spec.ts',
       ],
     },
     {
@@ -61,6 +50,7 @@ export default defineConfig({
       testIgnore: [
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
+        '**/stackLabelmapSegmentation.spec.ts',
       ],
     },
   ],

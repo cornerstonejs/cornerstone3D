@@ -1,4 +1,4 @@
-import { test, Page, Locator } from '@playwright/test';
+import { test } from '@playwright/test';
 import {
   checkForScreenshot,
   visitExample,

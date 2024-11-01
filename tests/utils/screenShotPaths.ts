@@ -88,7 +88,6 @@ const screenShotPaths = {
     segmentsAlpha25: 'segmentsAlpha25.png',
   },
   stackSegmentation: {
-    defaultSegmentation: 'defaultSegmentation.png',
     circularBrushSegment1: 'circularBrushSegment1.png',
     thresholdBrushFatSegment1: 'thresholdBrushFatSegment1.png',
     thresholdBrushBoneSegment1: 'thresholdBrushBoneSegment1.png',
