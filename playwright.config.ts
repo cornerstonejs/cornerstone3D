@@ -24,6 +24,21 @@ export default defineConfig({
 
   projects: [
     {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
+    },
+    {
+      name: 'Firefox',
+      use: { ...devices['Desktop Firefox'], deviceScaleFactor: 1 },
+
+      // broken in Firefox
+      testIgnore: ['**/labelmapGlobalConfiguration.spec.ts'],
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
+    },
+    {
       name: 'Mobile Safari',
       use: {
         ...devices['iPhone 15'],
