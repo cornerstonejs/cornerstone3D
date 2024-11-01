@@ -15,7 +15,6 @@ export const checkForScreenshot = async (
   attempts = 10,
   delay = 100
 ) => {
-  await page.waitForTimeout(5000);
   await page.waitForLoadState('networkidle');
 
   for (let i = 1; i < attempts; i++) {
