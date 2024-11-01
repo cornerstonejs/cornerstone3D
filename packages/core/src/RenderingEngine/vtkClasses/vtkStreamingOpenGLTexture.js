@@ -159,6 +159,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     // @ts-expect-error
     const imageIds = volume.getCurrentTimePointImageIds();
 
+    if (!imageIds.length) {
+      return false;
+    }
+
     let constructor;
 
     for (let i = 0; i < imageIds.length; i++) {

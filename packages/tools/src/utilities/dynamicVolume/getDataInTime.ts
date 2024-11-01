@@ -82,13 +82,11 @@ function _getTimePointDataCoordinate(frames, coordinate, volume) {
   // calculate offset for index
   const yMultiple = dimensions[0];
   const zMultiple = dimensions[0] * dimensions[1];
-  const allScalarData = volume.getScalarDataArrays();
   const value = [];
 
   frames.forEach((frame) => {
-    const activeScalarData = allScalarData[frame];
     const scalarIndex = index[2] * zMultiple + index[1] * yMultiple + index[0];
-    value.push(activeScalarData[scalarIndex]);
+    value.push(volume.voxelManager.getAtIndexAndTimePoint(scalarIndex, frame));
   });
 
   return value;
@@ -103,19 +101,11 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   // Pre-allocate memory for array
   const nonZeroVoxelIndices = [];
   nonZeroVoxelIndices.length = scalarDataLength;
-  const ijkCoords = [];
-
-  const dimensions = segmentationVolume.dimensions;
 
   // Get the index of every non-zero voxel in mask
   let actualLen = 0;
   for (let i = 0, len = scalarDataLength; i < len; i++) {
     if (segVoxelManager.getAtIndex(i) !== 0) {
-      ijkCoords.push([
-        i % dimensions[0],
-        Math.floor((i / dimensions[0]) % dimensions[1]),
-        Math.floor(i / (dimensions[0] * dimensions[1])),
-      ]);
       nonZeroVoxelIndices[actualLen++] = i;
     }
   }
@@ -123,26 +113,30 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
   // Trim the array to actual size
   nonZeroVoxelIndices.length = actualLen;
 
-  const dynamicVolumeScalarDataArray = dynamicVolume.getScalarDataArrays();
-  const values = [];
+  const nonZeroVoxelValuesInTime = [];
   const isSameVolume =
-    dynamicVolumeScalarDataArray[0].length === scalarDataLength &&
+    dynamicVolume.voxelManager.getScalarDataLength() === scalarDataLength &&
     JSON.stringify(dynamicVolume.spacing) ===
       JSON.stringify(segmentationVolume.spacing);
+
+  const ijkCoords = [];
 
   // if the segmentation mask is the same size as the dynamic volume (one frame)
   // means we can just return the scalar data for the non-zero voxels
   if (isSameVolume) {
     for (let i = 0; i < nonZeroVoxelIndices.length; i++) {
-      const indexValues = [];
-      frames.forEach((frame) => {
-        const activeScalarData = dynamicVolumeScalarDataArray[frame];
-        indexValues.push(activeScalarData[nonZeroVoxelIndices[i]]);
-      });
-      values.push(indexValues);
+      const valuesInTime = [];
+      const index = nonZeroVoxelIndices[i];
+      for (let j = 0; j < frames.length; j++) {
+        valuesInTime.push(
+          dynamicVolume.voxelManager.getAtIndexAndTimePoint(index, frames[j])
+        );
+      }
+      nonZeroVoxelValuesInTime.push(valuesInTime);
+      ijkCoords.push(segVoxelManager.toIJK(index));
     }
 
-    return [values, ijkCoords];
+    return [nonZeroVoxelValuesInTime, ijkCoords];
   }
 
   // In case that the segmentation mask is not the same size as the dynamic volume (one frame)
@@ -154,7 +148,6 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
     value: segValue,
     pointIJK: segPointIJK,
   }) => {
-    // see if the value is non-zero
     if (segValue === 0) {
       // not interested
       return;
@@ -180,7 +173,10 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
 
     const averageCallback = ({ index }) => {
       for (let i = 0; i < frames.length; i++) {
-        const value = dynamicVolumeScalarDataArray[i][index];
+        const value = dynamicVolume.voxelManager.getAtIndexAndTimePoint(
+          index,
+          frames[i]
+        );
         const frame = frames[i];
         perFrameSum.set(frame, perFrameSum.get(frame) + value);
       }
@@ -199,21 +195,18 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
     });
 
     ijkCoords.push(segPointIJK);
-    values.push(averageValues);
+    nonZeroVoxelValuesInTime.push(averageValues);
   };
 
   // Since we have the non-zero voxel indices of the segmentation mask,
   // we theoretically can use them, however, we kind of need to compute the
   // pointLPS for each of the non-zero voxel indices, which is a bit of a pain.
   // Todo: consider using the nonZeroVoxelIndices to compute the pointLPS
-
-  const { voxelManager } = maskImageData.get('voxelManager');
-
-  voxelManager.forEach(callback, {
+  segmentationVolume.voxelManager.forEach(callback, {
     imageData: maskImageData,
   });
 
-  return [values, ijkCoords];
+  return [nonZeroVoxelValuesInTime, ijkCoords];
 }
 
 export default getDataInTime;

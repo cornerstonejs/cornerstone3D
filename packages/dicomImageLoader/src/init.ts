@@ -9,7 +9,7 @@ const workerFn = () => {
   return instance;
 };
 
-function init(options: LoaderOptions): void {
+function init(options?: LoaderOptions): void {
   // setting options should happen first, since we use the options in the
   // cornerstone set
   // DO NOT CHANGE THE ORDER OF THESE TWO LINES!

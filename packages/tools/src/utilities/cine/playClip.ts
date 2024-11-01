@@ -61,10 +61,13 @@ function playClip(
     playClipOptions.dynamicCineEnabled ?? true;
 
   const { viewport } = enabledElement;
+  const volume = _getVolumeFromViewport(viewport as Types.IBaseVolumeViewport);
+
   const playClipContext = _createCinePlayContext(viewport, playClipOptions);
   let playClipData = getToolState(element);
 
-  const isDynamicCinePlaying = playClipOptions.dynamicCineEnabled;
+  const isDynamicCinePlaying =
+    playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume();
 
   // If user is trying to play CINE for a 4D volume it first needs
   // to stop CINE that has may be playing for any other viewport.
@@ -167,11 +170,7 @@ function playClip(
   };
 
   if (isDynamicCinePlaying) {
-    const volume = _getVolumeFromViewport(viewport);
-
-    if (volume) {
-      dynamicVolumesPlayingMap.set(volume.volumeId, element);
-    }
+    dynamicVolumesPlayingMap.set(volume.volumeId, element);
   }
 
   if (playClipContext.play) {
@@ -262,9 +261,9 @@ function _stopClip(
  * [private] Stops any CINE playing for the dynamic volume loaded on this viewport
  * @param element - HTML Element
  */
-function _stopDynamicVolumeCine(element) {
+function _stopDynamicVolumeCine(element: HTMLDivElement) {
   const { viewport } = getEnabledElement(element);
-  const volume = _getVolumeFromViewport(viewport);
+  const volume = _getVolumeFromViewport(viewport as Types.IBaseVolumeViewport);
 
   // If the current viewport has a 4D volume loaded it may be playing
   // if it is also loaded on another viewport and user has started CINE
@@ -350,21 +349,17 @@ function _stopClipWithData(playClipData) {
   }
 }
 
-function _getVolumesFromViewport(viewport): Types.IImageVolume[] {
-  if (!viewport || !viewport.getVolumeId) {
-    return [];
-  }
+function _getVolumeFromViewport(
+  viewport: Types.IBaseVolumeViewport
+): Types.IImageVolume {
+  const volumeIds = viewport.getAllVolumeIds();
+  const dynamicVolumeId = volumeIds.find((volumeId) =>
+    cache.getVolume(volumeId)?.isDynamicVolume()
+  );
 
-  const volumeId = viewport.getVolumeId();
+  const volumeId = dynamicVolumeId ?? volumeIds[0];
 
-  return [cache.getVolume(volumeId)];
-}
-
-function _getVolumeFromViewport(viewport): Types.IImageVolume {
-  const volumes = _getVolumesFromViewport(viewport);
-  const dynamicVolume = volumes.find((volume) => volume.isDynamicVolume());
-
-  return dynamicVolume ?? volumes[0];
+  return cache.getVolume(volumeId);
 }
 
 function _createStackViewportCinePlayContext(
