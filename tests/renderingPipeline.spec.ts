@@ -6,7 +6,7 @@ import {
   screenShotPaths,
 } from './utils/index';
 
-test.skip('Rendering Pipelines for GPU', async () => {
+test.describe('Rendering Pipelines for GPU', async () => {
   test.beforeEach(async ({ page }) => {
     await visitExample(page, 'renderingPipelines');
   });
@@ -50,7 +50,7 @@ test.skip('Rendering Pipelines for GPU', async () => {
   }
 });
 
-test.skip('Stack Viewport with CPU Rendering', () => {
+test.describe('Stack Viewport with CPU Rendering', () => {
   test.beforeEach(async ({ page }) => {
     await visitExample(page, 'renderingPipelinesCPU');
   });

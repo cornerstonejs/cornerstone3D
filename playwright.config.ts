@@ -61,7 +61,6 @@ export default defineConfig({
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
-        '**/renderingPipeline.spec.ts',
       ],
     },
   ],
