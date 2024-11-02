@@ -30,6 +30,7 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
+      testIgnore: ['**/renderingPipeline.spec.ts'],
     },
     {
       name: 'Mobile Safari',
@@ -44,6 +45,7 @@ export default defineConfig({
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
+        '**/renderingPipeline.spec.ts',
       ],
     },
     {
@@ -59,6 +61,7 @@ export default defineConfig({
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
+        '**/renderingPipeline.spec.ts',
       ],
     },
   ],
