@@ -8,6 +8,8 @@ jobs:
   playwright-tests:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:focal
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +22,6 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
       - name: Run Playwright tests
         run:
           export NODE_OPTIONS="--max_old_space_size=8192" && npx playwright test --shard=${{
