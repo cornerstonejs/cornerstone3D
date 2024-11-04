@@ -232,6 +232,10 @@ export class ImageVolume {
     return this._imageURIsIndexMap.get(imageURI);
   }
 
+  public load(callback: (...args: unknown[]) => void): void {
+    // TODO: Implement
+  }
+
   /**
    * destroy the volume and make it unusable
    */

@@ -33,27 +33,43 @@ export function getVoxelOverlap(
   voxelSpacing,
   voxelCenter
 ) {
-  const voxelCornersWorld = [];
-  for (let i = 0; i < 2; i++) {
-    for (let j = 0; j < 2; j++) {
-      for (let k = 0; k < 2; k++) {
-        const point = [...voxelCenter]; // Create a new point from voxelCenter
-        point[0] = point[0] + ((i * 2 - 1) * voxelSpacing[0]) / 2;
-        point[1] = point[1] + ((j * 2 - 1) * voxelSpacing[1]) / 2;
-        point[2] = point[2] + ((k * 2 - 1) * voxelSpacing[2]) / 2;
-        voxelCornersWorld.push(point);
-      }
-    }
-  }
-  const voxelCornersIJK = voxelCornersWorld.map(
-    (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
-  );
-  const overlapBounds = getBoundingBoxAroundShapeIJK(
-    voxelCornersIJK,
-    dimensions
-  );
+  // Pre-calculate half spacings
+  const halfSpacingX = voxelSpacing[0] / 2;
+  const halfSpacingY = voxelSpacing[1] / 2;
+  const halfSpacingZ = voxelSpacing[2] / 2;
 
-  return overlapBounds;
+  // Pre-allocate array for 8 corners
+  const voxelCornersIJK = new Array(8);
+
+  // Calculate first corner
+  voxelCornersIJK[0] = csUtils.transformWorldToIndex(imageData, [
+    voxelCenter[0] - halfSpacingX,
+    voxelCenter[1] - halfSpacingY,
+    voxelCenter[2] - halfSpacingZ,
+  ]) as Types.Point3;
+
+  // Define offsets for remaining 7 corners
+  const offsets = [
+    [1, -1, -1],
+    [-1, 1, -1],
+    [1, 1, -1],
+    [-1, -1, 1],
+    [1, -1, 1],
+    [-1, 1, 1],
+    [1, 1, 1],
+  ];
+
+  // Calculate remaining corners
+  for (let i = 0; i < 7; i++) {
+    const [xOff, yOff, zOff] = offsets[i];
+    voxelCornersIJK[i + 1] = csUtils.transformWorldToIndex(imageData, [
+      voxelCenter[0] + xOff * halfSpacingX,
+      voxelCenter[1] + yOff * halfSpacingY,
+      voxelCenter[2] + zOff * halfSpacingZ,
+    ]) as Types.Point3;
+  }
+
+  return getBoundingBoxAroundShapeIJK(voxelCornersIJK, dimensions);
 }
 
 /**

@@ -271,7 +271,7 @@ export default class BaseStreamingImageVolume
    * @param priority - The priority for loading the volume images, lower number is higher priority
    * @returns
    */
-  public load = (callback: (...args: unknown[]) => void): void => {
+  public load(callback: (...args: unknown[]) => void): void {
     const { imageIds, loadStatus, numFrames } = this;
     const { transferSyntaxUID } =
       metaData.get('transferSyntax', imageIds[0]) || {};
@@ -316,7 +316,7 @@ export default class BaseStreamingImageVolume
     }
 
     this._prefetchImageIds();
-  };
+  }
 
   public getLoaderImageOptions(imageId: string) {
     const { transferSyntaxUID: transferSyntaxUID } =

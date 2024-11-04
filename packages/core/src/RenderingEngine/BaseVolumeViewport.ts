@@ -286,6 +286,7 @@ abstract class BaseVolumeViewport extends Viewport {
         colormap,
         volumeId,
       };
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
     }
   }
@@ -463,16 +464,12 @@ abstract class BaseVolumeViewport extends Viewport {
     const { volumeActor } = applicableVolumeActorInfo;
     const volumeIdToUse = applicableVolumeActorInfo.volumeId;
 
-    let voiRangeToUse = voiRange;
+    const voiRangeToUse = voiRange;
     // Todo: not sure why this is needed, in the new model this will not work for sure
     if (typeof voiRangeToUse === 'undefined') {
       throw new Error(
         'voiRangeToUse is undefined, need to implement this in the new volume model'
       );
-      const imageData = volumeActor.getMapper().getInputData();
-      const range = imageData.getPointData().getScalars().getRange();
-      const maxVoiRange = { lower: range[0], upper: range[1] };
-      voiRangeToUse = maxVoiRange;
     }
 
     const { VOILUTFunction } = this.getProperties(volumeIdToUse);
