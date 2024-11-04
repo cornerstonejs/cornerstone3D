@@ -97,6 +97,7 @@ addToggleButtonToToolbar({
 });
 
 addSliderToToolbar({
+  id: 'outlineWidthActive',
   title: 'outline width active',
   range: [1, 5],
   defaultValue: 1,
@@ -113,6 +114,7 @@ addSliderToToolbar({
 });
 
 addSliderToToolbar({
+  id: 'outlineAlphaActive',
   title: 'outline alpha active',
   range: [0, 100],
   defaultValue: 100,
@@ -128,6 +130,7 @@ addSliderToToolbar({
   },
 });
 addSliderToToolbar({
+  id: 'outlineWidthInactive',
   title: 'outline width inactive',
   range: [1, 5],
   defaultValue: 1,
@@ -143,6 +146,7 @@ addSliderToToolbar({
   },
 });
 addSliderToToolbar({
+  id: 'fillAlphaActive',
   title: 'fill alpha',
   range: [0, 100],
   defaultValue: 50,
@@ -160,6 +164,7 @@ addSliderToToolbar({
   },
 });
 addSliderToToolbar({
+  id: 'fillAlphaInactive',
   title: 'fill alpha inactive',
   range: [0, 100],
   defaultValue: 50,

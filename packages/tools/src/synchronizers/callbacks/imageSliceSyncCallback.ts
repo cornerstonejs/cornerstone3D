@@ -7,7 +7,7 @@ import {
   VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
-import areViewportsCoplanar from './areViewportsCoplanar ';
+import areViewportsCoplanar from './areViewportsCoplanar';
 
 const getSpatialRegistration = (targetId, sourceId) =>
   utilities.spatialRegistrationMetadataProvider.get(

@@ -66,8 +66,7 @@ function playClip(
   const playClipContext = _createCinePlayContext(viewport, playClipOptions);
   let playClipData = getToolState(element);
 
-  const isDynamicCinePlaying =
-    playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume();
+  const isDynamicCinePlaying = playClipOptions.dynamicCineEnabled;
 
   // If user is trying to play CINE for a 4D volume it first needs
   // to stop CINE that has may be playing for any other viewport.
@@ -170,7 +169,11 @@ function playClip(
   };
 
   if (isDynamicCinePlaying) {
-    dynamicVolumesPlayingMap.set(volume.volumeId, element);
+    const volume = _getVolumeFromViewport(viewport);
+
+    if (volume) {
+      dynamicVolumesPlayingMap.set(volume.volumeId, element);
+    }
   }
 
   if (playClipContext.play) {
