@@ -1,10 +1,5 @@
 import type { ByteArray, DataSet } from 'dicom-parser';
-import {
-  ByteStream,
-  createJPEGBasicOffsetTable,
-  readEncapsulatedImageFrame,
-  readSequenceItem,
-} from 'dicom-parser';
+import * as dicomParser from 'dicom-parser';
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
  */
@@ -25,7 +20,7 @@ export default function getEncapsulatedImageFrame(
     dataSet.elements.x7fe00010.basicOffsetTable.length
   ) {
     // Basic Offset Table is not empty
-    return readEncapsulatedImageFrame(
+    return dicomParser.readEncapsulatedImageFrame(
       dataSet,
       dataSet.elements.x7fe00010,
       frameIndex
@@ -35,12 +30,12 @@ export default function getEncapsulatedImageFrame(
   // Empty basic offset table
 
   if (framesAreFragmented(dataSet)) {
-    const basicOffsetTable = createJPEGBasicOffsetTable(
+    const basicOffsetTable = dicomParser.createJPEGBasicOffsetTable(
       dataSet,
       dataSet.elements.x7fe00010
     );
 
-    return readEncapsulatedImageFrame(
+    return dicomParser.readEncapsulatedImageFrame(
       dataSet,
       dataSet.elements.x7fe00010,
       frameIndex,
@@ -59,14 +54,14 @@ export default function getEncapsulatedImageFrame(
   const fragments = dataSet.elements.x7fe00010.fragments;
 
   // create byte stream on the data for this pixel data element
-  const byteStream = new ByteStream(
+  const byteStream = new dicomParser.ByteStream(
     dataSet.byteArrayParser,
     dataSet.byteArray,
     dataSet.elements.x7fe00010.dataOffset
   );
 
   // seek past the basic offset table (no need to parse it again since we already have)
-  const basicOffsetTable = readSequenceItem(byteStream);
+  const basicOffsetTable = dicomParser.readSequenceItem(byteStream);
 
   if (basicOffsetTable.tag !== 'xfffee000') {
     throw 'dicomParser.readEncapsulatedPixelData: missing basic offset table xfffee000';
