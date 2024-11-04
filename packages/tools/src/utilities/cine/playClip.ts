@@ -169,7 +169,9 @@ function playClip(
   };
 
   if (isDynamicCinePlaying) {
-    const volume = _getVolumeFromViewport(viewport);
+    const volume = _getVolumeFromViewport(
+      viewport as Types.IBaseVolumeViewport
+    );
 
     if (volume) {
       dynamicVolumesPlayingMap.set(volume.volumeId, element);

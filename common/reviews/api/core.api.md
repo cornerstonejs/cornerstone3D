@@ -2202,6 +2202,8 @@ export class ImageVolume {
     // (undocumented)
     isPreScaled: boolean;
     // (undocumented)
+    load(callback: (...args: unknown[]) => void): void;
+    // (undocumented)
     loadStatus?: Record<string, unknown>;
     // (undocumented)
     metadata: Metadata;
@@ -4153,6 +4155,8 @@ export class Viewport {
     }): Point3;
     // (undocumented)
     getFrameOfReferenceUID: () => string;
+    // (undocumented)
+    getImageActor(volumeId?: string): ImageActor | null;
     // (undocumented)
     getImageData(): any;
     // (undocumented)
