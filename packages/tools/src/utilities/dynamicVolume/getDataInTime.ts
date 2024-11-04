@@ -45,6 +45,10 @@ function getDataInTime(
   if (options.maskVolumeId) {
     const segmentationVolume = cache.getVolume(options.maskVolumeId);
 
+    if (!segmentationVolume) {
+      throw new Error('Segmentation volume not found');
+    }
+
     const [dataInTime, ijkCoords] = _getTimePointDataMask(
       frames,
       dynamicVolume,
