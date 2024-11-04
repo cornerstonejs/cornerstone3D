@@ -176,7 +176,11 @@ addDropdownToToolbar({
 const thresholdOptions = ['CT Fat: (-150, -70)', 'CT Bone: (200, 1000)'];
 
 addDropdownToToolbar({
-  options: { values: thresholdOptions, defaultValue: thresholdOptions[0] },
+  id: 'thresholdDropdown',
+  options: {
+    values: thresholdOptions,
+    defaultValue: thresholdOptions[0],
+  },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
 

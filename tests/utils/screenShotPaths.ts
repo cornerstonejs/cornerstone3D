@@ -88,9 +88,9 @@ const screenShotPaths = {
     segmentsAlpha25: 'segmentsAlpha25.png',
   },
   stackSegmentation: {
-    defaultSegmentation: 'defaultSegmentation.png',
     circularBrushSegment1: 'circularBrushSegment1.png',
-    thresholdBrushSegment1: 'thresholdBrushSegment1.png',
+    thresholdBrushFatSegment1: 'thresholdBrushFatSegment1.png',
+    thresholdBrushBoneSegment1: 'thresholdBrushBoneSegment1.png',
     dynamicThresholdInitialHighlightedPixels:
       'dynamicThresholdInitialHighlightedPixels.png',
     dynamicThresholdHighlightedContour:
@@ -104,6 +104,25 @@ const screenShotPaths = {
     circularScissorSegmentation2: 'circularScissorSegmentation2.png',
     paintFillSeg1OuterCircle: 'paintFillSeg1OuterCircle.png',
     paintFillSegmentation2: 'paintFillSegmentation2.png',
+  },
+  labelmapRendering: {
+    axial: 'axial.png',
+    coronal: 'coronal.png',
+    sagittal: 'sagittal.png',
+  },
+  contourRendering: {
+    viewport: 'viewport.png',
+  },
+  labelmapGlobalConfiguration: {
+    defaultGlobalConfig: 'defaultGlobalConfig.png',
+    toggleInactiveSegmentation: 'toggleInactiveSegmentation.png',
+    toggleOutlineRendering: 'toggleOutlineRendering.png',
+    toggleFillRendering: 'toggleFillRendering.png',
+    outlineWidthActive: 'outlineWidthActive.png',
+    outlineAlphaActive: 'outlineAlphaActive.png',
+    outlineWidthInactive: 'outlineWidthInactive.png',
+    fillAlphaActive: 'fillAlphaActive.png',
+    fillAlphaInactive: 'fillAlphaInactive.png',
   },
 };
 
