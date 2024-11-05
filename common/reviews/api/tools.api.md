@@ -2308,6 +2308,8 @@ enum Events {
     // (undocumented)
     MOUSE_WHEEL = "CORNERSTONE_TOOLS_MOUSE_WHEEL",
     // (undocumented)
+    SEGMENTATION_ADDED = "CORNERSTONE_TOOLS_SEGMENTATION_ADDED",
+    // (undocumented)
     SEGMENTATION_DATA_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED",
     // (undocumented)
     SEGMENTATION_MODIFIED = "CORNERSTONE_TOOLS_SEGMENTATION_MODIFIED",
@@ -2431,7 +2433,9 @@ declare namespace EventTypes_2 {
         MouseDoubleClickEventDetail,
         MouseDoubleClickEventType,
         MouseWheelEventDetail,
-        MouseWheelEventType
+        MouseWheelEventType,
+        SegmentationAddedEventDetail,
+        SegmentationAddedEventType
     }
 }
 
@@ -4850,6 +4854,14 @@ declare namespace segmentation_2 {
         getBrushToolInstances
     }
 }
+
+// @public (undocumented)
+type SegmentationAddedEventDetail = {
+    segmentationId: string;
+};
+
+// @public (undocumented)
+type SegmentationAddedEventType = Types_2.CustomEventType<SegmentationAddedEventDetail>;
 
 // @public (undocumented)
 type SegmentationDataModifiedEventDetail = {
