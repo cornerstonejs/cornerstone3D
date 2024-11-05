@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.7...v2.1.8) (2024-11-05)
+
+### Bug Fixes
+
+- **ci:** use bun instead of node ([#1544](https://github.com/cornerstonejs/cornerstone3D/issues/1544)) ([2a4291a](https://github.com/cornerstonejs/cornerstone3D/commit/2a4291af1e7188554162f136371d1b6578facc43))
+- **ci:** use bun instead of node ([#1545](https://github.com/cornerstonejs/cornerstone3D/issues/1545)) ([ff9bcc9](https://github.com/cornerstonejs/cornerstone3D/commit/ff9bcc9423b5f1f478838c0cf16028bc09c715a0))
+- **ci:** use bun instead of node ([#1546](https://github.com/cornerstonejs/cornerstone3D/issues/1546)) ([f2144ed](https://github.com/cornerstonejs/cornerstone3D/commit/f2144ed2a529ef8d09e26a29165bfcc3b377cae3))
+
+### Features
+
+- **seg:** add segmentation event tracking and migrate to Bun for CI ([#1543](https://github.com/cornerstonejs/cornerstone3D/issues/1543)) ([58c3917](https://github.com/cornerstonejs/cornerstone3D/commit/58c39179d3d64fa5b9de327ca4cbedbc562afa1a))
+
 ## [2.1.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.6...v2.1.7) (2024-11-04)
 
 ### Bug Fixes
