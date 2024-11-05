@@ -8,6 +8,14 @@ defaults: &defaults
     - image: cimg/node:18.19.0-browsers
       environment:
         TERM: xterm # Enable colors in term
+  steps:
+    - run:
+        name: Install Bun
+        command: |
+          curl -fsSL https://bun.sh/install | bash
+          echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
+          echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
+
 
 jobs:
   CHECKOUT:
@@ -15,12 +23,6 @@ jobs:
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
-      - run:
-          name: Install Bun
-          command: |
-            curl -fsSL https://bun.sh/install | bash
-            echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
-            echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
       - run: bun install
       - persist_to_workspace:
           root: ~/repo
