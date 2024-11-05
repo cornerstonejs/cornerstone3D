@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.11...v2.1.12) (2024-11-05)
+
+### Bug Fixes
+
+- Improve configuration handling and adjust example batch size ([#1553](https://github.com/cornerstonejs/cornerstone3D/issues/1553)) ([365dde1](https://github.com/cornerstonejs/cornerstone3D/commit/365dde1d4d18d5c2be06279d1487336824ac7df8))
+
 ## [2.1.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.10...v2.1.11) (2024-11-05)
 
 ### Bug Fixes
