@@ -60,6 +60,7 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - install_bun
+      - run: bun install -d ajv
       - run: bun run api-check
   FORMAT_CHECK:
     <<: *defaults
