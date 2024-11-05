@@ -7,6 +7,5 @@
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader"
   ],
-  "npmClient": "yarn",
-  "useWorkspaces": true
+  "npmClient": "yarn"
 }

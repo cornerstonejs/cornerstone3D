@@ -2,7 +2,6 @@
   "name": "@cornerstonejs/nifti-volume-loader",
   "version": "2.1.10",
   "description": "Nifti Image Loader for Cornerstone3D",
-  "main": "./dist/umd/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
