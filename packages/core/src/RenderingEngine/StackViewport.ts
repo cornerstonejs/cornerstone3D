@@ -3048,12 +3048,10 @@ class StackViewport extends Viewport {
       // Remove the dataLoader scheme since that can change
       imageURI = imageIdToURI(currentImageId);
     }
-
     const referencedImageURI = imageIdToURI(referencedImageId);
-
-    const endsWith = referencedImageId?.endsWith(imageURI);
-    if (endsWith) {
-      return endsWith;
+    const matches = referencedImageURI === imageURI;
+    if (matches) {
+      return matches;
     }
 
     // if camera focal point is provided, we can use that as a point
