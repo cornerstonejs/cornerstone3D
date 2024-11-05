@@ -143,6 +143,8 @@ enum Events {
    */
   SEGMENTATION_REPRESENTATION_ADDED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_ADDED',
 
+  SEGMENTATION_ADDED = 'CORNERSTONE_TOOLS_SEGMENTATION_ADDED',
+
   /**
    * Triggers on the eventTarget when a Segmentation representation of a toolGroup is modified in the state manager.
    * Make use of {@link EventTypes.SegmentationRepresentationModifiedEventType | Segmentation Representation Modified Event Type}

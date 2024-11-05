@@ -30,6 +30,7 @@ import {
   triggerSegmentationRepresentationRemoved,
 } from './triggerSegmentationEvents';
 import { segmentationStyle } from './SegmentationStyle';
+import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -206,7 +207,7 @@ export default class SegmentationStateManager {
       state.segmentations.push(newSegmentation);
     });
 
-    triggerSegmentationModified(segmentation.segmentationId);
+    triggerSegmentationAdded(segmentation.segmentationId);
   }
 
   /**

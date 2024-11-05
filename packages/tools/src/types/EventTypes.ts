@@ -287,6 +287,14 @@ type SegmentationModifiedEventDetail = {
 };
 
 /**
+ * EventDetail for when a Segmentation is added
+ */
+type SegmentationAddedEventDetail = {
+  /** unique id of the segmentation */
+  segmentationId: string;
+};
+
+/**
  * EventDetail for keyDown event
  */
 type KeyDownEventDetail = {
@@ -576,6 +584,12 @@ type SegmentationModifiedEventType =
   Types.CustomEventType<SegmentationModifiedEventDetail>;
 
 /**
+ * Event for when Segmentation is added
+ */
+type SegmentationAddedEventType =
+  Types.CustomEventType<SegmentationAddedEventDetail>;
+
+/**
  * Event for when a key is pressed
  */
 type KeyDownEventType = Types.CustomEventType<KeyDownEventDetail>;
@@ -756,4 +770,6 @@ export type {
   MouseDoubleClickEventType,
   MouseWheelEventDetail,
   MouseWheelEventType,
+  SegmentationAddedEventDetail,
+  SegmentationAddedEventType,
 };
