@@ -116,14 +116,14 @@ class Cache {
    *
    * @throws Error if the image is part of a shared cache key
    */
-  private _decacheImage = (imageId: string) => {
+  private _decacheImage = (imageId: string, force = false) => {
     const cachedImage = this._imageCache.get(imageId);
 
     if (!cachedImage) {
       return;
     }
 
-    if (cachedImage.sharedCacheKey) {
+    if (cachedImage.sharedCacheKey && !force) {
       throw new Error(
         'Cannot decache an image with a shared cache key. You need to manually decache the volume first.'
       );
@@ -211,7 +211,7 @@ class Cache {
         break;
       }
 
-      this.removeImageLoadObject(imageId);
+      this.removeImageLoadObject(imageId, { force: true });
 
       triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, { imageId });
     }
@@ -1183,7 +1183,10 @@ class Cache {
    *
    * @param imageId - Image ID
    */
-  public removeImageLoadObject = (imageId: string): void => {
+  public removeImageLoadObject = (
+    imageId: string,
+    { force = false }: { force?: boolean } = {}
+  ): void => {
     if (imageId === undefined) {
       throw new Error('removeImageLoadObject: imageId must not be undefined');
     }
@@ -1196,6 +1199,8 @@ class Cache {
       );
     }
 
+    this._decacheImage(imageId, force);
+
     this.incrementImageCacheSize(-cachedImage.sizeInBytes);
 
     const eventDetails = {
@@ -1204,7 +1209,6 @@ class Cache {
     };
 
     triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_REMOVED, eventDetails);
-    this._decacheImage(imageId);
   };
 
   /**
