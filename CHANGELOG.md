@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.13](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.12...v2.1.13) (2024-11-05)
+
+### Bug Fixes
+
+- change annotation color locked ([#1554](https://github.com/cornerstonejs/cornerstone3D/issues/1554)) ([e963b77](https://github.com/cornerstonejs/cornerstone3D/commit/e963b773c296748d2dcf56dba97d5516e6b510e8))
+
 ## [2.1.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.11...v2.1.12) (2024-11-05)
 
 ### Bug Fixes
