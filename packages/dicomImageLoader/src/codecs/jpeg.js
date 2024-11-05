@@ -1097,3 +1097,5 @@ var JpegImage = (function jpegImage() {
 
   return JpegImage;
 })();
+
+export default JpegImage;

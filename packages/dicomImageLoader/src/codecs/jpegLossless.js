@@ -2059,3 +2059,5 @@
     [6]
   )(6);
 });
+
+export default JpegImage;
