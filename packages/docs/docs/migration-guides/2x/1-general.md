@@ -193,10 +193,6 @@ import { someTool } from '@cornerstonejs/tools/tools/someTool'; // Imports a spe
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
-    "./umd": {
-      // UMD bundle export
-      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
-    },
     "./imageLoader": {
       // Subpath export for the image loader
       "import": "./dist/esm/imageLoader/index.js",
