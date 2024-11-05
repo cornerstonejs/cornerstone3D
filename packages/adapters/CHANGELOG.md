@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.11](https://github.com/dcmjs-org/dcmjs/compare/v2.1.10...v2.1.11) (2024-11-05)
+
+### Bug Fixes
+
+-   **jpeg:** Export JpegImage from JPEG codecs ([#1552](https://github.com/dcmjs-org/dcmjs/issues/1552)) ([fbaa769](https://github.com/dcmjs-org/dcmjs/commit/fbaa7690bbd493ec81e2d729af124c217fd5d46a))
+
 ## [2.1.10](https://github.com/dcmjs-org/dcmjs/compare/v2.1.9...v2.1.10) (2024-11-05)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
