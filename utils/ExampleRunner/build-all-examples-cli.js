@@ -158,9 +158,9 @@ if (configuration.examples) {
   shell.ShellString(exampleIndexMarkdown).to(path.join(docsDir, 'examples.md'));
 
   if (options.build == true) {
-    // Split the examples into batches of 10
+    // Split the examples into batches of 4
     const exampleEntries = Object.entries(allExamplePaths);
-    const batches = chunkArray(exampleEntries, 10);
+    const batches = chunkArray(exampleEntries, 4);
 
     batches.forEach((batch, index) => {
       const batchNames = batch.map(([name, path]) => name);
