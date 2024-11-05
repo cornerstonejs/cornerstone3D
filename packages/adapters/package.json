@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "2.1.8",
+    "version": "2.1.9",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "main": "./dist/umd/adapters.umd.js",
     "module": "./dist/esm/index.js",

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.8...v2.1.9) (2024-11-05)
+
+### Bug Fixes
+
+- **viewport:** Add rotation support in camera interface ([#1551](https://github.com/cornerstonejs/cornerstone3D/issues/1551)) ([51cd8f0](https://github.com/cornerstonejs/cornerstone3D/commit/51cd8f09705d6b0c28b988d390d208994cf823cb))
+
 ## [2.1.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.7...v2.1.8) (2024-11-05)
 
 **Note:** Version bump only for package @cornerstonejs/core
