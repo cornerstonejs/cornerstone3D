@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.9...v2.1.10) (2024-11-05)
+
+### Bug Fixes
+
+- Annotations showing up on incorrect images ([#1460](https://github.com/cornerstonejs/cornerstone3D/issues/1460)) ([8da547a](https://github.com/cornerstonejs/cornerstone3D/commit/8da547ae889a594081b4b5aab9b9ec3a39d8c6ff))
+
 ## [2.1.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.8...v2.1.9) (2024-11-05)
 
 ### Bug Fixes
