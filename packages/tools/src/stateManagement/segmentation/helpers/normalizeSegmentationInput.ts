@@ -31,6 +31,9 @@ function normalizeSegmentationInput(
   }
   const normalizedSegments = normalizeSegments(config?.segments, type, data);
 
+  // since we normalize the segments, we don't need the segments config in the final object
+  delete config?.segments;
+
   return {
     segmentationId,
     label: config?.label ?? null,

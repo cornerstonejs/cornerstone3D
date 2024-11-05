@@ -74,10 +74,8 @@ function getSegmentIndexColor(
     segmentationId,
   });
 
-  if (!representations) {
-    throw new Error(
-      `segmentation representation with segmentationId ${segmentationId} does not exist`
-    );
+  if (!representations || representations.length === 0) {
+    return null;
   }
 
   const representation = representations[0];

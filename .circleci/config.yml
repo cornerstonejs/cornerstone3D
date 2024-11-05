@@ -15,19 +15,13 @@ jobs:
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
-      - restore_cache:
-          name: Restore Package Cache
-          keys:
-            - packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
-            - packages-v1-{{ .Branch }}-
-            - packages-v1-
-      # Was, todo restore it - run: yarn install --frozen-lockfile
-      - run: yarn install --frozen-lockfile
-      - save_cache:
-          name: Save Package Cache
-          paths:
-            - ~/.cache/yarn
-          key: packages-v1-{{ .Branch }}-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install Bun
+          command: |
+            curl -fsSL https://bun.sh/install | bash
+            echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
+            echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
+      - run: bun install
       - persist_to_workspace:
           root: ~/repo
           paths: .
@@ -40,7 +34,7 @@ jobs:
       - run:
           name: 'Perform the versioning before build'
           command: node ./version.mjs
-      - run: yarn build
+      - run: bun run build
       - persist_to_workspace:
           root: ~/repo
           paths:
@@ -58,13 +52,13 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: yarn run api-check
+      - run: bun run api-check
   FORMAT_CHECK:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
-      - run: yarn run format-check
+      - run: bun run format-check
 
   # https://circleci.com/docs/2.0/collect-test-data/#karma
   TEST:
@@ -74,7 +68,7 @@ jobs:
           at: ~/repo
       - run: mkdir ~/junit
       - run:
-          command: yarn run test:unit:ci
+          command: bun run test:unit:ci
           environment:
             JUNIT_REPORT_PATH: ./junit/
             JUNIT_REPORT_NAME: test-results.xml
