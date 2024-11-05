@@ -12,7 +12,6 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "./dist/esm/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "files": [
