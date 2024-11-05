@@ -74,7 +74,7 @@
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
-    "build:all": "yarn run build:umd:dynamic && yarn run build:esm",
+    "build:all": "yarn run build:esm",
     "copy-dts": "echo 'not implemented yet'",
     "clean": "shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",

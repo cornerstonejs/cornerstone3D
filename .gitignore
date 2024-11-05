@@ -1,6 +1,6 @@
 # dependencies
 node_modules
-
+.nx
 .vscode/settings.json
 # builds
 build
