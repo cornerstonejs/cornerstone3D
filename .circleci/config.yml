@@ -8,14 +8,17 @@ defaults: &defaults
     - image: cimg/node:18.19.0-browsers
       environment:
         TERM: xterm # Enable colors in term
-  steps:
-    - run:
-        name: Install Bun
-        command: |
-          curl -fsSL https://bun.sh/install | bash
-          echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
-          echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
 
+
+commands:
+  install_bun:
+    steps:
+      - run:
+          name: Install Bun
+          command: |
+            curl -fsSL https://bun.sh/install | bash
+            echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
+            echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
 
 jobs:
   CHECKOUT:
@@ -23,6 +26,7 @@ jobs:
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
+      - install_bun
       - run: bun install
       - persist_to_workspace:
           root: ~/repo
@@ -33,6 +37,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+      - install_bun
       - run:
           name: 'Perform the versioning before build'
           command: node ./version.mjs
@@ -54,12 +59,14 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+      - install_bun
       - run: bun run api-check
   FORMAT_CHECK:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
+      - install_bun
       - run: bun run format-check
 
   # https://circleci.com/docs/2.0/collect-test-data/#karma
@@ -68,6 +75,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+      - install_bun
       - run: mkdir ~/junit
       - run:
           command: bun run test:unit:ci
