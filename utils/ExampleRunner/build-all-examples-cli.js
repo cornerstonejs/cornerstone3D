@@ -47,6 +47,15 @@ function validPath(str) {
   return str.replace(/\\\\/g, '/');
 }
 
+// Function to split array into chunks
+function chunkArray(array, size) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
+
 // ----------------------------------------------------------------------------
 // Find examples
 // ----------------------------------------------------------------------------
@@ -132,14 +141,8 @@ if (configuration.examples) {
 
   const examplePaths = Object.values(allExamplePaths);
   const exampleNames = Object.keys(allExamplePaths);
-  const conf = buildConfig(
-    exampleNames,
-    examplePaths,
-    distDir,
-    validPath(rootPath)
-  );
-  shell.ShellString(conf).to(webpackConfigPath);
 
+  // Build the example index HTML and markdown
   const exampleIndexHTML = buildExampleIndex(
     exampleNames,
     examplePaths,
@@ -153,14 +156,33 @@ if (configuration.examples) {
     validPath(rootPath)
   );
   shell.ShellString(exampleIndexMarkdown).to(path.join(docsDir, 'examples.md'));
-  //shell.cd(rootPath);
 
   if (options.build == true) {
-    shell.exec(
-      `node --max_old_space_size=16384 ${
-        currentWD.endsWith('examples') ? '../../../' : ''
-      }node_modules/webpack/bin/webpack.js --progress --config ${webpackConfigPath}`
-    );
+    // Split the examples into batches of 4
+    const exampleEntries = Object.entries(allExamplePaths);
+    const batches = chunkArray(exampleEntries, 4);
+
+    batches.forEach((batch, index) => {
+      const batchNames = batch.map(([name, path]) => name);
+      const batchPaths = batch.map(([name, path]) => path);
+
+      // Build config for this batch
+      const conf = buildConfig(
+        batchNames,
+        batchPaths,
+        distDir,
+        validPath(rootPath)
+      );
+      shell.ShellString(conf).to(webpackConfigPath);
+
+      // Build batch
+      console.log(`Building batch ${index + 1}/${batches.length}...`);
+      shell.exec(
+        `node --max_old_space_size=16384 ${
+          currentWD.endsWith('examples') ? '../../../' : ''
+        }node_modules/webpack/bin/webpack.js --progress --config ${webpackConfigPath}`
+      );
+    });
   } else {
     shell.exec(
       `webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`

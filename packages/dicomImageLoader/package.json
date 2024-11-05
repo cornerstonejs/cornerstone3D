@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "2.1.9",
+  "version": "2.1.13",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -12,7 +12,6 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "./dist/esm/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "files": [
@@ -74,7 +73,7 @@
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
-    "build:all": "yarn run build:umd:dynamic && yarn run build:esm",
+    "build:all": "yarn run build:esm",
     "copy-dts": "echo 'not implemented yet'",
     "clean": "shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
@@ -119,7 +118,7 @@
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^2.1.9",
+    "@cornerstonejs/core": "^2.1.13",
     "dicom-parser": "^1.8.9"
   },
   "lint-staged": {

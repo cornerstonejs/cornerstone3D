@@ -67,14 +67,6 @@ module.exports = {
           loader: 'babel-loader',
         },
       },
-      {
-        test: path.join(codecs, 'jpeg.js'),
-        loader: 'exports-loader',
-        options: {
-          type: 'commonjs',
-          exports: 'JpegImage',
-        },
-      },
     ],
   },
   plugins: [

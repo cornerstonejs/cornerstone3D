@@ -105,7 +105,7 @@ function init(configuration = config): boolean {
   config = deepMerge(defaultConfig, configuration);
 
   if (isIOS()) {
-    if (configuration.rendering.preferSizeOverAccuracy) {
+    if (configuration.rendering?.preferSizeOverAccuracy) {
       config.rendering.preferSizeOverAccuracy = true;
     } else {
       console.log(

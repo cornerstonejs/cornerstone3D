@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "2.1.9",
+  "version": "2.1.10",
   "private": true,
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "scripts": {
@@ -33,11 +33,11 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/adapters": "^2.1.9",
-    "@cornerstonejs/core": "^2.1.9",
-    "@cornerstonejs/dicom-image-loader": "^2.1.9",
-    "@cornerstonejs/nifti-volume-loader": "^2.1.9",
-    "@cornerstonejs/tools": "^2.1.9",
+    "@cornerstonejs/adapters": "^2.1.13",
+    "@cornerstonejs/core": "^2.1.13",
+    "@cornerstonejs/dicom-image-loader": "^2.1.13",
+    "@cornerstonejs/nifti-volume-loader": "^2.1.13",
+    "@cornerstonejs/tools": "^2.1.13",
     "@docusaurus/core": "3.6.0",
     "@docusaurus/faster": "3.6.0",
     "@docusaurus/module-type-aliases": "3.6.0",

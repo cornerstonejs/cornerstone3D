@@ -47,49 +47,5 @@ export default [
             }),
             json()
         ]
-    },
-    // UMD configuration
-
-    {
-        external: [
-            "dcmjs",
-            "gl-matrix",
-            "lodash.clonedeep",
-            "ndarray",
-            "@cornerstonejs/tools"
-        ],
-        input: pkg.src || "src/index.ts",
-        output: [
-            {
-                file: "dist/umd/adapters.umd.js",
-                format: "umd",
-                name: "Adapters",
-                sourcemap: true,
-                globals: {
-                    dcmjs: "dcmjs",
-                    "gl-matrix": "glMatrix",
-                    "lodash.clonedeep": "_.cloneDeep",
-                    ndarray: "ndarray",
-                    "@cornerstonejs/tools": "cornerstoneTools"
-                }
-            }
-        ],
-        plugins: [
-            resolve({
-                preferBuiltins: true,
-                browser: true
-            }),
-            typescript({
-                sourceMap: false,
-                declaration: false,
-                outDir: "dist/esm"
-            }),
-            babel({
-                exclude: "node_modules/**",
-                babelHelpers: "bundled",
-                extensions: [".js", ".ts"]
-            }),
-            json()
-        ]
     }
 ];
