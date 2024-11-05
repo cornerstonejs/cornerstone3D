@@ -40,7 +40,7 @@ jobs:
       - install_bun
       - run:
           name: 'Perform the versioning before build'
-          command: node ./version.mjs
+          command: bun ./version.mjs
       - run: bun run build
       - persist_to_workspace:
           root: ~/repo
@@ -113,7 +113,7 @@ jobs:
       - run:
           name: publish package versions
           command: |
-            node ./publish-version.mjs
+            bun ./publish-version.mjs
       - run:
           name: Again set the NPM registry (was deleted in the version script)
           command:
@@ -121,7 +121,7 @@ jobs:
       - run:
           name: publish package dist
           command: |
-            node ./publish-package.mjs
+            bun ./publish-package.mjs
 
 workflows:
   version: 2
