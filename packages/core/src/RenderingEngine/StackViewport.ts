@@ -3042,18 +3042,12 @@ class StackViewport extends Viewport {
       }
     }
 
-    let { imageURI } = options;
+    const { imageURI } = options;
 
-    if (!imageURI) {
-      // Remove the dataLoader scheme since that can change
-      imageURI = imageIdToURI(currentImageId);
-    }
-
-    const referencedImageURI = imageIdToURI(referencedImageId);
-
-    const endsWith = referencedImageId?.endsWith(imageURI);
-    if (endsWith) {
-      return endsWith;
+    // Direct URI match check
+    const currentImageURI = imageIdToURI(referencedImageId);
+    if (!imageURI || currentImageURI === imageURI) {
+      return true;
     }
 
     // if camera focal point is provided, we can use that as a point
