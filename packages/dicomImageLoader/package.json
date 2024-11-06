@@ -113,6 +113,7 @@
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.5",
+    "jpeg-lossless-decoder-js": "^2.1.0",
     "comlink": "^4.4.1",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"

@@ -557,7 +557,9 @@ function clampToUint8(a) {
 }
 
 class JpegImage {
-  constructor() {}
+  constructor() {
+    this.colorTransform = true;
+  }
 
   // setting up all the prototype functions
   // javascript new version of setting up prototype functions
