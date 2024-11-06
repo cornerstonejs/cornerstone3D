@@ -61,7 +61,6 @@ function playClip(
     playClipOptions.dynamicCineEnabled ?? true;
 
   const { viewport } = enabledElement;
-  const volume = _getVolumeFromViewport(viewport as Types.IBaseVolumeViewport);
 
   const playClipContext = _createCinePlayContext(viewport, playClipOptions);
   let playClipData = getToolState(element);
