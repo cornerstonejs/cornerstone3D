@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.14](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.13...v2.1.14) (2024-11-06)
+
+### Bug Fixes
+
+- segmentation stack was broken ([#1555](https://github.com/cornerstonejs/cornerstone3D/issues/1555)) ([8d73d4d](https://github.com/cornerstonejs/cornerstone3D/commit/8d73d4de075c8489b70daee705c12a0f01fa66ee))
+
 ## [2.1.13](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.12...v2.1.13) (2024-11-05)
 
 ### Bug Fixes
