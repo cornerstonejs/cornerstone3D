@@ -25,3 +25,12 @@ export default {
   metaDataManager,
   register,
 };
+
+export {
+  metaData,
+  findIndexOfString,
+  getPixelData,
+  loadImage,
+  metaDataManager,
+  register,
+};

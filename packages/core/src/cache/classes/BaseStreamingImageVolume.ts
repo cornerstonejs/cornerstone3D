@@ -10,13 +10,11 @@ import type {
   PTScaling,
   ScalingParameters,
 } from '../../types';
-import {
-  ProgressiveIterator,
-  imageRetrieveMetadataProvider,
-  hasFloatScalingParameters,
-  autoLoad,
-  triggerEvent,
-} from '../../utilities';
+import ProgressiveIterator from '../../utilities/ProgressiveIterator';
+import imageRetrieveMetadataProvider from '../../utilities/imageRetrieveMetadataProvider';
+import { hasFloatScalingParameters } from '../../utilities/hasFloatScalingParameters';
+import autoLoad from '../../utilities/autoLoad';
+import triggerEvent from '../../utilities/triggerEvent';
 import ImageVolume from './ImageVolume';
 import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
 import { canRenderFloatTextures } from '../../init';

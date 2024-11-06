@@ -29,9 +29,6 @@
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
-    "./umd": {
-      "import": "./dist/dynamic-import/cornerstoneDICOMImageLoader.min.js"
-    },
     "./constants": {
       "import": "./dist/esm/constants/index.js",
       "types": "./dist/esm/constants/index.d.ts"

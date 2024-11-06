@@ -46,3 +46,19 @@ export default {
   unpackBinaryFrame,
   register,
 };
+
+export {
+  metaData,
+  dataSetCacheManager,
+  fileManager,
+  getEncapsulatedImageFrame,
+  getUncompressedImageFrame,
+  loadFileRequest,
+  loadImageFromPromise,
+  getLoaderForScheme,
+  getPixelData,
+  loadImage,
+  parseImageId,
+  unpackBinaryFrame,
+  register,
+};
