@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.15](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.14...v2.1.15) (2024-11-06)
+
+### Bug Fixes
+
+- jpeg codec build ([#1559](https://github.com/cornerstonejs/cornerstone3D/issues/1559)) ([d93df9a](https://github.com/cornerstonejs/cornerstone3D/commit/d93df9a197fb4be3d88205f5f6412c73b1d040f3))
+
 ## [2.1.14](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.13...v2.1.14) (2024-11-06)
 
 ### Bug Fixes
