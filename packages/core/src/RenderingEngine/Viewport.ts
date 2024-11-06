@@ -1379,7 +1379,6 @@ class Viewport {
       flipHorizontal,
       flipVertical,
       clippingRange,
-      rotation,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1439,10 +1438,6 @@ class Viewport {
 
     if (clippingRange !== undefined) {
       vtkCamera.setClippingRange(clippingRange);
-    }
-
-    if (rotation !== undefined) {
-      this.setViewPresentation({ rotation });
     }
 
     // update clipping range only if focal point changed of a new actor is added

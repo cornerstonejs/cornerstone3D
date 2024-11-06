@@ -492,6 +492,19 @@ export function createAndCacheLocalImage(
     scalarData: scalarDataToUse,
   });
 
+  // Calculate min and max pixel values
+  let minPixelValue = scalarDataToUse[0];
+  let maxPixelValue = scalarDataToUse[0];
+
+  for (let i = 1; i < scalarDataToUse.length; i++) {
+    if (scalarDataToUse[i] < minPixelValue) {
+      minPixelValue = scalarDataToUse[i];
+    }
+    if (scalarDataToUse[i] > maxPixelValue) {
+      maxPixelValue = scalarDataToUse[i];
+    }
+  }
+
   const image = {
     imageId: imageId,
     intercept: 0,
@@ -501,8 +514,8 @@ export function createAndCacheLocalImage(
     numberOfComponents: imagePixelModule.samplesPerPixel,
     dataType: targetBuffer?.type,
     slope: 1,
-    minPixelValue: 0,
-    maxPixelValue: Math.pow(2, imagePixelModule.bitsStored) - 1,
+    minPixelValue,
+    maxPixelValue,
     rows: imagePixelModule.rows,
     columns: imagePixelModule.columns,
     getCanvas: undefined,

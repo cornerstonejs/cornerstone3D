@@ -835,6 +835,10 @@ export default class VoxelManager<T> {
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
       const SliceDataConstructor = voxelManager._getConstructor();
 
+      // Track min/max values across all slices
+      let minValue = Infinity;
+      let maxValue = -Infinity;
+
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
         const { pixelData } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
@@ -848,6 +852,21 @@ export default class VoxelManager<T> {
           // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
           pixelData.set(sliceData);
+
+          // Update min/max values for this slice
+          for (let i = 0; i < sliceData.length; i++) {
+            const value = sliceData[i];
+            minValue = Math.min(minValue, value);
+            maxValue = Math.max(maxValue, value);
+          }
+
+          // Update the image's min/max pixel values
+          const imageId = imageIds[sliceIndex];
+          const image = cache.getImage(imageId);
+          if (image) {
+            image.minPixelValue = minValue;
+            image.maxPixelValue = maxValue;
+          }
         }
       }
 
