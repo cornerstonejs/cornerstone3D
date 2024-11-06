@@ -26,6 +26,7 @@ import {
 } from './imageLoader';
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import type { StreamingDynamicImageVolume } from '../cache';
+import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingImageVolumeLoader';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -61,7 +62,8 @@ export interface LocalVolumeOptions {
 
 const volumeLoaders = {};
 
-let unknownVolumeLoader;
+let unknownVolumeLoader =
+  cornerstoneStreamingImageVolumeLoader as unknown as VolumeLoaderFn;
 
 /**
  * Load a volume using a registered Cornerstone Volume Loader.

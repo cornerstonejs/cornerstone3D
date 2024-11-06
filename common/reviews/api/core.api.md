@@ -2202,7 +2202,7 @@ export class ImageVolume {
     // (undocumented)
     isPreScaled: boolean;
     // (undocumented)
-    load(callback: (...args: unknown[]) => void): void;
+    load(callback?: (...args: unknown[]) => void): void;
     // (undocumented)
     loadStatus?: Record<string, unknown>;
     // (undocumented)

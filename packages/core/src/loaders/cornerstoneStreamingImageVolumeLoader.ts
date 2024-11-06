@@ -1,10 +1,9 @@
 import StreamingImageVolume from '../cache/classes/StreamingImageVolume';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
-import type { IRetrieveConfiguration, VolumeLoaderFn } from '../types';
-import { generateVolumePropsFromImageIds } from '../utilities';
+import type { IRetrieveConfiguration } from '../types';
+import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import { loadImage } from './imageLoader';
-import { registerUnknownVolumeLoader } from './volumeLoader';
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -138,9 +137,5 @@ function cornerstoneStreamingImageVolumeLoader(
     },
   };
 }
-
-registerUnknownVolumeLoader(
-  cornerstoneStreamingImageVolumeLoader as unknown as VolumeLoaderFn
-);
 
 export { cornerstoneStreamingImageVolumeLoader };

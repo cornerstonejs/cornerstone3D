@@ -65,7 +65,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'yarn build-and-serve-static-examples',
+    command: 'yarn build-and-serve-static-examples-legacy',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 500 * 1000,
