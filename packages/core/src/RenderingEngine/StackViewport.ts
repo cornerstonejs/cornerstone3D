@@ -3042,7 +3042,7 @@ class StackViewport extends Viewport {
       }
     }
 
-    const { imageURI } = options;
+    let { imageURI } = options;
 
     if (!imageURI) {
       // Remove the dataLoader scheme since that can change
