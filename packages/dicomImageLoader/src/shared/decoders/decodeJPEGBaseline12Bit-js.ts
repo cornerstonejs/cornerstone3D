@@ -1,11 +1,11 @@
 import type { ByteArray } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
-import JpegImage from '../../codecs/jpeg';
 
 async function decodeJPEGBaseline12BitAsync(
   imageFrame: Types.IImageFrame,
   pixelData: ByteArray
 ): Promise<Types.IImageFrame> {
+  const { default: JpegImage } = await import('../../codecs/jpeg');
   const jpeg = new JpegImage();
 
   jpeg.parse(pixelData);

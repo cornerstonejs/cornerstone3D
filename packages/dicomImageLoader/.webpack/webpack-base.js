@@ -48,7 +48,6 @@ module.exports = {
     },
   },
   module: {
-    noParse: [/(codecs)/],
     rules: [
       {
         test: /\.wasm/,
@@ -56,20 +55,12 @@ module.exports = {
       },
       {
         test: /\.(mjs|js|ts)$/,
-        exclude: [/(node_modules)/, /(codecs)/],
+        exclude: [/(node_modules)/],
         use: {
           loader: 'babel-loader',
           options: {
             cacheDirectory: false,
           },
-        },
-      },
-      {
-        test: path.join(codecs, 'jpeg.js'),
-        loader: 'exports-loader',
-        options: {
-          type: 'commonjs',
-          exports: 'JpegImage',
         },
       },
     ],
