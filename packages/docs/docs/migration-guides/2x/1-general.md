@@ -24,6 +24,14 @@ Watch this video guide for a [visual walkthrough](https://www.youtube.com/embed/
   allowfullscreen
 ></iframe>
 
+## Frameworks
+
+We have worked hard to enhance the developer experience when using Cornerstone3D with various frameworks like React, Vue, Angular, Vite, and Webpack.
+
+For more information, please refer to the [frameworks](../../getting-started/vue-angular-react-etc.md) page.
+
+You need to modify your Vite and Webpack configurations to correctly import the Cornerstone3D library. Check each framework's repository for more details.
+
 ## Typescript Version
 
 We have upgraded the typescript version from 4.6 to 5.5 in the 2.0 version of the cornerstone3D.
