@@ -51,18 +51,6 @@ module.exports = function (config) {
       'karma-spec-reporter',
     ],
     frameworks: ['jasmine', 'webpack'],
-    customHeaders: [
-      {
-        match: '.*.html',
-        name: 'Cross-Origin-Opener-Policy',
-        value: 'same-origin',
-      },
-      {
-        match: '.*.html',
-        name: 'Cross-Origin-Embedder-Policy',
-        value: 'require-corp',
-      },
-    ],
     files: [
       'packages/core/test/**/*_test.js',
       'packages/tools/test/**/*_test.js',

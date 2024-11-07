@@ -84,16 +84,14 @@ describe('Stack Segmentation Rendering:', () => {
     const vp = renderingEngine.getViewport(viewportId1);
 
     eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
-      setTimeout(() => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
+      const canvas = vp.getCanvas();
+      const image = canvas.toDataURL('image/png');
 
-        compareImages(
-          image,
-          imageURI_64_64_10_5_1_1_0_SEG_Mocked,
-          'imageURI_64_64_10_5_1_1_0_SEG_Mocked'
-        ).then(done, done.fail);
-      }, 500);
+      compareImages(
+        image,
+        imageURI_64_64_10_5_1_1_0_SEG_Mocked,
+        'imageURI_64_64_10_5_1_1_0_SEG_Mocked'
+      ).then(done, done.fail);
     });
 
     try {
@@ -160,16 +158,14 @@ describe('Stack Segmentation Rendering:', () => {
       renderCount++;
 
       if (renderCount === expectedRenderCount) {
-        setTimeout(() => {
-          const canvas = vp.getCanvas();
-          const image = canvas.toDataURL('image/png');
+        const canvas = vp.getCanvas();
+        const image = canvas.toDataURL('image/png');
 
-          compareImages(
-            image,
-            imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked,
-            'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
-          ).then(done, done.fail);
-        }, 700);
+        compareImages(
+          image,
+          imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked,
+          'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
+        ).then(done, done.fail);
       }
     });
 
