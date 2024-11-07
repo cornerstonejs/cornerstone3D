@@ -16,7 +16,10 @@ import type {
 } from '../../../types/LabelmapTypes';
 import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
-import { triggerSegmentationModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import {
+  triggerSegmentationDataModified,
+  triggerSegmentationModified,
+} from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { SegmentationRepresentations } from '../../../enums';
 
 const { uuidv4 } = utilities;
@@ -97,6 +100,9 @@ async function addLabelmapToElement(
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
     await addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
   }
+
+  // Just to make sure if the segmentation data had value before, it gets updated too
+  triggerSegmentationDataModified(segmentationId);
 }
 
 /**
