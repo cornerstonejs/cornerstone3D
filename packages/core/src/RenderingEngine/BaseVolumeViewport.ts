@@ -976,31 +976,30 @@ abstract class BaseVolumeViewport extends Viewport {
       slabThickness,
       preset,
     } = this.viewportProperties;
-    const volume = cache.getVolume(this.getVolumeId());
+
+    volumeId ||= this.getVolumeId();
+    const volume = cache.getVolume(volumeId);
+
     if (!volume) {
       return null;
     }
 
-    const voiRanges = this.getActors()
-      .map((actorEntry) => {
-        const volumeActor = actorEntry.actor as vtkVolume;
+    const volumeActorEntry = this.getActors().find((actorEntry) => {
+      return actorEntry.referencedId === volumeId;
+    });
 
-        if (!actorIsA(actorEntry, 'vtkVolume')) {
-          return null;
-        }
+    if (!volumeActorEntry) {
+      return;
+    }
 
-        const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
-        const [lower, upper] =
-          this.viewportProperties?.VOILUTFunction === 'SIGMOID'
-            ? getVoiFromSigmoidRGBTransferFunction(cfun)
-            : cfun.getRange();
-        return { volumeId, voiRange: { lower, upper } };
-      })
-      .filter(Boolean);
+    const volumeActor = volumeActorEntry.actor as vtkVolume;
+    const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+    const [lower, upper] =
+      this.viewportProperties?.VOILUTFunction === 'SIGMOID'
+        ? getVoiFromSigmoidRGBTransferFunction(cfun)
+        : cfun.getRange();
 
-    const voiRange = volumeId
-      ? voiRanges.find((range) => range.volumeId === volumeId)?.voiRange
-      : voiRanges[0]?.voiRange;
+    const voiRange = { lower, upper };
 
     const volumeColormap = this.getColormap(volumeId);
 

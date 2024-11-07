@@ -251,19 +251,19 @@ class CrosshairsTool extends AnnotationTool {
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
     this._subscribeToViewportNewVolumeSet(viewportsInfo);
 
-    this.computeToolCenter(viewportsInfo);
+    this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolPassive() {
     const viewportsInfo = this._getViewportsInfo();
 
-    this.computeToolCenter(viewportsInfo);
+    this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolEnabled() {
     const viewportsInfo = this._getViewportsInfo();
 
-    this.computeToolCenter(viewportsInfo);
+    this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolDisabled() {
@@ -330,7 +330,12 @@ class CrosshairsTool extends AnnotationTool {
       viewport.render();
     }
 
-    this.computeToolCenter(viewportsInfo);
+    this._computeToolCenter(viewportsInfo);
+  };
+
+  computeToolCenter = () => {
+    const viewportsInfo = this._getViewportsInfo();
+    this._computeToolCenter(viewportsInfo);
   };
 
   /**
@@ -342,7 +347,7 @@ class CrosshairsTool extends AnnotationTool {
    * of the two rendering viewports.
    * @param viewportsInfo Array of viewportInputs which each item containing `{viewportId, renderingEngineId}`
    */
-  computeToolCenter = (viewportsInfo): void => {
+  _computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo.length || viewportsInfo.length === 1) {
       console.warn(
         'For crosshairs to operate, at least two viewports must be given.'
@@ -1475,7 +1480,7 @@ class CrosshairsTool extends AnnotationTool {
 
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
-    this.computeToolCenter(viewportsInfo);
+    this._computeToolCenter(viewportsInfo);
   };
 
   _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
