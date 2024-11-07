@@ -142,7 +142,7 @@ async function run() {
   viewport.render();
 
   function getValue(volume, worldPos) {
-    const { dimensions, scalarData, imageData } = volume;
+    const { dimensions, imageData } = volume;
 
     const index = imageData.worldToIndex(worldPos);
 
@@ -154,11 +154,7 @@ async function run() {
       return;
     }
 
-    const yMultiple = dimensions[0];
-    const zMultiple = dimensions[0] * dimensions[1];
-
-    const value =
-      scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]];
+    const value = volume.voxelManager.getAtIJK(index[0], index[1], index[2]);
 
     return value;
   }
