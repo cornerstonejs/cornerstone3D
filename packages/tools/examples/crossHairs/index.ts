@@ -18,7 +18,6 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { encodeVolumeIdInfo } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -28,7 +27,7 @@ console.warn(
 const {
   ToolGroupManager,
   Enums: csToolsEnums,
-  StackScrollTool,
+  CrosshairsTool,
   synchronizers,
 } = cornerstoneTools;
 
@@ -107,14 +106,14 @@ addButtonToToolbar({
     const resetZoom = true;
     const resetToCenter = true;
     const resetRotation = true;
-    const suppressEvents = false;
-    viewport1.resetCamera({
+    const supressEvents = false;
+    viewport1.resetCamera(
       resetPan,
       resetZoom,
       resetToCenter,
       resetRotation,
-      suppressEvents,
-    });
+      supressEvents
+    );
 
     viewport1.render();
   },
@@ -202,7 +201,7 @@ addDropdownToToolbar({
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     const crosshairsInstance = toolGroup.getToolInstance(
-      StackScrollTool.toolName
+      CrosshairsTool.toolName
     );
     const oldConfiguration = crosshairsInstance.configuration;
 
@@ -256,26 +255,17 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  // cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(CrosshairsTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.2.826.0.1.3680043.8.498.62453947377885188916859342059398232266',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.2.826.0.1.3680043.8.498.95761650623702141948748826678788764509',
-    wadoRsRoot: 'http://localhost/dicom-web',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
-  // const volumeId = encodeVolumeIdInfo({
-  //   loader: 'fakeVolumeLoader',
-  //   name: 'volumeURI',
-  //   rows: 100,
-  //   columns: 100,
-  //   slices: 10,
-  //   xSpacing: 1,
-  //   ySpacing: 1,
-  //   zSpacing: 1,
-  // });
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -296,24 +286,24 @@ async function run() {
         background: <Types.Point3>[0, 0, 0],
       },
     },
-    // {
-    //   viewportId: viewportId2,
-    //   type: ViewportType.ORTHOGRAPHIC,
-    //   element: element2,
-    //   defaultOptions: {
-    //     orientation: Enums.OrientationAxis.SAGITTAL,
-    //     background: <Types.Point3>[0, 0, 0],
-    //   },
-    // },
-    // {
-    //   viewportId: viewportId3,
-    //   type: ViewportType.ORTHOGRAPHIC,
-    //   element: element3,
-    //   defaultOptions: {
-    //     orientation: Enums.OrientationAxis.CORONAL,
-    //     background: <Types.Point3>[0, 0, 0],
-    //   },
-    // },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -330,7 +320,7 @@ async function run() {
         callback: setCtTransferFunctionForVolumeActor,
       },
     ],
-    [viewportId1]
+    [viewportId1, viewportId2, viewportId3]
   );
 
   // Define tool groups to add the segmentation display tool to
@@ -340,8 +330,8 @@ async function run() {
   // For the crosshairs to operate, the viewports must currently be
   // added ahead of setting the tool active. This will be improved in the future.
   toolGroup.addViewport(viewportId1, renderingEngineId);
-  // toolGroup.addViewport(viewportId2, renderingEngineId);
-  // toolGroup.addViewport(viewportId3, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Manipulation Tools
   // Add Crosshairs tool and configure it to link the three viewports
@@ -350,36 +340,26 @@ async function run() {
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
 
-  // toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName, {
-  //   getReferenceLineColor,
-  //   getReferenceLineControllable,
-  //   getReferenceLineDraggableRotatable,
-  //   getReferenceLineSlabThicknessControlsOn,
-  //   mobile: {
-  //     enabled: isMobile,
-  //     opacity: 0.8,
-  //     handleRadius: 9,
-  //   },
-  // });
+  toolGroup.addTool(CrosshairsTool.toolName, {
+    getReferenceLineColor,
+    getReferenceLineControllable,
+    getReferenceLineDraggableRotatable,
+    getReferenceLineSlabThicknessControlsOn,
+    mobile: {
+      enabled: isMobile,
+      opacity: 0.8,
+      handleRadius: 9,
+    },
+  });
 
-  toolGroup.setToolActive(StackScrollTool.toolName, {
+  toolGroup.setToolActive(CrosshairsTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
-  // setUpSynchronizers();
+  setUpSynchronizers();
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
-
-  // // set viewports to be not interpolated
-  setTimeout(() => {
-    const viewport = renderingEngine.getViewport(viewportId1);
-    viewport.setProperties({
-      slabThickness: 100,
-    });
-
-    viewport.render();
-  }, 2000);
 }
 
 run();
