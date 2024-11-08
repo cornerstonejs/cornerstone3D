@@ -203,9 +203,11 @@ class VolumeViewport extends BaseVolumeViewport {
   protected setCameraClippingRange() {
     const activeCamera = this.getVtkActiveCamera();
     if (activeCamera.getParallelProjection()) {
+      // which makes more sense. However, in situations like MPR where the camera is
+      // oblique, the slab thickness might not be sufficient.
       activeCamera.setClippingRange(
-        activeCamera.getDistance() - this.getSlabThickness(),
-        activeCamera.getDistance() + this.getSlabThickness()
+        -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
+        RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     } else {
       activeCamera.setClippingRange(
