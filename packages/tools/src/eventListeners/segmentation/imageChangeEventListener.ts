@@ -169,12 +169,14 @@ function _imageChangeEventListener(evt) {
       // not derived from it. We need to find a way to handle this case, but don't think
       // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
       const originToUse = currentOrigin;
+      const constructor = derivedImage.voxelManager.getConstructor();
+      const newPixelData = derivedImage.voxelManager.getScalarData();
 
       const scalarArray = vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: 1,
-        // @ts-ignore
-        values: [...derivedImage.voxelManager.getScalarData()],
+        // @ts-expect-error
+        values: new constructor(newPixelData),
       });
 
       const imageData = vtkImageData.newInstance();
