@@ -8,8 +8,6 @@ jobs:
   playwright-tests:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.48.1-focal
     strategy:
       fail-fast: false
       matrix:
