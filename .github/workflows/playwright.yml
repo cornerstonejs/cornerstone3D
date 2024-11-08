@@ -20,13 +20,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export PATH="$HOME/.bun/bin:$PATH"
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: bun install --frozen-lockfile
       - name: Run Playwright tests
-        run:
-          export NODE_OPTIONS="--max_old_space_size=8192" && npx playwright test --shard=${{
-          matrix.shardIndex }}/${{ matrix.shardTotal }}
-
+        run: |
+          export NODE_OPTIONS="--max_old_space_size=8192"
+          bun x playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -44,19 +47,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export PATH="$HOME/.bun/bin:$PATH"
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
+        run: bun install --frozen-lockfile
       - name: Download blob reports from GitHub Actions Artifacts
         uses: actions/download-artifact@v4
         with:
           path: all-blob-reports
           pattern: blob-report-*
           merge-multiple: true
-
       - name: Merge into HTML Report
-        run: npx playwright merge-reports --reporter html ./all-blob-reports
-
+        run: bun x playwright merge-reports --reporter html ./all-blob-reports
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
