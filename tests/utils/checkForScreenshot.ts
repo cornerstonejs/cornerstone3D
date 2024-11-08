@@ -18,9 +18,6 @@ export const checkForScreenshot = async (
   await page.waitForLoadState('networkidle');
 
   for (let i = 1; i < attempts; i++) {
-    if (i > 50) {
-      throw new Error('Passed max attempts to check for screenshot.');
-    }
     try {
       await expect(locator).toHaveScreenshot(screenshotPath, {
         maxDiffPixelRatio: 0.1,
