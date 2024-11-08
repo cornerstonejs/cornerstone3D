@@ -1,3 +1,11 @@
+/**
+ *
+ * @param action  The action function to attempt
+ * @param attempts  The number of attempts to try the action
+ * @param delay delay between attempts
+ * @returns True if the action is successful, otherwise throws an error
+ */
+
 export const attemptAction = async (
   action: () => Promise<void>,
   attempts = 10,
