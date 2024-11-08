@@ -129,7 +129,23 @@ module.exports = {
     }
   },
   optimization: {
-    minimize: false
+    minimize: false,
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        defaultVendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+        },
+        commons: {
+          test: /[\\/]packages[\\/]/,
+          name: 'commons',
+          chunks: 'all',
+          minChunks: 2,
+        },
+      },
+    }
   },
 };
 `;
