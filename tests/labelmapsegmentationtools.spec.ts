@@ -36,7 +36,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -58,7 +57,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -80,7 +78,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -115,7 +112,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -137,7 +133,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -159,7 +154,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
 
     await page
@@ -186,7 +180,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -208,7 +201,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -230,7 +222,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -269,7 +260,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -291,7 +281,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -313,7 +302,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -352,7 +340,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -374,7 +361,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -396,7 +382,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
 
     await page
@@ -423,7 +408,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -445,7 +429,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -467,7 +450,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -512,7 +494,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 301,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -534,7 +515,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 379,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -556,7 +536,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 165,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -589,7 +568,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -603,7 +581,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 340,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -617,7 +594,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 300,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -648,7 +624,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -662,7 +637,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
 
     await simulateClicksOnElement({
@@ -677,7 +651,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -708,7 +681,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -722,7 +694,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 340,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -736,7 +707,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 300,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -767,7 +737,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -781,7 +750,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 340,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -795,7 +763,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 300,
         },
       ],
-      delayBetweenClicks: 500,
     });
 
     await page
@@ -814,7 +781,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 320,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -828,7 +794,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 340,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -842,7 +807,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 300,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await checkForScreenshot(
       page,
@@ -869,7 +833,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 268,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: secondCanvas,
@@ -879,7 +842,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 354,
         },
       ],
-      delayBetweenClicks: 500,
     });
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -889,7 +851,6 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
           y: 331,
         },
       ],
-      delayBetweenClicks: 500,
     });
 
     await checkForScreenshot(
