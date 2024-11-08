@@ -3,7 +3,7 @@ import {
   visitExample,
   checkForScreenshot,
   screenShotPaths,
-  reduce3DViewportSize,
+  reduceViewportsSize,
   attemptAction,
 } from './utils/index';
 
@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('Surface Segmentation Representation for Volume Viewports', async () => {
   test('should render the segmentation correctly', async ({ page }) => {
     const locator = page.locator('.cornerstone-canvas');
-    await attemptAction(() => reduce3DViewportSize(page), 1000, 10);
+    await attemptAction(() => reduceViewportsSize(page), 1000, 10);
     await checkForScreenshot(
       page,
       locator,
