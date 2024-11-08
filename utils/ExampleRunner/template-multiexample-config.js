@@ -58,7 +58,6 @@ if (!fs.existsSync(dir)){
 
 module.exports = {
   mode: 'development',
-  devtool: 'source-map',
   plugins: [
     new ESLintPlugin(),
     ${multiTemplates}
