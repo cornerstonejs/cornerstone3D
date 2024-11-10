@@ -9,7 +9,7 @@ export const reduceViewportsSize = async (page) => {
     const enabledElements = cornerstone.getEnabledElements();
 
     enabledElements.forEach(({ viewport }) => {
-      viewport.setZoom(0.25);
+      viewport.setZoom(0.4);
       viewport.render();
     });
   }, await page.evaluateHandle('window'));
