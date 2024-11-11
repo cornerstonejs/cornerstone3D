@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.22...v2.2.0) (2024-11-11)
+
+### Features
+
+- **dicomImageLoader:** Switch JPEG lossless decoder and add more tests ([#1568](https://github.com/cornerstonejs/cornerstone3D/issues/1568)) ([b6a29a2](https://github.com/cornerstonejs/cornerstone3D/commit/b6a29a292951a13bd357c17f3259bef3bcf19f1c))
+
 ## [2.1.22](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.21...v2.1.22) (2024-11-11)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
