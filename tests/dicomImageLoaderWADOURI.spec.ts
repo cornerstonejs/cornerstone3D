@@ -14,7 +14,7 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   /**
    * Test to load a dicom image with JPEGLSLosslessTransferSyntax
    */
-  test.only('should load a dicom image with JPEGLSLosslessTransferSyntax', async ({
+  test('should load a dicom image with JPEGLSLosslessTransferSyntax', async ({
     page,
   }) => {
     await page
