@@ -30,7 +30,9 @@ test.describe('Dicom Image Loader WADOURI', async () => {
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.80']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80'
+      ]
     );
   });
 
