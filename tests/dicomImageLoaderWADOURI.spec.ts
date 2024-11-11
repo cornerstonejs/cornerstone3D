@@ -6,6 +6,7 @@ import {
   screenShotPaths,
 } from './utils/index';
 
+const TIME_OUT = 3000;
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'dicomImageLoaderWADOURI');
 });
@@ -25,7 +26,7 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -50,12 +51,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.81']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81'
+      ]
     );
   });
 
@@ -73,12 +76,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.50']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50'
+      ]
     );
   });
 
@@ -96,12 +101,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.5']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5'
+      ]
     );
   });
 
@@ -119,12 +126,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.57']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57'
+      ]
     );
   });
 
@@ -142,12 +151,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.70']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70'
+      ]
     );
   });
 
@@ -165,12 +176,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.90']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90'
+      ]
     );
   });
 
@@ -188,12 +201,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.4.91']
+      screenShotPaths.dicomImageLoaderWADOURI[
+        'dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91'
+      ]
     );
   });
 
@@ -230,13 +245,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TestPattern_JPEG-Baseline_YBR422.dcm'
+        'TestPattern_JPEG-Baseline_YBR422'
       ]
     );
   });
@@ -253,13 +268,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TestPattern_JPEG-Baseline_YBRFull.dcm'
+        'TestPattern_JPEG-Baseline_YBRFull'
       ]
     );
   });
@@ -274,14 +289,12 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI[
-        'TestPattern_JPEG-Lossless_RGB.dcm'
-      ]
+      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_JPEG-Lossless_RGB']
     );
   });
 
@@ -295,14 +308,12 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI[
-        'TestPattern_JPEG-LS-Lossless.dcm'
-      ]
+      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_JPEG-LS-Lossless']
     );
   });
 
@@ -316,13 +327,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TestPattern_JPEG-LS-NearLossless.dcm'
+        'TestPattern_JPEG-LS-NearLossless'
       ]
     );
   });
@@ -337,12 +348,12 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_Palette_16.dcm']
+      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_Palette_16']
     );
   });
 
@@ -356,12 +367,12 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_Palette.dcm']
+      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_Palette']
     );
   });
 
@@ -373,12 +384,12 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_RGB.dcm']
+      screenShotPaths.dicomImageLoaderWADOURI['TestPattern_RGB']
     );
   });
 
@@ -394,13 +405,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm'
+        'TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01'
       ]
     );
   });
@@ -417,13 +428,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01.dcm'
+        'TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01'
       ]
     );
   });
@@ -440,13 +451,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm'
+        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01'
       ]
     );
   });
@@ -463,13 +474,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04.dcm'
+        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04'
       ]
     );
   });
@@ -486,13 +497,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm'
+        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09'
       ]
     );
   });
@@ -509,13 +520,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13.dcm'
+        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13'
       ]
     );
   });
@@ -532,13 +543,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm'
+        'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18'
       ]
     );
   });
@@ -555,13 +566,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01.dcm'
+        'TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01'
       ]
     );
   });
@@ -578,13 +589,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm'
+        'TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01'
       ]
     );
   });
@@ -601,13 +612,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01.dcm'
+        'TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01'
       ]
     );
   });
@@ -624,13 +635,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm'
+        'TG_18-multi-1K/TG18-BR/TG18-BR-1k-01'
       ]
     );
   });
@@ -647,13 +658,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-multi-1K/TG18-QC/TG18-QC-1k-01.dcm'
+        'TG_18-multi-1K/TG18-QC/TG18-QC-1k-01'
       ]
     );
   });
@@ -670,13 +681,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm'
+        'TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01'
       ]
     );
   });
@@ -693,13 +704,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01.dcm'
+        'TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01'
       ]
     );
   });
@@ -716,13 +727,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm'
+        'TG_18-noise-1k/TG18-NS/TG18-NS-1k-01'
       ]
     );
   });
@@ -739,13 +750,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-noise-1k/TG18-NS/TG18-NS-1k-02.dcm'
+        'TG_18-noise-1k/TG18-NS/TG18-NS-1k-02'
       ]
     );
   });
@@ -762,13 +773,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm'
+        'TG_18-noise-1k/TG18-NS/TG18-NS-1k-03'
       ]
     );
   });
@@ -785,13 +796,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01.dcm'
+        'TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01'
       ]
     );
   });
@@ -808,13 +819,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3000);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm'
+        'TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01'
       ]
     );
   });
@@ -831,13 +842,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01.dcm'
+        'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01'
       ]
     );
   });
@@ -854,13 +865,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm'
+        'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02'
       ]
     );
   });
@@ -877,13 +888,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03.dcm'
+        'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03'
       ]
     );
   });
@@ -900,13 +911,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm'
+        'TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01'
       ]
     );
   });
@@ -923,13 +934,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01.dcm'
+        'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01'
       ]
     );
   });
@@ -946,13 +957,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm'
+        'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02'
       ]
     );
   });
@@ -969,13 +980,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03.dcm'
+        'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03'
       ]
     );
   });
@@ -992,13 +1003,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm'
+        'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01'
       ]
     );
   });
@@ -1015,13 +1026,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02.dcm'
+        'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02'
       ]
     );
   });
@@ -1038,13 +1049,13 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
       locator,
       screenShotPaths.dicomImageLoaderWADOURI[
-        'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm'
+        'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03'
       ]
     );
   });
