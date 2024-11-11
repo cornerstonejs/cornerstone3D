@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.22](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.21...v2.1.22) (2024-11-11)
+
+### Bug Fixes
+
+- **interpolation:** Preserve NEAREST (0) interpolation type ([#1571](https://github.com/cornerstonejs/cornerstone3D/issues/1571)) ([4e56c91](https://github.com/cornerstonejs/cornerstone3D/commit/4e56c912338ff6eaead79a87fdeea3e697fd467f))
+
 ## [2.1.21](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.20...v2.1.21) (2024-11-11)
 
 **Note:** Version bump only for package @cornerstonejs/core
