@@ -87,20 +87,30 @@ function _determineDataType(
   imageIds,
   volumeMetadata
 ): PixelDataTypedArrayString {
-  const { BitsAllocated, PixelRepresentation, x } = volumeMetadata;
-
+  const { BitsAllocated, PixelRepresentation } = volumeMetadata;
   const signed = PixelRepresentation === 1;
 
-  const imageIdIndex = Math.floor(imageIds.length / 2);
-  const imageId = imageIds[imageIdIndex];
-  const scalingParameters = getScalingParameters(imageId);
-  const hasNegativeRescale =
-    scalingParameters.rescaleIntercept < 0 ||
-    scalingParameters.rescaleSlope < 0;
+  // Check scaling parameters for first, middle, and last images
+  const [firstIndex, middleIndex, lastIndex] = [
+    0,
+    Math.floor(imageIds.length / 2),
+    imageIds.length - 1,
+  ];
 
-  // The preScale is ALWAYS used with modality LUT, so we can assume that
-  // if the rescale slope is not an integer, we need to use Float32
-  const floatAfterScale = hasFloatScalingParameters(scalingParameters);
+  const scalingParameters = [firstIndex, middleIndex, lastIndex].map((index) =>
+    getScalingParameters(imageIds[index])
+  );
+
+  // Check if any image has negative rescale values
+  const hasNegativeRescale = scalingParameters.some(
+    (params) => params.rescaleIntercept < 0 || params.rescaleSlope < 0
+  );
+
+  // Check if any image has float scaling parameters
+  const floatAfterScale = scalingParameters.some((params) =>
+    hasFloatScalingParameters(params)
+  );
+
   const canRenderFloat = canRenderFloatTextures();
 
   switch (BitsAllocated) {

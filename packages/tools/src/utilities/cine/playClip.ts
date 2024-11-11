@@ -357,6 +357,11 @@ function _getVolumeFromViewport(
   viewport: Types.IBaseVolumeViewport
 ): Types.IImageVolume {
   const volumeIds = viewport.getAllVolumeIds();
+
+  if (!volumeIds?.length) {
+    return undefined;
+  }
+
   const dynamicVolumeId = volumeIds.find((volumeId) =>
     cache.getVolume(volumeId)?.isDynamicVolume()
   );

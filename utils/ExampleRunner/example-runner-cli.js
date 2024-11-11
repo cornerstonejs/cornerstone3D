@@ -34,7 +34,7 @@ function getSplittedPath(filePath) {
 }
 
 function validPath(str) {
-  return str.replace(/\\\\/g, '/');
+  return str?.replace(/\\\\/g, '/');
 }
 
 function calculateSubstringSimilarity(a, b) {
