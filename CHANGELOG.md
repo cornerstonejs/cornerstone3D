@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.21](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.20...v2.1.21) (2024-11-11)
+
+### Bug Fixes
+
+- **tests:** update some screenshots ([#1570](https://github.com/cornerstonejs/cornerstone3D/issues/1570)) ([5838d61](https://github.com/cornerstonejs/cornerstone3D/commit/5838d61636a6088da88f7c072ac249e8b2cc149a))
+
 ## [2.1.20](https://github.com/cornerstonejs/cornerstone3D/compare/v2.1.19...v2.1.20) (2024-11-08)
 
 ### Bug Fixes
