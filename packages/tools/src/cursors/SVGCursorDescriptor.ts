@@ -41,6 +41,7 @@ const CIRCLE_ICON = `<path fill="{{color}}" d="M40.77,2.25A31.92,31.92,0,1,0,72.
 
 const CursorSVG: Record<string, SVGCursorDescriptor> = {
   Angle: extend(BASE, {
+    name: 'Angle',
     iconContent: `<path fill="{{color}}" d="M1203 544q0 13-10 23l-393 393 393 393q10 10 10 23t-10 23l-50
     50q-10 10-23 10t-23-10l-466-466q-10-10-10-23t10-23l466-466q10-10 23-10t23
     10l50 50q10 10 10 23z" />`,
@@ -50,6 +51,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   ArrowAnnotate: extend(BASE, {
+    name: 'ArrowAnnotate',
     iconContent: `<g id="arrowAnnotate-group" fill="none" stroke-width="1" stroke="{{color}}" stroke-linecap="round" stroke-linejoin="round">
     <path id="arrowAnnotate-arrow" d="M23,7 l-15,15 M7,17 l0,6 6,0" stroke-width="2" />
   </g>`,
@@ -59,6 +61,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Bidirectional: extend(BASE, {
+    name: 'Bidirectional',
     iconContent: `<g fill="{{color}}" stroke-width="3" stroke="{{color}}">
     <path d="M27.63 3.21L3.12 28.81"></path>
     <path d="M27.63 15.75L15.27 4.43"></path>
@@ -73,6 +76,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   CobbAngle: extend(BASE, {
+    name: 'CobbAngle',
     iconContent: `<g stroke="{{color}}" stroke-width="3">
     <path d="M28.59 2.34L3.82 12.32"></path>
     <path d="M28.59 29.66L3.82 19.68"></path>
@@ -87,6 +91,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   CircleROI: extend(BASE, {
+    name: 'CircleROI',
     iconContent: `<circle stroke="{{color}}" fill="none" stroke-width="3" cx="16" cy="16" r="14" />`,
     viewBox: {
       x: 32,
@@ -94,6 +99,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   EllipticalROI: extend(BASE, {
+    name: 'EllipticalROI',
     iconContent: `<path stroke="{{color}}" fill="none" stroke-width="3" d="M30.74 15.76C30.74 20.99 24.14 25.23 16
     25.23C7.86 25.23 1.26 20.99 1.26 15.76C1.26 10.54 7.86 6.3 16 6.3C24.14
     6.3 30.74 10.54 30.74 15.76Z" />`,
@@ -103,6 +109,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   FreehandROI: extend(BASE, {
+    name: 'FreehandROI',
     iconContent: `<g fill="{{color}}" stroke="{{color}}" stroke-width="2">
     <ellipse ry="1" rx="1" id="svg_3" cy="4.240343" cx="14.306499"/>
     <line id="svg_4" y2="3.58462" x2="12.242186" y1="3.997482" x1="13.432202"/>
@@ -141,6 +148,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   FreehandROISculptor: extend(BASE, {
+    name: 'FreehandROISculptor',
     iconContent: `<g id="icon-freehand-sculpt" fill="none" stroke-width="1.5" stroke="{{color}}" stroke-linecap="round" stroke-linejoin="round">
     <line id="svg_1" y2="2.559367" x2="10.184807" y1="4.467781" x1="8.81711"/>
     <line id="svg_4" y2="1.493836" x2="11.727442" y1="2.766112" x1="10.089386"/>
@@ -181,6 +189,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Length: extend(BASE, {
+    name: 'Length',
     iconContent: `<g id="length-group" fill="none" stroke-width="1" stroke="{{color}}" stroke-linecap="round" stroke-linejoin="round">
     <path id="length-dashes" d="m22.5,6 -16.5,16.5" stroke-width="3" stroke-dasharray="0.6666,5" />
   </g>`,
@@ -190,6 +199,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Height: extend(BASE, {
+    name: 'Height',
     iconContent: `<path d="m 6 22 l 8.5 0 v -16 h 8" stroke-width="3" fill="none" stroke="{{color}}" />`,
     viewBox: {
       x: 24,
@@ -197,6 +207,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Probe: extend(BASE, {
+    name: 'Probe',
     iconContent: `<path fill="{{color}}" d="M1152 896q0 106-75 181t-181 75-181-75-75-181 75-181 181-75 181 75
     75 181zm-256-544q-148 0-273 73t-198 198-73 273 73 273 198 198 273 73 273-73
     198-198 73-273-73-273-198-198-273-73zm768 544q0 209-103 385.5t-279.5
@@ -208,6 +219,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   RectangleROI: extend(BASE, {
+    name: 'RectangleROI',
     iconContent: `<path fill="{{color}}" d="M1312 256h-832q-66 0-113 47t-47 113v832q0 66 47
     113t113 47h832q66 0 113-47t47-113v-832q0-66-47-113t-113-47zm288 160v832q0
     119-84.5 203.5t-203.5 84.5h-832q-119 0-203.5-84.5t-84.5-203.5v-832q0-119
@@ -218,6 +230,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   TextMarker: extend(BASE, {
+    name: 'TextMarker',
     iconContent: `<path fill="{{color}}" d="M789 559l-170 450q33 0 136.5 2t160.5 2q19 0
     57-2-87-253-184-452zm-725 1105l2-79q23-7 56-12.5t57-10.5 49.5-14.5 44.5-29
     31-50.5l237-616 280-724h128q8 14 11 21l205 480q33 78 106 257.5t114 274.5q15
@@ -233,6 +246,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Crosshairs: extend(BASE, {
+    name: 'Crosshairs',
     iconContent: `<path fill="{{color}}" d="M1325 1024h-109q-26 0-45-19t-19-45v-128q0-26
     19-45t45-19h109q-32-108-112.5-188.5t-188.5-112.5v109q0 26-19 45t-45
     19h-128q-26 0-45-19t-19-45v-109q-108 32-188.5 112.5t-112.5 188.5h109q26
@@ -250,6 +264,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Eraser: extend(BASE, {
+    name: 'Eraser',
     iconContent: `<path transform="translate(0,1792) scale(1,-1)" fill="{{color}}" d="M960 1408l336-384h-768l-336 384h768zm1013-1077q15
     34 9.5 71.5t-30.5 65.5l-896 1024q-38 44-96 44h-768q-38
     0-69.5-20.5t-47.5-54.5q-15-34-9.5-71.5t30.5-65.5l896-1024q38-44 96-44h768q38
@@ -260,6 +275,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Magnify: extend(BASE, {
+    name: 'Magnify',
     iconContent: `<path fill="{{color}}" d="M508.5 481.6l-129-129c-2.3-2.3-5.3-3.5-8.5-3.5h-10.3C395
     312 416 262.5 416 208 416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c54.5
     0 104-21 141.1-55.2V371c0 3.2 1.3 6.2 3.5 8.5l129 129c4.7 4.7 12.3 4.7 17
@@ -271,6 +287,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Pan: extend(BASE, {
+    name: 'Pan',
     iconContent: `<path fill="{{color}}" d="M1411 541l-355 355 355 355 144-144q29-31 70-14 39 17
     39 59v448q0 26-19 45t-45 19h-448q-42 0-59-40-17-39 14-69l144-144-355-355-355
     355 144 144q31 30 14 69-17 40-59 40h-448q-26 0-45-19t-19-45v-448q0-42 40-59
@@ -284,6 +301,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Rotate: extend(BASE, {
+    name: 'Rotate',
     iconContent: `<path fill="{{color}}" d="M1664 256v448q0 26-19 45t-45 19h-448q-42 0-59-40-17-39
     14-69l138-138q-148-137-349-137-104 0-198.5 40.5t-163.5 109.5-109.5
     163.5-40.5 198.5 40.5 198.5 109.5 163.5 163.5 109.5 198.5 40.5q119 0
@@ -297,6 +315,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   StackScroll: extend(BASE, {
+    name: 'StackScroll',
     iconContent: `<path fill="{{color}}" d="M24 21v2c0 0.547-0.453 1-1 1h-22c-0.547
     0-1-0.453-1-1v-2c0-0.547 0.453-1 1-1h22c0.547 0 1 0.453 1 1zM24 13v2c0
     0.547-0.453 1-1 1h-22c-0.547 0-1-0.453-1-1v-2c0-0.547 0.453-1 1-1h22c0.547
@@ -308,6 +327,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   WindowLevelRegion: extend(BASE, {
+    name: 'WindowLevelRegion',
     iconContent: `<path fill="{{color}}" d="M1664 416v960q0 119-84.5 203.5t-203.5 84.5h-960q-119
     0-203.5-84.5t-84.5-203.5v-960q0-119 84.5-203.5t203.5-84.5h960q119 0 203.5
     84.5t84.5 203.5z" />`,
@@ -317,6 +337,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   WindowLevel: extend(BASE, {
+    name: 'WindowLevel',
     iconContent: `
     <path fill="{{color}}" d="M14.5,3.5 a1 1 0 0 1 -11,11 Z" stroke="none" opacity="0.8" />
     <circle cx="9" cy="9" r="8" fill="none" stroke-width="2" stroke="{{color}}" />`,
@@ -326,6 +347,7 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
     },
   }),
   Zoom: extend(BASE, {
+    name: 'Zoom',
     iconContent: `
   <path fill="{{color}}" d="M508.5 481.6l-129-129c-2.3-2.3-5.3-3.5-8.5-3.5h-10.3C395
     312 416 262.5 416 208 416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c54.5
@@ -347,72 +369,86 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
    */
 
   SegmentationFreeHandEraseInside: extend(BASE, {
+    name: 'SegmentationFreeHandEraseInside',
     iconContent: `${SCISSOR_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   SegmentationFreeHandFillInside: extend(BASE, {
+    name: 'SegmentationFreeHandFillInside',
     iconContent: `${SCISSOR_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   SegmentationFreeHandEraseOutside: extend(BASE, {
+    name: 'SegmentationFreeHandEraseOutside',
     iconContent: `${SCISSOR_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   SegmentationFreeHandFillOutside: extend(BASE, {
+    name: 'SegmentationFreeHandFillOutside',
     iconContent: `${SCISSOR_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   SegmentationRectangleEraseInside: extend(BASE, {
+    name: 'SegmentationRectangleEraseInside',
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   // Default Rectangle Scissors
   RectangleScissor: extend(BASE, {
+    name: 'RectangleScissor',
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'RectangleScissor.FILL_INSIDE': extend(BASE, {
+    name: 'RectangleScissor.FILL_INSIDE',
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'RectangleScissor.FILL_OUTSIDE': extend(BASE, {
+    name: 'RectangleScissor.FILL_OUTSIDE',
     iconContent: `${RECTANGLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'RectangleScissor.ERASE_OUTSIDE': extend(BASE, {
+    name: 'RectangleScissor.ERASE_OUTSIDE',
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'RectangleScissor.ERASE_INSIDE': extend(BASE, {
+    name: 'RectangleScissor.ERASE_INSIDE',
     iconContent: `${RECTANGLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   CircleScissor: extend(BASE, {
+    name: 'CircleScissor',
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'CircleScissor.FILL_INSIDE': extend(BASE, {
+    name: 'CircleScissor.FILL_INSIDE',
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'CircleScissor.ERASE_OUTSIDE': extend(BASE, {
+    name: 'CircleScissor.ERASE_OUTSIDE',
     iconContent: `${CIRCLE_ICON} ${MINUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
 
   'CircleScissor.FILL_OUTSIDE': extend(BASE, {
+    name: 'CircleScissor.FILL_OUTSIDE',
     iconContent: `${CIRCLE_ICON} ${PLUS_RECT}`,
     viewBox: SEGMENTATION_CURSOR_BOUNDARIES,
   }),
@@ -424,9 +460,12 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
 
 function extend(
   base: SVGCursorDescriptor,
-  values: Record<string, unknown>
+  values: Record<string, unknown> & { name?: string }
 ): SVGCursorDescriptor {
-  return Object.assign(Object.create(base), values);
+  return Object.assign(Object.create(base), {
+    ...values,
+    name: values.name || base.name,
+  });
 }
 
 /**
