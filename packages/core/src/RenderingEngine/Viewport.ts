@@ -743,7 +743,7 @@ class Viewport {
       this.setDisplayAreaScale(displayArea);
     } else {
       this.setInterpolationType(
-        this.getProperties()?.interpolationType || InterpolationType.LINEAR
+        this.getProperties()?.interpolationType ?? InterpolationType.LINEAR
       );
       this.setDisplayAreaFit(displayArea);
     }
