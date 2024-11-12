@@ -267,20 +267,22 @@ function _stopClip(
  */
 function _stopDynamicVolumeCine(element: HTMLDivElement) {
   const { viewport } = getEnabledElement(element);
-  const volume = _getVolumeFromViewport(viewport as Types.IBaseVolumeViewport);
+  if (viewport instanceof VolumeViewport) {
+    const volume = _getVolumeFromViewport(viewport);
+    if (volume?.isDynamicVolume()) {
+      const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
+
+      dynamicVolumesPlayingMap.delete(volume.volumeId);
+
+      if (dynamicCineElement && dynamicCineElement !== element) {
+        stopClip(<HTMLDivElement>dynamicCineElement);
+      }
+    }
+  }
 
   // If the current viewport has a 4D volume loaded it may be playing
   // if it is also loaded on another viewport and user has started CINE
   // for that one. This guarantees the other viewport will also be stopped.
-  if (volume?.isDynamicVolume()) {
-    const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
-
-    dynamicVolumesPlayingMap.delete(volume.volumeId);
-
-    if (dynamicCineElement && dynamicCineElement !== element) {
-      stopClip(<HTMLDivElement>dynamicCineElement);
-    }
-  }
 }
 
 /**
@@ -356,6 +358,10 @@ function _stopClipWithData(playClipData) {
 function _getVolumeFromViewport(
   viewport: Types.IBaseVolumeViewport
 ): Types.IImageVolume {
+  if (!(viewport instanceof VolumeViewport)) {
+    return undefined;
+  }
+
   const volumeIds = viewport.getAllVolumeIds();
 
   if (!volumeIds?.length) {
