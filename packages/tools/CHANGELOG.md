@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.3...v2.2.4) (2024-11-12)
+
+### Bug Fixes
+
+- Improve dynamic volume cine stopping logic ([#1582](https://github.com/cornerstonejs/cornerstone3D/issues/1582)) ([794fb07](https://github.com/cornerstonejs/cornerstone3D/commit/794fb07cace7ea9986aec35eb8d5907ed98adc43))
+
 ## [2.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.2...v2.2.3) (2024-11-12)
 
 ### Bug Fixes
