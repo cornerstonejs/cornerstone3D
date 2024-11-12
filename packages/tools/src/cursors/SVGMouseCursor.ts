@@ -98,7 +98,12 @@ function createSVGIconUrl(
   pointer: boolean,
   options: Record<string, unknown>
 ): string {
-  return URL.createObjectURL(createSVGIconBlob(descriptor, pointer, options));
+  const blob = createSVGIconBlob(descriptor, pointer, options);
+  const url = URL.createObjectURL(blob);
+  const urn = `${url}#${descriptor.name || 'unknown'}-${
+    pointer ? 'pointer' : 'cursor'
+  }`;
+  return urn;
 }
 
 function createSVGIconBlob(

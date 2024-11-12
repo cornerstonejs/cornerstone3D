@@ -5441,11 +5441,18 @@ type SurfaceStyle = {};
 
 // @public (undocumented)
 type SVGCursorDescriptor = {
+    name?: string;
     iconContent: string;
-    iconSize: number;
-    viewBox: SVGPoint_2;
-    mousePoint: SVGPoint_2;
-    mousePointerGroupString: string;
+    iconSize?: number;
+    viewBox: {
+        x: number;
+        y: number;
+    };
+    mousePoint?: {
+        x: number;
+        y: number;
+    };
+    mousePointerGroupString?: string;
 };
 
 // @public (undocumented)
