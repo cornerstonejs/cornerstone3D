@@ -116,7 +116,7 @@
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^2.2.2",
+    "@cornerstonejs/core": "^2.2.3",
     "dicom-parser": "^1.8.9"
   },
   "lint-staged": {
