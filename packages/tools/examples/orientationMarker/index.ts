@@ -149,6 +149,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(VolumeRotateTool);
 
   ctToolGroup.addTool(OrientationMarkerTool.toolName);
   ctToolGroup.addTool(ZoomTool.toolName);
