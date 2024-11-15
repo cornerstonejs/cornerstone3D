@@ -283,10 +283,7 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
     //
     const derivedVolume = await addSegmentationsToState(newSegmentationId);
 
-    // Todo: need to move to the new model with voxel manager
-    const derivedVolumeScalarData = derivedVolume.voxelManager.getScalarData();
-    //
-    derivedVolumeScalarData.set(
+    derivedVolume?.voxelManager?.setCompleteScalarDataArray?.(
         new Uint8Array(generateToolState.labelmapBufferArray[0])
     );
 
@@ -763,6 +760,20 @@ async function addSegmentationsToState(segmentationId: string) {
 
     // Add the segmentation representation to the viewport
     await csToolsSegmentation.addSegmentationRepresentations(viewportIds[0], [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+
+    await csToolsSegmentation.addSegmentationRepresentations(viewportIds[1], [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+
+    await csToolsSegmentation.addSegmentationRepresentations(viewportIds[2], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap
