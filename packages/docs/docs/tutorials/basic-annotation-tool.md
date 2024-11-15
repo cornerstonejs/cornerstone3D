@@ -10,10 +10,23 @@ In this tutorial, you will learn how to use annotation tools to annotate.
 
 In order to render a volume we need:
 
+- Initialize cornerstone and related libraries.
 - HTMLDivElements to render different orientation of the volume (e.g., one for Axial, one for Sagittal)
 - The path to the images (`imageId`s).
 
 ## Implementation
+
+**Initialize cornerstone and related libraries**
+
+```js
+import { init as coreInit } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { init as cornerstoneToolsInit } from '@cornerstonejs/tools';
+
+await coreInit();
+await dicomImageLoaderInit();
+await cornerstoneToolsInit();
+```
 
 We have already stored images on a server for the purpose of this tutorial.
 
@@ -46,10 +59,6 @@ const renderingEngine = new RenderingEngine(renderingEngineId);
 Loading a volume is possible by using the `volumeLoader` API.
 
 ```js
-// note we need to add the cornerstoneStreamingImageVolume: to
-// use the streaming volume loader
-const volumeId = 'cornerstoneStreamingImageVolume: myVolume';
-
 // Define a volume in memory
 const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
 ```
@@ -80,6 +89,8 @@ const viewportInput = [
 ];
 
 renderingEngine.setViewports(viewportInput);
+
+await volume.load();
 ```
 
 In order for us to use tools, add them inside `Cornerstone3DTools` internal state via the `addTool` API.
@@ -124,9 +135,6 @@ toolGroup.setToolActive(BidirectionalTool.toolName, {
 Let's load the volume and set the viewports to render the volume.
 
 ```js
-// Set the volume to load
-volume.load();
-
 setVolumesForViewports(
   renderingEngine,
   [
@@ -150,15 +158,30 @@ renderingEngine.renderViewports([viewportId1, viewportId2]);
 
 ## Final code
 
+<details>
+<summary>Final Code</summary>
+
 ```js
-// Get Cornerstone imageIds and fetch metadata into RAM
-const imageIds = await createImageIdsAndCacheMetaData({
-  StudyInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  SeriesInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-});
+import {
+  init as coreInit,
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+} from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import {
+  init as cornerstoneToolsInit,
+  ToolGroupManager,
+  WindowLevelTool,
+  ZoomTool,
+  Enums as csToolsEnums,
+  addTool,
+  BidirectionalTool,
+} from '@cornerstonejs/tools';
+import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
+
+const { ViewportType } = Enums;
 
 const content = document.getElementById('content');
 
@@ -174,82 +197,101 @@ element2.style.height = '500px';
 
 content.appendChild(element1);
 content.appendChild(element2);
+// ============================= //
 
-const renderingEngineId = 'myRenderingEngine';
-const renderingEngine = new RenderingEngine(renderingEngineId);
+/**
+ * Runs the demo
+ */
+async function run() {
+  await coreInit();
+  await dicomImageLoaderInit();
+  await cornerstoneToolsInit();
 
-// note we need to add the cornerstoneStreamingImageVolume: to
-// use the streaming volume loader
-const volumeId = 'cornerstoneStreamingImageVolume: myVolume';
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
 
-// Define a volume in memory
-const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-  imageIds,
-});
+  // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine';
+  const volumeId = 'myVolume';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
 
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-
-const viewportInput = [
-  {
-    viewportId: viewportId1,
-    element: element1,
-    type: ViewportType.ORTHOGRAPHIC,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.AXIAL,
-    },
-  },
-  {
-    viewportId: viewportId2,
-    element: element2,
-    type: ViewportType.ORTHOGRAPHIC,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-    },
-  },
-];
-
-renderingEngine.setViewports(viewportInput);
-
-addTool(BidirectionalTool);
-
-const toolGroupId = 'myToolGroup';
-const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-toolGroup.addTool(BidirectionalTool.toolName);
-
-toolGroup.addViewport(viewportId1, renderingEngineId);
-toolGroup.addViewport(viewportId2, renderingEngineId);
-toolGroup.setToolActive(BidirectionalTool.toolName, {
-  bindings: [
+  const viewportInput = [
     {
-      mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
-    },
-  ],
-});
-
-// Set the volume to load
-volume.load();
-
-setVolumesForViewports(
-  renderingEngine,
-  [
-    {
-      volumeId,
-      callback: ({ volumeActor }) => {
-        // set the windowLevel after the volumeActor is created
-        volumeActor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          .setMappingRange(-180, 220);
+      viewportId: viewportId1,
+      element: element1,
+      type: ViewportType.ORTHOGRAPHIC,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
       },
     },
-  ],
-  [viewportId1, viewportId2]
-);
+    {
+      viewportId: viewportId2,
+      element: element2,
+      type: ViewportType.ORTHOGRAPHIC,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
+    },
+  ];
 
-// Render the image
-renderingEngine.renderViewports([viewportId1, viewportId2]);
+  renderingEngine.setViewports(viewportInput);
+
+  await volume.load();
+
+  addTool(BidirectionalTool);
+
+  const toolGroupId = 'myToolGroup';
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Add tools to the ToolGroup
+  toolGroup.addTool(BidirectionalTool.toolName);
+
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+
+  toolGroup.setToolActive(BidirectionalTool.toolName, {
+    bindings: [
+      {
+        mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId,
+        callback: ({ volumeActor }) => {
+          // set the windowLevel after the volumeActor is created
+          volumeActor
+            .getProperty()
+            .getRGBTransferFunction(0)
+            .setMappingRange(-180, 220);
+        },
+      },
+    ],
+    [viewportId1, viewportId2]
+  );
+
+  // Render the image
+  renderingEngine.renderViewports([viewportId1, viewportId2]);
+}
+
+run();
 ```
+
+</details>
 
 You should be able to annotate images with the tools you added.
 

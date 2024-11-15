@@ -10,10 +10,23 @@ In this tutorial, you will learn how to use the segmentation tools to draw and e
 
 In order to render a volume we need:
 
+- Initialize cornerstone and related libraries.
 - HTMLDivElements to render different orientation of the volume (e.g., one for Axial, one for Sagittal)
 - The path to the images (`imageId`s).
 
 ## Implementation
+
+**Initialize cornerstone and related libraries**
+
+```js
+import { init as coreInit } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { init as cornerstoneToolsInit } from '@cornerstonejs/tools';
+
+await coreInit();
+await dicomImageLoaderInit();
+await cornerstoneToolsInit();
+```
 
 We have already stored images on a server for the purpose of this tutorial.
 
@@ -51,7 +64,6 @@ content.appendChild(viewportGrid);
 For rendering Segmentations, add the `SegmentationDisplayTool`. This tool is used to render segmentations. For the brush tool, add the `BrushTool`. Both these tools should be added to the `Cornerstone3D` via the `addTool` API and the `ToolGroup`:
 
 ```js
-addTool(SegmentationDisplayTool);
 addTool(BrushTool);
 ```
 
@@ -63,15 +75,7 @@ const toolGroupId = 'CT_TOOLGROUP';
 const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
 // Segmentation Tools
-toolGroup.addTool(SegmentationDisplayTool.toolName);
 toolGroup.addTool(BrushTool.toolName);
-```
-
-Next, in order for segmentations to be rendered, set the
-`SegmentationDisplayTool` to be enabled:
-
-```js
-toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 ```
 
 And for having the brush tool active as the left mouse button is pressed, set the `BrushTool` to be active:
@@ -87,8 +91,7 @@ CT volume we are intending to use for rendering.
 
 ```js
 const volumeName = 'CT_VOLUME_ID';
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const volumeId = `${volumeName}`;
 
 // Define a volume in memory for CT
 const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -182,55 +185,83 @@ toolGroup.addViewport(viewportId3, renderingEngineId);
 Let's set the volume to load and set it on the viewports
 
 ```js
-/ Set the volume to load
-  volume.load();
+// Set the volume to load
+await volume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: ({ volumeActor }) => {
-          // set the windowLevel after the volumeActor is created
-          volumeActor
-            .getProperty()
-            .getRGBTransferFunction(0)
-            .setMappingRange(-180, 220);
-        },
+// Set volumes on the viewports
+await setVolumesForViewports(
+  renderingEngine,
+  [
+    {
+      volumeId,
+      callback: ({ volumeActor }) => {
+        // set the windowLevel after the volumeActor is created
+        volumeActor
+          .getProperty()
+          .getRGBTransferFunction(0)
+          .setMappingRange(-180, 220);
       },
-    ],
-    [viewportId1, viewportId2, viewportId3]
-  );
+    },
+  ],
+  [viewportId1, viewportId2, viewportId3]
+);
 ```
 
 Finally, we create a labelmap representation of the segmentation and
 add it to the toolGroup
 
 ```js
-// Add the segmentation representation to the toolGroup
-await segmentation.addSegmentationRepresentations(toolGroupId, [
-  {
-    segmentationId,
-    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  },
-]);
+await segmentation.addLabelmapRepresentationToViewportMap({
+  [viewportId1]: [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ],
+  [viewportId2]: [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ],
+  [viewportId3]: [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ],
+});
 
 // Render the image
-renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+renderingEngine.render();
 ```
 
 ## Final code
 
+<details>
+<summary>Final code</summary>
+
 ```js
-// Get Cornerstone imageIds and fetch metadata into RAM
-const imageIds = await createImageIdsAndCacheMetaData({
-  StudyInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  SeriesInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-});
+import {
+  init as coreInit,
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+} from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import {
+  init as cornerstoneToolsInit,
+  ToolGroupManager,
+  Enums as csToolsEnums,
+  addTool,
+  BidirectionalTool,
+  BrushTool,
+  segmentation,
+} from '@cornerstonejs/tools';
+import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
+
+const { ViewportType } = Enums;
 
 const content = document.getElementById('content');
 
@@ -258,120 +289,159 @@ viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
+// ============================= //
 
-addTool(SegmentationDisplayTool);
-addTool(BrushTool);
+/**
+ * Runs the demo
+ */
+async function run() {
+  await coreInit();
+  await dicomImageLoaderInit();
+  await cornerstoneToolsInit();
 
-const volumeName = 'CT_VOLUME_ID';
-const toolGroupId = 'CT_TOOLGROUP';
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-const segmentationId = 'MY_SEGMENTATION_ID';
-// Define tool groups to add the segmentation display tool to
-const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
 
-// Segmentation Tools
-toolGroup.addTool(SegmentationDisplayTool.toolName);
-toolGroup.addTool(BrushTool.toolName);
-toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine';
 
-toolGroup.setToolActive(BrushTool.toolName, {
-  bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
-});
+  addTool(BrushTool);
 
-// Define a volume in memory for CT
-const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-  imageIds,
-});
+  const toolGroupId = 'CT_TOOLGROUP';
+  // Define tool groups to add the segmentation display tool to
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-// Create a segmentation of the same resolution as the source data for the CT volume
-await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
-  volumeId: segmentationId,
-});
+  // Segmentation Tools
+  toolGroup.addTool(BrushTool.toolName);
 
-// Add the segmentations to state
-segmentation.addSegmentations([
-  {
-    segmentationId,
-    representation: {
-      // The type of segmentation
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      // The actual segmentation data, in the case of labelmap this is a
-      // reference to the source volume of the segmentation.
-      data: {
-        volumeId: segmentationId,
+  toolGroup.setToolActive(BrushTool.toolName, {
+    bindings: [{ mouseButton: csToolsEnums.MouseBindings.Primary }],
+  });
+
+  const volumeName = 'CT_VOLUME_ID';
+  const volumeId = `${volumeName}`;
+
+  // Define a volume in memory for CT
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  const segmentationId = 'MY_SEGMENTATION_ID';
+
+  // Create a segmentation of the same resolution as the source data for the CT volume
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
       },
     },
-  },
-]);
+  ]);
 
-// Instantiate a rendering engine
-const renderingEngineId = 'myRenderingEngine';
-const renderingEngine = new RenderingEngine(renderingEngineId);
+  // Create the viewports
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
 
-// Create the viewports
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-const viewportId3 = 'CT_CORONAL';
-
-const viewportInputArray = [
-  {
-    viewportId: viewportId1,
-    type: ViewportType.ORTHOGRAPHIC,
-    element: element1,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.AXIAL,
-    },
-  },
-  {
-    viewportId: viewportId2,
-    type: ViewportType.ORTHOGRAPHIC,
-    element: element2,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-    },
-  },
-  {
-    viewportId: viewportId3,
-    type: ViewportType.ORTHOGRAPHIC,
-    element: element3,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.CORONAL,
-    },
-  },
-];
-
-renderingEngine.setViewports(viewportInputArray);
-
-toolGroup.addViewport(viewportId1, renderingEngineId);
-toolGroup.addViewport(viewportId2, renderingEngineId);
-toolGroup.addViewport(viewportId3, renderingEngineId);
-
-// Set the volume to load
-volume.load();
-
-// Set volumes on the viewports
-await setVolumesForViewports(
-  renderingEngine,
-  [
+  const viewportInputArray = [
     {
-      volumeId,
+      viewportId: viewportId1,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
     },
-  ],
-  [viewportId1, viewportId2, viewportId3]
-);
+    {
+      viewportId: viewportId2,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
+  ];
 
-// // Add the segmentation representation to the toolGroup
-await segmentation.addSegmentationRepresentations(toolGroupId, [
-  {
-    segmentationId,
-    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  },
-]);
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine.setViewports(viewportInputArray);
 
-// Render the image
-renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
+
+  // Set the volume to load
+  await volume.load();
+
+  // Set volumes on the viewports
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId,
+        callback: ({ volumeActor }) => {
+          // set the windowLevel after the volumeActor is created
+          volumeActor
+            .getProperty()
+            .getRGBTransferFunction(0)
+            .setMappingRange(-180, 220);
+        },
+      },
+    ],
+    [viewportId1, viewportId2, viewportId3]
+  );
+
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ],
+    [viewportId2]: [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ],
+    [viewportId3]: [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ],
+  });
+
+  // Render the image
+  renderingEngine.render();
+}
+
+run();
 ```
+
+</details>
 
 You should be able to draw segmentations with the brush tool
 

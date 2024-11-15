@@ -10,10 +10,23 @@ In this tutorial, you will learn how to add a zoom manipulation tool.
 
 In order to render a volume we need:
 
+- init the libraries
 - A HTMLDivElement to render the viewport
 - The path to the images (`imageId`s).
 
 ## Implementation
+
+**Initialize cornerstone and related libraries**
+
+```js
+import { init as coreInit } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { init as cornerstoneToolsInit } from '@cornerstonejs/tools';
+
+await coreInit();
+await dicomImageLoaderInit();
+await cornerstoneToolsInit();
+```
 
 We have already stored images on a server for the purpose of this tutorial.
 
@@ -110,17 +123,25 @@ toolGroup.setToolActive(ZoomTool.toolName, {
 });
 ```
 
-## Final code
+## Final Code
+
+<details>
+<summary>Final Code</summary>
 
 ```js
-// Get Cornerstone imageIds and fetch metadata into RAM
-const imageIds = await createImageIdsAndCacheMetaData({
-  StudyInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  SeriesInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-});
+import { init as coreInit, RenderingEngine, Enums } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import {
+  init as cornerstoneToolsInit,
+  ToolGroupManager,
+  WindowLevelTool,
+  ZoomTool,
+  Enums as csToolsEnums,
+  addTool,
+} from '@cornerstonejs/tools';
+import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
+
+const { ViewportType } = Enums;
 
 const content = document.getElementById('content');
 
@@ -132,57 +153,76 @@ element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
+// ============================= //
 
-const renderingEngineId = 'myRenderingEngine';
-const renderingEngine = new RenderingEngine(renderingEngineId);
+/**
+ * Runs the demo
+ */
+async function run() {
+  await coreInit();
+  await dicomImageLoaderInit();
+  await cornerstoneToolsInit();
 
-const viewportId = 'CT_AXIAL_STACK';
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
 
-const viewportInput = {
-  viewportId,
-  element,
-  type: ViewportType.STACK,
-};
+  // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
-renderingEngine.enableElement(viewportInput);
+  const viewportId = 'CT_AXIAL_STACK';
 
-const viewport = renderingEngine.getViewport(viewportId);
+  const viewportInput = {
+    viewportId,
+    element,
+    type: ViewportType.STACK,
+  };
 
-viewport.setStack(imageIds);
+  renderingEngine.enableElement(viewportInput);
 
-viewport.render();
+  const viewport = renderingEngine.getViewport(viewportId);
 
-addTool(ZoomTool);
-addTool(WindowLevelTool);
+  viewport.setStack(imageIds);
 
-const toolGroupId = 'myToolGroup';
-const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  viewport.render();
 
-// Add tools to the ToolGroup
-toolGroup.addTool(ZoomTool.toolName);
-toolGroup.addTool(WindowLevelTool.toolName);
+  const toolGroupId = 'myToolGroup';
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-toolGroup.addViewport(viewportId, renderingEngineId);
+  addTool(ZoomTool);
+  addTool(WindowLevelTool);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(WindowLevelTool.toolName);
 
-// Set the windowLevel tool to be active when the mouse left button is pressed
-toolGroup.setToolActive(WindowLevelTool.toolName, {
-  bindings: [
-    {
-      mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
-    },
-  ],
-});
+  toolGroup.addViewport(viewportId);
 
-toolGroup.setToolActive(ZoomTool.toolName, {
-  bindings: [
-    {
-      mouseButton: csToolsEnums.MouseBindings.Secondary, // Right Click
-    },
-  ],
-});
+  toolGroup.setToolActive(WindowLevelTool.toolName, {
+    bindings: [
+      {
+        mouseButton: csToolsEnums.MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: csToolsEnums.MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+  viewport.render();
+}
+
+run();
 ```
 
-You should be able to zoom with right click and window level with left click.
+</details>
 
 ![](../assets/basic-manipulation-tool.png)
 
@@ -192,12 +232,3 @@ Learn more about:
 
 - [ToolGroup](../concepts/cornerstone-tools/toolGroups.md)
 - [Tools](../concepts/cornerstone-tools/tools.md)
-
-For advanced usage of Stack Viewport, please visit <a href="/live-examples/stackAPI.html" target="_blank">Stack API</a> example page.
-
-:::note Tip
-
-- Visit [Examples](examples.md#run-examples-locally) page to see how to run the examples locally.
-- Check how to debug examples in the [Debugging](examples.md#debugging) section.
-
-:::
