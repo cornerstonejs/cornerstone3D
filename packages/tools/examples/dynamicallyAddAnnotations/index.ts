@@ -21,6 +21,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const { MouseBindings } = cornerstoneTools.Enums;
 const renderingEngineId = 'myRenderingEngine';
 const toolGroupIds = new Set<string>();
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
