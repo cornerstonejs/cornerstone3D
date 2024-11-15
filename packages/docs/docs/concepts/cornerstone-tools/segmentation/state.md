@@ -108,10 +108,6 @@ the segmentation representation (e.g., Labelmap, etc.). We will see how below.
 
 ## ToolGroups
 
-`SegmentationDisplayTool` is a Tool inside `Cornerstone3DTools` that is responsible for
-displaying the segmentation representations. From each `Segmentation`, a `ToolGroup` can
-create a `SegmentationRepresentation` and display it.
-
 ### Adding a SegmentationRepresentation to a ToolGroup
 
 Next, we need to add the `SegmentationRepresentation` to the `ToolGroup`. This can be done by
@@ -122,7 +118,6 @@ to include the new `SegmentationRepresentation`.
 ```js
 import {
   segmentation,
-  SegmentationDisplayTool,
   Enums,
 } from '@cornerstonejs/tools';
 
@@ -132,8 +127,6 @@ import {
 
 const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-toolGroup.addTool(SegmentationDisplayTool.toolName);
-toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
 await segmentation.addSegmentationRepresentations(toolGroupId, [
   {

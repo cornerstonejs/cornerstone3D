@@ -16,12 +16,12 @@ The `Cornerstone3D` scope **DOES NOT** encompass dealing with image/volume loadi
 and metadata parsing. The `Cornerstone3D` scope **DOES** include image rendering and caching.
 Proper image loaders should be registered **TO** the cornerstone3D using `imageLoader.registerImageLoader`
 and `volumeLoader.registerVolumeLoader`. Examples of such image loaders are `wadors` loader
-using `cornerstoneWADOImageLoader` for DICOM P10 instances over `dicomweb` and `wadouri` for
+using `cornerstoneDICOMImageLoader` for DICOM P10 instances over `dicomweb` and `wadouri` for
 the DICOM P10 instances over HTTP.
 
 In addition, `Cornerstone3D` has a metadata registration mechanism that allows
 metadata parsers to be registered **TO** the `Cornerstone3D` using `metaData.addProvider`.
-Using `cornerstoneWADOImageLoader`, its image loaders and metadata providers self-register
+Using `cornerstoneDICOMImageLoader`, its image loaders and metadata providers self-register
 with the `Cornerstone3D`. You can always checkout the example helpers to see how an
 end-to-end example from metadata parsing to image loading and image rendering can be achieved.
 

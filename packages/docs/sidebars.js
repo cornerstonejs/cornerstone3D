@@ -137,6 +137,7 @@ module.exports = {
             'concepts/cornerstone-core/images',
             'concepts/cornerstone-core/metadataProvider',
             'concepts/cornerstone-core/volumes',
+            'concepts/cornerstone-core/voxelManager',
             'concepts/cornerstone-core/volumeLoader',
             'concepts/cornerstone-core/geometryLoader',
             'concepts/cornerstone-core/cache',
@@ -226,7 +227,6 @@ module.exports = {
               },
               items: [
                 'concepts/cornerstone-tools/segmentation/state',
-                'concepts/cornerstone-tools/segmentation/segmentation-display',
                 'concepts/cornerstone-tools/segmentation/active-segmentation',
                 'concepts/cornerstone-tools/segmentation/locking',
                 'concepts/cornerstone-tools/segmentation/config',

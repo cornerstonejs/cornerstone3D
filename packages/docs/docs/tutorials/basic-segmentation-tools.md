@@ -61,7 +61,7 @@ viewportGrid.appendChild(element3);
 content.appendChild(viewportGrid);
 ```
 
-For rendering Segmentations, add the `SegmentationDisplayTool`. This tool is used to render segmentations. For the brush tool, add the `BrushTool`. Both these tools should be added to the `Cornerstone3D` via the `addTool` API and the `ToolGroup`:
+For the brush tool, add the `BrushTool`. Both these tools should be added to the `Cornerstone3D` via the `addTool` API and the `ToolGroup`:
 
 ```js
 addTool(BrushTool);
@@ -452,7 +452,6 @@ You should be able to draw segmentations with the brush tool
 Learn more about:
 
 - [Segmentation](../concepts/cornerstone-tools/segmentation/index.md)
-- [SegmentationDisplay](../concepts/cornerstone-tools/segmentation/segmentationDisplay.md)
 - [SegmentationTools](../concepts/cornerstone-tools/segmentation/segmentation-tools.md)
 
 :::note Tip
