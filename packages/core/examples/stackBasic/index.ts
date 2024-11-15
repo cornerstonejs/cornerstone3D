@@ -1,28 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
-import {
-  initDemo,
-  createImageIdsAndCacheMetaData,
-  setTitleAndDescription,
-  ctVoiRange,
-} from '../../../../utils/demo/helpers';
-
-// This is for debugging purposes
-console.warn(
-  'Click on index.ts to open source code for this example --------->'
-);
-
-const { ViewportType } = Enums;
-
-// ======== Set up page ======== //
-setTitleAndDescription(
-  'Basic Stack',
-  'Displays a single DICOM image in a Stack viewport.'
-);
+import { RenderingEngine, Enums, init as coreInit } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
 
 const content = document.getElementById('content');
 const element = document.createElement('div');
-element.id = 'cornerstone-element';
+
 element.style.width = '500px';
 element.style.height = '500px';
 
@@ -33,8 +15,8 @@ content.appendChild(element);
  * Runs the demo
  */
 async function run() {
-  // Init Cornerstone and related libraries
-  await initDemo();
+  await coreInit();
+  await dicomImageLoaderInit();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -45,38 +27,23 @@ async function run() {
     wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
-  // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportId = 'CT_STACK';
+  const viewportId = 'CT_AXIAL_STACK';
+
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
     element,
-    defaultOptions: {
-      background: [0.2, 0, 0.2] as Types.Point3,
-    },
+    type: Enums.ViewportType.STACK,
   };
 
   renderingEngine.enableElement(viewportInput);
 
-  // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport(viewportId);
 
-  // Define a stack containing a single image
-  const stack = [imageIds[0]];
+  viewport.setStack(imageIds, 60);
 
-  // Set the stack on the viewport
-  await viewport.setStack(stack);
-
-  // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
-
-  // Render the image
   viewport.render();
 }
 

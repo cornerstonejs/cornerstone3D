@@ -231,19 +231,6 @@ module.exports = {
       },
     ],
   ],
-  webpack: {
-    jsLoader: (isServer) => ({
-      // Using esbuild instead of babel-loader is recommended
-      // by the docusaurus team to improve build times.
-      // They use it themselves: https://github.com/facebook/docusaurus/blob/1efc6c609185c780c03d6205015b998e3ec24c3a/website/docusaurus.config.js#L96-L102
-      // See https://github.com/facebook/docusaurus/issues/4765#issuecomment-841135926
-      loader: require.resolve('esbuild-loader'),
-      options: {
-        loader: 'tsx',
-        target: isServer ? 'node12' : 'es2017',
-      },
-    }),
-  },
   plugins: [
     require.resolve('./webpackConfigurationPlugin'),
     ...(() => {

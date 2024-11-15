@@ -17,8 +17,7 @@ and metadata parsing. The `Cornerstone3D` scope **DOES** include image rendering
 Proper image loaders should be registered **TO** the cornerstone3D using `imageLoader.registerImageLoader`
 and `volumeLoader.registerVolumeLoader`. Examples of such image loaders are `wadors` loader
 using `cornerstoneWADOImageLoader` for DICOM P10 instances over `dicomweb` and `wadouri` for
-the DICOM P10 instances over HTTP. With `Cornerstone3D`, we are releasing our first `volumeLoader`,
-`streaming-image-volume-loader`, that will be able to stream images of a volume one by one.
+the DICOM P10 instances over HTTP.
 
 In addition, `Cornerstone3D` has a metadata registration mechanism that allows
 metadata parsers to be registered **TO** the `Cornerstone3D` using `metaData.addProvider`.
@@ -28,7 +27,7 @@ end-to-end example from metadata parsing to image loading and image rendering ca
 
 ## Typescript
 
-Since `Cornerstone3D` and `Cornerstone3DTools` are written in Typescript, they provide
+Since all libraries in the `Cornerstone3D` monorepo are written in Typescript, they provide
 a type-safe API. This means that you can use the library in a TypeScript environment
 and using type information, you can be assured that the parameters being passed to any method
 match what is expected.
@@ -47,19 +46,12 @@ If you are using an older browser, or don't have any graphics cards, your device
 render volumetric images with `Cornerstone3D`. However, you can still render stack images using the
 CPU fallback that we have implemented in `Cornerstone3D` for such scenarios.
 
-
 ## Monorepo hierarchy
 
 `Cornerstone3D` is a monorepo that contains the following packages:
 
-- `/packages/core`: The core library responsible for rendering images and caching.
+- `/packages/core`: The core library responsible for rendering images and volumesand caching.
 - `/packages/tools`: The tool library for manipulation, annotation and segmentation rendering and tools.
-- `/packages/streaming-image-volume-loader`: For streaming the volumes into the viewport and progressively loading them.
+- `/packages/dicom-image-loader`: The image loader for `wadors` and `wadouri` DICOM P10 instances over HTTP.
+- `/packages/nifti-volume-loader`: The image loader for NIfTI files.
 - `/packages/docs`: Documentation for all the packages including guides, examples, and API reference.
-
-There are other `Cornerstone` affiliated packages (such as `cornerstone-wado-image-loader`) that are not included in this monorepo. In long term we are working to add them to this monorepo to have a single location for all packages.
-Having a monorepo helps us to:
-
-- Share validation and linting rules
-- Keep dependencies synced across all packages
-- Easier linking between packages which is often required for bug fixing and testing
