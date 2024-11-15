@@ -230,7 +230,7 @@ percentComplete: number;
 }>;
 
 // @public (undocumented)
-export function init(options: LoaderOptions): void;
+export function init(options?: LoaderOptions): void;
 
 // @public (undocumented)
 export const internal: {
