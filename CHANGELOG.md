@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.5...v2.2.6) (2024-11-15)
+
+### Bug Fixes
+
+- Fixed examples where VolumeRotateTool was not added to Cornerstone3D ([#1588](https://github.com/cornerstonejs/cornerstone3D/issues/1588)) ([071727c](https://github.com/cornerstonejs/cornerstone3D/commit/071727c804c1177f17afdd0d8ceca553a7aa0c6e))
+
 ## [2.2.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.4...v2.2.5) (2024-11-15)
 
 **Note:** Version bump only for package root
