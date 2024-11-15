@@ -17,7 +17,6 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { VolumeRotateTool } from '@cornerstonejs/tools';
 
 const {
   ToolGroupManager,
@@ -30,6 +29,7 @@ const {
   MIPJumpToClickTool,
   CrosshairsTool,
   TrackballRotateTool,
+  VolumeRotateTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -328,6 +328,7 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(MIPJumpToClickTool);
   cornerstoneTools.addTool(CrosshairsTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(VolumeRotateTool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -413,22 +414,19 @@ function setUpToolGroups() {
   mipToolGroup.setToolActive(VolumeRotateTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
-  mipToolGroup.addTool('MIPJumpToClickTool', {
+  mipToolGroup.addTool(MIPJumpToClickTool.toolName, {
     toolGroupId: ptToolGroupId,
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  mipToolGroup.setToolActive('MIPJumpToClickTool', {
+  mipToolGroup.setToolActive(MIPJumpToClickTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  mipToolGroup.setToolActive('VolumeRotateMouseWheel');
 
   mipToolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
 }
