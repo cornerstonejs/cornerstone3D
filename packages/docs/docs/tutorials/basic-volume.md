@@ -10,10 +10,21 @@ In this tutorial, you will learn how to render a volume.
 
 In order to render a volume we need:
 
+- Initialize cornerstone and related libraries.
 - HTMLDivElements to render different orientation of the volume (e.g., one for Axial, one for Sagittal)
 - The path to the images (`imageId`s).
 
 ## Implementation
+
+### Step 1: Initialize cornerstone and related libraries
+
+```js
+import { init as coreInit } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+
+await coreInit();
+await dicomImageLoaderInit();
+```
 
 We have already stored images on a server for the purpose of this tutorial.
 
@@ -52,9 +63,7 @@ const renderingEngine = new RenderingEngine(renderingEngineId);
 Loading a volume is possible by using the `volumeLoader` API.
 
 ```js
-// note we need to add the cornerstoneStreamingImageVolume: to
-// use the streaming volume loader
-const volumeId = 'cornerstoneStreamingImageVolume: myVolume';
+const volumeId = 'myVolume';
 
 // Define a volume in memory
 const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
@@ -114,15 +123,21 @@ renderingEngine.renderViewports([viewportId1, viewportId2]);
 
 ## Final code
 
+<details>
+<summary>Click to see the full code</summary>
+
 ```js
-// Get Cornerstone imageIds and fetch metadata into RAM
-const imageIds = await createImageIdsAndCacheMetaData({
-  StudyInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  SeriesInstanceUID:
-    '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
-});
+import {
+  init as coreInit,
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  setVolumesForViewports,
+} from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
+
+const { ViewportType } = Enums;
 
 const content = document.getElementById('content');
 
@@ -144,55 +159,69 @@ viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
+// ============================= //
 
-const renderingEngineId = 'myRenderingEngine';
-const renderingEngine = new RenderingEngine(renderingEngineId);
+async function run() {
+  await coreInit();
+  await dicomImageLoaderInit();
 
-// note we need to add the cornerstoneStreamingImageVolume: to
-// use the streaming volume loader
-const volumeId = 'cornerstoneStreamingImageVolume: myVolume';
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  });
 
-// Define a volume in memory
-const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-  imageIds,
-});
+  // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
+  const volumeId = 'myVolume';
 
-const viewportInput = [
-  {
-    viewportId: viewportId1,
-    element: element1,
-    type: ViewportType.ORTHOGRAPHIC,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.AXIAL,
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+
+  const viewportInput = [
+    {
+      viewportId: viewportId1,
+      element: element1,
+      type: ViewportType.ORTHOGRAPHIC,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
     },
-  },
-  {
-    viewportId: viewportId2,
-    element: element2,
-    type: ViewportType.ORTHOGRAPHIC,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
+    {
+      viewportId: viewportId2,
+      element: element2,
+      type: ViewportType.ORTHOGRAPHIC,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
     },
-  },
-];
+  ];
 
-renderingEngine.setViewports(viewportInput);
+  renderingEngine.setViewports(viewportInput);
 
-// Set the volume to load
-volume.load();
+  volume.load();
 
-setVolumesForViewports(
-  renderingEngine,
-  [{ volumeId }],
-  [viewportId1, viewportId2]
-);
+  setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId1, viewportId2]
+  );
+}
 
-// Render the image
-renderingEngine.renderViewports([viewportId1, viewportId2]);
+run();
 ```
+
+</details>
 
 You should be able to see:
 
@@ -214,7 +243,6 @@ For advanced usage of Volume Viewport, please visit <a href="/live-examples/volu
 
 :::note Tip
 
-- Visit [Examples](examples.md#run-examples-locally) page to see how to run the examples locally.
-- Check how to debug examples in the [Debugging](examples.md#debugging) section.
+- Visit [Examples](../examples.md) page to see how to run the examples locally.
 
 :::

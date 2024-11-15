@@ -24,8 +24,6 @@ interface IImageVolume {
   metadata: Metadata
   /** volume origin - set to the imagePositionPatient of the last image in the volume */
   origin: Point3
-  /** volume scalar data */
-  scalarData: any
   /** volume scaling metadata */
   scaling?: {
     PET?: {
@@ -51,5 +49,13 @@ interface IImageVolume {
   imageIds?: Array<string>
   /** volume referencedVolumeId (if it is derived from another volume) */
   referencedVolumeId?: string // if volume is derived from another volume
+  /** voxel manager */
+  voxelManager?: IVoxelManager
 }
 ```
+
+## Voxel Manager
+
+The `VoxelManager` is responsible for managing the voxel data of a volume. In previous version of `Cornerstone3D` we used to include `scalarData` in the `ImageVolume` object. However, this approach had several limitations in memory usage and performance. Therefore, we now delegate the voxel data management to the `VoxelManager` class which is a stateful class that keeps track of the voxel data in a volume.
+
+You can read more about the `VoxelManager` class [here](./voxelManager.md).

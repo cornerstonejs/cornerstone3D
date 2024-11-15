@@ -377,18 +377,16 @@ html[data-theme='light'] .tsd-flag-public {
 }
 
 #open-ptct-button {
-  margin-top: 20px;
   background-color: #0944b3;
   color: white;
   font-size: 18px;
-  padding: 9px 20px;
+  padding: 9px 9px;
   box-shadow: none;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   text-align: center;
   width: 200px;
-  margin: auto;
 }
 
 a.card > h2 {

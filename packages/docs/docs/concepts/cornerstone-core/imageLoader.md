@@ -26,59 +26,27 @@ cornerstone library. This function accept a `scheme` which the image loader func
 
 | Image Loader                                                                                      | Used for                                                                                                                                      |
 | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Cornerstone WADO Image Loader](https://github.com/cornerstonejs/cornerstoneWADOImageLoader)      | DICOM Part 10 images; Supports WADO-URI and WADO-RS; Supports multi-frame DICOM instances; Supports reading DICOM files from the File objects |
+| [Cornerstone DICOM Image Loader](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/dicomImageLoader)      | DICOM Part 10 images; Supports WADO-URI and WADO-RS; Supports multi-frame DICOM instances; Supports reading DICOM files from the File objects |
 | [Cornerstone Web Image Loader](https://github.com/cornerstonejs/cornerstoneWebImageLoader)        | PNG and JPEG                                                                                                                                  |
-| [Cornerstone-nifti-image-loader](https://github.com/cornerstonejs/cornerstone-nifti-image-loader) | NIFTI                                                                                                                                         |
+| [Cornerstone-nifti-image-loader](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/nifti-volume-loader) | NIFTI                                                                                                                                         |
 
-### CornerstoneWADOImageLoader
+### CornerstoneDICOMImageLoader
 
-[`CornerstoneWADOImageLoader`](https://github.com/cornerstonejs/cornerstoneWADOImageLoader) is a cornerstone image loader that loads DICOM images from a WADO-compliant server. You can install it and initialize to via the following code. Internally, `CornerstoneWADOImageLoader` registers its `wado-rs` and `wado-uri` imageLoaders to `Cornerstone3D` and uses [`dicomParser`](https://github.com/cornerstonejs/dicomParser) to parse the the metadata and pixel data.
+[`CornerstoneDICOMImageLoader`](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/dicomImageLoader) is a cornerstone image loader that loads DICOM images from a WADO-compliant server. You can install it and initialize to via the following code. Internally, `CornerstoneDICOMImageLoader` registers its `wado-rs` and `wado-uri` imageLoaders to `Cornerstone3D` and uses [`dicomParser`](https://github.com/cornerstonejs/dicomParser) to parse the the metadata and pixel data.
 
 ```js
-import * as cornerstone from '@cornerstonejs/core';
-import dicomParser from 'dicom-parser';
-import cornerstoneWADOImageLoader from 'cornerstone-wado-image-loader';
+import { init } from '@cornerstonejs/dicom-image-loader';
 
-cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
-cornerstoneWADOImageLoader.configure({
-  useWebWorkers: true,
-  decodeConfig: {
-    convertFloatPixelDataToInt: false,
-  },
+init({
+  maxWebWorkers: navigator.hardwareConcurrency || 1,
 });
 
-var config = {
-  maxWebWorkers: navigator.hardwareConcurrency || 1,
-  startWebWorkersOnDemand: false,
-  taskConfiguration: {
-    decodeTask: {
-      initializeCodecsOnStartup: true,
-      strict: false,
-    },
-  },
-};
-
-cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
 ```
 
-After initialization of the `CornerstoneWADOImageLoader`, any imageId using the `wado-uri` scheme will be loaded using the `CornerstoneWADOImageLoader`
+After initialization of the `CornerstoneDICOMImageLoader`, any imageId using the `wado-uri` scheme will be loaded using the `CornerstoneDICOMImageLoader`
 `wado-uri` image loader and metadata provider (e.g., imageId = 'wado-uri: https://exampleServer.com/wadoURIEndPoint?requestType=WADO&studyUID=1.2.3&seriesUID=4.5.6&objectUID=7.8.9&contentType=application%2Fdicom'), and likewise for `wado-rs` imageIds which will use
-`CornerstoneWADOImageLoader` `wado-rs` image loader and metadata provider (e.g., imageId = 'wado-rs: https://exampleServer.com/wadoRSEndPoint/studies/1.2.3/series/4.5.6/instances/7.8.9/frames/1').
+`CornerstoneDICOMImageLoader` `wado-rs` image loader and metadata provider (e.g., imageId = 'wado-rs: https://exampleServer.com/wadoRSEndPoint/studies/1.2.3/series/4.5.6/instances/7.8.9/frames/1').
 
 ### CornerstoneWebImageLoader
 
-[`CornerstoneWebImageLoader`](https://github.com/cornerstonejs/cornerstoneWebImageLoader) is another
-cornerstone image loader for web images (PNG, JPEG). Similar to `CornerstoneWADOImageLoader`, it self registers
-its imageLoaders to cornerstone.
-
-```js
-cornerstoneWebImageLoader.external.cornerstone = cornerstone;
-
-cornerstoneWebImageLoader.configure({
-  beforeSend: function (xhr) {
-    // Add custom headers here (e.g. auth tokens)
-    //xhr.setRequestHeader('x-auth-token', 'my auth token');
-  },
-});
-```
+You can take a look at our sample code example for `CornerstoneWebImageLoader` [here](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/core/examples/webLoader)

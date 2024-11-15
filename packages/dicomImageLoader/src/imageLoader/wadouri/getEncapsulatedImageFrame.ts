@@ -85,7 +85,7 @@ export default function getEncapsulatedImageFrame(
 
   // Grab ONLY the portion of the byteArray containing the frame for decoding since
   // it will be impossible to decode the entire image everytime (this return will go
-  // to the decodeImageFrame function in cornerstoneWADOImageLoader which runs in a
+  // to the decodeImageFrame function in cornerstoneDICOMImageLoader which runs in a
   // web worker)
   return new Uint8Array(
     byteStream.byteArray.buffer.slice(
