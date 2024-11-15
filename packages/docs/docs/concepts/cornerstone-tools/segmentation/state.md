@@ -5,80 +5,60 @@ title: State
 
 # State
 
-`SegmentationState` stores all the information regarding the current state of the `Segmentation`s
-and `SegmentationRepresentation`s in the library. As mentioned in the previous section
-we have decoupled the `Segmentation`s and `SegmentationRepresentation`s from each other.
-From a `Segmentation` various representations can be created (labelmap supported currently).
-Therefore, the state also stores segmentations and their toolGroup-specific representations separately.
-
-An overview of the state is shown below.
-
-<div style={{textAlign: 'center', width:"80%"}}>
-
-![](../../../assets/segmentation-state.png)
-
-</div>
-
-## Global Config
-
-`Cornerstone3DTools` implements two configurations, and the consumer
-can set each of them individually. `GlobalConfig` in the state
-stores the global configuration for all segmentation representations in all toolGroups.
-
-You can read more in the [`config`](./config.md) on how to set each individually.
+`SegmentationState` stores all the information regarding the current state of `Segmentation`s and `SegmentationRepresentation`s in the library. In version 2.x, we've decoupled `Segmentation`s from their representations and made the system viewport-specific rather than toolGroup-specific. From a `Segmentation`, various representations can be created (currently supporting Labelmap, Contour, and Surface).
 
 ## ColorLUT
 
-`SegmentationState` Stores an array of `colorLUT`s that are used to render the segmentation representations.
-`Cornerstone3DTools` initially adds 255 colors (`[ [0,0,0,0], [221, 84, 84, 255],[77, 228, 121, 255], ... ]`) as the
-first index of this array, and by default all segmentation representations use the first colorLUT.
-However, using the color API in the [config](./config.md#color-api) you can add more colors to the global colorLUT
-in the state and/or change the colorLUT for a specific segmentation representation.
+`SegmentationState` stores an array of `colorLUT`s used to render segmentation representations. `Cornerstone3DTools` initially adds 255 colors (`[[0,0,0,0], [221, 84, 84, 255], [77, 228, 121, 255], ...]`) as the first index of this array. By default, all segmentation representations use the first colorLUT. However, using the color API in the config, you can add more colors to the global colorLUT and/or change the colorLUT for specific segmentation representations in specific viewports.
 
 ## Segmentations
 
-`SegmentationState` stores all the segmentations in an array. It should be noted that
-`Segmentation` and `SegmentationRepresentation` are two separate concepts.
-Each Segmentation Object inside the state, stores all the required information
-in order for the `SegmentationRepresentation` to be created.
+`SegmentationState` stores all segmentations in an array. Each Segmentation Object stores the required information for creating `SegmentationRepresentation`s.
 
 Each segmentation object has the following properties:
 
 ```js
 {
   segmentationId: 'segmentation1',
-  mainType: 'Labelmap',
-  activeSegmentIndex: 0,
-  segmentsLocked: new Set(),
   label: 'segmentation1',
-  cachedStats: {},
-  representationData: {
-    LABELMAP: {
-      volumeId: 'segmentation1',
+  segments: {
+    0: {
+      segmentIndex: 0,
+      label: 'Segment 1',
+      active: true,
+      locked: false,
+      cachedStats: {}
     },
-    CONTOUR: {
-      geometryIds: ['contourSet1', 'contourSet2'],
-    },
+    1: {
+      segmentIndex: 1,
+      label: 'Segment 2',
+      active: false,
+      locked: false,
+      cachedStats: {}
+    }
   },
-},
+  representationData: {
+    Labelmap: {
+      volumeId: 'segmentation1'
+    },
+    Contour: {
+      geometryIds: ['contourSet1', 'contourSet2']
+    },
+    Surface: {
+      geometryId: 'surface1'
+    }
+  }
+}
 ```
 
-- `segmentationId`: a required field provided by the consumer. This is the unique identifier for the segmentation.
-- `mainType`: set internally, by default 'Labelmap'
-- `activeSegmentIndex`: the active segment index that will be used
-  to modify the data of the segmentation by tools.
-- `segmentsLocked`: a set of locked segment indices which will not be modified by tools.
-- `label`: the label of the segmentation.
-- `cachedStats`: a cache of the stats of the segmentation (volume etc. - not used currently)
-- `representationData`: **THE MOST IMPORTANT PART**, this is where
-  the data for creation of the `SegmentationRepresentation` is stored.
-  For instance, in `LABELMAP` representation, the required information for creating the `SegmentationRepresentation` is a cached `volumeId`.
+- `segmentationId`: A required field provided by the consumer. This is the unique identifier for the segmentation.
+- `label`: The label of the segmentation.
+- `segments`: An object containing information about each segment, including its label, active state, locked state, and cached statistics.
+- `representationData`: **THE MOST IMPORTANT PART**, this is where the data for creation of each type of `SegmentationRepresentation` is stored. For instance, in `Labelmap` representation, the required information is a cached `volumeId`.
 
 ### Adding Segmentations to the State
 
-Since, `Segmentation` and `SegmentationRepresentation` are separated from each other, first,
-we need to add the `segmentation` to the state. This can be done by
-top level API:
+Since `Segmentation` and `SegmentationRepresentation` are separated, first we need to add the `segmentation` to the state using the top-level API:
 
 ```js
 import { segmentation, Enums } from '@cornerstonejs/tools';
@@ -89,73 +69,83 @@ segmentation.addSegmentations([
     representation: {
       type: Enums.SegmentationRepresentations.Labelmap,
       data: {
-        volumeId: segmentationId,
-      },
-    },
-  },
+        imageIds: segmentationImageIds
+      }
+    }
+  }
 ]);
 ```
-
-As seen, we add an array of segmentations to the state each
-including a segmentationId, and a `representation` which includes
-the type and the data that is required to create the `SegmentationRepresentation`.
 
 :::note Important
-Adding a `Segmentation` to the state WILL NOT render the segmentation. You should
-add the `SegmentationRepresentation`s to the toolGroup that is intended to render
-the segmentation representation (e.g., Labelmap, etc.). We will see how below.
+Adding a `Segmentation` to the state WILL NOT render the segmentation. You need to add `SegmentationRepresentation`s to specific viewports where you want to render them.
 :::
 
-## ToolGroups
+## Viewports
 
-### Adding a SegmentationRepresentation to a ToolGroup
+### Adding a SegmentationRepresentation to a Viewport
 
-Next, we need to add the `SegmentationRepresentation` to the `ToolGroup`. This can be done by
-using the `addSegmentationRepresentation` method of the `Segmentation` module. This way,
-all the viewports that are added to the `ToolGroup` will be updated their renderers
-to include the new `SegmentationRepresentation`.
+To render a segmentation, you need to add its representation to specific viewports. This can be done using the `addSegmentationRepresentation` method:
 
 ```js
-import {
-  segmentation,
-  Enums,
-} from '@cornerstonejs/tools';
+import { segmentation, Enums } from '@cornerstonejs/tools';
 
-/**
- * Setup toolGroups and addViewports to them before hand
- */
-
-const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-
-await segmentation.addSegmentationRepresentations(toolGroupId, [
+await segmentation.addSegmentationRepresentations(viewportId, [
   {
     segmentationId,
-    type: Enums.SegmentationRepresentations.Labelmap,
-  },
+    type: Enums.SegmentationRepresentations.Labelmap
+  }
 ]);
 ```
 
-or if the ToolGroup is displaying the segmentation representation with a specific config, you can provide it in the last argument.
+
+### Representation-Specific Methods
+
+Cornerstone3D v2 provides dedicated methods for adding different types of segmentation representations:
 
 ```js
-const toolGroupSpecificRepresentationConfig = {
-  renderInactiveSegmentations: true,
-  representations: {
-    [Enums.SegmentationRepresentations.Labelmap]: {
-      renderOutline: true,
-    },
-  },
+// Add labelmap representations
+await segmentation.addLabelmapRepresentationToViewport(viewportId, [
+  {
+    segmentationId,
+    config: {}
+  }
+]);
+
+// Add contour representations
+await segmentation.addContourRepresentationToViewport(viewportId, [
+  {
+    segmentationId,
+    config: {}
+  }
+]);
+
+// Add surface representations
+await segmentation.addSurfaceRepresentationToViewport(viewportId, [
+  {
+    segmentationId,
+    config: {}
+]);
+```
+
+### Multiple Viewport Operations
+
+You can also add representations to multiple viewports simultaneously using the viewport map methods:
+
+```js
+const viewportInputMap = {
+  viewport1: [
+    {
+      segmentationId: 'seg1',
+      type: Enums.SegmentationRepresentations.Labelmap
+    }
+  ],
+  viewport2: [
+    {
+      segmentationId: 'seg1',
+      type: Enums.SegmentationRepresentations.Labelmap
+    }
+  ]
 };
 
-await segmentation.addSegmentationRepresentations(
-  toolGroupId,
-  [
-    {
-      segmentationId,
-      type: Enums.SegmentationRepresentations.Labelmap,
-    },
-  ],
-  toolGroupSpecificRepresentationConfig
-);
+await segmentation.addLabelmapRepresentationToViewportMap(viewportInputMap);
 ```

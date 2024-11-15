@@ -22,12 +22,6 @@ Similar relationship structure has been adapted in popular medical imaging softw
 such as [3D Slicer](https://www.slicer.org/) with the addition of [polymorph segmentation](https://github.com/PerkLab/PolySeg).
 :::
 
-## ToolGroup Specific Representations
-
-Previously in `Cornerstone (legacy)` we applied `Segmentations` to elements.
-This had its own limitations, such as: repetitive creation of `Segmentations` for each viewport
-(ct-axial, ct-sagittal, and ct-coronal). We have changed this to apply a `Segmentation Representation`
-to a `ToolGroup` which accordingly applies to all viewports.
 
 
 ## API
