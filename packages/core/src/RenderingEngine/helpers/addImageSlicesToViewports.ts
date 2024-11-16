@@ -22,7 +22,7 @@ async function addImageSlicesToViewports(
   viewportIds: string[]
 ): Promise<void> {
   for (const viewportId of viewportIds) {
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportId) as IStackViewport;
 
     if (!viewport) {
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
@@ -39,7 +39,7 @@ async function addImageSlicesToViewports(
   }
 
   const addStackPromises = viewportIds.map(async (viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(viewportId) as IStackViewport;
     viewport.addImages(stackInputs);
   });
 
