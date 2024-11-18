@@ -60,7 +60,10 @@ addSliderToToolbar({
       viewportId
     ) as Types.IBaseVolumeViewport;
 
-    viewport.setOpacity({ opacity: Number(value) / 100 }, ptVolumeId);
+    viewport.setProperties(
+      { colormap: { opacity: Number(value) } },
+      ptVolumeId
+    );
     viewport.render();
   },
 });
