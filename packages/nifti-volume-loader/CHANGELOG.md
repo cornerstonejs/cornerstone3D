@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.7...v2.2.8) (2024-11-18)
+
+### Bug Fixes
+
+- Include min/maxPixelValue in the return value of createImage ([#1596](https://github.com/cornerstonejs/cornerstone3D/issues/1596)) ([35c1b7c](https://github.com/cornerstonejs/cornerstone3D/commit/35c1b7c8c65e7e6572f344f4b73b9c84044320ca))
+
 ## [2.2.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.6...v2.2.7) (2024-11-15)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
