@@ -119,7 +119,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ctVolume.load();
+  await ctVolume.load();
 
   // Define a volume in memory
   const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
@@ -127,7 +127,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ptVolume.load();
+  await ptVolume.load();
 
   // Set the volume on the viewport
   viewport.setVolumes([
