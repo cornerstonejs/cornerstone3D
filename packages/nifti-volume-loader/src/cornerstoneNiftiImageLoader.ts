@@ -17,7 +17,7 @@ import { Events } from './enums';
 import { modalityScaleNifti } from './helpers';
 
 const fetchStarted = new Map<string, boolean>();
-let niftiScalarData = null;
+const niftiScalarDataMap: Map<string, Types.PixelDataTypedArray> = new Map();
 
 function fetchArrayBuffer({
   url,
@@ -106,7 +106,13 @@ export default function cornerstoneNiftiImageLoader(
         .then(resolve)
         .catch(reject);
     } else {
-      waitForNiftiData(imageId, sliceIndex, imagePixelModule, imagePlaneModule)
+      waitForNiftiData(
+        imageId,
+        url,
+        sliceIndex,
+        imagePixelModule,
+        imagePlaneModule
+      )
         .then(resolve)
         .catch(reject);
     }
@@ -143,32 +149,35 @@ async function fetchAndProcessNiftiData(
   }
 
   const { scalarData } = modalityScaleNifti(niftiHeader, niftiImage);
-  niftiScalarData = scalarData;
+  niftiScalarDataMap.set(url, scalarData);
 
   return createImage(
     imageId,
     sliceIndex,
     imagePixelModule,
-    imagePlaneModule
+    imagePlaneModule,
+    scalarData
   ) as unknown as Types.IImage;
 }
 
 function waitForNiftiData(
   imageId,
+  url: string,
   sliceIndex: number,
   imagePixelModule: Types.ImagePixelModule,
   imagePlaneModule: Types.ImagePlaneModule
 ): Promise<Types.IImage> {
   return new Promise((resolve) => {
     const intervalId = setInterval(() => {
-      if (niftiScalarData) {
+      if (niftiScalarDataMap.has(url)) {
         clearInterval(intervalId);
         resolve(
           createImage(
             imageId,
             sliceIndex,
             imagePixelModule,
-            imagePlaneModule
+            imagePlaneModule,
+            niftiScalarDataMap.get(url)
           ) as unknown as Types.IImage
         );
       }
@@ -180,13 +189,16 @@ function createImage(
   imageId: string,
   sliceIndex: number,
   imagePixelModule: Types.ImagePixelModule,
-  imagePlaneModule: Types.ImagePlaneModule
+  imagePlaneModule: Types.ImagePlaneModule,
+  niftiScalarData: Types.PixelDataTypedArray
 ) {
   const { rows, columns } = imagePlaneModule;
   const numVoxels = rows * columns;
   const sliceOffset = numVoxels * sliceIndex;
 
-  const pixelData = new niftiScalarData.constructor(numVoxels);
+  const pixelData = new (niftiScalarData.constructor as {
+    new (size: number): Types.PixelDataTypedArray;
+  })(numVoxels);
   pixelData.set(niftiScalarData.subarray(sliceOffset, sliceOffset + numVoxels));
 
   // @ts-ignore
