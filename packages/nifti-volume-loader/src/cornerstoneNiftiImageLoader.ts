@@ -197,6 +197,18 @@ function createImage(
     scalarData: pixelData,
   });
 
+  let minPixelValue = pixelData[0];
+  let maxPixelValue = pixelData[0];
+  for (let i = 1; i < pixelData.length; i++) {
+    const pixelValue = pixelData[i];
+    if (pixelValue < minPixelValue) {
+      minPixelValue = pixelValue;
+    }
+    if (pixelValue > maxPixelValue) {
+      maxPixelValue = pixelValue;
+    }
+  }
+
   return {
     imageId,
     dataType: niftiScalarData.constructor
@@ -213,5 +225,7 @@ function createImage(
     getCanvas: undefined,
     numberOfComponents: undefined,
     voxelManager,
+    minPixelValue,
+    maxPixelValue,
   };
 }
