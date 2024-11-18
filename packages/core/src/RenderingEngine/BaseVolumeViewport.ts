@@ -2,6 +2,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import vtkProxyManager from '@kitware/vtk.js/Proxy/Core/PiecewiseFunctionProxy';
 
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
@@ -306,21 +307,26 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const ofun = vtkPiecewiseFunction.newInstance();
     if (typeof colormap.opacity === 'number') {
-      const range = volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .getRange();
-
-      ofun.addPoint(range[0], colormap.opacity);
-      ofun.addPoint(range[1], colormap.opacity);
+      const pwf = vtkProxyManager.newInstance();
+      pwf.setMode(vtkProxyManager.Mode.Points);
+      pwf.setDataRange(
+        ...volumeActor.getProperty().getRGBTransferFunction(0).getRange()
+      );
+      pwf.setPoints([[0, 1]]); // only slice mesh controls opacity
+      //pwf.setRescaleOnColorBy(false);
+      //pwf.setColorBy(arrayName, location);
+      volumeActor.getProperty().setOpacity(colormap.opacity);
+      volumeActor.getProperty().setRescaleOnColorBy(false);
+      //volumeActor.getProperty().setColorBy(arrayName, location);
+      volumeActor.getProperty().setScalarOpacity(0, ofun);
     } else {
+      const ofun = vtkPiecewiseFunction.newInstance();
       colormap.opacity.forEach(({ opacity, value }) => {
         ofun.addPoint(value, opacity);
       });
+      volumeActor.getProperty().setScalarOpacity(0, ofun);
     }
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
 
     if (!this.viewportProperties.colormap) {
       this.viewportProperties.colormap = {};
