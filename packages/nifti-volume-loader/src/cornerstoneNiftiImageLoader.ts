@@ -16,8 +16,16 @@ import * as NiftiReader from 'nifti-reader-js';
 import { Events } from './enums';
 import { modalityScaleNifti } from './helpers';
 
-const fetchStarted = new Map<string, boolean>();
-const niftiScalarDataMap: Map<string, Types.PixelDataTypedArray> = new Map();
+type NiftiDataFetchState =
+  | {
+      status: 'fetching';
+    }
+  | {
+      status: 'fetched';
+      scalarData: Types.PixelDataTypedArray;
+    };
+
+const dataFetchStateMap: Map<string, NiftiDataFetchState> = new Map();
 
 function fetchArrayBuffer({
   url,
@@ -94,8 +102,8 @@ export default function cornerstoneNiftiImageLoader(
   ) as Types.ImagePlaneModule;
 
   const promise = new Promise<Types.IImage>((resolve, reject) => {
-    if (!fetchStarted.get(url)) {
-      fetchStarted.set(url, true);
+    if (!dataFetchStateMap.get(url)) {
+      dataFetchStateMap.set(url, { status: 'fetching' });
       fetchAndProcessNiftiData(
         imageId,
         url,
@@ -149,7 +157,7 @@ async function fetchAndProcessNiftiData(
   }
 
   const { scalarData } = modalityScaleNifti(niftiHeader, niftiImage);
-  niftiScalarDataMap.set(url, scalarData);
+  dataFetchStateMap.set(url, { status: 'fetched', scalarData });
 
   return createImage(
     imageId,
@@ -169,7 +177,8 @@ function waitForNiftiData(
 ): Promise<Types.IImage> {
   return new Promise((resolve) => {
     const intervalId = setInterval(() => {
-      if (niftiScalarDataMap.has(url)) {
+      const dataFetchState = dataFetchStateMap.get(url);
+      if (dataFetchState.status === 'fetched') {
         clearInterval(intervalId);
         resolve(
           createImage(
@@ -177,7 +186,7 @@ function waitForNiftiData(
             sliceIndex,
             imagePixelModule,
             imagePlaneModule,
-            niftiScalarDataMap.get(url)
+            dataFetchState.scalarData
           ) as unknown as Types.IImage
         );
       }
