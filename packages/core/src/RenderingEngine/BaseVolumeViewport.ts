@@ -316,10 +316,7 @@ abstract class BaseVolumeViewport extends Viewport {
       pwf.setPoints([[0, 1]]); // only slice mesh controls opacity
       //pwf.setRescaleOnColorBy(false);
       //pwf.setColorBy(arrayName, location);
-      volumeActor.getProperty().setOpacity(colormap.opacity);
-      volumeActor.getProperty().setRescaleOnColorBy(false);
-      //volumeActor.getProperty().setColorBy(arrayName, location);
-      volumeActor.getProperty().setScalarOpacity(0, ofun);
+      volumeActor.getProperty().setScalarOpacity(0, pwf.getPiecewiseFunction());
     } else {
       const ofun = vtkPiecewiseFunction.newInstance();
       colormap.opacity.forEach(({ opacity, value }) => {
