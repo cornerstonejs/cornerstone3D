@@ -16,8 +16,16 @@ import * as NiftiReader from 'nifti-reader-js';
 import { Events } from './enums';
 import { modalityScaleNifti } from './helpers';
 
-const fetchStarted = new Map<string, boolean>();
-let niftiScalarData = null;
+type NiftiDataFetchState =
+  | {
+      status: 'fetching';
+    }
+  | {
+      status: 'fetched';
+      scalarData: Types.PixelDataTypedArray;
+    };
+
+const dataFetchStateMap: Map<string, NiftiDataFetchState> = new Map();
 
 function fetchArrayBuffer({
   url,
@@ -94,8 +102,8 @@ export default function cornerstoneNiftiImageLoader(
   ) as Types.ImagePlaneModule;
 
   const promise = new Promise<Types.IImage>((resolve, reject) => {
-    if (!fetchStarted.get(url)) {
-      fetchStarted.set(url, true);
+    if (!dataFetchStateMap.get(url)) {
+      dataFetchStateMap.set(url, { status: 'fetching' });
       fetchAndProcessNiftiData(
         imageId,
         url,
@@ -106,7 +114,13 @@ export default function cornerstoneNiftiImageLoader(
         .then(resolve)
         .catch(reject);
     } else {
-      waitForNiftiData(imageId, sliceIndex, imagePixelModule, imagePlaneModule)
+      waitForNiftiData(
+        imageId,
+        url,
+        sliceIndex,
+        imagePixelModule,
+        imagePlaneModule
+      )
         .then(resolve)
         .catch(reject);
     }
@@ -143,32 +157,36 @@ async function fetchAndProcessNiftiData(
   }
 
   const { scalarData } = modalityScaleNifti(niftiHeader, niftiImage);
-  niftiScalarData = scalarData;
+  dataFetchStateMap.set(url, { status: 'fetched', scalarData });
 
   return createImage(
     imageId,
     sliceIndex,
     imagePixelModule,
-    imagePlaneModule
+    imagePlaneModule,
+    scalarData
   ) as unknown as Types.IImage;
 }
 
 function waitForNiftiData(
   imageId,
+  url: string,
   sliceIndex: number,
   imagePixelModule: Types.ImagePixelModule,
   imagePlaneModule: Types.ImagePlaneModule
 ): Promise<Types.IImage> {
   return new Promise((resolve) => {
     const intervalId = setInterval(() => {
-      if (niftiScalarData) {
+      const dataFetchState = dataFetchStateMap.get(url);
+      if (dataFetchState.status === 'fetched') {
         clearInterval(intervalId);
         resolve(
           createImage(
             imageId,
             sliceIndex,
             imagePixelModule,
-            imagePlaneModule
+            imagePlaneModule,
+            dataFetchState.scalarData
           ) as unknown as Types.IImage
         );
       }
@@ -180,13 +198,16 @@ function createImage(
   imageId: string,
   sliceIndex: number,
   imagePixelModule: Types.ImagePixelModule,
-  imagePlaneModule: Types.ImagePlaneModule
+  imagePlaneModule: Types.ImagePlaneModule,
+  niftiScalarData: Types.PixelDataTypedArray
 ) {
   const { rows, columns } = imagePlaneModule;
   const numVoxels = rows * columns;
   const sliceOffset = numVoxels * sliceIndex;
 
-  const pixelData = new niftiScalarData.constructor(numVoxels);
+  const pixelData = new (niftiScalarData.constructor as {
+    new (size: number): Types.PixelDataTypedArray;
+  })(numVoxels);
   pixelData.set(niftiScalarData.subarray(sliceOffset, sliceOffset + numVoxels));
 
   // @ts-ignore
