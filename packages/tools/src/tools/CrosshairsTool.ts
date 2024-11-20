@@ -414,6 +414,7 @@ class CrosshairsTool extends AnnotationTool {
     const { element } = eventDetail;
 
     const { currentPoints } = eventDetail;
+    debugger;
     const jumpWorld = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
@@ -1888,21 +1889,13 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   _checkIfViewportsRenderingSameScene = (viewport, otherViewport) => {
-    const actors = viewport.getActors();
-    const otherViewportActors = otherViewport.getActors();
+    const volumeIds = viewport.getAllVolumeIds();
+    const otherVolumeIds = otherViewport.getAllVolumeIds();
 
-    let sameScene = true;
-
-    actors.forEach((actor) => {
-      if (
-        actors.length !== otherViewportActors.length ||
-        otherViewportActors.find(({ uid }) => uid === actor.uid) === undefined
-      ) {
-        sameScene = false;
-      }
-    });
-
-    return sameScene;
+    return (
+      volumeIds.length === otherVolumeIds.length &&
+      volumeIds.every((id) => otherVolumeIds.includes(id))
+    );
   };
 
   _jump = (enabledElement, jumpWorld) => {

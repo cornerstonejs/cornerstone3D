@@ -106,14 +106,12 @@ addButtonToToolbar({
     const resetZoom = true;
     const resetToCenter = true;
     const resetRotation = true;
-    const supressEvents = false;
-    viewport1.resetCamera(
+    viewport1.resetCamera({
       resetPan,
       resetZoom,
       resetToCenter,
       resetRotation,
-      supressEvents
-    );
+    });
 
     viewport1.render();
   },
