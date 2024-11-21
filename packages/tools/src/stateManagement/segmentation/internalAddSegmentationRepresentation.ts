@@ -47,27 +47,29 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
   // Destructure colorLUTOrIndex from the config, with a fallback to undefined if config is undefined
   const { colorLUTOrIndex } = config || {};
 
-  // Determine if colorLUTOrIndex is a numeric index or a Color LUT object
-  const isIndexProvided = typeof colorLUTOrIndex === 'number';
-
-  // If an index is provided, retrieve the corresponding Color LUT; otherwise, use the default Color LUT
-  const selectedColorLUT: Types.ColorLUT = isIndexProvided
-    ? getColorLUT(colorLUTOrIndex)
-    : CORNERSTONE_COLOR_LUT;
-
-  // Determine the Color LUT index:
-  // - Use the provided index if available
-  // - Otherwise, obtain the next available index
-  const colorLUTIndex: number = isIndexProvided
-    ? colorLUTOrIndex
-    : getNextColorLUTIndex();
-
-  // If a Color LUT object is provided instead of an index, add it to the state with the determined index
-  if (!isIndexProvided) {
-    addColorLUT(selectedColorLUT, colorLUTIndex);
+  // If no colorLUTOrIndex provided, get next available index and add default LUT
+  if (colorLUTOrIndex === undefined) {
+    const index = addColorLUT(CORNERSTONE_COLOR_LUT);
+    return index;
   }
 
-  return colorLUTIndex;
+  // If numeric index provided, return it directly
+  if (typeof colorLUTOrIndex === 'number') {
+    return colorLUTOrIndex;
+  }
+
+  // If colorLUTOrIndex is a ColorLUT array, add it with a new index
+  if (
+    Array.isArray(colorLUTOrIndex) &&
+    colorLUTOrIndex.every((item) => Array.isArray(item) && item.length === 4)
+  ) {
+    const index = addColorLUT(colorLUTOrIndex);
+    return index;
+  }
+
+  // Fallback: use default LUT with next available index
+  const index = addColorLUT(CORNERSTONE_COLOR_LUT);
+  return index;
 }
 
 export { internalAddSegmentationRepresentation };

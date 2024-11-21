@@ -220,10 +220,10 @@ async function run() {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
       config: {
-        colorLUT: [
+        colorLUTOrIndex: [
           [0, 0, 0, 0],
-          [125, 152, 180, 255],
-          [125, 152, 20, 255],
+          [0, 0, 255, 255],
+          [255, 255, 0, 255],
         ],
       },
     },

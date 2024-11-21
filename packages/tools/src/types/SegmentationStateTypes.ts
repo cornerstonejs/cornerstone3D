@@ -137,6 +137,6 @@ export type RepresentationPublicInput = {
   segmentationId: string;
   type?: Enums.SegmentationRepresentations;
   config?: {
-    colorLUTOrIndex?: Types.ColorLUT[] | number;
+    colorLUTOrIndex?: Types.ColorLUT | number;
   };
 };
