@@ -1751,7 +1751,7 @@ export class CrosshairsTool extends AnnotationTool {
     // (undocumented)
     cancel: () => void;
     // (undocumented)
-    _checkIfViewportsRenderingSameScene: (viewport: any, otherViewport: any) => boolean;
+    _checkIfViewportsRenderingSameScene: (viewport: any, otherViewport: any) => any;
     // (undocumented)
     computeToolCenter: () => void;
     // (undocumented)
