@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.10...v2.2.11) (2024-11-21)
+
+### Bug Fixes
+
+- **tools:** segmentation colorLUT initial config and crosshairs jump to click ([#1609](https://github.com/cornerstonejs/cornerstone3D/issues/1609)) ([b4aee7b](https://github.com/cornerstonejs/cornerstone3D/commit/b4aee7b690aa3d98eb01f21aed73d9bde662c8c8))
+
 ## [2.2.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.9...v2.2.10) (2024-11-19)
 
 **Note:** Version bump only for package @cornerstonejs/core
