@@ -414,7 +414,6 @@ class CrosshairsTool extends AnnotationTool {
     const { element } = eventDetail;
 
     const { currentPoints } = eventDetail;
-    debugger;
     const jumpWorld = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
