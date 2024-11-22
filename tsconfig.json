@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": "./packages",
     "paths": {
-      "@cornerstonejs/core": ["core/dist/types", "core/src"],
+      "@cornerstonejs/core": ["core/src"],
       "@cornerstonejs/tools": ["tools/src"],
       "@cornerstonejs/dicomImageLoader": ["dicomImageLoader/src"],
       "@cornerstonejs/nifti-volume-loader": ["nifti-volume-loader/src"],
