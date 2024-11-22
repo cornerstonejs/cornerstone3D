@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.14](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.13...v2.2.14) (2024-11-22)
+
+### Bug Fixes
+
+- **examples:** Enhance volume loading and toolbar functionality ([#1605](https://github.com/cornerstonejs/cornerstone3D/issues/1605)) ([58e6a80](https://github.com/cornerstonejs/cornerstone3D/commit/58e6a80d3ef4bf3c7c74937d9ea0bef95ecd9917))
+
 ## [2.2.13](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.12...v2.2.13) (2024-11-22)
 
 ### Bug Fixes
