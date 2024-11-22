@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.2.13](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.12...v2.2.13) (2024-11-22)
+
+### Bug Fixes
+
+- **docs:** Update 5-tools.md ([#1610](https://github.com/cornerstonejs/cornerstone3D/issues/1610)) ([ecba3c9](https://github.com/cornerstonejs/cornerstone3D/commit/ecba3c9096d20461ea3c0173149728293f67642b))
+
 ## [2.2.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.11...v2.2.12) (2024-11-22)
 
 ### Bug Fixes
