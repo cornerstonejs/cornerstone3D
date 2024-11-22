@@ -359,6 +359,11 @@ class Synchronizer {
 
     viewports.forEach((vp) => {
       const eventSource = this.getEventSource(vp);
+
+      if (!eventSource) {
+        return;
+      }
+
       eventSource.removeEventListener(
         Enums.Events.ELEMENT_DISABLED,
         disableHandler
@@ -380,9 +385,13 @@ class Synchronizer {
     const { renderingEngineId, viewportId } = viewportInfo;
     const renderingEngine = getRenderingEngine(renderingEngineId);
     if (!renderingEngine) {
-      throw new Error(`No RenderingEngine for Id: ${renderingEngineId}`);
+      return null;
     }
-    return renderingEngine.getViewport(viewportId).element;
+    const viewport = renderingEngine.getViewport(viewportId);
+    if (!viewport) {
+      return null;
+    }
+    return viewport.element;
   }
 }
 

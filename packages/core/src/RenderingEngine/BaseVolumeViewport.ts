@@ -1790,7 +1790,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const querySeparator = volumeId.includes('?') ? '&' : '?';
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
       ','
-    )}&focalPoint=${focalPoint.join(',')}`;
+    )}`;
   }
 
   private _addVolumeId(volumeId: string): void {
