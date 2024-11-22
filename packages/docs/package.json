@@ -43,7 +43,7 @@
     "@docusaurus/module-type-aliases": "3.6.1",
     "@docusaurus/plugin-google-gtag": "3.6.1",
     "@docusaurus/preset-classic": "3.6.1",
-    "@kitware/vtk.js": "32.1.0",
+    "@kitware/vtk.js": "32.1.1",
     "@mdx-js/react": "^3.0.1",
     "@svgr/webpack": "^8.1.0",
     "clsx": "^1.1.1",
