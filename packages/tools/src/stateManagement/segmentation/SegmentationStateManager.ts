@@ -326,7 +326,8 @@ export default class SegmentationStateManager {
       type,
       active: true,
       visible: true,
-      colorLUTIndex: 0,
+      // @ts-ignore
+      colorLUTIndex: renderingConfig?.colorLUTIndex ?? 0,
       segments: segmentReps,
       config: {
         ...getDefaultRenderingConfig(type),
