@@ -59,6 +59,7 @@ export type Segmentation = {
 export type LabelmapRenderingConfig = {
   cfun: vtkColorTransferFunction;
   ofun: vtkPiecewiseFunction;
+  colorLUTIndex: number;
 };
 
 export type ContourRenderingConfig = {};
