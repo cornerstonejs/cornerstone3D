@@ -4027,8 +4027,6 @@ export class VideoViewport extends Viewport {
     // (undocumented)
     setVideo(imageId: string, frameNumber?: number): Promise<unknown>;
     // (undocumented)
-    setVideoURL(videoURL: string): Promise<unknown>;
-    // (undocumented)
     setViewReference(viewRef: ViewReference): void;
     // (undocumented)
     setVOI(voiRange: VOIRange): void;
