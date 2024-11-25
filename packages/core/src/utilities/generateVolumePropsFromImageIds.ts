@@ -10,7 +10,15 @@ import type {
 import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { canRenderFloatTextures } from '../init';
+import cache from '../cache/cache';
 
+// Map constructor names to PixelDataTypedArrayString
+const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
+  Uint8Array: 'Uint8Array',
+  Int16Array: 'Int16Array',
+  Uint16Array: 'Uint16Array',
+  Float32Array: 'Float32Array',
+};
 /**
  * Generates volume properties from a list of image IDs.
  *
@@ -84,11 +92,17 @@ function generateVolumePropsFromImageIds(
  * @returns The determined data type.
  */
 function _determineDataType(
-  imageIds,
+  imageIds: string[],
   volumeMetadata
 ): PixelDataTypedArrayString {
   const { BitsAllocated, PixelRepresentation } = volumeMetadata;
   const signed = PixelRepresentation === 1;
+
+  // First try to get data type from cache if images are loaded
+  const cachedDataType = _getDataTypeFromCache(imageIds);
+  if (cachedDataType) {
+    return cachedDataType;
+  }
 
   // Check scaling parameters for first, middle, and last images
   const [firstIndex, middleIndex, lastIndex] = [
@@ -146,6 +160,37 @@ function _determineDataType(
         `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`
       );
   }
+}
+
+/**
+ * Attempts to determine data type from cached images
+ */
+function _getDataTypeFromCache(
+  imageIds: string[]
+): PixelDataTypedArrayString | null {
+  // Check first, middle and last images
+  const indices = [0, Math.floor(imageIds.length / 2), imageIds.length - 1];
+  const images = indices.map((i) => cache.getImage(imageIds[i]));
+
+  // Return null if any images are missing
+  if (!images.every(Boolean)) {
+    return null;
+  }
+
+  // Get constructor name from first image's pixel data
+  const constructorName = images[0].getPixelData().constructor.name;
+
+  // Check if all images have same constructor and it's a valid type
+  if (
+    images.every(
+      (img) => img.getPixelData().constructor.name === constructorName
+    ) &&
+    constructorName in constructorToTypedArray
+  ) {
+    return constructorToTypedArray[constructorName];
+  }
+
+  return null;
 }
 
 export { generateVolumePropsFromImageIds };
