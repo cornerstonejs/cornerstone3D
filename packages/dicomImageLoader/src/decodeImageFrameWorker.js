@@ -16,7 +16,9 @@ import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
 import applyModalityLUT from './shared/scaling/scaleArray';
 import getMinMax from './shared/getMinMax';
-import getPixelDataTypeFromMinMax from './shared/getPixelDataTypeFromMinMax';
+import getPixelDataTypeFromMinMax, {
+  validatePixelDataType,
+} from './shared/getPixelDataTypeFromMinMax';
 import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
@@ -24,160 +26,18 @@ const imageUtils = {
   replicate,
 };
 
-/**
- * Decodes the provided image frame.
- * This is an async function return the result, or you can provide an optional
- * callbackFn that is called with the results.
- */
-async function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  decodeConfig,
-  options,
-  callbackFn
-) {
-  const start = new Date().getTime();
-
-  let decodePromise = null;
-
-  let opts;
-
-  switch (transferSyntax) {
-    case '1.2.840.10008.1.2':
-    case '1.2.840.10008.1.2.1':
-      // Implicit or Explicit VR Little Endian
-      decodePromise = decodeLittleEndian(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.2':
-      // Explicit VR Big Endian (retired)
-      decodePromise = decodeBigEndian(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.1.99':
-      // Deflate transfer syntax (deflated by dicomParser)
-      decodePromise = decodeLittleEndian(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.5':
-      // RLE Lossless
-      decodePromise = decodeRLE(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.4.50':
-      // JPEG Baseline lossy process 1 (8 bit)
-      opts = {
-        ...imageFrame,
-      };
-
-      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
-      break;
-    case '1.2.840.10008.1.2.4.51':
-      // JPEG Baseline lossy process 2 & 4 (12 bit)
-      // opts = {
-      //   ...imageFrame,
-      // };
-      // decodePromise = decodeJPEGBaseline12Bit(pixelData, opts);
-      //throw new Error('Currently unsupported: 1.2.840.10008.1.2.4.51');
-      decodePromise = decodeJPEGBaseline12Bit(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.4.57':
-      // JPEG Lossless, Nonhierarchical (Processes 14)
-      decodePromise = decodeJPEGLossless(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.4.70':
-      // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
-      decodePromise = decodeJPEGLossless(imageFrame, pixelData);
-      break;
-    case '1.2.840.10008.1.2.4.80':
-      // JPEG-LS Lossless Image Compression
-      opts = {
-        signed: imageFrame.pixelRepresentation === 1, // imageFrame.signed,
-        // shouldn't need...
-        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
-        ...imageFrame,
-      };
-
-      decodePromise = decodeJPEGLS(pixelData, opts);
-      break;
-    case '1.2.840.10008.1.2.4.81':
-      // JPEG-LS Lossy (Near-Lossless) Image Compression
-      opts = {
-        signed: imageFrame.pixelRepresentation === 1, // imageFrame.signed,
-        // shouldn't need...
-        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
-        ...imageFrame,
-      };
-
-      decodePromise = decodeJPEGLS(pixelData, opts);
-      break;
-    case '1.2.840.10008.1.2.4.90':
-      opts = {
-        ...imageFrame,
-      };
-
-      // JPEG 2000 Lossless
-      // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(pixelData, opts);
-      break;
-    case '1.2.840.10008.1.2.4.91':
-      // JPEG 2000 Lossy
-      opts = {
-        ...imageFrame,
-      };
-
-      // JPEG 2000 Lossy
-      // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(pixelData, opts);
-      break;
-    case '3.2.840.10008.1.2.4.96':
-    case '1.2.840.10008.1.2.4.201':
-    case '1.2.840.10008.1.2.4.202':
-    case '1.2.840.10008.1.2.4.203':
-      // HTJ2K
-      opts = {
-        ...imageFrame,
-      };
-
-      decodePromise = decodeHTJ2K(pixelData, opts);
-      break;
-    default:
-      throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
-  }
-
-  /* Don't know if these work...
-   // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
-   else if(transferSyntax === "1.2.840.10008.1.2.4.92")
-   {
-   return decodeJPEG2000(dataSet, frame);
-   }
-   // JPEG 2000 Part 2 Multicomponent Image Compression
-   else if(transferSyntax === "1.2.840.10008.1.2.4.93")
-   {
-   return decodeJPEG2000(dataSet, frame);
-   }
-   */
-
-  if (!decodePromise) {
-    throw new Error('decodePromise not defined');
-  }
-
-  const decodedFrame = await decodePromise;
-
-  const postProcessed = postProcessDecodedPixels(
-    decodedFrame,
-    options,
-    start,
-    decodeConfig
-  );
-
-  // Call the callbackFn to agree with older arguments
-  callbackFn?.(postProcessed);
-
-  return postProcessed;
-}
+const typedArrayConstructors = {
+  Uint8Array,
+  Uint16Array,
+  Int16Array,
+  Float32Array,
+};
 
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
+
   const shift =
     shouldShift && imageFrame.bitsStored !== undefined
       ? 32 - imageFrame.bitsStored
@@ -185,7 +45,6 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
 
   if (shouldShift && shift !== undefined) {
     for (let i = 0; i < imageFrame.pixelData.length; i++) {
-      // eslint-disable-next-line no-bitwise
       imageFrame.pixelData[i] = (imageFrame.pixelData[i] << shift) >> shift;
     }
   }
@@ -197,15 +56,6 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     imageFrame.pixelData
   );
 
-  const typedArrayConstructors = {
-    Uint8Array,
-    Uint16Array,
-    Int16Array,
-    Float32Array,
-  };
-
-  const type = options.targetBuffer?.type;
-
   const canRenderFloat =
     typeof options.allowFloatRendering !== 'undefined'
       ? options.allowFloatRendering
@@ -214,7 +64,7 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   // Sometimes the type is specified before the DICOM header data has been
   // read.  This is fine except for color data, where the wrong type gets
   // specified.  Don't use the target buffer in that case.
-  const invalidType =
+  let invalidType =
     isColorImage(imageFrame.photometricInterpretation) &&
     options.targetBuffer?.offset === undefined;
 
@@ -225,8 +75,22 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     Object.values(options.preScale.scalingParameters).some(
       (v) => typeof v === 'number' && !Number.isInteger(v)
     );
+
   const disableScale =
     !options.preScale.enabled || (!canRenderFloat && hasFloatRescale);
+
+  const type = options.targetBuffer?.type;
+
+  // if there is a type, we need to check whether the min and max AFTER scale
+  // are actually within the range of the type. If not, we need to convert the
+  // pixel data to the correct type.
+  if (type && options.preScale.enabled && !disableScale) {
+    const { rescaleSlope, rescaleIntercept } =
+      options.preScale.scalingParameters;
+    const minAfterScale = rescaleSlope * minBeforeScale + rescaleIntercept;
+    const maxAfterScale = rescaleSlope * maxBeforeScale + rescaleIntercept;
+    invalidType = !validatePixelDataType(minAfterScale, maxAfterScale, type);
+  }
 
   if (type && !invalidType) {
     pixelDataArray = _handleTargetBuffer(
@@ -433,6 +297,156 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
   Object.assign(imageFrame, dest);
   imageFrame.pixelDataLength = imageFrame.pixelData.length;
   return imageFrame;
+}
+
+/**
+ * Decodes the provided image frame.
+ * This is an async function return the result, or you can provide an optional
+ * callbackFn that is called with the results.
+ */
+async function decodeImageFrame(
+  imageFrame,
+  transferSyntax,
+  pixelData,
+  decodeConfig,
+  options,
+  callbackFn
+) {
+  const start = new Date().getTime();
+
+  let decodePromise = null;
+
+  let opts;
+
+  switch (transferSyntax) {
+    case '1.2.840.10008.1.2':
+    case '1.2.840.10008.1.2.1':
+      // Implicit or Explicit VR Little Endian
+      decodePromise = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.2':
+      // Explicit VR Big Endian (retired)
+      decodePromise = decodeBigEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.1.99':
+      // Deflate transfer syntax (deflated by dicomParser)
+      decodePromise = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.5':
+      // RLE Lossless
+      decodePromise = decodeRLE(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.50':
+      // JPEG Baseline lossy process 1 (8 bit)
+      opts = {
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.51':
+      // JPEG Baseline lossy process 2 & 4 (12 bit)
+      // opts = {
+      //   ...imageFrame,
+      // };
+      // decodePromise = decodeJPEGBaseline12Bit(pixelData, opts);
+      //throw new Error('Currently unsupported: 1.2.840.10008.1.2.4.51');
+      decodePromise = decodeJPEGBaseline12Bit(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.57':
+      // JPEG Lossless, Nonhierarchical (Processes 14)
+      decodePromise = decodeJPEGLossless(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.70':
+      // JPEG Lossless, Nonhierarchical (Processes 14 [Selection 1])
+      decodePromise = decodeJPEGLossless(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.4.80':
+      // JPEG-LS Lossless Image Compression
+      opts = {
+        signed: imageFrame.pixelRepresentation === 1, // imageFrame.signed,
+        // shouldn't need...
+        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGLS(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.81':
+      // JPEG-LS Lossy (Near-Lossless) Image Compression
+      opts = {
+        signed: imageFrame.pixelRepresentation === 1, // imageFrame.signed,
+        // shouldn't need...
+        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGLS(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.90':
+      opts = {
+        ...imageFrame,
+      };
+
+      // JPEG 2000 Lossless
+      // imageFrame, pixelData, decodeConfig, options
+      decodePromise = decodeJPEG2000(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.91':
+      // JPEG 2000 Lossy
+      opts = {
+        ...imageFrame,
+      };
+
+      // JPEG 2000 Lossy
+      // imageFrame, pixelData, decodeConfig, options
+      decodePromise = decodeJPEG2000(pixelData, opts);
+      break;
+    case '3.2.840.10008.1.2.4.96':
+    case '1.2.840.10008.1.2.4.201':
+    case '1.2.840.10008.1.2.4.202':
+    case '1.2.840.10008.1.2.4.203':
+      // HTJ2K
+      opts = {
+        ...imageFrame,
+      };
+
+      decodePromise = decodeHTJ2K(pixelData, opts);
+      break;
+    default:
+      throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
+  }
+
+  /* Don't know if these work...
+   // JPEG 2000 Part 2 Multicomponent Image Compression (Lossless Only)
+   else if(transferSyntax === "1.2.840.10008.1.2.4.92")
+   {
+   return decodeJPEG2000(dataSet, frame);
+   }
+   // JPEG 2000 Part 2 Multicomponent Image Compression
+   else if(transferSyntax === "1.2.840.10008.1.2.4.93")
+   {
+   return decodeJPEG2000(dataSet, frame);
+   }
+   */
+
+  if (!decodePromise) {
+    throw new Error('decodePromise not defined');
+  }
+
+  const decodedFrame = await decodePromise;
+
+  const postProcessed = postProcessDecodedPixels(
+    decodedFrame,
+    options,
+    start,
+    decodeConfig
+  );
+
+  // Call the callbackFn to agree with older arguments
+  callbackFn?.(postProcessed);
+
+  return postProcessed;
 }
 
 const obj = {
