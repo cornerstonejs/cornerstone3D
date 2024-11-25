@@ -49,7 +49,9 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
 
   // If no colorLUTOrIndex provided, get next available index and add default LUT
   if (colorLUTOrIndex === undefined) {
-    const index = addColorLUT(CORNERSTONE_COLOR_LUT);
+    const index = addColorLUT(
+      JSON.parse(JSON.stringify(CORNERSTONE_COLOR_LUT))
+    );
     return index;
   }
 
@@ -68,7 +70,7 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
   }
 
   // Fallback: use default LUT with next available index
-  const index = addColorLUT(CORNERSTONE_COLOR_LUT);
+  const index = addColorLUT(JSON.parse(JSON.stringify(CORNERSTONE_COLOR_LUT)));
   return index;
 }
 

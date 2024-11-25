@@ -4,36 +4,17 @@ import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_controller_1 from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_controller_1.png';
 
-const {
-  cache,
-  RenderingEngine,
-  Enums,
-  metaData,
-  volumeLoader,
-  setVolumesForViewports,
-  eventTarget,
-} = cornerstone3D;
+const { Enums, volumeLoader, setVolumesForViewports, eventTarget } =
+  cornerstone3D;
 
-const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
+const { createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
 
-const {
-  ToolGroupManager,
-  segmentation,
-  Enums: csToolsEnums,
-  RectangleScissorsTool,
-} = csTools3d;
+const { segmentation, Enums: csToolsEnums, RectangleScissorsTool } = csTools3d;
 
 const { Events } = csToolsEnums;
 
 const { addSegmentationRepresentations, addSegmentations } = segmentation;
-
-const {
-  fakeVolumeLoader,
-  fakeMetaDataProvider,
-  createNormalizedMouseEvent,
-  compareImages,
-} = testUtils;
 
 const renderingEngineId =
   'renderingEngineId-segmentationSegmentIndexController_test';
