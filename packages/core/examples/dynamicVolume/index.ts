@@ -87,7 +87,7 @@ async function run() {
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.79767489559005369769092179787138169587',
     SeriesInstanceUID: '2.25.87977716979310885152986847054790859463',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

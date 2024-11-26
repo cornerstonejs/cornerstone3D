@@ -91,7 +91,7 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   // TODO - deploy the testdata publically
   const wadoRsRoot =
-    getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+    getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const client = new api.DICOMwebClient({ url: wadoRsRoot });
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.2.276.1.74.1.2.132733202464108492637644434464108492',
