@@ -12,7 +12,7 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { LengthTool, ProbeTool } from '@cornerstonejs/tools';
+import { LengthTool, ProbeTool, RectangleROITool } from '@cornerstonejs/tools';
 import {
   createToolUI,
   STACK_VIEWPORT_ID,
@@ -24,6 +24,9 @@ import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToTo
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const tools = [LengthTool, ProbeTool, RectangleROITool];
+const toolNames = tools.map((tool) => tool.toolName);
 
 const { ViewportType } = Enums;
 const { MouseBindings } = cornerstoneTools.Enums;
@@ -63,9 +66,6 @@ setTitleAndDescription(
   'Dynamically Add Annotations',
   'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.'
 );
-
-const tools = [LengthTool, ProbeTool];
-const toolNames = tools.map((tool) => tool.toolName);
 
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
