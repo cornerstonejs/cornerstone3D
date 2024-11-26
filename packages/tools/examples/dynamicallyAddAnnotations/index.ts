@@ -12,7 +12,13 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { LengthTool, ProbeTool, RectangleROITool } from '@cornerstonejs/tools';
+import {
+  CircleROITool,
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
+  SplineROITool,
+} from '@cornerstonejs/tools';
 import {
   createToolUI,
   STACK_VIEWPORT_ID,
@@ -21,11 +27,17 @@ import {
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
 
 // This is for debugging purposes
-console.warn(
+console.debug(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const tools = [LengthTool, ProbeTool, RectangleROITool];
+const tools = [
+  SplineROITool,
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
+  CircleROITool,
+];
 const toolNames = tools.map((tool) => tool.toolName);
 
 const { ViewportType } = Enums;
@@ -56,7 +68,7 @@ const viewportsInfo = [
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 255, 0],
+        background: <Types.Point3>[0.2, 0.2, 0.2],
       },
     },
   },
@@ -64,7 +76,9 @@ const viewportsInfo = [
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Dynamically Add Annotations',
-  'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.'
+  'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.' +
+    'These example provide canvas and image coordinates for the tools. Which internally convert to world coordinates. If you have the world' +
+    'coordinates, you can use them directly to add an annotation using each annotation static method.'
 );
 
 const content = document.getElementById('content');
@@ -132,8 +146,8 @@ addDropDownToToolbar({
   },
 });
 
-const { forms } = createToolUI(LengthTool.toolName, {
-  toolName: LengthTool.toolName,
+const { forms } = createToolUI(toolNames[0], {
+  toolName: toolNames[0],
   renderingEngineId,
   content,
   demoToolbar,
@@ -242,7 +256,7 @@ function initializeToolGroup(toolGroupId) {
   });
 
   toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
-  toolGroup.setToolPassive(cornerstoneTools.LengthTool.toolName);
+  toolGroup.setToolPassive(toolNames[0]);
   toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
     bindings: [
       {
@@ -265,17 +279,17 @@ async function run() {
 
   const stackImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.55651399101931177647030363790032',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.285235930168924996436870336581',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.87075509829481869121008947712950',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
   const volumeImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

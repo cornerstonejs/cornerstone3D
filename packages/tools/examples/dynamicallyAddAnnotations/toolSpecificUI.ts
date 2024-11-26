@@ -1,6 +1,8 @@
 import { createLengthToolUI } from './lengthToolUI';
 import { createProbeToolUI } from './probeToolUI';
 import { createRectangleROIToolUI } from './rectangleROIToolUI';
+import { createCircleROIToolUI } from './circleROIToolUI';
+import { createSplineROIToolUI } from './splineROIToolUI';
 
 export const STACK_VIEWPORT_ID = 'viewport-stack';
 export const VOLUME_VIEWPORT_ID = 'viewport-volume';
@@ -43,6 +45,12 @@ function createToolUI(toolName: string, config: ToolUIConfig): ToolUI | null {
       break;
     case 'RectangleROI':
       forms = [createRectangleROIToolUI()];
+      break;
+    case 'CircleROI':
+      forms = [createCircleROIToolUI()];
+      break;
+    case 'SplineROI':
+      forms = [createSplineROIToolUI()];
       break;
     default:
       console.debug('No UI configuration for tool:', toolName);
