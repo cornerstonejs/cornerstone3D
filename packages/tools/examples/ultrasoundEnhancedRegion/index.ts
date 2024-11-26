@@ -155,14 +155,14 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
     SOPInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
   const imageIds2 = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
     SeriesInstanceUID:
       '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
     SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

@@ -229,7 +229,7 @@ async function run() {
       '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
     SeriesInstanceUID:
       '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   const MAX_NUM_TIMEPOINTS = 40;

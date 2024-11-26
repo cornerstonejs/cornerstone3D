@@ -126,7 +126,7 @@ async function run() {
   const stackLabelmapToolGroup = setupTools(stackSegContourToolGroupId, true);
   const volumeLabelmapToolGroup = setupTools(volumeSegContourToolGroupId, true);
 
-  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
   const volumeImageIds = await createImageIdsAndCacheMetaData({

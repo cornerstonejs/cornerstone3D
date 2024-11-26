@@ -18,7 +18,7 @@ import setPetTransferFunction from '../../../../utils/demo/helpers/setPetTransfe
 import { VolumeRotateTool } from '@cornerstonejs/tools';
 
 async function getImageStacks() {
-  const wadoRsRoot1 = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
+  const wadoRsRoot1 = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const studyInstanceUID =
     '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1';
   const seriesInstanceUIDs = [
@@ -30,7 +30,7 @@ async function getImageStacks() {
     wadoRsRoot: wadoRsRoot1,
   });
 
-  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
