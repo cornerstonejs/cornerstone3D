@@ -96,7 +96,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     const viewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(viewport);
 
-    let annotation = this.editData.annotation;
+    let annotation = this.editData?.annotation;
 
     const annotations = getAnnotations(this.getToolName(), viewport.element);
 
@@ -137,7 +137,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     });
 
     if (
-      this.editData.annotation &&
+      this.editData?.annotation &&
       this.editData.annotation.data.viewportId == viewport.id
     ) {
       this.editData.annotation.data.handles.points =
@@ -176,9 +176,10 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ) {
-    if (!this.editData.viewport) {
+    if (!this.editData || !this.editData.viewport) {
       return;
     }
+
     const location = this.configuration.scaleLocation;
     const { viewport } = enabledElement;
 
