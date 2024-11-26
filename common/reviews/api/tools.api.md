@@ -1227,6 +1227,10 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: CircleROIAnnotation, handle: ToolHandle) => void;
     // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+    }) => CircleROIAnnotation;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
@@ -3392,6 +3396,10 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation, handle: ToolHandle): void;
     // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+    }) => LengthAnnotation;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
@@ -4122,6 +4130,10 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ProbeAnnotation): void;
     // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+    }) => ProbeAnnotation;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
@@ -4420,6 +4432,10 @@ export class RectangleROITool extends AnnotationTool {
     };
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+    }) => RectangleROIAnnotation;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -5244,6 +5260,11 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     };
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+        splineType?: SplineTypesEnum;
+    }) => SplineROIAnnotation;
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
     // (undocumented)

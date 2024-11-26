@@ -441,8 +441,5 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 const defaultFrameOfReferenceSpecificAnnotationManager =
   new FrameOfReferenceSpecificAnnotationManager('DEFAULT');
 
-window.annotations = () =>
-  defaultFrameOfReferenceSpecificAnnotationManager.annotations;
-
 export { defaultFrameOfReferenceSpecificAnnotationManager };
 export default FrameOfReferenceSpecificAnnotationManager;
