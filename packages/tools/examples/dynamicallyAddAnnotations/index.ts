@@ -64,7 +64,8 @@ setTitleAndDescription(
   'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.'
 );
 
-const tools = [LengthTool.toolName, ProbeTool.toolName];
+const tools = [LengthTool, ProbeTool];
+const toolNames = tools.map((tool) => tool.toolName);
 
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
@@ -93,7 +94,7 @@ content.appendChild(mousePosDiv);
 const demoToolbar = document.getElementById('demo-toolbar');
 addDropDownToToolbar({
   options: {
-    values: tools,
+    values: toolNames,
   },
   labelText: 'Select Tool',
   container: demoToolbar,
@@ -112,12 +113,9 @@ addDropDownToToolbar({
 
     if (toolUI) {
       toolUI.forms.forEach((form) => demoToolbar.appendChild(form));
-      if (toolUI.mousePosDiv) {
-        content.appendChild(toolUI.mousePosDiv);
-      }
     }
 
-    // Update active tool in toolgroups
+    // Update active tool in toolGroups
     toolGroupIds.forEach((toolGroupId) => {
       const toolGroup =
         cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
@@ -239,7 +237,10 @@ function initializeToolGroup(toolGroupId) {
   toolGroup = cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
+  tools.forEach((tool) => {
+    toolGroup.addTool(tool.toolName);
+  });
+
   toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
   toolGroup.setToolPassive(cornerstoneTools.LengthTool.toolName);
   toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
@@ -257,7 +258,9 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(cornerstoneTools.LengthTool);
+  tools.forEach((tool) => {
+    cornerstoneTools.addTool(tool);
+  });
   cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
 
   const stackImageIds = await createImageIdsAndCacheMetaData({

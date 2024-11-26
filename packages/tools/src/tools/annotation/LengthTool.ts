@@ -161,7 +161,7 @@ class LengthTool extends AnnotationTool {
       isLocked: false,
       isVisible: true,
       metadata: {
-        toolName: this.toolName,
+        toolName: instance.getToolName(),
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
