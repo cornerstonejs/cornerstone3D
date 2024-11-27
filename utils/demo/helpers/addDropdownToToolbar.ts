@@ -1,7 +1,8 @@
 import { Enums as csToolsEnums, ToolGroupManager } from '@cornerstonejs/tools';
 const { MouseBindings } = csToolsEnums;
 
-import createElement, { configElement } from './createElement';
+import type { configElement } from './createElement';
+import createElement from './createElement';
 import addLabelToToolbar from './addLabelToToolbar';
 
 export type optionTypeDefaultValue =
