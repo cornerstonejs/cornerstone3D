@@ -1,13 +1,14 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-import { VolumeActor } from './../../types/IActor';
-import { VoiModifiedEventDetail } from './../../types/EventTypes';
+import type { VolumeActor } from './../../types/IActor';
+import type { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
-import BlendModes from '../../enums/BlendModes';
-import { triggerEvent } from '../../utilities';
+import type BlendModes from '../../enums/BlendModes';
+import triggerEvent from '../../utilities/triggerEvent';
 import { Events } from '../../enums';
 import setDefaultVolumeVOI from './setDefaultVolumeVOI';
+import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
 interface createVolumeActorInterface {
   volumeId: string;
@@ -33,8 +34,7 @@ async function createVolumeActor(
   props: createVolumeActorInterface,
   element: HTMLDivElement,
   viewportId: string,
-  suppressEvents = false,
-  useNativeDataType = false
+  suppressEvents = false
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
 
@@ -51,28 +51,25 @@ async function createVolumeActor(
   const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture);
 
   if (blendMode) {
-    volumeMapper.setBlendMode(blendMode);
+    volumeMapper.setBlendMode(blendMode as unknown as BlendMode);
   }
 
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
 
-  const numberOfComponents = imageData
-    .getPointData()
-    .getScalars()
-    .getNumberOfComponents();
+  // Todo: fix this for 3D RGB
+  const { numberOfComponents } = imageData.get('numberOfComponents') as {
+    numberOfComponents: number;
+  };
+
+  const volumeProperty = volumeActor.getProperty();
+  volumeProperty.set({ viewportId: viewportId });
 
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);
   }
 
-  // If the volume is composed of imageIds, we can apply a default VOI based
-  // on either the metadata or the min/max of the middle slice. Example of other
-  // types of volumes which might not be composed of imageIds would be e.g., nrrd, nifti
-  // format volumes
-  if (imageVolume.imageIds?.length) {
-    await setDefaultVolumeVOI(volumeActor, imageVolume, useNativeDataType);
-  }
+  await setDefaultVolumeVOI(volumeActor, imageVolume);
 
   if (callback) {
     callback({ volumeActor, volumeId });

@@ -6,7 +6,7 @@ import getNumberValues from './getNumberValues';
  * @param key - The key for which to retrieve the number value.
  * @returns The first number value for the given key, or null if no value is found.
  */
-function getFirstNumberValue(sequence: any, key: string): number | null {
+function getFirstNumberValue(sequence: unknown, key: string): number | null {
   const values = getNumberValues(sequence[key]);
   return values ? values[0] : null;
 }

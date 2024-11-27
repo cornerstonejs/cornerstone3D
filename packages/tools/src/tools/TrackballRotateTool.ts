@@ -1,6 +1,5 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { Events } from '../enums';
-
 import {
   eventTarget,
   getEnabledElement,
@@ -8,20 +7,19 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
 
-/**
- * Tool that rotates the camera in the plane defined by the viewPlaneNormal and the viewUp.
- */
 class TrackballRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
   _resizeObservers = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _viewportAddedListener: (evt: any) => void;
+  _hasResolutionChanged = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -33,7 +31,6 @@ class TrackballRotateTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
-
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
@@ -43,31 +40,41 @@ class TrackballRotateTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-
     const actorEntry = viewport.getDefaultActor();
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
-    const originalSampleDistance = mapper.getSampleDistance();
 
-    mapper.setSampleDistance(originalSampleDistance * 2);
+    const hasSampleDistance =
+      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
 
-    if (this.cleanUp !== null) {
-      // Clean up previous event listener
-      document.removeEventListener('mouseup', this.cleanUp);
+    if (!hasSampleDistance) {
+      return true;
     }
 
-    this.cleanUp = () => {
-      mapper.setSampleDistance(originalSampleDistance);
-      viewport.render();
-    };
+    const originalSampleDistance = mapper.getSampleDistance();
 
-    document.addEventListener('mouseup', this.cleanUp, { once: true });
+    if (!this._hasResolutionChanged) {
+      mapper.setSampleDistance(originalSampleDistance * 2);
+      this._hasResolutionChanged = true;
+
+      if (this.cleanUp !== null) {
+        // Clean up previous event listener
+        document.removeEventListener('mouseup', this.cleanUp);
+      }
+
+      this.cleanUp = () => {
+        mapper.setSampleDistance(originalSampleDistance);
+        viewport.render();
+        this._hasResolutionChanged = false;
+      };
+
+      document.addEventListener('mouseup', this.cleanUp, { once: true });
+    }
     return true;
   };
 
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-
     return viewports;
   };
 
@@ -79,14 +86,23 @@ class TrackballRotateTool extends BaseTool {
           const { viewport } = getEnabledElementByIds(
             viewportId,
             renderingEngineId
-          );
+          ) || { viewport: null };
+
+          if (!viewport) {
+            return;
+          }
+
           const { element } = viewport;
 
           const resizeObserver = new ResizeObserver(() => {
-            const { viewport } = getEnabledElementByIds(
+            const element = getEnabledElementByIds(
               viewportId,
               renderingEngineId
             );
+            if (!element) {
+              return;
+            }
+            const { viewport } = element;
             viewport.resetCamera();
             viewport.render();
           });
@@ -159,8 +175,6 @@ class TrackballRotateTool extends BaseTool {
     });
   };
 
-  // pseudocode inspired from
-  // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;
     const currentPointsCanvas = currentPoints.canvas;

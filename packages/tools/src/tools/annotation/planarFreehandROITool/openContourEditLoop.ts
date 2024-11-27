@@ -1,21 +1,21 @@
 import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { state } from '../../../store';
+import { state } from '../../../store/state';
 import { Events } from '../../../enums';
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../../../cursors/elementCursor';
 import type { EventTypes } from '../../../types';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { polyline } from '../../../utilities/math';
 import {
   shouldSmooth,
   getInterpolatedPoints,
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { updateContourPolyline } from '../../../utilities/contours';
+import updateContourPolyline from '../../../utilities/contours/updateContourPolyline';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
@@ -197,7 +197,7 @@ function mouseDragOpenContourEditCallback(
     this.openContourEditOverwriteEnd(evt);
   }
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -528,7 +528,7 @@ function finishEditOpenOnSecondCrossing(
     editIndex: 0,
   };
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 }
 
 /**
@@ -562,13 +562,21 @@ function completeOpenContourEdit(element: HTMLDivElement) {
         )
       : fusedCanvasPoints;
 
+    const decimateConfig = this.configuration?.decimate || {};
+
     updateContourPolyline(
       annotation,
       {
         points: updatedPoints,
         closed: false,
       },
-      viewport
+      viewport,
+      {
+        decimate: {
+          enabled: !!decimateConfig.enabled,
+          epsilon: decimateConfig.epsilon,
+        },
+      }
     );
 
     const worldPoints = annotation.data.contour.polyline;
@@ -591,7 +599,7 @@ function completeOpenContourEdit(element: HTMLDivElement) {
   this.editData = undefined;
   this.commonData = undefined;
 
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+  triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
   this.deactivateOpenContourEdit(element);
 }

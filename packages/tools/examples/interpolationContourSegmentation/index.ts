@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -27,7 +23,6 @@ const {
   SplineROITool,
   LivewireContourSegmentationTool,
   LivewireContourTool,
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -201,7 +196,7 @@ function acceptCurrent() {
           segmentIndex:
             segmentation.segmentIndex.getActiveSegmentIndex(segmentationId),
           segmentationId: segmentationIdStack,
-          sliceIndex: viewport.getCurrentImageIdIndex(),
+          sliceIndex: viewport.getSliceIndex(),
         }
       );
     }
@@ -268,8 +263,6 @@ function addBindings(toolGroupId) {
   addManipulationBindings(toolGroup);
 
   // Add the tools to the tool group
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   for (const [toolName, config] of interpolationTools.entries()) {
     if (config.baseTool) {
@@ -312,8 +305,6 @@ async function run() {
   cornerstoneTools.addTool(LivewireContourSegmentationTool);
   cornerstoneTools.addTool(LivewireContourTool);
 
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   addBindings(toolGroupIds[0]);
@@ -327,7 +318,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const volumeImageIds = await createImageIdsAndCacheMetaData({
@@ -335,7 +326,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -421,9 +412,9 @@ async function run() {
         },
       },
     ]);
-    // Create a segmentation representation associated to the toolGroupId
-    // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupIds[index++], [
+    // Create a segmentation representation associated to the viewportId
+    // Add the segmentation representation to the viewport
+    await segmentation.addSegmentationRepresentations(viewportIds[index++], [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,

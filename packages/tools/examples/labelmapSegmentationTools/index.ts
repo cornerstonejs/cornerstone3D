@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -17,6 +17,7 @@ import {
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { encodeVolumeIdInfo } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -24,7 +25,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -36,7 +36,6 @@ const {
   PanTool,
   ZoomTool,
   StackScrollTool,
-  StackScrollMouseWheelTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
@@ -46,10 +45,20 @@ const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+// const volumeId = encodeVolumeIdInfo({
+//   loader: 'fakeVolumeLoader',
+//   name: 'volumeURI',
+//   rows: 100,
+//   columns: 100,
+//   slices: 10,
+//   xSpacing: 1,
+//   ySpacing: 1,
+//   zSpacing: 1,
+// });
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -199,7 +208,7 @@ addSliderToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -236,9 +245,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
   cornerstoneTools.addTool(SphereScissorsTool);
@@ -251,10 +258,8 @@ async function run() {
   // Manipulation Tools
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
@@ -314,7 +319,6 @@ async function run() {
       activeStrategy: brushStrategies.ThresholdCircle,
     }
   );
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -347,9 +351,6 @@ async function run() {
       },
     ],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -357,14 +358,15 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
+
+  volume.load();
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
@@ -415,7 +417,7 @@ async function run() {
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
-  volume.load();
+  // volume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
@@ -424,16 +426,20 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // Add the segmentation representation to the viewports
+  const segmentationRepresentation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
+
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: [segmentationRepresentation],
+    [viewportId2]: [segmentationRepresentation],
+    [viewportId3]: [segmentationRepresentation],
+  });
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.render();
 }
 
 run();

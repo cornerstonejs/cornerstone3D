@@ -1,25 +1,29 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
-//
-import {
-  createVolumeActor,
-  createVolumeMapper,
-  getOrCreateCanvas,
-} from './RenderingEngine';
 import RenderingEngine from './RenderingEngine';
+import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
+import createVolumeMapper from './RenderingEngine/helpers/createVolumeMapper';
+import getOrCreateCanvas from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
+import WSIViewport from './RenderingEngine/WSIViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import {
   getRenderingEngine,
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import cache, { ImageVolume, Surface } from './cache';
+import {
+  ImageVolume,
+  Surface,
+  StreamingDynamicImageVolume,
+  StreamingImageVolume,
+} from './cache';
+import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
 
@@ -32,17 +36,16 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
-  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
-  setUseSharedArrayBuffer,
   resetUseCPURendering,
-  resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
   canRenderFloatTextures,
+  peerImport,
+  resetInitialization,
 } from './init';
 
 // Classes
@@ -54,7 +57,7 @@ import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
 import type * as Types from './types';
-import {
+import type {
   IRetrieveConfiguration,
   IImagesLoader,
   RetrieveOptions,
@@ -65,6 +68,8 @@ import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
+import { cornerstoneStreamingImageVolumeLoader } from './loaders/cornerstoneStreamingImageVolumeLoader';
+import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerstoneStreamingDynamicImageVolumeLoader';
 
 import {
   setVolumesForViewports,
@@ -86,6 +91,8 @@ export {
   // init
   init,
   isCornerstoneInitialized,
+  peerImport,
+  resetInitialization,
   // configs
   getConfiguration,
   setConfiguration,
@@ -104,6 +111,7 @@ export {
   Viewport,
   StackViewport,
   VideoViewport,
+  WSIViewport,
   RenderingEngine,
   ImageVolume,
   Surface,
@@ -143,11 +151,11 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
-  // SharedArrayBuffer
-  getShouldUseSharedArrayBuffer,
-  setUseSharedArrayBuffer,
-  resetUseSharedArrayBuffer,
   // Geometry Loader
   geometryLoader,
   ProgressiveRetrieveImages,
+  cornerstoneStreamingImageVolumeLoader,
+  cornerstoneStreamingDynamicImageVolumeLoader,
+  StreamingDynamicImageVolume,
+  StreamingImageVolume,
 };

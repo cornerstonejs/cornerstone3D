@@ -1,202 +1,175 @@
-import * as SegmentationState from '../../../stateManagement/segmentation/segmentationState';
-import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/segmentationState';
-import { ToolGroupSpecificRepresentation } from '../../../types/SegmentationStateTypes';
-import { getUniqueSegmentIndices } from '../../../utilities/segmentation';
+import {
+  getSegmentationRepresentation,
+  getSegmentationRepresentations,
+} from '../getSegmentationRepresentation';
+import { setSegmentationRepresentationVisibility as _setSegmentationRepresentationVisibility } from '../setSegmentationRepresentationVisibility';
+import { getSegmentationRepresentationVisibility as _getSegmentationRepresentationVisibility } from '../getSegmentationRepresentationVisibility';
+import type { SegmentationRepresentations } from '../../../enums';
+import { triggerSegmentationRenderBySegmentationId } from '../SegmentationRenderingEngine';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 
 /**
- * Set the visibility of a segmentation representation for a given tool group. It fires
- * a SEGMENTATION_REPRESENTATION_MODIFIED event. Visibility true will show all segments
- * and visibility false will hide all segments"
+ * Sets the visibility of a segmentation representation for a given viewport.
  *
- * @triggers SEGMENTATION_REPRESENTATION_MODIFIED
- * @param toolGroupId - The Id of the tool group that contains the segmentation.
- * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
- * @param visibility - boolean
+ * @param viewportId - The ID of the viewport that the segmentation representation belongs to.
+ * @param specifier - The specifier for the segmentation representation.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.type - The type of the segmentation representation.
+ * @param visibility - The visibility state to set for the segmentation representation.
+ * @returns void
+ *
+ * @remarks
+ * This function sets the visibility of a specific segmentation representation for a given viewport.
+ * if the type is not specified, the visibility of all representations of the segmentation will be set.
  */
-function setSegmentationVisibility(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
+function setSegmentationRepresentationVisibility(
+  viewportId: string,
+  specifier: {
+    segmentationId: string;
+    type?: SegmentationRepresentations;
+  },
   visibility: boolean
 ): void {
-  const toolGroupSegmentationRepresentations =
-    getSegmentationRepresentations(toolGroupId);
+  const representations = getSegmentationRepresentations(viewportId, specifier);
 
-  if (!toolGroupSegmentationRepresentations) {
+  if (!representations) {
     return;
   }
 
-  const representation = toolGroupSegmentationRepresentations.find(
-    (representation: ToolGroupSpecificRepresentation) =>
-      representation.segmentationRepresentationUID ===
-      segmentationRepresentationUID
-  );
-
-  if (!representation) {
-    return;
-  }
-
-  const { segmentsHidden, segmentationId } = representation;
-
-  const indices = getUniqueSegmentIndices(segmentationId);
-
-  // if visibility is set to be true, we need to remove all the segments
-  // from the segmentsHidden set, otherwise we need to add all the segments
-  // to the segmentsHidden set
-  if (visibility) {
-    segmentsHidden.clear();
-  } else {
-    indices.forEach((index) => {
-      segmentsHidden.add(index);
-    });
-  }
-
-  triggerSegmentationRepresentationModified(
-    toolGroupId,
-    representation.segmentationRepresentationUID
-  );
-}
-
-/**
- * Get the visibility of a segmentation data for a given tool group.
- *
- * @param toolGroupId - The Id of the tool group that the segmentation
- * data belongs to.
- * @param segmentationRepresentationUID - The id of the segmentation data to get
- * @returns A boolean value that indicates whether the segmentation data is visible or
- * not on the toolGroup
- */
-function getSegmentationVisibility(
-  toolGroupId: string,
-  segmentationRepresentationUID: string
-): boolean | undefined {
-  const toolGroupSegmentationRepresentations =
-    getSegmentationRepresentations(toolGroupId);
-
-  const representation = toolGroupSegmentationRepresentations.find(
-    (representation: ToolGroupSpecificRepresentation) =>
-      representation.segmentationRepresentationUID ===
-      segmentationRepresentationUID
-  );
-
-  if (!representation) {
-    return;
-  }
-
-  const { segmentsHidden, segmentationId } = representation;
-  const indices = getUniqueSegmentIndices(segmentationId);
-
-  // Create a set that contains all segments indices
-  const indicesSet = new Set(indices);
-
-  // Remove a indices that are hidden
-  segmentsHidden.forEach((segmentIndex) => indicesSet.delete(segmentIndex));
-
-  // Check if there is at least one segment visible
-  return !!indicesSet.size;
-}
-
-/**
- * Set the visibility of the given segment indices to the given visibility. This
- * is a helper to set the visibility of multiple segments at once and reduces
- * the number of events fired.
- *
- * @param toolGroupId -  The tool group id of the segmentation representation.
- * @param segmentationRepresentationUID -  The UID of the segmentation
- * representation.
- * @param segmentIndices -  The indices of the segments to be hidden/shown.
- * @param visibility -  The visibility to set the segments to.
- *
- */
-function setSegmentsVisibility(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
-  segmentIndices: number[],
-  visibility: boolean
-): void {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationUID
+  representations.forEach((representation) => {
+    _setSegmentationRepresentationVisibility(
+      viewportId,
+      {
+        segmentationId: representation.segmentationId,
+        type: representation.type,
+      },
+      visibility
     );
-
-  if (!segRepresentation) {
-    return;
-  }
-
-  segmentIndices.forEach((segmentIndex) => {
-    visibility
-      ? segRepresentation.segmentsHidden.delete(segmentIndex)
-      : segRepresentation.segmentsHidden.add(segmentIndex);
   });
-
-  triggerSegmentationRepresentationModified(
-    toolGroupId,
-    segmentationRepresentationUID
-  );
 }
 
 /**
- * @param toolGroupId - The Id of the tool group that contains the segmentation
- * @param segmentationRepresentationUID - The id of the segmentation representation that contains the segment
- * @param segmentIndex - Index of the segment that will be updated
- * @param visibility - True to show the segment or false to hide it
- * @returns True if the segment is visible or false otherwise
+ * Gets the visibility of a segmentation representation for a given viewport.
+ *
+ * @param viewportId - The ID of the viewport that the segmentation representation belongs to.
+ * @param segmentationId - The ID of the segmentation to get visibility for.
+ * @param type - The type of segmentation representation.
+ * @returns The visibility state of the segmentation representation, or undefined if not found.
+ *
  */
-function setSegmentVisibility(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
+function getSegmentationRepresentationVisibility(
+  viewportId: string,
+  specifier: {
+    segmentationId: string;
+    type: SegmentationRepresentations;
+  }
+): boolean | undefined {
+  return _getSegmentationRepresentationVisibility(viewportId, specifier);
+}
+
+/**
+ * Sets the visibility of a single segment for a specific viewport and segmentation representation.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param specifier - The specifier for the segmentation representation.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.type - The type of the segmentation representation.
+ * @param segmentIndex - The index of the segment to modify.
+ * @param visibility - The visibility status to set for the segment.
+ *
+ * @remarks
+ * If the type is not specified, the visibility of all representations of the segmentation will be set.
+ * If the type is specified, the visibility of the exact type representation will be set.
+ */
+function setSegmentIndexVisibility(
+  viewportId: string,
+  specifier: {
+    segmentationId: string;
+    type?: SegmentationRepresentations;
+  },
   segmentIndex: number,
   visibility: boolean
 ): void {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationUID
-    );
+  const representations = getSegmentationRepresentations(viewportId, specifier);
 
-  if (!segRepresentation) {
+  if (!representations) {
     return;
   }
 
-  visibility
-    ? segRepresentation.segmentsHidden.delete(segmentIndex)
-    : segRepresentation.segmentsHidden.add(segmentIndex);
+  representations.forEach((representation) => {
+    representation.segments[segmentIndex].visible = visibility;
+  });
 
+  // Note: we should make sure to trigger here, since this does not go
+  // through the SegmentationStateManager
+  triggerSegmentationRenderBySegmentationId(specifier.segmentationId);
   triggerSegmentationRepresentationModified(
-    toolGroupId,
-    segmentationRepresentationUID
+    viewportId,
+    specifier.segmentationId
   );
 }
 
 /**
- * @param toolGroupId - The Id of the tool group that contains the segmentation.
- * @param segmentationRepresentationUID - The id of the segmentation representation to modify its visibility.
- * @param segmentIndex - Index of the segment
- * @returns True if the segment is visible or false otherwise
+ * Retrieves the visibility of a specific segment for a given viewport and segmentation representation.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param type - The type of segmentation representation.
+ * @param segmentIndex - The index of the segment to check.
+ * @returns True if the segment is visible, false otherwise.
  */
-function getSegmentVisibility(
-  toolGroupId: string,
-  segmentationRepresentationUID: string,
+function getSegmentIndexVisibility(
+  viewportId: string,
+  specifier: {
+    segmentationId: string;
+    type: SegmentationRepresentations;
+  },
   segmentIndex: number
 ): boolean {
-  const segRepresentation =
-    SegmentationState.getSegmentationRepresentationByUID(
-      toolGroupId,
-      segmentationRepresentationUID
-    );
+  const hiddenSegments = getHiddenSegmentIndices(viewportId, specifier);
 
-  if (!segRepresentation) {
-    return false;
+  return !hiddenSegments.has(segmentIndex);
+}
+
+/**
+ * Retrieves the hidden segment indices for a given viewport and segmentation representation.
+ *
+ * @param viewportId - The ID of the viewport.
+ * @param specifier - The specifier for the segmentation representation.
+ * @param specifier.segmentationId - The ID of the segmentation.
+ * @param specifier.type - The type of the segmentation representation.
+ * @returns A Set of hidden segment indices.
+ */
+function getHiddenSegmentIndices(
+  viewportId: string,
+  specifier: {
+    segmentationId: string;
+    type: SegmentationRepresentations;
+  }
+): Set<number> {
+  const representation = getSegmentationRepresentation(viewportId, specifier);
+
+  if (!representation) {
+    return new Set();
   }
 
-  return !segRepresentation.segmentsHidden.has(segmentIndex);
+  const segmentsHidden = Object.entries(representation.segments).reduce(
+    (acc, [segmentIndex, segment]) => {
+      if (!segment.visible) {
+        acc.add(Number(segmentIndex));
+      }
+      return acc;
+    },
+    new Set<number>()
+  );
+
+  return segmentsHidden;
 }
 
 export {
-  setSegmentationVisibility,
-  getSegmentationVisibility,
-  setSegmentVisibility,
-  setSegmentsVisibility,
-  getSegmentVisibility,
+  setSegmentationRepresentationVisibility,
+  getSegmentationRepresentationVisibility,
+  setSegmentIndexVisibility,
+  getSegmentIndexVisibility,
+  getHiddenSegmentIndices,
 };

@@ -7,16 +7,17 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import VOILUTFunctionType from '../enums/VOILUTFunctionType';
-import ViewportStatus from '../enums/ViewportStatus';
+import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
-import IImageCalibration from './IImageCalibration';
-import { ColormapPublic } from './Colormap';
+import type IImageCalibration from './IImageCalibration';
+import type { ColormapPublic } from './Colormap';
+import type IVolumeViewport from './IVolumeViewport';
 
 /**
  * CAMERA_MODIFIED Event's data
  */
-type CameraModifiedEventDetail = {
+interface CameraModifiedEventDetail {
   /** Previous camera properties */
   previousCamera: ICamera;
   /** Current camera properties */
@@ -27,14 +28,29 @@ type CameraModifiedEventDetail = {
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
-  /** Rotation Optional */
-  rotation?: number;
-};
+}
+
+/**
+ * CAMERA_RESET Event's data
+ */
+
+interface CameraResetEventDetail {
+  /** Viewport HTML element in the DOM */
+  element: HTMLDivElement;
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** Unique ID for the renderingEngine */
+  renderingEngineId: string;
+  /** Camera properties */
+  camera: ICamera;
+}
+
+type CameraResetEvent = CustomEventType<CameraResetEventDetail>;
 
 /**
  * VOI_MODIFIED Event's data
  */
-type VoiModifiedEventDetail = {
+interface VoiModifiedEventDetail {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** new VOI range */
@@ -47,21 +63,23 @@ type VoiModifiedEventDetail = {
   invert?: boolean;
   /** Indicates if the 'invert' state has changed from the previous state */
   invertStateChanged?: boolean;
-};
+  /** color map */
+  colormap?: ColormapPublic;
+}
 
-type ColormapModifiedEventDetail = {
+interface ColormapModifiedEventDetail {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** The new colormap */
   colormap: ColormapPublic;
   /** Unique ID for the volume in the cache */
   volumeId?: string;
-};
+}
 
 /**
  * DISPLAY_AREA_MODIFIED Event's data
  */
-type DisplayAreaModifiedEventDetail = {
+interface DisplayAreaModifiedEventDetail {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** new display area */
@@ -70,36 +88,36 @@ type DisplayAreaModifiedEventDetail = {
   volumeId?: string;
   /** Whether displayArea was stored as initial view */
   storeAsInitialCamera?: boolean;
-};
+}
 
 /**
  * ELEMENT_DISABLED Event's data
  */
-type ElementDisabledEventDetail = {
+interface ElementDisabledEventDetail {
   /** Viewport HTML element in the DOM */
   element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
-};
+}
 
 /**
  * ELEMENT_Enabled Event's data
  */
-type ElementEnabledEventDetail = {
+interface ElementEnabledEventDetail {
   /** Viewport HTML element in the DOM */
   element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
-};
+}
 
 /**
  * IMAGE_RENDERED Event's data
  */
-type ImageRenderedEventDetail = {
+interface ImageRenderedEventDetail {
   /** Viewport HTML element in the DOM */
   element: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
@@ -110,40 +128,39 @@ type ImageRenderedEventDetail = {
   suppressEvents?: boolean;
   /** Include information on whether this is a real rendering or just background */
   viewportStatus: ViewportStatus;
-};
+}
 /**
  * IMAGE_VOLUME_MODIFIED Event's data
  */
-type ImageVolumeModifiedEventDetail = {
-  /** the modified volume */
-  imageVolume: IImageVolume;
+interface ImageVolumeModifiedEventDetail {
+  volumeId: string;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
   /** number of frames */
   numberOfFrames: number;
   /** framesProcessed */
   framesProcessed: number;
-};
+}
 
 /**
  * IMAGE_VOLUME_LOADING_COMPLETED Event's data
  */
-type ImageVolumeLoadingCompletedEventDetail = {
+interface ImageVolumeLoadingCompletedEventDetail {
   /** the loaded volume */
   volumeId: string;
   /** FrameOfReferenceUID where the volume belongs to */
   FrameOfReferenceUID: string;
-};
+}
 
 /**
  * IMAGE_LOADED Event's data
  */
-type ImageLoadedEventDetail = {
+interface ImageLoadedEventDetail {
   /** the loaded image */
   image: IImage;
-};
+}
 
-export type ImageLoadStageEventDetail = {
+export interface ImageLoadStageEventDetail {
   stageId: string;
   numberOfImages: number;
   numberOfFailures: number;
@@ -151,70 +168,70 @@ export type ImageLoadStageEventDetail = {
   stageDurationInMS: number;
   // The overall duration
   startDurationInMS: number;
-};
+}
 
 /**
  * IMAGE_LOADED_FAILED Event's data
  */
-type ImageLoadedFailedEventDetail = {
+interface ImageLoadedFailedEventDetail {
   /** the imageId for the image */
   imageId: string;
   error: unknown;
-};
+}
 
 /**
  * VOLUME_LOADED Event's data
  */
-type VolumeLoadedEventDetail = {
+interface VolumeLoadedEventDetail {
   /** the loaded volume */
   volume: IImageVolume;
-};
+}
 
 /**
  * VOLUME_LOADED_FAILED Event's data
  */
-type VolumeLoadedFailedEventDetail = {
+interface VolumeLoadedFailedEventDetail {
   /** the volumeId for the volume */
   volumeId: string;
   error: unknown;
-};
+}
 
 /**
  * IMAGE_CACHE_IMAGE_REMOVED Event's data
  */
-type ImageCacheImageRemovedEventDetail = {
+interface ImageCacheImageRemovedEventDetail {
   /** the removed image id */
   imageId: string;
-};
+}
 
 /**
  * IMAGE_CACHE_IMAGE_ADDED Event's data
  */
-type ImageCacheImageAddedEventDetail = {
+interface ImageCacheImageAddedEventDetail {
   /** the added image */
   image: ICachedImage;
-};
+}
 
 /**
  * VOLUME_CACHE_VOLUME_REMOVED Event's data
  */
-type VolumeCacheVolumeRemovedEventDetail = {
+interface VolumeCacheVolumeRemovedEventDetail {
   /** the removed volume id */
   volumeId: string;
-};
+}
 
 /**
  * VOLUME_CACHE_VOLUME_ADDED Event's data
  */
-type VolumeCacheVolumeAddedEventDetail = {
+interface VolumeCacheVolumeAddedEventDetail {
   /** the added volume */
   volume: ICachedVolume;
-};
+}
 
 /**
  * PRE_STACK_NEW_IMAGE Event's data
  */
-type PreStackNewImageEventDetail = {
+interface PreStackNewImageEventDetail {
   /** the image imageId */
   imageId: string;
   /** the index of imageId in the stack */
@@ -223,12 +240,25 @@ type PreStackNewImageEventDetail = {
   viewportId: string;
   /** unique id for the renderingEngine */
   renderingEngineId: string;
+}
+
+/**
+ * Volume Scroll Out of Bounds event detail
+ */
+type VolumeScrollOutOfBoundsEventDetail = {
+  volumeId: string;
+  viewport: IVolumeViewport;
+  desiredStepIndex: number;
+  currentStepIndex: number;
+  delta: number; // difference between the desired and current frame
+  numScrollSteps: number; // total scroll steps in the volume
+  currentImageId: string; // get ImageId (ImageIndex for in-plane acquisition)
 };
 
 /**
  * STACK_NEW_IMAGE Event's data
  */
-type StackNewImageEventDetail = {
+interface StackNewImageEventDetail {
   /** the new image set on the stack viewport */
   image: IImage;
   /** the image imageId */
@@ -239,12 +269,12 @@ type StackNewImageEventDetail = {
   viewportId: string;
   /** unique id for the renderingEngine */
   renderingEngineId: string;
-};
+}
 
 /**
  * VOLUME_NEW_IMAGE Event's data
  */
-type VolumeNewImageEventDetail = {
+interface VolumeNewImageEventDetail {
   /** image index */
   imageIndex: number;
   /** number of slices */
@@ -253,12 +283,12 @@ type VolumeNewImageEventDetail = {
   viewportId: string;
   /** unique id for the renderingEngine */
   renderingEngineId: string;
-};
+}
 
 /**
  * IMAGE_SPACING_CALIBRATED Event's data
  */
-type ImageSpacingCalibratedEventDetail = {
+interface ImageSpacingCalibratedEventDetail {
   element: HTMLDivElement;
   viewportId: string;
   renderingEngineId: string;
@@ -267,26 +297,36 @@ type ImageSpacingCalibratedEventDetail = {
   calibration: IImageCalibration;
   imageData: vtkImageData;
   worldToIndex: mat4;
-};
+}
 
 /**
- * The STACK_VIEWPORT_NEW_STACK event's data, when a new stack is set on a StackViewport
+ * The VIEWPORT_NEW_IMAGE_SET event's data, when a new stack is set on a StackViewport
  */
-type StackViewportNewStackEventDetail = {
+interface StackViewportNewStackEventDetail {
   imageIds: string[];
   viewportId: string;
   element: HTMLDivElement;
   currentImageIdIndex: number;
-};
+}
 
 /**
  * Stack Scroll event detail
  */
-type StackViewportScrollEventDetail = {
+interface StackViewportScrollEventDetail {
   /** the new imageId index in the stack that we just scroll to */
   newImageIdIndex: number;
   /** the new imageId in the stack that we just scroll to */
   imageId: string;
+  /** direction of the scroll */
+  direction: number;
+}
+
+/**
+ * Stack Scroll out of bounds event detail
+ */
+type StackScrollOutOfBoundsEventDetail = {
+  /** the current imageId index in the stack that we just scroll to */
+  imageIdIndex: number;
   /** direction of the scroll */
   direction: number;
 };
@@ -405,14 +445,22 @@ type ImageSpacingCalibratedEvent =
   CustomEventType<ImageSpacingCalibratedEventDetail>;
 
 /**
- * STACK_VIEWPORT_NEW_STACK
+ * VIEWPORT_NEW_IMAGE_SET
  */
 type StackViewportNewStackEvent =
   CustomEventType<StackViewportNewStackEventDetail>;
 
 type StackViewportScrollEvent = CustomEventType<StackViewportScrollEventDetail>;
 
+type StackScrollOutOfBoundsEvent =
+  CustomEventType<StackScrollOutOfBoundsEventDetail>;
+
+type VolumeScrollOutOfBoundsEvent =
+  CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+
 export type {
+  VolumeScrollOutOfBoundsEventDetail,
+  VolumeScrollOutOfBoundsEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,
@@ -459,4 +507,8 @@ export type {
   StackViewportNewStackEventDetail,
   StackViewportScrollEvent,
   StackViewportScrollEventDetail,
+  StackScrollOutOfBoundsEvent,
+  StackScrollOutOfBoundsEventDetail,
+  CameraResetEvent,
+  CameraResetEventDetail,
 };

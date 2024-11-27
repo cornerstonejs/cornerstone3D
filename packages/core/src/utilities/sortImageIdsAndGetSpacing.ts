@@ -1,12 +1,13 @@
 import { vec3 } from 'gl-matrix';
-import { metaData, getConfiguration } from '../';
-import { Point3 } from '../types';
+import * as metaData from '../metaData';
+import { getConfiguration } from '../init';
+import type { Point3 } from '../types';
 
-type SortedImageIdsItem = {
+interface SortedImageIdsItem {
   zSpacing: number;
   origin: Point3;
-  sortedImageIds: Array<string>;
-};
+  sortedImageIds: string[];
+}
 /**
  * Given an array of imageIds, sort them based on their imagePositionPatient, and
  * also returns the spacing between images and the origin of the reference image
@@ -17,7 +18,7 @@ type SortedImageIdsItem = {
  * @returns The sortedImageIds, zSpacing, and origin of the first image in the series.
  */
 export default function sortImageIdsAndGetSpacing(
-  imageIds: Array<string>,
+  imageIds: string[],
   scanAxisNormal?: vec3
 ): SortedImageIdsItem {
   const {
@@ -122,6 +123,7 @@ export default function sortImageIdsAndGetSpacing(
       'imagePlaneModule',
       prefetchedImageIds[1]
     );
+
     if (!metadataForMiddleImage) {
       throw new Error('Incomplete metadata required for volume construction.');
     }
@@ -142,10 +144,11 @@ export default function sortImageIdsAndGetSpacing(
       Math.floor(imageIds.length / 2);
   }
 
-  const { imagePositionPatient: origin, sliceThickness } = metaData.get(
-    'imagePlaneModule',
-    sortedImageIds[0]
-  );
+  const {
+    imagePositionPatient: origin,
+    sliceThickness,
+    spacingBetweenSlices,
+  } = metaData.get('imagePlaneModule', sortedImageIds[0]);
 
   const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
 
@@ -154,8 +157,13 @@ export default function sortImageIdsAndGetSpacing(
   // If possible, we use the sliceThickness, but we warn about this dicom file
   // weirdness. If sliceThickness is not available, we set to 1 just to render
   if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
-    if (sliceThickness) {
-      console.log('Could not calculate zSpacing. Using sliceThickness');
+    if (sliceThickness && spacingBetweenSlices) {
+      console.log('Could not calculate zSpacing. Using spacingBetweenSlices');
+      zSpacing = spacingBetweenSlices;
+    } else if (sliceThickness) {
+      console.log(
+        'Could not calculate zSpacing and no spacingBetweenSlices. Using sliceThickness'
+      );
       zSpacing = sliceThickness;
     } else {
       console.log(

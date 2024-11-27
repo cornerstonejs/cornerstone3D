@@ -1,6 +1,6 @@
 import { addProvider } from '../metaData';
 
-const retrieveConfigurationState = new Map<string, any>();
+const retrieveConfigurationState = new Map<string, unknown>();
 
 const IMAGE_RETRIEVE_CONFIGURATION = 'imageRetrieveConfiguration';
 
@@ -18,6 +18,19 @@ const imageRetrieveMetadataProvider = {
   /* Adding a new entry to the state object. */
   add: (key: string, payload): void => {
     retrieveConfigurationState.set(key, payload);
+  },
+
+  /** Get a copy of the current configuration state */
+  clone: (): Map<string, unknown> => {
+    return new Map(retrieveConfigurationState);
+  },
+
+  /** Restore the configuration state from a previously cloned state */
+  restore: (state: Map<string, unknown>): void => {
+    retrieveConfigurationState.clear();
+    state.forEach((value, key) => {
+      retrieveConfigurationState.set(key, value);
+    });
   },
 
   get: (type: string, ...queries: string[]) => {

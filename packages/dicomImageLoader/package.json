@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "1.70.10",
+  "version": "2.2.20",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -12,10 +12,10 @@
   "author": "@cornerstonejs (previously Chris Hafey)",
   "homepage": "https://github.com/cornerstonejs/cornerstone3D",
   "license": "MIT",
-  "main": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
-  "module": "dist/cornerstoneDICOMImageLoader.bundle.min.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "files": [
-    "dist/"
+    "./dist/"
   ],
   "repository": {
     "type": "git",
@@ -24,21 +24,66 @@
   "publishConfig": {
     "access": "public"
   },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/esm/constants/index.js",
+      "types": "./dist/esm/constants/index.d.ts"
+    },
+    "./constants/*": {
+      "import": "./dist/esm/constants/*.js",
+      "types": "./dist/esm/constants/*.d.ts"
+    },
+    "./imageLoader": {
+      "import": "./dist/esm/imageLoader/index.js",
+      "types": "./dist/esm/imageLoader/index.d.ts"
+    },
+    "./wadors": {
+      "import": "./dist/esm/imageLoader/wadors/index.js",
+      "types": "./dist/esm/imageLoader/wadors/index.d.ts"
+    },
+    "./wadors/*": {
+      "import": "./dist/esm/imageLoader/wadors/*.js",
+      "types": "./dist/esm/imageLoader/wadors/*.d.ts"
+    },
+    "./wadouri": {
+      "import": "./dist/esm/imageLoader/wadouri/index.js",
+      "types": "./dist/esm/imageLoader/wadouri/index.d.ts"
+    },
+    "./wadouri/*": {
+      "import": "./dist/esm/imageLoader/wadouri/*.js",
+      "types": "./dist/esm/imageLoader/wadouri/*.d.ts"
+    },
+    "./types": {
+      "types": "./dist/esm/types/index.d.ts"
+    },
+    "./types/*": {
+      "types": "./dist/esm/types/*.d.ts"
+    }
+  },
   "scripts": {
+    "build:loader": "yarn run build:all && yarn run copy-dts",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
-    "build:all": "yarn run build:umd:dynamic & yarn run build:umd:bundle",
+    "build:all": "yarn run build:esm",
     "copy-dts": "echo 'not implemented yet'",
-    "build": "yarn run build:all && yarn run copy-dts",
-    "api-check": "echo 'not implemented yet'",
-    "build:update-api": "echo 'not implemented yet'",
+    "clean": "shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "format-check": "npx eslint ./src --quiet",
+    "api-check": "api-extractor --debug run ",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
     "cm": "npx git-cz",
-    "clean": "npm run clean:dist && npm run clean:coverage",
     "clean:dist": "shx rm -rf dist",
     "clean:docs": "shx rm -rf documentation",
     "clean:coverage": "shx rm -rf coverage",
     "doc": "npm run doc:generate && opn documentation/index.html",
     "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
+    "dev": "tsc --project ./tsconfig.json --watch",
     "eslint": "eslint -c .eslintrc.js src",
     "eslint-quiet": "eslint -c .eslintrc.js --quiet src",
     "eslint-fix": "eslint -c .eslintrc.js --fix src",
@@ -52,29 +97,27 @@
     "test:firefox": "karma start config/karma/karma-firefox.js",
     "test:watch": "karma start config/karma/karma-watch.js",
     "watch": "npm run clean && shx mkdir dist && npm run webpack:watch",
-    "dev": "npm run webpack:dev",
     "webpack:dev": "webpack serve --progress --config .webpack/webpack-dev.js",
     "webpack:dynamic-import": "webpack --progress --config .webpack/webpack-dynamic-import",
     "webpack:bundle": "webpack --progress --config .webpack/webpack-bundle",
     "webpack:dynamic-import:watch": "webpack --progress --watch --config .webpack/webpack-dynamic-import",
     "webpack:dynamic-import:debug": "webpack --progress --watch --config .webpack/webpack-dynamic-import-debug",
     "webpack:watch": "webpack --progress --watch  --config .webpack",
-    "prepublishOnly": "yarn run build"
+    "prepublishOnly": "yarn run build:loader"
   },
   "dependencies": {
     "@cornerstonejs/codec-charls": "^1.2.3",
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.5",
-    "@cornerstonejs/core": "^1.70.10",
-    "dicom-parser": "^1.8.9",
+    "comlink": "^4.4.1",
+    "jpeg-lossless-decoder-js": "^2.1.0",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
+  "peerDependencies": {
+    "@cornerstonejs/core": "^2.2.20",
+    "dicom-parser": "^1.8.9"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,json,css}": [

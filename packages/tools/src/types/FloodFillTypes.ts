@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 type FloodFillResult = {
   flooded: Types.Point2[] | Types.Point3[];
@@ -16,4 +16,4 @@ type FloodFillOptions = {
   diagonals?: boolean; // Whether to flood fill across diagonals. Default false.
 };
 
-export { FloodFillResult, FloodFillGetter, FloodFillOptions };
+export type { FloodFillResult, FloodFillGetter, FloodFillOptions };

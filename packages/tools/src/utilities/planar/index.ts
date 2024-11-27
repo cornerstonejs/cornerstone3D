@@ -3,6 +3,7 @@ import getWorldWidthAndHeightFromCorners from './getWorldWidthAndHeightFromCorne
 import filterAnnotationsForDisplay from './filterAnnotationsForDisplay';
 import getPointInLineOfSightWithCriteria from './getPointInLineOfSightWithCriteria';
 import { isPlaneIntersectingAABB } from './isPlaneIntersectingAABB';
+import { filterAnnotationsWithinSamePlane } from './filterAnnotationsWithinPlane';
 
 export default {
   filterAnnotationsWithinSlice,
@@ -10,6 +11,7 @@ export default {
   filterAnnotationsForDisplay,
   getPointInLineOfSightWithCriteria,
   isPlaneIntersectingAABB,
+  filterAnnotationsWithinSamePlane,
 };
 
 export {
@@ -18,4 +20,5 @@ export {
   filterAnnotationsForDisplay,
   getPointInLineOfSightWithCriteria,
   isPlaneIntersectingAABB,
+  filterAnnotationsWithinSamePlane,
 };

@@ -1,11 +1,11 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   cache,
-  setUseCPURendering,
   ProgressiveRetrieveImages,
   utilities,
+  metaData,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -77,10 +77,7 @@ async function newImageFunction(evt) {
   } = image;
   const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
-    element.removeEventListener(
-      cornerstone.EVENTS.STACK_NEW_IMAGE,
-      newImageFunction
-    );
+    element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, newImageFunction);
   }
   const completeText = statusNames[status] || `other ${status}`;
   const totalTime = Date.now() - startTime;
@@ -100,10 +97,7 @@ async function showStack(
   }
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   startTime = Date.now();
-  element.addEventListener(
-    cornerstone.EVENTS.STACK_NEW_IMAGE,
-    newImageFunction
-  );
+  element.addEventListener(Enums.Events.STACK_NEW_IMAGE, newImageFunction);
   const start = Date.now();
   // Set the stack on the viewport
   await viewport.setStack(stack, 0, retrieveConfiguration);
@@ -111,10 +105,7 @@ async function showStack(
   // Render the image
   viewport.render();
   const end = Date.now();
-  const { transferSyntaxUID } = cornerstone.metaData.get(
-    'transferSyntax',
-    stack[0]
-  );
+  const { transferSyntaxUID } = metaData.get('transferSyntax', stack[0]);
   document.getElementById('loading').innerText = `Stack render took ${
     end - start
   } using ${transferSyntaxUID}`;
@@ -211,7 +202,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

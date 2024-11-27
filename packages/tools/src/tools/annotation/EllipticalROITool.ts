@@ -8,7 +8,6 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -27,7 +26,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -40,20 +39,20 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { pointInShapeCallback } from '../../utilities/';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 
@@ -109,11 +108,9 @@ const { transformWorldToIndex } = csUtils;
 class EllipticalROITool extends AnnotationTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -134,6 +131,8 @@ class EllipticalROITool extends AnnotationTool {
       configuration: {
         shadow: true,
         preventHandleOutsideImage: false,
+        // Whether to store point data in the annotation
+        storePointData: false,
         // Radius of the circle to draw  at the center point of the ellipse.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
@@ -193,6 +192,7 @@ class EllipticalROITool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
+        ...viewport.getViewReference({ points: [worldPos] }),
       },
       data: {
         label: '',
@@ -240,7 +240,7 @@ class EllipticalROITool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -337,7 +337,7 @@ class EllipticalROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -409,7 +409,7 @@ class EllipticalROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -450,7 +450,7 @@ class EllipticalROITool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -492,7 +492,7 @@ class EllipticalROITool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -537,7 +537,7 @@ class EllipticalROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
@@ -637,12 +637,7 @@ class EllipticalROITool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -761,15 +756,11 @@ class EllipticalROITool extends AnnotationTool {
         viewport.worldToCanvas(p)
       ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
 
-      const rotation = Math.abs(
-        viewport.getRotation() - (data.initialRotation || 0)
-      );
       const canvasCorners = <Array<Types.Point2>>(
         getCanvasEllipseCorners(canvasCoordinates) // bottom, top, left, right, keep as is
       );
 
       const { centerPointRadius } = this.configuration;
-
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -841,7 +832,7 @@ class EllipticalROITool extends AnnotationTool {
       }
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -985,7 +976,7 @@ class EllipticalROITool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -994,7 +985,7 @@ class EllipticalROITool extends AnnotationTool {
         continue;
       }
 
-      const { dimensions, imageData, metadata } = image;
+      const { dimensions, imageData, metadata, voxelManager } = image;
 
       const pos1Index = transformWorldToIndex(imageData, worldPos1);
 
@@ -1011,99 +1002,99 @@ class EllipticalROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(pos1Index, post2Index, dimensions)) {
-        this.isHandleOutsideImage = false;
+      this.isHandleOutsideImage = !this._isInsideVolume(
+        pos1Index,
+        post2Index,
+        dimensions
+      );
 
-        const iMin = Math.min(pos1Index[0], post2Index[0]);
-        const iMax = Math.max(pos1Index[0], post2Index[0]);
+      const iMin = Math.min(pos1Index[0], post2Index[0]);
+      const iMax = Math.max(pos1Index[0], post2Index[0]);
 
-        const jMin = Math.min(pos1Index[1], post2Index[1]);
-        const jMax = Math.max(pos1Index[1], post2Index[1]);
+      const jMin = Math.min(pos1Index[1], post2Index[1]);
+      const jMax = Math.max(pos1Index[1], post2Index[1]);
 
-        const kMin = Math.min(pos1Index[2], post2Index[2]);
-        const kMax = Math.max(pos1Index[2], post2Index[2]);
+      const kMin = Math.min(pos1Index[2], post2Index[2]);
+      const kMax = Math.max(pos1Index[2], post2Index[2]);
 
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
+      const boundsIJK = [
+        [iMin, iMax],
+        [jMin, jMax],
+        [kMin, kMax],
+      ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const center = [
-          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
-          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
-          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
-        ] as Types.Point3;
+      const center = [
+        (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+        (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+        (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+      ] as Types.Point3;
 
-        const ellipseObj = {
-          center,
-          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-        };
+      const ellipseObj = {
+        center,
+        xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
+        yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
+        zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+      };
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        );
-        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
+      const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
+        viewPlaneNormal,
+        viewUp,
+        worldPos1,
+        worldPos2
+      );
+      const isEmptyArea = worldWidth === 0 && worldHeight === 0;
 
-        const handles = [pos1Index, post2Index];
-        const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+      const handles = [pos1Index, post2Index];
+      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
+        image,
+        handles
+      );
 
-        const area =
-          Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
-          scale /
-          scale;
+      const area =
+        Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
+        scale /
+        scale;
 
-        const modalityUnitOptions = {
-          isPreScaled: isViewportPreScaled(viewport, targetId),
+      const pixelUnitsOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
 
-          isSuvScaled: this.isSuvScaled(
-            viewport,
-            targetId,
-            annotation.metadata.referencedImageId
-          ),
-        };
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
-        const modalityUnit = getModalityUnit(
-          metadata.Modality,
-          annotation.metadata.referencedImageId,
-          modalityUnitOptions
-        );
+      const modalityUnit = getPixelValueUnits(
+        metadata.Modality,
+        annotation.metadata.referencedImageId,
+        pixelUnitsOptions
+      );
 
-        const pointsInShape = pointInShapeCallback(
+      const pointsInShape = voxelManager.forEach(
+        this.configuration.statsCalculator.statsCallback,
+        {
+          boundsIJK,
           imageData,
-          (pointLPS) => pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-          this.configuration.statsCalculator.statsCallback,
-          boundsIJK
-        );
+          isInObject: (pointLPS) =>
+            pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+          returnPoints: this.configuration.storePointData,
+        }
+      );
 
-        const stats = this.configuration.statsCalculator.getStatistics();
-        cachedStats[targetId] = {
-          Modality: metadata.Modality,
-          area,
-          mean: stats.mean?.value,
-          max: stats.max?.value,
-          stdDev: stats.stdDev?.value,
-          statsArray: stats.array,
-          pointsInShape,
-          isEmptyArea,
-          areaUnit: areaUnits,
-          modalityUnit,
-        };
-      } else {
-        this.isHandleOutsideImage = true;
-
-        cachedStats[targetId] = {
-          Modality: metadata.Modality,
-        };
-      }
+      const stats = this.configuration.statsCalculator.getStatistics();
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        mean: stats.mean?.value,
+        max: stats.max?.value,
+        stdDev: stats.stdDev?.value,
+        statsArray: stats.array,
+        pointsInShape,
+        isEmptyArea,
+        areaUnit,
+        modalityUnit,
+      };
     }
 
     annotation.invalidated = false;
@@ -1176,20 +1167,20 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
   if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
   return textLines;

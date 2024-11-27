@@ -56,10 +56,6 @@ if (options.fromRoot === true) {
       { path: 'packages/core/examples', regexp: 'index.ts' },
       { path: 'packages/tools/examples', regexp: 'index.ts' },
       {
-        path: 'packages/streaming-image-volume-loader/examples',
-        regexp: 'index.ts',
-      },
-      {
         path: 'packages/dicomImageLoader/examples',
         regexp: 'index.ts',
       },
@@ -128,20 +124,16 @@ if (configuration.examples) {
   const currentWD = process.cwd();
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run webpack:dynamic-import`);
+  shell.exec(`yarn run build:esm`);
+  shell.cd('../..');
+  shell.exec('yarn');
 
   shell.cd(currentWD);
 
   const examplePaths = Object.values(allExamplePaths);
   const exampleNames = Object.keys(allExamplePaths);
-  const conf = buildConfig(
-    exampleNames,
-    examplePaths,
-    distDir,
-    validPath(rootPath)
-  );
-  shell.ShellString(conf).to(webpackConfigPath);
 
+  // Build the example index HTML and markdown
   const exampleIndexHTML = buildExampleIndex(
     exampleNames,
     examplePaths,
@@ -155,10 +147,16 @@ if (configuration.examples) {
     validPath(rootPath)
   );
   shell.ShellString(exampleIndexMarkdown).to(path.join(docsDir, 'examples.md'));
-  //shell.cd(rootPath);
 
   if (options.build == true) {
-    shell.exec(`webpack --progress --config ${webpackConfigPath}`);
+    const conf = buildConfig(exampleNames, examplePaths, distDir, validPath(rootPath));
+    shell.ShellString(conf).to(webpackConfigPath);
+
+    shell.exec(
+      `node --max_old_space_size=16384 ${
+        currentWD.endsWith('examples') ? '../../../' : ''
+      }node_modules/webpack/bin/webpack.js --progress --config ${webpackConfigPath}`
+    );
   } else {
     shell.exec(
       `webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`

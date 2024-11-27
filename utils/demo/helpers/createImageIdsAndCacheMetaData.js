@@ -30,6 +30,7 @@ export default async function createImageIdsAndCacheMetaData({
   SOPInstanceUID = null,
   wadoRsRoot,
   client = null,
+  convertMultiframe = true,
 }) {
   const SOP_INSTANCE_UID = '00080018';
   const SERIES_INSTANCE_UID = '0020000E';
@@ -62,11 +63,11 @@ export default async function createImageIdsAndCacheMetaData({
       prefix +
       wadoRsRoot +
       '/studies/' +
-      StudyInstanceUID +
+      StudyInstanceUID.trim() +
       '/series/' +
-      SeriesInstanceUID +
+      SeriesInstanceUID.trim() +
       '/instances/' +
-      SOPInstanceUIDToUse +
+      SOPInstanceUIDToUse.trim() +
       '/frames/1';
 
     cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
@@ -78,11 +79,17 @@ export default async function createImageIdsAndCacheMetaData({
 
   // if the image ids represent multiframe information, creates a new list with one image id per frame
   // if not multiframe data available, just returns the same list given
-  imageIds = convertMultiframeImageIds(imageIds);
+  if (convertMultiframe) {
+    imageIds = convertMultiframeImageIds(imageIds);
+  }
 
   imageIds.forEach((imageId) => {
     let instanceMetaData =
       cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
+
+    if (!instanceMetaData) {
+      return;
+    }
 
     // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
     instanceMetaData = removeInvalidTags(instanceMetaData);

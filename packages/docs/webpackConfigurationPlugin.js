@@ -36,9 +36,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 //         alias: {
 //           '@cornerstonejs/core': path.resolve('../core/src/index'),
 //           '@cornerstonejs/tools': path.resolve('../tools/src/index'),
-//           '@cornerstonejs/streaming-image-volume-loader': path.resolve(
-//             '../streaming-image-volume-loader/src/index'
-//           ),
 //           // We use this alias and the CopyPlugin to support using the dynamic-import version
 //           // of WADO Image Loader
 //           '@cornerstonejs/dicom-image-loader': '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',

@@ -20,6 +20,7 @@ const rootPath = path.resolve(path.join(__dirname, '../..'));
 program
   .option('-c, --config [file.js]', 'Configuration file')
   .option('--no-browser', 'Do not open the browser')
+  .option('--https', 'Enable https')
   .parse(process.argv);
 
 const options = program.opts();
@@ -33,7 +34,7 @@ function getSplittedPath(filePath) {
 }
 
 function validPath(str) {
-  return str.replace(/\\\\/g, '/');
+  return str?.replace(/\\\\/g, '/');
 }
 
 function calculateSubstringSimilarity(a, b) {
@@ -113,10 +114,6 @@ const configuration = {
   examples: [
     { path: 'packages/core/examples', regexp: 'index.ts' },
     { path: 'packages/tools/examples', regexp: 'index.ts' },
-    {
-      path: 'packages/streaming-image-volume-loader/examples',
-      regexp: 'index.ts',
-    },
     {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',
@@ -260,9 +257,15 @@ function run() {
 
   // run the build for dicom image loader
   const currentWD = process.cwd();
+
+  // for some reason the esm build of the dicom image loader
+  // requires the core to be built first and cannot link it
+  shell.cd('../../core');
+  shell.exec(`yarn run build:esm`);
+
   // run the build for dicom image loader
   shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run webpack:dynamic-import`);
+  shell.exec(`yarn run build:esm`);
   shell.cd(currentWD);
 
   if (buildExample) {
@@ -283,7 +286,9 @@ function run() {
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
-      `webpack serve --host 0.0.0.0 --progress --config ${webpackConfigPath}`
+      `webpack serve --host 0.0.0.0 ${
+        options.https ? '--https' : ''
+      } --progress --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');

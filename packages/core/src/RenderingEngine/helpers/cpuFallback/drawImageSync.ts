@@ -2,7 +2,7 @@ import now from './rendering/now';
 import { renderColorImage } from './rendering/renderColorImage';
 import { renderGrayscaleImage } from './rendering/renderGrayscaleImage';
 import { renderPseudoColorImage } from './rendering/renderPseudoColorImage';
-import { CPUFallbackEnabledElement } from '../../../types';
+import type { CPUFallbackEnabledElement } from '../../../types';
 
 /**
  * Draw an image to a given enabled element synchronously

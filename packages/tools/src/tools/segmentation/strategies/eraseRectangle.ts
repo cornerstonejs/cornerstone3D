@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 
-import { LabelmapToolOperationData } from '../../../types';
+import type { LabelmapToolOperationData } from '../../../types';
 import { fillInsideRectangle } from './fillRectangle';
 
 type OperationData = LabelmapToolOperationData & {

@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { ContourAnnotation } from './ContourAnnotation';
+import type { ContourAnnotation } from './ContourAnnotation';
 // Import the type so it isn't recursive imports
 
 export type ContourSegmentationAnnotationData = {
@@ -42,7 +42,7 @@ export type ContourSegmentationAnnotationData = {
      * update the handle position with a snap to nearest live point or can
      * be used as an indicator that interpolation has taken place.
      */
-    interpolationSources?: Types.PointsManager<Types.Point3>[];
+    interpolationSources?: Types.IPointsManager<Types.Point3>[];
   };
 
   /**

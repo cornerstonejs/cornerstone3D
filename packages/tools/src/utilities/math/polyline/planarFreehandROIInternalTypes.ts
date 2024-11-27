@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 
 // Note: These types are internal to the drawing/editing processes of the tool.
 
@@ -31,7 +31,7 @@ type PlanarFreehandROICommonData = {
   movingTextBox?: boolean;
 };
 
-export {
+export type {
   PlanarFreehandROIDrawData,
   PlanarFreehandROIEditData,
   PlanarFreehandROICommonData,

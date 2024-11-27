@@ -48,42 +48,19 @@ module.exports = {
     },
   },
   module: {
-    noParse: [/(codecs)/],
     rules: [
       {
         test: /\.wasm/,
         type: 'asset/resource',
       },
       {
-        test: /\.worker\.(mjs|js|ts)$/,
-        use: [
-          {
-            loader: 'worker-loader',
-            options: {
-              filename: '[name].[contenthash].worker.js',
-            },
-          },
-          // {
-          //   loader: 'babel-loader',
-          // },
-        ],
-      },
-      {
         test: /\.(mjs|js|ts)$/,
-        exclude: [/(node_modules)/, /(codecs)/],
+        exclude: [/(node_modules)/],
         use: {
           loader: 'babel-loader',
           options: {
             cacheDirectory: false,
           },
-        },
-      },
-      {
-        test: path.join(codecs, 'jpeg.js'),
-        loader: 'exports-loader',
-        options: {
-          type: 'commonjs',
-          exports: 'JpegImage',
         },
       },
     ],

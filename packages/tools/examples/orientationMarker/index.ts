@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -5,7 +6,6 @@ import {
   setVolumesForViewports,
   CONSTANTS,
   utilities,
-  Types,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -15,9 +15,10 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
 import setPetTransferFunction from '../../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
+import { VolumeRotateTool } from '@cornerstonejs/tools';
 
 async function getImageStacks() {
-  const wadoRsRoot1 = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';
+  const wadoRsRoot1 = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const studyInstanceUID =
     '1.3.6.1.4.1.25403.345050719074.3824.20170125095258.1';
   const seriesInstanceUIDs = [
@@ -29,7 +30,7 @@ async function getImageStacks() {
     wadoRsRoot: wadoRsRoot1,
   });
 
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -53,7 +54,7 @@ const {
   OrientationMarkerTool,
   ZoomTool,
   PanTool,
-  VolumeRotateMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 
@@ -92,8 +93,8 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'OverlayGrid',
-  'Here we demonstrate overlay grid tool working. The reference lines for all the images in axial series is displayed in the sagittal and coronal series.'
+  'Orientation Marker',
+  'Here we demonstrate Orientation marker tool working .'
 );
 
 const size = '500px';
@@ -146,8 +147,9 @@ async function run() {
   cornerstoneTools.addTool(OrientationMarkerTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(VolumeRotateTool);
 
   ctToolGroup.addTool(OrientationMarkerTool.toolName);
   ctToolGroup.addTool(ZoomTool.toolName);
@@ -171,8 +173,15 @@ async function run() {
   ptToolGroup.addTool(OrientationMarkerTool.toolName);
   ptToolGroup.addTool(ZoomTool.toolName);
   ptToolGroup.addTool(PanTool.toolName);
-  ptToolGroup.addTool(VolumeRotateMouseWheelTool.toolName);
-  ptToolGroup.setToolActive(VolumeRotateMouseWheelTool.toolName);
+  ptToolGroup.addTool(StackScrollTool.toolName);
+  ptToolGroup.addTool(VolumeRotateTool.toolName);
+  ptToolGroup.setToolActive(VolumeRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

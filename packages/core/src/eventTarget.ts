@@ -87,10 +87,7 @@ class CornerstoneEventTarget implements EventTarget {
    * @param callback - The callback function to be removed.
    */
   public removeEventListenerDebounced(type, callback) {
-    if (
-      this.debouncedListeners[type] &&
-      this.debouncedListeners[type][callback]
-    ) {
+    if (this.debouncedListeners[type]?.[callback]) {
       const debounced = this.debouncedListeners[type][callback];
       this.removeEventListener(type, debounced.handle);
       clearTimeout(debounced.timeoutId);
@@ -118,7 +115,7 @@ class CornerstoneEventTarget implements EventTarget {
   dispatchEvent(event) {
     if (!this.listeners[event.type]) {
       //console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
-      return;
+      return !event.defaultPrevented;
     }
 
     const stack = this.listeners[event.type].slice();

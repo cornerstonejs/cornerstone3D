@@ -1,10 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
-  Types,
   geometryLoader,
   eventTarget,
 } from '@cornerstonejs/core';
@@ -19,6 +19,7 @@ import {
   addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { createAndCacheGeometriesFromSurfaces } from '../../../../utils/demo/helpers/createAndCacheGeometriesFromSurfaces';
 
 // This is for debugging purposes
 console.warn(
@@ -26,7 +27,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -89,15 +89,10 @@ addButtonToToolbar({
   title: 'Convert surface to contour',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addSegmentationRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -130,7 +125,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId);
@@ -139,21 +133,13 @@ async function run() {
   addManipulationBindings(toolGroup1, { is3DViewport: true });
   addManipulationBindings(toolGroup2);
 
-  // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
-
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -199,23 +185,7 @@ async function run() {
     [viewportId2]
   );
 
-  const surfaces = await downloadSurfacesData();
-
-  const geometriesInfo = surfaces.reduce(
-    (acc: Map<number, string>, surface, index) => {
-      const geometryId = surface.closedSurface.id;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: Enums.GeometryType.SURFACE,
-        geometryData: surface.closedSurface as Types.PublicSurfaceData,
-      });
-
-      const segmentIndex = index + 1;
-      acc.set(segmentIndex, geometryId);
-
-      return acc;
-    },
-    new Map()
-  );
+  const geometryIds = await createAndCacheGeometriesFromSurfaces();
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -227,14 +197,14 @@ async function run() {
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
         data: {
-          geometryIds: geometriesInfo,
+          geometryIds,
         },
       },
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Surface,

@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -14,6 +15,7 @@ console.warn(
 const {
   WindowLevelTool,
   LengthTool,
+  HeightTool,
   RectangleROITool,
   BidirectionalTool,
   ZoomTool,
@@ -73,6 +75,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(StackScrollTool);
@@ -86,6 +89,7 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
@@ -166,6 +170,18 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(HeightTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Shift + Left Click
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+      {
+        numTouchPoints: 1,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+    ],
+  });
   toolGroup.setToolActive(RectangleROITool.toolName, {
     bindings: [
       {
@@ -189,7 +205,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

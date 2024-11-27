@@ -1,12 +1,12 @@
-import Point4 from './Point4';
+import type Point4 from './Point4';
 
-type CPUFallbackColormapData = {
+interface CPUFallbackColormapData {
   name: string;
   numOfColors?: number;
   colors?: Point4[];
   segmentedData?: unknown;
   numColors?: number;
   gamma?: number;
-};
+}
 
-export default CPUFallbackColormapData;
+export type { CPUFallbackColormapData as default };

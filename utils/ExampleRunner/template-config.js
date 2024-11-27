@@ -3,11 +3,8 @@ const path = require('path');
 const csRenderBasePath = path.resolve('packages/core/src/index');
 const csToolsBasePath = path.resolve('packages/tools/src/index');
 const csAdapters = path.resolve('packages/adapters/src/index');
-const csStreamingBasePath = path.resolve(
-  'packages/streaming-image-volume-loader/src/index'
-);
 const csDICOMImageLoaderDistPath = path.resolve(
-  'packages/dicomImageLoader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js'
+  'packages/dicomImageLoader/src/index'
 );
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
@@ -42,8 +39,9 @@ module.exports = {
       patterns: [
         {
           from:
-            '../../../node_modules/@cornerstonejs/dicom-image-loader/dist/dynamic-import',
+          '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
           to: '${destPath.replace(/\\/g, '/')}',
+          noErrorOnMissing: true,
         },
       ],
     }),
@@ -60,6 +58,12 @@ module.exports = {
   experiments: {
     asyncWebAssembly: true
   },
+  externals: {
+    "dicom-microscopy-viewer": {
+      root: "window",
+      commonjs: "dicomMicroscopyViewer",
+    },
+  },
   resolve: {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
@@ -69,16 +73,10 @@ module.exports = {
         '/'
       )}',
       '@cornerstonejs/adapters': '${csAdapters.replace(/\\/g, '/')}',
-      '@cornerstonejs/streaming-image-volume-loader': '${csStreamingBasePath.replace(
-        /\\/g,
-        '//'
-      )}',
-      // We use this alias and the CopyPlugin to support using the dynamic-import version
-      // of WADO Image Loader
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'
-      )}'
+      )}',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -93,6 +91,12 @@ module.exports = {
     open: false,
     port: ${process.env.CS3D_PORT || 3000},
     historyApiFallback: true,
+    allowedHosts: [
+      '127.0.0.1',
+      'localhost',
+      // Change the next line to add your localhostname to run via localhostname
+      // 'braveheart2',
+    ],
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin"

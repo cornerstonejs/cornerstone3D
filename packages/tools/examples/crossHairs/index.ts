@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -15,6 +15,7 @@ import {
   addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -94,6 +95,27 @@ instructions.innerText = `
   `;
 
 content.append(instructions);
+
+addButtonToToolbar({
+  title: 'Reset Camera',
+  onClick: () => {
+    const viewport1 = getRenderingEngine(renderingEngineId).getViewport(
+      viewportId1
+    ) as Types.IVolumeViewport;
+    const resetPan = true;
+    const resetZoom = true;
+    const resetToCenter = true;
+    const resetRotation = true;
+    viewport1.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetRotation,
+    });
+
+    viewport1.render();
+  },
+});
 
 // ============================= //
 
@@ -240,7 +262,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory

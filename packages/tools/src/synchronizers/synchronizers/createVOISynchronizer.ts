@@ -1,11 +1,11 @@
 import { createSynchronizer } from '../../store/SynchronizerManager';
 import { Enums } from '@cornerstonejs/core';
 import voiSyncCallback from '../callbacks/voiSyncCallback';
-import Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
 type VOISynchronizerOptions = {
   syncInvertState: boolean;
-  syncColormap :boolean;
+  syncColormap: boolean;
 };
 
 /**
@@ -24,14 +24,21 @@ export default function createVOISynchronizer(
   options: VOISynchronizerOptions
 ): Synchronizer {
   //  = { syncInvertState: true } if options is not provided or undefined or {}
-  options = Object.assign({ syncInvertState: true, syncColormap:true }, options);
+  options = Object.assign(
+    { syncInvertState: true, syncColormap: true },
+    options
+  );
 
   const VOISynchronizer = createSynchronizer(
     synchronizerName,
     Enums.Events.VOI_MODIFIED,
     voiSyncCallback,
     {
-      auxiliaryEventNames: [Enums.Events.COLORMAP_MODIFIED],
+      auxiliaryEvents: [
+        {
+          name: Enums.Events.COLORMAP_MODIFIED,
+        },
+      ],
       ...options,
     }
   );

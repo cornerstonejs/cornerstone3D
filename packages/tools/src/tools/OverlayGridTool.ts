@@ -17,13 +17,13 @@ import { getToolGroup } from '../store/ToolGroupManager';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
-import {
+import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
   Annotation,
 } from '../types';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 
 const { EPSILON } = CONSTANTS;
@@ -41,9 +41,7 @@ export interface OverlayGridAnnotation extends Annotation {
 class OverlayGridTool extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -123,7 +121,6 @@ class OverlayGridTool extends AnnotationDisplayTool {
     }
 
     triggerAnnotationRenderForViewportIds(
-      getRenderingEngine(viewportsInfo[0].renderingEngineId),
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
   };
@@ -237,6 +234,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
       const { pointSet1, pointSet2 } = pointSets[i];
 
       const targetData =
+        // @ts-expect-error
         viewportData.get(targetViewport.id) ||
         this.initializeViewportData(viewportData, targetViewport.id);
 

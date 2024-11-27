@@ -1,16 +1,16 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
-  StackScrollMouseWheelTool,
   ToolGroupManager,
   addTool,
   Enums as csToolsEnums,
   ZoomTool,
+  StackScrollTool,
 } from '@cornerstonejs/tools';
 import {
   initDemo,
@@ -74,7 +74,7 @@ addDropdownToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-  addTool(StackScrollMouseWheelTool);
+  addTool(StackScrollTool);
   addTool(ZoomTool);
 
   // Using a oblique acquired image to demonstrate the orientation of the volume
@@ -84,15 +84,21 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // create toolGroup
   const toolGroup = ToolGroupManager.createToolGroup('myToolGroup');
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {

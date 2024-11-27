@@ -1,3 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
+
 type Statistics = {
   name: string;
   label?: string;
@@ -8,12 +10,13 @@ type Statistics = {
 type NamedStatistics = {
   mean: Statistics & { name: 'mean' };
   max: Statistics & { name: 'max' };
+  min: Statistics & { name: 'min' };
   stdDev: Statistics & { name: 'stdDev' };
-  stdDevWithSumSquare: Statistics & { name: 'stdDevWithSumSquare' };
   count: Statistics & { name: 'count' };
   area?: Statistics & { name: 'area' };
   volume?: Statistics & { name: 'volume' };
-  circumferance?: Statistics & { name: 'circumferance' };
+  circumference?: Statistics & { name: 'circumference' };
+  pointsInShape?: Types.IPointsManager<Types.Point3>;
   array: Statistics[];
 };
 

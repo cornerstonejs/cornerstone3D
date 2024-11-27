@@ -1,10 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
-import { ISpline } from './';
-import { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
-import { ContourAnnotation } from './ContourAnnotation';
+import type { Annotation } from './AnnotationTypes';
+import type { ISpline } from './';
+import type { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
+import type { ContourAnnotation } from './ContourAnnotation';
 
-interface ROICachedStats {
+export interface ROICachedStats {
   [targetId: string]: {
     Modality: string;
     area: number;
@@ -234,22 +234,33 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
     toolName: string;
-    enabledElement: any; // Todo: how to remove this from the annotation??
+    enabledElement: Types.IEnabledElement; // Todo: how to remove this from the annotation??
     volumeId: string;
     spacingInNormal: number;
   };
   data: {
     label: string;
-    startSlice: number;
-    endSlice: number;
+    startCoordinate: number;
+    endCoordinate: number;
     cachedStats: {
       pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
       projectionPointsImageIds: string[];
+      statistics?: ROICachedStats;
     };
     handles: {
       points: Types.Point3[];
       activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
     };
   };
 }
@@ -264,21 +275,32 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
     toolName: string;
-    enabledElement: any; // Todo: how to remove this from the annotation??
+    enabledElement: Types.IEnabledElement; // Todo: how to remove this from the annotation??
     volumeId: string;
     spacingInNormal: number;
   };
   data: {
     label: string;
-    startSlice: number;
-    endSlice: number;
+    startCoordinate: number;
+    endCoordinate: number;
     cachedStats?: {
       pointsInVolume: Types.Point3[];
       projectionPoints: Types.Point3[][];
+      statistics?: ROICachedStats;
     };
     handles: {
       points: [Types.Point3, Types.Point3]; // [center, end]
       activeHandleIndex: number | null;
+      textBox?: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
     };
   };
 }
@@ -475,7 +497,7 @@ export interface VideoRedactionAnnotation extends Annotation {
       activeHandleIndex: number | null;
     };
     cachedStats: {
-      [key: string]: any; // Can be more specific if the structure is known
+      [key: string]: unknown; // Can be more specific if the structure is known
     };
     active: boolean;
   };

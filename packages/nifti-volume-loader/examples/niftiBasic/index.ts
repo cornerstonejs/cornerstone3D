@@ -1,15 +1,9 @@
+import { RenderingEngine, Enums, imageLoader } from '@cornerstonejs/core';
 import {
-  RenderingEngine,
-  Enums,
-  init as csInit,
-  Types,
-  volumeLoader,
-  setVolumesForViewports,
-} from '@cornerstonejs/core';
-import { init as csTools3dInit } from '@cornerstonejs/tools';
-import { cornerstoneNiftiImageVolumeLoader } from '@cornerstonejs/nifti-volume-loader';
-
-import { setCtTransferFunctionForVolumeActor } from '../../../../utils/demo/helpers';
+  cornerstoneNiftiImageLoader,
+  createNiftiImageIdsAndCacheMetadata,
+} from '@cornerstonejs/nifti-volume-loader';
+import { initDemo } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
 console.warn(
@@ -41,20 +35,16 @@ viewportGrid.appendChild(element3);
 content.appendChild(viewportGrid);
 
 const viewportId1 = 'CT_NIFTI_AXIAL';
-const viewportId2 = 'CT_NIFTI_SAGITTAL';
-const viewportId3 = 'CT_NIFTI_CORONAL';
+
+const niftiURL =
+  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
 
 async function setup() {
-  await csInit();
-  await csTools3dInit();
+  await initDemo();
 
-  volumeLoader.registerVolumeLoader('nifti', cornerstoneNiftiImageVolumeLoader);
+  imageLoader.registerImageLoader('nifti', cornerstoneNiftiImageLoader);
 
-  const niftiURL =
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/MRHead.nii.gz';
-  const volumeId = 'nifti:' + niftiURL;
-
-  const volume = await volumeLoader.createAndCacheVolume(volumeId);
+  const imageIds = await createNiftiImageIdsAndCacheMetadata({ url: niftiURL });
 
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -62,37 +52,17 @@ async function setup() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: Enums.ViewportType.ORTHOGRAPHIC,
+      type: Enums.ViewportType.STACK,
       element: element1,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
-      },
-    },
-    {
-      viewportId: viewportId2,
-      type: Enums.ViewportType.ORTHOGRAPHIC,
-      element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-      },
-    },
-    {
-      viewportId: viewportId3,
-      type: Enums.ViewportType.ORTHOGRAPHIC,
-      element: element3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-      },
     },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    viewportInputArray.map((v) => v.viewportId)
-  );
+  const vps = renderingEngine.getStackViewports();
+  const viewport = vps[0];
+
+  viewport.setStack(imageIds);
 
   renderingEngine.render();
 }

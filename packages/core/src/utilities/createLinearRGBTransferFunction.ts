@@ -1,5 +1,5 @@
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import { VOIRange } from '../types';
+import type { VOIRange } from '../types/voi';
 
 export default function createLinearRGBTransferFunction(
   voiRange: VOIRange
@@ -7,11 +7,7 @@ export default function createLinearRGBTransferFunction(
   const cfun = vtkColorTransferFunction.newInstance();
   let lower = 0;
   let upper = 1024;
-  if (
-    voiRange &&
-    voiRange.lower !== undefined &&
-    voiRange.upper !== undefined
-  ) {
+  if (voiRange.lower !== undefined && voiRange.upper !== undefined) {
     lower = voiRange.lower;
     upper = voiRange.upper;
   }

@@ -1,17 +1,18 @@
 import htmlStr from './layout';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
+  cache,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -45,6 +46,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick(toggle) {
     toggle ? setUseCPURendering(true) : setUseCPURendering(false);
+    cache.purgeCache();
   },
 });
 
@@ -53,6 +55,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick(toggle) {
     toggle ? setPreferSizeOverAccuracy(true) : setPreferSizeOverAccuracy(false);
+    cache.purgeCache();
   },
 });
 
@@ -70,7 +73,7 @@ async function run() {
 
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -81,7 +84,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
@@ -108,7 +111,13 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
@@ -234,6 +243,7 @@ async function loadAndViewImage(imageId) {
 }
 
 function downloadAndView(downloadUrl) {
+  // @ts-ignore
   let url = downloadUrl || document.getElementById('wadoURL').value;
 
   // prefix the url with wadouri: so cornerstone can find the image loader

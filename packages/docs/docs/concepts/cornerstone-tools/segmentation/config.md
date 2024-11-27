@@ -3,130 +3,165 @@ id: config
 title: Config
 ---
 
-# Config
 
-There are two types of configurations that can be applied to a segmentation representation.
+# Configuration
 
-- Global Configuration: A configuration for all segmentation representations in all toolGroups.
-- ToolGroup-specific Configuration: A configuration for each toolGroup, which overrides the global configuration.
+In version 2.x, segmentation configurations are managed through a unified style system that can be applied at different levels of specificity using a specifier object.
 
-Regardless of the type of the configuration, it is object that include each representations configuration.
+## Style System
+
+Styles can be applied at multiple levels:
+- Global styles for all segmentations
+- Type-specific styles (e.g., all Labelmaps)
+- Viewport-specific styles
+- Segmentation-specific styles
+- Segment-specific styles
+
+The style configuration object structure depends on the representation type:
 
 ```js
+// Labelmap Style Example
 {
-  renderInactiveSegmentations: false,
-  representations: {
-    LABELMAP: {
-      renderFill: true,
-      renderOutline: true,
-      // other related labelmap-specific
-    },
-    CONTOUR: {
-      // contour-specific configuration
-      // contours are not implemented yet, see our roadmap for more details
-    },
+  renderFill: true,
+  renderOutline: true,
+  outlineWidth: 3,
+  fillAlpha: 0.7,
+  outlineAlpha: 0.9
+}
+
+// Contour Style Example
+{
+  renderFill: true,
+  renderOutline: true,
+  outlineWidth: 2
+}
+
+// Surface Style Example
+{
+  renderFill: true,
+  fillAlpha: 0.7
+}
+```
+
+## Style API
+
+The new style API uses a specifier object to target specific configurations:
+
+```js
+import { segmentation } from '@cornerstonejs/tools';
+
+// Get style for a specific context
+const style = segmentation.getStyle({
+  viewportId: 'viewport1',            // optional
+  segmentationId: 'segmentation1',    // optional
+  type: Enums.SegmentationRepresentations.Labelmap,  // required
+  segmentIndex: 1                     // optional
+});
+
+// Set style for a specific context
+segmentation.setStyle(
+  {
+    viewportId: 'viewport1',
+    segmentationId: 'segmentation1',
+    type: Enums.SegmentationRepresentations.Labelmap
   },
-},
+  {
+    renderFill: true,
+    renderOutline: true,
+    outlineWidth: 3
+  }
+);
 
+// Reset to global style
+segmentation.resetToGlobalStyle();
+
+// Check if a context has custom style
+const hasCustomStyle = segmentation.hasCustomStyle({
+  viewportId: 'viewport1',
+  segmentationId: 'segmentation1',
+  type: Enums.SegmentationRepresentations.Labelmap
+});
 ```
 
-:::note Important
-ToolGroup-specific configuration ALWAYS overrides the global configuration.
-:::
+### Inactive Segmentations
 
-For instance, if we have the following situation where only global configuration is set:
+The rendering of inactive segmentations is now controlled per viewport:
 
 ```js
-const globalConfiguration = {
-  renderInactiveSegmentations: false,
-};
+// Set whether to render inactive segmentations in a viewport
+segmentation.setRenderInactiveSegmentations('viewport1', true);
 
-// Results: Cornerstone3DTools WILL NOT render inactive segmentations
+// Get whether inactive segmentations are rendered in a viewport
+const renderInactive = segmentation.getRenderInactiveSegmentations('viewport1');
 ```
 
-But, if there is a toolGroup-specific configuration:
+## Color Management
+
+The color API has been updated to be viewport-specific and use more consistent naming:
 
 ```js
-const globalConfiguration = {
-  renderInactiveSegmentations: false,
-};
+import { segmentation } from '@cornerstonejs/tools';
 
-const toolGroupConfiguration = {
-  renderInactiveSegmentations: true,
-};
+// Add a new color LUT
+const colorLUTIndex = segmentation.addColorLUT(colorLUT);
 
-// Results: Cornerstone3DTools WILL render inactive segmentations
+// Set color LUT for a segmentation in a viewport
+segmentation.setColorLUT('viewport1', 'segmentation1', colorLUTIndex);
+
+// Get color for a specific segment
+const color = segmentation.getSegmentIndexColor(
+  'viewport1',
+  'segmentation1',
+  segmentIndex
+);
+
+// Set color for a specific segment
+segmentation.setSegmentIndexColor(
+  'viewport1',
+  'segmentation1',
+  segmentIndex,
+  [255, 0, 0, 255]  // RGBA color
+);
 ```
 
-## Config State API
+### Style Hierarchy
 
-The api for the segmentation representation configurations are
+Styles are applied in the following order of precedence (highest to lowest):
+1. Segment-specific style (when segmentIndex is provided)
+2. Viewport-specific style (when viewportId is provided)
+3. Segmentation-specific style (when segmentationId is provided)
+4. Type-specific style (when only type is provided)
+5. Global style
 
+Example:
 ```js
-import {segmentation, Enums} from '@cornerstonejs/tools
+// Set global style for all labelmaps
+segmentation.setStyle(
+  { type: Enums.SegmentationRepresentations.Labelmap },
+  { renderOutline: true }
+);
 
-// Get the global configuration
-segmentation.config.getGlobalConfig()
+// Override style for a specific viewport
+segmentation.setStyle(
+  {
+    viewportId: 'viewport1',
+    type: Enums.SegmentationRepresentations.Labelmap
+  },
+  { renderOutline: false }
+);
 
-// Set the global configuration
-segmentation.config.setGlobalConfig(config)
-
-// Get toolGroup-specific configuration
-segmentation.config.getToolGroupSpecificConfig(toolGroupId)
-
-// Set toolGroup-specific configuration
-segmentation.config.setToolGroupSpecificConfig(toolGroupId, config)
-
-// Get global representation configuration for a specific representation (e.g., labelmap)
-const representationType = Enums.SegmentationRepresentations.Labelmap
-segmentation.config.getGlobalRepresentationConfig(representationType)
-
-// Set global representation configuration for a specific representation (e.g., labelmap)
-segmentation.config.setGlobalRepresentationConfig(representationType, config)
+// Set style for a specific segment
+segmentation.setStyle(
+  {
+    viewportId: 'viewport1',
+    segmentationId: 'segmentation1',
+    type: Enums.SegmentationRepresentations.Labelmap,
+    segmentIndex: 1
+  },
+  { outlineWidth: 5 }
+);
 ```
 
 :::note Tip
-Read more about the [**Labelmap Configuration**](/api/tools/namespace/Types#LabelmapConfig) options `Cornerstone3DTools` provides.
+For detailed information about available style options for each representation type, refer to the API documentation.
 :::
-
-## Visibility API
-
-`Segmentation` module provides API for setting/getting the visibility of each segmentation representation. You can use
-`visibility` API to hide/show each representation.
-
-```js
-import { segmentation } from '@cornerstonejs/tools
-
-// set the visibility of a segmentation representation for a toolGroup
-segmentation.config.visibility.setSegmentationVisibility(toolGroupId, representationUID, visibility)
-
-// get the visibility of a segmentation representation for a toolGroup
-segmentation.config.visibility.getSegmentationVisibility(toolGroupId, representationUID)
-```
-
-
-## Color API
-
-Provides API for adding a `colorLUT` (color Look Up Table (LUT)) that the segmentation representations will use to render their segments. The `colorLUT`
-is an array of RGBA values that will be used to render each segment.
-For instance, `segment index 0` (background) will use the first item in the `colorLUT` array (colorLUT[0]), the `segment index 1`
-(first segment) will use the second item in the `colorLUT` array (colorLUT[1]), and so on. In order to use the `colorLUT`,
-you need to add your LUT via the `color` API.
-
-:::note Important
-`Segmentation State` keeps track of all the `colorLUT`s that have been added in an array (this makes colorLUT entries in the segmentation state an array of arrays). So, to change the colorLUT you need to provide the index of the colorLUT you want to
-use too.
-:::
-
-```js
-import { segmentation } from '@cornerstonejs/tools
-
-// add color LUT for use with a segmentation representation
-segmentation.config.color.addColorLUT(colorLUT, colorLUTIndex)
-
-// sets the colorLUT index to use for the segmentation representation
-segmentation.config.color.setColorLUT(toolGroupId, representationUID, colorLUTIndex)
-
-// get the color for the segment index
-segmentation.config.color.getColorForSegmentIndex(toolGroupId, representationUID, segmentIndex)
-```

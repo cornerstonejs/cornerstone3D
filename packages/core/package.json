@@ -1,40 +1,76 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "1.70.10",
+  "version": "2.2.20",
   "description": "",
-  "main": "src/index.ts",
-  "types": "dist/types/index.d.ts",
-  "module": "dist/esm/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
-    "dist/",
-    "src/"
+    "./dist/"
   ],
-  "directories": {
-    "test": "test"
-  },
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
+    "./utilities": {
+      "import": "./dist/esm/utilities/index.js",
+      "types": "./dist/esm/utilities/index.d.ts"
+    },
+    "./utilities/*": {
+      "import": "./dist/esm/utilities/*.js",
+      "types": "./dist/esm/utilities/*.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/esm/constants/index.js",
+      "types": "./dist/esm/constants/index.d.ts"
+    },
+    "./constants/*": {
+      "import": "./dist/esm/constants/*.js",
+      "types": "./dist/esm/constants/*.d.ts"
+    },
+    "./enums": {
+      "import": "./dist/esm/enums/index.js",
+      "types": "./dist/esm/enums/index.d.ts"
+    },
+    "./enums/*": {
+      "import": "./dist/esm/enums/*.js",
+      "types": "./dist/esm/enums/*.d.ts"
+    },
+    "./loaders": {
+      "import": "./dist/esm/loaders/index.js",
+      "types": "./dist/esm/loaders/index.d.ts"
+    },
+    "./loaders/*": {
+      "import": "./dist/esm/loaders/*.js",
+      "types": "./dist/esm/loaders/*.d.ts"
+    },
+    "./types": {
+      "types": "./dist/esm/types/index.d.ts"
+    },
+    "./types/*": {
+      "types": "./dist/esm/types/*.d.ts"
+    }
+  },
   "scripts": {
-    "build:cjs": "tsc --project ./tsconfig.cjs.json",
-    "build:esm": "tsc --project ./tsconfig.esm.json",
-    "build:esm:watch": "tsc --project ./tsconfig.esm.json --watch",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "build": "yarn run build:esm",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
-    "build:all": "yarn run build:umd && yarn run build:cjs && yarn run build:esm",
-    "clean": "shx rm -rf dist",
-    "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/cjs && copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
-    "build": "yarn run build:all && yarn run copy-dts",
-    "dev": "tsc --project ./tsconfig.esm.json --watch",
-    "api-check": "api-extractor --debug run",
-    "build:update-api": "yarn run build && api-extractor run --local",
-    "prepublishOnly": "yarn run build",
-    "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
+    "build:all": "yarn run build:esm && yarn run build:umd",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "format-check": "npx eslint ./src --quiet",
+    "api-check": "api-extractor --debug run ",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
+    "prepublishOnly": "yarn run build"
   },
   "dependencies": {
-    "@kitware/vtk.js": "30.3.3",
+    "@kitware/vtk.js": "32.1.1",
     "comlink": "^4.4.1",
-    "detect-gpu": "^5.0.22",
-    "gl-matrix": "^3.4.3",
-    "lodash.clonedeep": "4.5.0"
+    "gl-matrix": "^3.4.3"
   },
   "contributors": [
     {
