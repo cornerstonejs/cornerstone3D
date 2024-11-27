@@ -4,6 +4,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,9 +14,7 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
-  addButtonToToolbar,
   addManipulationBindings,
-  labelmapTools,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -28,13 +27,17 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
+  RectangleScissorsTool,
+  SphereScissorsTool,
+  CircleScissorsTool,
   BrushTool,
+  PaintFillTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, Events } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils } = cstUtils;
+const { segmentation: segmentationUtils, roundNumber } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -42,15 +45,41 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const viewports = [];
+
+const DEFAULT_BRUSH_SIZE = 10;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Dynamic Threshold',
-  'Here we demonstrate dynamic threshold with preview'
+  'Labelmap Segmentation Statistics',
+  'Here we demonstrate calculating labelmap statistics'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
+
+const statsGrid = document.createElement('div');
+statsGrid.style.display = 'flex';
+statsGrid.style.display = 'flex';
+statsGrid.style.flexDirection = 'row';
+statsGrid.style.fontSize = 'smaller';
+
+const statsIds = ['segment1', 'segment2', 'segmentCombined'];
+const statsStyle = {
+  width: '20em',
+  height: '10em',
+};
+
+for (const statsId of statsIds) {
+  const statsDiv = document.createElement('div');
+  statsDiv.id = statsId;
+  statsDiv.innerText = statsId;
+  Object.assign(statsDiv.style, statsStyle);
+  statsGrid.appendChild(statsDiv);
+}
+
+content.appendChild(statsGrid);
+
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
@@ -96,32 +125,37 @@ const previewColors = {
   1: [0, 255, 255, 192],
   2: [255, 0, 255, 255],
 };
-
 const configuration = {
   preview: {
     enabled: true,
     previewColors,
   },
 };
+const thresholdOptions = new Map<string, any>();
+thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
+thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
+thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
+thresholdOptions.set('Dynamic Radius 5', { isDynamic: true, dynamicRadius: 5 });
+thresholdOptions.set('Use Existing Threshold', {
+  isDynamic: false,
+  dynamicRadius: 5,
+});
+thresholdOptions.set('CT Fat: (-150, -70)', {
+  threshold: [-150, -70],
+  isDynamic: false,
+});
+thresholdOptions.set('CT Bone: (200, 1000)', {
+  threshold: [200, 1000],
+  isDynamic: false,
+});
+const defaultThresholdOption = [...thresholdOptions.keys()][2];
+const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
-const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'];
-const viewportId1 = viewportIds[0];
-const viewportId2 = viewportIds[1];
-const viewportId3 = viewportIds[2];
-
-const defaultThresholdOption = [...labelmapTools.thresholdOptions.keys()][2];
-const thresholdArgs = labelmapTools.thresholdOptions.get(
-  defaultThresholdOption
-);
-
-interpolationTools.set('ThresholdSphereIsland', {
+interpolationTools.set('CircularBrush', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
-    strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
-    },
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
   },
 });
 
@@ -147,9 +181,49 @@ interpolationTools.set('ThresholdSphere', {
   },
 });
 
-const optionsValues = [...interpolationTools.keys()];
+interpolationTools.set('CircularEraser', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'ERASE_INSIDE_CIRCLE',
+  },
+});
+
+interpolationTools.set('SphereBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_SPHERE',
+  },
+});
+interpolationTools.set('SphereEraser', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'ERASE_INSIDE_SPHERE',
+  },
+});
+interpolationTools.set('ScissorsEraser', {
+  baseTool: SphereScissorsTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'ERASE_INSIDE',
+  },
+});
+
+const optionsValues = [
+  ...interpolationTools.keys(),
+  RectangleScissorsTool.toolName,
+  CircleScissorsTool.toolName,
+  SphereScissorsTool.toolName,
+  PaintFillTool.toolName,
+];
 
 // ============================= //
+
+// Create a reference to the threshold dropdown element
+let thresholdDropdownElement;
+
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -166,14 +240,28 @@ addDropdownToToolbar({
     toolGroup.setToolActive(name, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
+
+    // Show/hide threshold dropdown based on selected tool
+    if (thresholdDropdownElement) {
+      thresholdDropdownElement.style.display = name
+        .toLowerCase()
+        .includes('threshold')
+        ? 'inline-block'
+        : 'none';
+    }
   },
 });
 
-addDropdownToToolbar({
+// Store reference to threshold dropdown element
+thresholdDropdownElement = addDropdownToToolbar({
   options: {
-    map: labelmapTools.thresholdOptions,
+    values: Array.from(thresholdOptions.keys()),
+    defaultValue: defaultThresholdOption,
   },
-  onSelectedValueChange: (name, thresholdArgs) => {
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
+    const thresholdArgs = thresholdOptions.get(name);
+
     segmentationUtils.setBrushThresholdForToolGroup(
       toolGroupId,
       thresholdArgs.threshold,
@@ -182,10 +270,20 @@ addDropdownToToolbar({
   },
 });
 
+// Initially hide threshold dropdown if first tool doesn't include 'threshold'
+if (thresholdDropdownElement) {
+  const initialTool = optionsValues[0];
+  thresholdDropdownElement.style.display = initialTool
+    .toLowerCase()
+    .includes('threshold')
+    ? 'inline-block'
+    : 'none';
+}
+
 addSliderToToolbar({
   title: 'Brush Size',
   range: [5, 100],
-  defaultValue: 25,
+  defaultValue: DEFAULT_BRUSH_SIZE,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
@@ -194,7 +292,7 @@ addSliderToToolbar({
 
 // ============================= //
 addDropdownToToolbar({
-  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  options: { values: ['1', '2'], defaultValue: '1' },
   labelText: 'Segment',
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
@@ -204,15 +302,62 @@ addDropdownToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Reject Preview',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.rejectPreview?.(element1);
-  },
-});
+function displayStat(stat) {
+  if (!stat) {
+    return;
+  }
+  return `${stat.label || stat.name}: ${roundNumber(stat.value)} ${
+    stat.unit ? stat.unit : ''
+  }`;
+}
+
+function calculateStatistics(id, indices) {
+  const [viewport] = viewports;
+  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+  const brush = toolGroup.getToolInstance(activeName);
+  const stats = brush.getStatistics(viewport.element, { indices });
+  const items = [`Statistics on ${indices.join(', ')}`];
+  stats.count.label = 'Voxels';
+  const lesionGlycolysis = {
+    name: 'Lesion Glycolysis',
+    value: stats.volume.value * stats.stdDev.value,
+    unit: 'HU \xB7 mm \xb3',
+  };
+  items.push(
+    displayStat(stats.volume),
+    displayStat(stats.count),
+    displayStat(lesionGlycolysis),
+    displayStat(stats.mean),
+    displayStat(stats.max),
+    displayStat(stats.min)
+  );
+  const statsDiv = document.getElementById(id);
+  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+}
+
+let timeoutId;
+
+function segmentationModifiedCallback(evt) {
+  const { detail } = evt;
+  if (!detail || !detail.segmentIndex || detail.segmentIndex === 255) {
+    return;
+  }
+
+  if (timeoutId) {
+    window.clearTimeout(timeoutId);
+    timeoutId = null;
+  }
+
+  const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
+
+  window.setTimeout(() => {
+    timeoutId = null;
+    calculateStatistics(statsId, [detail.segmentIndex]);
+    // Also update combined stats
+    calculateStatistics(statsIds[2], [1, 2]);
+  }, 100);
+}
 
 // ============================= //
 
@@ -237,6 +382,11 @@ async function addSegmentationsToState() {
       },
     },
   ]);
+
+  eventTarget.addEventListener(
+    Events.SEGMENTATION_DATA_MODIFIED,
+    segmentationModifiedCallback
+  );
 }
 
 /**
@@ -247,6 +397,10 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(RectangleScissorsTool);
+  cornerstoneTools.addTool(CircleScissorsTool);
+  cornerstoneTools.addTool(SphereScissorsTool);
+  cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -256,6 +410,10 @@ async function run() {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
+  toolGroup.addTool(RectangleScissorsTool.toolName);
+  toolGroup.addTool(CircleScissorsTool.toolName);
+  toolGroup.addTool(SphereScissorsTool.toolName);
+  toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addTool(BrushTool.toolName);
 
   for (const [toolName, config] of interpolationTools.entries()) {
@@ -285,7 +443,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -299,6 +457,11 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Create the viewports
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
@@ -336,6 +499,8 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
+  viewports.push(...renderingEngine.getViewports());
+
   // Set the volume to load
   volume.load();
 
@@ -346,13 +511,19 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  const seg = [{ segmentationId }];
+  const segmentationRepresentation = [
+    {
+      segmentationId,
+    },
+  ];
   // Add the segmentation representation to the toolgroup
   await segmentation.addLabelmapRepresentationToViewportMap({
-    [viewportId1]: seg,
-    [viewportId2]: seg,
-    [viewportId3]: seg,
+    [viewportId1]: segmentationRepresentation,
+    [viewportId2]: segmentationRepresentation,
+    [viewportId3]: segmentationRepresentation,
   });
+
+  segmentationUtils.setBrushSizeForToolGroup(toolGroupId, DEFAULT_BRUSH_SIZE);
 
   // Render the image
   renderingEngine.render();

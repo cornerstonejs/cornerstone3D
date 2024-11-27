@@ -6,6 +6,7 @@ import preview from './preview';
 import regionFill from './regionFill';
 import setValue from './setValue';
 import threshold from './threshold';
+import labelmapStatistics from './labelmapStatistics';
 
 export default {
   determineSegmentIndex,
@@ -16,4 +17,5 @@ export default {
   regionFill,
   setValue,
   threshold,
+  labelmapStatistics,
 };

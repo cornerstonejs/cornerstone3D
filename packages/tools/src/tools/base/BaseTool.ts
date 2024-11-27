@@ -86,9 +86,9 @@ abstract class BaseTool {
   public applyActiveStrategyCallback(
     enabledElement: Types.IEnabledElement,
     operationData: unknown,
-    callbackType: StrategyCallbacks | string
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): any {
+    callbackType: StrategyCallbacks | string,
+    ...extraArgs
+  ) {
     const { strategies, activeStrategy } = this.configuration;
 
     if (!strategies[activeStrategy]) {
@@ -100,7 +100,8 @@ abstract class BaseTool {
     return strategies[activeStrategy][callbackType]?.call(
       this,
       enabledElement,
-      operationData
+      operationData,
+      ...extraArgs
     );
   }
 

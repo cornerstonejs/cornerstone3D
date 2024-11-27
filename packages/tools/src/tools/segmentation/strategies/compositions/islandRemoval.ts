@@ -172,7 +172,8 @@ export default {
     }
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfModifiedSlices()
+      previewVoxelManager.getArrayOfModifiedSlices(),
+      previewSegmentIndex
     );
   },
 };

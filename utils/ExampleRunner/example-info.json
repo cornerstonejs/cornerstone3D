@@ -340,6 +340,10 @@
         "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
       },
+      "labelmapStatistics": {
+        "name": "Labelmap Statistics",
+        "description": "Show labelmap statistics"
+      },
       "labelmapSegmentationDynamicThreshold": {
         "name": "Labelmap Segmentation Dynamic Threshold and Preview",
         "description": "Demonstrates how to use dynamic threshold with preview to modify the segmentation data"

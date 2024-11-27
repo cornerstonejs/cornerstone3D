@@ -17,7 +17,6 @@ import {
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { encodeVolumeIdInfo } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(

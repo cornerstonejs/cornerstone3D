@@ -115,7 +115,8 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfModifiedSlices()
+      tracking.getArrayOfModifiedSlices(),
+      preview.segmentIndex
     );
     tracking.clear();
   },
@@ -136,9 +137,12 @@ export default {
     };
     previewVoxelManager.forEach(callback);
 
+    // Primarily rejects back to zero, so use 0 as the segment index - even
+    // if somtimes it modifies the data to other values on reject.
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfModifiedSlices()
+      previewVoxelManager.getArrayOfModifiedSlices(),
+      0
     );
     previewVoxelManager.clear();
   },

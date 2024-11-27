@@ -50,6 +50,9 @@ enum StrategyCallbacks {
 
   /** inner circle size  */
   ComputeInnerCircleRadius = 'computeInnerCircleRadius',
+
+  /** Compute statistics on this instance */
+  GetStatistics = 'getStatistics',
 }
 
 export default StrategyCallbacks;

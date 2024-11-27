@@ -103,11 +103,6 @@ addButtonToToolbar({
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -131,7 +126,7 @@ eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
   }
 
   const { progress } = evt.detail;
-  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
+  label.innerHTML = `Progress: ${(progress * 1).toFixed(2)}%`;
 });
 
 /**

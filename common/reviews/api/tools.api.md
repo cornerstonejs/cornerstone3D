@@ -645,7 +645,7 @@ export abstract class BaseTool {
     // (undocumented)
     applyActiveStrategy(enabledElement: Types_2.IEnabledElement, operationData: unknown): any;
     // (undocumented)
-    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string): any;
+    applyActiveStrategyCallback(enabledElement: Types_2.IEnabledElement, operationData: unknown, callbackType: StrategyCallbacks | string, ...extraArgs: any[]): any;
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
@@ -905,6 +905,8 @@ export class BrushTool extends BaseTool {
         referencedVolumeId?: undefined;
         override?: undefined;
     };
+    // (undocumented)
+    getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -4860,6 +4862,7 @@ declare namespace segmentation_2 {
         setBrushSizeForToolGroup,
         getBrushThresholdForToolGroup,
         setBrushThresholdForToolGroup,
+        VolumetricCalculator,
         thresholdSegmentationByRange,
         contourAndFindLargestBidirectional,
         createBidirectionalToolData,
@@ -4885,6 +4888,7 @@ type SegmentationAddedEventType = Types_2.CustomEventType<SegmentationAddedEvent
 type SegmentationDataModifiedEventDetail = {
     segmentationId: string;
     modifiedSlicesToUse?: number[];
+    segmentIndex?: number;
 };
 
 // @public (undocumented)
@@ -5406,6 +5410,8 @@ enum StrategyCallbacks {
     // (undocumented)
     Fill = "fill",
     // (undocumented)
+    GetStatistics = "getStatistics",
+    // (undocumented)
     Initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
@@ -5917,7 +5923,7 @@ function triggerAnnotationRenderForViewportIds(viewportIdsToRender: string[]): v
 function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
 
 // @public (undocumented)
-function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[]): void;
+function triggerSegmentationDataModified(segmentationId: string, modifiedSlicesToUse?: number[], segmentIndex?: number): void;
 
 declare namespace triggerSegmentationEvents {
     export {
@@ -6365,6 +6371,15 @@ export class VolumeRotateTool extends BaseTool {
     mouseWheelCallback(evt: MouseWheelEventType): void;
     // (undocumented)
     static toolName: any;
+}
+
+// @public (undocumented)
+class VolumetricCalculator extends BasicStatsCalculator_2 {
+    // (undocumented)
+    static getStatistics(options: {
+        spacing?: number;
+        unit?: string;
+    }): NamedStatistics;
 }
 
 declare namespace windowLevel_2 {

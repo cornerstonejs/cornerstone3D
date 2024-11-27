@@ -109,6 +109,8 @@ export default function addDropDownToToolbar(config: configDropdown): void {
 
     elSelect.append(elOption);
   });
+
+  return elSelect;
 }
 
 function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {
