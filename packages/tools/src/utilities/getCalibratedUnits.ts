@@ -5,14 +5,19 @@ const PIXEL_UNITS = 'px';
 
 const SUPPORTED_REGION_DATA_TYPES = [
   1, // Tissue
+  2, // Color Flow
+  3, // PW Spectral Doppler
+  4, // CW Spectral Doppler
 ];
 
 const SUPPORTED_LENGTH_VARIANT = [
-  '3,3', // x: cm  &  y:cm
+  "3,3", // x: cm & y:cm
+  "4,7", // x: seconds & y : cm/sec
 ];
 
 const SUPPORTED_PROBE_VARIANT = [
-  '4,3', // x: seconds  &  y : cm
+  "4,3", // x: seconds & y : cm
+  "4,7", // x: seconds & y : cm/sec
 ];
 
 const UNIT_MAPPING = {
