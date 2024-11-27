@@ -6373,6 +6373,15 @@ export class VolumeRotateTool extends BaseTool {
     static toolName: any;
 }
 
+// @public (undocumented)
+class VolumetricCalculator extends BasicStatsCalculator_2 {
+    // (undocumented)
+    static getStatistics(options: {
+        spacing?: number;
+        unit?: string;
+    }): NamedStatistics;
+}
+
 declare namespace windowLevel_2 {
     export {
         getLuminanceFromRegion,
@@ -6419,15 +6428,6 @@ export class WindowLevelRegionTool extends AnnotationTool {
     static toolName: any;
     // (undocumented)
     toolSelectedCallback: () => void;
-}
-
-// @public (undocumented)
-class VolumetricCalculator extends BasicStatsCalculator_2 {
-    // (undocumented)
-    static getStatistics(options: {
-        spacing?: number;
-        unit?: string;
-    }): NamedStatistics;
 }
 
 // @public (undocumented)
