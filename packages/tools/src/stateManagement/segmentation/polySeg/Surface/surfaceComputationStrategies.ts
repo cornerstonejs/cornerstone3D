@@ -1,18 +1,17 @@
 import type { Types } from '@cornerstonejs/core';
-import {
+import type {
   ContourSegmentationData,
   PolySegConversionOptions,
 } from '../../../../types';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import { getSegmentation } from '../../segmentationState';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
+import { getSegmentation } from '../../getSegmentation';
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
-import {
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { isVolumeSegmentation } from '../../../../tools/segmentation/strategies/utils/stackVolumeCheck';
 import { convertLabelmapToSurface } from './convertLabelmapToSurface';
 
 export type RawSurfacesData = {
@@ -40,7 +39,7 @@ export async function computeSurfaceData(
   const representationData = segmentation.representationData;
 
   try {
-    if (representationData.CONTOUR) {
+    if (representationData.Contour) {
       rawSurfacesData = await computeSurfaceFromContourSegmentation(
         segmentationId,
         {
@@ -48,7 +47,7 @@ export async function computeSurfaceData(
           ...options,
         }
       );
-    } else if (representationData.LABELMAP as LabelmapSegmentationData) {
+    } else if (representationData.Labelmap as LabelmapSegmentationData) {
       // convert volume labelmap to surface
       rawSurfacesData = await computeSurfaceFromLabelmapSegmentation(
         segmentation.segmentationId,
@@ -85,16 +84,12 @@ async function computeSurfaceFromLabelmapSegmentation(
   // Todo: validate valid labelmap representation
   const segmentation = getSegmentation(segmentationId);
 
-  if (!segmentation?.representationData?.LABELMAP) {
+  if (!segmentation?.representationData?.Labelmap) {
     console.warn('Only support surface update from labelmaps');
     return;
   }
 
-  const isVolume = isVolumeSegmentation(
-    segmentation.representationData.LABELMAP
-  );
-
-  const labelmapRepresentationData = segmentation.representationData.LABELMAP;
+  const labelmapRepresentationData = segmentation.representationData.Labelmap;
 
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);
@@ -104,8 +99,7 @@ async function computeSurfaceFromLabelmapSegmentation(
       labelmapRepresentationData as
         | LabelmapSegmentationDataVolume
         | LabelmapSegmentationDataStack,
-      index,
-      isVolume
+      index
     );
 
     return surface;
@@ -142,7 +136,7 @@ async function computeSurfaceFromContourSegmentation(
 ): Promise<RawSurfacesData> {
   const segmentation = getSegmentation(segmentationId);
 
-  const contourRepresentationData = segmentation.representationData.CONTOUR;
+  const contourRepresentationData = segmentation.representationData.Contour;
 
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);

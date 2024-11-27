@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -12,7 +12,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { Statistics } from '../../src/types';
+import type { Statistics } from '../../src/types';
 import { Calculator } from '../../src/utilities/math/basic';
 
 // This is for debugging purposes
@@ -22,6 +22,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -93,6 +94,7 @@ const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 const toolsNames = [
   LengthTool.toolName,
+  HeightTool.toolName,
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
@@ -130,21 +132,24 @@ addDropdownToToolbar({
 //Here are the function with all your custom text to show
 function getTextLinesLength(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { length, unit } = cachedVolumeStats;
+  const { length, lengthUnits } = cachedVolumeStats;
 
   // Can be null on load
   if (length === undefined || length === null || isNaN(length)) {
     return;
   }
 
-  const textLines = [`${Math.round(length)} ${unit}`, `(your custom text)`];
+  const textLines = [
+    `${Math.round(length)} ${lengthUnits}`,
+    `(your custom text)`,
+  ];
 
   return textLines;
 }
 
 function getTextLinesRectangle(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, areaUnit, modalityUnit } = cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -160,7 +165,7 @@ function getTextLinesRectangle(data, targetId): string[] {
 
 function getTextLinesProbe(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, modalityUnit } = cachedVolumeStats;
+  const { index, value } = cachedVolumeStats;
 
   if (value === undefined) {
     return;
@@ -231,6 +236,10 @@ addButtonToToolbar({
       getTextLines: getTextLinesLength,
     });
 
+    toolgroup.setToolConfiguration(HeightTool.toolName, {
+      getTextLines: getTextLinesLength,
+    });
+
     toolgroup.setToolConfiguration(ProbeTool.toolName, {
       getTextLines: getTextLinesProbe,
     });
@@ -278,6 +287,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -294,6 +304,7 @@ async function run() {
 
   // Add the tools to the tool group (we can add specified tools configuration if wanted)
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
@@ -317,6 +328,7 @@ async function run() {
   });
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
+  toolGroup.setToolPassive(HeightTool.toolName);
   toolGroup.setToolPassive(ProbeTool.toolName);
   toolGroup.setToolPassive(RectangleROITool.toolName);
   toolGroup.setToolPassive(EllipticalROITool.toolName);
@@ -333,7 +345,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

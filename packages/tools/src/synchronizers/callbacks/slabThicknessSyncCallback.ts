@@ -1,4 +1,5 @@
-import { getRenderingEngine, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { getRenderingEngine } from '@cornerstonejs/core';
 
 /**
  * Synchronizer callback to synchronize the slab thickness.

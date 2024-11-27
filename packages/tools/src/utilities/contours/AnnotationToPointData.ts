@@ -5,13 +5,13 @@ function validateAnnotation(annotation) {
     throw new Error('Tool data is empty');
   }
 
-  if (!annotation.metadata || annotation.metadata.referenceImageId) {
+  if (!annotation.metadata || annotation.metadata.referencedImageId) {
     throw new Error('Tool data is not associated with any imageId');
   }
 }
 
 class AnnotationToPointData {
-  static TOOL_NAMES: Record<string, any> = {};
+  static TOOL_NAMES: Record<string, unknown> = {};
 
   constructor() {
     // empty
@@ -32,6 +32,7 @@ class AnnotationToPointData {
     // Each toolData should become a list of contours, ContourSequence
     // contains a list of contours with their pointData, their geometry
     // type and their length.
+    // @ts-expect-error
     const ContourSequence = toolClass.getContourSequence(
       annotation,
       metadataProvider

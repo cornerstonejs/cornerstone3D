@@ -3,7 +3,7 @@
 The Cornerstone WADO Image Loader can be configured by the following:
 
 ```js
-cornerstoneWADOImageLoader.configure(options);
+CornerstoneDICOMImageLoader.init(options);
 ```
 
 Where options can have the following properties:

@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   StackViewport,
   VolumeViewport,
-  Types,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 
@@ -46,6 +46,9 @@ export default function filterAnnotationsForDisplay(
   return annotations.filter((annotation) => {
     if (!annotation.isVisible) {
       return false;
+    }
+    if (annotation.data.isCanvasAnnotation) {
+      return true;
     }
     return viewport.isReferenceViewable(annotation.metadata, filterOptions);
   });

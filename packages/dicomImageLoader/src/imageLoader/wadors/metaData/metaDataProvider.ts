@@ -1,14 +1,16 @@
-import external from '../../../externalModules';
+import * as dicomParser from 'dicom-parser';
+import { Enums, utilities } from '@cornerstonejs/core';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
-import metaDataManager from '../metaDataManager';
+import metaDataManager, {
+  retrieveMultiframeMetadataImageId,
+} from '../metaDataManager';
 import getValue from './getValue';
 import {
   getMultiframeInformation,
   getFrameInformation,
 } from '../combineFrameInstance';
-import multiframeMetadata from '../retrieveMultiframeMetadata';
 import {
   extractOrientationFromMetadata,
   extractPositionFromMetadata,
@@ -22,11 +24,11 @@ import {
 import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = external.cornerstone.Enums;
+  const { MetadataModules } = Enums;
+
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
-    const { metadata, frame } =
-      multiframeMetadata.retrieveMultiframeMetadata(imageId);
+    const { metadata, frame } = retrieveMultiframeMetadataImageId(imageId);
 
     if (!metadata) {
       return;
@@ -57,12 +59,22 @@ function metaDataProvider(type, imageId) {
       //PerFrameFunctionalGroupsSequence,
     };
   }
-  const { dicomParser } = external;
 
   const metaData = metaDataManager.get(imageId);
 
   if (!metaData) {
     return;
+  }
+
+  if (type === MetadataModules.GENERAL_STUDY) {
+    return {
+      studyDescription: getValue<string>(metaData['00081030']),
+      studyDate: dicomParser.parseDA(getValue<string>(metaData['00080020'])),
+      studyTime: dicomParser.parseTM(
+        getValue<string>(metaData['00080030'], 0, '')
+      ),
+      accessionNumber: getValue<string>(metaData['00080050']),
+    };
   }
 
   if (type === MetadataModules.GENERAL_SERIES) {
@@ -76,12 +88,28 @@ function metaDataProvider(type, imageId) {
         getValue<string>(metaData['00080031'], 0, '')
       ),
       acquisitionDate: dicomParser.parseDA(
-        getValue<string>(metaData['00080022']),
-        ''
+        getValue<string>(metaData['00080022'])
       ),
       acquisitionTime: dicomParser.parseTM(
         getValue<string>(metaData['00080032'], 0, '')
       ),
+    };
+  }
+
+  if (type === MetadataModules.GENERAL_IMAGE) {
+    return {
+      sopInstanceUID: getValue<string>(metaData['00080018']),
+      instanceNumber: getNumberValue(metaData['00200013']),
+      lossyImageCompression: getValue<string>(metaData['00282110']),
+      lossyImageCompressionRatio: getNumberValue(metaData['00282112']),
+      lossyImageCompressionMethod: getValue<string>(metaData['00282114']),
+    };
+  }
+
+  if (type === MetadataModules.PATIENT) {
+    return {
+      patientID: getValue<string>(metaData['00100020']),
+      patientName: getValue<string>(metaData['00100010']),
     };
   }
 
@@ -95,7 +123,7 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
-    const modality = getValue(metaData['00080060']);
+    const modality = getValue(metaData['00080060']) as string;
     const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
 
     return {
@@ -105,6 +133,7 @@ function metaDataProvider(type, imageId) {
       imageOrientationPatient: extractOrientationFromMetadata(metaData),
       imagePositionPatient: extractPositionFromMetadata(metaData),
       sliceThickness: getNumberValue(metaData['00180050']),
+      spacingBetweenSlices: getNumberValue(metaData['00180088']),
       pixelSpacing: getNumberValues(metaData['00280030'], 2),
       numberOfFrames: getNumberValue(metaData['00280008']),
       isNMReconstructable:
@@ -114,22 +143,24 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.IMAGE_PLANE) {
     //metaData = fixNMMetadata(metaData);
-    const imageOrientationPatient = extractOrientationFromMetadata(metaData);
-    const imagePositionPatient = extractPositionFromMetadata(metaData);
+    let imageOrientationPatient = extractOrientationFromMetadata(metaData);
+    let imagePositionPatient = extractPositionFromMetadata(metaData);
     const pixelSpacing = getNumberValues(metaData['00280030'], 2);
 
     let columnPixelSpacing = null;
-
     let rowPixelSpacing = null;
+    let rowCosines = null;
+    let columnCosines = null;
 
+    let usingDefaultValues = false;
     if (pixelSpacing) {
       rowPixelSpacing = pixelSpacing[0];
       columnPixelSpacing = pixelSpacing[1];
+    } else {
+      usingDefaultValues = true;
+      rowPixelSpacing = 1;
+      columnPixelSpacing = 1;
     }
-
-    let rowCosines = null;
-
-    let columnCosines = null;
 
     if (imageOrientationPatient) {
       rowCosines = [
@@ -148,6 +179,16 @@ function metaDataProvider(type, imageId) {
         // @ts-expect-error
         parseFloat(imageOrientationPatient[5]),
       ];
+    } else {
+      rowCosines = [0, 1, 0];
+      columnCosines = [0, 0, -1];
+      usingDefaultValues = true;
+      imageOrientationPatient = [...rowCosines, ...columnCosines];
+    }
+
+    if (!imagePositionPatient) {
+      imagePositionPatient = [0, 0, 0];
+      usingDefaultValues = true;
     }
 
     return {
@@ -163,8 +204,10 @@ function metaDataProvider(type, imageId) {
       pixelSpacing,
       rowPixelSpacing,
       columnPixelSpacing,
+      usingDefaultValues,
     };
   }
+
   if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
     return getUSEnhancedRegions(metaData);
   }
@@ -188,7 +231,7 @@ function metaDataProvider(type, imageId) {
     return getCineModule(imageId, metaData);
   }
 
-  if (type === 'imagePixelModule') {
+  if (type === MetadataModules.IMAGE_PIXEL) {
     return {
       samplesPerPixel: getNumberValue(metaData['00280002']),
       photometricInterpretation: getValue(metaData['00280004']),
@@ -217,7 +260,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'voiLutModule') {
+  if (type === MetadataModules.VOI_LUT) {
     return {
       // TODO VOT LUT Sequence
       windowCenter: getNumberValues(metaData['00281050'], 1),
@@ -225,7 +268,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'modalityLutModule') {
+  if (type === MetadataModules.MODALITY_LUT) {
     return {
       // TODO VOT LUT Sequence
       rescaleIntercept: getNumberValue(metaData['00281052']),
@@ -234,14 +277,14 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'sopCommonModule') {
+  if (type === MetadataModules.SOP_COMMON) {
     return {
       sopClassUID: getValue<string>(metaData['00080016']),
       sopInstanceUID: getValue<string>(metaData['00080018']),
     };
   }
 
-  if (type === 'petIsotopeModule') {
+  if (type === MetadataModules.PET_ISOTOPE) {
     const radiopharmaceuticalInfo = getValue(metaData['00540016']);
 
     if (radiopharmaceuticalInfo === undefined) {
@@ -268,7 +311,7 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'overlayPlaneModule') {
+  if (type === MetadataModules.OVERLAY_PLANE) {
     return getOverlayPlaneModule(metaData);
   }
 
@@ -278,7 +321,7 @@ function metaDataProvider(type, imageId) {
     return getTransferSyntax(imageId, metaData);
   }
 
-  if (type === 'petSeriesModule') {
+  if (type === MetadataModules.PET_SERIES) {
     return {
       correctedImage: getValue(metaData['00280051']),
       units: getValue(metaData['00541001']),
@@ -286,14 +329,14 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === 'petImageModule') {
+  if (type === MetadataModules.PET_IMAGE) {
     return {
       frameReferenceTime: getNumberValue(metaData['00541300']),
       actualFrameDuration: getNumberValue(metaData['00181242']),
     };
   }
 
-  // This is used for gathering all the metadata for export
+  // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
     return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
   }
@@ -301,8 +344,7 @@ function metaDataProvider(type, imageId) {
 
 export function getImageUrlModule(imageId, metaData) {
   const { transferSyntaxUID } = getTransferSyntax(imageId, metaData);
-  const isVideo =
-    external.cornerstone.utilities.isVideoTransferSyntax(transferSyntaxUID);
+  const isVideo = utilities.isVideoTransferSyntax(transferSyntaxUID);
   const imageUrl = imageId.substring(7);
   const thumbnail = imageUrl.replace('/frames/', '/thumbnail/');
   let rendered = imageUrl.replace('/frames/', '/rendered/');
@@ -334,4 +376,5 @@ export function getTransferSyntax(imageId, metaData) {
       getValue<string>(metaData['00083002']),
   };
 }
+
 export default metaDataProvider;

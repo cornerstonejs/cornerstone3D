@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import { metaData } from '..';
-import { Point2, Point3 } from '../types';
+import { get } from '../metaData';
+import type { Point2, Point3 } from '../types';
 
 /**
  * Given the imageId and a 2d coordinates on the image space with [0,0] being the top left corner
@@ -15,7 +15,7 @@ export default function imageToWorldCoords(
   imageId: string,
   imageCoords: Point2
 ): Point3 | undefined {
-  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+  const imagePlaneModule = get('imagePlaneModule', imageId);
 
   if (!imagePlaneModule) {
     throw new Error(`No imagePlaneModule found for imageId: ${imageId}`);

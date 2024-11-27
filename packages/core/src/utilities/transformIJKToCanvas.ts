@@ -1,4 +1,4 @@
-import { IStackViewport, IVolumeViewport, Point3 } from '../types';
+import type { IStackViewport, IVolumeViewport, Point3 } from '../types';
 import transformIndexToWorld from './transformIndexToWorld';
 
 /**

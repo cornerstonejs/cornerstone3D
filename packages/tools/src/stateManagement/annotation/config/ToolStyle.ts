@@ -1,4 +1,4 @@
-import {
+import type {
   StyleConfig,
   ToolStyleConfig,
   StyleSpecifier,
@@ -31,7 +31,7 @@ class ToolStyle {
       color: 'rgb(255, 255, 0)',
       colorHighlighted: 'rgb(0, 255, 0)',
       colorSelected: 'rgb(0, 220, 0)',
-      colorLocked: 'rgb(255, 255, 0)',
+      colorLocked: 'rgb(209, 193, 90)',
       lineWidth: '1',
       lineDash: '',
       shadow: true,
@@ -41,7 +41,7 @@ class ToolStyle {
       textBoxColor: 'rgb(255, 255, 0)',
       textBoxColorHighlighted: 'rgb(0, 255, 0)',
       textBoxColorSelected: 'rgb(0, 255, 0)',
-      textBoxColorLocked: 'rgb(255, 255, 0)',
+      textBoxColorLocked: 'rgb(209, 193, 90)',
       textBoxBackground: '',
       textBoxLinkLineWidth: '1',
       textBoxLinkLineDash: '2,3',

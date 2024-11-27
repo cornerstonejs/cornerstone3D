@@ -100,6 +100,7 @@ function createImage(image, imageId) {
     rowPixelSpacing: 1, // for web it's always 1
     invert: false,
     sizeInBytes: rows * columns * 3,
+    numberOfComponents: 3,
   };
 }
 
@@ -206,8 +207,14 @@ function registerWebImageLoader(imageLoader): void {
  */
 function _loadImageIntoBuffer(
   imageId: string,
-  options?: Record<string, any>
-): { promise: Promise<Record<string, any>>; cancelFn: () => void } {
+  options?: {
+    targetBuffer?: {
+      arrayBuffer: ArrayBuffer;
+      offset: number;
+      length: number;
+    };
+  }
+): { promise: Promise<Record<string, unknown>>; cancelFn: () => void } {
   const uri = imageId.replace('web:', '');
 
   const promise = new Promise((resolve, reject) => {
@@ -216,10 +223,8 @@ function _loadImageIntoBuffer(
       .promise.then(
         (image) => {
           if (
-            !options ||
-            !options.targetBuffer ||
-            !options.targetBuffer.length ||
-            !options.targetBuffer.offset
+            !options?.targetBuffer?.length ||
+            !options?.targetBuffer?.offset
           ) {
             resolve(image);
             return;

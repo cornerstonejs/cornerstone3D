@@ -13,7 +13,7 @@ export type FilterParam = {
    * Was originally a key name, but this became too limited to match multiple levels
    * of selection, so was changed to a function returning the values.
    */
-  parentKey?: (annotation) => any;
+  parentKey?: (annotation: Annotation) => unknown;
 
   /**
    * The attribute to extract the value from the parent object, compared with

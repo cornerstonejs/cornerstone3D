@@ -1,13 +1,9 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
 import { pointInSphere } from './math/sphere';
-import pointInShapeCallback, {
-  PointInShapeCallback,
-} from './pointInShapeCallback';
-import { BoundsIJK } from '../types';
+import type { BoundsIJK } from '../types';
 import { getBoundingBoxAroundShape } from './boundingBox';
 
 const { transformWorldToIndex } = csUtils;
@@ -27,16 +23,17 @@ const { transformWorldToIndex } = csUtils;
  * @param circlePoints - bottom and top points of the great circle in world coordinates
  * @param callback - A callback function that will be called for each point in the shape.
  */
-export default function pointInSurroundingSphereCallback(
+export function pointInSurroundingSphereCallback(
   imageData: vtkImageData,
   circlePoints: [Types.Point3, Types.Point3],
-  callback: PointInShapeCallback,
+  callback: (args: {
+    value: unknown;
+    index: number;
+    pointIJK: Types.Point3;
+    pointLPS: Types.Point3;
+  }) => void,
   viewport?: Types.IVolumeViewport
 ): void {
-  // We can run the sphere equation to determine if a point is inside
-  // the sphere; however, since the imageData dimensions can be quite large, we
-  // can narrow down the search by estimating the bounds of the sphere in index
-  // space.
   const { boundsIJK, centerWorld, radiusWorld } = _getBounds(
     circlePoints,
     imageData,
@@ -48,12 +45,17 @@ export default function pointInSurroundingSphereCallback(
     radius: radiusWorld,
   };
 
-  pointInShapeCallback(
+  const dimensions = imageData.getDimensions();
+  const voxelManager = csUtils.VoxelManager.createScalarVolumeVoxelManager({
+    dimensions: dimensions as Types.Point3,
+    scalarData: imageData.getPointData().getScalars().getData(),
+  });
+
+  voxelManager.forEach(callback, {
+    boundsIJK,
+    isInObject: (pointLPS) => pointInSphere(sphereObj, pointLPS),
     imageData,
-    (pointLPS) => pointInSphere(sphereObj, pointLPS),
-    callback,
-    boundsIJK
-  );
+  });
 }
 
 function _getBounds(

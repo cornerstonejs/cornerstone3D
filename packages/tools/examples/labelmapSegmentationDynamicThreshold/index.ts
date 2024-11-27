@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -17,6 +17,8 @@ import {
   getLocalUrl,
   addButtonToToolbar,
   addManipulationBindings,
+  addManipulationBindings,
+  labelmapTools,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -26,7 +28,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -38,7 +39,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 
@@ -236,14 +237,9 @@ addDropdownToToolbar({
 
 addDropdownToToolbar({
   options: {
-    values: Array.from(thresholdOptions.keys()),
-    defaultValue: defaultThresholdOption,
+    map: labelmapTools.thresholdOptions,
   },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-
-    const thresholdArgs = thresholdOptions.get(name);
-
+  onSelectedValueChange: (name, thresholdArgs) => {
     segmentationUtils.setBrushThresholdForToolGroup(
       toolGroupId,
       thresholdArgs.threshold,
@@ -288,7 +284,7 @@ addButtonToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
     // The following doesn't quite work yet
     // TODO, allow RLE to be used instead of scalars.
@@ -376,7 +372,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory

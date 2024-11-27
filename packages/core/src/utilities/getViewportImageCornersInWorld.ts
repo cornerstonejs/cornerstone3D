@@ -1,4 +1,4 @@
-import {
+import type {
   IImageData,
   IStackViewport,
   IVolumeViewport,
@@ -18,13 +18,26 @@ import {
 export default function getViewportImageCornersInWorld(
   viewport: IStackViewport | IVolumeViewport
 ): Point3[] {
-  const { imageData, dimensions } = viewport.getImageData() as IImageData;
+  const { imageData, dimensions } =
+    (viewport.getImageData() as IImageData) || {};
+
+  if (!imageData || !dimensions) {
+    return [];
+  }
+
   const { canvas } = viewport;
 
+  // we should consider the device pixel ratio since we are
+  // working with canvas coordinates
+  const ratio = window.devicePixelRatio;
+
   const topLeftCanvas: Point2 = [0, 0];
-  const topRightCanvas: Point2 = [canvas.width, 0];
-  const bottomRightCanvas: Point2 = [canvas.width, canvas.height];
-  const bottomLeftCanvas: Point2 = [0, canvas.height];
+  const topRightCanvas: Point2 = [canvas.width / ratio, 0];
+  const bottomRightCanvas: Point2 = [
+    canvas.width / ratio,
+    canvas.height / ratio,
+  ];
+  const bottomLeftCanvas: Point2 = [0, canvas.height / ratio];
 
   const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
   const topRightWorld = viewport.canvasToWorld(topRightCanvas);

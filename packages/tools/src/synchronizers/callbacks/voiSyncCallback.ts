@@ -1,8 +1,8 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
-  Types,
 } from '@cornerstonejs/core';
 
 /**
@@ -19,8 +19,8 @@ export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
-  modifiedEvent: any,
-  options?: any
+  modifiedEvent: Types.EventTypes.VoiModifiedEvent,
+  options?: { syncInvertState?: boolean; syncColormap?: boolean }
 ): void {
   const eventDetail = modifiedEvent.detail;
   const { volumeId, range, invertStateChanged, invert, colormap } = eventDetail;
@@ -47,7 +47,12 @@ export default function voiSyncCallback(
   }
 
   if (tViewport instanceof BaseVolumeViewport) {
-    tViewport.setProperties(tProperties, volumeId);
+    const isFusion = tViewport._actors && tViewport._actors.size > 1;
+    if (isFusion) {
+      tViewport.setProperties(tProperties, volumeId);
+    } else {
+      tViewport.setProperties(tProperties);
+    }
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties(tProperties);
   } else {

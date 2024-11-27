@@ -1,0 +1,17 @@
+{
+  "name": "@externals/dicom-microscopy-viewer",
+  "description": "External reference to dicom-microscopy-viewer",
+  "private": true,
+  "version": "2.1.10",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18",
+    "yarn": ">=1.19.1"
+  },
+  "dependencies": {
+    "dicom-microscopy-viewer": "^0.46.1"
+  },
+  "scripts": {
+    "build": "echo addOns externals dependency"
+  }
+}

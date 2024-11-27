@@ -1,6 +1,4 @@
-import { getActiveSegmentationRepresentation } from './activeSegmentation';
-
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 /**
@@ -20,8 +18,8 @@ function isSegmentIndexLocked(
     throw new Error(`No segmentation state found for ${segmentationId}`);
   }
 
-  const { segmentsLocked } = segmentation;
-  return segmentsLocked.has(segmentIndex);
+  const { segments } = segmentation;
+  return segments[segmentIndex].locked;
 }
 
 /**
@@ -41,13 +39,9 @@ function setSegmentIndexLocked(
     throw new Error(`No segmentation state found for ${segmentationId}`);
   }
 
-  const { segmentsLocked } = segmentation;
+  const { segments } = segmentation;
 
-  if (locked) {
-    segmentsLocked.add(segmentIndex);
-  } else {
-    segmentsLocked.delete(segmentIndex);
-  }
+  segments[segmentIndex].locked = locked;
 
   triggerSegmentationModified(segmentationId);
 }
@@ -58,15 +52,18 @@ function setSegmentIndexLocked(
  * segments for.
  * @returns An array of locked segment indices.
  */
-function getLockedSegments(segmentationId: string): number[] | [] {
+function getLockedSegmentIndices(segmentationId: string): number[] | [] {
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
     throw new Error(`No segmentation state found for ${segmentationId}`);
   }
 
-  const { segmentsLocked } = segmentation;
-  return Array.from(segmentsLocked);
+  const { segments } = segmentation;
+  const lockedSegmentIndices = Object.keys(segments).filter(
+    (segmentIndex) => segments[segmentIndex].locked
+  );
+  return lockedSegmentIndices.map((segmentIndex) => parseInt(segmentIndex));
 }
 
-export { isSegmentIndexLocked, setSegmentIndexLocked, getLockedSegments };
+export { isSegmentIndexLocked, setSegmentIndexLocked, getLockedSegmentIndices };

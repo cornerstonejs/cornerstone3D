@@ -1,4 +1,4 @@
-import { state } from '../index';
+import { state } from '../state';
 
 // Synchronizers are a bit more tenacious. We need to make sure we remove
 // any attached events

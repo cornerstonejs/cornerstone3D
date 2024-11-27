@@ -4,9 +4,9 @@
  * labelmap is supported.
  */
 enum SegmentationRepresentations {
-  Labelmap = 'LABELMAP',
-  Contour = 'CONTOUR',
-  Surface = 'SURFACE',
+  Labelmap = 'Labelmap',
+  Contour = 'Contour',
+  Surface = 'Surface',
 }
 
 export default SegmentationRepresentations;

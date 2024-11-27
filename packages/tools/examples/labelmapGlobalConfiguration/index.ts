@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -14,7 +14,7 @@ import {
   addToggleButtonToToolbar,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-import { fillVolumeSegmentationWithMockData } from '../../../../utils/test/testUtils';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -23,7 +23,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -57,87 +56,128 @@ element.style.height = size;
 content.appendChild(element);
 // ============================= //
 
-function setConfigValue(property, value) {
-  const config = segmentation.config.getGlobalConfig();
-
-  config.representations.LABELMAP[property] = value;
-  segmentation.config.setGlobalConfig(config);
-
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  renderingEngine.renderViewports([viewportId]);
-}
-
 addToggleButtonToToolbar({
   title: 'toggle render inactive segmentations',
   onClick: (toggle) => {
-    const config = segmentation.config.getGlobalConfig();
-
-    config.renderInactiveSegmentations = toggle;
-    segmentation.config.setGlobalConfig(config);
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    renderingEngine.renderViewports([viewportId]);
+    segmentation.config.style.setRenderInactiveSegmentations(
+      viewportId,
+      toggle
+    );
   },
   defaultToggle: true,
 });
+
 addToggleButtonToToolbar({
   title: 'toggle outline rendering',
   onClick: (toggle) => {
-    setConfigValue('renderOutline', toggle);
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        renderOutline: toggle,
+      }
+    );
   },
   defaultToggle: true,
 });
 addToggleButtonToToolbar({
   title: 'toggle fill rendering',
   onClick: (toggle) => {
-    setConfigValue('renderFill', toggle);
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        renderFill: toggle,
+      }
+    );
   },
   defaultToggle: true,
 });
 
 addSliderToToolbar({
+  id: 'outlineWidthActive',
   title: 'outline width active',
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthActive', Number(value));
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        outlineWidth: Number(value),
+      }
+    );
   },
 });
+
 addSliderToToolbar({
+  id: 'outlineAlphaActive',
   title: 'outline alpha active',
   range: [0, 100],
   defaultValue: 100,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineOpacity', Number(value) / 100);
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        outlineOpacity: Number(value) / 100,
+      }
+    );
   },
 });
 addSliderToToolbar({
+  id: 'outlineWidthInactive',
   title: 'outline width inactive',
   range: [1, 5],
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    setConfigValue('outlineWidthInactive', Number(value));
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        outlineWidthInactive: Number(value),
+      }
+    );
   },
 });
 addSliderToToolbar({
+  id: 'fillAlphaActive',
   title: 'fill alpha',
   range: [0, 100],
   defaultValue: 50,
   onSelectedValueChange: (value) => {
     const mappedValue = Number(value) / 100.0;
 
-    setConfigValue('fillAlpha', mappedValue);
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        fillAlpha: mappedValue,
+      }
+    );
   },
 });
 addSliderToToolbar({
+  id: 'fillAlphaInactive',
   title: 'fill alpha inactive',
   range: [0, 100],
   defaultValue: 50,
   onSelectedValueChange: (value) => {
     const mappedValue = Number(value) / 100.0;
-    setConfigValue('fillAlphaInactive', mappedValue);
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+      {
+        fillAlphaInactive: mappedValue,
+      }
+    );
   },
 });
 
@@ -146,11 +186,11 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId1,
     });
   const segmentationVolume2 =
-    await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId2,
     });
 
@@ -180,12 +220,12 @@ async function addSegmentationsToState() {
   ]);
 
   // Add some data to the segmentations
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume1.volumeId,
     centerOffset: [50, 50, 0],
     cornerstone,
   });
-  fillVolumeSegmentationWithMockData({
+  fillVolumeLabelmapWithMockData({
     volumeId: segmentationVolume2.volumeId,
     centerOffset: [-50, -50, 0],
     cornerstone,
@@ -200,13 +240,9 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -214,7 +250,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const smallVolumeImageIds = [imageIds[0], imageIds[1]];
@@ -251,8 +287,8 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // // Add the segmentation representations to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representations to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId, [
     {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

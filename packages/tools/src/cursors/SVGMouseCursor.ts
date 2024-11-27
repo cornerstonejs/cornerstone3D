@@ -1,5 +1,5 @@
 import { ToolModes, AnnotationStyleStates } from '../enums';
-import MouseCursor from './MouseCursor';
+import type MouseCursor from './MouseCursor';
 import ImageMouseCursor from './ImageMouseCursor';
 import { getDefinedSVGCursorDescriptor } from './SVGCursorDescriptor';
 import { getStyleProperty } from '../stateManagement/annotation/config/helpers';
@@ -98,7 +98,12 @@ function createSVGIconUrl(
   pointer: boolean,
   options: Record<string, unknown>
 ): string {
-  return URL.createObjectURL(createSVGIconBlob(descriptor, pointer, options));
+  const blob = createSVGIconBlob(descriptor, pointer, options);
+  const url = URL.createObjectURL(blob);
+  const urn = `${url}#${descriptor.name || 'unknown'}-${
+    pointer ? 'pointer' : 'cursor'
+  }`;
+  return urn;
 }
 
 function createSVGIconBlob(

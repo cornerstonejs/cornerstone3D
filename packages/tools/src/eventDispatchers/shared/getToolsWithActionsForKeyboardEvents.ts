@@ -1,6 +1,6 @@
-import { ToolGroupManager } from '../../store';
-import { ToolModes } from '../../enums';
-import { EventTypes } from '../../types';
+import type { ToolModes } from '../../enums';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
+import type { EventTypes } from '../../types';
 
 /**
  * Given the normalized mouse event and a filter of modes,
@@ -15,10 +15,7 @@ export default function getToolsWithModesForKeyboardEvent(
 ) {
   const toolsWithActions = new Map();
   const { renderingEngineId, viewportId } = evt.detail;
-  const toolGroup = ToolGroupManager.getToolGroupForViewport(
-    viewportId,
-    renderingEngineId
-  );
+  const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
   if (!toolGroup) {
     return toolsWithActions;
@@ -40,6 +37,7 @@ export default function getToolsWithModesForKeyboardEvent(
       continue;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const action = actions.find((action: any) =>
       action.bindings.some((binding) => binding.key === key)
     );

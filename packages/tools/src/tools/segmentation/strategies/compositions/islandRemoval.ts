@@ -16,7 +16,7 @@ export default {
   ) => {
     const {
       previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,
@@ -172,7 +172,7 @@ export default {
     }
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfSlices(),
+      previewVoxelManager.getArrayOfModifiedSlices(),
       previewSegmentIndex
     );
   },

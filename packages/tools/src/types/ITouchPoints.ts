@@ -1,4 +1,4 @@
-import IPoints from './IPoints';
+import type IPoints from './IPoints';
 
 type ITouchPoints = IPoints & {
   /** Native Touch object properties which are JSON serializable*/
@@ -11,4 +11,4 @@ type ITouchPoints = IPoints & {
   };
 };
 
-export default ITouchPoints;
+export type { ITouchPoints as default };

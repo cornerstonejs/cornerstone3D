@@ -1,36 +1,68 @@
 {
   "name": "@cornerstonejs/nifti-volume-loader",
-  "version": "1.66.0",
-  "description": "",
-  "main": "dist/umd/index.js",
-  "types": "dist/esm/index.d.ts",
-  "module": "dist/esm/index.js",
+  "version": "2.2.20",
+  "description": "Nifti Image Loader for Cornerstone3D",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
-    "dist/"
+    "dist/esm"
   ],
-  "directories": {
-    "test": "test"
-  },
   "publishConfig": {
     "access": "public"
   },
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
+    "./helpers": {
+      "import": "./dist/esm/helpers/index.js",
+      "types": "./dist/esm/helpers/index.d.ts"
+    },
+    "./helpers/*": {
+      "import": "./dist/esm/helpers/*.js",
+      "types": "./dist/esm/helpers/*.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/esm/constants/index.js",
+      "types": "./dist/esm/constants/index.d.ts"
+    },
+    "./constants/*": {
+      "import": "./dist/esm/constants/*.js",
+      "types": "./dist/esm/constants/*.d.ts"
+    },
+    "./enums": {
+      "import": "./dist/esm/enums/index.js",
+      "types": "./dist/esm/enums/index.d.ts"
+    },
+    "./enums/*": {
+      "import": "./dist/esm/enums/*.js",
+      "types": "./dist/esm/enums/*.d.ts"
+    }
+  },
   "scripts": {
-    "build:esm": "tsc --project ./tsconfig.esm.json",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "yarn run build:umd && yarn run build:esm",
+    "dev": "tsc --project ./tsconfig.json --watch",
     "build": "yarn run build:all && yarn run copy-dts",
-    "clean": "shx rm -rf dist",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "format-check": "npx eslint ./src --quiet",
+    "api-check": "api-extractor --debug run ",
     "copy-dts": "copyfiles -u 1 \"src/**/*.d.ts\" dist/esm",
-    "api-check": "api-extractor --debug run",
-    "build:update-api": "yarn run build && api-extractor run --local",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "@cornerstonejs/core": "^1.66.0",
-    "nifti-reader-js": "^0.6.6"
+    "nifti-reader-js": "^0.6.8"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": "^2.2.20"
   },
   "contributors": [
     {

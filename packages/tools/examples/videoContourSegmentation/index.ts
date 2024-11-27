@@ -1,4 +1,5 @@
-import { Enums, RenderingEngine, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
@@ -13,7 +14,7 @@ import {
   getLocalUrl,
   addVideoTime,
   addSegmentIndexDropdown,
-  contourSegmentationToolBindings,
+  contourTools,
 } from '../../../../utils/demo/helpers';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -27,17 +28,13 @@ const DEFAULT_SEGMENTATION_CONFIG = {
   fillAlphaInactive: 0.3,
   outlineOpacity: 1,
   outlineOpacityInactive: 0.85,
-  outlineWidthActive: 3,
+  outlineWidth: 3,
   outlineWidthInactive: 2,
-  outlineDashActive: undefined,
+  outlineDash: undefined,
   outlineDashInactive: undefined,
 };
 
 const {
-  SplineContourSegmentationTool,
-  SegmentationDisplayTool,
-  LivewireContourSegmentationTool,
-  PlanarFreehandContourSegmentationTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -48,56 +45,10 @@ const { ViewportType } = Enums;
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
-let segmentationRepresentationUID = '';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 
-const configuredTools = new Map<string, any>();
-const interpolationConfiguration = {
-  interpolation: { enabled: true },
-  decimate: {
-    enabled: true,
-    /** A maximum given distance 'epsilon' to decide if a point should or
-     * shouldn't be added the resulting polyline which will have a lower
-     * number of points for higher `epsilon` values.
-     * Larger values work well for this video example
-     */
-    epsilon: 0.5,
-  },
-};
-
-configuredTools.set('CatmullRomSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.CatmullRom,
-  },
-});
-configuredTools.set('LinearSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.Linear,
-  },
-});
-
-configuredTools.set('BSplineROI', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: {
-    splineType: SplineContourSegmentationTool.SplineTypes.BSpline,
-  },
-});
-
-configuredTools.set('FreeformInterpolation', {
-  baseTool: PlanarFreehandContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
-configuredTools.set('SplineInterpolation', {
-  baseTool: SplineContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
-configuredTools.set('LivewireInterpolation', {
-  baseTool: LivewireContourSegmentationTool.toolName,
-  configuration: interpolationConfiguration,
-});
+const { toolMap } = contourTools;
 
 // ======== Set up page ======== //
 
@@ -139,13 +90,11 @@ createInfoSection(content, { ordered: true })
 function updateInputsForCurrentSegmentation() {
   // We can use any toolGroupId because they are all configured in the same way
   const segmentationConfig = getSegmentationConfig(toolGroupId);
-  const contourConfig = segmentationConfig.CONTOUR;
+  const contourConfig = segmentationConfig.Contour;
 
-  (document.getElementById('outlineWidthActive') as HTMLInputElement).value =
-    String(
-      contourConfig.outlineWidthActive ??
-        DEFAULT_SEGMENTATION_CONFIG.outlineWidthActive
-    );
+  (document.getElementById('outlineWidth') as HTMLInputElement).value = String(
+    contourConfig.outlineWidth ?? DEFAULT_SEGMENTATION_CONFIG.outlineWidth
+  );
 
   (document.getElementById('outlineOpacity') as HTMLInputElement).value =
     String(
@@ -169,18 +118,17 @@ function getSegmentsVisibilityState() {
 }
 
 function getSegmentationConfig(
-  toolGroupdId: string
+  toolGroupId: string
 ): cstTypes.RepresentationConfig {
   const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationSpecificConfig(
-      toolGroupdId,
+    segmentation.config.getSegmentationRepresentationConfig(
       segmentationRepresentationUID
     ) ?? {};
 
-  // Add CONTOUR object because getSegmentationRepresentationSpecificConfig
+  // Add Contour object because it
   // can return an empty object
-  if (!segmentationConfig.CONTOUR) {
-    segmentationConfig.CONTOUR = {};
+  if (!segmentationConfig.Contour) {
+    segmentationConfig.Contour = {};
   }
 
   return segmentationConfig;
@@ -189,10 +137,9 @@ function getSegmentationConfig(
 function updateSegmentationConfig(config) {
   const segmentationConfig = getSegmentationConfig(toolGroupId);
 
-  Object.assign(segmentationConfig.CONTOUR, config);
+  Object.assign(segmentationConfig.Contour, config);
 
-  segmentation.config.setSegmentationRepresentationSpecificConfig(
-    toolGroupId,
+  segmentation.config.setSegmentationRepresentationConfig(
     segmentationRepresentationUID,
     segmentationConfig
   );
@@ -214,31 +161,9 @@ element.addEventListener(
 
 addSegmentIndexDropdown(segmentationId);
 
-const toolNames = [
-  PlanarFreehandContourSegmentationTool.toolName,
-  LivewireContourSegmentationTool.toolName,
-  ...configuredTools.keys(),
-];
-let selectedToolName = toolNames[0];
-
 addDropdownToToolbar({
-  options: { values: toolNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName, {
-      removeAllBindings: contourSegmentationToolBindings,
-    });
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: contourSegmentationToolBindings,
-    });
-
-    selectedToolName = <string>newSelectedToolName;
-  },
+  options: { map: toolMap },
+  toolGroupId,
 });
 
 addToggleButtonToToolbar({
@@ -246,9 +171,12 @@ addToggleButtonToToolbar({
   onClick: function (toggle) {
     const segmentsVisibility = getSegmentsVisibilityState();
 
-    segmentation.config.visibility.setSegmentationVisibility(
-      toolGroupId,
-      segmentationRepresentationUID,
+    segmentation.config.visibility.setSegmentationRepresentationVisibility(
+      viewportId,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       !toggle
     );
 
@@ -263,8 +191,8 @@ addButtonToToolbar({
     const { segmentIndex: activeSegmentIndex } = addSegmentIndexDropdown;
     const visible = !segmentsVisibility[activeSegmentIndex];
 
-    segmentation.config.visibility.setSegmentVisibility(
-      toolGroupId,
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
       segmentationRepresentationUID,
       activeSegmentIndex,
       visible
@@ -275,13 +203,13 @@ addButtonToToolbar({
 });
 
 addSliderToToolbar({
-  id: 'outlineWidthActive',
+  id: 'outlineWidth',
   title: 'Outline Thickness',
   range: [0.1, 10],
   step: 0.1,
   defaultValue: 1,
   onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineWidthActive: Number(value) });
+    updateSegmentationConfig({ outlineWidth: Number(value) });
   },
 });
 
@@ -314,37 +242,16 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
-  cornerstoneTools.addTool(SplineContourSegmentationTool);
-  cornerstoneTools.addTool(LivewireContourSegmentationTool);
-  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
-
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
-
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
-  toolGroup.addTool(SplineContourSegmentationTool.toolName);
-  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup.addTool(LivewireContourSegmentationTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-  for (const [toolName, config] of configuredTools.entries()) {
-    toolGroup.addToolInstance(toolName, config.baseTool, config.configuration);
-  }
-
-  toolGroup.setToolActive(toolNames[0], {
-    bindings: contourSegmentationToolBindings,
-  });
+  addManipulationBindings(toolGroup, { toolMap });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
@@ -391,9 +298,9 @@ async function run() {
     },
   ]);
 
-  // Create a segmentation representation associated to the toolGroupId
+  // Create a segmentation representation associated to the viewportId
   const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(toolGroupId, [
+    await segmentation.addSegmentationRepresentations(viewportId, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,

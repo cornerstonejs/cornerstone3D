@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   getRenderingEngine,
   Enums,
 } from '@cornerstonejs/core';
@@ -104,9 +104,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Set a range to highlight bones
     viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
@@ -122,9 +122,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -147,9 +147,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -171,9 +171,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId);
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
@@ -191,7 +189,7 @@ addButtonToToolbar({
     // Move the camera in plane by some random number
     const viewRight = vec3.create(); // Get the X direction of the viewport
 
-    vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
+    vec3.cross(viewRight, viewUp as vec3, viewPlaneNormal as vec3);
 
     const randomPanX = 50 * (2.0 * Math.random() - 1);
     const randomPanY = 50 * (2.0 * Math.random() - 1);
@@ -218,8 +216,8 @@ addButtonToToolbar({
 
     viewport.setCamera({
       parallelScale: newParallelScale,
-      position: <Types.Point3>newPosition,
-      focalPoint: <Types.Point3>newFocalPoint,
+      position: newPosition as Types.Point3,
+      focalPoint: newFocalPoint as Types.Point3,
     });
     viewport.render();
   },
@@ -232,9 +230,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(viewportId);
 
     // Resets the viewport's camera
     viewport.resetCamera();
@@ -257,7 +253,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -270,16 +266,16 @@ async function run() {
     type: ViewportType.STACK,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]];

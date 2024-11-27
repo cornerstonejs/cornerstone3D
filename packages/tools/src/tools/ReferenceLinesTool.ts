@@ -4,16 +4,16 @@ import {
   CONSTANTS,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import { type Types, getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
 
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
-import { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import type { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 
 const { EPSILON } = CONSTANTS;
@@ -21,18 +21,15 @@ const { EPSILON } = CONSTANTS;
 /**
  * @public
  */
-
 class ReferenceLines extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    renderingEngine: any;
-    sourceViewport: any;
+    renderingEngine: Types.IRenderingEngine;
+    sourceViewportId: string;
     annotation: ReferenceLineAnnotation;
-  } | null = {} as any;
+  } | null = null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -42,6 +39,7 @@ class ReferenceLines extends AnnotationDisplayTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         sourceViewportId: '',
+        enforceSameFrameOfReference: true,
         showFullDimension: false,
       },
     }
@@ -71,7 +69,7 @@ class ReferenceLines extends AnnotationDisplayTool {
       this.configuration.sourceViewportId
     ) as Types.IVolumeViewport;
 
-    if (!sourceViewport || !sourceViewport.getImageData()) {
+    if (!sourceViewport?.getImageData()) {
       return;
     }
 
@@ -81,7 +79,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     const sourceViewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(sourceViewport);
 
-    let annotation = this.editData.annotation;
+    let annotation = this.editData?.annotation;
     const FrameOfReferenceUID = sourceViewport.getFrameOfReferenceUID();
 
     if (!annotation) {
@@ -110,13 +108,12 @@ class ReferenceLines extends AnnotationDisplayTool {
     }
 
     this.editData = {
-      sourceViewport,
+      sourceViewportId: sourceViewport.id,
       renderingEngine,
       annotation,
     };
 
     triggerAnnotationRenderForViewportIds(
-      renderingEngine,
       viewports
         .filter((viewport) => viewport.id !== sourceViewport.id)
         .map((viewport) => viewport.id)
@@ -124,6 +121,10 @@ class ReferenceLines extends AnnotationDisplayTool {
   };
 
   onSetToolEnabled = (): void => {
+    this._init();
+  };
+
+  onSetToolConfiguration = (): void => {
     this._init();
   };
 
@@ -148,9 +149,19 @@ class ReferenceLines extends AnnotationDisplayTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     const { viewport: targetViewport } = enabledElement;
-    const { annotation, sourceViewport } = this.editData;
+
+    if (!this.editData) {
+      return false;
+    }
+
+    const { annotation, sourceViewportId } = this.editData;
 
     let renderStatus = false;
+
+    // we need to grab the viewport again since there might have been
+    // a change in the viewport state since the last time we cached it
+    const { viewport: sourceViewport } =
+      getEnabledElementByViewportId(sourceViewportId) || {};
 
     if (!sourceViewport) {
       return renderStatus;
@@ -162,6 +173,14 @@ class ReferenceLines extends AnnotationDisplayTool {
     }
 
     if (!annotation || !annotation?.data?.handles?.points) {
+      return renderStatus;
+    }
+
+    if (
+      this.configuration.enforceSameFrameOfReference &&
+      sourceViewport.getFrameOfReferenceUID() !==
+        targetViewport.getFrameOfReferenceUID()
+    ) {
       return renderStatus;
     }
 
@@ -295,7 +314,7 @@ class ReferenceLines extends AnnotationDisplayTool {
   ) {
     const renderingEngine = targetViewport.getRenderingEngine();
     const targetId = this.getTargetId(targetViewport);
-    const targetImage = this.getTargetIdImage(targetId, renderingEngine);
+    const targetImage = this.getTargetImageData(targetId);
 
     const referencedImageId = this.getReferencedImageId(
       targetViewport,

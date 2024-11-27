@@ -1,7 +1,6 @@
 import { Events } from '../../enums';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -12,14 +11,13 @@ import {
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import * as lineSegment from '../../utilities/math/line';
 import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
-import { roundNumber } from '../../utilities';
 
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -32,26 +30,25 @@ import {
   hideElementCursor,
 } from '../../cursors/elementCursor';
 
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class AngleTool extends AnnotationTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
   angleStartedNotYetCompleted: boolean;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox?: boolean;
@@ -128,6 +125,7 @@ class AngleTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
+        ...viewport.getViewReference({ points: [worldPos] }),
       },
       data: {
         handles: {
@@ -168,7 +166,7 @@ class AngleTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -274,7 +272,7 @@ class AngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -318,7 +316,7 @@ class AngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   }
@@ -362,7 +360,7 @@ class AngleTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -421,7 +419,7 @@ class AngleTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -438,13 +436,7 @@ class AngleTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const enabledElement = getEnabledElement(element);
-      const { renderingEngine } = enabledElement;
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -661,7 +653,7 @@ class AngleTool extends AnnotationTool {
       let activeHandleCanvasCoords;
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotation.annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -807,10 +799,7 @@ class AngleTool extends AnnotationTool {
         [worldPos1, worldPos2],
         [worldPos2, worldPos3]
       );
-      const { dimensions, imageData } = this.getTargetIdImage(
-        targetId,
-        renderingEngine
-      );
+      const { dimensions, imageData } = this.getTargetImageData(targetId);
 
       // Decide if there's at least one handle is outside of image
       this.isHandleOutsideImage = [worldPos1, worldPos2, worldPos3]
@@ -838,7 +827,14 @@ function defaultGetTextLines(data, targetId): string[] {
     return;
   }
 
-  const textLines = [`${roundNumber(angle)} ${String.fromCharCode(176)}`];
+  if (isNaN(angle)) {
+    // The verbiage for incomplete angle is set in cachedStats
+    return [`${angle}`];
+  }
+
+  const textLines = [
+    `${csUtils.roundNumber(angle)} ${String.fromCharCode(176)}`,
+  ];
 
   return textLines;
 }

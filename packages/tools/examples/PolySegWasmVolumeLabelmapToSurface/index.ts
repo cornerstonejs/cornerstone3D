@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -5,7 +6,7 @@ import {
   volumeLoader,
   CONSTANTS,
   utilities,
-  Types,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -17,6 +18,7 @@ import {
   addToggleButtonToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -26,15 +28,10 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
   BrushTool,
-  PanTool,
-  ZoomTool,
-  StackScrollMouseWheelTool,
-  TrackballRotateTool,
 } = cornerstoneTools;
 
 setTitleAndDescription(
@@ -107,7 +104,7 @@ addButtonToToolbar({
   title: 'Convert labelmap to surface',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addSegmentationRepresentations(viewportId3, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Surface,
@@ -175,6 +172,21 @@ addToggleButtonToToolbar({
   },
 });
 
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 100).toFixed(2)}%`;
+});
+
 /**
  * Runs the demo
  */
@@ -183,7 +195,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -194,19 +205,12 @@ async function run() {
   addManipulationBindings(toolGroup2, { is3DViewport: true });
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
   toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
     activeStrategy: 'FILL_INSIDE_SPHERE',
   });
   toolGroup1.addToolInstance('EraserBrush', BrushTool.toolName, {
     activeStrategy: 'ERASE_INSIDE_SPHERE',
   });
-
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive('SphereBrush', {
     bindings: [
@@ -222,7 +226,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -288,8 +292,7 @@ async function run() {
 
   // Add some segmentations based on the source data volume
   // Create a segmentation of the same resolution as the source data
-  // using volumeLoader.createAndCacheDerivedVolume.
-  await volumeLoader.createAndCacheDerivedVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -309,18 +312,19 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // Add the segmentation representation to the viewports
+  const segmentationRepresentation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
 
-  // setBrushSizeForToolGroup(toolGroupId, 100);
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: [segmentationRepresentation],
+    [viewportId2]: [segmentationRepresentation],
+  });
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.render();
 }
 
 run();

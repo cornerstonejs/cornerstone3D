@@ -1,7 +1,7 @@
 import { vec3, mat4 } from 'gl-matrix';
-import { IStackViewport, IVolumeViewport } from '../types';
+import type { IStackViewport, IVolumeViewport } from '../types';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
-import { metaData } from '..';
+import { get } from '../metaData';
 
 /**
  * Defines the allowed difference as a percent between the unit normals before
@@ -27,11 +27,11 @@ function calculateViewportsSpatialRegistration(
   viewport1: IStackViewport | IVolumeViewport,
   viewport2: IStackViewport | IVolumeViewport
 ): void {
-  const imageId1 = viewport1.getCurrentImageId();
-  const imageId2 = viewport2.getCurrentImageId();
+  const imageId1 = viewport1.getSliceIndex();
+  const imageId2 = viewport2.getSliceIndex();
 
-  const imagePlaneModule1 = metaData.get('imagePlaneModule', imageId1);
-  const imagePlaneModule2 = metaData.get('imagePlaneModule', imageId2);
+  const imagePlaneModule1 = get('imagePlaneModule', imageId1.toString());
+  const imagePlaneModule2 = get('imagePlaneModule', imageId2.toString());
 
   if (!imagePlaneModule1 || !imagePlaneModule2) {
     console.log('Viewport spatial registration requires image plane module');

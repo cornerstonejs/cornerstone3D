@@ -4,9 +4,8 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
-  getConfiguration as getCoreConfiguration,
 } from '@cornerstonejs/core';
-import { addToolState, getToolState } from './state';
+import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
   getStackData,
   requestType,
@@ -14,7 +13,6 @@ import {
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
-import { roundNumber } from '../../utilities';
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -63,8 +61,10 @@ const resetPrefetchDelay = 5;
  */
 const enable = (element): void => {
   const stack = getStackData(element);
-
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+  if (!stack) {
+    return;
+  }
+  if (!stack.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
@@ -90,6 +90,9 @@ const enable = (element): void => {
 
 function prefetch(element) {
   const stack = getStackData(element);
+  if (!stack) {
+    return;
+  }
   if (!stack?.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
@@ -102,10 +105,11 @@ function prefetch(element) {
     return;
   }
 
-  const stackPrefetch = stackPrefetchData || {};
+  const stackPrefetch = (stackPrefetchData || {}) as StackPrefetchData;
 
   // If all the requests are complete, disable the stackPrefetch tool
-  stackPrefetch.enabled &&= stackPrefetch.indicesToRequest?.length;
+  stackPrefetch.enabled =
+    stackPrefetch.enabled && (stackPrefetch.indicesToRequest?.length ?? 0) > 0;
 
   // Make sure the tool is still enabled
   if (stackPrefetch.enabled === false) {
@@ -164,7 +168,7 @@ function prefetch(element) {
     imageLoadPoolManager.filterRequests(clearFromImageIds(stack));
   }
 
-  function doneCallback(imageId) {
+  function doneCallback(imageId: string) {
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
@@ -191,22 +195,22 @@ function prefetch(element) {
           stats.fillTime = Date.now() - stats.start;
           const { size } = stats.imageIds;
           stats.fillSize = size;
-          console.log(
-            'Done cache fill',
-            stats.fillTime,
-            'ms',
-            size,
-            'items',
-            'average total time',
-            roundNumber(stats.fillTime / size),
-            'ms',
-            'average load',
-            roundNumber(stats.loadTimeInMS / size),
-            'ms',
-            'average decode',
-            roundNumber(stats.decodeTimeInMS / size),
-            'ms'
-          );
+          // console.log(
+          //   'Done cache fill',
+          //   stats.fillTime,
+          //   'ms',
+          //   size,
+          //   'items',
+          //   'average total time',
+          //   roundNumber(stats.fillTime / size),
+          //   'ms',
+          //   'average load',
+          //   roundNumber(stats.loadTimeInMS / size),
+          //   'ms',
+          //   'average decode',
+          //   roundNumber(stats.decodeTimeInMS / size),
+          //   'ms'
+          // );
         }
       }
     }
@@ -217,19 +221,11 @@ function prefetch(element) {
       .loadAndCacheImage(imageId, options)
       .then(() => doneCallback(imageId));
 
-  const { useNorm16Texture } = getCoreConfiguration().rendering;
-
-  indicesToRequestCopy.forEach((imageIdIndex) => {
+  stackPrefetch.indicesToRequest.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
-      targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
-      },
-      preScale: {
-        enabled: true,
-      },
       requestType,
     };
 
@@ -269,7 +265,11 @@ const signum = (x) => (x < 0 ? -1 : 1);
 
 const updateToolState = (element, usage?: number) => {
   const stack = getStackData(element);
-  if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
+  if (!stack) {
+    // Other viewport type - no message
+    return;
+  }
+  if (!stack.imageIds?.length) {
     console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
@@ -278,20 +278,22 @@ const updateToolState = (element, usage?: number) => {
   let { maxAfter = 2, minBefore = 2 } = configuration;
   const { directionExtraImages = 10 } = configuration;
   // Use the currentImageIdIndex from the stack as the initialImageIdIndex
-  const stackPrefetchData = getToolState(element) || {
-    indicesToRequest: [],
-    currentImageIdIndex,
-    stackCount: 0,
-    enabled: true,
-    direction: 1,
-    stats: {
-      start: Date.now(),
-      imageIds: new Map(),
-      decodeTimeInMS: 0,
-      loadTimeInMS: 0,
-      totalBytes: 0,
-    },
-  };
+  const stackPrefetchData =
+    getToolState(element) ||
+    ({
+      indicesToRequest: [],
+      currentImageIdIndex,
+      stackCount: 0,
+      enabled: true,
+      direction: 1,
+      stats: {
+        start: Date.now(),
+        imageIds: new Map(),
+        decodeTimeInMS: 0,
+        loadTimeInMS: 0,
+        totalBytes: 0,
+      },
+    } as StackPrefetchData);
   const delta = currentImageIdIndex - stackPrefetchData.currentImageIdIndex;
   stackPrefetchData.direction = signum(delta);
   stackPrefetchData.currentImageIdIndex = currentImageIdIndex;
@@ -356,7 +358,7 @@ function disable(element) {
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it
 
-  if (stackPrefetchData && stackPrefetchData.data.length) {
+  if (stackPrefetchData) {
     stackPrefetchData.enabled = false;
     // Don't worry about clearing the requests - there aren't that many too be bothersome
   }

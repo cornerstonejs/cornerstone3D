@@ -7,11 +7,8 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import {
-  getCalibratedAreaUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import * as math from '../../utilities/math';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
@@ -36,22 +33,23 @@ import type {
 } from '../../types';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
-import { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
+import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
-import pointInShapeCallback from '../../utilities/pointInShapeCallback';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import calculatePerimeter from '../../utilities/contours/calculatePerimeter';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes } from '../../enums';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
 
 const PARALLEL_THRESHOLD = 1 - EPSILON;
+
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
  * You can use the PlanarFreehandROITool in all perpendicular views (axial, sagittal, coronal),
@@ -117,9 +115,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
 class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   private commonData?: PlanarFreehandROICommonData;
   isDrawing = false;
   isEditingClosed = false;
@@ -171,11 +167,19 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     annotation: PlanarFreehandROIAnnotation
   ) => void;
 
+  private renderPointContourWithMarker: (
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: SVGDrawingHelper,
+    annotation: PlanarFreehandROIAnnotation
+  ) => void;
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         shadow: true,
         preventHandleOutsideImage: false,
         /**
@@ -243,7 +247,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
            */
           epsilon: 0.1,
         },
-        calculateStats: false,
+        displayOnePointAsCrosshairs: false,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -279,8 +284,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ): PlanarFreehandROIAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     const annotation = this.createAnnotation(
       evt
@@ -294,8 +297,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     );
 
     this.activateDraw(evt, annotation, viewportIdsToRender);
+
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -350,6 +355,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     } else {
       this.activateOpenContourEdit(evt, annotation, viewportIdsToRender);
     }
+
+    evt.preventDefault();
   };
 
   /**
@@ -536,16 +543,21 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       annotation.data.handles.points.length = 0;
     };
 
-    return <PlanarFreehandROIAnnotation>csUtils.deepMerge(contourAnnotation, {
-      data: {
-        contour: {
-          polyline: [<Types.Point3>[...worldPos]],
+    const annotation = <PlanarFreehandROIAnnotation>csUtils.deepMerge(
+      contourAnnotation,
+      {
+        data: {
+          contour: {
+            polyline: [<Types.Point3>[...worldPos]],
+          },
+          label: '',
+          cachedStats: {},
         },
-        label: '',
-        cachedStats: {},
-      },
-      onInterpolationComplete,
-    });
+        onInterpolationComplete,
+      }
+    );
+
+    return annotation;
   }
 
   protected getAnnotationStyle(context) {
@@ -570,7 +582,18 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     if (!(isDrawing || isEditingOpen || isEditingClosed)) {
       // No annotations are currently being modified, so we can just use the
       // render contour method to render all of them
-      this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      if (
+        this.configuration.displayOnePointAsCrosshairs &&
+        annotation.data.contour.polyline.length === 1
+      ) {
+        this.renderPointContourWithMarker(
+          enabledElement,
+          svgDrawingHelper,
+          annotation
+        );
+      } else {
+        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+      }
     } else {
       // The active annotation will need special rendering treatment. Render all
       // other annotations not being interacted with using the standard renderContour
@@ -602,7 +625,18 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           );
         }
       } else {
-        this.renderContour(enabledElement, svgDrawingHelper, annotation);
+        if (
+          this.configuration.displayOnePointAsCrosshairs &&
+          annotation.data.contour.polyline.length === 1
+        ) {
+          this.renderPointContourWithMarker(
+            enabledElement,
+            svgDrawingHelper,
+            annotation
+          );
+        } else {
+          this.renderContour(enabledElement, svgDrawingHelper, annotation);
+        }
       }
 
       // Todo: return boolean flag for each rendering route in the planar tool.
@@ -682,13 +716,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ) => {
     const { data } = annotation;
     const { cachedStats } = data;
-    const { polyline: points } = data.contour;
+    const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -700,86 +734,188 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const { imageData, metadata } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      // Using an arbitrary start point (canvasPoint), calculate the
-      // mm spacing for the canvas in the X and Y directions.
-      const canvasPoint = canvasCoordinates[0];
-      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
-      const deltaXPoint = viewport.canvasToWorld([
-        canvasPoint[0] + 1,
-        canvasPoint[1],
-      ]);
-      const deltaYPoint = viewport.canvasToWorld([
-        canvasPoint[0],
-        canvasPoint[1] + 1,
-      ]);
+      const modalityUnitOptions = {
+        isPreScaled: isViewportPreScaled(viewport, targetId),
+        isSuvScaled: this.isSuvScaled(
+          viewport,
+          targetId,
+          annotation.metadata.referencedImageId
+        ),
+      };
 
-      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
-      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+      const modalityUnit = getPixelValueUnits(
+        metadata.Modality,
+        annotation.metadata.referencedImageId,
+        modalityUnitOptions
+      );
+      const calibratedScale = getCalibratedLengthUnitsAndScale(image, () => {
+        const polyline = data.contour.polyline;
+        const numPoints = polyline.length;
+        const projectedPolyline = new Array(numPoints);
 
-      const scale = getCalibratedScale(image);
-      let area = polyline.getArea(canvasCoordinates) / scale / scale;
-      // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
+        for (let i = 0; i < numPoints; i++) {
+          projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
+        }
 
-      const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(projectedPolyline);
+
+        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
+
+        const topLeftBBIndex = csUtils.transformWorldToIndex(
+          imageData,
+          topLeftBBWorld
+        );
+
+        const bottomRightBBWorld = viewport.canvasToWorld([
+          canvasMaxX,
+          canvasMaxY,
+        ]);
+
+        const bottomRightBBIndex = csUtils.transformWorldToIndex(
+          imageData,
+          bottomRightBBWorld
+        );
+
+        return [topLeftBBIndex, bottomRightBBIndex];
+      });
+
+      if (closed) {
+        this.updateClosedCachedStats({
+          targetId,
+          viewport,
+          canvasCoordinates,
+          points,
+          imageData,
+          metadata,
+          cachedStats,
+          modalityUnit,
+          calibratedScale,
+        });
+      } else {
+        this.updateOpenCachedStats({
+          metadata,
+          canvasCoordinates,
+          targetId,
+          cachedStats,
+          modalityUnit,
+          calibratedScale,
+        });
+      }
+    }
+
+    triggerAnnotationModified(
+      annotation,
+      enabledElement.viewport.element,
+      ChangeTypes.StatsUpdated
+    );
+
+    annotation.invalidated = false;
+
+    return cachedStats;
+  };
+
+  protected updateClosedCachedStats({
+    viewport,
+    points,
+    imageData,
+    metadata,
+    cachedStats,
+    targetId,
+    modalityUnit,
+    canvasCoordinates,
+    calibratedScale,
+  }) {
+    const { scale, areaUnit, units } = calibratedScale;
+
+    // Using an arbitrary start point (canvasPoint), calculate the
+    // mm spacing for the canvas in the X and Y directions.
+    const { voxelManager } = viewport.getImageData();
+    const canvasPoint = canvasCoordinates[0];
+    const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+    const deltaXPoint = viewport.canvasToWorld([
+      canvasPoint[0] + 1,
+      canvasPoint[1],
+    ]);
+    const deltaYPoint = viewport.canvasToWorld([
+      canvasPoint[0],
+      canvasPoint[1] + 1,
+    ]);
+
+    const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+    const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
+    const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
+    worldPosIndex[0] = Math.floor(worldPosIndex[0]);
+    worldPosIndex[1] = Math.floor(worldPosIndex[1]);
+    worldPosIndex[2] = Math.floor(worldPosIndex[2]);
+
+    let iMin = worldPosIndex[0];
+    let iMax = worldPosIndex[0];
+
+    let jMin = worldPosIndex[1];
+    let jMax = worldPosIndex[1];
+
+    let kMin = worldPosIndex[2];
+    let kMax = worldPosIndex[2];
+
+    for (let j = 1; j < points.length; j++) {
+      const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[j]);
       worldPosIndex[0] = Math.floor(worldPosIndex[0]);
       worldPosIndex[1] = Math.floor(worldPosIndex[1]);
       worldPosIndex[2] = Math.floor(worldPosIndex[2]);
+      iMin = Math.min(iMin, worldPosIndex[0]);
+      iMax = Math.max(iMax, worldPosIndex[0]);
 
-      let iMin = worldPosIndex[0];
-      let iMax = worldPosIndex[0];
+      jMin = Math.min(jMin, worldPosIndex[1]);
+      jMax = Math.max(jMax, worldPosIndex[1]);
 
-      let jMin = worldPosIndex[1];
-      let jMax = worldPosIndex[1];
+      kMin = Math.min(kMin, worldPosIndex[2]);
+      kMax = Math.max(kMax, worldPosIndex[2]);
+    }
 
-      let kMin = worldPosIndex[2];
-      let kMax = worldPosIndex[2];
+    const worldPosIndex2 = csUtils.transformWorldToIndex(imageData, points[1]);
+    worldPosIndex2[0] = Math.floor(worldPosIndex2[0]);
+    worldPosIndex2[1] = Math.floor(worldPosIndex2[1]);
+    worldPosIndex2[2] = Math.floor(worldPosIndex2[2]);
 
-      for (let j = 1; j < points.length; j++) {
-        const worldPosIndex = csUtils.transformWorldToIndex(
-          imageData,
-          points[j]
-        );
-        worldPosIndex[0] = Math.floor(worldPosIndex[0]);
-        worldPosIndex[1] = Math.floor(worldPosIndex[1]);
-        worldPosIndex[2] = Math.floor(worldPosIndex[2]);
-        iMin = Math.min(iMin, worldPosIndex[0]);
-        iMax = Math.max(iMax, worldPosIndex[0]);
+    let area = polyline.getArea(canvasCoordinates) / scale / scale;
+    // Convert from canvas_pixels ^2 to mm^2
+    area *= deltaInX * deltaInY;
 
-        jMin = Math.min(jMin, worldPosIndex[1]);
-        jMax = Math.max(jMax, worldPosIndex[1]);
+    // Expand bounding box
+    const iDelta = 0.01 * (iMax - iMin);
+    const jDelta = 0.01 * (jMax - jMin);
+    const kDelta = 0.01 * (kMax - kMin);
 
-        kMin = Math.min(kMin, worldPosIndex[2]);
-        kMax = Math.max(kMax, worldPosIndex[2]);
-      }
+    iMin = Math.floor(iMin - iDelta);
+    iMax = Math.ceil(iMax + iDelta);
+    jMin = Math.floor(jMin - jDelta);
+    jMax = Math.ceil(jMax + jDelta);
+    kMin = Math.floor(kMin - kDelta);
+    kMax = Math.ceil(kMax + kDelta);
 
-      // Expand bounding box
-      const iDelta = 0.01 * (iMax - iMin);
-      const jDelta = 0.01 * (jMax - jMin);
-      const kDelta = 0.01 * (kMax - kMin);
+    const boundsIJK = [
+      [iMin, iMax],
+      [jMin, jMax],
+      [kMin, kMax],
+    ] as [Types.Point2, Types.Point2, Types.Point2];
 
-      iMin = Math.floor(iMin - iDelta);
-      iMax = Math.ceil(iMax + iDelta);
-      jMin = Math.floor(jMin - jDelta);
-      jMax = Math.ceil(jMax + jDelta);
-      kMin = Math.floor(kMin - kDelta);
-      kMax = Math.ceil(kMax + kDelta);
+    const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
+    const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
 
-      const boundsIJK = [
-        [iMin, iMax],
-        [jMin, jMax],
-        [kMin, kMax],
-      ] as [Types.Point2, Types.Point2, Types.Point2];
-
-      const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
-      const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
-
-      let curRow = 0;
-      let intersections = [];
-      let intersectionCounter = 0;
-      const pointsInShape = pointInShapeCallback(
+    let curRow = 0;
+    let intersections = [];
+    let intersectionCounter = 0;
+    const pointsInShape = voxelManager.forEach(
+      this.configuration.statsCalculator.statsCallback,
+      {
         imageData,
-        (pointLPS, pointIJK) => {
+        isInObject: (pointLPS, _pointIJK) => {
           let result = true;
           const point = viewport.worldToCanvas(pointLPS);
           if (point[1] != curRow) {
@@ -811,50 +947,50 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           }
           return result;
         },
-        this.configuration.statsCalculator.statsCallback,
-        boundsIJK
-      );
-
-      const modalityUnitOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
-      const modalityUnit = getModalityUnit(
-        metadata.Modality,
-        annotation.metadata.referencedImageId,
-        modalityUnitOptions
-      );
-
-      const stats = this.configuration.statsCalculator.getStatistics();
-
-      cachedStats[targetId] = {
-        Modality: metadata.Modality,
-        area,
-        mean: stats.mean?.value,
-        max: stats.max?.value,
-        stdDev: stats.stdDev?.value,
-        statsArray: stats.array,
-        pointsInShape: pointsInShape,
-        areaUnit: getCalibratedAreaUnits(null, image),
-        modalityUnit,
-      };
-    }
-
-    triggerAnnotationModified(
-      annotation,
-      enabledElement.viewport.element,
-      ChangeTypes.StatsUpdated
+        boundsIJK,
+        returnPoints: this.configuration.storePointData,
+      }
     );
 
-    annotation.invalidated = false;
+    const stats = this.configuration.statsCalculator.getStatistics();
 
-    return cachedStats;
-  };
+    cachedStats[targetId] = {
+      Modality: metadata.Modality,
+      area,
+      perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
+      mean: stats.mean?.value,
+      max: stats.max?.value,
+      stdDev: stats.stdDev?.value,
+      statsArray: stats.array,
+      pointsInShape: pointsInShape,
+      /**
+       * areaUnit are sizing, eg mm^2 typically
+       * modality units are pixel value units, eg HU or other
+       * unit is linear measurement unit, eg mm
+       */
+      areaUnit,
+      modalityUnit,
+      unit: units,
+    };
+  }
+
+  protected updateOpenCachedStats({
+    targetId,
+    metadata,
+    canvasCoordinates,
+    cachedStats,
+    modalityUnit,
+    calibratedScale,
+  }) {
+    const { scale, units } = calibratedScale;
+
+    cachedStats[targetId] = {
+      Modality: metadata.Modality,
+      length: calculatePerimeter(canvasCoordinates, false) / scale,
+      modalityUnit,
+      getPixelValueUnitunit: units,
+    };
+  }
 
   private _renderStats = (
     annotation,
@@ -920,28 +1056,47 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
-    cachedVolumeStats || {};
+  const {
+    area,
+    mean,
+    stdDev,
+    length,
+    perimeter,
+    max,
+    isEmptyArea,
+    unit,
+    areaUnit,
+    modalityUnit,
+  } = cachedVolumeStats || {};
 
   const textLines: string[] = [];
 
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
   if (mean) {
-    textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
-    textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
+  if (Number.isFinite(max)) {
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
   if (stdDev) {
-    textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  }
+
+  if (perimeter) {
+    textLines.push(`Perimeter: ${csUtils.roundNumber(perimeter)} ${unit}`);
+  }
+
+  if (length) {
+    // No need to show length prefix as there is just the single value
+    textLines.push(`${csUtils.roundNumber(length)} ${unit}`);
   }
 
   return textLines;

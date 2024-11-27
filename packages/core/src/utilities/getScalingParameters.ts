@@ -1,5 +1,5 @@
-import { get as metaDataGet } from '../metaData';
-import { ScalingParameters } from '../types';
+import * as metaData from '../metaData';
+import type { ScalingParameters } from '../types';
 
 /**
  * It returns the scaling parameters for the image with the given imageId. This can be
@@ -11,18 +11,19 @@ import { ScalingParameters } from '../types';
 export default function getScalingParameters(
   imageId: string
 ): ScalingParameters {
-  const modalityLutModule = metaDataGet('modalityLutModule', imageId) || {};
-  const generalSeriesModule = metaDataGet('generalSeriesModule', imageId) || {};
+  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+  const generalSeriesModule =
+    metaData.get('generalSeriesModule', imageId) || {};
 
   const { modality } = generalSeriesModule;
 
   const scalingParameters = {
-    rescaleSlope: modalityLutModule.rescaleSlope,
-    rescaleIntercept: modalityLutModule.rescaleIntercept,
+    rescaleSlope: modalityLutModule.rescaleSlope || 1,
+    rescaleIntercept: modalityLutModule.rescaleIntercept ?? 0,
     modality,
   };
 
-  const suvFactor = metaDataGet('scalingModule', imageId) || {};
+  const suvFactor = metaData.get('scalingModule', imageId) || {};
 
   return {
     ...scalingParameters,

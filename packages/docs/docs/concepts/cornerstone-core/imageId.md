@@ -33,7 +33,7 @@ requestType=WADO&studyUID=1.2.250.1.59.40211.12345678.678910
 [**WADO-RS**](https://dicom.nema.org/dicom/2013/output/chtml/part18/sect_6.5.html)
 
 ```
-https://d3t6nz73ql33tx.cloudfront.net/dicomweb/
+https://d14fa38qiwhyfd.cloudfront.net/dicomweb/
 studies/1.3.6.1.4.1.25403.345050719074.3824.20170126083429.2/
 series/1.3.6.1.4.1.25403.345050719074.3824.20170126083454.5/
 instances/1.3.6.1.4.1.25403.345050719074.3824.20170126083455.3/frames/1
@@ -43,8 +43,8 @@ Cornerstone does not specify what the contents of the URL are - it is up to the 
 
 Here are some examples of what an ImageId could look like for different Image Loader plugins:
 
-- example://1
-- dicomweb://server/wado/{uid}/{uid}/{uid}
-- http://server/image.jpeg
-- custom://server/uuid
-- wadors://server/{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}
+- `example://1`
+- `dicomweb://server/wado/{uid}/{uid}/{uid}`
+- `http://server/image.jpeg`
+- `custom://server/uuid`
+- `wadors://server/{StudyInstanceUID}/{SeriesInstanceUID}/{SOPInstanceUID}`

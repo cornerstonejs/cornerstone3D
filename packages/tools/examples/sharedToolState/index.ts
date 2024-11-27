@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  volumeLoader,
-  Enums,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, volumeLoader, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -19,7 +15,7 @@ console.warn(
 const {
   LengthTool,
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -75,7 +71,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -83,7 +79,7 @@ async function run() {
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(LengthTool.toolName, { volumeId });
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -96,7 +92,9 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const volumeImageIds = await createImageIdsAndCacheMetaData({
@@ -104,7 +102,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const stackImageIds = await createImageIdsAndCacheMetaData({
@@ -112,7 +110,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const smallVolumeImageIds = [volumeImageIds[42], volumeImageIds[43]]; // Small bit of the body
