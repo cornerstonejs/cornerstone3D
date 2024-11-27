@@ -21,6 +21,7 @@ import { BaseTool } from '../base';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
+  thresholdInsideSphereIsland,
 } from './strategies/fillSphere';
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
@@ -111,12 +112,35 @@ class BrushTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
+          /** Perform fill of the active segment index inside a (2d) circle */
           FILL_INSIDE_CIRCLE: fillInsideCircle,
+          /** Erase (to 0) inside a circle */
           ERASE_INSIDE_CIRCLE: eraseInsideCircle,
+          /** Fill a 3d sphere with the active segment index */
           FILL_INSIDE_SPHERE: fillInsideSphere,
+          /** Erase inside a 3d sphere, clearing any segment index (to 0) */
           ERASE_INSIDE_SPHERE: eraseInsideSphere,
+          /**
+           * Threshold inside a circle, either with a dynamic threshold value
+           * based on the voxels in a 2d plane around the center click.
+           * Performs island removal.
+           */
           THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
+          /**
+           * Threshold inside a sphere, either dynamic or pre-configured.
+           * For dynamic, base the threshold on a 2d CIRCLE around the center click.
+           * Do not perform island removal (this may be slow)
+           * Users may see delays dragging the sphere for large radius values and
+           * for complex mixtures of texture.
+           */
           THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
+          /**
+           * Threshold inside a sphere, but also include island removal.
+           * The current implementation of this is fairly fast now, but users may
+           * see delays when island removal occurs on large sections of the volume.
+           */
+          THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL:
+            thresholdInsideSphereIsland,
         },
         strategySpecificConfiguration: {
           THRESHOLD: {
@@ -624,7 +648,7 @@ class BrushTool extends BaseTool {
 
     // Note: i don't think this is the best way to implement this
     // but don't think we have a better way to do it for now
-    if (typeof strategy.computeInnerCircleRadius === 'function') {
+    if (typeof strategy?.computeInnerCircleRadius === 'function') {
       strategy.computeInnerCircleRadius({
         configuration: this.configuration,
         viewport,

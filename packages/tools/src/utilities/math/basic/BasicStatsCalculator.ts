@@ -14,6 +14,8 @@ export default class BasicStatsCalculator extends Calculator {
   // Values for Welford's algorithm
   private static runMean = [0];
   private static m2 = [0];
+  private static squaredDiffSum = [0];
+  private static sumSquares = [0];
 
   // Collect the points to be returned
   private static pointsInShape = PointsManager.create3(1024);
@@ -43,7 +45,9 @@ export default class BasicStatsCalculator extends Calculator {
       this.m2.push(this.m2[0], this.m2[0]);
     }
 
-    this.pointsInShape?.push(pointLPS);
+    if (pointLPS) {
+      this.pointsInShape?.push(pointLPS);
+    }
     const newArray = Array.isArray(newValue) ? newValue : [newValue];
 
     this.count += 1;
@@ -84,7 +88,6 @@ export default class BasicStatsCalculator extends Calculator {
    */
 
   static getStatistics = (options?: { unit: string }): NamedStatistics => {
-  static getStatistics = (options?: { unit: string }): NamedStatistics => {
     const mean = this.sum.map((sum) => sum / this.count);
     const stdDev = this.m2.map((squaredDiffSum) =>
       Math.sqrt(squaredDiffSum / this.count)
@@ -107,26 +110,17 @@ export default class BasicStatsCalculator extends Calculator {
         label: 'Min Pixel',
         value: singleArrayAsNumber(this.min),
         unit,
-        unit,
-      },
-      min: {
-        name: 'min',
-        label: 'Min Pixel',
-        value: singleArrayAsNumber(this.min),
-        unit,
       },
       mean: {
         name: 'mean',
         label: 'Mean Pixel',
         value: singleArrayAsNumber(mean),
         unit,
-        unit,
       },
       stdDev: {
         name: 'stdDev',
         label: 'Standard Deviation',
         value: singleArrayAsNumber(stdDev),
-        unit,
         unit,
       },
       // stdDevWithSumSquare: {

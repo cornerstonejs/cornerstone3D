@@ -1,6 +1,6 @@
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import type { InitializedOperationData } from '../BrushStrategy';
-import { VolumetricCalculator } from '../../../../utilities/segmentation';
+import VolumetricCalculator from '../../../../utilities/segmentation/VolumetricCalculator';
 import { segmentIndex } from '../../../../stateManagement/segmentation';
 import { getStrategyData } from '../utils/getStrategyData';
 

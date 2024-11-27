@@ -55,7 +55,7 @@ export default {
       hasPreviewIndex ||= value === previewSegmentIndex;
     };
 
-    imageVoxelManager.forEach(callback, {
+    segmentationVoxelManager.forEach(callback, {
       imageData: segmentationImageData,
       isInObject: operationData.isInObject,
     });

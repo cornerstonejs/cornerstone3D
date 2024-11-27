@@ -22,6 +22,7 @@ const configuration = {
     useCenterSegmentIndex: false,
   },
 };
+
 const thresholdOptions = new Map();
 thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
 thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
