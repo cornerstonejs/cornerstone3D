@@ -10,12 +10,9 @@ export default class BasicStatsCalculator extends Calculator {
   private static sum = [0];
   private static count = 0;
 
-  // private static sumSquares = [0];
   // Values for Welford's algorithm
   private static runMean = [0];
   private static m2 = [0];
-  private static squaredDiffSum = [0];
-  private static sumSquares = [0];
 
   // Collect the points to be returned
   private static pointsInShape = PointsManager.create3(1024);
@@ -38,14 +35,12 @@ export default class BasicStatsCalculator extends Calculator {
     ) {
       this.max.push(this.max[0], this.max[0]);
       this.min.push(this.min[0], this.min[0]);
-      this.min.push(this.min[0], this.min[0]);
       this.sum.push(this.sum[0], this.sum[0]);
       this.runMean.push(0, 0);
-      // this.sumSquares.push(this.sumSquares[0], this.sumSquares[0]);
       this.m2.push(this.m2[0], this.m2[0]);
     }
 
-    if (pointLPS) {
+    if (this.pointsInShape && pointLPS) {
       this.pointsInShape?.push(pointLPS);
     }
     const newArray = Array.isArray(newValue) ? newValue : [newValue];
@@ -59,23 +54,10 @@ export default class BasicStatsCalculator extends Calculator {
       this.runMean[idx] += delta / this.count;
       const delta2 = value - this.runMean[idx];
       this.m2[idx] += delta * delta2;
-      // this.sumSquares[idx] += value * value;
 
       this.min[idx] = Math.min(this.min[idx], value);
       this.max[idx] = Math.max(it, value);
     });
-
-    this.sum.map((it, idx) => (this.sum[idx] += newArray[idx]));
-    this.sumSquares.map(
-      (it, idx) => (this.sumSquares[idx] += newArray[idx] ** 2)
-    );
-    this.squaredDiffSum.map(
-      (it, idx) =>
-        (this.squaredDiffSum[idx] += Math.pow(
-          newArray[idx] - this.sum[idx] / this.count,
-          2
-        ))
-    );
   };
 
   /**
@@ -92,9 +74,6 @@ export default class BasicStatsCalculator extends Calculator {
     const stdDev = this.m2.map((squaredDiffSum) =>
       Math.sqrt(squaredDiffSum / this.count)
     );
-    // const stdDevWithSumSquare = this.sumSquares.map((it, idx) =>
-    //   Math.sqrt(this.sumSquares[idx] / this.count - mean[idx] ** 2)
-    // );
 
     const unit = options?.unit || null;
 
@@ -123,11 +102,6 @@ export default class BasicStatsCalculator extends Calculator {
         value: singleArrayAsNumber(stdDev),
         unit,
       },
-      // stdDevWithSumSquare: {
-      //   name: 'stdDevWithSumSquare',
-      //   value: singleArrayAsNumber(stdDevWithSumSquare),
-      //   unit,
-      // },
       count: {
         name: 'count',
         label: 'Pixel Count',
