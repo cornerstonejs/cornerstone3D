@@ -1170,8 +1170,6 @@ function getDefaultRenderingConfig(type: string): RenderingConfig {
 
 const defaultSegmentationStateManager = new SegmentationStateManager('DEFAULT');
 
-window.seg = () => defaultSegmentationStateManager.getState();
-
 export {
   internalConvertStackToVolumeLabelmap,
   internalComputeVolumeLabelmapFromStack,

@@ -1,7 +1,7 @@
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import type { InitializedOperationData } from '../BrushStrategy';
 import VolumetricCalculator from '../../../../utilities/segmentation/VolumetricCalculator';
-import { segmentIndex } from '../../../../stateManagement/segmentation';
+import { getActiveSegmentIndex } from '../../../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getStrategyData } from '../utils/getStrategyData';
 
 /**
@@ -17,7 +17,7 @@ export default {
     let { indices } = options;
     const { segmentationId } = operationData;
     if (!indices) {
-      indices = [segmentIndex.getActiveSegmentIndex(segmentationId)];
+      indices = [getActiveSegmentIndex(segmentationId)];
     } else if (!Array.isArray(indices)) {
       // Include the preview index
       indices = [indices, 255];
