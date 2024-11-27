@@ -6,7 +6,7 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import {
   getSurfaceActorEntry,
-  getSurfaceActorUID,
+  getSurfaceRepresentationUID,
 } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 function addOrUpdateSurfaceToElement(
@@ -16,12 +16,6 @@ function addOrUpdateSurfaceToElement(
 ): void {
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
-
-  const representationUID = getSurfaceActorUID(
-    viewport.id,
-    segmentationId,
-    surface.segmentIndex
-  );
 
   const surfaceActorEntry = getSurfaceActorEntry(
     viewport.id,
@@ -103,6 +97,11 @@ function addOrUpdateSurfaceToElement(
   // set line width
   // Todo: make this configurable
   actor.getProperty().setLineWidth(2);
+
+  const representationUID = getSurfaceRepresentationUID(
+    segmentationId,
+    surface.segmentIndex
+  );
 
   viewport.addActor({
     uid: utilities.uuidv4(),

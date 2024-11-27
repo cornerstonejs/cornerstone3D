@@ -114,7 +114,7 @@ eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
   }
 
   const { progress } = evt.detail;
-  label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
+  label.innerHTML = `Caching Progress: ${(progress * 1).toFixed(2)}%`;
 });
 
 /**
