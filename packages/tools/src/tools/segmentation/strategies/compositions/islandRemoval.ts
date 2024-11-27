@@ -204,7 +204,7 @@ function removeInternalIslands(
       previewVoxelManager.setAtIJKPoint(clearPoint, previewSegmentIndex);
     }
   });
-  return previewVoxelManager.getArrayOfSlices();
+  return previewVoxelManager.getArrayOfModifiedSlices();
 }
 
 /**

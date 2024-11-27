@@ -84,14 +84,6 @@ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
   compositions.islandRemoval
 );
 
-const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
-  'SphereThreshold',
-  ...SPHERE_STRATEGY.compositions,
-  compositions.dynamicThreshold,
-  compositions.threshold,
-  compositions.islandRemoval
-);
-
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels inside the defined circle.
@@ -100,8 +92,6 @@ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
  */
 
 const thresholdInsideSphere = SPHERE_THRESHOLD_STRATEGY.strategyFunction;
-const thresholdInsideSphereIsland =
-  SPHERE_THRESHOLD_STRATEGY_ISLAND.strategyFunction;
 
 const thresholdInsideSphereIsland =
   SPHERE_THRESHOLD_STRATEGY_ISLAND.strategyFunction;

@@ -310,6 +310,9 @@ export default class VoxelManager<T> {
     // in the IJK coordinate system
 
     if (this.map) {
+      if (this.map instanceof RLEVoxelMap) {
+        return this.rleForEach(callback, options);
+      }
       // Optimize this for only values in the map
       for (const index of this.map.keys()) {
         const pointIJK = this.toIJK(index);
@@ -360,6 +363,39 @@ export default class VoxelManager<T> {
       return pointsInShape;
     }
   };
+
+  /**
+   * Foreach callback optimized for RLE testing
+   */
+  public rleForEach(callback, options?) {
+    const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
+    const { isWithinObject } = options || {};
+    const map = this.map as RLEVoxelMap<T>;
+    map.defaultValue = undefined;
+    for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        const row = map.getRun(j, k);
+        if (!row) {
+          continue;
+        }
+        for (const rle of row) {
+          const { start, end, value } = rle;
+          const baseIndex = this.toIndex([0, j, k]);
+          for (let i = start; i < end; i++) {
+            const callbackArguments = {
+              value,
+              index: baseIndex + i,
+              pointIJK: [i, j, k],
+            };
+            if (isWithinObject?.(callbackArguments) === false) {
+              continue;
+            }
+            callback(callbackArguments);
+          }
+        }
+      }
+    }
+  }
 
   /**
    * Retrieves the scalar data.
