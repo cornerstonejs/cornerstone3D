@@ -1,5 +1,5 @@
-import { PolyDataClipCacheType } from '../../../helpers/clipAndCacheSurfacesForViewport';
-import { RawContourData } from '../contourComputationStrategies';
+import type { PolyDataClipCacheType } from '../../../helpers/clipAndCacheSurfacesForViewport';
+import type { RawContourData } from '../contourComputationStrategies';
 
 /**
  * Extracts contour data from the given polyDataCache.
@@ -7,31 +7,22 @@ import { RawContourData } from '../contourComputationStrategies';
  * @param segmentIndexMap - Optional map for mapping surface IDs to segment indices.
  * @returns A map of segment indices to an array of contour results.
  */
-export function extractContourData(
-  polyDataCache: PolyDataClipCacheType,
-  segmentIndexMap?: Map<string, number>
-) {
+export function extractContourData(polyDataCache: PolyDataClipCacheType) {
   const rawResults = new Map() as RawContourData;
 
-  for (const [cacheId, intersectionInfo] of polyDataCache) {
-    // Todo; fix this
-    const surfaceId = cacheId.split('_')[1];
+  for (const [segmentIndex, intersectionInfo] of polyDataCache) {
+    const segmentIndexNumber = Number(segmentIndex);
 
     for (const [_, result] of intersectionInfo) {
       if (!result) {
         continue;
       }
-      const segmentIndex = Number(surfaceId) || segmentIndexMap?.get(surfaceId);
 
-      if (!segmentIndex) {
-        continue;
+      if (!rawResults.has(segmentIndexNumber)) {
+        rawResults.set(segmentIndexNumber, []);
       }
 
-      if (!rawResults.has(segmentIndex)) {
-        rawResults.set(segmentIndex, []);
-      }
-
-      rawResults.get(segmentIndex).push(result);
+      rawResults.get(segmentIndexNumber).push(result);
     }
   }
   return rawResults;

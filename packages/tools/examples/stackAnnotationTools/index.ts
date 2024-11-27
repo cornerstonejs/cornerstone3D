@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -20,6 +20,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
@@ -88,7 +89,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   }
 
   const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getProperties();
+  const { rotation } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
@@ -111,6 +112,7 @@ element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
 
 const toolsNames = [
   LengthTool.toolName,
+  HeightTool.toolName,
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
@@ -195,8 +197,8 @@ addButtonToToolbar({
       renderingEngine.getViewport(viewportId)
     );
 
-    const { rotation } = viewport.getProperties();
-    viewport.setProperties({ rotation: rotation + 90 });
+    const { rotation } = viewport.getViewPresentation();
+    viewport.setViewPresentation({ rotation: rotation + 90 });
 
     viewport.render();
   },
@@ -211,6 +213,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -229,6 +232,7 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
@@ -272,7 +276,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

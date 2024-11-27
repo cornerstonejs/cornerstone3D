@@ -1,10 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   volumeLoader,
   Enums,
   utilities as csUtils,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
 import {
@@ -72,7 +71,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -103,16 +102,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -120,7 +119,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ctVolume.load();
+  await ctVolume.load();
 
   // Define a volume in memory
   const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
@@ -128,7 +127,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ptVolume.load();
+  await ptVolume.load();
 
   // Set the volume on the viewport
   viewport.setVolumes([
@@ -143,7 +142,7 @@ async function run() {
   viewport.render();
 
   function getValue(volume, worldPos) {
-    const { dimensions, scalarData, imageData } = volume;
+    const { dimensions, imageData } = volume;
 
     const index = imageData.worldToIndex(worldPos);
 
@@ -155,11 +154,7 @@ async function run() {
       return;
     }
 
-    const yMultiple = dimensions[0];
-    const zMultiple = dimensions[0] * dimensions[1];
-
-    const value =
-      scalarData[index[2] * zMultiple + index[1] * yMultiple + index[0]];
+    const value = volume.voxelManager.getAtIJK(index[0], index[1], index[2]);
 
     return value;
   }
@@ -167,10 +162,10 @@ async function run() {
   element.addEventListener('mousemove', (evt) => {
     const rect = element.getBoundingClientRect();
 
-    const canvasPos = <Types.Point2>[
+    const canvasPos = [
       Math.floor(evt.clientX - rect.left),
       Math.floor(evt.clientY - rect.top),
-    ];
+    ] as Types.Point2;
     // Convert canvas coordinates to world coordinates
     const worldPos = viewport.canvasToWorld(canvasPos);
 

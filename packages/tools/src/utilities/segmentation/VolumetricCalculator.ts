@@ -1,4 +1,4 @@
-import { NamedStatistics } from '../../types';
+import type { NamedStatistics } from '../../types';
 import { BasicStatsCalculator } from '../math/basic';
 
 /**

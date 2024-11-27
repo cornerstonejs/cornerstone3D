@@ -3,7 +3,7 @@ import type {
   FloodFillGetter,
   FloodFillOptions,
 } from '../../types';
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * floodFill.js - Taken from MIT OSS lib - https://github.com/tuzz/n-dimensional-flood-fill

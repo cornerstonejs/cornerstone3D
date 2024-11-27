@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -12,11 +13,12 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const { worldToImageCoords } = utilities;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Stack CanvasToWorld',
-  'Displays the world coordinate when the mouse is moved over the canvas.'
+  'Displays the world and image (ijk) coordinates when the mouse is moved over the canvas.'
 );
 
 const content = document.getElementById('content');
@@ -31,14 +33,17 @@ const mousePosDiv = document.createElement('div');
 
 const canvasPosElement = document.createElement('p');
 const worldPosElement = document.createElement('p');
+const imagePosElement = document.createElement('p');
 
 canvasPosElement.innerText = 'canvas:';
 worldPosElement.innerText = 'world:';
+imagePosElement.innerText = 'image (ijk):';
 
 content.appendChild(mousePosDiv);
 
 mousePosDiv.appendChild(canvasPosElement);
 mousePosDiv.appendChild(worldPosElement);
+mousePosDiv.appendChild(imagePosElement);
 
 // ============================= //
 
@@ -55,7 +60,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -69,16 +74,16 @@ async function run() {
     type: ViewportType.STACK,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   // Define a stack containing a single image
   const stack = [imageIds[0]];
@@ -101,11 +106,16 @@ async function run() {
     ];
     // Convert canvas coordinates to world coordinates
     const worldPos = viewport.canvasToWorld(canvasPos);
+    // Convert world coordinates to image (ijk) coordinates
+    const imagePos = worldToImageCoords(viewport.getCurrentImageId(), worldPos);
 
     canvasPosElement.innerText = `canvas: (${canvasPos[0]}, ${canvasPos[1]})`;
     worldPosElement.innerText = `world: (${worldPos[0].toFixed(
       2
     )}, ${worldPos[1].toFixed(2)}, ${worldPos[2].toFixed(2)})`;
+
+    const [i, j, k] = imagePos.map((item) => item.toFixed(2));
+    imagePosElement.innerText = `image (ij): (${i}, ${j})`;
   });
 }
 

@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  eventTarget,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addToggleButtonToToolbar,
@@ -14,6 +10,7 @@ import {
   getLocalUrl,
   addManipulationBindings,
   addVideoTime,
+  annotationTools,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,6 +21,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   KeyImageTool,
   ProbeTool,
   RectangleROITool,
@@ -98,43 +96,9 @@ addToggleButtonToToolbar({
   defaultToggle: false,
 });
 
-const toolsNames = [
-  LengthTool.toolName,
-  KeyImageTool.toolName,
-  ProbeTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-  AngleTool.toolName,
-  CobbAngleTool.toolName,
-  ArrowAnnotateTool.toolName,
-  PlanarFreehandROITool.toolName,
-  VideoRedactionTool.toolName,
-  LivewireContourTool.toolName,
-];
-let selectedToolName = toolsNames[0];
-
 addDropdownToToolbar({
-  options: { values: toolsNames, defaultValue: selectedToolName },
-  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
-    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
-    });
-
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
-
-    selectedToolName = <string>newSelectedToolName;
-  },
+  options: { map: annotationTools },
+  toolGroupId,
 });
 
 function togglePlay(toggle = undefined) {
@@ -227,7 +191,7 @@ async function run() {
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
@@ -237,54 +201,21 @@ async function run() {
 
   addAnnotationListeners();
 
-  // Add annotation tools to Cornerstone3D
-  cornerstoneTools.addTool(KeyImageTool);
-  cornerstoneTools.addTool(ProbeTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(AngleTool);
-  cornerstoneTools.addTool(CobbAngleTool);
-  cornerstoneTools.addTool(ArrowAnnotateTool);
-  cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(VideoRedactionTool);
-  cornerstoneTools.addTool(LivewireContourTool);
+  // Add annotation tools to Cornerstone3D - done in addManipulation
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  annotationTools.get('KeyImage').bindings = [
+    {
+      mouseButton: MouseBindings.Primary,
+      modifierKey: KeyboardBindings.ShiftAlt,
+    },
+  ];
+
+  addManipulationBindings(toolGroup, { toolMap: annotationTools });
 
   // Add tools to the tool group
-  toolGroup.addTool(KeyImageTool.toolName);
-  toolGroup.addTool(ProbeTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-  toolGroup.addTool(AngleTool.toolName);
-  toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
-  toolGroup.addTool(VideoRedactionTool.toolName);
-  toolGroup.addTool(LivewireContourTool.toolName);
-
-  toolGroup.setToolActive(KeyImageTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.ShiftAlt,
-      },
-    ],
-  });
-  toolGroup.setToolActive(LengthTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Middle Click
-      },
-    ],
-  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
@@ -292,7 +223,6 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-
   const viewportInput = {
     viewportId,
     type: ViewportType.VIDEO,

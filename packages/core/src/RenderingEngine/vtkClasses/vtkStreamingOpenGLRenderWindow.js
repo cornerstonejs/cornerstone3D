@@ -1,9 +1,11 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow';
-import vtkStreamingOpenGLViewNodeFactory from './vtkStreamingOpenGLViewNodeFactory';
+import vtkStreamingOpenGLViewNodeFactory, {
+  registerOverride,
+} from './vtkStreamingOpenGLViewNodeFactory';
 
 /**
- * vtkStreamingOpenGLRenderWindow - A dervied class of the core vtkOpenGLRenderWindow class.
+ * vtkStreamingOpenGLRenderWindow - A derived class of the core vtkOpenGLRenderWindow class.
  * The main purpose for this class extension is to add in our own node factory, so we can use
  * our extended "streaming" classes for progressive texture loading.
  *
@@ -27,9 +29,8 @@ export function extend(publicAPI, model, initialValues = {}) {
   vtkOpenGLRenderWindow.extend(publicAPI, model, initialValues);
 
   model.myFactory = vtkStreamingOpenGLViewNodeFactory.newInstance();
-  /* eslint-disable no-use-before-define */
-  model.myFactory.registerOverride('vtkRenderWindow', newInstance);
-  /* eslint-enable no-use-before-define */
+
+  registerOverride('vtkRenderWindow', newInstance);
 
   // Object methods
   vtkStreamingOpenGLRenderWindow(publicAPI, model);

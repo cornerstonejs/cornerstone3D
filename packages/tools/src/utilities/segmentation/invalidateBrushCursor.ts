@@ -1,8 +1,7 @@
 import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
+import type BrushTool from '../../tools/segmentation/BrushTool';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
-import { getRenderingEngine } from '@cornerstonejs/core';
-import getBrushToolInstances from './utilities';
+import { getBrushToolInstances } from './getBrushToolInstances';
 
 /**
  * Invalidates the brush cursor for a specific tool group.
@@ -36,13 +35,9 @@ export function invalidateBrushCursor(toolGroupId: string): void {
     return;
   }
 
-  const { renderingEngineId } = viewportsInfoArray[0];
-
   // Use helper to get array of viewportIds, or we just end up doing this mapping
   // ourselves here.
   const viewportIds = toolGroup.getViewportIds();
 
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  triggerAnnotationRenderForViewportIds(renderingEngine, viewportIds);
+  triggerAnnotationRenderForViewportIds(viewportIds);
 }

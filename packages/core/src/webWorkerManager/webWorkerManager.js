@@ -13,12 +13,14 @@ class CentralizedWorkerManager {
    *
    * @param workerName - The name of the worker.
    * @param workerFn - The function that creates a new instance of the worker.
-   * @param options - Optional parameters.
-   * @param options.maxWorkerInstances - The maximum number of instances of this worker that can be created.
+   * @param {object} options - Optional parameters.
+   * @param {number} [options.maxWorkerInstances=1] - The maximum number of instances of this worker that can be created.
    * For instance if you create a worker with maxWorkerInstances = 2, then only 2 instances of this worker will be created
    * and in case there are 10 tasks that need to be executed, each will get assigned 5 tasks.
-   * @param options.overwrite - Whether to overwrite the worker if it's already registered.
-   * @param options.autoTerminateOnIdle - Whether to automatically terminate idle workers.
+   * @param {boolean} [options.overwrite=false] - Whether to overwrite the worker if it's already registered.
+   * @param {object} [options.autoTerminateOnIdle] - Configuration for automatically terminating idle workers.
+   * @param {boolean} [options.autoTerminateOnIdle.enabled=false] - Whether to enable auto-termination.
+   * @param {number} [options.autoTerminateOnIdle.idleTimeThreshold=3000] - Idle time threshold in milliseconds.
    */
   registerWorker(workerName, workerFn, options = {}) {
     const {
@@ -108,18 +110,15 @@ class CentralizedWorkerManager {
   /**
    * Executes a task on a worker.
    *
-   * @param workerName - The name of the worker to execute the task on.
-   * @param methodName - The name of the method to execute on the worker.
-   * @param args - The arguments to pass to the method. Default is an array
-   * You should put your transferable objects in the first argument as object
-   * and from the second argument you can put your non-transferable objects such
-   * as functions, classes, etc.
-   * @param options - An object containing options for the request. Default is an empty object.
-   * @param options.requestType - The type of the request. Default is RequestType.Compute.
-   * @param options.priority - The priority of the request. Default is 0.
-   * @param options.options - Additional options for the request. Default is an empty object.
-   *
-   * @returns A promise that resolves with the result of the task.
+   * @param {string} workerName - The name of the worker to execute the task on.
+   * @param {string} methodName - The name of the method to execute on the worker.
+   * @param {object} [args={}] - The arguments to pass to the method.
+   * @param {object} [options] - An object containing options for the request.
+   * @param {RequestType} [options.requestType=RequestType.Compute] - The type of the request.
+   * @param {number} [options.priority=0] - The priority of the request.
+   * @param {object} [options.options] - Additional options for the request.
+   * @param {Function[]} [options.callbacks=[]] - Callback functions.
+   * @returns {Promise} A promise that resolves with the result of the task.
    */
   executeTask(
     workerName,
@@ -147,7 +146,7 @@ class CentralizedWorkerManager {
         try {
           // fix if any of the args keys are a function then we need to proxy it
           // for the worker to be able to call it
-          let finalCallbacks;
+          let finalCallbacks = [];
           if (callbacks.length) {
             finalCallbacks = callbacks.map((cb) => {
               return Comlink.proxy(cb);
@@ -155,8 +154,11 @@ class CentralizedWorkerManager {
           }
           const workerProperties = this.workerRegistry[workerName];
 
+          workerProperties.processing = true;
+
           const results = await api[methodName](args, ...finalCallbacks);
 
+          workerProperties.processing = false;
           workerProperties.lastActiveTime[index] = Date.now();
 
           // If auto termination is enabled and the interval is not set, set it.
@@ -201,6 +203,11 @@ class CentralizedWorkerManager {
 
   terminateIdleWorkers(workerName, idleTimeThreshold) {
     const workerProperties = this.workerRegistry[workerName];
+
+    if (workerProperties.processing) {
+      return;
+    }
+
     const now = Date.now();
 
     workerProperties.instances.forEach((_, index) => {

@@ -1,4 +1,4 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 type FloodFillResult = {
   flooded: Types.Point2[] | Types.Point3[];
@@ -18,4 +18,4 @@ type FloodFillOptions = {
   filter?: (point) => boolean;
 };
 
-export { FloodFillResult, FloodFillGetter, FloodFillOptions };
+export type { FloodFillResult, FloodFillGetter, FloodFillOptions };

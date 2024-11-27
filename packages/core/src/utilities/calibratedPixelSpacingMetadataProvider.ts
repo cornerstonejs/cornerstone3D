@@ -1,5 +1,5 @@
 import imageIdToURI from './imageIdToURI';
-import { IImageCalibration } from '../types';
+import type { IImageCalibration } from '../types/IImageCalibration';
 
 const state: Record<string, IImageCalibration> = {}; // Calibrated pixel spacing per imageId
 

@@ -45,10 +45,4 @@ the actual rendering. Our roadmap (not funded yet) includes enabling usage of `v
 [Open Health Imaging Foundation (OHIF)](https://ohif.org/) image viewer is an open source image viewer
 that is being used in academic and commercial projects such as [The Cancer Imaging Archive (TCIA)](https://www.cancerimagingarchive.net/) and [NCI Imaging Data Commons](https://datacommons.cancer.gov/repository/imaging-data-commons).
 It is an extensible web imaging
-platform with zero footprint and installation required. Currently, OHIF relies on the `cornerstone-core` and `cornerstone-tools` libraries for its image rendering and annotation features and OHIF team has been actively maintaining
-these libraries for the past several years.
-
-As `Cornerstone3D` and `Cornerstone3DTools` will replace
-`cornerstone-core` and `cornerstone-tools` in the future, OHIF in its next stable release (v3)
-will move towards using `Cornerstone3D` and `Cornerstone3DTools` instead of `cornerstone-core` and `cornerstone-tools`.
-You can see OHIF's roadmap for the next stable release [here](https://ohif.org/roadmap/).
+platform with zero footprint and installation required. Currently, OHIF 3.9 relies on the all the libraries in the `Cornerstone3D` monorepo for its image rendering and annotation features.

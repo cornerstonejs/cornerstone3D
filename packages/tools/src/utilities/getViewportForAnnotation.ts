@@ -1,4 +1,5 @@
 import type { Annotation } from '../types';
+import type { Types } from '@cornerstonejs/core';
 import getViewportsForAnnotation from './getViewportsForAnnotation';
 
 /**
@@ -10,7 +11,9 @@ import getViewportsForAnnotation from './getViewportsForAnnotation';
  * @param annotation - to find a viewport that it could display in
  * @returns The viewport to display in
  */
-export default function getViewportForAnnotation(annotation: Annotation) {
+export default function getViewportForAnnotation(
+  annotation: Annotation
+): Types.IStackViewport | Types.IVolumeViewport | undefined {
   const viewports = getViewportsForAnnotation(annotation);
 
   return viewports.length ? viewports[0] : undefined;

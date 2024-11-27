@@ -4,6 +4,9 @@ import {
   ProgressiveRetrieveImages,
   utilities,
   RenderingEngine,
+  metaData,
+  type Types,
+  setUseCPURendering,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -14,7 +17,7 @@ import {
 
 const { imageRetrieveMetadataProvider } = utilities;
 const { sequentialRetrieveStages } = ProgressiveRetrieveImages;
-
+const { Events } = Enums;
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -89,10 +92,7 @@ async function newImageFunction(evt) {
   } = image;
   const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
-    element.removeEventListener(
-      cornerstone.EVENTS.STACK_NEW_IMAGE,
-      newImageFunction
-    );
+    element.removeEventListener(Events.STACK_NEW_IMAGE, newImageFunction);
   }
   const completeText = statusNames[status] || `other ${status}`;
   const totalTime = Date.now() - startTime;
@@ -112,10 +112,7 @@ async function showStack(
   }
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   startTime = Date.now();
-  element.addEventListener(
-    cornerstone.EVENTS.STACK_NEW_IMAGE,
-    newImageFunction
-  );
+  element.addEventListener(Events.STACK_NEW_IMAGE, newImageFunction);
   const start = Date.now();
   // Set the stack on the viewport
   await viewport.setStack(stack, 0, retrieveConfiguration);
@@ -123,10 +120,7 @@ async function showStack(
   // Render the image
   viewport.render();
   const end = Date.now();
-  const { transferSyntaxUID } = cornerstone.metaData.get(
-    'transferSyntax',
-    stack[0]
-  );
+  const { transferSyntaxUID } = metaData.get('transferSyntax', stack[0]);
   document.getElementById('loading').innerText = `Stack render took ${
     end - start
   } using ${transferSyntaxUID}`;
@@ -275,14 +269,14 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const imageIdsCt = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -296,16 +290,16 @@ async function run() {
     type: ViewportType.STACK,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   const createButton = (text, action) => {
     const button = document.createElement('button');

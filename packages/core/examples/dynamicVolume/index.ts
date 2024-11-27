@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   getRenderingEngine,
@@ -55,11 +55,11 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
-    viewport.setOrientation(<Enums.OrientationAxis>selectedValue);
+    viewport.setOrientation(selectedValue as Enums.OrientationAxis);
     viewport.render();
   },
 });
@@ -85,11 +85,9 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    StudyInstanceUID: '2.25.79767489559005369769092179787138169587',
+    SeriesInstanceUID: '2.25.87977716979310885152986847054790859463',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -102,16 +100,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a unique id for the volume
   const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -129,9 +127,7 @@ async function run() {
   addTimePointSlider(volume);
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId, callback: setPetTransferFunctionForVolumeActor },
-  ]);
+  viewport.setVolumes([{ volumeId }]);
 
   // Render the image
   viewport.render();

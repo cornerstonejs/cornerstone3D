@@ -5,13 +5,14 @@ import {
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
 import { Events, ChangeTypes } from '../../../enums';
-import { Annotation } from '../../../types/AnnotationTypes';
+import type { Annotation } from '../../../types/AnnotationTypes';
 import { getToolGroupsWithToolName } from '../../../store/ToolGroupManager';
-import {
+import type {
   AnnotationAddedEventDetail,
   AnnotationModifiedEventDetail,
   AnnotationCompletedEventDetail,
   ContourAnnotationCompletedEventDetail,
+  AnnotationRemovedEventDetail,
 } from '../../../types/EventTypes';
 
 /**
@@ -82,6 +83,17 @@ function triggerAnnotationAddedForFOR(annotation: Annotation) {
 }
 
 /**
+ * Triggers an annotation removed event.
+ * @param eventDetail - Event detail
+ */
+function triggerAnnotationRemoved(
+  eventDetail: AnnotationRemovedEventDetail
+): void {
+  const eventType = Events.ANNOTATION_REMOVED;
+  triggerEvent(eventTarget, eventType, eventDetail);
+}
+
+/**
  * Triggers an annotation modified event.
  */
 function triggerAnnotationModified(
@@ -143,6 +155,7 @@ function _triggerAnnotationCompleted(
 export {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
+  triggerAnnotationRemoved,
   triggerAnnotationModified,
   triggerAnnotationCompleted,
   triggerContourAnnotationCompleted,

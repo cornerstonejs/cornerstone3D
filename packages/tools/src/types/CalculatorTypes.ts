@@ -12,11 +12,11 @@ type NamedStatistics = {
   max: Statistics & { name: 'max' };
   min: Statistics & { name: 'min' };
   stdDev: Statistics & { name: 'stdDev' };
-  stdDevWithSumSquare: Statistics & { name: 'stdDevWithSumSquare' };
   count: Statistics & { name: 'count' };
   area?: Statistics & { name: 'area' };
   volume?: Statistics & { name: 'volume' };
-  circumferance?: Statistics & { name: 'circumferance' };
+  circumference?: Statistics & { name: 'circumference' };
+  pointsInShape?: Types.IPointsManager<Types.Point3>;
   array: Statistics[];
   /** The array of points that this statistic is calculated on. */
   pointsInShape?: Types.PointsManager<Types.Point3>;

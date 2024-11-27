@@ -1,7 +1,7 @@
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import type { InitializedOperationData } from '../BrushStrategy';
-import { VolumetricCalculator } from '../../../../utilities/segmentation';
-import { segmentIndex } from '../../../../stateManagement/segmentation';
+import VolumetricCalculator from '../../../../utilities/segmentation/VolumetricCalculator';
+import { getActiveSegmentIndex } from '../../../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getStrategyData } from '../utils/getStrategyData';
 
 /**
@@ -17,7 +17,7 @@ export default {
     let { indices } = options;
     const { segmentationId } = operationData;
     if (!indices) {
-      indices = [segmentIndex.getActiveSegmentIndex(segmentationId)];
+      indices = [getActiveSegmentIndex(segmentationId)];
     } else if (!Array.isArray(indices)) {
       // Include the preview index
       indices = [indices, 255];
@@ -34,8 +34,6 @@ export default {
     });
 
     const spacing = segmentationImageData.getSpacing();
-    // Turning this off more than doubles the speed of the stats collection...
-    VolumetricCalculator.statsInit({ noPointsCollection: true });
 
     segmentationVoxelManager.forEach((voxel) => {
       const { value, pointIJK } = voxel;

@@ -9,10 +9,14 @@ A viewport can be thought of as:
 
 - A camera viewing an image from a specific perspective.
 - A canvas to display the output of this camera.
+- A set of transforms from the image data to viewable data (LUT, Window Level, Pan etc)
 
 In `Cornerstone3D` viewports are created from HTML elements, and the consumer should
 pass the `element` for which the viewport should be created. For example, a CT series can be
 viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MPR, A 3D perspective volume render.
+
+See [Viewport Reference and Presentation](./viewportReferencePresentation.md) for more details on the reference
+and presentation details that select which image and how that image is presented.
 
 <div style={{textAlign: 'center'}}>
 
@@ -47,6 +51,10 @@ Both `StackViewport` and `VolumeViewport`, `VolumeViewport3D` are created via th
 - Suitable for rendering video data
 - Video can include MPEG 4 encoded vide streams. In theory, MPEG2 is also supported,
   but practically the browser doesn't support that.
+
+## Whole Slide Image Viewport
+
+- Suitable for rendering whole slide images
 
 ## Initial Display Area
 

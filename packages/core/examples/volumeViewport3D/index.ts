@@ -1,10 +1,10 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
   getRenderingEngine,
   RenderingEngine,
   setVolumesForViewports,
-  Types,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -71,12 +71,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     // Apply the rotation to the camera of the viewport
-    viewport.setProperties({ rotation: Math.random() * 360 });
+    viewport.setViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
   },
 });
@@ -154,14 +154,16 @@ async function run() {
   volume.load();
   viewport = renderingEngine.getViewport(viewportId);
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]).then(
-    () => {
-      viewport.setProperties({
-        preset: 'CT-Bone',
-      });
-      viewport.render();
-    }
-  );
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId]
+  ).then(() => {
+    viewport.setProperties({
+      preset: 'CT-Bone',
+    });
+    viewport.render();
+  });
 }
 
 run();

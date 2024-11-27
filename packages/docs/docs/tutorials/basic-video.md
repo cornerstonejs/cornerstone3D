@@ -10,12 +10,23 @@ In this tutorial, you will learn how to render a video.
 
 In order to render a video we need:
 
+- Initialize cornerstone and related libraries.
 - an `element` (HTMLDivElement) to use as the container for the viewport
 - the URL to the video.
 - a server that will serve the video as MP4 using byte range requests
 - ideally, the video in 'fast start' format
 
 ## Implementation
+
+**Initialize cornerstone and related libraries**
+
+```js
+import { init as coreInit } from '@cornerstonejs/core';
+
+await coreInit();
+```
+
+**Create an HTML element**
 
 We have already stored images on a server for the purpose of this tutorial.
 
@@ -57,11 +68,11 @@ RenderingEngine will handle creation of the viewports, and we can get the viewpo
 ```js
 const viewport = renderingEngine.getViewport(viewportId);
 
-viewport.setVideoURL(
+await viewport.setVideoURL(
   'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
 );
 
-viewport.render();
+await viewport.play();
 ```
 
 :::note Tip
@@ -78,7 +89,56 @@ For instance you can look at this example in OHIF which uses the rendered endpoi
 
 ## Final code
 
-See `examples/video/index.ts`
+<details>
+<summary>Final code</summary>
+
+```js
+import { init as coreInit, RenderingEngine, Enums } from '@cornerstonejs/core';
+
+const { ViewportType } = Enums;
+
+const content = document.getElementById('content');
+const element = document.createElement('div');
+
+element.style.width = '500px';
+element.style.height = '500px';
+
+content.appendChild(element);
+// ============================= //
+
+/**
+ * Runs the demo
+ */
+async function run() {
+  await coreInit();
+
+  // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  const viewportId = 'CT_AXIAL_STACK';
+
+  const viewportInput = {
+    viewportId,
+    element,
+    type: ViewportType.VIDEO,
+  };
+
+  renderingEngine.enableElement(viewportInput);
+
+  const viewport = renderingEngine.getViewport(viewportId);
+
+  await viewport.setVideoURL(
+    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+  );
+
+  await viewport.play();
+}
+
+run();
+```
+
+</details>
 
 :::note Tip
 

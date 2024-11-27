@@ -3,7 +3,7 @@ import {
   quantize as d3Quantize,
 } from 'd3-interpolate';
 import { zip as d3Zip } from 'd3-array';
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 function isPoints3D(
   points: (Types.Point2 | Types.Point3)[]

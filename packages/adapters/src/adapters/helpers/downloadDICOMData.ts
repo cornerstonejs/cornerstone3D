@@ -3,7 +3,7 @@ import { Buffer } from "buffer";
 const { datasetToDict } = data;
 
 interface DicomDataset {
-    _meta?: any;
+    _meta?: unknown;
     // other properties
 }
 

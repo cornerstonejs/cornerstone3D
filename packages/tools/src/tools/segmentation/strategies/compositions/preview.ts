@@ -1,13 +1,25 @@
 import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
-import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { config as segmentationConfig } from '../../../../stateManagement/segmentation';
+import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/events/triggerSegmentationDataModified';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import {
+  getSegmentIndexColor,
+  setSegmentIndexColor,
+} from '../../../../stateManagement/segmentation/config/segmentationColor';
+
+function lightenColor(r, g, b, a, factor = 0.4) {
+  return [
+    Math.round(r + (255 - r) * factor),
+    Math.round(g + (255 - g) * factor),
+    Math.round(b + (255 - b) * factor),
+    a,
+  ];
+}
 
 /**
- * Sets up a preview to use an alternate set of colours.  First fills the
+ * Sets up a preview to use an alternate set of colors.  First fills the
  * preview segment index with the final one for all pixels, then resets
- * the preview colours.
+ * the preview colors.
  * This is only activated when the preview segment index is defined, either
  * from the initial state or from the global state.
  */
@@ -39,14 +51,8 @@ export default {
   },
 
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      toolGroupId,
-      segmentIndex,
-      segmentationRepresentationUID,
-      previewSegmentIndex,
-      previewColors,
-      preview,
-    } = operationData;
+    const { segmentIndex, previewSegmentIndex, previewColors, preview } =
+      operationData;
     if (previewColors === undefined) {
       return;
     }
@@ -67,20 +73,19 @@ export default {
     }
 
     const configColor = previewColors?.[segmentIndex];
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    const segmentColor = getSegmentIndexColor(
+      operationData.viewport.id,
+      operationData.segmentationId,
       segmentIndex
     );
     if (!configColor && !segmentColor) {
       return;
     }
-    const previewColor =
-      configColor ||
-      segmentColor.map((it, idx) => (idx === 3 ? 64 : Math.round(it * 0.9)));
-    segmentationConfig.color.setColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    const previewColor = configColor || lightenColor(...segmentColor);
+
+    setSegmentIndexColor(
+      operationData.viewport.id,
+      operationData.segmentationId,
       previewSegmentIndex,
       previewColor as Types.Color
     );
@@ -90,11 +95,11 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      segmentationVoxelManager: segmentationVoxelManager,
-      previewVoxelManager,
+      segmentationVoxelManager,
+      previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
       preview,
-    } = operationData;
+    } = operationData || {};
     if (previewSegmentIndex === undefined) {
       return;
     }
@@ -114,7 +119,7 @@ export default {
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      tracking.getArrayOfSlices(),
+      tracking.getArrayOfModifiedSlices(),
       preview.segmentIndex
     );
     tracking.clear();
@@ -123,7 +128,10 @@ export default {
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const { previewVoxelManager, segmentationVoxelManager } = operationData;
+    const {
+      previewVoxelManager: previewVoxelManager,
+      segmentationVoxelManager,
+    } = operationData;
     if (previewVoxelManager.modifiedSlices.size === 0) {
       return;
     }
@@ -137,7 +145,7 @@ export default {
     // if somtimes it modifies the data to other values on reject.
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfSlices(),
+      previewVoxelManager.getArrayOfModifiedSlices(),
       0
     );
     previewVoxelManager.clear();

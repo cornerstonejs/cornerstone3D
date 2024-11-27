@@ -9,15 +9,10 @@ import StrategyCallbacks from '../../../enums/StrategyCallbacks';
 import { createEllipseInPoint } from './fillCircle';
 const { transformWorldToIndex } = csUtils;
 import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
+
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      points,
-      imageVoxelManager: imageVoxelManager,
-      viewport,
-      segmentationImageData,
-      segmentationVoxelManager: segmentationVoxelManager,
-    } = operationData;
+    const { points, viewport, segmentationImageData } = operationData;
 
     // Happens on a preview setup
     if (!points) {
@@ -46,21 +41,13 @@ const sphereComposition = {
       viewport
     );
 
-    segmentationVoxelManager.boundsIJK = newBoundsIJK;
-
-    if (imageVoxelManager) {
-      imageVoxelManager.isInObject = createEllipseInPoint({
-        topLeftWorld,
-        bottomRightWorld,
-        center,
-      });
-    } else {
-      segmentationVoxelManager.isInObject = createEllipseInPoint({
-        topLeftWorld,
-        bottomRightWorld,
-        center,
-      });
-    }
+    operationData.isInObjectBoundsIJK = newBoundsIJK;
+    operationData.isInObject = createEllipseInPoint({
+      topLeftWorld,
+      bottomRightWorld,
+      center,
+    });
+    // }
   },
 } as Composition;
 
@@ -97,6 +84,14 @@ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
   compositions.islandRemoval
 );
 
+const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
+  'SphereThreshold',
+  ...SPHERE_STRATEGY.compositions,
+  compositions.dynamicThreshold,
+  compositions.threshold,
+  compositions.islandRemoval
+);
+
 /**
  * Fill inside the circular region segment inside the segmentation defined by the operationData.
  * It fills the segmentation pixels inside the defined circle.
@@ -108,6 +103,8 @@ const thresholdInsideSphere = SPHERE_THRESHOLD_STRATEGY.strategyFunction;
 const thresholdInsideSphereIsland =
   SPHERE_THRESHOLD_STRATEGY_ISLAND.strategyFunction;
 
+const thresholdInsideSphereIsland =
+  SPHERE_THRESHOLD_STRATEGY_ISLAND.strategyFunction;
 /**
  * Fill outside a sphere with the given segment index in the given operation data. The
  * operation data contains the sphere required points.

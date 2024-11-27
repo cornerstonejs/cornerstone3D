@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   getRenderingEngine,
@@ -18,11 +18,10 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 const {
-  SegmentationDisplayTool,
   utilities: csToolsUtilities,
   Enums: csToolsEnums,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
 } = cornerstoneTools;
 
@@ -164,9 +163,9 @@ let computedVolume;
 
 async function createVolumeFromTimeData(dataInTime) {
   // Fill the scalar data of the computed volume with the operation data
-  const scalarData = computedVolume.getScalarData();
+  const computedVoxelManager = computedVolume.voxelManager;
   for (let i = 0; i < dataInTime.length; i++) {
-    scalarData[i] = dataInTime[i];
+    computedVoxelManager.setAtIndex(i, dataInTime[i]);
   }
 
   const { imageData, vtkOpenGLTexture } = computedVolume;
@@ -195,19 +194,18 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
   // Define tool groups to add the segmentation display tool to
   const toolGroup =
     cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -231,7 +229,7 @@ async function run() {
       '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
     SeriesInstanceUID:
       '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const MAX_NUM_TIMEPOINTS = 40;
@@ -273,7 +271,6 @@ async function run() {
     element: element2,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
-      background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
 
@@ -292,9 +289,12 @@ async function run() {
     imageIds,
   });
 
-  computedVolume = await volumeLoader.createAndCacheDerivedVolume(volumeId, {
-    volumeId: computedVolumeId,
-  });
+  computedVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
+    volumeId,
+    {
+      volumeId: computedVolumeId,
+    }
+  );
 
   // Set the volume to load
   volume.load();

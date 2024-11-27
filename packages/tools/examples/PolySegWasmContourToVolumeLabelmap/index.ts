@@ -3,6 +3,7 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,6 +14,7 @@ import {
   addDropdownToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -22,7 +24,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -88,16 +89,10 @@ const segmentIndexes = [1, 2, 3, 4, 5];
 addButtonToToolbar({
   title: 'Convert contour segmentation to labelmap segmentation',
   onClick: async () => {
-    // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    // add the 3d representation to the 3d viewport
+    await segmentation.addLabelmapRepresentationToViewport(viewportId2, [
       {
         segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -114,6 +109,21 @@ addDropdownToToolbar({
   },
 });
 
+addLabelToToolbar({
+  id: 'progress',
+  title: 'Progress:',
+  style: {
+    paddingLeft: '10px',
+  },
+});
+
+eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
+  const label = document.getElementById('progress');
+
+  const { progress } = evt.detail;
+  label.innerHTML = `Progress: ${(progress * 1).toFixed(2)}%`;
+});
+
 /**
  * Runs the demo
  */
@@ -122,7 +132,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -134,12 +143,6 @@ async function run() {
 
   // Manipulation Tools
   toolGroup1.addTool(PlanarFreehandContourSegmentationTool.toolName);
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
     bindings: [
@@ -159,7 +162,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -210,17 +213,16 @@ async function run() {
     {
       segmentationId,
       representation: {
-        // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
+        data: {},
       },
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId1, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addContourRepresentationToViewport(viewportId1, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 

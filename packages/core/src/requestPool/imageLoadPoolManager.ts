@@ -19,9 +19,6 @@ import RequestType from '../enums/RequestType';
  *     offset: null,
  *     length: null,
  *   },
- *   preScale: {
- *     enabled: true,
- *   },
  * }
  *
  * imageLoadPoolManager.addRequest(

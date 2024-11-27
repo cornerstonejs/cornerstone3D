@@ -1,4 +1,4 @@
-import { Types } from '..';
+import type { Types } from '..';
 
 type actorTypes = 'vtkActor' | 'vtkVolume' | 'vtkImageSlice';
 
@@ -15,10 +15,11 @@ export function isImageActor(actorEntry: Types.ActorEntry): boolean {
 }
 
 export function actorIsA(
-  actorEntry: Types.ActorEntry,
+  actorEntry: Types.ActorEntry | Types.Actor,
   actorType: actorTypes
 ): boolean {
-  const actor = actorEntry.actor;
+  const actorToCheck = 'isA' in actorEntry ? actorEntry : actorEntry.actor;
 
-  return !!actor.isA(actorType);
+  // @ts-expect-error
+  return !!actorToCheck.isA(actorType);
 }

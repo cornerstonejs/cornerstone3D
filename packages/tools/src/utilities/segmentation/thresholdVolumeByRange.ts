@@ -1,17 +1,14 @@
-import { Types } from '@cornerstonejs/core';
-import { pointInShapeCallback } from '../../utilities';
+import type { Types } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import { BoundsIJK } from '../../types';
-import {
-  getVoxelOverlap,
-  processVolumes,
-  ThresholdInformation,
-} from './utilities';
+import type { BoundsIJK } from '../../types';
+import type { ThresholdInformation } from './utilities';
+import { getVoxelOverlap, processVolumes } from './utilities';
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   boundsIJK: BoundsIJK;
   overlapType?: number;
+  segmentIndex?: number;
 };
 
 /**
@@ -39,15 +36,18 @@ function thresholdVolumeByRange(
   options: ThresholdRangeOptions
 ): Types.IImageVolume {
   const { imageData: segmentationImageData } = segmentationVolume;
-  const scalarData = segmentationVolume.getScalarData();
 
   const { overwrite, boundsIJK } = options;
   const overlapType = options?.overlapType || 0;
+  const segVoxelManager =
+    segmentationVolume.voxelManager as Types.IVoxelManager<number>;
+  const scalarDataLength =
+    segmentationVolume.voxelManager.getScalarDataLength();
 
   // set the segmentation to all zeros
   if (overwrite) {
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
+    for (let i = 0; i < scalarDataLength; i++) {
+      segVoxelManager.setAtIndex(i, 0);
     }
   }
 
@@ -88,8 +88,12 @@ function thresholdVolumeByRange(
 
     let overlapTest = false;
 
+    const { voxelManager } = imageData.get('voxelManager');
     // check all voxel overlaps
-    pointInShapeCallback(imageData, () => true, callbackOverlap, overlapBounds);
+    voxelManager.forEach(callbackOverlap, {
+      imageData,
+      boundsIJK: overlapBounds,
+    });
 
     if (overlapType === 0) {
       overlapTest = overlaps > 0; // any voxel overlap is accepted
@@ -101,10 +105,11 @@ function thresholdVolumeByRange(
 
   // range checks a voxel in a volume with same dimension as the segmentation
   const testRange = (volumeInfo, pointIJK) => {
-    const { imageData, referenceValues, lower, upper } = volumeInfo;
-    const offset = imageData.computeOffsetIndex(pointIJK);
+    const { imageData, lower, upper } = volumeInfo;
+    const voxelManager = imageData.get('voxelManager').voxelManager;
+    const offset = voxelManager.toIndex(pointIJK);
 
-    const value = referenceValues[offset];
+    const value = voxelManager.getAtIndex(offset);
     if (value <= lower || value >= upper) {
       return false;
     } else {
@@ -121,7 +126,7 @@ function thresholdVolumeByRange(
     let insert = volumeInfoList.length > 0;
     for (let i = 0; i < volumeInfoList.length; i++) {
       // if volume has the same size as segmentation volume, just range check
-      if (volumeInfoList[i].volumeSize === scalarData.length) {
+      if (volumeInfoList[i].volumeSize === scalarDataLength) {
         insert = testRange(volumeInfoList[i], pointIJK);
       } else {
         // if not, need to calculate overlaps
@@ -136,13 +141,17 @@ function thresholdVolumeByRange(
       }
     }
 
-    // Todo: make the segmentIndex a parameter
     if (insert) {
-      scalarData[index] = 1;
+      segVoxelManager.setAtIndex(index, options.segmentIndex || 1);
     }
   };
 
-  pointInShapeCallback(segmentationImageData, () => true, callback, boundsIJK);
+  const voxelManager = segmentationVolume.voxelManager;
+
+  voxelManager.forEach(callback, {
+    imageData: segmentationImageData,
+    boundsIJK,
+  });
 
   triggerSegmentationDataModified(segmentationVolume.volumeId);
 

@@ -1,44 +1,33 @@
 import type { Types } from '@cornerstonejs/core';
-import * as Enums from '../enums';
-import {
-  ContourConfig,
-  ContourRenderingConfig,
-  ContourSegmentationData,
-} from './ContourTypes';
-import type {
-  LabelmapConfig,
-  LabelmapRenderingConfig,
-  LabelmapSegmentationData,
-} from './LabelmapTypes';
-import {
-  SurfaceSegmentationData,
-  SurfaceRenderingConfig,
-} from './SurfaceTypes';
+import type * as Enums from '../enums';
+import type { ContourSegmentationData } from './ContourTypes';
+import type { LabelmapSegmentationData } from './LabelmapTypes';
+import type { SurfaceSegmentationData } from './SurfaceTypes';
+import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
-export type SegmentSpecificRepresentationConfig = {
-  [key: number | string]: RepresentationConfig;
+export type RepresentationsData = {
+  [Enums.SegmentationRepresentations.Labelmap]?: LabelmapSegmentationData;
+  [Enums.SegmentationRepresentations.Contour]?: ContourSegmentationData;
+  [Enums.SegmentationRepresentations.Surface]?: SurfaceSegmentationData;
 };
 
-export type RepresentationConfig = {
-  /** labelmap configuration */
-  LABELMAP?: LabelmapConfig;
-  /** contour configuration */
-  CONTOUR?: ContourConfig;
-  /** surface configuration */
-  SURFACE?: any;
-};
+export type RepresentationData =
+  | LabelmapSegmentationData
+  | ContourSegmentationData
+  | SurfaceSegmentationData;
 
-export type SegmentationRepresentationConfig = {
-  /** Whether to render Inactive segmentations  */
-  renderInactiveSegmentations: boolean;
-  /** Representations configuration */
-  representations: RepresentationConfig;
-};
-
-export type SegmentationRepresentationData = {
-  LABELMAP?: LabelmapSegmentationData;
-  CONTOUR?: ContourSegmentationData;
-  SURFACE?: SurfaceSegmentationData;
+export type Segment = {
+  /** segment index */
+  segmentIndex: number;
+  /** segment label */
+  label: string;
+  /** is segment locked for editing */
+  locked: boolean;
+  /** cached stats for the segment, e.g., pt suv mean, max etc. */
+  cachedStats: { [key: string]: unknown };
+  /** is segment active for editing, at the same time only one segment can be active for editing */
+  active: boolean;
 };
 
 /**
@@ -47,25 +36,11 @@ export type SegmentationRepresentationData = {
 export type Segmentation = {
   /** segmentation id  */
   segmentationId: string;
-  /** segmentation main representation type */
-  type: Enums.SegmentationRepresentations;
   /** segmentation label */
   label: string;
-  /**
-   * Active segment index in the segmentation, this index will get used
-   * inside the segmentation tools
-   */
-  activeSegmentIndex: number;
-  /**
-   * Locked segments in the segmentation, if a segment is locked no tool
-   * will be able to modify it
-   */
-  segmentsLocked: Set<number>;
-  /**
-   * If there is any derived statistics for the segmentation (e.g., mean, volume, etc)
-   */
-  cachedStats: { [key: string]: number };
-  segmentLabels: { [key: string]: string };
+  segments: {
+    [segmentIndex: number]: Segment;
+  };
   /**
    * Representations of the segmentation. Each segmentation "can" be viewed
    * in various representations. For instance, if a DICOM SEG is loaded, the main
@@ -73,189 +48,69 @@ export type Segmentation = {
    * is contours, and other representations can be derived from the contour (currently
    * only labelmap representation is supported)
    */
-  representationData: SegmentationRepresentationData;
+  representationData: RepresentationsData;
+  /**
+   * Segmentation level stats, Note each segment can have its own stats
+   * This is used for caching stats for the segmentation level
+   */
+  cachedStats: { [key: string]: unknown };
 };
 
-/**
- * Representation state of the segmentation which is common between all
- * representations (we don't need to separate these states for each representation)
- */
-export type ToolGroupSpecificRepresentationState = {
-  /**
-   * Segmentation Representation UID
-   */
-  segmentationRepresentationUID: string;
-  /**
-   * The segmentationId that this representation is derived from
-   */
-  segmentationId: string;
-  /**
-   * The representation type
-   */
-  type: Enums.SegmentationRepresentations;
-  /**
-   * Whether the segmentation is the active (manipulatable) segmentation or not
-   * which means it is inactive
-   */
-  active: boolean;
-  /**
-   * Hidden segment indices in the segmentation
-   */
-  segmentsHidden: Set<number>;
-  /**
-   * The index of the colorLUT from the state that this segmentationData is
-   * using to render
-   */
+export type LabelmapRenderingConfig = {
+  cfun: vtkColorTransferFunction;
+  ofun: vtkPiecewiseFunction;
   colorLUTIndex: number;
-  /**
-   * Poly Seg generated
-   */
-  polySeg?: {
-    enabled: boolean;
-    options?: any;
+};
+
+export type ContourRenderingConfig = {};
+
+export type SurfaceRenderingConfig = {};
+
+export type RenderingConfig =
+  | LabelmapRenderingConfig
+  | ContourRenderingConfig
+  | SurfaceRenderingConfig;
+
+type BaseSegmentationRepresentation = {
+  colorLUTIndex: number;
+  // identifier for the segmentation representation
+  segmentationId: string;
+  type: Enums.SegmentationRepresentations;
+  // settings
+  visible: boolean;
+  active: boolean;
+  segments: {
+    [segmentIndex: number]: {
+      visible: boolean;
+    };
   };
 };
 
-/**
- * ToolGroup Specific Segmentation Data for segmentations. As one segmentation
- * can be represented in various ways (currently only labelmap is supported)
- * we store ToolGroup specific segmentation data in this object
- */
-export type ToolGroupSpecificLabelmapRepresentation =
-  ToolGroupSpecificRepresentationState & {
-    config: LabelmapRenderingConfig;
-    // Todo: we need to merge all these configs into one to make it easier
-    segmentationRepresentationSpecificConfig?: RepresentationConfig;
-    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
-  };
+export type LabelmapRepresentation = BaseSegmentationRepresentation & {
+  config: LabelmapRenderingConfig;
+};
 
-export type ToolGroupSpecificContourRepresentation =
-  ToolGroupSpecificRepresentationState & {
-    config: ContourRenderingConfig;
-    segmentationRepresentationSpecificConfig?: RepresentationConfig;
-    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
-  };
+export type ContourRepresentation = BaseSegmentationRepresentation & {
+  config: ContourRenderingConfig;
+};
 
-export type ToolGroupSpecificSurfaceRepresentation =
-  ToolGroupSpecificRepresentationState & {
-    config: SurfaceRenderingConfig;
-    segmentationRepresentationSpecificConfig?: RepresentationConfig;
-    segmentSpecificConfig?: SegmentSpecificRepresentationConfig;
-  };
+export type SurfaceRepresentation = BaseSegmentationRepresentation & {
+  config: SurfaceRenderingConfig;
+};
 
-export type ToolGroupSpecificRepresentation =
-  | ToolGroupSpecificLabelmapRepresentation
-  | ToolGroupSpecificContourRepresentation;
+export type SegmentationRepresentation =
+  | LabelmapRepresentation
+  | ContourRepresentation
+  | SurfaceRepresentation;
 
-export type ToolGroupSpecificRepresentations =
-  Array<ToolGroupSpecificRepresentation>;
-
-/**
- * Segmentation State stored inside the cornerstone3DTools
- *
- * ```js
- *  {
- *   colorLUT: [],
- *   globalConfig: {
- *     renderInactiveSegmentations: false,
- *     representations: {
- *       LABELMAP: {
- *         renderFill: true,
- *         renderOutline: true,
- *       },
- *     },
- *   },
- *   segmentations: [
- *     {
- *       segmentationId: 'segmentation1',
- *       mainType: 'Labelmap',
- *       activeSegmentIndex: 0,
- *       segmentsLocked: new Set(),
- *       label: 'segmentation1',
- *       cachedStats: {},
- *       representationData: {
- *         LABELMAP: {
- *           volumeId: 'segmentation1',
- *         },
- *         CONTOUR: {
- *           geometryIds: ['contourSet1', 'contourSet2'],
- *         },
- *       },
- *     },
- *     {
- *       segmentationId: 'segmentation2',
- *       type: 'Labelmap',
- *       activeSegmentIndex: 1,
- *       segmentsLocked: new Set(),
- *       label: 'segmentation2',
- *       cachedStats: {},
- *       representationData: {
- *         CONTOUR: {
- *           points: Float32Array,
- *         },
- *       },
- *     },
- *   ],
- *   toolGroups: {
- *     toolGroupUID1: {
- *       segmentationRepresentations: [
- *         {
- *           segmentationRepresentationUID: '12123123123132',
- *           segmentationId: '123123',
- *           type: 'Labelmap',
- *           active: true,
- *           colorLUTIndex: 0,
- *           visibility: true,
- *           segmentsHidden: Set(),
- *           // rendering config
- *           config: {
- *             "cfun",
- *             "ofun",
- *           },
- *           // segmentation representation specific config, has priority over the one in the outer scope
- *           segmentationRepresentationSpecificConfig: {
- *             LABELMAP: {
- *               renderFill: true,
- *             }
- *           }
- *           // segment specific config
- *           segmentSpecificConfig: {
- *             1: {
- *              renderFill: false,
- *              }
- *           },
- *         },
- *       ],
- *       config: {
- *         renderInactiveSegmentations: false,
- *         representations: {
- *           LABELMAP: {
- *             renderFill: true,
- *             renderOutline: true,
- *           },
- *         },
- *       },
- *     },
- *   },
- * }
- * ```
- */
 export type SegmentationState = {
   /** Array of colorLUT for segmentation to render */
   colorLUT: Types.ColorLUT[];
   /** segmentations */
   segmentations: Segmentation[];
-  /** global segmentation state with config */
-  globalConfig: SegmentationRepresentationConfig;
-  /**
-   * ToolGroup specific segmentation state with config
-   */
-  toolGroups: {
-    /** toolGroupId and their toolGroup specific segmentation state with config */
-    [key: string]: {
-      segmentationRepresentations: ToolGroupSpecificRepresentations;
-      config: SegmentationRepresentationConfig;
-    };
+  /** viewports association with segmentation representations */
+  viewportSegRepresentations: {
+    [viewportId: string]: Array<SegmentationRepresentation>;
   };
 };
 
@@ -263,28 +118,26 @@ export type SegmentationPublicInput = {
   segmentationId: string;
   representation: {
     type: Enums.SegmentationRepresentations;
-    data?:
-      | LabelmapSegmentationData
-      | ContourSegmentationData
-      | SurfaceSegmentationData;
+    data?: RepresentationData;
+  };
+  config?: {
+    segments?: {
+      [segmentIndex: number]: Partial<Segment>;
+    };
+    label?: string;
+    // segmentation level stats
+    cachedStats?: { [key: string]: unknown };
   };
 };
 
+/**
+ * Represents the input structure for adding a segmentation to a viewport.
+ */
 export type RepresentationPublicInput = {
+  /** The unique identifier for the segmentation. */
   segmentationId: string;
-  type: Enums.SegmentationRepresentations;
-  options?: RepresentationPublicInputOptions;
-};
-
-export type RepresentationPublicInputOptions = {
-  segmentationRepresentationUID?: string;
-  // color lut to use for this representation (optional), it can
-  // be either a colorLUT array or the index of the colorLUT in the state
-  colorLUTOrIndex?: Types.ColorLUT | number;
-  // whether to use polymorphic segmentation utilities to convert
-  // from other representations to this representation
-  polySeg?: {
-    enabled: boolean;
-    options?: any;
+  type?: Enums.SegmentationRepresentations;
+  config?: {
+    colorLUTOrIndex?: Types.ColorLUT | number;
   };
 };

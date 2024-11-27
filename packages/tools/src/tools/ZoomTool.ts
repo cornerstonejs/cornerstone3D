@@ -1,8 +1,9 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import { getEnabledElement, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -23,8 +24,11 @@ class ZoomTool extends BaseTool {
       configuration: {
         // whether zoom to the center of the image OR zoom to the mouse position
         zoomToCenter: false,
-        minZoomScale: 0.1,
-        maxZoomScale: 30,
+        // Use large ranges to allow for microscopy viewing.
+        // TODO: Change the definitions of these to be relative to 1:1 pixel and
+        // relative to scale to fit sizing
+        minZoomScale: 0.001,
+        maxZoomScale: 3000,
         pinchToZoom: true,
         pan: true,
         invert: false,

@@ -1,5 +1,5 @@
 import getVOILUT from './getVOILut';
-import { IImage, CPUFallbackLUT } from '../../../../types';
+import type { IImage, CPUFallbackLUT } from '../../../../types';
 
 /**
  * Creates a LUT used while rendering to convert stored pixel values to
@@ -38,7 +38,7 @@ export default function generateColorLUT(
     voiLUT
   );
 
-  if (invert === true) {
+  if (invert) {
     for (
       let storedValue = minPixelValue;
       storedValue <= maxPixelValue;

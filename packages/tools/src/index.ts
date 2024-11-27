@@ -2,13 +2,12 @@ import { init, destroy } from './init';
 import {
   addTool,
   removeTool,
-  state,
   ToolGroupManager,
   SynchronizerManager,
   Synchronizer,
   cancelActiveManipulations,
 } from './store';
-
+import { state } from './store/state';
 import * as CONSTANTS from './constants';
 
 // Name spaces
@@ -31,14 +30,14 @@ import {
   ZoomTool,
   StackScrollTool,
   PlanarRotateTool,
-  StackScrollMouseWheelTool,
-  VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   LengthTool,
+  HeightTool,
   ProbeTool,
   RectangleROITool,
   EllipticalROITool,
   CircleROITool,
+  ETDRSGridTool,
   SplineROITool,
   SplineContourSegmentationTool,
   BidirectionalTool,
@@ -56,7 +55,6 @@ import {
   RectangleROIThresholdTool,
   RectangleROIStartEndThresholdTool,
   CircleROIStartEndThresholdTool,
-  SegmentationDisplayTool,
   BrushTool,
   AngleTool,
   CobbAngleTool,
@@ -64,14 +62,16 @@ import {
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,
-  ReferenceLines,
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
   EraserTool,
+  SculptorTool,
   SegmentSelectTool,
+  WindowLevelRegionTool,
+  VolumeRotateTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -95,14 +95,14 @@ export {
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
+  WindowLevelRegionTool,
   ZoomTool,
   StackScrollTool,
   PlanarRotateTool,
-  StackScrollMouseWheelTool,
-  VolumeRotateMouseWheelTool,
   MIPJumpToClickTool,
   // Annotation Tools
   LengthTool,
+  HeightTool,
   CrosshairsTool,
   ReferenceLinesTool,
   OverlayGridTool,
@@ -111,6 +111,7 @@ export {
   RectangleROITool,
   EllipticalROITool,
   CircleROITool,
+  ETDRSGridTool,
   SplineROITool,
   SplineContourSegmentationTool,
   BidirectionalTool,
@@ -126,11 +127,10 @@ export {
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,
-  ReferenceLines,
   ScaleOverlayTool,
+  SculptorTool,
   EraserTool,
   // Segmentation Display
-  SegmentationDisplayTool,
   // Segmentation Editing Tools
   RectangleScissorsTool,
   CircleScissorsTool,
@@ -163,4 +163,5 @@ export {
   // Utilities
   utilities,
   cursors,
+  VolumeRotateTool,
 };

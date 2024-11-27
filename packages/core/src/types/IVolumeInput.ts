@@ -1,5 +1,5 @@
-import { VolumeActor } from './IActor';
-import BlendModes from '../enums/BlendModes';
+import type { VolumeActor } from './IActor';
+import type BlendModes from '../enums/BlendModes';
 
 /**
  * Volume input callback type, used to perform operations on the volume data
@@ -17,7 +17,7 @@ type VolumeInputCallback = (params: {
  * mandatory `volumeId` but other options such as `visibility`, `blendMode`,
  * `slabThickness` and `callback` can also be provided
  */
-interface IVolumeInput {
+type IVolumeInput = {
   /** Volume ID of the volume in the cache */
   volumeId: string;
   // actorUID for segmentations, since two segmentations with the same volumeId
@@ -31,6 +31,8 @@ interface IVolumeInput {
   blendMode?: BlendModes;
   /** Slab thickness of the volume - by default it is 0.05*/
   slabThickness?: number;
-}
+  /** other metadata that is needed for the volume */
+  [key: string]: unknown;
+};
 
 export type { IVolumeInput, VolumeInputCallback };

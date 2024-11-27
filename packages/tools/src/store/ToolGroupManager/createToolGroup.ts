@@ -1,6 +1,6 @@
-import { state } from '../index';
+import { state } from '../state';
 import ToolGroup from './ToolGroup';
-import { IToolGroup } from '../../types';
+import type { IToolGroup } from '../../types';
 
 /**
  * Create a new tool group with the given name. ToolGroups are the new way

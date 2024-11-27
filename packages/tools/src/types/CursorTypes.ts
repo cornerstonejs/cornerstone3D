@@ -4,9 +4,16 @@ export type SVGPoint = {
 };
 
 export type SVGCursorDescriptor = {
+  name?: string; // The name from CursorSVG object
   iconContent: string;
-  iconSize: number;
-  viewBox: SVGPoint;
-  mousePoint: SVGPoint;
-  mousePointerGroupString: string;
+  iconSize?: number;
+  viewBox: {
+    x: number;
+    y: number;
+  };
+  mousePoint?: {
+    x: number;
+    y: number;
+  };
+  mousePointerGroupString?: string;
 };

@@ -1,3 +1,5 @@
+import type { CPUFallbackLUT } from '../../../../types';
+
 /**
  * Check if two lookup tables match
  *
@@ -6,7 +8,10 @@
  * @return {boolean} Whether or not they match
  * @memberof rendering
  */
-export default function (a: any, b: any) {
+export default function lutMatches(
+  a: CPUFallbackLUT,
+  b: CPUFallbackLUT
+): boolean {
   // If undefined, they are equal
   if (!a && !b) {
     return true;

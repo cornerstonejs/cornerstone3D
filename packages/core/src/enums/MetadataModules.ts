@@ -7,19 +7,35 @@
  * with existing naming conventions)
  */
 enum MetadataModules {
-  CINE = 'cineModule',
-  IMAGE_URL = 'imageUrlModule',
-  SOP_COMMON = 'sopCommonModule',
-  VOI_LUT = 'voiLutModule',
-  MODALITY_LUT = 'modalityLutModule',
-  GENERAL_SERIES = 'generalSeriesModule',
-  PATIENT_STUDY = 'patientStudyModule',
-  NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',
-  IMAGE_PLANE = 'imagePlaneModule',
-  IMAGE_PIXEL = 'imagePixelModule',
-  MULTIFRAME = 'multiframeModule',
-  ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
   CALIBRATION = 'calibrationModule',
+  CINE = 'cineModule',
+  GENERAL_IMAGE = 'generalImageModule',
+  GENERAL_SERIES = 'generalSeriesModule',
+  GENERAL_STUDY = 'generalStudyModule',
+  IMAGE_PIXEL = 'imagePixelModule',
+  IMAGE_PLANE = 'imagePlaneModule',
+  IMAGE_URL = 'imageUrlModule',
+  MODALITY_LUT = 'modalityLutModule',
+  MULTIFRAME = 'multiframeModule',
+  NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',
+  OVERLAY_PLANE = 'overlayPlaneModule',
+  PATIENT = 'patientModule',
+  PATIENT_STUDY = 'patientStudyModule',
+  PET_IMAGE = 'petImageModule',
+  PET_ISOTOPE = 'petIsotopeModule',
+  PET_SERIES = 'petSeriesModule',
+  SOP_COMMON = 'sopCommonModule',
+  ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
+  VOI_LUT = 'voiLutModule',
+  /**
+   * Some modules need direct access to a data services (WADO) web client.
+   * This allows getting images and metadata as raw results for display.
+   * This is DICOMweb WADO, not base WADO, and should support:
+   *    * Series level metadata retrieve
+   *    * Bulkdata retrieve
+   *    * Image retrieve
+   */
+  WADO_WEB_CLIENT = 'wadoWebClient',
 }
 
 export default MetadataModules;

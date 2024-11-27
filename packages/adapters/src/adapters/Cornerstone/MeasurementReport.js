@@ -18,7 +18,9 @@ const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
 const codeValueMatch = (group, code, oldCode) => {
     const { ConceptNameCodeSequence } = group;
-    if (!ConceptNameCodeSequence) return;
+    if (!ConceptNameCodeSequence) {
+        return;
+    }
     const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
     return (
         (CodingSchemeDesignator == code.CodingSchemeDesignator &&
@@ -247,6 +249,7 @@ export default class MeasurementReport {
         // Merge the derived dataset with the content from the Measurement Report
         report.dataset = Object.assign(report.dataset, contentItem);
         report.dataset._meta = _meta;
+        report.dataset.SpecificCharacterSet = "ISO_IR 192";
 
         return report;
     }

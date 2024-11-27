@@ -1,22 +1,21 @@
-import { getEnabledElement, type Types } from '@cornerstonejs/core';
+import { getEnabledElement, type Types, utilities } from '@cornerstonejs/core';
 
 import type { Annotation } from '../../types/AnnotationTypes';
-import * as segmentation from '../../stateManagement/segmentation';
 import {
   state as annotationState,
   config as annotationConfig,
 } from '../../stateManagement/annotation';
-import { jumpToSlice } from '../viewport';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
 import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
+import { getSegmentations } from '../../stateManagement/segmentation/getSegmentations';
+import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 
 export type Segment = {
   segmentationId: string;
   segmentIndex: number;
   label: string;
-
-  style?: any;
+  style?: Record<string, unknown>;
   containedSegmentIndices?: (number) => boolean;
 };
 
@@ -49,7 +48,7 @@ export default function segmentContourAction(
     return;
   }
   const FrameOfReferenceUID = enabledElement.viewport.getFrameOfReferenceUID();
-  const segmentationsList = segmentation.state.getSegmentations();
+  const segmentationsList = getSegmentations();
   const { segmentIndex, segmentationId } = segment;
   const bidirectionals = annotationState.getAnnotations(
     this.toolName || BidirectionalTool.toolName,
@@ -58,9 +57,11 @@ export default function segmentContourAction(
   let hasExistingActiveSegment = false;
   const existingLargestBidirectionals = bidirectionals.filter(
     (existingBidirectionalItem) => {
-      const { segment } = existingBidirectionalItem.data;
+      const segment = existingBidirectionalItem.data.segment as
+        | Segment
+        | undefined;
       if (!segment) {
-        return;
+        return false;
       }
       if (
         segment.segmentationId === segmentationId &&
@@ -69,7 +70,7 @@ export default function segmentContourAction(
         hasExistingActiveSegment = true;
         existingBidirectionalItem.data.segment = segment;
       }
-      return !!segment;
+      return true;
     }
   );
   if (!hasExistingActiveSegment) {
@@ -82,8 +83,8 @@ export default function segmentContourAction(
 
   let newBidirectional;
   existingLargestBidirectionals.forEach((existingLargestBidirectional) => {
-    const segments = [];
-    const { segment: updateSegment } = existingLargestBidirectional.data;
+    const segments: Segment[] = [];
+    const updateSegment = existingLargestBidirectional.data.segment as Segment;
     const { segmentIndex, segmentationId } = updateSegment;
     segments[segmentIndex] = updateSegment;
     annotationState.removeAnnotation(
@@ -129,7 +130,7 @@ export default function segmentContourAction(
     const imageIds = enabledElement.viewport.getImageIds();
 
     // TODO - figure out why this is reversed
-    jumpToSlice(element, {
+    utilities.jumpToSlice(element, {
       imageIndex: imageIds.length - 1 - sliceIndex,
     });
     enabledElement.viewport.render();
@@ -144,15 +145,14 @@ export function defaultGetSegment(
   enabledElement: Types.IEnabledElement,
   configuration: SegmentContourActionConfiguration
 ): Segment {
-  const segmentationsList = segmentation.state.getSegmentations();
+  const segmentationsList = getSegmentations();
   if (!segmentationsList.length) {
     return;
   }
   const segmentationId =
     configuration.segmentationId || segmentationsList[0].segmentationId;
   const segmentIndex =
-    configuration.segmentIndex ??
-    segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    configuration.segmentIndex ?? getActiveSegmentIndex(segmentationId);
   if (!segmentIndex) {
     return;
   }

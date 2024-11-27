@@ -5,7 +5,7 @@ import {
   getRenderingEngines,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
+import type { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
@@ -15,16 +15,10 @@ import {
   drawLine as drawLineSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../drawingSvg';
-import {
-  EventTypes,
-  PublicToolProps,
-  ToolProps,
-  SVGDrawingHelper,
-} from '../types';
-import { StyleSpecifier } from '../types/AnnotationStyle';
+import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getToolGroup } from '../store/ToolGroupManager';
 
-const SCALEOVERLAYTOOL_ID = 'scaleoverlay-viewport';
 const viewportsWithAnnotations = [];
 
 /**
@@ -38,14 +32,12 @@ const viewportsWithAnnotations = [];
 class ScaleOverlayTool extends AnnotationDisplayTool {
   static toolName;
 
-  public touchDragCallback: any;
-  public mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    renderingEngine: any;
-    viewport: any;
+    renderingEngine: Types.IRenderingEngine;
+    viewport: Types.IViewport;
     annotation: ScaleOverlayAnnotation;
-  } | null = {} as any;
+  } | null = null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
@@ -104,7 +96,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     const viewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(viewport);
 
-    let annotation = this.editData.annotation;
+    let annotation = this.editData?.annotation;
 
     const annotations = getAnnotations(this.getToolName(), viewport.element);
 
@@ -118,29 +110,34 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     // viewportsWithAnnotations stores which viewports have an annotation,
     // if the viewport does not have an annotation, create a new one
-    if (!viewportsWithAnnotations.includes(viewport.id)) {
-      const newAnnotation: ScaleOverlayAnnotation = {
-        metadata: {
-          toolName: this.getToolName(),
-          viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-          viewUp: <Types.Point3>[...viewUp],
-          FrameOfReferenceUID,
-          referencedImageId: null,
-        },
-        data: {
-          handles: {
-            points: viewportCanvasCornersInWorld,
+    enabledElements.forEach((element) => {
+      const { viewport } = element;
+      if (!viewportsWithAnnotations.includes(viewport.id)) {
+        const newAnnotation: ScaleOverlayAnnotation = {
+          metadata: {
+            toolName: this.getToolName(),
+            viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+            viewUp: <Types.Point3>[...viewUp],
+            FrameOfReferenceUID,
+            referencedImageId: null,
           },
-          viewportId: viewport.id,
-        },
-      };
+          data: {
+            handles: {
+              points: csUtils.getViewportImageCornersInWorld(viewport),
+            },
+            viewportId: viewport.id,
+          },
+        };
 
-      viewportsWithAnnotations.push(viewport.id);
+        viewportsWithAnnotations.push(viewport.id);
 
-      addAnnotation(newAnnotation, viewport.element);
-      annotation = newAnnotation;
-    } else if (
-      this.editData.annotation &&
+        addAnnotation(newAnnotation, viewport.element);
+        annotation = newAnnotation;
+      }
+    });
+
+    if (
+      this.editData?.annotation &&
       this.editData.annotation.data.viewportId == viewport.id
     ) {
       this.editData.annotation.data.handles.points =
@@ -179,9 +176,10 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ) {
-    if (!this.editData.viewport) {
+    if (!this.editData || !this.editData.viewport) {
       return;
     }
+
     const location = this.configuration.scaleLocation;
     const { viewport } = enabledElement;
 
@@ -204,8 +202,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     };
 
     const canvasSize = {
-      width: canvas.width,
-      height: canvas.height,
+      width: canvas.width / window.devicePixelRatio || 1,
+      height: canvas.height / window.devicePixelRatio || 1,
     };
 
     const topLeft = annotation.data.handles.points[0];
@@ -340,8 +338,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       scaleSize,
       location,
       annotationUID,
-      scaleTicks.endTick1,
-      scaleTicks.endTick2
+      scaleTicks.endTick1 as Types.Point2[],
+      scaleTicks.endTick2 as Types.Point2[]
     );
 
     // draws inner ticks for scale
@@ -406,7 +404,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
   computeScaleSize = (
     worldWidthViewport: number,
     worldHeightViewport: number,
-    location: any
+    location: string
   ) => {
     const scaleSizes = [
       16000, 8000, 4000, 2000, 1000, 500, 250, 100, 50, 25, 10, 5, 2,
@@ -485,8 +483,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     scaleSize: number,
     location: string,
     annotationUID: string,
-    leftTick: any[][],
-    rightTick: any[][]
+    leftTick: Types.Point2[],
+    rightTick: Types.Point2[]
   ) => {
     let canvasScaleSize;
     if (location == 'bottom' || location == 'top') {

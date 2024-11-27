@@ -1,15 +1,9 @@
 {
+    "extends": "../../tsconfig.base.json",
     "compilerOptions": {
-        "declaration": true,
-        "declarationDir": "./dist/types",
-        "emitDeclarationOnly": true
+        "outDir": "./dist/esm",
+        "rootDir": "./src"
     },
-    "exclude": [
-        "node_modules",
-        "dist",
-        "examples",
-        "old-examples"
-    ]
-
-
+    "include": ["./src/**/*"],
+    "exclude": ["node_modules", "dist"]
 }

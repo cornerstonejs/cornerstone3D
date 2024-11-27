@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 function drawHandle(
   svgDrawingHelper: SVGDrawingHelper,
@@ -16,7 +16,7 @@ function drawHandle(
   const { color, handleRadius, width, lineWidth, fill, type, opacity } =
     Object.assign(
       {
-        color: 'dodgerblue',
+        color: 'rgb(0, 255, 0)',
         handleRadius: '6',
         width: '2',
         lineWidth: undefined,

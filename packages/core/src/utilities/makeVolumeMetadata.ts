@@ -1,5 +1,5 @@
-import { metaData } from '../';
-import { Metadata } from '../types';
+import { get } from '../metaData';
+import type { Metadata } from '../types';
 
 /**
  * It creates a metadata object for a volume given the imageIds that compose it.
@@ -8,7 +8,7 @@ import { Metadata } from '../types';
  * @param imageIds - array of imageIds
  * @returns The volume metadata
  */
-export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
+export default function makeVolumeMetadata(imageIds: string[]): Metadata {
   const imageId0 = imageIds[0];
 
   const {
@@ -18,12 +18,12 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     highBit,
     photometricInterpretation,
     samplesPerPixel,
-  } = metaData.get('imagePixelModule', imageId0);
+  } = get('imagePixelModule', imageId0);
 
   // Add list of VOIs stored on the DICOM.
   const voiLut = [];
 
-  const voiLutModule = metaData.get('voiLutModule', imageId0);
+  const voiLutModule = get('voiLutModule', imageId0);
 
   // voiLutModule is not always present
   let voiLUTFunction;
@@ -51,10 +51,7 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     });
   }
 
-  const { modality, seriesInstanceUID } = metaData.get(
-    'generalSeriesModule',
-    imageId0
-  );
+  const { modality, seriesInstanceUID } = get('generalSeriesModule', imageId0);
 
   const {
     imageOrientationPatient,
@@ -62,7 +59,7 @@ export default function makeVolumeMetadata(imageIds: Array<string>): Metadata {
     frameOfReferenceUID,
     columns,
     rows,
-  } = metaData.get('imagePlaneModule', imageId0);
+  } = get('imagePlaneModule', imageId0);
 
   // Map to dcmjs-style keywords. This is becoming the standard and makes it
   // Easier to swap out cornerstoneDICOMImageLoader at a later date.

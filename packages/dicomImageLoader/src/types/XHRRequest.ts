@@ -1,6 +1,6 @@
 export interface LoaderXhrRequestError extends Error {
   request: XMLHttpRequest;
-  response: any;
+  response: unknown;
   status: number;
 }
 
@@ -11,7 +11,7 @@ export interface LoaderXhrRequestParams {
   url?: string;
   deferred?: {
     resolve: (value: ArrayBuffer | PromiseLike<ArrayBuffer>) => void;
-    reject: (reason?: any) => void;
+    reject: (reason) => void;
   };
   imageId?: string;
 }

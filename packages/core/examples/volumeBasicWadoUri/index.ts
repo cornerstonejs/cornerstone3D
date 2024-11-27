@@ -1,15 +1,12 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
 import {
   initDemo,
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
-  wadoURICreateImageIds,
 } from '../../../../utils/demo/helpers';
+
+import { ctImageIds } from '../../../../utils/demo/helpers/WADOURICreateImageIds';
 
 // This is for debugging purposes
 console.warn(
@@ -40,7 +37,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const imageIds = wadoURICreateImageIds();
+  const imageIds = ctImageIds;
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -54,16 +51,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a unique id for the volume
   const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix

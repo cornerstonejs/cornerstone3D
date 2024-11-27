@@ -12,7 +12,7 @@ import { vec2 } from 'gl-matrix';
 import AnnotationDisplayTool from './AnnotationDisplayTool';
 import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import {
+import type {
   Annotation,
   Annotations,
   EventTypes,
@@ -22,9 +22,11 @@ import {
   PublicToolProps,
 } from '../../types';
 import { addAnnotation } from '../../stateManagement/annotation/annotationState';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type {
+  AnnotationStyle,
+  StyleSpecifier,
+} from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { getVolumeId } from '../../utilities/getVolumeId';
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -207,7 +209,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     for (const annotation of filteredAnnotations) {
       // Do not do anything if the annotation is locked or hidden.
       if (
-        isAnnotationLocked(annotation) ||
+        isAnnotationLocked(annotation.annotationUID) ||
         !isAnnotationVisible(annotation.annotationUID)
       ) {
         continue;
@@ -267,6 +269,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
 
     const { data } = annotation;
+    const { isCanvasAnnotation } = data;
     const { points, textBox } = data.handles;
 
     if (textBox) {
@@ -293,10 +296,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
     for (let i = 0; i < points?.length; i++) {
       const point = points[i];
-      const annotationCanvasCoordinate = viewport.worldToCanvas(point);
+      const annotationCanvasCoordinate = isCanvasAnnotation
+        ? point.slice(0, 2)
+        : viewport.worldToCanvas(point);
 
       const near =
-        vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity;
+        vec2.distance(
+          canvasCoords,
+          annotationCanvasCoordinate as Types.Point2
+        ) < proximity;
 
       if (near === true) {
         data.handles.activeHandleIndex = i;
@@ -369,9 +377,9 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     imageId?: string
   ): boolean {
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = getVolumeId(targetId);
+      const volumeId = csUtils.getVolumeId(targetId);
       const volume = cache.getVolume(volumeId);
-      return volume.scaling?.PT !== undefined;
+      return volume?.scaling?.PT !== undefined;
     }
     const scalingModule: Types.ScalingParameters | undefined =
       imageId && metaData.get('scalingModule', imageId);
@@ -391,7 +399,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       this.getStyle(property, styleSpecifier, annotation);
     const { annotationUID } = annotation;
     const visibility = isAnnotationVisible(annotationUID);
-    const locked = isAnnotationLocked(annotation);
+    const locked = isAnnotationLocked(annotationUID);
 
     const lineWidth = getStyle('lineWidth') as number;
     const lineDash = getStyle('lineDash') as string;
@@ -410,7 +418,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       fillOpacity: 0,
       shadow,
       textbox: textboxStyle,
-    };
+    } as AnnotationStyle;
   }
 
   /**

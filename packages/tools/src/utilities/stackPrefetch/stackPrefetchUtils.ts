@@ -54,10 +54,6 @@ export function getStackData(element) {
   if (!(viewport instanceof StackViewport)) {
     // we shouldn't throw error here, since the viewport might have
     // changed from stack to volume during prefetch
-    console.warn(
-      'stackPrefetch: element must be a StackViewport, VolumeViewport stackPrefetch not yet implemented'
-    );
-
     return null;
   }
 
@@ -100,8 +96,8 @@ export function getPromiseRemovedHandler(element) {
 
     if (
       !stackPrefetchData ||
-      !stackPrefetchData.data ||
-      !stackPrefetchData.data.length
+      !stackPrefetchData.indicesToRequest ||
+      !stackPrefetchData.indicesToRequest.length
     ) {
       return;
     }

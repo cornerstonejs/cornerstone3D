@@ -1,10 +1,17 @@
-import { IStackViewport, IVolumeViewport, Point3 } from '../types';
+import type {
+  IStackViewport,
+  IStreamingImageVolume,
+  IVolumeViewport,
+  Point3,
+} from '../types';
 import { setVolumesForViewports } from '../RenderingEngine/helpers';
 import {
   createAndCacheVolume,
   getUnknownVolumeLoaderSchema,
 } from '../loaders/volumeLoader';
-import { Events, OrientationAxis, ViewportType } from '../enums';
+import type { OrientationAxis } from '../enums';
+import { Events, ViewportType } from '../enums';
+import uuidv4 from './uuidv4';
 
 /**
  * Converts a stack viewport to a volume viewport.
@@ -19,11 +26,11 @@ import { Events, OrientationAxis, ViewportType } from '../enums';
  */
 async function convertStackToVolumeViewport({
   viewport,
-  options,
+  options = {},
 }: {
   viewport: IStackViewport;
-  options: {
-    volumeId: string;
+  options?: {
+    volumeId?: string;
     viewportId?: string;
     background?: Point3;
     orientation?: OrientationAxis;
@@ -31,11 +38,11 @@ async function convertStackToVolumeViewport({
 }): Promise<IVolumeViewport> {
   const renderingEngine = viewport.getRenderingEngine();
 
-  let { volumeId } = options;
+  let volumeId = options.volumeId || `${uuidv4()}`;
 
   // if there is no loader schema for the volume Id, we will use the default one
   // which we can get from the volume loader
-  if (volumeId.split(':').length === 1) {
+  if (volumeId.split(':').length === 0) {
     const schema = getUnknownVolumeLoaderSchema();
     volumeId = `${schema}:${volumeId}`;
   }
@@ -46,7 +53,8 @@ async function convertStackToVolumeViewport({
   const imageIds = viewport.getImageIds();
 
   // It is important to keep the camera before enabling the viewport
-  const prevCamera = viewport.getCamera();
+  const prevViewPresentation = viewport.getViewPresentation();
+  const prevViewReference = viewport.getViewReference();
 
   // this will disable the stack viewport and remove it from the toolGroup
   renderingEngine.enableElement({
@@ -60,23 +68,23 @@ async function convertStackToVolumeViewport({
   });
 
   // Ideally here we should be able to just create a local volume and not use the
-  //  volume louder but we don't know if the stack is already pre-cached for all its
+  // volume louder but we don't know if the stack is already pre-cached for all its
   // imageIds or not so we just let the loader handle it and we have cache
   // optimizations in place to avoid fetching the same imageId if it is already
   // cached
-  const volume = await createAndCacheVolume(volumeId, {
+  const volume = (await createAndCacheVolume(volumeId, {
     imageIds,
-  });
+  })) as IStreamingImageVolume;
 
   volume.load();
 
   // we should get the new viewport from the renderingEngine since the stack viewport
   // was disabled and replaced with a volume viewport of the same id
-  const volumeViewport = <IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const volumeViewport = renderingEngine.getViewport(
+    viewportId
+  ) as IVolumeViewport;
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
@@ -87,9 +95,6 @@ async function convertStackToVolumeViewport({
   );
 
   const volumeViewportNewVolumeHandler = () => {
-    volumeViewport.setCamera({
-      ...prevCamera,
-    });
     volumeViewport.render();
 
     element.removeEventListener(
@@ -106,6 +111,9 @@ async function convertStackToVolumeViewport({
   };
 
   addVolumeViewportNewVolumeListener();
+
+  volumeViewport.setViewPresentation(prevViewPresentation);
+  volumeViewport.setViewReference(prevViewReference);
 
   volumeViewport.render();
 

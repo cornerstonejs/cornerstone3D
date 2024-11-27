@@ -1,6 +1,6 @@
 import getValue from './getValue';
 import getNumberValue from './getNumberValue';
-import { WADORSMetaData } from '../../../types';
+import type { WADORSMetaData } from '../../../types';
 
 export default function getOverlayPlaneModule(metaData: WADORSMetaData) {
   const overlays = [];
@@ -17,7 +17,8 @@ export default function getOverlayPlaneModule(metaData: WADORSMetaData) {
      * on includes  string[] | number[] | boolean. from the look of this, data
      * is a more complex type
      */
-    const data = getValue<any>(metaData[`${groupStr}3000`]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = getValue(metaData[`${groupStr}3000`]) as any;
 
     if (!data) {
       continue;

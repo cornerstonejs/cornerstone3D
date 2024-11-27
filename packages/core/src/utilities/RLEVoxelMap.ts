@@ -86,7 +86,7 @@ export default class RLEVoxelMap<T> {
    */
   protected kMultiple = 1;
   /** Number of components in the value */
-  protected numComps = 1;
+  protected numberOfComponents = 1;
 
   /**
    * The default value returned for get.
@@ -140,7 +140,7 @@ export default class RLEVoxelMap<T> {
    * This allows applying or modifying the run directly.  See CanvasActor
    * for an example in the RLE rendering.
    */
-  protected getRLE(i: number, j: number, k = 0): RLERun<T> {
+  protected getRLE(i: number, j: number, k = 0): RLERun<T> | undefined {
     const row = this.rows.get(j + k * this.height);
     if (!row) {
       return;
@@ -301,7 +301,7 @@ export default class RLEVoxelMap<T> {
     let rleNext = isAfter ? row[rleIndex + 1] : rle1;
 
     // Can merge with previous value, so no insert
-    if (rlePrev?.value === value && rlePrev?.end === i) {
+    if (rlePrev?.value === value && rlePrev.end === i) {
       rlePrev.end++;
       if (rleNext?.value === value && rleNext.start === i + 1) {
         rlePrev.end = rleNext.end;
@@ -340,7 +340,7 @@ export default class RLEVoxelMap<T> {
     if (rleNext?.start === i && rleNext.end === i + 1) {
       rleNext.value = value;
       const nextnext = row[rleIndex + 1];
-      if (nextnext?.start == i + 1 && nextnext.value === value) {
+      if (nextnext?.start == i + 1 && nextnext?.value === value) {
         row.splice(rleIndex + 1, 1);
         rleNext.end = nextnext.end;
       }
@@ -393,19 +393,19 @@ export default class RLEVoxelMap<T> {
   ): PixelDataTypedArray {
     if (!pixelData) {
       pixelData = new this.pixelDataConstructor(
-        this.width * this.height * this.numComps
+        this.width * this.height * this.numberOfComponents
       );
     } else {
       pixelData.fill(0);
     }
-    const { width, height, numComps } = this;
+    const { width, height, numberOfComponents } = this;
 
     for (let j = 0; j < height; j++) {
       const row = this.getRun(j, k);
       if (!row) {
         continue;
       }
-      if (numComps === 1) {
+      if (numberOfComponents === 1) {
         for (const rle of row) {
           const rowOffset = j * width;
           const { start, end, value } = rle;
@@ -415,10 +415,10 @@ export default class RLEVoxelMap<T> {
         }
       } else {
         for (const rle of row) {
-          const rowOffset = j * width * numComps;
+          const rowOffset = j * width * numberOfComponents;
           const { start, end, value } = rle;
-          for (let i = start; i < end; i += numComps) {
-            for (let comp = 0; comp < numComps; comp++) {
+          for (let i = start; i < end; i += numberOfComponents) {
+            for (let comp = 0; comp < numberOfComponents; comp++) {
               pixelData[rowOffset + i + comp] = value[comp];
             }
           }
@@ -603,7 +603,6 @@ export default class RLEVoxelMap<T> {
 //     const { start, end, value } = rle;
 //     if (start < 0 || end > 1920 || start >= end) {
 //       console.log('Wrong order', ...inputs);
-//       debugger;
 //     }
 //     if (!lastRle) {
 //       lastRle = rle;
@@ -613,11 +612,9 @@ export default class RLEVoxelMap<T> {
 //     lastRle = rle;
 //     if (start < lastEnd) {
 //       console.log('inputs for wrong overlap', ...inputs);
-//       debugger;
 //     }
 //     if (start === lastEnd && value === lastValue) {
 //       console.log('inputs for two in a row same', ...inputs);
-//       debugger;
 //     }
 //   }
 // }

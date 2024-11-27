@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import _getHash from './_getHash';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 /**
  * Draws an SVG polyline with the given points.
@@ -30,7 +30,7 @@ export default function drawPolyline(
   }
 
   const {
-    color = 'dodgerblue',
+    color = 'rgb(0, 255, 0)',
     width = 10,
     fillColor = 'none',
     fillOpacity = 0,

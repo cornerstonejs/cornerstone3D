@@ -1,12 +1,11 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
-import { getAnnotation } from './annotationState';
 import { Events } from '../../enums';
-import { Annotation } from '../../types';
-import { AnnotationVisibilityChangeEventDetail } from '../../types/EventTypes';
+import type { AnnotationVisibilityChangeEventDetail } from '../../types/EventTypes';
 import {
   isAnnotationSelected,
   deselectAnnotation,
 } from './annotationSelection';
+import { getAnnotation } from './getAnnotation';
 
 /*
  * It stores all hidden annotation uids.
@@ -64,26 +63,6 @@ function isAnnotationVisible(annotationUID: string): boolean | undefined {
     return !globalHiddenAnnotationUIDsSet.has(annotationUID);
   }
 }
-/**
- * It decorates given annotation with isVisible property.
- * It properly initializes the isVisible on annotation(the property will be create if does not exist yet)
- *
- * @param annotation - The annotation object to be checked.
- */
-function checkAndDefineIsVisibleProperty(annotation: Annotation): void {
-  if (annotation) {
-    const isVisible = annotation.isVisible ?? true;
-    if (shouldDefineIsVisibleProperty(annotation)) {
-      Object.defineProperty(annotation, 'isVisible', {
-        configurable: false,
-        enumerable: true,
-        set: setIsVisible,
-        get: getIsVisible,
-      });
-    }
-    setAnnotationVisibility(annotation.annotationUID, isVisible);
-  }
-}
 
 /*
  * Private Helpers
@@ -103,6 +82,8 @@ function show(
 ): void {
   if (annotationUIDsSet.delete(annotationUID)) {
     detail.lastVisible.push(annotationUID);
+    const annotation = getAnnotation(annotationUID);
+    annotation.isVisible = true;
   }
 }
 
@@ -129,28 +110,21 @@ function publish(detail: AnnotationVisibilityChangeEventDetail) {
   }
 }
 
-function shouldDefineIsVisibleProperty(annotation: Annotation): boolean {
-  const descriptor = Object.getOwnPropertyDescriptor(annotation, 'isVisible');
-  if (descriptor) {
-    return (
-      descriptor.configurable &&
-      (descriptor.set !== setIsVisible || descriptor.get !== getIsVisible)
-    );
-  }
-  return Object.isExtensible(annotation);
-}
+/**
+ * Properly initialize the isVisible state for an annotation based on its UID.
+ * @param annotationUID - The UID of the annotation to be checked.
+ * @returns The visibility state of the annotation.
+ */
+function checkAndSetAnnotationVisibility(annotationUID: string): boolean {
+  const isVisible = !globalHiddenAnnotationUIDsSet.has(annotationUID);
+  setAnnotationVisibility(annotationUID, isVisible);
 
-function setIsVisible(hidden: boolean) {
-  setAnnotationVisibility((this as Annotation).annotationUID, hidden);
-}
-
-function getIsVisible() {
-  return isAnnotationVisible((this as Annotation).annotationUID);
+  return isVisible;
 }
 
 export {
   setAnnotationVisibility,
   showAllAnnotations,
   isAnnotationVisible,
-  checkAndDefineIsVisibleProperty,
+  checkAndSetAnnotationVisibility,
 };

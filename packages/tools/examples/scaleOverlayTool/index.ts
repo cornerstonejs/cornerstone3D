@@ -1,4 +1,5 @@
-import { Types, Enums, RenderingEngine } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -18,7 +19,7 @@ const {
   ToolGroupManager,
   ScaleOverlayTool,
   LengthTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -30,18 +31,31 @@ setTitleAndDescription(
   'Scale Overlay Tool',
   'Set scale location using dropdown menu, zoom by holding right mouse down'
 );
+const viewportGrid = document.createElement('div');
+
+viewportGrid.style.display = 'flex';
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
 
 const content = document.getElementById('content');
 const element = document.createElement('div');
+const element2 = document.createElement('div');
 
 // Disable right click context menu so we can have right click tools
 element.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 
-content.appendChild(element);
+element2.id = 'cornerstone-element';
+element2.style.width = '500px';
+element2.style.height = '500px';
+
+viewportGrid.appendChild(element);
+viewportGrid.appendChild(element2);
+content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText =
@@ -86,7 +100,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(ScaleOverlayTool);
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Create a stack viewport
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -97,7 +111,7 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ScaleOverlayTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -119,7 +133,9 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   toolGroup.setToolEnabled(ScaleOverlayTool.toolName);
 
@@ -132,11 +148,20 @@ async function run() {
     wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
   });
 
+  const imageIds2 = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   const viewportId = 'CT_STACK';
+  const viewportId2 = 'CT_STACK2';
+
   const viewportInput = {
     viewportId,
     type: ViewportType.STACK,
@@ -145,25 +170,41 @@ async function run() {
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
+  const viewportInput2 = {
+    viewportId: viewportId2,
+    type: ViewportType.STACK,
+    element: element2,
+    defaultOptions: {
+      background: <Types.Point3>[0.2, 0, 0.2],
+    },
+  };
 
   renderingEngine.enableElement(viewportInput);
+  renderingEngine.enableElement(viewportInput2);
 
   // Set the tool group on the viewport
   toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportId)
   );
+  const viewport2 = <Types.IStackViewport>(
+    renderingEngine.getViewport(viewportId2)
+  );
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
+  const stack2 = [imageIds2[0], imageIds2[1], imageIds2[2]];
 
   // Set the stack on the viewport
   viewport.setStack(stack);
+  viewport2.setStack(stack2);
 
   // Render the image
   viewport.render();
+  viewport2.render();
 }
 
 run();
