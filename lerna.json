@@ -1,5 +1,5 @@
 {
-  "version": "2.2.17",
+  "version": "2.2.19",
   "packages": [
     "packages/core",
     "packages/tools",
