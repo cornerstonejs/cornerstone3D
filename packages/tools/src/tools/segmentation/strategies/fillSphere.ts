@@ -73,7 +73,8 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   'SphereThreshold',
   ...SPHERE_STRATEGY.compositions,
   compositions.dynamicThreshold,
-  compositions.threshold
+  compositions.threshold,
+  compositions.islandRemoval
 );
 
 const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(

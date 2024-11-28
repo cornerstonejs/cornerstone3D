@@ -9,6 +9,7 @@ import type {
   CPUImageData,
   IVoxelManager,
   IRLEVoxelMap,
+  Point2,
 } from '../types';
 import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
@@ -1270,7 +1271,7 @@ export default class VoxelManager<T> {
    * Creates a RLE based voxel manager.  This is effective for storing
    * segmentation maps or already RLE encoded data such as ultrasounds.
    */
-  public static createRLEVoxelManager<T>({
+  public static createRLEVolumeVoxelManager<T>({
     dimensions,
   }: {
     dimensions: Point3;
@@ -1290,6 +1291,17 @@ export default class VoxelManager<T> {
     // @ts-ignore
     voxelManager.getPixelData = map.getPixelData.bind(map);
     return voxelManager;
+  }
+
+  public static createRLEImageVoxelManager<T>({
+    dimensions,
+  }: {
+    dimensions: Point2;
+  }): VoxelManager<T> {
+    const [width, height] = dimensions;
+    return VoxelManager.createRLEVolumeVoxelManager<T>({
+      dimensions: [width, height, 1],
+    });
   }
 
   /**
@@ -1316,7 +1328,7 @@ export default class VoxelManager<T> {
     // This case occurs when the image data is a dummy image data set
     // created just to prevent exceptions in the caching logic.  Then, the
     // RLE voxel manager can be created to store the data instead.
-    image.voxelManager = VoxelManager.createRLEVoxelManager<number>({
+    image.voxelManager = VoxelManager.createRLEVolumeVoxelManager<number>({
       dimensions: [width, height, 1],
     });
     // The RLE voxel manager knows how to get scalar data pixel data representations.

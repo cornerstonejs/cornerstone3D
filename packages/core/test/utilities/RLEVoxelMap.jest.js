@@ -80,7 +80,7 @@ xdescribe('RLEVoxelMap', () => {
 
   describe('RLEVoxelManager', () => {
     it('sets', () => {
-      const map = VoxelManager.createRLEVoxelManager({ dimension });
+      const map = VoxelManager.createRLEVolumeVoxelManager({ dimension });
       map.setAtIJK(...ijkPoint, 15);
       expect(map.getAtIJK(...ijkPoint)).toBe(15);
       expect(map.getAtIJKPoint(ijkPoint)).toBe(15);

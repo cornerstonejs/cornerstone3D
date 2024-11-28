@@ -222,8 +222,7 @@ async function addSegmentationsToState() {
     volumeId: segmentationId,
     // The following doesn't quite work yet
     // TODO, allow RLE to be used instead of scalars.
-    // targetBuffer: { type: 'none' },
-    // voxelRepresentation: 'rleVoxelManager',
+    // voxelRepresentation: Enums.VoxelManagerEnum.RLE,
   });
 
   // Add the segmentations to state

@@ -12,9 +12,8 @@ export default {
     const {
       segmentsLocked,
       segmentationImageData,
-      segmentationVoxelManager: segmentationVoxelManager,
+      segmentationVoxelManager,
       previewVoxelManager,
-      imageVoxelManager,
       brushStrategy,
       centerIJK,
     } = operationData;

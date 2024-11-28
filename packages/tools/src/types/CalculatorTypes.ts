@@ -18,7 +18,6 @@ type NamedStatistics = {
   circumference?: Statistics & { name: 'circumference' };
   pointsInShape?: Types.IPointsManager<Types.Point3>;
   array: Statistics[];
-  /** The array of points that this statistic is calculated on. */
 };
 
 export type { Statistics, NamedStatistics };

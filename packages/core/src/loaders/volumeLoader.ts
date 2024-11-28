@@ -206,8 +206,7 @@ export function createAndCacheDerivedVolume(
   }
 
   let { volumeId } = options;
-  const { targetBuffer, voxelRepresentation } = options;
-  const { type } = targetBuffer;
+  const { voxelRepresentation } = options;
 
   if (volumeId === undefined) {
     volumeId = uuidv4();
@@ -239,6 +238,7 @@ export function createAndCacheDerivedVolume(
   // images
   const derivedImages = createAndCacheDerivedImages(referencedImageIds, {
     targetBuffer: options.targetBuffer,
+    voxelRepresentation,
   });
 
   const dataType = derivedImages[0].dataType;
@@ -320,6 +320,8 @@ export function createAndCacheVolumeFromImagesSync(
   if (cachedVolume) {
     return cachedVolume;
   }
+
+  // Todo: implement rle based voxel manager here for ultrasound later
 
   const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
 

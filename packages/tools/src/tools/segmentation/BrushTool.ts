@@ -142,7 +142,6 @@ class BrushTool extends BaseTool {
           THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL:
             thresholdInsideSphereIsland,
         },
-
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
