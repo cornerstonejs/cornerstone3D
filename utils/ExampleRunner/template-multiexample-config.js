@@ -22,7 +22,7 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
   let multiTemplates = '';
   names.forEach((name) => {
     multiTemplates += `
-      new HtmlWebpackPlugin({
+      new rspack.HtmlRspackPlugin({
         title: '${name}',
         chunks: ['${name}'],
         filename: '${name}.html',
@@ -41,8 +41,6 @@ const path = require('path')
 const fs = require('fs');
 const rules = require('./rules-examples.js');
 const modules = [path.resolve('../node_modules/'), path.resolve('../../../node_modules/')];
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ESLintPlugin = require('eslint-webpack-plugin');
 const rspack = require('@rspack/core');
 
 const dir = "${destPath.replace(/\\/g, '/')}";
@@ -56,7 +54,6 @@ module.exports = {
   mode: 'development',
   devtool: 'source-map',
   plugins: [
-    new ESLintPlugin(),
     ${multiTemplates}
     new rspack.DefinePlugin({
       __BASE_PATH__: "''",
@@ -125,10 +122,6 @@ module.exports = {
       '127.0.0.1',
       'localhost',
     ],
-    headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp",
-      "Cross-Origin-Opener-Policy": "same-origin"
-    }
   },
   optimization: {
     minimize: false,

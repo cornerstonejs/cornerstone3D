@@ -141,8 +141,6 @@ if (configuration.examples) {
       : /example\/index.ts$/;
     let fullPath = path.join(rootPath, entry.path ? entry.path : entry);
 
-    console.warn('', fullPath);
-
     // Single example use case
     examples[fullPath] = {};
     var currentExamples = examples[fullPath];
@@ -175,7 +173,6 @@ if (configuration.examples) {
         ) {
           currentExamples[exampleName] = './' + file;
           exampleCount++;
-          console.log('  - Found example: ' + exampleName);
           filteredExampleCorrectCase = exampleName;
         } else {
           // store the similarity of the example name to the filter name
@@ -255,7 +252,7 @@ function run() {
   console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
 
   // run the build for dicom image loader
-  const currentWD = process.cwd();
+  // const currentWD = process.cwd();
 
   // for some reason the esm build of the dicom image loader
   // requires the core to be built first and cannot link it
@@ -281,7 +278,7 @@ function run() {
     // console.log('conf', conf);
     shell.ShellString(conf).to(webpackConfigPath);
 
-    shell.cd(exBasePath);
+    // shell.cd(exBasePath);
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
