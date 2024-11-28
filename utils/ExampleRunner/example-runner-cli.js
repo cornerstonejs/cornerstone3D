@@ -135,7 +135,6 @@ if (configuration.examples) {
   var buildExample = filterExamples.length === 1;
   var exampleCount = 0;
 
-  console.log('\n=> Extract examples\n');
   configuration.examples.forEach(function (entry) {
     const regexp = entry.regexp
       ? new RegExp(entry.regexp)
@@ -260,13 +259,13 @@ function run() {
 
   // for some reason the esm build of the dicom image loader
   // requires the core to be built first and cannot link it
-  shell.cd('../../core');
-  shell.exec(`yarn run build:esm`);
+  // shell.cd('../../core');
+  // shell.exec(`yarn run build:esm`);
 
   // run the build for dicom image loader
-  shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run build:esm`);
-  shell.cd(currentWD);
+  // shell.cd('../../dicomImageLoader');
+  // shell.exec(`yarn run build:esm`);
+  // shell.cd(currentWD);
 
   if (buildExample) {
     const exampleName = filteredExampleCorrectCase;
@@ -286,9 +285,9 @@ function run() {
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
-      `webpack serve --host 0.0.0.0 ${
+      `rspack serve --host 0.0.0.0 ${
         options.https ? '--https' : ''
-      } --progress --config ${webpackConfigPath}`
+      } --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');
