@@ -211,9 +211,9 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.9590.100.1.2.19841440611855834937505752510708699165',
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.55651399101931177647030363790032',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.9590.100.1.2.160160590111755920740089886004263812825',
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.11955901484749168523821342348553',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
