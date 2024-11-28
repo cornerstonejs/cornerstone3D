@@ -1,6 +1,6 @@
 import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
 import type { Point2 } from '@cornerstonejs/core/types';
-import { CircleROITool } from '@cornerstonejs/tools';
+import { AngleTool } from '@cornerstonejs/tools';
 import { typeToIdMap, typeToStartIdMap, typeToEndIdMap } from './constants';
 
 function getInputValue(form: HTMLFormElement, inputId: string): number {
@@ -10,18 +10,23 @@ function getInputValue(form: HTMLFormElement, inputId: string): number {
 function getCoordinates(
   form: HTMLFormElement,
   type: 'canvas' | 'image'
-): { center: Point2; radiusPoint: Point2 } {
-  const center: Point2 = [
+): { point1: Point2; point2: Point2; point3: Point2 } {
+  const point1: Point2 = [
     getInputValue(form, `${typeToStartIdMap[type]}-1`),
     getInputValue(form, `${typeToStartIdMap[type]}-2`),
   ];
 
-  const radiusPoint: Point2 = [
+  const point2: Point2 = [
     getInputValue(form, `${typeToEndIdMap[type]}-1`),
     getInputValue(form, `${typeToEndIdMap[type]}-2`),
   ];
 
-  return { center, radiusPoint };
+  const point3: Point2 = [
+    getInputValue(form, `${type}-mid-1`),
+    getInputValue(form, `${type}-mid-2`),
+  ];
+
+  return { point1, point2, point3 };
 }
 
 function createFormElement(): HTMLFormElement {
@@ -32,22 +37,31 @@ function createFormElement(): HTMLFormElement {
     form.innerHTML += `
       <label style="margin-right: 20px;">${
         coordType.charAt(0).toUpperCase() + coordType.slice(1)
-      } Coords: Center [${coordType === 'canvas' ? 'x, y' : 'i, j'}]:</label>
+      } Coords: Point 1 [${coordType === 'canvas' ? 'x, y' : 'i, j'}]:</label>
       <input style="width:40px" type="number" id="${coordType}-start-1" placeholder="${
       coordType === 'canvas' ? 'x' : 'i'
-    }" value="50">
+    }" value="10">
       <input style="width:40px" type="number" id="${coordType}-start-2" placeholder="${
       coordType === 'canvas' ? 'y' : 'j'
-    }" value="50">
-      <label style="margin-left: 52px; margin-right: 21px;">Radius Point [${
+    }" value="10">
+      <label style="margin-left: 52px; margin-right: 21px;">Point 2 [${
         coordType === 'canvas' ? 'x, y' : 'i, j'
       }]:</label>
-      <input style="width:40px" type="number" id="${coordType}-end-1" placeholder="Radius ${
+      <input style="width:40px" type="number" id="${coordType}-mid-1" placeholder="${
       coordType === 'canvas' ? 'x' : 'i'
     }" value="100">
-      <input style="width:40px" type="number" id="${coordType}-end-2" placeholder="Radius ${
+      <input style="width:40px" type="number" id="${coordType}-mid-2" placeholder="${
       coordType === 'canvas' ? 'y' : 'j'
-    }" value="50">
+    }" value="100">
+      <label style="margin-left: 52px; margin-right: 21px;">Point 3 [${
+        coordType === 'canvas' ? 'x, y' : 'i, j'
+      }]:</label>
+      <input style="width:40px" type="number" id="${coordType}-end-1" placeholder="${
+      coordType === 'canvas' ? 'x' : 'i'
+    }" value="100">
+      <input style="width:40px" type="number" id="${coordType}-end-2" placeholder="${
+      coordType === 'canvas' ? 'y' : 'j'
+    }" value="10">
       <br>
       <button style="margin-left: 52px;" type="button" id="${coordType}-stack">Add Stack</button>
       <button type="button" id="${coordType}-volume">Add Volume</button>
@@ -73,22 +87,27 @@ function addButtonListeners(form: HTMLFormElement): void {
       const coords = getCoordinates(form, type);
       const currentImageId = viewport.getCurrentImageId() as string;
 
-      const worldCenter =
+      const worldPoint1 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.center)
-          : viewport.canvasToWorld(coords.center);
+          ? utilities.imageToWorldCoords(currentImageId, coords.point1)
+          : viewport.canvasToWorld(coords.point1);
 
-      const worldRadiusPoint =
+      const worldPoint2 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.radiusPoint)
-          : viewport.canvasToWorld(coords.radiusPoint);
+          ? utilities.imageToWorldCoords(currentImageId, coords.point2)
+          : viewport.canvasToWorld(coords.point2);
 
-      CircleROITool.hydrate(viewport.id, [worldCenter, worldRadiusPoint]);
+      const worldPoint3 =
+        type === 'image'
+          ? utilities.imageToWorldCoords(currentImageId, coords.point3)
+          : viewport.canvasToWorld(coords.point3);
+
+      AngleTool.hydrate(viewport.id, [worldPoint1, worldPoint2, worldPoint3]);
     });
   });
 }
 
-export function createCircleROIToolUI(): HTMLFormElement {
+export function createAngleToolUI(): HTMLFormElement {
   const form = createFormElement();
   addButtonListeners(form);
   return form;

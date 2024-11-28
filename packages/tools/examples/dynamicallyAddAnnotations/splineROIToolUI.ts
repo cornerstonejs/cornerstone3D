@@ -1,11 +1,7 @@
 import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
 import type { Point2 } from '@cornerstonejs/core/types';
 import { SplineROITool } from '@cornerstonejs/tools';
-import {
-  typeToIdMap,
-  typeToStartIdMap,
-  typeToEndIdMap,
-} from './toolSpecificUI';
+import { typeToIdMap, typeToStartIdMap, typeToEndIdMap } from './constants';
 
 function getInputValue(form: HTMLFormElement, inputId: string): number {
   return Number((form.querySelector(`#${inputId}`) as HTMLInputElement).value);
@@ -89,29 +85,21 @@ function addButtonListeners(form: HTMLFormElement): void {
       );
       const viewport = enabledElement.viewport;
       const coords = getCoordinates(form, type);
+      const currentImageId = viewport.getCurrentImageId() as string;
 
       const worldPoint1 =
         type === 'image'
-          ? utilities.imageToWorldCoords(
-              viewport.getCurrentImageId(),
-              coords.point1
-            )
+          ? utilities.imageToWorldCoords(currentImageId, coords.point1)
           : viewport.canvasToWorld(coords.point1);
 
       const worldPoint2 =
         type === 'image'
-          ? utilities.imageToWorldCoords(
-              viewport.getCurrentImageId(),
-              coords.point2
-            )
+          ? utilities.imageToWorldCoords(currentImageId, coords.point2)
           : viewport.canvasToWorld(coords.point2);
 
       const worldPoint3 =
         type === 'image'
-          ? utilities.imageToWorldCoords(
-              viewport.getCurrentImageId(),
-              coords.point3
-            )
+          ? utilities.imageToWorldCoords(currentImageId, coords.point3)
           : viewport.canvasToWorld(coords.point3);
 
       SplineROITool.hydrate(viewport.id, [

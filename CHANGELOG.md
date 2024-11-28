@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.3.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.3.0...v2.3.1) (2024-11-28)
+
+### Bug Fixes
+
+- **tools:** Implement more dynamic annotation examples ([#1633](https://github.com/cornerstonejs/cornerstone3D/issues/1633)) ([fdb764d](https://github.com/cornerstonejs/cornerstone3D/commit/fdb764d203b71360065d0134eee49a2b1f0fe415))
+
 # [2.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.2.20...v2.3.0) (2024-11-27)
 
 ### Features
