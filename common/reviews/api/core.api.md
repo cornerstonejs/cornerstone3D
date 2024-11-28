@@ -806,6 +806,7 @@ function createAndCacheDerivedImages(referencedImageIds: string[], options?: Der
     targetBuffer?: {
         type: PixelDataTypedArrayString;
     };
+    voxelRepresentation?: VoxelManagerEnum;
 }): IImage[];
 
 // @public (undocumented)
@@ -4843,7 +4844,11 @@ class VoxelManager<T> {
     // (undocumented)
     static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
     // (undocumented)
-    static createRLEVoxelManager<T>({ dimensions, }: {
+    static createRLEImageVoxelManager<T>({ dimensions, }: {
+        dimensions: Point2;
+    }): VoxelManager<T>;
+    // (undocumented)
+    static createRLEVolumeVoxelManager<T>({ dimensions, }: {
         dimensions: Point3;
     }): VoxelManager<T>;
     // (undocumented)
