@@ -19,19 +19,18 @@ function generateContourSetsFromLabelmap({ segmentations }) {
     console.warn(`No volume found for ${segVolumeId}`);
     return;
   }
+  const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
+  const segData = voxelManager.getCompleteScalarDataArray() as Array<number>;
 
   const numSlices = vol.dimensions[2];
 
-  // NOTE: Workaround for marching squares not finding closed contours at
-  // boundary of image volume, clear pixels along x-y border of volume
-  const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
   const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
 
   for (let z = 0; z < numSlices; z++) {
     for (let y = 0; y < vol.dimensions[1]; y++) {
       const index = y * vol.dimensions[0] + z * pixelsPerSlice;
-      voxelManager.setAtIndex(index, 0);
-      voxelManager.setAtIndex(index + vol.dimensions[0] - 1, 0);
+      segData[index] = 0;
+      segData[index + vol.dimensions[0] - 1] = 0;
     }
   }
 
@@ -57,18 +56,12 @@ function generateContourSetsFromLabelmap({ segmentations }) {
       numberOfComponents: 1,
       size: pixelsPerSlice * numSlices,
       dataType: 'Uint8Array',
-    }) as vtkDataArray;
-
+    });
     const { containedSegmentIndices } = segment;
     for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
       // Check if the slice is empty before running marching cube
       if (
-        isSliceEmptyForSegment(
-          sliceIndex,
-          voxelManager,
-          pixelsPerSlice,
-          segIndex
-        )
+        isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex)
       ) {
         continue;
       }
@@ -77,12 +70,12 @@ function generateContourSetsFromLabelmap({ segmentations }) {
       try {
         // Modify segData for this specific segment directly
         for (let i = 0; i < pixelsPerSlice; i++) {
-          const value = voxelManager.getAtIndex(i + frameStart);
+          const value = segData[i + frameStart];
           if (value === segIndex || containedSegmentIndices?.has(value)) {
-            // @ts-expect-error vtk has wrong types
+            // @ts-ignore
             scalars.setValue(i + frameStart, 1);
           } else {
-            // @ts-expect-error vtk has wrong types
+            // @ts-ignore
             scalars.setValue(i, 0);
           }
         }
@@ -99,16 +92,12 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         imageDataCopy.getPointData().setScalars(scalars);
 
         // Connect pipeline
-        // @ts-ignore
         mSquares.setInputData(imageDataCopy);
         const cValues = [1];
-        // @ts-ignore
         mSquares.setContourValues(cValues);
-        // @ts-ignore
         mSquares.setMergePoints(false);
 
         // Perform marching squares
-        // @ts-ignore
         const msOutput = mSquares.getOutputData();
 
         // Clean up output from marching squares
@@ -147,17 +136,12 @@ function generateContourSetsFromLabelmap({ segmentations }) {
   return ContourSets;
 }
 
-function isSliceEmptyForSegment(
-  sliceIndex,
-  voxelManager,
-  pixelsPerSlice,
-  segIndex
-) {
+function isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex) {
   const startIdx = sliceIndex * pixelsPerSlice;
   const endIdx = startIdx + pixelsPerSlice;
 
   for (let i = startIdx; i < endIdx; i++) {
-    if (voxelManager.getAtIndex(i) === segIndex) {
+    if (segData[i] === segIndex) {
       return false;
     }
   }
