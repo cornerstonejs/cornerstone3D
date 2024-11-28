@@ -3732,7 +3732,6 @@ type NamedStatistics = {
     };
     pointsInShape?: Types_2.IPointsManager<Types_2.Point3>;
     array: Statistics[];
-    pointsInShape?: Types_2.PointsManager<Types_2.Point3>;
 };
 
 // @public (undocumented)

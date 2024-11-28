@@ -989,6 +989,7 @@ declare namespace Enums {
         VideoEnums,
         MetadataModules,
         ImageQualityStatus,
+        VoxelManagerEnum,
         GenerateImageType
     }
 }
@@ -3058,7 +3059,7 @@ type RGB = [number, number, number];
 function rgbToHex(r: any, g: any, b: any): string;
 
 // @public (undocumented)
-interface RLERun<T> {
+interface RLERun_2<T> {
     // (undocumented)
     end: number;
     // (undocumented)
@@ -3075,17 +3076,41 @@ class RLEVoxelMap<T> {
     // (undocumented)
     defaultValue: T;
     // (undocumented)
+    delete(index: number): void;
+    // (undocumented)
     protected depth: number;
     // (undocumented)
+    fillFrom(getter: (i: number, j: number, k: number) => T, boundsIJK: BoundsIJK): void;
+    // (undocumented)
+    findAdjacents(item: [RLERun<T>, number, number, Point3[]?], { diagonals, planar, singlePlane }: {
+        diagonals?: boolean;
+        planar?: boolean;
+        singlePlane?: boolean;
+    }): any[];
+    // (undocumented)
     protected findIndex(row: RLERun<T>[], i: number): number;
+    // (undocumented)
+    floodFill(i: number, j: number, k: number, value: T, options?: {
+        planar?: boolean;
+        diagonals?: boolean;
+        singlePlane?: boolean;
+    }): number;
+    // (undocumented)
+    forEach(callback: any, options?: {
+        rowModified?: boolean;
+    }): void;
+    // (undocumented)
+    forEachRow(callback: any): void;
     // (undocumented)
     get: (index: number) => T;
     // (undocumented)
     getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;
     // (undocumented)
-    protected getRLE(i: number, j: number, k?: number): RLERun<T> | undefined;
+    protected getRLE(i: number, j: number, k?: number): RLERun<T>;
     // (undocumented)
     getRun: (j: number, k: number) => RLERun<T>[];
+    // (undocumented)
+    has(index: number): boolean;
     // (undocumented)
     protected height: number;
     // (undocumented)
@@ -3095,13 +3120,19 @@ class RLEVoxelMap<T> {
     // (undocumented)
     protected kMultiple: number;
     // (undocumented)
-    protected numberOfComponents: number;
+    normalizer: PlaneNormalizer;
+    // (undocumented)
+    protected numComps: number;
     // (undocumented)
     pixelDataConstructor: Uint8ArrayConstructor;
     // (undocumented)
     protected rows: Map<number, RLERun<T>[]>;
     // (undocumented)
     set: (index: number, value: T) => void;
+    // (undocumented)
+    toIJK(index: number): Point3;
+    // (undocumented)
+    toIndex([i, j, k]: Point3): number;
     // (undocumented)
     protected width: number;
 }
@@ -3781,7 +3812,7 @@ declare namespace Types {
         LocalVolumeOptions,
         IVoxelManager,
         IRLEVoxelMap,
-        RLERun,
+        RLERun_2 as RLERun,
         ViewportInput,
         ImageLoadRequests,
         IBaseVolumeViewport,
@@ -4810,6 +4841,8 @@ class VoxelManager<T> {
         dimension: Point3;
     }): IVoxelManager<T>;
     // (undocumented)
+    static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
+    // (undocumented)
     static createRLEVoxelManager<T>({ dimensions, }: {
         dimensions: Point3;
     }): VoxelManager<T>;
@@ -4839,7 +4872,7 @@ class VoxelManager<T> {
         isInObject?: (pointLPS: any, pointIJK: any) => boolean;
         returnPoints?: boolean;
         imageData?: vtkImageData | CPUImageData;
-    }) => any[];
+    }) => void | any[];
     // (undocumented)
     frameSize: number;
     // (undocumented)
@@ -4898,6 +4931,8 @@ class VoxelManager<T> {
     points: Set<number>;
     // (undocumented)
     resetModifiedSlices(): void;
+    // (undocumented)
+    rleForEach(callback: any, options?: any): void;
     // (undocumented)
     _set: (index: number, v: T) => boolean;
     // (undocumented)
