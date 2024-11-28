@@ -224,6 +224,10 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: AngleAnnotation, handle: ToolHandle): void;
     // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+    }) => AngleAnnotation;
+    // (undocumented)
     isDrawing: boolean;
     // (undocumented)
     isHandleOutsideImage: boolean;
@@ -596,6 +600,10 @@ export class ArrowAnnotateTool extends AnnotationTool {
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
     handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: ArrowAnnotation, handle: ToolHandle): void;
+    // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], text?: string, options?: {
+        annotationUID?: string;
+    }) => ArrowAnnotation;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)
@@ -2166,6 +2174,10 @@ export class EllipticalROITool extends AnnotationTool {
     _getCanvasEllipseCenter(ellipseCanvasPoints: Types_2.Point2[]): Types_2.Point2;
     // (undocumented)
     handleSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation, handle: ToolHandle) => void;
+    // (undocumented)
+    static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
+        annotationUID?: string;
+    }) => EllipticalROIAnnotation;
     // (undocumented)
     isDrawing: boolean;
     // (undocumented)

@@ -13,18 +13,18 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
+  AngleTool,
+  ArrowAnnotateTool,
   CircleROITool,
+  EllipticalROITool,
   LengthTool,
   ProbeTool,
   RectangleROITool,
   SplineROITool,
 } from '@cornerstonejs/tools';
-import {
-  createToolUI,
-  STACK_VIEWPORT_ID,
-  VOLUME_VIEWPORT_ID,
-} from './toolSpecificUI';
+import { createToolUI } from './toolSpecificUI';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
+import { STACK_VIEWPORT_ID, VOLUME_VIEWPORT_ID } from './constants';
 
 // This is for debugging purposes
 console.debug(
@@ -32,6 +32,9 @@ console.debug(
 );
 
 const tools = [
+  AngleTool,
+  ArrowAnnotateTool,
+  EllipticalROITool,
   SplineROITool,
   LengthTool,
   ProbeTool,
@@ -91,7 +94,7 @@ viewportGrid.style.height = '500px';
 viewportGrid.style.paddingTop = '5px';
 viewportGrid.style.gap = '5px';
 
-content.appendChild(viewportGrid);
+content?.appendChild(viewportGrid);
 
 const mousePosDiv = document.createElement('div');
 
@@ -103,7 +106,7 @@ worldPosElement.innerText = 'world:';
 
 mousePosDiv.appendChild(canvasPosElement);
 mousePosDiv.appendChild(worldPosElement);
-content.appendChild(mousePosDiv);
+content?.appendChild(mousePosDiv);
 
 const demoToolbar = document.getElementById('demo-toolbar');
 addDropDownToToolbar({
@@ -126,7 +129,7 @@ addDropDownToToolbar({
     });
 
     if (toolUI) {
-      toolUI.forms.forEach((form) => demoToolbar.appendChild(form));
+      toolUI.forms.forEach((form) => demoToolbar?.appendChild(form));
     }
 
     // Update active tool in toolGroups
