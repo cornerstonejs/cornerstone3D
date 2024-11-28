@@ -122,7 +122,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
           continue;
         }
 
-        let data = image.voxelManager.getScalarData();
+        // Get a temporary copy
+        let data = image.voxelManager.getScalarData(true);
         const gl = model.context;
 
         if (volume.dataType !== data.constructor.name) {

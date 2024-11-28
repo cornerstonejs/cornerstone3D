@@ -1,6 +1,6 @@
 import type Point3 from '../types/Point3';
 import type BoundsIJK from '../types/BoundsIJK';
-import type { PixelDataTypedArray } from '../types';
+import { PixelDataTypedArray } from '../types';
 
 /**
  * The RLERun specifies a contigous run of values for a row,
@@ -60,6 +60,7 @@ export type PlaneNormalizer = {
  */
 export default class RLEVoxelMap<T> {
   public normalizer: PlaneNormalizer;
+
   /**
    * The rows for the voxel map is a map from the j index location (or for
    * volumes, `j + k*height`) to a list of RLE runs.  That is, each entry in
@@ -69,14 +70,14 @@ export default class RLEVoxelMap<T> {
    */
   protected rows = new Map<number, RLERun<T>[]>();
   /** The height of the images stored in the voxel map (eg the height of each plane) */
-  protected height = 1;
+  public height = 1;
   /** The width of the image planes */
-  protected width = 1;
+  public width = 1;
   /**
    * The number of image planes stored (the depth of the indices), with the k
    * index going from 0...depth.
    */
-  protected depth = 1;
+  public depth = 1;
   /**
    * A multiplier value to go from j values to overall index values.
    */
@@ -90,7 +91,7 @@ export default class RLEVoxelMap<T> {
 
   /**
    * The default value returned for get.
-   * This allows treting the voxel map more like scalar data, returning the right
+   * This allows treating the voxel map more like scalar data, returning the right
    * default value for unset values.
    * Set to 0 by default, but any maps where 0 not in T should update this value.
    */
@@ -101,6 +102,18 @@ export default class RLEVoxelMap<T> {
    */
   public pixelDataConstructor = Uint8Array;
 
+  /**
+   * Copies the data in source into the map.
+   */
+  public static copyMap<T>(
+    destination: RLEVoxelMap<T>,
+    source: RLEVoxelMap<T>
+  ) {
+    for (const [index, row] of source.rows) {
+      destination.rows.set(index, structuredClone(row));
+    }
+  }
+
   constructor(width: number, height: number, depth = 1) {
     this.width = width;
     this.height = height;
@@ -108,6 +121,24 @@ export default class RLEVoxelMap<T> {
     this.jMultiple = width;
     this.kMultiple = this.jMultiple * height;
   }
+
+  /** This is a function on the voxel manager, to get the RLE scalar data. */
+  public static getScalarData = function () {
+    const scalarData = new Float32Array(this.frameSize);
+    this.map.updateScalarData(scalarData);
+    return scalarData;
+  };
+
+  public updateScalarData = function (scalarData: ArrayLike<number>) {
+    scalarData.set(0);
+    const callback = (index, rle, row) => {
+      const { start, end, value } = rle;
+      for (let i = start; i < end; i++) {
+        scalarData[index + i] = value;
+      }
+    };
+    this.forEach(callback);
+  };
 
   /**
    * Gets the value encoded in the map at the given index, which is

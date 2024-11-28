@@ -180,10 +180,8 @@ async function getVOIFromMiddleSliceMinMax(
     image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
 
-  const imageScalarData = image.getPixelData();
-
   // Get the min and max pixel values of the middle slice
-  const { min, max } = getMinMax(imageScalarData);
+  const { min, max } = image.voxelManager.getMinMax();
   return {
     lower: min,
     upper: max,
