@@ -451,7 +451,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           }
         );
 
-        pointsInsideVolume.push(points);
+        pointsInsideVolume.push(pointsInShape);
       }
     }
     const stats = this.configuration.statsCalculator.getStatistics();

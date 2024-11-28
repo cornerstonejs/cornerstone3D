@@ -66,7 +66,8 @@ export default {
       if (distance > useDeltaSqr) {
         return;
       }
-      const gray = Array.isArray(value) ? vec3.len(value as any) : value;
+      // @ts-ignore
+      const gray = Array.isArray(value) ? vec3.len(value) : value;
       threshold[0] = Math.min(gray, threshold[0]);
       threshold[1] = Math.max(gray, threshold[1]);
     };

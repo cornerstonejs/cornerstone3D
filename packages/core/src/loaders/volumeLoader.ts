@@ -3,7 +3,7 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
-import VoxelManagerEnum from '../enums/VoxelManagerEnum';
+import type VoxelManagerEnum from '../enums/VoxelManagerEnum';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 
@@ -39,6 +39,7 @@ interface DerivedVolumeOptions {
   targetBuffer?: {
     type: PixelDataTypedArrayString;
   };
+  voxelRepresentation?: VoxelManagerEnum;
 }
 
 export interface LocalVolumeOptions {
@@ -510,7 +511,6 @@ export function createAndCacheDerivedLabelmapVolume(
       type: 'Uint8Array',
       ...options?.targetBuffer,
     },
-    targetBuffer: { type: 'Uint8Array' },
   });
 }
 
