@@ -148,7 +148,7 @@ export default class VoxelManager<T> {
   /** Gets the min/max pair - as array for RGB */
   public getMinMax() {
     let min, max;
-    const callback = (v) => {
+    const callback = ({ value: v }) => {
       const isArray = Array.isArray(v);
       if (min === undefined) {
         min = isArray ? [...v] : v;
@@ -164,7 +164,7 @@ export default class VoxelManager<T> {
         max = Math.max(max, v);
       }
     };
-    this.forEach(callback);
+    this.forEach(callback, { boundsIJK: this.getDefaultBounds() });
     return { min, max };
   }
 

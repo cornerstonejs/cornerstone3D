@@ -180,7 +180,13 @@ async function getVOIFromMiddleSliceMinMax(
   }
 
   // Get the min and max pixel values of the middle slice
-  const { min, max } = image.voxelManager.getMinMax();
+  let { min, max } = image.voxelManager.getMinMax();
+
+  if (min.length > 1) {
+    min = Math.min(...min);
+    max = Math.max(...max);
+  }
+
   return {
     lower: min,
     upper: max,
