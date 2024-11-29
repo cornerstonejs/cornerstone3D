@@ -729,7 +729,7 @@ describe('Volume Viewport GPU -- ', () => {
     });
   });
 
-  fdescribe('Volume Viewport Color images Neighbor and Linear Interpolation --- ', function () {
+  describe('Volume Viewport Color images Neighbor and Linear Interpolation --- ', function () {
     it('should successfully load a color volume: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
