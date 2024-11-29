@@ -1,16 +1,8 @@
-import {
-  getEnabledElementByViewportId,
-  getRenderingEngine,
-  utilities,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
 import type { Point2 } from '@cornerstonejs/core/types';
 import type { Point3 } from '@cornerstonejs/core/types/Point3';
 import { LengthTool } from '@cornerstonejs/tools';
-import {
-  typeToIdMap,
-  typeToStartIdMap,
-  typeToEndIdMap,
-} from './toolSpecificUI';
+import { typeToIdMap, typeToStartIdMap, typeToEndIdMap } from './constants';
 
 function getInputValue(form: HTMLFormElement, inputId: string): number {
   return Number((form.querySelector(`#${inputId}`) as HTMLInputElement).value);
@@ -80,21 +72,16 @@ function addButtonListeners(form: HTMLFormElement): void {
       );
       const viewport = enabledElement.viewport;
       const coords = getCoordinates(form, type);
+      const currentImageId = viewport.getCurrentImageId() as string;
 
       const worldStart =
         type === 'image'
-          ? utilities.imageToWorldCoords(
-              viewport.getCurrentImageId(),
-              coords.topLeft
-            )
+          ? utilities.imageToWorldCoords(currentImageId, coords.topLeft)
           : viewport.canvasToWorld(coords.topLeft);
 
       const worldEnd =
         type === 'image'
-          ? utilities.imageToWorldCoords(
-              viewport.getCurrentImageId(),
-              coords.topRight
-            )
+          ? utilities.imageToWorldCoords(currentImageId, coords.topRight)
           : viewport.canvasToWorld(coords.topRight);
 
       LengthTool.hydrate(viewport.id, [worldStart, worldEnd]);

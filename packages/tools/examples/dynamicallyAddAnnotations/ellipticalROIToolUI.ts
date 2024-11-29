@@ -1,7 +1,6 @@
 import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
-import type { Point2 } from '@cornerstonejs/core/types';
-import type { Point3 } from '@cornerstonejs/core/types/Point3';
-import { RectangleROITool } from '@cornerstonejs/tools';
+import type { Point2, Point3 } from '@cornerstonejs/core/types';
+import { EllipticalROITool } from '@cornerstonejs/tools';
 import { typeToIdMap } from './constants';
 
 function getInputValue(form: HTMLFormElement, inputId: string): number {
@@ -55,19 +54,19 @@ function createFormElement(): HTMLFormElement {
       <label style="margin-left: 52px; margin-right: 21px;">Top Right [${
         coordType === 'canvas' ? 'x, y' : 'i, j'
       }]:</label>
-      <input style="width:40px" type="number" id="${coordType}-topright-1" value="110">
+      <input style="width:40px" type="number" id="${coordType}-topright-1" value="150">
       <input style="width:40px" type="number" id="${coordType}-topright-2" value="10">
       <br>
       <label style="margin-right: 20px;">Bottom Left [${
         coordType === 'canvas' ? 'x, y' : 'i, j'
       }]:</label>
-      <input style="width:40px" type="number" id="${coordType}-bottomleft-1" value="10">
-      <input style="width:40px" type="number" id="${coordType}-bottomleft-2" value="110">
+      <input style="width:40px" type="number" id="${coordType}-bottomleft-1" value="20">
+      <input style="width:40px" type="number" id="${coordType}-bottomleft-2" value="100">
       <label style="margin-left: 52px; margin-right: 21px;">Bottom Right [${
         coordType === 'canvas' ? 'x, y' : 'i, j'
       }]:</label>
-      <input style="width:40px" type="number" id="${coordType}-bottomright-1" value="110">
-      <input style="width:40px" type="number" id="${coordType}-bottomright-2" value="110">
+      <input style="width:40px" type="number" id="${coordType}-bottomright-1" value="100">
+      <input style="width:40px" type="number" id="${coordType}-bottomright-2" value="100">
       <br>
       <button style="margin-left: 52px;" type="button" id="${coordType}-stack">Add Stack</button>
       <button type="button" id="${coordType}-volume">Add Volume</button>
@@ -105,12 +104,12 @@ function addButtonListeners(form: HTMLFormElement): void {
         convertPoint(coords.topRight),
       ];
 
-      RectangleROITool.hydrate(viewport.id, points);
+      EllipticalROITool.hydrate(viewport.id, points);
     });
   });
 }
 
-export function createRectangleROIToolUI(): HTMLFormElement {
+export function createEllipseROIToolUI(): HTMLFormElement {
   const form = createFormElement();
   addButtonListeners(form);
   return form;

@@ -22,14 +22,14 @@ var distDir = path.join(rootPath, '/.static-examples');
 var docsDir = path.join(rootPath, '/packages/docs/docs/');
 
 if (!fs.existsSync(distDir)) {
-  console.log('Creating directory: ' + distDir);
+  console.debug('Creating directory: ' + distDir);
   fs.mkdirSync(distDir);
 }
 
 program
   .option(
     '--build',
-    'Build and write examples to disk, rather than using the Webpack Dev Server'
+    'Build and write examples to disk, rather than using the Rspack Dev Server'
   )
   .option(
     '--fromRoot',
@@ -87,7 +87,6 @@ if (configuration.examples) {
       : /example\/index.ts$/;
     let fullPath = path.join(basePath, entry.path ? entry.path : entry);
 
-    // Single example use case
     examples[fullPath] = {};
     currentExamples = examples[fullPath];
     shell.cd(fullPath);
@@ -105,7 +104,7 @@ if (configuration.examples) {
         }
 
         currentExamples[exampleName] = './' + file;
-        console.log(' -', exampleName, ':', file);
+        console.debug(' -', exampleName, ':', file);
         exampleCount++;
 
         allExamplePaths[exampleName] = validPath(path.resolve(file));
@@ -123,12 +122,12 @@ if (configuration.examples) {
   // say name of running example
   const currentWD = process.cwd();
   // run the build for dicom image loader
-  shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run build:esm`);
-  shell.cd('../..');
-  shell.exec('yarn');
+  // shell.cd('../../dicomImageLoader');
+  // shell.exec(`yarn run build:esm`);
+  // shell.cd('../..');
+  // shell.exec('yarn');
 
-  shell.cd(currentWD);
+  // shell.cd(currentWD);
 
   const examplePaths = Object.values(allExamplePaths);
   const exampleNames = Object.keys(allExamplePaths);
@@ -149,17 +148,16 @@ if (configuration.examples) {
   shell.ShellString(exampleIndexMarkdown).to(path.join(docsDir, 'examples.md'));
 
   if (options.build == true) {
-    const conf = buildConfig(exampleNames, examplePaths, distDir, validPath(rootPath));
+    const conf = buildConfig(
+      exampleNames,
+      examplePaths,
+      distDir,
+      validPath(rootPath)
+    );
     shell.ShellString(conf).to(webpackConfigPath);
 
-    shell.exec(
-      `node --max_old_space_size=16384 ${
-        currentWD.endsWith('examples') ? '../../../' : ''
-      }node_modules/webpack/bin/webpack.js --progress --config ${webpackConfigPath}`
-    );
+    shell.exec(`rspack build --config ${webpackConfigPath}`);
   } else {
-    shell.exec(
-      `webpack serve --progress --host 0.0.0.0 --config ${webpackConfigPath}`
-    );
+    shell.exec(`rspack serve  --host 0.0.0.0 --config ${webpackConfigPath}`);
   }
 }

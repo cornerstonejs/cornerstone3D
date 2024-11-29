@@ -69,11 +69,11 @@ https://compat-table.github.io/compat-table/es2016plus/
 
 ## Remove of CJS, only ESM builds
 
-Starting with Cornerstone3D 2.x, we will no longer ship the CommonJS (CJS) build of the library. You most likely won't need to make any changes to your codebase. If you are aliasing the cjs library in your bundler, you can remove it completely.
+Starting with Cornerstone3D 2.x, we will no longer ship the CommonJS (CJS) and UMD builds of the library. You most likely won't need to make any changes to your codebase. If you are aliasing the cjs library in your bundler, you can remove it completely.
 
 <details>
 <summary>Why?</summary>
-Both Node.js and modern browsers now support ECMAScript Modules (ESM) by default. However, in the rare case where you need a non-ESM version, you can use the Universal Module Definition (UMD) build of the library.
+Both Node.js and modern browsers now support ECMAScript Modules (ESM) by default.
 </details>
 
 
