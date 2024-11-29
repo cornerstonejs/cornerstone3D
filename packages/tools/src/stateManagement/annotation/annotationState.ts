@@ -8,7 +8,7 @@ import {
 } from './helpers/state';
 
 // our default annotation manager
-let defaultManager: IAnnotationManager;
+let defaultManager;
 
 /**
  * It returns the default annotations manager.
