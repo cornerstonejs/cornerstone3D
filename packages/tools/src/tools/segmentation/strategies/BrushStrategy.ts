@@ -240,9 +240,7 @@ export default class BrushStrategy {
 
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
-      VoxelManager.createHistoryVoxelManager({
-        sourceVoxelManager: segmentationVoxelManagerToUse,
-      });
+      VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 

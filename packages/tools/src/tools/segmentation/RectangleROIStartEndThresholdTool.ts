@@ -451,7 +451,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           }
         );
 
-        //@ts-ignore
         pointsInsideVolume.push(pointsInShape);
       }
     }

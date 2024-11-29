@@ -13,6 +13,7 @@ import ViewportStatus from './ViewportStatus';
 import ImageQualityStatus from './ImageQualityStatus';
 import * as VideoEnums from './VideoEnums';
 import MetadataModules from './MetadataModules';
+import VoxelManagerEnum from './VoxelManagerEnum';
 import { GenerateImageType } from './GenerateImageType';
 
 export {
@@ -31,5 +32,6 @@ export {
   VideoEnums,
   MetadataModules,
   ImageQualityStatus,
+  VoxelManagerEnum,
   GenerateImageType,
 };

@@ -151,8 +151,8 @@ describe('VoxelManager', () => {
     });
   });
 
-  it('createRLEVoxelManager', () => {
-    const map = VoxelManager.createRLEVoxelManager({ dimensions });
+  it('createRLEVolumeVoxelManager', () => {
+    const map = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
     map.setAtIJKPoint(ijkPoint, 1);
     expect(map.getAtIJKPoint(ijkPoint)).toBe(1);
   });

@@ -6,7 +6,6 @@ import type {
 } from '../../types';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
-import getMinMax from '../../utilities/getMinMax';
 import * as windowLevel from '../../utilities/windowLevel';
 import { RequestType } from '../../enums';
 import cache from '../../cache/cache';
@@ -180,10 +179,14 @@ async function getVOIFromMiddleSliceMinMax(
     image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
   }
 
-  const imageScalarData = image.getPixelData();
-
   // Get the min and max pixel values of the middle slice
-  const { min, max } = getMinMax(imageScalarData);
+  let { min, max } = image.voxelManager.getMinMax();
+
+  if (min.length > 1) {
+    min = Math.min(...min);
+    max = Math.max(...max);
+  }
+
   return {
     lower: min,
     upper: max,

@@ -21,6 +21,7 @@ import type {
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import * as metaData from '../metaData';
+import VoxelManagerEnum from '../enums/VoxelManagerEnum';
 
 export interface ImageLoaderOptions {
   priority: number;
@@ -35,6 +36,7 @@ interface LocalImageOptions {
   targetBuffer?: {
     type: PixelDataTypedArrayString;
   };
+  voxelRepresentation?: VoxelManagerEnum;
   dimensions?: Point2;
   spacing?: Point2;
   origin?: Point3;
@@ -136,7 +138,8 @@ function ensureVoxelManager(image: IImage): void {
     });
 
     image.voxelManager = voxelManager;
-    image.getPixelData = () => voxelManager.getScalarData();
+    image.getPixelData = () =>
+      voxelManager.getScalarData() as PixelDataTypedArray;
     delete image.imageFrame.pixelData;
   }
 }
@@ -240,7 +243,8 @@ export function createAndCacheDerivedImage(
     options.imageId = `derived:${uuidv4()}`;
   }
 
-  const { imageId, skipCreateBuffer, onCacheAdd } = options;
+  const { imageId, skipCreateBuffer, onCacheAdd, voxelRepresentation } =
+    options;
 
   const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
 
@@ -303,6 +307,7 @@ export function createAndCacheDerivedImage(
     targetBuffer: {
       type: imageScalarData.constructor.name as PixelDataTypedArrayString,
     },
+    voxelRepresentation,
     dimensions: [imagePlaneModule.columns, imagePlaneModule.rows],
     spacing: [
       imagePlaneModule.columnPixelSpacing,
@@ -339,6 +344,7 @@ export function createAndCacheDerivedImages(
     targetBuffer?: {
       type: PixelDataTypedArrayString;
     };
+    voxelRepresentation?: VoxelManagerEnum;
   } = {}
 ): IImage[] {
   if (referencedImageIds.length === 0) {
@@ -376,6 +382,7 @@ export function createAndCacheLocalImage(
     skipCreateBuffer,
     onCacheAdd,
     frameOfReferenceUID,
+    voxelRepresentation,
   } = options;
 
   const dimensions = options.dimensions;
@@ -426,7 +433,7 @@ export function createAndCacheLocalImage(
     scalarDataToUse = scalarData;
   } else if (!skipCreateBuffer) {
     // Todo: need to handle numberOfComponents > 1
-    const { numBytes, TypedArrayConstructor } = getBufferConfiguration(
+    const { TypedArrayConstructor } = getBufferConfiguration(
       targetBuffer?.type,
       length
     );
@@ -485,12 +492,16 @@ export function createAndCacheLocalImage(
     });
   });
 
-  const voxelManager = VoxelManager.createImageVoxelManager({
-    height,
-    width,
-    numberOfComponents,
-    scalarData: scalarDataToUse,
-  });
+  // Todo: probably here we need to consider the RLE voxel manager as well
+  const voxelManager =
+    (voxelRepresentation === VoxelManagerEnum.RLE &&
+      VoxelManager.createRLEImageVoxelManager<number>({ dimensions })) ||
+    (VoxelManager.createImageVoxelManager({
+      height,
+      width,
+      numberOfComponents,
+      scalarData: scalarDataToUse,
+    }) as VoxelManager<number>);
 
   // Calculate min and max pixel values
   let minPixelValue = scalarDataToUse[0];

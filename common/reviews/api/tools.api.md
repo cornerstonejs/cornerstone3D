@@ -2518,12 +2518,13 @@ type FloodFillOptions = {
     onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
+    bounds?: Map<number, Types_2.Point2 | Types_2.Point3>;
+    filter?: (point: any) => boolean;
 };
 
 // @public (undocumented)
 type FloodFillResult = {
     flooded: Types_2.Point2[] | Types_2.Point3[];
-    boundaries: Types_2.Point2[] | Types_2.Point3[];
 };
 
 // @public (undocumented)

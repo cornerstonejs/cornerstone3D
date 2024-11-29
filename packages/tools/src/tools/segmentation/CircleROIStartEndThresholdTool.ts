@@ -751,8 +751,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
             returnPoints: this.configuration.storePointData,
           }
         );
-
-        //@ts-ignore
         pointsInsideVolume.push(pointsInShape);
       }
     }
