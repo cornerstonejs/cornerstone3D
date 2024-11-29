@@ -3,7 +3,6 @@ import FrameOfReferenceSpecificAnnotationManager, {
 } from './annotation/FrameOfReferenceSpecificAnnotationManager';
 import * as annotationLocking from './annotation/annotationLocking';
 import * as annotationSelection from './annotation/annotationSelection';
-
 import {
   getAnnotations,
   addAnnotation,
@@ -16,9 +15,9 @@ import {
   getNumberOfAnnotations,
   setAnnotationManager,
   getAnnotationManager,
-  resetAnnotationManager,
   invalidateAnnotation,
 } from './annotation/annotationState';
+import { resetAnnotationManager } from './annotation/resetAnnotationManager';
 
 export {
   // annotations
