@@ -1,6 +1,5 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex

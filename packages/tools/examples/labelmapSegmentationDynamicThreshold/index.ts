@@ -220,9 +220,7 @@ async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
   await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
-    // The following doesn't quite work yet
-    // TODO, allow RLE to be used instead of scalars.
-    // voxelRepresentation: Enums.VoxelManagerEnum.RLE,
+    voxelRepresentation: Enums.VoxelManagerEnum.RLE,
   });
 
   // Add the segmentations to state
