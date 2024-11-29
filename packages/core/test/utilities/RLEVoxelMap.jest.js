@@ -6,7 +6,7 @@ const size = [64, 128, 4];
 
 const ijkPoint = [4, 2, 2];
 const rleMap = new RLEVoxelMap(64, 128, 4);
-const voxelMap = VoxelManager.createLazyVoxelManager(size);
+const voxelMap = VoxelManager.createLazyVoxelManager({ dimensions: size });
 
 const j = 4;
 const baseIndex = j * 64;
@@ -81,7 +81,9 @@ describe('RLEVoxelMap', () => {
 
   describe('RLEVoxelManager', () => {
     it('sets', () => {
-      const map = VoxelManager.createRLEVoxelManager(size);
+      const map = VoxelManager.createRLEVolumeVoxelManager({
+        dimensions: size,
+      });
       map.setAtIJK(...ijkPoint, 15);
       expect(map.getAtIJK(...ijkPoint)).toBe(15);
       expect(map.getAtIJKPoint(ijkPoint)).toBe(15);
