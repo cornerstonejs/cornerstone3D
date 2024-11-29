@@ -9,7 +9,6 @@ import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
 import { RequestType } from '../../enums';
 import cache from '../../cache/cache';
-import { getMinMax } from '../../utilities';
 
 const PRIORITY = 0;
 const REQUEST_TYPE = RequestType.Prefetch;
@@ -181,15 +180,12 @@ async function getVOIFromMiddleSliceMinMax(
   }
 
   // Get the min and max pixel values of the middle slice
-  // let { min, max } = image.voxelManager.getMinMax();
+  let { min, max } = image.voxelManager.getMinMax();
 
-  // if (min.length > 1) {
-  //   min = Math.min(...min);
-  //   max = Math.max(...max);
-  // }
-
-  const { min, max } = getMinMax(image.voxelManager.getScalarData());
-  console.log('****************************, ', min, max);
+  if (min.length > 1) {
+    min = Math.min(...min);
+    max = Math.max(...max);
+  }
 
   return {
     lower: min,
