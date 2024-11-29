@@ -3075,11 +3075,13 @@ class RLEVoxelMap<T> {
     // (undocumented)
     clear(): void;
     // (undocumented)
+    static copyMap<T>(destination: RLEVoxelMap<T>, source: RLEVoxelMap<T>): void;
+    // (undocumented)
     defaultValue: T;
     // (undocumented)
     delete(index: number): void;
     // (undocumented)
-    protected depth: number;
+    depth: number;
     // (undocumented)
     fillFrom(getter: (i: number, j: number, k: number) => T, boundsIJK: BoundsIJK): void;
     // (undocumented)
@@ -3111,9 +3113,11 @@ class RLEVoxelMap<T> {
     // (undocumented)
     getRun: (j: number, k: number) => RLERun<T>[];
     // (undocumented)
+    static getScalarData: (ArrayType?: Uint8ClampedArrayConstructor) => Uint8ClampedArray;
+    // (undocumented)
     has(index: number): boolean;
     // (undocumented)
-    protected height: number;
+    height: number;
     // (undocumented)
     protected jMultiple: number;
     // (undocumented)
@@ -3135,7 +3139,9 @@ class RLEVoxelMap<T> {
     // (undocumented)
     toIndex([i, j, k]: Point3): number;
     // (undocumented)
-    protected width: number;
+    updateScalarData: (scalarData: PixelDataTypedArray) => void;
+    // (undocumented)
+    width: number;
 }
 
 // @public (undocumented)
@@ -4804,7 +4810,16 @@ type VolumeViewportProperties = ViewportProperties & {
 
 // @public (undocumented)
 class VoxelManager<T> {
-    constructor(dimensions: any, _get: (index: number) => T, _set?: (index: number, v: T) => boolean);
+    constructor(dimensions: any, options: {
+        _get: (index: number) => T;
+        _set?: (index: number, v: T) => boolean;
+        _getScalarData?: () => ArrayLike<number>;
+        _id?: string;
+        _updateScalarData?: (scalarData: ArrayLike<number>) => PixelDataTypedArray;
+        numberOfComponents?: number;
+        scalarData?: ArrayLike<number>;
+        _getConstructor?: () => new (length: number) => PixelDataTypedArray;
+    });
     // (undocumented)
     static addBounds(bounds: BoundsIJK, point: Point3): void;
     // (undocumented)
@@ -4881,7 +4896,7 @@ class VoxelManager<T> {
     // (undocumented)
     frameSize: number;
     // (undocumented)
-    _get: (index: number) => T;
+    readonly _get: (index: number) => T;
     // (undocumented)
     getArrayOfModifiedSlices(): number[];
     // (undocumented)
@@ -4897,19 +4912,24 @@ class VoxelManager<T> {
     // (undocumented)
     getConstructor(): new (length: number) => PixelDataTypedArray;
     // (undocumented)
-    _getConstructor?: () => new (length: number) => PixelDataTypedArray;
+    readonly _getConstructor?: () => new (length: number) => PixelDataTypedArray;
     // (undocumented)
     getDefaultBounds(): BoundsIJK;
     // (undocumented)
     getMiddleSliceData: () => PixelDataTypedArray;
     // (undocumented)
+    getMinMax(): {
+        min: any;
+        max: any;
+    };
+    // (undocumented)
     getPoints(): Point3[];
     // (undocumented)
     getRange: () => [number, number];
     // (undocumented)
-    getScalarData(): PixelDataTypedArray;
+    getScalarData(storeScalarData?: boolean): PixelDataTypedArray;
     // (undocumented)
-    _getScalarData?: () => PixelDataTypedArray;
+    _getScalarData?: () => ArrayLike<number>;
     // (undocumented)
     getScalarDataLength(): number;
     // (undocumented)
@@ -4925,13 +4945,15 @@ class VoxelManager<T> {
         slicePlane: number;
     }) => PixelDataTypedArray;
     // (undocumented)
+    readonly _id: string;
+    // (undocumented)
     isInObject: (pointLPS: any, pointIJK: any) => boolean;
     // (undocumented)
     map: Map<number, T> | IRLEVoxelMap<T>;
     // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
-    numberOfComponents: number;
+    readonly numberOfComponents: any;
     // (undocumented)
     points: Set<number>;
     // (undocumented)
@@ -4939,7 +4961,7 @@ class VoxelManager<T> {
     // (undocumented)
     rleForEach(callback: any, options?: any): void;
     // (undocumented)
-    _set: (index: number, v: T) => boolean;
+    readonly _set: (index: number, v: T) => boolean;
     // (undocumented)
     setAtIJK: (i: number, j: number, k: number, v: any) => boolean;
     // (undocumented)
@@ -4960,6 +4982,8 @@ class VoxelManager<T> {
     toIJK(index: number): Point3;
     // (undocumented)
     toIndex(ijk: Point3): number;
+    // (undocumented)
+    _updateScalarData?: (scalarData: ArrayLike<number>) => PixelDataTypedArray;
     // (undocumented)
     width: number;
 }

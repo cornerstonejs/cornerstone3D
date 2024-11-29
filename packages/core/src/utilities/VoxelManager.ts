@@ -14,6 +14,7 @@ import type {
 import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
 
 /**
  * Have a default size for cached RLE encoded images.  This is hard to guess
@@ -263,95 +264,22 @@ export default class VoxelManager<T> {
     const pointsInShape = [];
 
     if (useLPSTransform) {
-      const { imageData } = options;
-      const direction = imageData.getDirection();
-      const rowCosines = direction.slice(0, 3);
-      const columnCosines = direction.slice(3, 6);
-      const scanAxisNormal = direction.slice(6, 9);
-
-      const spacing = imageData.getSpacing();
-      const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing;
-
-      // @ts-ignore will
-
-      const start = vec3.fromValues(iMin, jMin, kMin);
-
-      // @ts-ignore will be fixed in vtk-master
-      const worldPosStart = imageData.indexToWorld(start);
-
-      const rowStep = vec3.fromValues(
-        rowCosines[0] * rowSpacing,
-        rowCosines[1] * rowSpacing,
-        rowCosines[2] * rowSpacing
-      );
-
-      const columnStep = vec3.fromValues(
-        columnCosines[0] * columnSpacing,
-        columnCosines[1] * columnSpacing,
-        columnCosines[2] * columnSpacing
-      );
-
-      const scanAxisStep = vec3.fromValues(
-        scanAxisNormal[0] * scanAxisSpacing,
-        scanAxisNormal[1] * scanAxisSpacing,
-        scanAxisNormal[2] * scanAxisSpacing
-      );
-
-      const currentPos = vec3.clone(worldPosStart) as Point3;
-
-      for (let k = kMin; k <= kMax; k++) {
-        // Todo: There is an optimized version of this in the currently closed source
-        // code - it is quite noticeably faster as it pre-generates i,j,k arrays
-        // and adds the three numbers for each dimension. That version actually works
-        // with sparse data voxel managers, whereas this one doesn't
-        const startPosJ = vec3.clone(currentPos);
-
-        for (let j = jMin; j <= jMax; j++) {
-          const startPosI = vec3.clone(currentPos);
-
-          for (let i = iMin; i <= iMax; i++) {
-            const pointIJK = [i, j, k] as Point3;
-
-            // The current world position (pointLPS) is now in currentPos
-            if (isInObject(currentPos, pointIJK)) {
-              const index = this.toIndex(pointIJK);
-
-              const value = this._get(index);
-
-              if (returnPoints) {
-                pointsInShape.push({
-                  value,
-                  index,
-                  pointIJK,
-                  pointLPS: currentPos.slice(),
-                });
-              }
-
-              if (callback) {
-                callback({ value, index, pointIJK, pointLPS: currentPos });
-              }
-            }
-
-            // Increment currentPos by rowStep for the next iteration
-            vec3.add(currentPos, currentPos, rowStep);
-          }
-
-          // Reset currentPos to the start of the next J line and increment by columnStep
-          vec3.copy(currentPos, startPosI);
-          vec3.add(currentPos, currentPos, columnStep);
-        }
-
-        // Reset currentPos to the start of the next K slice and increment by scanAxisStep
-        vec3.copy(currentPos, startPosJ);
-        vec3.add(currentPos, currentPos, scanAxisStep);
-      }
-
+      const pointsInShape = iterateOverPointsInShapeVoxelManager({
+        voxelManager: this,
+        imageData: options.imageData,
+        bounds: [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ],
+        pointInShapeFn: isInObject,
+        callback,
+      });
       return pointsInShape;
     }
 
     // We don't need the complex LPS calculations and we can just iterate over the data
     // in the IJK coordinate system
-
     if (this.map) {
       if (this.map instanceof RLEVoxelMap) {
         return this.rleForEach(callback, options);
