@@ -446,10 +446,12 @@ export default class VoxelManager<T> {
    * Otherwise, if the `_getScalarData` method is defined, it will be called to retrieve the scalar data.
    * If neither the scalar data nor the `_getScalarData` method is available, an error will be thrown.
    *
+   * @param storeScalarData - a parameter to allow storing the scalar data rather than throwing it away
+   *     each time.
    * @returns The scalar data.
    * @throws {Error} If no scalar data is available.
    */
-  public getScalarData(transient = null) {
+  public getScalarData(storeScalarData = false) {
     if (this.scalarData) {
       this._updateScalarData?.(this.scalarData);
       return this.scalarData;
@@ -457,7 +459,7 @@ export default class VoxelManager<T> {
 
     if (this._getScalarData) {
       const scalarData = this._getScalarData();
-      if (!transient) {
+      if (storeScalarData) {
         console.log('Not transient, should store value', scalarData);
       }
       return scalarData;

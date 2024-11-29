@@ -122,9 +122,12 @@ export default class RLEVoxelMap<T> {
     this.kMultiple = this.jMultiple * height;
   }
 
-  /** This is a function on the voxel manager, to get the RLE scalar data. */
-  public static getScalarData = function () {
-    const scalarData = new Float32Array(this.frameSize);
+  /**
+   *  This is a function on the voxel manager, to get the RLE scalar data.
+   * @returns an array of the given type for the data.
+   */
+  public static getScalarData = function (ArrayType = Uint8ClampedArray) {
+    const scalarData = new ArrayType(this.frameSize);
     this.map.updateScalarData(scalarData);
     return scalarData;
   };
@@ -291,7 +294,8 @@ export default class RLEVoxelMap<T> {
    */
   public set = (index: number, value: T) => {
     if (value === undefined) {
-      throw new Error(`Can't set undefined at ${index % this.width}`);
+      // Don't store undefined values
+      return;
     }
     const i = index % this.width;
     const j = (index - i) / this.width;
