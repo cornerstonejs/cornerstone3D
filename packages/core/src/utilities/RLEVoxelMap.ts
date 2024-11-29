@@ -1,6 +1,6 @@
 import type Point3 from '../types/Point3';
 import type BoundsIJK from '../types/BoundsIJK';
-import { PixelDataTypedArray } from '../types';
+import type { PixelDataTypedArray } from '../types';
 
 /**
  * The RLERun specifies a contigous run of values for a row,
@@ -132,8 +132,12 @@ export default class RLEVoxelMap<T> {
     return scalarData;
   };
 
-  public updateScalarData = function (scalarData: ArrayLike<number>) {
-    scalarData.set(0);
+  /**
+   * Update the scalar data with the current RLE state
+   * @param scalarData - old scalar data to update
+   */
+  public updateScalarData = function (scalarData: PixelDataTypedArray) {
+    scalarData.fill(0);
     const callback = (index, rle, row) => {
       const { start, end, value } = rle;
       for (let i = start; i < end; i++) {

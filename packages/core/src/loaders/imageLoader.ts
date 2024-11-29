@@ -138,7 +138,8 @@ function ensureVoxelManager(image: IImage): void {
     });
 
     image.voxelManager = voxelManager;
-    image.getPixelData = () => voxelManager.getScalarData();
+    image.getPixelData = () =>
+      voxelManager.getScalarData() as PixelDataTypedArray;
     delete image.imageFrame.pixelData;
   }
 }

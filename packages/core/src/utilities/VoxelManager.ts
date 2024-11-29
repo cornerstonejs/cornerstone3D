@@ -94,7 +94,7 @@ export default class VoxelManager<T> {
     this.managerType = options.managerType;
     this._getConstructor = options._getConstructor;
     this.numberOfComponents = this.numberOfComponents || 1;
-    this.scalarData = this.scalarData;
+    this.scalarData = options.scalarData as PixelDataTypedArray;
     this._getScalarData = options._getScalarData;
     this._updateScalarData = options._updateScalarData;
   }
@@ -451,7 +451,7 @@ export default class VoxelManager<T> {
    * @returns The scalar data.
    * @throws {Error} If no scalar data is available.
    */
-  public getScalarData(storeScalarData = false) {
+  public getScalarData(storeScalarData = false): PixelDataTypedArray {
     if (this.scalarData) {
       this._updateScalarData?.(this.scalarData);
       return this.scalarData;
@@ -462,7 +462,7 @@ export default class VoxelManager<T> {
       if (storeScalarData) {
         console.log('Not transient, should store value', scalarData);
       }
-      return scalarData;
+      return scalarData as PixelDataTypedArray;
     }
 
     throw new Error('No scalar data available');
@@ -723,7 +723,11 @@ export default class VoxelManager<T> {
     const voxels = new VoxelManager<RGB>(dimensions, {
       _get: (index) => {
         index *= numberOfComponents;
-        return [scalarData[index++], scalarData[index++], scalarData[index++]];
+        return [
+          scalarData[index++],
+          scalarData[index++],
+          scalarData[index++],
+        ] as RGB;
       },
       managerType: '_createRGBScalarVolumeVoxelManager',
       _set: (index, v) => {
@@ -784,29 +788,31 @@ export default class VoxelManager<T> {
     }
 
     function getVoxelValue(index) {
-      const { voxelManager, pixelIndex } = getPixelInfo(index);
+      const { voxelManager: imageVoxelManager, pixelIndex } =
+        getPixelInfo(index);
 
-      if (!voxelManager || pixelIndex === null) {
+      if (!imageVoxelManager || pixelIndex === null) {
         return null;
       }
 
-      return voxelManager.getAtIndex(pixelIndex) as Number;
+      return imageVoxelManager.getAtIndex(pixelIndex) as number | RGB;
     }
 
     function setVoxelValue(index, v) {
-      const { voxelManager, pixelIndex } = getPixelInfo(index);
+      const { voxelManager: imageVoxelManager, pixelIndex } =
+        getPixelInfo(index);
 
-      if (!voxelManager || pixelIndex === null) {
+      if (!imageVoxelManager || pixelIndex === null) {
         return false;
       }
 
-      const currentValue = voxelManager.getAtIndex(pixelIndex);
+      const currentValue = imageVoxelManager.getAtIndex(pixelIndex);
       const isChanged = !isEqual(v, currentValue);
 
       if (!isChanged) {
         return isChanged;
       }
-      voxelManager.setAtIndex(pixelIndex, v as number);
+      imageVoxelManager.setAtIndex(pixelIndex, v as number);
 
       return true;
     }
@@ -819,7 +825,7 @@ export default class VoxelManager<T> {
       return pixelInfo.pixelData.constructor;
     };
 
-    const voxelManager = new VoxelManager<T>(dimensions, {
+    const voxelManager = new VoxelManager<number | RGB>(dimensions, {
       _get: getVoxelValue,
       _set: setVoxelValue,
       numberOfComponents,
@@ -1054,6 +1060,7 @@ export default class VoxelManager<T> {
     // Create a VoxelManager that will manage the active voxel group
     const voxelManager = new VoxelManager<number | RGB>(dimensions, {
       _get: (index) => voxelGroups[timePoint]._get(index),
+      // @ts-ignore
       _set: (index, v) => voxelGroups[timePoint]._set(index, v),
       numberOfComponents,
       managerType: 'createScalarDynamicVolumeVoxelManager',
@@ -1262,10 +1269,13 @@ export default class VoxelManager<T> {
         this.sourceVoxelManager.setAtIndex(index, v);
       },
       _getScalarData: RLEVoxelMap.getScalarData,
-      _updateScalarData: map.updateScalarData,
+      _updateScalarData: (scalarData) => {
+        map.updateScalarData(scalarData as PixelDataTypedArray);
+        return scalarData as PixelDataTypedArray;
+      },
       managerType: 'createRLEHistoryVoxelManager',
-      map,
     });
+    voxelManager.map = map;
     voxelManager.sourceVoxelManager = sourceVoxelManager;
     return voxelManager;
   }
@@ -1324,7 +1334,10 @@ export default class VoxelManager<T> {
         return true;
       },
       _getScalarData: RLEVoxelMap.getScalarData,
-      _updateScalarData: map.updateScalarData,
+      _updateScalarData: (scalarData) => {
+        map.updateScalarData(scalarData as PixelDataTypedArray);
+        return scalarData as PixelDataTypedArray;
+      },
       managerType: 'createRLEVolumeVoxelManager',
     });
     voxelManager.map = map;
