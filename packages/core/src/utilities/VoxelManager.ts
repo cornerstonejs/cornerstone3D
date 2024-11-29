@@ -48,7 +48,7 @@ export default class VoxelManager<T> {
   // a limit on the number of slices to cache since it can grow indefinitely
   private _sliceDataCache = null as Map<string, PixelDataTypedArray>;
 
-  public readonly managerType: string;
+  public readonly _id: string;
 
   points: Set<number>;
   width: number;
@@ -77,7 +77,7 @@ export default class VoxelManager<T> {
       _get: (index: number) => T;
       _set?: (index: number, v: T) => boolean;
       _getScalarData?: () => ArrayLike<number>;
-      managerType: string;
+      _id?: string;
       _updateScalarData?: (
         scalarData: ArrayLike<number>
       ) => PixelDataTypedArray;
@@ -91,7 +91,7 @@ export default class VoxelManager<T> {
     this.frameSize = this.width * dimensions[1];
     this._get = options._get;
     this._set = options._set;
-    this.managerType = options.managerType;
+    this._id = options._id || '';
     this._getConstructor = options._getConstructor;
     this.numberOfComponents = this.numberOfComponents || 1;
     this.scalarData = options.scalarData as PixelDataTypedArray;
@@ -729,7 +729,7 @@ export default class VoxelManager<T> {
           scalarData[index++],
         ] as RGB;
       },
-      managerType: '_createRGBScalarVolumeVoxelManager',
+      _id: '_createRGBScalarVolumeVoxelManager',
       _set: (index, v) => {
         index *= 3;
         const isChanged = !isEqual(scalarData[index], v);
@@ -830,7 +830,7 @@ export default class VoxelManager<T> {
       _set: setVoxelValue,
       numberOfComponents,
       _getConstructor,
-      managerType: 'createImageVolumeVoxelManager',
+      _id: 'createImageVolumeVoxelManager',
     });
 
     voxelManager.getMiddleSliceData = () => {
@@ -1063,7 +1063,7 @@ export default class VoxelManager<T> {
       // @ts-ignore
       _set: (index, v) => voxelGroups[timePoint]._set(index, v),
       numberOfComponents,
-      managerType: 'createScalarDynamicVolumeVoxelManager',
+      _id: 'createScalarDynamicVolumeVoxelManager',
     }) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.getScalarDataLength = () => {
@@ -1170,7 +1170,7 @@ export default class VoxelManager<T> {
         scalarData[index] = v;
         return isChanged;
       },
-      managerType: '_createNumberVolumeVoxelManager',
+      _id: '_createNumberVolumeVoxelManager',
     });
     voxels.scalarData = scalarData;
 
@@ -1199,7 +1199,7 @@ export default class VoxelManager<T> {
     const voxelManager = new VoxelManager<T>(dimension, {
       _get: map.get.bind(map),
       _set: (index, v) => map.set(index, v) && true,
-      managerType: 'createMapVoxelManager',
+      _id: 'createMapVoxelManager',
     });
     voxelManager.map = map;
     return voxelManager;
@@ -1232,7 +1232,7 @@ export default class VoxelManager<T> {
         }
         this.sourceVoxelManager.setAtIndex(index, v);
       },
-      managerType: 'createHistoryVoxelManager',
+      _id: 'createHistoryVoxelManager',
     });
     voxelManager.map = map;
     voxelManager.scalarData = sourceVoxelManager.scalarData;
@@ -1273,7 +1273,7 @@ export default class VoxelManager<T> {
         map.updateScalarData(scalarData as PixelDataTypedArray);
         return scalarData as PixelDataTypedArray;
       },
-      managerType: 'createRLEHistoryVoxelManager',
+      _id: 'createRLEHistoryVoxelManager',
     });
     voxelManager.map = map;
     voxelManager.sourceVoxelManager = sourceVoxelManager;
@@ -1309,7 +1309,7 @@ export default class VoxelManager<T> {
         layer[index % planeSize] = v;
         return true;
       },
-      managerType: 'createLazyVoxelManager',
+      _id: 'createLazyVoxelManager',
     });
     voxelManager.map = map;
     return voxelManager;
@@ -1338,7 +1338,7 @@ export default class VoxelManager<T> {
         map.updateScalarData(scalarData as PixelDataTypedArray);
         return scalarData as PixelDataTypedArray;
       },
-      managerType: 'createRLEVolumeVoxelManager',
+      _id: 'createRLEVolumeVoxelManager',
     });
     voxelManager.map = map;
     // @ts-ignore
