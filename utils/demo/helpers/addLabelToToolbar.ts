@@ -1,6 +1,7 @@
 import { utilities as csUtilities } from '@cornerstonejs/core';
 
-import createElement, { configElement } from './createElement';
+import type { configElement } from './createElement';
+import createElement from './createElement';
 
 interface configLabel extends configElement {
   id?: string;

@@ -30,8 +30,7 @@ setTitleAndDescription(
 );
 
 const pixelSize = 500;
-const devicePixelRatio = window.devicePixelRatio || 1;
-const size = `${Math.round(pixelSize / devicePixelRatio)}px`;
+const size = '35vw';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 const volumeId = 'volumeId';
@@ -53,7 +52,7 @@ const viewportInput = {
   type: ViewportType.ORTHOGRAPHIC,
   element: element1,
   defaultOptions: {
-    background: [0.2, 0, 0.2] as Types.Point3,
+    background: <Types.Point3>[0.2, 0, 0.2],
   },
 };
 
@@ -74,7 +73,7 @@ viewportTypes.set('Axial', {
       ...viewportInput,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: [0.2, 0.2, 0] as Types.Point3,
+        background: <Types.Point3>[0.2, 0.2, 0],
       },
     },
   ],
@@ -85,7 +84,7 @@ viewportTypes.set('Sagittal', {
       ...viewportInput,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: [0.2, 0, 0.2] as Types.Point3,
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ],
@@ -98,7 +97,7 @@ viewportTypes.set('Sagittal 2', {
       viewportId: 'Axial',
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: [0, 0, 0.2] as Types.Point3,
+        background: <Types.Point3>[0, 0, 0.2],
         sliceIndex: 200,
       },
     },
@@ -111,7 +110,7 @@ viewportTypes.set('Coronal', {
       viewportId: 'Axial',
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: [0, 0.2, 0] as Types.Point3,
+        background: <Types.Point3>[0, 0.2, 0],
       },
     },
   ],
@@ -176,7 +175,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -195,7 +194,7 @@ async function run() {
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     }
     const { viewportInputArray, sliceIndex } = viewportType;
-    renderingEngine.setViewports(viewportInputArray);
+    renderingEngine.setViewports(viewportInputArray as any);
 
     const [viewportInputData] = viewportInputArray;
     const { viewportId, type } = viewportInputData;
@@ -215,16 +214,18 @@ async function run() {
       // mechanisms are different for the two viewports
       setTimeout(async () => {
         // Get the stack viewport that was created
-        const viewport = renderingEngine.getViewport(viewportId);
-        await (viewport as Types.IStackViewport).setStack([imageId], 0);
+        const viewport = <Types.IStackViewport>(
+          renderingEngine.getViewport(viewportId)
+        );
+        await viewport.setStack([imageId], 0);
         viewport.resetCamera();
         viewport.render();
       }, 200);
     } else {
       // Get the stack viewport that was created
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport = <Types.IVolumeViewport>(
+        renderingEngine.getViewport(viewportId)
+      );
       await viewport.setVolumes([{ volumeId }]);
       if (sliceIndex !== undefined) {
         await utilities.jumpToSlice(viewport.element, {

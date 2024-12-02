@@ -19,7 +19,7 @@ interface configSlider extends configElement {
 export type DeleteFn = () => void;
 
 export default function addSliderToToolbar(config: configSlider): DeleteFn {
-  config = csUtilities.deepMerge(config, config.merge);
+  config = csUtilities.deepMerge(config, config.merge || {});
 
   config.container =
     config.container ?? document.getElementById('demo-toolbar');

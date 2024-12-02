@@ -46,6 +46,7 @@
   "bundledPackages": [
     "@cornerstonejs/core",
     "@cornerstonejs/tools",
+    "@cornerstonejs/ai"
   ],
 
   /**

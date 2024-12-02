@@ -67,6 +67,10 @@ if (options.fromRoot === true) {
         path: 'packages/adapters/examples',
         regexp: 'index.ts',
       },
+      {
+        path: 'packages/ai/examples',
+        regexp: 'index.ts',
+      },
     ],
   };
 } else {

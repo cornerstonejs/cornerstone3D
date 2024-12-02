@@ -13,50 +13,38 @@ import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
-import { getConfiguration } from '../init';
 import cache from '../cache/cache';
 
 /**
- * The original load image options specified just an image id,  which is optimal
- * for things like thumbnails rendering a single image.
+ * A type constraint to define the imageId and exclude the viewReference,
+ * used in the image load options.
  */
-export interface StackLoadImageOptions {
+type ImageIdConstraint = {
   imageId: string;
-}
+};
 
 /**
  * The full image load options allows specifying more parameters for both the
- * presentation and the view so that a specific view can be referenced/displayed.
- */
+ * presentation and the view so that a specific view can be referenced/displayed. */
 export interface FullImageLoadOptions {
   viewReference: ViewReference;
   viewPresentation: ViewPresentation;
+
   imageId: undefined;
 }
 
 /**
- * The canvas load position allows for determining the rendered position of
- * image data within the canvas, and can be used to map loaded canvas points
- * to and from other viewport positions for things like external computations
- * on the load image to canvas view and the viewport view (which may contain
- * extraneous data such as segmentation and thus not be usable for external
- * computations.)
- */
-export interface CanvasLoadPosition {
-  origin: Point3;
-  topRight: Point3;
-  bottomLeft: Point3;
-  thicknessMm: number;
-}
-
-/**
  * The image canvas can be loaded/set with various view conditions to specify the initial
- * view as well as how and where ot render the image.
+ * view as well as how and where to render the image.
+ * Stack views are specified with an imageId to view, while volume views are
+ * specified with a viewReference and optionally a viewPresentation.
  */
 export type LoadImageOptions = {
   canvas: HTMLCanvasElement;
-  // Define the view specification as optional here, and then incorporate specific
-  // requirements in mix in types.
+  /**
+   * Either the imageID or view reference is required, as defined in type
+   * constraints.
+   */
   imageId?: string;
   viewReference?: ViewReference;
   viewPresentation?: ViewPresentation;
@@ -73,12 +61,42 @@ export type LoadImageOptions = {
   physicalPixels?: boolean;
   // Sets the viewport input options  Defaults to scale to fit 110%
   viewportOptions?: ViewportInputOptions;
-} & (StackLoadImageOptions | FullImageLoadOptions);
+} & (ImageIdConstraint | FullImageLoadOptions);
+
+/**
+ * The canvas load position allows for determining the rendered position of
+ * image data within the canvas, and can be used to map loaded canvas points
+ * to and from other viewport positions for things like external computations
+ * on the load image to canvas view and the viewport view (which may contain
+ * extraneous data such as segmentation and thus not be usable for external
+ * computations.)
+ */
+export type CanvasLoadPosition = {
+  /**
+   *  The origin of canvas rendered, as world point.  This is the
+   * canvas position `[0,0]` in world coordinates.
+   */
+  origin: Point3;
+  /**
+   * The top right canvas position in world coordinates - that is, the canvas
+   * point `[width,0]` in world coordinates.
+   */
+  topRight: Point3;
+  /**
+   * The bottom left canvas position in world coordinates.  That is, `[0,height]`
+   * in world coordinates.
+   */
+  bottomLeft: Point3;
+};
 
 /**
  * Loads and renders an imageId to a Canvas. It will use the GPU rendering pipeline
  * for image by default but you can force the CPU rendering pipeline by setting the
  * useCPURendering parameter to true.
+ *
+ * For volume views, the volume is specified by a volumeId, which must be in the
+ * same rendering engine in which it was originally created.  This isn't otherwise
+ * loaded, and the data needs to already be available.
  *
  * @example
  * ```
@@ -103,7 +121,7 @@ export default function loadImageToCanvas(
   const {
     canvas,
     imageId,
-    viewReference,
+    viewReference = null,
     requestType = RequestType.Thumbnail,
     priority = -5,
     renderingEngineId = '_thumbnails',

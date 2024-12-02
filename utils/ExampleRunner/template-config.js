@@ -6,6 +6,7 @@ const csAdapters = path.resolve('packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
 );
+const csAIBasePath = path.resolve('packages/ai/src/index');
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
 module.exports = function buildConfig(name, destPath, root, exampleBasePath) {
@@ -36,6 +37,11 @@ module.exports = {
           to: '${destPath.replace(/\\/g, '/')}',
           noErrorOnMissing: true,
         },
+        {
+          from:
+            '../../../node_modules/onnxruntime-web/dist',
+          to: '${destPath.replace(/\\/g, '/')}/dist',
+        },
       ],
     }),
   ],
@@ -60,6 +66,7 @@ module.exports = {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/ai': '${csAIBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/nifti-volume-loader': '${csNiftiPath.replace(
         /\\/g,
         '/'

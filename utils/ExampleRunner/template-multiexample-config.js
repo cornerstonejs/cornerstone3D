@@ -6,6 +6,7 @@ const csAdaptersBasePath = path.resolve('./packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
 );
+const csAIBasePath = path.resolve('packages/ai/src/index');
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
 module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
@@ -96,6 +97,7 @@ module.exports = {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/adapters': '${csAdaptersBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/ai': '${csAIBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'
