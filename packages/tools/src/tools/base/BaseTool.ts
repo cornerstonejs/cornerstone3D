@@ -247,42 +247,6 @@ abstract class BaseTool {
     DefaultHistoryMemo.push(zoomPanMemo);
     return zoomPanMemo;
   }
-
-  /**
-   * Undo an action
-   */
-  public undo() {
-    DefaultHistoryMemo.undo();
-    this.memo = null;
-  }
-
-  /**
-   * Redo an action (undo the undo)
-   */
-  public redo() {
-    DefaultHistoryMemo.redo();
-  }
-
-  public static createZoomPanMemo(viewport) {
-    // TODO - move this to view callback as a utility
-    const state = {
-      pan: viewport.getPan(),
-      zoom: viewport.getZoom(),
-    };
-    const zoomPanMemo = {
-      restoreMemo: () => {
-        const currentPan = viewport.getPan();
-        const currentZoom = viewport.getZoom();
-        viewport.setZoom(state.zoom);
-        viewport.setPan(state.pan);
-        viewport.render();
-        state.pan = currentPan;
-        state.zoom = currentZoom;
-      },
-    };
-    DefaultHistoryMemo.push(zoomPanMemo);
-    return zoomPanMemo;
-  }
 }
 
 // Note: this is a workaround since terser plugin does not support static blocks

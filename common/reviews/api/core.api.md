@@ -882,14 +882,6 @@ function deepEqual(obj1: unknown, obj2: unknown): boolean;
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
-<<<<<<< HEAD
-const DefaultHistoryMemo: HistoryMemo_2;
-
-// @public (undocumented)
-type DisplayArea = {
-||||||| 23c01d523
-type DisplayArea = {
-=======
 interface DicomDateObject {
     // (undocumented)
     day: number;
@@ -914,7 +906,6 @@ interface DicomTimeObject {
 // @public (undocumented)
 interface DisplayArea {
     // (undocumented)
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
     imageArea?: [number, number];
     // (undocumented)
     imageCanvasPoint?: {
@@ -998,16 +989,9 @@ declare namespace Enums {
         ViewportStatus,
         VideoEnums,
         MetadataModules,
-<<<<<<< HEAD
-        ImageQualityStatus,
-        VoxelManagerEnum
-||||||| 23c01d523
-        ImageQualityStatus
-=======
         ImageQualityStatus,
         VoxelManagerEnum,
         GenerateImageType
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
     }
 }
 export { Enums }
@@ -1404,30 +1388,6 @@ const hasFloatScalingParameters: (scalingParameters: ScalingParameters) => boole
 
 // @public (undocumented)
 function hasNaNValues(input: number[] | number): boolean;
-
-declare namespace HistoryMemo {
-    export {
-        Memo,
-        Memoable,
-        HistoryMemo_2 as HistoryMemo,
-        DefaultHistoryMemo
-    }
-}
-
-// @public (undocumented)
-class HistoryMemo_2 {
-    constructor(label?: string, size?: number);
-    // (undocumented)
-    readonly label: any;
-    // (undocumented)
-    push(item: Memo | Memoable): Memo;
-    // (undocumented)
-    redo(items?: number): void;
-    // (undocumented)
-    get size(): any;
-    // (undocumented)
-    undo(items?: number): void;
-}
 
 // @public (undocumented)
 function hexToRgb(hex: any): {
@@ -2285,17 +2245,9 @@ export class ImageVolume {
     // (undocumented)
     readonly volumeId: string;
     // (undocumented)
-<<<<<<< HEAD
-    voxelManager?: VoxelManager<number> | VoxelManager<RGB>;
-    // (undocumented)
-    vtkOpenGLTexture: any;
-||||||| 23c01d523
-    vtkOpenGLTexture: any;
-=======
     voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
     // (undocumented)
     vtkOpenGLTexture: vtkStreamingOpenGLTexture;
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
 }
 
 // @public (undocumented)
@@ -2329,15 +2281,7 @@ interface ImageVolumeProps extends VolumeProps {
     // (undocumented)
     imageIds: string[];
     // (undocumented)
-<<<<<<< HEAD
-    referencedImageIds?: Array<string>;
-    // (undocumented)
-    voxelManager?: VoxelManager<number> | VoxelManager<Point3>;
-||||||| 23c01d523
-    referencedImageIds?: Array<string>;
-=======
     referencedImageIds?: string[];
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
 }
 
 // @public (undocumented)
@@ -2576,24 +2520,8 @@ function makeVolumeMetadata(imageIds: string[]): Metadata;
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
 
 // @public (undocumented)
-<<<<<<< HEAD
-type Memo = {
-    restoreMemo: (undo?: boolean) => void;
-};
-
-// @public (undocumented)
-type Memoable = {
-    createMemo: () => Memo;
-};
-
-// @public (undocumented)
-type Metadata = {
-||||||| 23c01d523
-type Metadata = {
-=======
 interface Metadata {
     // (undocumented)
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
     BitsAllocated: number;
     // (undocumented)
     BitsStored: number;
@@ -3129,78 +3057,6 @@ export interface RetrieveStage {
 type RGB = [number, number, number];
 
 // @public (undocumented)
-<<<<<<< HEAD
-class RLEVoxelMap<T> {
-    constructor(width: number, height: number, depth?: number);
-    // (undocumented)
-    clear(): void;
-    // (undocumented)
-    defaultValue: T;
-    // (undocumented)
-    delete(index: number): void;
-    // (undocumented)
-    protected depth: number;
-    // (undocumented)
-    fillFrom(getter: (i: number, j: number, k: number) => T, boundsIJK: BoundsIJK): void;
-    // (undocumented)
-    findAdjacents(item: [RLERun<T>, number, number, Point3[]?], { diagonals, planar, singlePlane }: {
-        diagonals?: boolean;
-        planar?: boolean;
-        singlePlane?: boolean;
-    }): any[];
-    // (undocumented)
-    protected findIndex(row: RLERun<T>[], i: number): number;
-    // (undocumented)
-    floodFill(i: number, j: number, k: number, value: T, options?: {
-        planar?: boolean;
-        diagonals?: boolean;
-        singlePlane?: boolean;
-    }): number;
-    // (undocumented)
-    forEach(callback: any, options?: {
-        rowModified?: boolean;
-    }): void;
-    // (undocumented)
-    forEachRow(callback: any): void;
-    // (undocumented)
-    get: (index: number) => T;
-    // (undocumented)
-    getPixelData(k?: number, pixelData?: PixelDataTypedArray): PixelDataTypedArray;
-    // (undocumented)
-    protected getRLE(i: number, j: number, k?: number): RLERun<T>;
-    // (undocumented)
-    getRun: (j: number, k: number) => RLERun<T>[];
-    // (undocumented)
-    has(index: number): boolean;
-    // (undocumented)
-    protected height: number;
-    // (undocumented)
-    protected jMultiple: number;
-    // (undocumented)
-    keys(): number[];
-    // (undocumented)
-    protected kMultiple: number;
-    // (undocumented)
-    normalizer: PlaneNormalizer;
-    // (undocumented)
-    protected numComps: number;
-    // (undocumented)
-    pixelDataConstructor: Uint8ArrayConstructor;
-    // (undocumented)
-    protected rows: Map<number, RLERun<T>[]>;
-    // (undocumented)
-    set: (index: number, value: T) => void;
-    // (undocumented)
-    toIJK(index: number): Point3;
-    // (undocumented)
-    toIndex([i, j, k]: Point3): number;
-    // (undocumented)
-    protected width: number;
-}
-
-// @public (undocumented)
-||||||| 23c01d523
-=======
 function rgbToHex(r: any, g: any, b: any): string;
 
 // @public (undocumented)
@@ -3289,7 +3145,6 @@ class RLEVoxelMap<T> {
 }
 
 // @public (undocumented)
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
 function roundNumber(value: string | number | (string | number)[], precision?: number): string;
 
 // @public (undocumented)
@@ -4049,13 +3904,7 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-<<<<<<< HEAD
-        HistoryMemo,
         generateVolumePropsFromImageIds,
-||||||| 23c01d523
-=======
-        generateVolumePropsFromImageIds,
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
         getBufferConfiguration,
         VoxelManager,
         RLEVoxelMap,
@@ -5008,15 +4857,7 @@ class VoxelManager<T> {
         dimension: Point3;
     }): IVoxelManager<T>;
     // (undocumented)
-<<<<<<< HEAD
     static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
-    // (undocumented)
-    static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
-||||||| 23c01d523
-    static createRLEVoxelManager<T>(dimensions: Point3): VoxelManager<T>;
-=======
-    static createRLEHistoryVoxelManager<T>(sourceVoxelManager: VoxelManager<T>): VoxelManager<T>;
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
     // (undocumented)
     static createRLEImageVoxelManager<T>({ dimensions, }: {
         dimensions: Point2;
@@ -5110,23 +4951,13 @@ class VoxelManager<T> {
     // (undocumented)
     map: Map<number, T> | IRLEVoxelMap<T>;
     // (undocumented)
-    mapForEach(callback: any, options?: any): void;
-    // (undocumented)
     modifiedSlices: Set<number>;
     // (undocumented)
     readonly numberOfComponents: any;
     // (undocumented)
     points: Set<number>;
     // (undocumented)
-<<<<<<< HEAD
-    rleForEach(callback: any, options?: any): void;
-    // (undocumented)
-    scalarData: PixelDataTypedArray;
-||||||| 23c01d523
-    scalarData: PixelDataTypedArray;
-=======
     resetModifiedSlices(): void;
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
     // (undocumented)
     rleForEach(callback: any, options?: any): void;
     // (undocumented)

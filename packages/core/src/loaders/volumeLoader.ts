@@ -245,19 +245,6 @@ export function createAndCacheDerivedVolume(
 
   const derivedVolumeImageIds = derivedImages.map((image) => image.imageId);
 
-  const internalScalarData = derivedImageData
-    .getPointData()
-    .getScalars()
-    .getData() as PixelDataTypedArray;
-
-  const voxelManager =
-    (voxelRepresentation === VoxelManagerEnum.RLE &&
-      VoxelManager.createRLEVoxelManager<number>(dimensions)) ||
-    (VoxelManager.createVolumeVoxelManager(
-      dimensions,
-      internalScalarData,
-      1
-    ) as VoxelManager<number>);
   const derivedVolume = new ImageVolume({
     volumeId,
     dataType,

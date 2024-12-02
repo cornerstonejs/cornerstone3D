@@ -162,7 +162,6 @@ export {
   isVideoTransferSyntax,
   HistoryMemo,
   generateVolumePropsFromImageIds,
-  generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
   RLEVoxelMap,
