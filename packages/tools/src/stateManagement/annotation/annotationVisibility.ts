@@ -5,7 +5,7 @@ import {
   isAnnotationSelected,
   deselectAnnotation,
 } from './annotationSelection';
-import { getAnnotation } from './getAnnotation';
+import { getAnnotation } from './annotationState';
 
 /*
  * It stores all hidden annotation uids.

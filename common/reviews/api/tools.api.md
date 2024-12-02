@@ -45,13 +45,7 @@ declare namespace activeSegmentation {
 }
 
 // @public (undocumented)
-function addAnnotation(annotation: Annotation, annotationGroupSelector: AnnotationGroupSelector): string;
-
-// @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
-
-// @public (undocumented)
-function addChildAnnotation(parentAnnotation: Annotation, childAnnotation: Annotation): void;
 
 // @public (undocumented)
 function addColorLUT(colorLUT: Types_2.ColorLUT, index?: number): number;
@@ -1307,9 +1301,6 @@ export class CircleScissorsTool extends BaseTool {
     // (undocumented)
     static toolName: any;
 }
-
-// @public (undocumented)
-function clearParentAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
 function clip_2(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
@@ -2596,28 +2587,16 @@ function getActiveSegmentation(viewportId: string): Segmentation;
 function getActiveSegmentIndex(segmentationId: string): number | undefined;
 
 // @public (undocumented)
-function getAllAnnotations(): Annotations;
-
-// @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
 
 // @public (undocumented)
 function getAllToolGroups(): Array<ToolGroup>;
 
 // @public (undocumented)
-function getAnnotation(annotationUID: string): Annotation;
-
-// @public (undocumented)
-function getAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
-
-// @public (undocumented)
 function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
 
 // @public (undocumented)
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
-
-// @public (undocumented)
-function getAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): Annotations;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<string>;
@@ -2678,9 +2657,6 @@ const getCalibratedProbeUnitsAndValue: (image: any, handles: any) => {
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
-
-// @public (undocumented)
-function getChildAnnotations(annotation: Annotation): Annotation[];
 
 // @public (undocumented)
 function getClosestImageIdForStackViewport(viewport: StackViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3): string;
@@ -2777,13 +2753,7 @@ function getNormal2(polyline: Types_2.Point2[]): Types_2.Point3;
 function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 
 // @public (undocumented)
-function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
-
-// @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
-
-// @public (undocumented)
-function getParentAnnotation(annotation: Annotation): Annotation;
 
 // @public (undocumented)
 function getPoint(points: any, idx: any): Types_2.Point3;
@@ -3089,9 +3059,6 @@ function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, lin
 
 // @public (undocumented)
 function intersectPolyline(sourcePolyline: Types_2.Point2[], targetPolyline: Types_2.Point2[]): boolean;
-
-// @public (undocumented)
-function invalidateAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
 function invalidateBrushCursor(toolGroupId: string): void;
@@ -4632,19 +4599,10 @@ function registerCursor(toolName: string, iconContent: string, viewBox: {
 }): void;
 
 // @public (undocumented)
-function removeAllAnnotations(): void;
-
-// @public (undocumented)
 function removeAllSegmentationRepresentations(): void;
 
 // @public (undocumented)
 function removeAllSegmentations(): void;
-
-// @public (undocumented)
-function removeAnnotation(annotationUID: string): void;
-
-// @public (undocumented)
-function removeAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
@@ -4702,9 +4660,6 @@ type RepresentationsData = {
 
 // @public (undocumented)
 type RepresentationStyle = LabelmapStyle | ContourStyle | SurfaceStyle;
-
-// @public (undocumented)
-function resetAnnotationManager(): void;
 
 // @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
@@ -5083,9 +5038,6 @@ function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): vo
 function setAnnotationLocked(annotationUID: string, locked?: boolean): void;
 
 // @public (undocumented)
-function setAnnotationManager(annotationManager: any): void;
-
-// @public (undocumented)
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
 
 // @public (undocumented)
@@ -5364,26 +5316,25 @@ export class StackScrollTool extends BaseTool {
 // @public (undocumented)
 export let state: ICornerstoneTools3dState;
 
-declare namespace state_2 {
-    export {
-        getAllAnnotations,
-        getAnnotations,
-        getParentAnnotation,
-        getChildAnnotations,
-        clearParentAnnotation,
-        addChildAnnotation,
-        getNumberOfAnnotations,
-        addAnnotation,
-        removeAnnotation,
-        removeAnnotations,
-        removeAllAnnotations,
-        setAnnotationManager,
-        getAnnotationManager,
-        resetAnnotationManager,
-        invalidateAnnotation,
-        getAnnotation
-    }
-}
+// @public (undocumented)
+const state_2: {
+    resetAnnotationManager: typeof resetAnnotationManager;
+    getAllAnnotations: typeof annotationState.getAllAnnotations;
+    getAnnotations: typeof annotationState.getAnnotations;
+    getParentAnnotation: typeof annotationState.getParentAnnotation;
+    getChildAnnotations: typeof annotationState.getChildAnnotations;
+    clearParentAnnotation: typeof annotationState.clearParentAnnotation;
+    addChildAnnotation: typeof annotationState.addChildAnnotation;
+    getNumberOfAnnotations: typeof annotationState.getNumberOfAnnotations;
+    addAnnotation: typeof annotationState.addAnnotation;
+    removeAnnotation: typeof annotationState.removeAnnotation;
+    removeAnnotations: typeof annotationState.removeAnnotations;
+    removeAllAnnotations: typeof annotationState.removeAllAnnotations;
+    setAnnotationManager: typeof annotationState.setAnnotationManager;
+    getAnnotationManager: typeof annotationState.getAnnotationManager;
+    invalidateAnnotation: typeof annotationState.invalidateAnnotation;
+    getAnnotation: typeof annotationState.getAnnotation;
+};
 
 declare namespace state_3 {
     export {
