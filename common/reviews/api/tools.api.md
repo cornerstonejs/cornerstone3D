@@ -14,14 +14,8 @@ import type { Range as Range_2 } from '@kitware/vtk.js/types';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
-<<<<<<< HEAD
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-||||||| 23c01d523
-import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-=======
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
+import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
@@ -710,18 +704,10 @@ class BasicStatsCalculator_2 extends Calculator {
         value: any;
         pointLPS?: any;
     }) => void;
-<<<<<<< HEAD
-    // (undocumented)
-    static statsInit(options: {
-        noPointsCollection: boolean;
-    }): void;
-||||||| 23c01d523
-=======
     // (undocumented)
     static statsInit(options: {
         storePointData: boolean;
     }): void;
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
 }
 
 // @public (undocumented)
@@ -1326,7 +1312,7 @@ export class CircleScissorsTool extends BaseTool {
 function clearParentAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip_2(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
@@ -1471,7 +1457,7 @@ export class CobbAngleTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
 }
 
-declare namespace color {
+declare namespace color_2 {
     export {
         getSegmentIndexColor,
         addColorLUT_2 as addColorLUT,
@@ -1607,7 +1593,7 @@ declare namespace config {
 
 declare namespace config_2 {
     export {
-        color,
+        color_2 as color,
         visibility_2 as visibility,
         style
     }
@@ -3768,7 +3754,6 @@ type NamedStatistics = {
     };
     pointsInShape?: Types_2.IPointsManager<Types_2.Point3>;
     array: Statistics[];
-    pointsInShape?: Types_2.PointsManager<Types_2.Point3>;
 };
 
 // @public (undocumented)
@@ -4053,24 +4038,12 @@ const pointCanProjectOnLine: (p: Types_2.Point2, p1: Types_2.Point2, p2: Types_2
 function pointInEllipse(ellipse: any, pointLPS: any, inverts?: Inverts): boolean;
 
 // @public (undocumented)
-<<<<<<< HEAD
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback: PointInShapeCallback, boundsIJK?: BoundsIJK_2): void;
-
-// @public (undocumented)
-function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
-||||||| 23c01d523
-function pointInShapeCallback(imageData: vtkImageData | Types_2.CPUImageData, pointInShapeFn: ShapeFnCriteria, callback?: PointInShapeCallback, boundsIJK?: BoundsIJK_2): Array<PointInShape>;
-
-// @public (undocumented)
-function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: PointInShapeCallback, viewport?: Types_2.IVolumeViewport): void;
-=======
 function pointInSurroundingSphereCallback(imageData: vtkImageData, circlePoints: [Types_2.Point3, Types_2.Point3], callback: (args: {
     value: unknown;
     index: number;
     pointIJK: Types_2.Point3;
     pointLPS: Types_2.Point3;
 }) => void, viewport?: Types_2.IVolumeViewport): void;
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
 
 // @public (undocumented)
 const pointsAreWithinCloseContourProximity: (p1: Types_2.Point2, p2: Types_2.Point2, closeContourProximity: number) => boolean;
@@ -4737,11 +4710,6 @@ function resetAnnotationManager(): void;
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
-<<<<<<< HEAD
-const roundNumber_2: typeof utilities_2.roundNumber;
-||||||| 23c01d523
-const roundNumber: typeof utilities_2.roundNumber;
-=======
 function resetToGlobalStyle(): void;
 
 // @public (undocumented)
@@ -4758,8 +4726,7 @@ interface ROICachedStats {
 }
 
 // @public (undocumented)
-const roundNumber: typeof utilities_2.roundNumber;
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
+const roundNumber_2: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -6251,15 +6218,7 @@ declare namespace utilities {
         planarFreehandROITool,
         stackPrefetch,
         stackContextPrefetch,
-<<<<<<< HEAD
-        scroll_2 as scroll,
         roundNumber_2 as roundNumber,
-||||||| 23c01d523
-        scroll_2 as scroll,
-        roundNumber,
-=======
-        roundNumber,
->>>>>>> 70fc2826230875c1c5f3533953fac9a3025833c0
         pointToString,
         polyDataUtils,
         voi,
@@ -6275,7 +6234,7 @@ export { utilities }
 declare namespace vec2 {
     export {
         findClosestPoint,
-        clip as liangBarksyClip
+        clip_2 as liangBarksyClip
     }
 }
 
@@ -6494,15 +6453,6 @@ export class WindowLevelRegionTool extends AnnotationTool {
     static toolName: any;
     // (undocumented)
     toolSelectedCallback: () => void;
-}
-
-// @public (undocumented)
-class VolumetricCalculator extends BasicStatsCalculator_2 {
-    // (undocumented)
-    static getStatistics(options: {
-        spacing?: number;
-        unit?: string;
-    }): NamedStatistics;
 }
 
 // @public (undocumented)
