@@ -1,25 +1,26 @@
+import type { Types } from '@cornerstonejs/core';
 import {
-  Types,
   cache,
   eventTarget,
+  getWebWorkerManager,
   triggerEvent,
   Enums,
 } from '@cornerstonejs/core';
-import { getWebWorkerManager } from '@cornerstonejs/core';
-import {
+import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../../types/LabelmapTypes';
-import { computeVolumeSegmentationFromStack } from '../../convertStackToVolumeSegmentation';
+import { computeVolumeLabelmapFromStack } from '../../helpers/computeVolumeLabelmapFromStack';
 import { WorkerTypes } from '../../../../enums';
 
 const workerManager = getWebWorkerManager();
 
-const triggerWorkerProgress = (eventTarget, progress) => {
+const triggerWorkerProgress = (eventTarget, progress, id) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
     progress,
     type: WorkerTypes.POLYSEG_LABELMAP_TO_SURFACE,
+    id,
   });
 };
 
@@ -33,27 +34,27 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  */
 export async function convertLabelmapToSurface(
   labelmapRepresentationData: LabelmapSegmentationData,
-  segmentIndex: number,
-  isVolume = true
+  segmentIndex: number
 ): Promise<Types.SurfaceData> {
   let volumeId;
-  if (isVolume) {
+
+  if ((labelmapRepresentationData as LabelmapSegmentationDataVolume).volumeId) {
     volumeId = (labelmapRepresentationData as LabelmapSegmentationDataVolume)
       .volumeId;
   } else {
-    const { imageIdReferenceMap } =
+    const { imageIds } =
       labelmapRepresentationData as LabelmapSegmentationDataStack;
-    ({ volumeId } = await computeVolumeSegmentationFromStack({
-      imageIdReferenceMap,
+
+    ({ volumeId } = await computeVolumeLabelmapFromStack({
+      imageIds,
     }));
   }
 
   const volume = cache.getVolume(volumeId);
-
-  const scalarData = volume.getScalarData();
+  const scalarData = volume.voxelManager.getCompleteScalarDataArray();
   const { dimensions, spacing, origin, direction } = volume;
 
-  triggerWorkerProgress(eventTarget, 0);
+  triggerWorkerProgress(eventTarget, 0, segmentIndex);
 
   const results = await workerManager.executeTask(
     'polySeg',
@@ -69,13 +70,13 @@ export async function convertLabelmapToSurface(
     {
       callbacks: [
         (progress) => {
-          triggerWorkerProgress(eventTarget, progress);
+          triggerWorkerProgress(eventTarget, progress, segmentIndex);
         },
       ],
     }
   );
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100, segmentIndex);
 
   return results;
 }

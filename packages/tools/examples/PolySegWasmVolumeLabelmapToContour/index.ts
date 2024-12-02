@@ -24,7 +24,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -93,22 +92,17 @@ const toolGroupId2 = 'ToolGroup_3D';
 let toolGroup1, toolGroup2;
 let renderingEngine;
 // Create the viewports
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
+const viewportId1 = 'CT_LEFT';
+const viewportId2 = 'CT_RIGHT';
 
 addButtonToToolbar({
   title: 'Convert labelmap to contour',
   onClick: async () => {
     // add the 3d representation to the 3d toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroupId2, [
+    await segmentation.addSegmentationRepresentations(viewportId2, [
       {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        options: {
-          polySeg: {
-            enabled: true,
-          },
-        },
       },
     ]);
   },
@@ -119,8 +113,8 @@ addSegmentIndexDropdown(segmentationId);
 addLabelToToolbar({
   id: 'progress',
   title: 'Caching Progress:',
-  paddings: {
-    left: 10,
+  style: {
+    paddingLeft: '10px',
   },
 });
 
@@ -132,7 +126,7 @@ eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
   }
 
   const { progress } = evt.detail;
-  label.innerHTML = `Caching Progress: ${(progress * 100).toFixed(2)}%`;
+  label.innerHTML = `Progress: ${(progress * 1).toFixed(2)}%`;
 });
 
 /**
@@ -143,7 +137,6 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
   cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
   cornerstoneTools.addTool(SplineContourSegmentationTool);
@@ -156,18 +149,12 @@ async function run() {
   addManipulationBindings(toolGroup2);
 
   // Segmentation Tools
-  toolGroup1.addTool(SegmentationDisplayTool.toolName);
   toolGroup1.addToolInstance('SphereBrush', BrushTool.toolName, {
     activeStrategy: 'FILL_INSIDE_SPHERE',
   });
 
-  toolGroup2.addTool(SegmentationDisplayTool.toolName);
   toolGroup2.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup2.addTool(SplineContourSegmentationTool.toolName);
-
-  // activations
-  toolGroup1.setToolEnabled(SegmentationDisplayTool.toolName);
-  toolGroup2.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup1.setToolActive('SphereBrush', {
     bindings: [
@@ -190,7 +177,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -216,7 +203,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
       },
     },
   ];
@@ -259,8 +246,8 @@ async function run() {
     },
   ]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,

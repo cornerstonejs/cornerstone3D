@@ -1,5 +1,6 @@
 import { log, utilities, normalizers, derivations } from "dcmjs";
 import ndarray from "ndarray";
+import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
 
 const {
     rotateDirectionCosinesInPlane,
@@ -191,33 +192,7 @@ function _getSegCount(seg, segments) {
  * @returns {Object}              The Seg derived dataSet.
  */
 function _createSegFromImages(images, isMultiframe, options) {
-    const datasets = [];
-
-    if (isMultiframe) {
-        const image = images[0];
-        const arrayBuffer = image.data.byteArray.buffer;
-
-        const dicomData = DicomMessage.readFile(arrayBuffer);
-        const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-
-        dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-
-        datasets.push(dataset);
-    } else {
-        for (let i = 0; i < images.length; i++) {
-            const image = images[i];
-            const arrayBuffer = image.data.byteArray.buffer;
-            const dicomData = DicomMessage.readFile(arrayBuffer);
-            const dataset = DicomMetaDictionary.naturalizeDataset(
-                dicomData.dict
-            );
-
-            dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-            datasets.push(dataset);
-        }
-    }
-
-    const multiframe = Normalizer.normalizeToDataset(datasets);
+    const multiframe = getDatasetsFromImages(images, isMultiframe);
 
     return new SegmentationDerivation([multiframe], options);
 }

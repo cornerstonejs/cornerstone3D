@@ -1,4 +1,4 @@
-import { ByteArray, DataSet } from 'dicom-parser';
+import type { ByteArray, DataSet } from 'dicom-parser';
 import getEncapsulatedImageFrame from './getEncapsulatedImageFrame';
 import getUncompressedImageFrame from './getUncompressedImageFrame';
 

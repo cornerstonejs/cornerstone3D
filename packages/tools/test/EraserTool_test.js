@@ -1,7 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { EraserTool } from '@cornerstonejs/tools';
+import { EraserTool, LengthTool } from '@cornerstonejs/tools';
 import { triggerAnnotationAddedForElement } from '../src/stateManagement/annotation/helpers/state';
 
 const {
@@ -17,12 +17,7 @@ const {
 
 const { Events, ViewportType } = Enums;
 
-const {
-  LengthTool,
-  ToolGroupManager,
-  Enums: csToolsEnums,
-  annotation,
-} = csTools3d;
+const { ToolGroupManager, Enums: csToolsEnums, annotation } = csTools3d;
 
 const { Events: csToolsEvents } = csToolsEnums;
 
@@ -37,86 +32,66 @@ const renderingEngineId = utilities.uuidv4();
 
 const viewportId = 'VIEWPORT';
 
-function createViewport(renderingEngine, viewportType, width, height) {
-  const element = document.createElement('div');
-
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
-  document.body.appendChild(element);
-
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: viewportType,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-        orientation: Enums.OrientationAxis.AXIAL,
-      },
-    },
-  ]);
-  return element;
-}
-
-const volumeId = `fakeVolumeLoader:volumeURI_100_100_10_1_1_1_0`;
-
 describe('EraserTool:', () => {
   beforeAll(() => {
     cornerstone3D.setUseCPURendering(false);
   });
 
   describe('Cornerstone Tools: -- Eraser', () => {
+    let testEnv;
+    let renderingEngine;
+    let stackToolGroup;
+
     beforeEach(function () {
-      csTools3d.init();
-      csTools3d.addTool(EraserTool);
-      csTools3d.addTool(LengthTool);
-
-      cache.purgeCache();
-      this.DOMElements = [];
-
-      this.stackToolGroup = ToolGroupManager.createToolGroup('stack');
-      this.stackToolGroup.addTool(LengthTool.toolName, {});
-      this.stackToolGroup.setToolEnabled(LengthTool.toolName, {});
-      this.stackToolGroup.addTool(EraserTool.toolName, {});
-      this.stackToolGroup.setToolActive(EraserTool.toolName, {
-        bindings: [{ mouseButton: 1 }],
+      testEnv = testUtils.setupTestEnvironment({
+        renderingEngineId: renderingEngineId,
+        toolGroupIds: ['stack'],
+        tools: [EraserTool, LengthTool],
+        toolActivations: {
+          [EraserTool.toolName]: {
+            bindings: [{ mouseButton: 1 }],
+          },
+        },
+        viewportIds: [viewportId],
       });
 
-      this.renderingEngine = new RenderingEngine(renderingEngineId);
-      imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
-      volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-      metaData.addProvider(fakeMetaDataProvider, 10000);
+      renderingEngine = testEnv.renderingEngine;
+      stackToolGroup = testEnv.toolGroups.stack;
+
+      stackToolGroup.addTool(LengthTool.toolName, {});
+      stackToolGroup.setToolEnabled(LengthTool.toolName, {});
     });
 
     afterEach(function () {
-      csTools3d.destroy();
-      eventTarget.reset();
-      cache.purgeCache();
-
-      this.renderingEngine.destroy();
-      metaData.removeProvider(fakeMetaDataProvider);
-      imageLoader.unregisterAllImageLoaders();
-      ToolGroupManager.destroyToolGroup('stack');
-
-      this.DOMElements.forEach((el) => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
+      testUtils.cleanupTestEnvironment({
+        renderingEngineId: renderingEngineId,
+        toolGroupIds: ['stack'],
+        cleanupDOMElements: true,
       });
     });
 
     it('Should successfully delete a length annotation on a canvas with mouse down - 512 x 128', function (done) {
-      const element = createViewport(
-        this.renderingEngine,
-        ViewportType.STACK,
-        512,
-        128
-      );
+      const element = testUtils.createViewports(renderingEngine, {
+        viewportType: ViewportType.STACK,
+        width: 512,
+        height: 128,
+        viewportId: viewportId,
+      });
 
-      this.DOMElements.push(element);
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 10,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      };
 
-      const imageId1 = 'fakeImageLoader:imageURI_64_64_10_5_1_1_0';
-      const vp = this.renderingEngine.getViewport(viewportId);
+      const imageId1 = testUtils.encodeImageIdInfo(imageInfo1);
+      const vp = renderingEngine.getViewport(viewportId);
 
       eventTarget.addEventListener(csToolsEvents.ANNOTATION_REMOVED, () => {
         const lengthAnnotations = annotation.state.getAnnotations(
@@ -196,11 +171,9 @@ describe('EraserTool:', () => {
         element.dispatchEvent(evt);
       });
 
-      this.stackToolGroup.addViewport(vp.id, this.renderingEngine.id);
-
       try {
         vp.setStack([imageId1], 0);
-        this.renderingEngine.render();
+        renderingEngine.render();
       } catch (e) {
         done.fail(e);
       }

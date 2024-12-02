@@ -1,0 +1,14 @@
+{
+  "name": "@externals/polyseg-wasm",
+  "description": "External reference to @icr/polyseg-wasm",
+  "private": true,
+  "version": "2.1.10",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18",
+    "yarn": ">=1.19.1"
+  },
+  "dependencies": {
+    "@icr/polyseg-wasm": "^0.4.0"
+  }
+}

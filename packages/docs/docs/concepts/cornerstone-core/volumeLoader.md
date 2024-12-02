@@ -11,7 +11,7 @@ This `Volume` can be a constructed from a set of 2D images (e.g., `imageIds`) or
 can be from one 3D array object (such as `NIFTI` format).
 
 We have added [`cornerstoneStreamingImageVolumeLoader`](/docs/concepts/streaming-image-volume/streaming) library to support streaming
-of the 2D images (`imageIds`) into a 3D volume.
+of the 2D images (`imageIds`) into a 3D volume and it is the default volume loader for streaming volumes.
 
 ## Register Volume Loaders
 
@@ -92,3 +92,16 @@ const volume = await volumeLoader.createAndCacheVolume(volumeId, {
 
 By default if no `volumeLoader` is found for the scheme, the `unknownVolumeLoader` is used. `cornerstoneStreamingImageVolumeLoader`
 is the default unknown volume loader.
+
+
+:::info
+Even if you don't provide the scheme, the `cornerstoneStreamingImageVolumeLoader` will be used by default.
+
+So the following code will work as well:
+
+```js
+const volumeId = 'myVolumeId';
+const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+  imageIds: imageIds,
+});
+```

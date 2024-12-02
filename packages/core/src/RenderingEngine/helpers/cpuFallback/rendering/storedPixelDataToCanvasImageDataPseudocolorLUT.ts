@@ -19,7 +19,7 @@ function storedPixelDataToCanvasImageDataPseudocolorLUT(
   canvasImageDataData: Uint8ClampedArray
 ): void {
   let start = now();
-  const pixelData = image.getPixelData();
+  const pixelData = image.voxelManager.getScalarData();
 
   image.stats.lastGetPixelDataTime = now() - start;
 

@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   volumeLoader,
   getRenderingEngine,
@@ -13,6 +13,7 @@ import {
   addDropdownToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -48,7 +49,24 @@ element.style.height = '500px';
 content.appendChild(element);
 // ============================= //
 
-// TODO -> Maybe some of these implementations should be pushed down to some API
+addSliderToToolbar({
+  title: 'Opacity',
+  range: [0, 1],
+  step: 0.1,
+  defaultValue: 0.5,
+  onSelectedValueChange: (value) => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IBaseVolumeViewport;
+
+    viewport.setProperties(
+      { colormap: { opacity: Number(value) } },
+      ptVolumeId
+    );
+    viewport.render();
+  },
+});
 
 // Buttons
 addButtonToToolbar({
@@ -58,9 +76,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
     viewport.render();
@@ -74,19 +92,18 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     // Resets the viewport's camera
     viewport.resetCamera();
-    // TODO reset the viewport properties, we don't have API for this.
 
     viewport.render();
   },
 });
 
-let fused = false;
+const fused = false;
 
 addButtonToToolbar({
   title: 'toggle PET',
@@ -95,29 +112,18 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+    viewport.addVolumes(
+      [
+        {
+          volumeId: ptVolumeId,
+          callback: setPetColorMapTransferFunctionForVolumeActor,
+        },
+      ],
+      true
     );
-    if (fused) {
-      // Removes the PT actor from the scene
-      viewport.removeVolumeActors([ptVolumeId], true);
-
-      fused = false;
-    } else {
-      // Add the PET volume to the viewport. It is in the same DICOM Frame Of Reference/worldspace
-      // If it was in a different frame of reference, you would need to register it first.
-      viewport.addVolumes(
-        [
-          {
-            volumeId: ptVolumeId,
-            callback: setPetColorMapTransferFunctionForVolumeActor,
-          },
-        ],
-        true
-      );
-
-      fused = true;
-    }
   },
 });
 
@@ -138,9 +144,9 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
 
     let viewUp;
     let viewPlaneNormal;
@@ -181,7 +187,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -210,16 +216,16 @@ async function run() {
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -227,12 +233,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ctVolume.load();
-
-  // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  await ctVolume.load();
 
   // Render the image
   renderingEngine.render();
@@ -245,7 +246,16 @@ async function run() {
   });
 
   // Set the volume to load
-  ptVolume.load();
+  await ptVolume.load();
+
+  // Set the volume on the viewport
+  viewport.setVolumes([
+    { volumeId: ctVolumeId },
+    {
+      volumeId: ptVolumeId,
+      callback: setPetColorMapTransferFunctionForVolumeActor,
+    },
+  ]);
 }
 
 run();

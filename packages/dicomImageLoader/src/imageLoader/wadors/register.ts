@@ -1,8 +1,9 @@
+import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import loadImage from './loadImage';
-import { metaDataProvider } from './metaData/index';
+import { metaDataProvider } from './metaData';
 
-export default function (cornerstone) {
+export default function () {
   // register wadors scheme and metadata provider
-  cornerstone.registerImageLoader('wadors', loadImage);
-  cornerstone.metaData.addProvider(metaDataProvider);
+  registerImageLoader('wadors', loadImage as unknown as Types.ImageLoaderFn);
+  metaData.addProvider(metaDataProvider);
 }

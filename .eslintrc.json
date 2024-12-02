@@ -13,10 +13,9 @@
   // - @typescript-eslint
   //
   //
-  // eslint-plugin-import
   // - import
   "plugins": [
-    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint",
     "import",
     "eslint-plugin-tsdoc",
     "prettier"
@@ -41,30 +40,44 @@
   // -
   "extends": [
     "eslint:recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
     "plugin:@typescript-eslint/recommended",
     // sets up the plugin AND eslint-config-prettier
     "plugin:prettier/recommended"
   ],
 
   "parserOptions": {
-    "ecmaVersion": 2021,
+    "ecmaVersion": 2022,
     "sourceType": "module",
     "project": "./tsconfig.json",
-    "tsconfigRootDir": "./"
+    "tsconfigRootDir": "./",
+    "warnOnUnsupportedTypeScriptVersion": false
   },
-  "ignorePatterns": ["packages/docs"],
+  "ignorePatterns": ["packages/docs", "dist", "**/*_test.js", "**/*_jest.js", "**/*babel*", "**/*.d.ts", "**/*_types.ts"],
   "rules": {
+    "import/no-cycle": ["error", { "maxDepth": 15 }],
     // Enforce consistent brace style for all control statements for readability
     "curly": "error",
-    "tsdoc/syntax": "warn",
+    "tsdoc/syntax": "off",
     "@typescript-eslint/ban-ts-comment": "off",
-    "import/no-cycle": "error",
-    "no-console": [
-      "warn",
+    "no-console": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/consistent-type-exports": "error",
+    "@typescript-eslint/no-unsafe-function-type": "off",
+    "@typescript-eslint/no-empty-object-type": "off",
+    "@typescript-eslint/no-unused-expressions": "warn",
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
       {
-        "allow": ["warn", "error"]
+        "prefer": "type-imports",
+        "disallowTypeAnnotations": true
       }
     ],
+    "@typescript-eslint/no-import-type-side-effects": "error",
+
     "import/extensions": [
       "error",
       "ignorePackages",
@@ -76,7 +89,6 @@
       }
     ],
     "import/prefer-default-export": "off",
-    // eslint-plugin-prettier
     "prettier/prettier": [
       "error",
       {
@@ -84,29 +96,53 @@
         "printWidth": 80
       }
     ],
-    "no-undef": "warn"
+    "no-undef": "warn",
+    "import/no-named-as-default": "off",
+    "import/no-named-as-default-member": "off"
   },
-
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"], // Apply the rules to TypeScript files
+      "rules": {
+        "import/no-cycle": ["error", { "maxDepth": 15 }]
+      }
+    },
+    {
+      "files": ["**/examples/**"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off" // Disable the rule for files in the examples directory
+      }
+    }
+  ],
   "env": {
     "es6": true,
     "browser": true,
     "node": true
   },
-
   "settings": {
-    "react": {
-      "version": "detect"
-    },
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      },
+      "typescript": {
+        "project": "./tsconfig.json"
       }
     }
   },
-
   "globals": {
     "context": true,
-    "assert": true,
-    "SharedArrayBuffer": true
+    "jasmine": true,
+    "es6": true,
+    "browser": true,
+    "node": true,
+    "afterEach": true,
+    "beforeEach": true,
+    "done": true,
+    "describe": "readonly",
+    "beforeAll": "readonly",
+    "it": "readonly",
+    "jest": "readonly",
+    "expect": "readonly",
+    "assert": true
   }
 }

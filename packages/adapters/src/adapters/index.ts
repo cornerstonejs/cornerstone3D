@@ -1,7 +1,8 @@
-import { CornerstoneSR, CornerstoneSEG } from "./Cornerstone";
+import { CornerstoneSR, CornerstoneSEG, CornerstonePMAP } from "./Cornerstone";
 import {
     Cornerstone3DSR,
     Cornerstone3DSEG,
+    Cornerstone3DPMAP,
     Cornerstone3DRT
 } from "./Cornerstone3D";
 import { VTKjsSEG } from "./VTKjs";
@@ -19,8 +20,14 @@ const adaptersSEG = {
     VTKjs: VTKjsSEG
 };
 
+const adaptersPMAP = {
+    Cornerstone: CornerstonePMAP,
+    Cornerstone3D: Cornerstone3DPMAP
+    // VTKjs: VTKjsPMAP
+};
+
 const adaptersRT = {
     Cornerstone3D: Cornerstone3DRT
 };
 
-export { adaptersSR, adaptersSEG, adaptersRT, Enums, helpers };
+export { adaptersSR, adaptersSEG, adaptersPMAP, adaptersRT, Enums, helpers };

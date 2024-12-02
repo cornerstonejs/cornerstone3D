@@ -32,6 +32,7 @@ images in the viewports. These include:
 to create and edit annotations for use cases such as:
 
 - Measuring distance between two points (Length Tool)
+- Measuring height between two points (Height Tool)
 - Measuring width and length for a structure (Bidirectional Tool)
 - Measuring area and statistics for a rectangular area (RectangleRoi Tool)
 - Measuring volume and statistics for a ellipsoid (EllipseRoi Tool)
@@ -63,8 +64,7 @@ the same annotations.
 
 ### Segmentation Tools
 
-`Cornerstone3D` also provides segmentation tools. This includes 3D `SegmentationDisplay`
-and 3D segmentation editing tools such as brush, rectangle and circle scissors, and
+`Cornerstone3D` also provides segmentation tools. This includes3D segmentation editing tools such as brush, rectangle and circle scissors, and
 3d sphere tools.
 
 We will discuss in length the different types of segmentation tools and how they

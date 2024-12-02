@@ -1,12 +1,18 @@
-import { cache, getEnabledElement } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
+  ContourAnnotation,
 } from '../../types';
 
 import { fillInsideCircle } from './strategies/fillCircle';
@@ -25,13 +31,11 @@ import {
   segmentIndex as segmentIndexController,
   config as segmentationConfig,
 } from '../../stateManagement/segmentation';
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+} from '../../stateManagement/segmentation/segmentationState';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -43,13 +47,11 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
 class CircleScissorsTool extends BaseTool {
   static toolName;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     segmentIndex: number;
-    //
+    segmentationId: string;
     volumeId: string;
     referencedVolumeId: string;
-    imageIdReferenceMap: Map<string, string>;
-    //
     segmentsLocked: number[];
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
@@ -57,8 +59,8 @@ class CircleScissorsTool extends BaseTool {
     movingTextBox: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    imageId: string;
     centerCanvas?: Array<number>;
-    segmentationRepresentationUID?: string;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -102,38 +104,38 @@ class CircleScissorsTool extends BaseTool {
     const canvasPos = currentPoints.canvas;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-    const toolGroupId = this.toolGroupId;
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
+    const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+    if (!activeLabelmapSegmentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeLabelmapSegmentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
+    const segmentsLocked =
+      segmentLocking.getLockedSegmentIndices(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
     const { representationData } = getSegmentation(segmentationId);
 
     // Todo: are we going to support contour editing with rectangle scissors?
-    const labelmapData = representationData[type];
+    const labelmapData = representationData.Labelmap;
 
     if (!labelmapData) {
       throw new Error(
@@ -155,7 +157,12 @@ class CircleScissorsTool extends BaseTool {
       },
       data: {
         handles: {
-          points: [[...worldPos], [...worldPos], [...worldPos], [...worldPos]],
+          points: [
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+            [...worldPos],
+          ] as Types.Point3[],
           activeHandleIndex: null,
         },
         isDrawing: true,
@@ -177,12 +184,12 @@ class CircleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-      segmentationRepresentationUID,
-    } as any;
+      volumeId: null,
+      referencedVolumeId: null,
+      imageId: null,
+    };
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 
@@ -192,12 +199,14 @@ class CircleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
 
       this.editData = {
         ...this.editData,
-        imageIdReferenceMap,
+        imageId: segmentationImageId,
       };
     }
 
@@ -207,7 +216,7 @@ class CircleScissorsTool extends BaseTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return true;
   };
@@ -257,7 +266,7 @@ class CircleScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
@@ -366,6 +375,7 @@ class CircleScissorsTool extends BaseTool {
 
     const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
+    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

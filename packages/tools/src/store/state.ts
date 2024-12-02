@@ -1,7 +1,5 @@
-import _cloneDeep from 'lodash.clonedeep';
-
-import { IToolGroup, IToolClassReference } from '../types';
-import Synchronizer from './SynchronizerManager/Synchronizer';
+import type { IToolGroup, IToolClassReference } from '../types';
+import type Synchronizer from './SynchronizerManager/Synchronizer';
 import svgNodeCache, { resetSvgNodeCache } from './svgNodeCache';
 
 interface ICornerstoneTools3dState {
@@ -46,12 +44,16 @@ let state: ICornerstoneTools3dState = {
 
 function resetCornerstoneToolsState(): void {
   resetSvgNodeCache();
-  state = _cloneDeep(defaultState);
+  state = {
+    ...structuredClone({
+      ...defaultState,
+      svgNodeCache: {},
+    }),
+    svgNodeCache: {
+      ...defaultState.svgNodeCache,
+    },
+  };
 }
 
-export {
-  ICornerstoneTools3dState,
-  resetCornerstoneToolsState,
-  state,
-  state as default,
-};
+export type { ICornerstoneTools3dState };
+export { resetCornerstoneToolsState, state, state as default };

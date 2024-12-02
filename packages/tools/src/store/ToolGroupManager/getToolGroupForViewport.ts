@@ -1,6 +1,6 @@
 import { getRenderingEngines } from '@cornerstonejs/core';
-import { state } from '../index';
-import { IToolGroup } from '../../types';
+import { state } from '../state';
+import type { IToolGroup } from '../../types';
 
 /**
  * Given a rendering engine Id and a viewport Id, return the tool group that

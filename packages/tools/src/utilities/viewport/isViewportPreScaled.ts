@@ -1,8 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   StackViewport,
-  Types,
   BaseVolumeViewport,
+  utilities,
 } from '@cornerstonejs/core';
 
 function isViewportPreScaled(
@@ -10,11 +11,7 @@ function isViewportPreScaled(
   targetId: string
 ): boolean {
   if (viewport instanceof BaseVolumeViewport) {
-    const targetIdTokens = targetId.split('volumeId:');
-    const volumeId =
-      targetIdTokens.length > 1
-        ? targetIdTokens[1].split('?')[0]
-        : targetIdTokens[0];
+    const volumeId = utilities.getVolumeId(targetId);
     const volume = cache.getVolume(volumeId);
     return !!volume?.scaling && Object.keys(volume.scaling).length > 0;
   } else if (viewport instanceof StackViewport) {

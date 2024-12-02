@@ -1,6 +1,6 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import {
+import type {
   AnnotationCompletedEventType,
   AnnotationModifiedEventType,
   AnnotationRemovedEventType,
@@ -14,7 +14,7 @@ import type {
 } from '../../../types/InterpolationTypes';
 import interpolate from '../../contours/interpolation/interpolate';
 import deleteRelatedAnnotations from './deleteRelatedAnnotations';
-import { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import ChangeTypes from '../../../enums/ChangeTypes';
 import getViewportForAnnotation from '../../getViewportForAnnotation';
 import { addContourSegmentationAnnotation } from '../../contourSegmentation/addContourSegmentationAnnotation';

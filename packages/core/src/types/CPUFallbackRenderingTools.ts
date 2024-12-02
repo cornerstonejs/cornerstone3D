@@ -1,7 +1,7 @@
-import CPUFallbackLookupTable from './CPUFallbackLookupTable';
-import CPUFallbackLUT from './CPUFallbackLUT';
+import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
+import type CPUFallbackLUT from './CPUFallbackLUT';
 
-type CPUFallbackRenderingTools = {
+interface CPUFallbackRenderingTools {
   renderCanvas?: HTMLCanvasElement;
   lastRenderedIsColor?: boolean;
   lastRenderedImageId?: string;
@@ -20,6 +20,6 @@ type CPUFallbackRenderingTools = {
   colormapId?: string;
   colorLUT?: CPUFallbackLookupTable;
   renderCanvasData?: ImageData;
-};
+}
 
-export default CPUFallbackRenderingTools;
+export type { CPUFallbackRenderingTools as default };

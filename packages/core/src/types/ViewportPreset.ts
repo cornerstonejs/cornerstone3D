@@ -11,4 +11,4 @@ interface ViewportPreset {
   interpolation: string;
 }
 
-export default ViewportPreset;
+export type { ViewportPreset as default };

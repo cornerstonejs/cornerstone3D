@@ -18,8 +18,8 @@ export default {
       operationName,
       centerIJK,
       strategySpecificConfiguration,
-      segmentationVoxelManager: segmentationVoxelManager,
-      imageVoxelManager: imageVoxelManager,
+      segmentationVoxelManager,
+      imageVoxelManager,
       segmentIndex,
       viewport,
     } = operationData;
@@ -35,7 +35,7 @@ export default {
       return;
     }
 
-    const { boundsIJK } = segmentationVoxelManager;
+    const boundsIJK = segmentationVoxelManager.getBoundsIJK();
     const { threshold: oldThreshold, dynamicRadius = 0 } = THRESHOLD;
     const useDelta = oldThreshold ? 0 : dynamicRadius;
     const { viewPlaneNormal } = viewport.getCamera();
@@ -66,7 +66,8 @@ export default {
       if (distance > useDeltaSqr) {
         return;
       }
-      const gray = Array.isArray(value) ? vec3.len(value as any) : value;
+      // @ts-ignore
+      const gray = Array.isArray(value) ? vec3.len(value) : value;
       threshold[0] = Math.min(gray, threshold[0]);
       threshold[1] = Math.max(gray, threshold[1]);
     };
@@ -95,9 +96,19 @@ export default {
     const { configuration, viewport } = operationData;
     const { THRESHOLD: { dynamicRadius = 0 } = {} } =
       configuration.strategySpecificConfiguration || {};
-    const { spacing } = (
-      viewport as Types.IStackViewport | Types.IVolumeViewport
-    ).getImageData();
+
+    if (dynamicRadius === 0) {
+      return;
+    }
+
+    // @ts-ignore
+    const imageData = viewport.getImageData();
+
+    if (!imageData) {
+      return;
+    }
+
+    const { spacing } = imageData;
     const centerCanvas = [
       viewport.element.clientWidth / 2,
       viewport.element.clientHeight / 2,

@@ -1,7 +1,8 @@
 import Events from '../enums/Events';
 import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
-import { triggerEvent, uuidv4 } from '../utilities';
+import uuidv4 from '../utilities/uuidv4';
+import triggerEvent from '../utilities/triggerEvent';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
@@ -11,11 +12,7 @@ import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesC
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
 import type IStackViewport from '../types/IStackViewport';
-import type IVideoViewport from '../types/IVideoViewport';
-import type IRenderingEngine from '../types/IRenderingEngine';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import type { IViewport } from '../types/IViewport';
-import VideoViewport from './VideoViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -24,11 +21,12 @@ import type {
   PublicViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
+  IViewport,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
-type ViewportDisplayCoords = {
+interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
   syStartDisplayCoords: number;
   sxEndDisplayCoords: number;
@@ -37,7 +35,7 @@ type ViewportDisplayCoords = {
   sy: number;
   sWidth: number;
   sHeight: number;
-};
+}
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 const VIEWPORT_MIN_SIZE = 2;
@@ -47,6 +45,7 @@ const VIEWPORT_MIN_SIZE = 2;
  * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
  * to leverage the power of vtk.js whilst only using one WebGL context for the processing, and allowing
  * us to share texture memory across on-screen viewports that show the same data.
+ *
  *
  * Instantiating a rendering engine:
  * ```js
@@ -60,26 +59,26 @@ const VIEWPORT_MIN_SIZE = 2;
  * viewport.
  *
  *
- * Rendering engine uses `detect-gpu` external library to detect if GPU is available and
- * it has minimum requirement to be able to render a volume with vtk.js. If GPU is not available
- * RenderingEngine will throw an error if you try to render a volume; however, for StackViewports
- * it is capable of falling back to CPU rendering for Stack images.
+ * RenderingEngine checks for WebGL context availability to determine if GPU rendering is possible.
+ * If a WebGL context is not available, RenderingEngine will fall back to CPU rendering for StackViewports.
+ * However, for volume rendering, GPU availability is required, and an error will be thrown if attempted without GPU support.
  *
- * By default RenderingEngine will use vtk.js enabled pipeline for rendering viewports,
- * however, if a custom rendering pipeline is specified by a custom viewport, it will be used instead.
- * We use this custom pipeline to render a StackViewport on CPU using Cornerstone-legacy cpu rendering pipeline.
+ * By default, RenderingEngine will use the vtk.js-enabled pipeline for rendering viewports.
+ * However, if a custom rendering pipeline is specified by a custom viewport, it will be used instead.
+ * We use this custom pipeline to render a StackViewport on CPU using the Cornerstone legacy CPU rendering pipeline.
  *
  * @public
  */
-class RenderingEngine implements IRenderingEngine {
+class RenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
-  /** A flag which tells if the renderingEngine has been destroyed */
+  /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: any;
-  readonly offScreenCanvasContainer: any; // WebGL
+  readonly offScreenCanvasContainer: HTMLDivElement;
   private _viewports: Map<string, IViewport>;
-  private _needsRender: Set<string> = new Set();
+  private _needsRender = new Set<string>();
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   private useCPURendering: boolean;
@@ -134,7 +133,7 @@ class RenderingEngine implements IRenderingEngine {
    * })
    * ```
    *
-   * @fires Events.ELEMENT_ENABLED
+   * fires Events.ELEMENT_ENABLED
    *
    * @param viewportInputEntry - viewport specifications
    */
@@ -154,9 +153,7 @@ class RenderingEngine implements IRenderingEngine {
 
     // 1.a) If there is a found viewport, we remove the viewport and create a new viewport
     if (viewport) {
-      console.log('Viewport already exists, disabling it first');
       this.disableElement(viewportId);
-      console.log(`Viewport ${viewportId} disabled`);
     }
 
     // 2.a) See if viewport uses a custom rendering pipeline.
@@ -192,7 +189,7 @@ class RenderingEngine implements IRenderingEngine {
    * 3) resetting the viewport to remove the canvas attributes and canvas data
    * 4) resize the offScreen appropriately (if using vtk.js driven rendering pipeline)
    *
-   * @fires Events.ELEMENT_ENABLED
+   * fires Events.ELEMENT_ENABLED
    *
    * @param viewportId - viewport Id
    *
@@ -273,14 +270,12 @@ class RenderingEngine implements IRenderingEngine {
    * ])
    * ```
    *
-   * @fires Events.ELEMENT_ENABLED
+   * fires Events.ELEMENT_ENABLED
    *
    * @param viewportInputEntries - Array<PublicViewportInput>
    */
 
-  public setViewports(
-    publicViewportInputEntries: Array<PublicViewportInput>
-  ): void {
+  public setViewports(publicViewportInputEntries: PublicViewportInput[]): void {
     const viewportInputEntries = this._normalizeViewportInputEntries(
       publicViewportInputEntries
     );
@@ -366,53 +361,53 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @returns Array of viewports
    */
-  public getViewports(): Array<IViewport> {
+  public getViewports(): IViewport[] {
     this._throwIfDestroyed();
 
     return this._getViewportsAsArray();
   }
 
   /**
-   * Filters all the available viewports and return the stack viewports
-   * @returns stack viewports registered on the rendering Engine
+   * Retrieves a stack viewport by its ID. used just for type safety
+   *
+   * @param viewportId - The ID of the viewport to retrieve.
+   * @returns The stack viewport with the specified ID.
+   * @throws Error if the viewport with the given ID does not exist or is not a StackViewport.
    */
-  public getStackViewports(): Array<IStackViewport> {
+  public getStackViewport(viewportId: string): IStackViewport {
     this._throwIfDestroyed();
 
-    const viewports = this.getViewports();
+    const viewport = this.getViewport(viewportId);
 
-    const isStackViewport = (
-      viewport: IViewport
-    ): viewport is StackViewport => {
-      return viewport instanceof StackViewport;
-    };
+    if (!viewport) {
+      throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
 
-    return viewports.filter(isStackViewport) as Array<IStackViewport>;
+    if (!(viewport instanceof StackViewport)) {
+      throw new Error(`Viewport with Id ${viewportId} is not a StackViewport.`);
+    }
+
+    return viewport;
   }
 
   /**
    * Filters all the available viewports and return the stack viewports
    * @returns stack viewports registered on the rendering Engine
    */
-  public getVideoViewports(): Array<IVideoViewport> {
+  public getStackViewports(): IStackViewport[] {
     this._throwIfDestroyed();
 
     const viewports = this.getViewports();
 
-    const isVideoViewport = (
-      viewport: IViewport
-    ): viewport is VideoViewport => {
-      return viewport instanceof VideoViewport;
-    };
-
-    return viewports.filter(isVideoViewport) as Array<IVideoViewport>;
+    return viewports.filter(
+      (vp) => vp instanceof StackViewport
+    ) as IStackViewport[];
   }
-
   /**
    * Return all the viewports that are volume viewports
    * @returns An array of VolumeViewport objects.
    */
-  public getVolumeViewports(): Array<IVolumeViewport> {
+  public getVolumeViewports(): IVolumeViewport[] {
     this._throwIfDestroyed();
 
     const viewports = this.getViewports();
@@ -423,13 +418,13 @@ class RenderingEngine implements IRenderingEngine {
       return viewport instanceof BaseVolumeViewport;
     };
 
-    return viewports.filter(isVolumeViewport);
+    return viewports.filter(isVolumeViewport) as IVolumeViewport[];
   }
 
   /**
    * Renders all viewports on the next animation frame.
    *
-   * @fires Events.IMAGE_RENDERED
+   * fires Events.IMAGE_RENDERED
    */
   public render(): void {
     const viewports = this.getViewports();
@@ -452,14 +447,14 @@ class RenderingEngine implements IRenderingEngine {
       }
     });
 
-    return this.renderViewports(viewportIdsWithSameFrameOfReferenceUID);
+    this.renderViewports(viewportIdsWithSameFrameOfReferenceUID);
   };
 
   /**
    * Renders the provided Viewport IDs.
    *
    */
-  public renderViewports(viewportIds: Array<string>): void {
+  public renderViewports(viewportIds: string[]): void {
     this._setViewportsToBeRenderedNextFrame(viewportIds);
   }
 
@@ -557,8 +552,8 @@ class RenderingEngine implements IRenderingEngine {
   }
 
   private _normalizeViewportInputEntries(
-    viewportInputEntries: Array<PublicViewportInput>
-  ): Array<NormalizedViewportInput> {
+    viewportInputEntries: PublicViewportInput[]
+  ): NormalizedViewportInput[] {
     const normalizedViewportInputs = [];
 
     viewportInputEntries.forEach((viewportInput) => {
@@ -593,17 +588,29 @@ class RenderingEngine implements IRenderingEngine {
     });
 
     // 2. If render is immediate: Render all
-    if (immediate === true) {
+    if (immediate) {
       this.render();
     }
   }
 
   private _resizeVTKViewports(
-    vtkDrivenViewports: Array<IStackViewport | IVolumeViewport>,
+    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
     keepCamera = true,
     immediate = true
   ) {
-    const canvasesDrivenByVtkJs = vtkDrivenViewports.map((vp) => vp.canvas);
+    // Ensure all the canvases are ready for rendering
+    const canvasesDrivenByVtkJs = vtkDrivenViewports.map(
+      (vp: IStackViewport | IVolumeViewport) => {
+        return getOrCreateCanvas(vp.element);
+      }
+    );
+
+    // reset the canvas size to the client size
+    canvasesDrivenByVtkJs.forEach((canvas) => {
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * devicePixelRatio;
+      canvas.height = canvas.clientHeight * devicePixelRatio;
+    });
 
     if (canvasesDrivenByVtkJs.length) {
       // 1. Recalculate and resize the offscreen canvas size
@@ -620,18 +627,10 @@ class RenderingEngine implements IRenderingEngine {
 
     // 3. Reset viewport cameras
     vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      const canvas = getOrCreateCanvas(vp.element);
-      const rect = canvas.getBoundingClientRect();
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      canvas.width = rect.width * devicePixelRatio;
-      canvas.height = rect.height * devicePixelRatio;
-
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
-      const pan = vp.getPan();
-      const zoom = vp.getZoom();
       const { flipHorizontal } = prevCamera;
-      vp.resetCamera();
+      vp.resetCameraForResize();
 
       const displayArea = vp.getDisplayArea();
 
@@ -643,9 +642,8 @@ class RenderingEngine implements IRenderingEngine {
             vp.setCamera({ flipHorizontal });
           }
           if (rotation) {
-            vp.setProperties({ rotation });
+            vp.setViewPresentation({ rotation });
           }
-          console.log('What to do with pan and zoom', pan[0], pan[1], zoom);
         } else {
           vp.setCamera(prevCamera);
         }
@@ -653,7 +651,7 @@ class RenderingEngine implements IRenderingEngine {
     });
 
     // 4. If render is immediate: Render all
-    if (immediate === true) {
+    if (immediate) {
       this.render();
     }
   }
@@ -677,12 +675,6 @@ class RenderingEngine implements IRenderingEngine {
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
     canvasesDrivenByVtkJs.push(canvas);
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * devicePixelRatio;
-    canvas.height = rect.height * devicePixelRatio;
-
     // 2.c Calculating the new size for offScreen Canvas
     const { offScreenCanvasWidth, offScreenCanvasHeight } =
       this._resizeOffScreenCanvas(canvasesDrivenByVtkJs);
@@ -690,7 +682,7 @@ class RenderingEngine implements IRenderingEngine {
     // 2.d Re-position previous viewports on the offScreen Canvas based on the new
     // offScreen canvas size
     const xOffset = this._resize(
-      viewportsDrivenByVtkJs,
+      viewportsDrivenByVtkJs as (IStackViewport | IVolumeViewport)[],
       offScreenCanvasWidth,
       offScreenCanvasHeight
     );
@@ -769,7 +761,6 @@ class RenderingEngine implements IRenderingEngine {
       offScreenCanvasHeight,
       xOffset
     );
-
     // 2. Add a renderer to the offScreenMultiRenderWindow
     this.offscreenMultiRenderWindow.addRenderer({
       viewport: [
@@ -785,7 +776,7 @@ class RenderingEngine implements IRenderingEngine {
     });
 
     // 3. ViewportInput to be passed to a stack/volume viewport
-    const viewportInput = <ViewportInput>{
+    const viewportInput = {
       id: viewportId,
       element, // div
       renderingEngineId: this.id,
@@ -796,7 +787,7 @@ class RenderingEngine implements IRenderingEngine {
       sWidth,
       sHeight,
       defaultOptions: defaultOptions || {},
-    };
+    } as ViewportInput;
 
     // 4. Create a proper viewport based on the type of the viewport
     let viewport;
@@ -855,7 +846,7 @@ class RenderingEngine implements IRenderingEngine {
       canvas.height = clientHeight;
     }
 
-    const viewportInput = <ViewportInput>{
+    const viewportInput = {
       id: viewportId,
       renderingEngineId: this.id,
       element, // div
@@ -866,11 +857,10 @@ class RenderingEngine implements IRenderingEngine {
       sWidth: clientWidth,
       sHeight: clientHeight,
       defaultOptions: defaultOptions || {},
-    };
+    } as ViewportInput;
 
     // 4. Create a proper viewport based on the type of the viewport
     const ViewportType = viewportTypeToViewportClass[type];
-
     const viewport = new ViewportType(viewportInput);
 
     // 5. Storing the viewports
@@ -893,7 +883,9 @@ class RenderingEngine implements IRenderingEngine {
    * objects used to construct and enable the viewports.
    */
   private setCustomViewports(viewportInputEntries: PublicViewportInput[]) {
-    viewportInputEntries.forEach((vpie) => this.addCustomViewport(vpie));
+    viewportInputEntries.forEach((vpie) => {
+      this.addCustomViewport(vpie);
+    });
   }
 
   /**
@@ -961,29 +953,28 @@ class RenderingEngine implements IRenderingEngine {
    *
    * @param canvases - An array of HTML Canvas
    */
-  private _resizeOffScreenCanvas(
-    canvasesDrivenByVtkJs: Array<HTMLCanvasElement>
-  ): { offScreenCanvasWidth: number; offScreenCanvasHeight: number } {
+  private _resizeOffScreenCanvas(canvasesDrivenByVtkJs: HTMLCanvasElement[]): {
+    offScreenCanvasWidth: number;
+    offScreenCanvasHeight: number;
+  } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
-
-    const devicePixelRatio = window.devicePixelRatio || 1;
 
     // 1. Calculated the height of the offScreen canvas to be the maximum height
     // between canvases
     const offScreenCanvasHeight = Math.max(
-      ...canvasesDrivenByVtkJs.map(
-        (canvas) => canvas.clientHeight * devicePixelRatio
-      )
+      ...canvasesDrivenByVtkJs.map((canvas) => canvas.height)
     );
 
     // 2. Calculating the width of the offScreen canvas to be the sum of all
     let offScreenCanvasWidth = 0;
 
     canvasesDrivenByVtkJs.forEach((canvas) => {
-      offScreenCanvasWidth += canvas.clientWidth * devicePixelRatio;
+      offScreenCanvasWidth += canvas.width;
     });
 
+    // @ts-expect-error
     offScreenCanvasContainer.width = offScreenCanvasWidth;
+    // @ts-expect-error
     offScreenCanvasContainer.height = offScreenCanvasHeight;
 
     // 3. Resize command
@@ -1002,14 +993,12 @@ class RenderingEngine implements IRenderingEngine {
    * @returns _xOffset the final offset which will be used for the next viewport
    */
   private _resize(
-    viewportsDrivenByVtkJs: Array<IViewport>,
+    viewportsDrivenByVtkJs: (IStackViewport | IVolumeViewport)[],
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number
   ): number {
     // Redefine viewport properties
     let _xOffset = 0;
-
-    const devicePixelRatio = window.devicePixelRatio || 1;
 
     for (let i = 0; i < viewportsDrivenByVtkJs.length; i++) {
       const viewport = viewportsDrivenByVtkJs[i];
@@ -1023,13 +1012,13 @@ class RenderingEngine implements IRenderingEngine {
         sWidth,
         sHeight,
       } = this._getViewportCoordsOnOffScreenCanvas(
-        viewport,
+        viewport as IViewport,
         offScreenCanvasWidth,
         offScreenCanvasHeight,
         _xOffset
       );
 
-      _xOffset += viewport.canvas.clientWidth * devicePixelRatio;
+      _xOffset += viewport.canvas.width;
 
       viewport.sx = sx;
       viewport.sy = sy;
@@ -1065,22 +1054,17 @@ class RenderingEngine implements IRenderingEngine {
     _xOffset: number
   ): ViewportDisplayCoords {
     const { canvas } = viewport;
-    const { clientWidth, clientHeight } = canvas;
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const height = clientHeight * devicePixelRatio;
-    const width = clientWidth * devicePixelRatio;
+    const { width: sWidth, height: sHeight } = canvas;
 
     // Update the canvas drawImage offsets.
     const sx = _xOffset;
     const sy = 0;
-    const sWidth = width;
-    const sHeight = height;
 
     const sxStartDisplayCoords = sx / offScreenCanvasWidth;
 
     // Need to offset y if it not max height
     const syStartDisplayCoords =
-      sy + (offScreenCanvasHeight - height) / offScreenCanvasHeight;
+      sy + (offScreenCanvasHeight - sHeight) / offScreenCanvasHeight;
 
     const sWidthDisplayCoords = sWidth / offScreenCanvasWidth;
     const sHeightDisplayCoords = sHeight / offScreenCanvasHeight;
@@ -1122,7 +1106,7 @@ class RenderingEngine implements IRenderingEngine {
   private _render() {
     // If we have viewports that need rendering and we have not already
     // set the RAF callback to run on the next frame.
-    if (this._needsRender.size > 0 && this._animationFrameSet === false) {
+    if (this._needsRender.size > 0 && !this._animationFrameSet) {
       this._animationFrameHandle = window.requestAnimationFrame(
         this._renderFlaggedViewports
       );
@@ -1319,6 +1303,8 @@ class RenderingEngine implements IRenderingEngine {
       renderingEngineId,
     };
 
+    viewport.removeWidgets();
+
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
     triggerEvent(eventTarget, Events.ELEMENT_DISABLED, eventDetail);
@@ -1394,7 +1380,7 @@ class RenderingEngine implements IRenderingEngine {
     this._getViewportsAsArray().forEach((viewport) => {
       const { sx, sy, sWidth, sHeight } = viewport;
 
-      const canvas = <HTMLCanvasElement>viewport.canvas;
+      const canvas = viewport.canvas;
       const { width: dWidth, height: dHeight } = canvas;
 
       const onScreenContext = canvas.getContext('2d');

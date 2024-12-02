@@ -1,4 +1,4 @@
-import { ImageActor } from './IActor';
+import type { ImageActor } from './IActor';
 
 /**
  * Stack input callback type, used to perform operations on the image data
@@ -25,6 +25,8 @@ interface IStackInput {
   visibility?: boolean;
   /** Callback to be called when the image is added to the viewport */
   callback?: StackInputCallback;
+  /** other metadata that is needed for the image */
+  [key: string]: unknown;
 }
 
 export type { IStackInput, StackInputCallback };

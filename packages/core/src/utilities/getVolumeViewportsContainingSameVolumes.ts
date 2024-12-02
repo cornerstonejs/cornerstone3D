@@ -1,4 +1,4 @@
-import { IVolumeViewport } from '../types';
+import type { IVolumeViewport } from '../types';
 import {
   getRenderingEngines,
   getRenderingEngine,
@@ -19,7 +19,7 @@ import {
 function getVolumeViewportsContainingSameVolumes(
   targetViewport: IVolumeViewport,
   renderingEngineId?: string
-): Array<IVolumeViewport> {
+): IVolumeViewport[] {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines;
   if (renderingEngineId) {

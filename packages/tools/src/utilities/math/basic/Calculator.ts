@@ -1,4 +1,4 @@
-import { NamedStatistics } from '../../../types';
+import type { NamedStatistics } from '../../../types';
 
 abstract class Calculator {
   static run: ({ value }) => void;

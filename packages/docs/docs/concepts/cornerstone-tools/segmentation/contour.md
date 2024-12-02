@@ -46,11 +46,12 @@ segmentation.addSegmentations([
   },
 ]);
 
-// add segmentation representation
-await segmentation.addSegmentationRepresentations(toolGroupId, [
+// Add contour representation to a specific viewport
+await segmentation.addContourRepresentationToViewport(viewportId, [
   {
     segmentationId,
-    type: csToolsEnums.SegmentationRepresentations.Contour,
+    type: Enums.SegmentationRepresentations.Contour,
   },
 ]);
+
 ```

@@ -1,9 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 
-import {
+import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from './LabelmapTypes';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 type LabelmapToolOperationData = {
   segmentationId: string;
@@ -15,15 +16,21 @@ type LabelmapToolOperationData = {
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   strategySpecificConfiguration: any;
   // constraintFn: (pointIJK: number) => boolean;
-  segmentationRepresentationUID: string;
   points: Types.Point3[];
+  voxelManager;
+  override: {
+    voxelManager: Types.IVoxelManager<number>;
+    imageData: vtkImageData;
+  };
   /**
    * preview is used for sharing preview data between views/interactions with
    * a tool, and needs to be maintained by the tool side in order to be able
    * to accept/reject/update the preview information.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   preview: any;
   toolGroupId: string;
 };
@@ -38,7 +45,7 @@ type LabelmapToolOperationDataAny =
   | LabelmapToolOperationDataVolume
   | LabelmapToolOperationDataStack;
 
-export {
+export type {
   LabelmapToolOperationData,
   LabelmapToolOperationDataAny,
   LabelmapToolOperationDataStack,

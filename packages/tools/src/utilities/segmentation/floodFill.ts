@@ -3,7 +3,7 @@ import type {
   FloodFillGetter,
   FloodFillOptions,
 } from '../../types';
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * floodFill.js - Taken from MIT OSS lib - https://github.com/tuzz/n-dimensional-flood-fill
@@ -13,8 +13,8 @@ import { Types } from '@cornerstonejs/core';
  * map to work on keys.
  *
  * @param getter The getter to the elements of your data structure,
- *                          e.g. getter(x,y) for a 2D interprettation of your structure.
- * @param seed The seed for your fill. The dimensionality is infered
+ *                          e.g. getter(x,y) for a 2D interpretation of your structure.
+ * @param seed The seed for your fill. The dimensionality is inferred
  *                        by the number of dimensions of the seed.
  * @param options.onFlood - An optional callback to execute when each pixel is flooded.
  *                             e.g. onFlood(x,y).
@@ -182,15 +182,6 @@ function floodFill(
     }
 
     return perms;
-  }
-
-  function boundaries(): Types.Point2[] | Types.Point3[] {
-    if (!bounds) {
-      throw new Error('bounds not recorded');
-    }
-    const array = Array.from(bounds.values());
-    array.reverse();
-    return array as Types.Point2[] | Types.Point3[];
   }
 }
 

@@ -2,11 +2,7 @@ import { vec2, vec3 } from 'gl-matrix';
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  getCalibratedLengthUnits,
-  getCalibratedScale,
-} from '../../utilities/getCalibratedUnits';
-import { roundNumber } from '../../utilities';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { AnnotationTool } from '../base';
 import throttle from '../../utilities/throttle';
 import {
@@ -25,7 +21,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
@@ -34,19 +30,19 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
+import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
   PublicToolProps,
   ToolProps,
-  InteractionTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -88,11 +84,9 @@ const { transformWorldToIndex } = csUtils;
 class BidirectionalTool extends AnnotationTool {
   static toolName;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     movingTextBox: boolean;
@@ -162,6 +156,7 @@ class BidirectionalTool extends AnnotationTool {
         viewUp: <Types.Point3>[...viewUp],
         FrameOfReferenceUID,
         referencedImageId,
+        ...viewport.getViewReference({ points: [worldPos] }),
       },
       data: {
         handles: {
@@ -211,7 +206,7 @@ class BidirectionalTool extends AnnotationTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   }
@@ -322,7 +317,7 @@ class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     hideElementCursor(element);
 
@@ -377,7 +372,7 @@ class BidirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -478,7 +473,7 @@ class BidirectionalTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -566,7 +561,7 @@ class BidirectionalTool extends AnnotationTool {
     data.handles.points[3] = viewport.canvasToWorld([endX, endY]);
 
     annotation.invalidated = true;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData.hasMoved = true;
   };
@@ -614,7 +609,7 @@ class BidirectionalTool extends AnnotationTool {
       annotation.invalidated = true;
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   /**
@@ -893,12 +888,7 @@ class BidirectionalTool extends AnnotationTool {
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
 
-      const { renderingEngine } = getEnabledElement(element);
-
-      triggerAnnotationRenderForViewportIds(
-        renderingEngine,
-        viewportIdsToRender
-      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
       if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
@@ -1082,7 +1072,7 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -1262,7 +1252,7 @@ class BidirectionalTool extends AnnotationTool {
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
 
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -1272,16 +1262,31 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const scale = getCalibratedScale(image);
-      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale;
-      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale;
-      const length = dist1 > dist2 ? dist1 : dist2;
-      const width = dist1 > dist2 ? dist2 : dist1;
-
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const index3 = transformWorldToIndex(imageData, worldPos3);
       const index4 = transformWorldToIndex(imageData, worldPos4);
+
+      const handles1 = [index1, index2];
+      const handles2 = [index3, index4];
+
+      const { scale: scale1, unit: units1 } = getCalibratedLengthUnitsAndScale(
+        image,
+        handles1
+      );
+
+      const { scale: scale2, unit: units2 } = getCalibratedLengthUnitsAndScale(
+        image,
+        handles2
+      );
+
+      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale1;
+      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale2;
+      const length = dist1 > dist2 ? dist1 : dist2;
+      const width = dist1 > dist2 ? dist2 : dist1;
+
+      const unit = dist1 > dist2 ? units1 : units2;
+      const widthUnit = dist1 > dist2 ? units2 : units1;
 
       this._isInsideVolume(index1, index2, index3, index4, dimensions)
         ? (this.isHandleOutsideImage = false)
@@ -1290,7 +1295,8 @@ class BidirectionalTool extends AnnotationTool {
       cachedStats[targetId] = {
         length,
         width,
-        unit: getCalibratedLengthUnits(null, image),
+        unit,
+        widthUnit,
       };
     }
 
@@ -1334,8 +1340,8 @@ function defaultGetTextLines(data, targetId): string[] {
   // spaceBetweenSlices & pixelSpacing &
   // magnitude in each direction? Otherwise, this is "px"?
   textLines.push(
-    `L: ${roundNumber(length)} ${unit}`,
-    `W: ${roundNumber(width)} ${unit}`
+    `L: ${csUtils.roundNumber(length)} ${unit || unit}`,
+    `W: ${csUtils.roundNumber(width)} ${unit}`
   );
 
   return textLines;

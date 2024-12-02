@@ -1,3 +1,5 @@
+import type ColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+
 /**
  * A utility that can be used to scale (in place) an RgbTransferFunction. We
  * often use this to scale the transfer function based on a PET calculation.
@@ -18,7 +20,7 @@
  * @param scalingFactor
  */
 export default function scaleRGBTransferFunction(
-  rgbTransferFunction: any,
+  rgbTransferFunction: ColorTransferFunction,
   scalingFactor: number
 ): void {
   const size = rgbTransferFunction.getSize();

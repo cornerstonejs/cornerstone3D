@@ -1,6 +1,4 @@
-import type { VolumeProps } from '.';
-import type VoxelManager from '../utilities/VoxelManager';
-import type Point3 from './Point3';
+import type { VolumeProps } from './VolumeProps';
 
 /**
  * ImageVolume which is considered a special case of a Volume, which is
@@ -9,11 +7,9 @@ import type Point3 from './Point3';
  */
 interface ImageVolumeProps extends VolumeProps {
   /** imageIds of the volume (if it is built of separate imageIds) */
-  imageIds: Array<string>;
+  imageIds: string[];
   /** if the volume is created from a stack, the imageIds of the stack */
-  referencedImageIds?: Array<string>;
-  /** A voxel manager for this data */
-  voxelManager?: VoxelManager<number> | VoxelManager<Point3>;
+  referencedImageIds?: string[];
 }
 
-export { ImageVolumeProps };
+export type { ImageVolumeProps };

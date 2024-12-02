@@ -18,16 +18,16 @@ import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getVolumeId } from '../../utilities/getVolumeId';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,
@@ -37,9 +37,9 @@ import { getVolumeId } from '../../utilities/getVolumeId';
  */
 class RectangleROIThresholdTool extends RectangleROITool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -88,7 +88,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
     } else {
-      volumeId = getVolumeId(targetId);
+      volumeId = csUtils.getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -153,7 +153,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -223,7 +223,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
       }
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {

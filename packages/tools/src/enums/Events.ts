@@ -18,6 +18,12 @@ enum Events {
    */
   TOOL_ACTIVATED = 'CORNERSTONE_TOOLS_TOOL_ACTIVATED',
 
+  // fired when a viewport is added to the toolGroup
+  TOOLGROUP_VIEWPORT_ADDED = 'CORNERSTONE_TOOLS_TOOLGROUP_VIEWPORT_ADDED',
+
+  // fired when a viewport is removed from the toolGroup
+  TOOLGROUP_VIEWPORT_REMOVED = 'CORNERSTONE_TOOLS_TOOLGROUP_VIEWPORT_REMOVED',
+
   /**
    * Triggers on the eventTarget when a mode of a tool is changed (active, passive, enabled and disabled).
    *
@@ -131,6 +137,13 @@ enum Events {
    * event detail is included in {@link EventTypes.SegmentationRenderedEventDetail | Segmentation Rendered Event Detail}.
    */
   SEGMENTATION_RENDERED = 'CORNERSTONE_TOOLS_SEGMENTATION_RENDERED',
+
+  /**
+   * Triggers on the eventTarget when a Segmentation representation of a toolGroup is added in the state manager.
+   */
+  SEGMENTATION_REPRESENTATION_ADDED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_ADDED',
+
+  SEGMENTATION_ADDED = 'CORNERSTONE_TOOLS_SEGMENTATION_ADDED',
 
   /**
    * Triggers on the eventTarget when a Segmentation representation of a toolGroup is modified in the state manager.

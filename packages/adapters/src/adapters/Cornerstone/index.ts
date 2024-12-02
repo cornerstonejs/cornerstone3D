@@ -10,7 +10,10 @@ import Angle from "./Angle";
 import RectangleRoi from "./RectangleRoi";
 
 // Segmentation
-import Segmentation from "./Segmentation";
+import * as Segmentation from "./Segmentation";
+
+// Parametric Map
+import ParametricMap from "./ParametricMap";
 
 const CornerstoneSR = {
     Length,
@@ -29,4 +32,8 @@ const CornerstoneSEG = {
     Segmentation
 };
 
-export { CornerstoneSR, CornerstoneSEG };
+const CornerstonePMAP = {
+    ParametricMap
+};
+
+export { CornerstoneSR, CornerstoneSEG, CornerstonePMAP };

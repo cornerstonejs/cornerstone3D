@@ -8,7 +8,7 @@ import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToC
 import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
 import * as colors from '../colors/index';
 import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
-import { clamp } from '../../../../utilities';
+import { clamp } from '../../../../utilities/clamp';
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -51,8 +51,8 @@ function getRenderCanvas(
   const colormapId = colormap.getId();
 
   if (
-    doesImageNeedToBeRendered(enabledElement, image) === false &&
-    invalidated !== true &&
+    !doesImageNeedToBeRendered(enabledElement, image) &&
+    !invalidated &&
     enabledElement.renderingTools.colormapId === colormapId
   ) {
     return renderCanvas;

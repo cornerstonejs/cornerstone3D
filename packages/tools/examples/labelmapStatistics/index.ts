@@ -1,11 +1,9 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  ProgressiveRetrieveImages,
-  utilities,
   eventTarget,
 } from '@cornerstonejs/core';
 import {
@@ -16,7 +14,6 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
-  addButtonToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -27,7 +24,6 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
@@ -68,7 +64,7 @@ statsGrid.style.display = 'flex';
 statsGrid.style.flexDirection = 'row';
 statsGrid.style.fontSize = 'smaller';
 
-const statsIds = ['statsCurrent', 'statsPreview', 'statsCombined'];
+const statsIds = ['segment1', 'segment2', 'segmentCombined'];
 const statsStyle = {
   width: '20em',
   height: '10em',
@@ -129,14 +125,10 @@ const previewColors = {
   1: [0, 255, 255, 192],
   2: [255, 0, 255, 255],
 };
-const preview = {
-  enabled: true,
-  previewColors,
-};
 const configuration = {
-  preview,
-  strategySpecificConfiguration: {
-    useCenterSegmentIndex: true,
+  preview: {
+    enabled: true,
+    previewColors,
   },
 };
 const thresholdOptions = new Map<string, any>();
@@ -167,25 +159,12 @@ interpolationTools.set('CircularBrush', {
   },
 });
 
-interpolationTools.set('ThresholdSphereIsland', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
 interpolationTools.set('ThresholdCircle', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
     strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
     },
   },
@@ -197,7 +176,6 @@ interpolationTools.set('ThresholdSphere', {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
     strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
       THRESHOLD: { ...thresholdArgs },
     },
   },
@@ -242,6 +220,10 @@ const optionsValues = [
 ];
 
 // ============================= //
+
+// Create a reference to the threshold dropdown element
+let thresholdDropdownElement;
+
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -258,17 +240,26 @@ addDropdownToToolbar({
     toolGroup.setToolActive(name, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
+
+    // Show/hide threshold dropdown based on selected tool
+    if (thresholdDropdownElement) {
+      thresholdDropdownElement.style.display = name
+        .toLowerCase()
+        .includes('threshold')
+        ? 'inline-block'
+        : 'none';
+    }
   },
 });
 
-addDropdownToToolbar({
+// Store reference to threshold dropdown element
+thresholdDropdownElement = addDropdownToToolbar({
   options: {
     values: Array.from(thresholdOptions.keys()),
     defaultValue: defaultThresholdOption,
   },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
-
     const thresholdArgs = thresholdOptions.get(name);
 
     segmentationUtils.setBrushThresholdForToolGroup(
@@ -278,6 +269,16 @@ addDropdownToToolbar({
     );
   },
 });
+
+// Initially hide threshold dropdown if first tool doesn't include 'threshold'
+if (thresholdDropdownElement) {
+  const initialTool = optionsValues[0];
+  thresholdDropdownElement.style.display = initialTool
+    .toLowerCase()
+    .includes('threshold')
+    ? 'inline-block'
+    : 'none';
+}
 
 addSliderToToolbar({
   title: 'Brush Size',
@@ -291,7 +292,7 @@ addSliderToToolbar({
 
 // ============================= //
 addDropdownToToolbar({
-  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  options: { values: ['1', '2'], defaultValue: '1' },
   labelText: 'Segment',
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
@@ -299,11 +300,6 @@ addDropdownToToolbar({
       Number(segmentIndex)
     );
   },
-});
-
-addButtonToToolbar({
-  title: 'Statistics 1,2,3',
-  onClick: () => calculateStatistics(statsIds[2], [1, 2, 3]),
 });
 
 function displayStat(stat) {
@@ -328,11 +324,9 @@ function calculateStatistics(id, indices) {
     value: stats.volume.value * stats.stdDev.value,
     unit: 'HU \xB7 mm \xb3',
   };
-  stats.stdDev.label = 'SUV';
   items.push(
     displayStat(stats.volume),
     displayStat(stats.count),
-    displayStat(stats.stdDev),
     displayStat(lesionGlycolysis),
     displayStat(stats.mean),
     displayStat(stats.max),
@@ -346,23 +340,22 @@ let timeoutId;
 
 function segmentationModifiedCallback(evt) {
   const { detail } = evt;
-  if (!detail) {
+  if (!detail || !detail.segmentIndex || detail.segmentIndex === 255) {
     return;
   }
+
   if (timeoutId) {
     window.clearTimeout(timeoutId);
     timeoutId = null;
   }
-  const { segmentIndex } = detail;
-  if (!segmentIndex) {
-    // Both undefined and 0 segment indices are returns
-    return;
-  }
-  const statsId = statsIds[segmentIndex === 255 ? 1 : 0];
+
+  const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
 
   window.setTimeout(() => {
     timeoutId = null;
-    calculateStatistics(statsId, [segmentIndex]);
+    calculateStatistics(statsId, [detail.segmentIndex]);
+    // Also update combined stats
+    calculateStatistics(statsIds[2], [1, 2]);
   }, 100);
 }
 
@@ -370,12 +363,8 @@ function segmentationModifiedCallback(evt) {
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
-    // The following doesn't quite work yet
-    // TODO, allow RLE to be used instead of scalars.
-    // targetBuffer: { type: 'none' },
-    // voxelRepresentation: VoxelManagerEnum.RLE,
   });
 
   // Add the segmentations to state
@@ -407,13 +396,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  utilities.imageRetrieveMetadataProvider.add(
-    'volume',
-    ProgressiveRetrieveImages.interleavedRetrieveStages
-  );
-
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(RectangleScissorsTool);
   cornerstoneTools.addTool(CircleScissorsTool);
   cornerstoneTools.addTool(SphereScissorsTool);
@@ -427,7 +410,6 @@ async function run() {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(SphereScissorsTool.toolName);
@@ -449,8 +431,6 @@ async function run() {
       toolGroup.setToolPassive(toolName);
     }
   }
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(interpolationTools.keys().next().value, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -531,19 +511,22 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  const segmentationRepresentation = [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
-  ]);
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+  ];
+  // Add the segmentation representation to the toolgroup
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: segmentationRepresentation,
+    [viewportId2]: segmentationRepresentation,
+    [viewportId3]: segmentationRepresentation,
+  });
 
   segmentationUtils.setBrushSizeForToolGroup(toolGroupId, DEFAULT_BRUSH_SIZE);
 
   // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  renderingEngine.render();
 }
 
 run();

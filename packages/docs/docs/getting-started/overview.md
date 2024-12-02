@@ -7,7 +7,7 @@ import Link from '@docusaurus/Link';
 # Overview
 
 `Cornerstone3D` is a lightweight Javascript library for visualization of medical images in modern web browsers that support the HTML5 canvas element.
-Using `Cornerstone3D` and its accompanying libraries such as `Cornerstone3DTools`, you can achieve a wide range of imaging tasks.
+Using `@cornerstonejs/core` and its accompanying libraries such as `@cornerstonejs/tools`, you can achieve a wide range of imaging tasks.
 
 <br/>
 
@@ -73,10 +73,11 @@ In addition, you can:
 
 ### Segmentation
 
-`Cornerstone3D` supports rendering segmentations of images as labelmaps in 3D in the Volume viewport.
+`Cornerstone3D` supports rendering segmentations of images as labelmaps in all viewports including stack, volume, and 3D.
 You can:
 
-- Render segmentations as labelmaps in the volume viewport (e.g. segmentation of CT lung)
+- Render segmentations as labelmaps in the viewports (e.g. segmentation of CT lung)
+- Convert the label maps to surfaces in the 3D viewport and apply the same color.
 - View segmentations in any orientation (e.g. axial, sagittal, coronal) even in oblique slices
 - Change labelmap configuration (e.g. color, opacity, outline rendering, outline thickness etc.)
 - Edit/draw a segment in 3D Axial, Sagittal, Coronal using scissor tools such as Rectangle, Ellipse scissors
@@ -99,7 +100,7 @@ Our documentation can be broken down into the following sections:
 - [**How-to-Guides**](/docs/category/how-to-guides): provides guides for more advanced tasks such as custom loaders, custom metadata providers
 - [**Concepts**](/docs/category/concepts): explains an in-depth look at various technical concepts that are used in the library
 - [**Contributing**](/docs/category/contributing/): explains how to contribute to the project and how to report bugs
-- [**Migration Guides**](/docs/migrationGuides): includes instructions for upgrading from legacy `cornerstone-core` and `cornerstone-tools` to `Cornerstone3D` and `Cornerstone3DTools`
+- [**Migration Guides**](/docs/migrationGuides): includes instructions for upgrading from legacy to new versions of the library, and also upgrading from 1.x to 2.x
 - [**FAQ**](/docs/faq): provides answers to frequently asked questions
 - [**Help**](/docs/help): provides information of how to get help with the library
 - [**Test Coverage Report**](/test-coverage/): provides a detailed report of the test coverage of the library

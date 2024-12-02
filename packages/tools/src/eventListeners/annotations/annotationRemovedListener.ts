@@ -1,4 +1,4 @@
-import { AnnotationRemovedEventType } from '../../types/EventTypes';
+import type { AnnotationRemovedEventType } from '../../types/EventTypes';
 import * as contourSegUtils from '../../utilities/contourSegmentation';
 import { contourSegmentationRemoved } from './contourSegmentation';
 

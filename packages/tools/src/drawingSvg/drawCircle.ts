@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 
@@ -25,7 +25,7 @@ function drawCircle(
     strokeOpacity,
   } = Object.assign(
     {
-      color: 'dodgerblue',
+      color: 'rgb(0, 255, 0)',
       fill: 'transparent',
       width: '2',
       lineDash: undefined,

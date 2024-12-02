@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { SVGDrawingHelper } from '../types';
+import type { SVGDrawingHelper } from '../types';
 import drawLine from './drawLine';
 
 export default function drawArrow(
@@ -17,7 +17,7 @@ export default function drawArrow(
 
   const { color, width, lineWidth, lineDash } = Object.assign(
     {
-      color: 'dodgerblue',
+      color: 'rgb(0, 255, 0)',
       width: '2',
       lineWidth: undefined,
       lineDash: undefined,

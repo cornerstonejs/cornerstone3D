@@ -2,7 +2,7 @@ import { BaseTool } from './base';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
@@ -37,6 +37,14 @@ class PanTool extends BaseTool {
     this.memo ||= PanTool.createZoomPanMemo(enabledElement.viewport);
 
     const deltaPointsWorld = deltaPoints.world;
+    // This occurs when the mouse event is fired but the mouse hasn't moved a full pixel yet (high resolution mice)
+    if (
+      deltaPointsWorld[0] === 0 &&
+      deltaPointsWorld[1] === 0 &&
+      deltaPointsWorld[2] === 0
+    ) {
+      return;
+    }
     const camera = enabledElement.viewport.getCamera();
     const { focalPoint, position } = camera;
 

@@ -1,5 +1,5 @@
-import { ImageQualityStatus, RequestType } from '../enums';
-import { ImageLoadListener } from './ImageLoadListener';
+import type { ImageQualityStatus, RequestType } from '../enums';
+import type { ImageLoadListener } from './ImageLoadListener';
 
 /**
  * Retrieve stages are part of a retrieval of a set of image ids.
@@ -71,7 +71,7 @@ export interface RetrieveStage {
  * needing to have retrieved them from a remote/slow location.  This gives the
  * appearance of a complete volume extremely quickly.
  */
-export type NearbyFrames = {
+export interface NearbyFrames {
   /**
    * The offset of the nearby frame to fill from the current position.
    * For example, if the current image is index 32, and the offset is -1,
@@ -82,14 +82,14 @@ export type NearbyFrames = {
    *  The status to set a newly filled image from
    */
   imageQualityStatus?: ImageQualityStatus;
-};
+}
 
 /**
  * Base retrieves define some alternate path information, the decode level,
  * whether the transfer syntax supports streaming decode, and the desired
  * status and partial status used for retrieval.
  */
-export type BaseRetrieveOptions = {
+export interface BaseRetrieveOptions {
   /**
    * Additional arguments to add to the URL, in the format
    * arg1=value1 ('&' arg2=value2)*
@@ -113,7 +113,7 @@ export type BaseRetrieveOptions = {
    * complete image is lossy, this should be set to LOSSY.
    */
   imageQualityStatus?: ImageQualityStatus;
-};
+}
 
 /**
  * Range retrieves are used to retrieve part of an image, before the rest

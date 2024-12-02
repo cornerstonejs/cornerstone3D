@@ -4,4 +4,4 @@
  */
 type AnnotationGroupSelector = HTMLDivElement | string;
 
-export default AnnotationGroupSelector;
+export type { AnnotationGroupSelector as default };

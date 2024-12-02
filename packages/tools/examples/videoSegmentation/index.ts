@@ -26,7 +26,7 @@ console.warn(
 
 const {
   ToolGroupManager,
-  SegmentationDisplayTool,
+
   Enums: csToolsEnums,
   BrushTool,
   segmentation,
@@ -99,7 +99,6 @@ const optionsValues = [...brushValues];
 let viewport;
 
 const segmentationId = 'VIDEO_SEGMENTATION';
-const segmentationRepresentationUIDs = [];
 
 // ============================= //
 addDropdownToToolbar({
@@ -129,7 +128,7 @@ addDropdownToToolbar({
   },
 });
 
-addBrushSizeSlider();
+addBrushSizeSlider({});
 
 addSegmentIndexDropdown(segmentationId);
 
@@ -137,7 +136,6 @@ addSegmentIndexDropdown(segmentationId);
 
 function setupTools(toolGroupId) {
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -146,7 +144,6 @@ function setupTools(toolGroupId) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
@@ -176,8 +173,6 @@ function setupTools(toolGroupId) {
     }
   );
 
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
   toolGroup.setToolActive(optionsValues[0], {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
@@ -199,7 +194,7 @@ async function run() {
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
@@ -228,11 +223,12 @@ async function run() {
   addVideoTime(viewportGrid, viewport);
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();
-  const { imageIds: segmentationImageIds } =
-    await imageLoader.createAndCacheDerivedImages(allImageIds, {
-      skipCreateBuffer: true,
-      onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
-    });
+  const segImages = await imageLoader.createAndCacheDerivedImages(allImageIds, {
+    skipCreateBuffer: true,
+    onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
+  });
+
+  const segmentationImageIds = segImages.map((it) => it.imageId);
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,
@@ -248,23 +244,18 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIdReferenceMap: cstUtils.segmentation.createImageIdReferenceMap(
-            allImageIds,
-            segmentationImageIds
-          ),
+          imageIds: segmentationImageIds,
         },
       },
     },
   ]);
-  // Add the segmentation representation to the toolgroup
-  const [uid] = await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewport.id, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
-
-  segmentationRepresentationUIDs.push(uid);
 }
 
 run();

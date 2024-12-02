@@ -1,9 +1,5 @@
-import {
-  RenderingEngine,
-  Types,
-  Enums,
-  eventTarget,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   initDemo,
@@ -20,6 +16,7 @@ console.warn(
 
 const {
   LengthTool,
+  HeightTool,
   KeyImageTool,
   ProbeTool,
   RectangleROITool,
@@ -34,7 +31,6 @@ const {
   PanTool,
   ZoomTool,
   VideoRedactionTool,
-  StackScrollMouseWheelTool,
   StackScrollTool,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -332,7 +328,7 @@ async function run() {
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
-      getLocalUrl() || 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Only one SOP instances is DICOM, so find it
@@ -345,6 +341,7 @@ async function run() {
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(HeightTool);
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
@@ -354,7 +351,6 @@ async function run() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -368,6 +364,7 @@ async function run() {
 
   // Add tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(HeightTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
@@ -393,6 +390,14 @@ async function run() {
     ],
   });
   toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.ShiftCtrl,
+      },
+    ],
+  });
+  toolGroup.setToolActive(HeightTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary,

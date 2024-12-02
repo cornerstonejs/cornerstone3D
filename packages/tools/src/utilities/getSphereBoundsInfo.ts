@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
-import { BoundsIJK } from '../types';
+import type { BoundsIJK } from '../types';
 import { getBoundingBoxAroundShapeIJK } from './boundingBox';
 
 const { transformWorldToIndex } = csUtils;

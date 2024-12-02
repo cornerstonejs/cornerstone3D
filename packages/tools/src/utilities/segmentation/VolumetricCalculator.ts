@@ -1,4 +1,4 @@
-import { NamedStatistics } from '../../types';
+import type { NamedStatistics } from '../../types';
 import { BasicStatsCalculator } from '../math/basic';
 
 /**
@@ -16,7 +16,9 @@ export default class VolumetricCalculator extends BasicStatsCalculator {
 
     // Add the volumetric units
     const volumeUnit = spacing ? 'mm\xb3' : 'voxels\xb3';
-    const volumeScale = spacing ? spacing[0] * spacing[1] * spacing[2] : 1;
+    const volumeScale = spacing
+      ? spacing[0] * spacing[1] * spacing[2] * 1000
+      : 1;
 
     stats.volume = {
       value: Array.isArray(stats.count.value)

@@ -2,14 +2,16 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
 import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
+import { getTransferFunctionHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
+import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
  * This class  replaces the buildBufferObjects function so that we progressively upload our textures
  * into GPU memory using the new methods on vtkStreamingOpenGLTexture.
- *
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
@@ -33,11 +35,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       return;
     }
 
-    const scalars = image.getPointData()?.getScalars();
-    if (!scalars) {
-      return;
-    }
-
     const vprop = actor.getProperty();
 
     if (!model.jitterTexture.getHandle()) {
@@ -56,22 +53,39 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       );
     }
 
-    const numComp = scalars.getNumberOfComponents();
-    const iComps = vprop.getIndependentComponents();
-    const numIComps = iComps ? numComp : 1;
+    const { numberOfComponents: numIComps } = image.get('numberOfComponents');
+    const useIndependentComps = publicAPI.useIndependentComponents(vprop);
 
-    // rebuild opacity tfun?
-    let toString = `${vprop.getMTime()}`;
-    if (model.opacityTextureString !== toString) {
+    const scalarOpacityFunc = vprop.getScalarOpacity();
+    const opTex =
+      model._openGLRenderWindow.getGraphicsResourceForObject(scalarOpacityFunc);
+    let toString = getTransferFunctionHash(
+      scalarOpacityFunc,
+      useIndependentComps,
+      numIComps
+    );
+    const reBuildOp = !opTex?.oglObject || opTex.hash !== toString;
+    if (reBuildOp) {
+      model.opacityTexture = vtkOpenGLTexture.newInstance();
+      model.opacityTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
+      // rebuild opacity tfun?
       const oWidth = 1024;
       const oSize = oWidth * 2 * numIComps;
       const ofTable = new Float32Array(oSize);
       const tmpTable = new Float32Array(oWidth);
 
+      // for debugging
+      // for (let index = 0; index < 3; index++) {
+      //   const ofun = vprop.getScalarOpacity(0);
+      //   const nodeValue1 = [];
+      //   ofun.getNodeValue(index, nodeValue1);
+      //   console.debug(index, nodeValue1);
+      // }
+
       for (let c = 0; c < numIComps; ++c) {
         const ofun = vprop.getScalarOpacity(c);
         const opacityFactor =
-          model.renderable.getSampleDistance() /
+          publicAPI.getCurrentSampleDistance(ren) /
           vprop.getScalarOpacityUnitDistance(c);
 
         const oRange = ofun.getRange();
@@ -84,7 +98,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         }
       }
 
-      model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow);
+      model.opacityTexture.resetFormatAndType();
       model.opacityTexture.setMinificationFilter(Filter.LINEAR);
       model.opacityTexture.setMagnificationFilter(Filter.LINEAR);
 
@@ -93,9 +107,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // visible artifacts. High values of opacity quickly terminate without
       // artifacts.
       if (
-        model._openGLRenderWindow.getWebgl2() ||
-        (model.context.getExtension('OES_texture_float') &&
-          model.context.getExtension('OES_texture_float_linear'))
+        model._openGLRenderWindow.getWebgl2() &&
+        model.context.getExtension('OES_texture_float') &&
+        model.context.getExtension('OES_texture_float_linear')
       ) {
         model.opacityTexture.create2DFromRaw(
           oWidth,
@@ -105,7 +119,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           ofTable
         );
       } else {
-        const oTable = new Uint8Array(oSize);
+        const oTable = new Uint8ClampedArray(oSize);
         for (let i = 0; i < oSize; ++i) {
           oTable[i] = 255.0 * ofTable[i];
         }
@@ -117,29 +131,66 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           oTable
         );
       }
-      model.opacityTextureString = toString;
+      if (scalarOpacityFunc) {
+        model._openGLRenderWindow.setGraphicsResourceForObject(
+          scalarOpacityFunc,
+          model.opacityTexture,
+          toString
+        );
+        if (scalarOpacityFunc !== model._scalarOpacityFunc) {
+          model._openGLRenderWindow.registerGraphicsResourceUser(
+            scalarOpacityFunc,
+            publicAPI
+          );
+          model._openGLRenderWindow.unregisterGraphicsResourceUser(
+            model._scalarOpacityFunc,
+            publicAPI
+          );
+        }
+        model._scalarOpacityFunc = scalarOpacityFunc;
+      }
+    } else {
+      model.opacityTexture = opTex.oglObject;
     }
 
     // rebuild color tfun?
-    toString = `${vprop.getMTime()}`;
-
-    if (model.colorTextureString !== toString) {
+    const colorTransferFunc = vprop.getRGBTransferFunction();
+    toString = getTransferFunctionHash(
+      colorTransferFunc,
+      useIndependentComps,
+      numIComps
+    );
+    const cTex =
+      model._openGLRenderWindow.getGraphicsResourceForObject(colorTransferFunc);
+    const reBuildC = !cTex?.oglObject?.getHandle() || cTex?.hash !== toString;
+    if (reBuildC) {
+      model.colorTexture = vtkOpenGLTexture.newInstance();
+      model.colorTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
       const cWidth = 1024;
       const cSize = cWidth * 2 * numIComps * 3;
-      const cTable = new Uint8Array(cSize);
+      const cTable = new Uint8ClampedArray(cSize);
       const tmpTable = new Float32Array(cWidth * 3);
+
+      // // for debugging
+      // for (let index = 0; index < 3; index++) {
+      //   const cfun = vprop.getRGBTransferFunction(0);
+      //   const nodeValue1 = [];
+      //   cfun.getNodeValue(index, nodeValue1);
+      //   console.debug(index, nodeValue1);
+      // }
 
       for (let c = 0; c < numIComps; ++c) {
         const cfun = vprop.getRGBTransferFunction(c);
         const cRange = cfun.getRange();
         cfun.getTable(cRange[0], cRange[1], cWidth, tmpTable, 1);
+
         for (let i = 0; i < cWidth * 3; ++i) {
           cTable[c * cWidth * 6 + i] = 255.0 * tmpTable[i];
           cTable[c * cWidth * 6 + i + cWidth * 3] = 255.0 * tmpTable[i];
         }
       }
 
-      model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow);
+      model.colorTexture.resetFormatAndType();
       model.colorTexture.setMinificationFilter(Filter.LINEAR);
       model.colorTexture.setMagnificationFilter(Filter.LINEAR);
 
@@ -150,60 +201,101 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         VtkDataTypes.UNSIGNED_CHAR,
         cTable
       );
-      model.colorTextureString = toString;
+      if (colorTransferFunc) {
+        model._openGLRenderWindow.setGraphicsResourceForObject(
+          colorTransferFunc,
+          model.colorTexture,
+          toString
+        );
+        if (colorTransferFunc !== model._colorTransferFunc) {
+          model._openGLRenderWindow.registerGraphicsResourceUser(
+            colorTransferFunc,
+            publicAPI
+          );
+          model._openGLRenderWindow.unregisterGraphicsResourceUser(
+            model._colorTransferFunc,
+            publicAPI
+          );
+        }
+        model._colorTransferFunc = colorTransferFunc;
+      }
+    } else {
+      model.colorTexture = cTex.oglObject;
     }
 
     publicAPI.updateLabelOutlineThicknessTexture(actor);
 
     // rebuild the scalarTexture if the data has changed
-    toString = `${image.getMTime()}`;
+    // IMPORTANT: this is the most important part of the streaming process.
+    // we need to take into account that sometimes the texture is updated (mtime)
+    // but the image is not updated since in the new model the image lives in the cpu
+    // while the texture lives in the gpu.
+    toString = `${image.getMTime()}-${model.scalarTexture.getMTime()}`;
 
     if (model.scalarTextureString !== toString) {
       // Build the textures
       const dims = image.getDimensions();
+      model.scalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
+
+      // Set not to use half float initially since we don't know if the
+      // streamed data is actually half float compatible or not yet, as
+      // the data has not arrived due to streaming
+      model.scalarTexture.enableUseHalfFloat(false);
 
       const previousTextureParameters =
         model.scalarTexture.getTextureParameters();
 
-      const dataType = image.getPointData().getScalars().getDataType();
-      const data = image.getPointData().getScalars().getData();
+      const dataType = image.get('dataType').dataType;
 
       let shouldReset = true;
 
-      if (
-        previousTextureParameters.dataType &&
-        previousTextureParameters.dataType === dataType
-      ) {
-        const previousTextureSize =
-          previousTextureParameters.width *
-          previousTextureParameters.height *
-          previousTextureParameters.depth *
-          previousTextureParameters.numComps;
-        if (data.length === previousTextureSize) {
-          shouldReset = false;
+      if (previousTextureParameters?.dataType === dataType) {
+        if (previousTextureParameters?.width === dims[0]) {
+          if (previousTextureParameters?.height === dims[1]) {
+            if (previousTextureParameters?.depth === dims[2]) {
+              shouldReset = false;
+            }
+          }
         }
       }
 
       if (shouldReset) {
-        model.scalarTexture.setOglNorm16Ext(
-          model.context.getExtension('EXT_texture_norm16')
-        );
-
-        model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
+        const norm16Ext = model.context.getExtension('EXT_texture_norm16');
+        model.scalarTexture.setOglNorm16Ext(norm16Ext);
         model.scalarTexture.resetFormatAndType();
 
-        model.scalarTexture.create3DFilterableFromRaw(
+        model.scalarTexture.setTextureParameters({
+          width: dims[0],
+          height: dims[1],
+          depth: dims[2],
+          numberOfComponents: numIComps,
+          dataType,
+        });
+
+        // const emptyDataTypeOfType = getConstructorFromType(dataType);
+        // const emptyData = new emptyDataTypeOfType(dims[0] * dims[1] * dims[2]);
+
+        // There are some bugs in mac for texStorage3D so basically here
+        // we let the vtk.js decide if it wants to use it or not
+        model.scalarTexture.create3DFromRaw(
           dims[0],
           dims[1],
           dims[2],
-          numComp,
-          scalars.getDataType(),
-          scalars.getData(),
-          model.renderable.getPreferSizeOverAccuracy()
+          numIComps,
+          dataType,
+          null
+          // emptyData
         );
+
+        // do an initial update since some data may be already
+        // available and we can avoid a re-render to trigger
+        // the update
+        model.scalarTexture.update3DFromRaw();
+
+        // since we don't have scalars we don't need to set graphics resource for the scalar texture
       } else {
         model.scalarTexture.deactivate();
-        model.scalarTexture.update3DFromRaw(data);
+        model.scalarTexture.update3DFromRaw();
       }
 
       model.scalarTextureString = toString;
@@ -246,34 +338,26 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     model.VBOBuildTime.modified();
   };
 
-  publicAPI.getRenderTargetSize = () => {
-    if (model._useSmallViewport) {
-      return [model._smallViewportWidth, model._smallViewportHeight];
+  publicAPI.getNeedToRebuildBufferObjects = (ren, actor) => {
+    if (
+      model.VBOBuildTime.getMTime() < publicAPI.getMTime() ||
+      model.VBOBuildTime.getMTime() < actor.getMTime() ||
+      model.VBOBuildTime.getMTime() < model.renderable.getMTime() ||
+      model.VBOBuildTime.getMTime() < actor.getProperty().getMTime() ||
+      model.VBOBuildTime.getMTime() < model.currentInput.getMTime() ||
+      model.VBOBuildTime.getMTime() < model.scalarTexture?.getMTime() ||
+      model.VBOBuildTime.getMTime() < model.colorTexture?.getMTime() ||
+      model.VBOBuildTime.getMTime() <
+        model.labelOutlineThicknessTexture?.getMTime() ||
+      !model.scalarTexture?.getHandle() ||
+      !model.colorTexture?.getHandle() ||
+      !model.labelOutlineThicknessTexture?.getHandle()
+    ) {
+      return true;
     }
 
-    const { usize, vsize } = model._openGLRenderer.getTiledSizeAndOrigin();
-
-    return [usize, vsize];
+    return false;
   };
-
-  publicAPI.getRenderTargetOffset = () => {
-    const { lowerLeftU, lowerLeftV } =
-      model._openGLRenderer.getTiledSizeAndOrigin();
-
-    return [lowerLeftU, lowerLeftV];
-  };
-
-  // TODO: it seems like this may be needed to reset the GPU memory associated
-  // with a volume
-  // publicAPI.hardReset = () => {
-  //   model.opacityTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.colorTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.scalarTexture.setOglNorm16Ext(
-  //     model.context.getExtension('EXT_texture_norm16')
-  //   );
-  //   model.scalarTexture.releaseGraphicsResources(model._openGLRenderWindow);
-  //   model.scalarTexture.resetFormatAndType();
-  // };
 }
 
 // ----------------------------------------------------------------------------

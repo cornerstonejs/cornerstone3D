@@ -1,7 +1,7 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { vec2 } from 'gl-matrix';
 import { polyline } from '../../../utilities/math';
-import { EventTypes } from '../../../types';
+import type { EventTypes } from '../../../types';
 
 const { addCanvasPointsToArray, getFirstLineSegmentIntersectionIndexes } =
   polyline;

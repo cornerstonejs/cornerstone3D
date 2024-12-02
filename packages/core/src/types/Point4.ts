@@ -3,4 +3,4 @@
  */
 type Point4 = [number, number, number, number];
 
-export default Point4;
+export type { Point4 as default };

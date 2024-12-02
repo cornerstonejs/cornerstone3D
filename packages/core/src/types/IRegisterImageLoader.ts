@@ -1,4 +1,4 @@
-import ImageLoaderFn from './ImageLoaderFn';
+import type ImageLoaderFn from './ImageLoaderFn';
 
 /**
  * Register image loader interface
@@ -7,4 +7,4 @@ interface IRegisterImageLoader {
   registerImageLoader: (scheme: string, imageLoader: ImageLoaderFn) => void;
 }
 
-export default IRegisterImageLoader;
+export type { IRegisterImageLoader as default };
