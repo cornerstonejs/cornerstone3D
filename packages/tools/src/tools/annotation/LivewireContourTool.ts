@@ -136,8 +136,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         },
 
         actions: {
-          undo: {
-            method: 'undo',
+          cancelInProgress: {
+            method: 'cancelInProgress',
             bindings: [
               {
                 key: 'Escape',
@@ -899,9 +899,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
    * Eventually this is to be replaced with a proper undo, once that framework
    * is available.
    */
-  public undo(element, config, evt) {
+  public cancelInProgress(element, config, evt) {
     if (!this.editData) {
-      // TODO - proper undo
+      this.undo();
       return;
     }
     this._endCallback(evt, true);

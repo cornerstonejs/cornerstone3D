@@ -15,7 +15,7 @@ import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
@@ -657,13 +657,21 @@ export abstract class BaseTool {
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
+    static createZoomPanMemo(viewport: any): {
+        restoreMemo: () => void;
+    };
+    // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
     protected getTargetImageData(targetId: string): Types_2.IImageData | Types_2.CPUIImageData;
     // (undocumented)
     getToolName(): string;
     // (undocumented)
+    protected memo: utilities_2.HistoryMemo.Memo;
+    // (undocumented)
     mode: ToolModes;
+    // (undocumented)
+    redo(): void;
     // (undocumented)
     setActiveStrategy(strategyName: string): void;
     // (undocumented)
@@ -674,6 +682,8 @@ export abstract class BaseTool {
     toolGroupId: string;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    undo(): void;
 }
 
 declare namespace BasicStatsCalculator {
@@ -1302,7 +1312,7 @@ export class CircleScissorsTool extends BaseTool {
 function clearParentAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip_2(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
@@ -1447,7 +1457,7 @@ export class CobbAngleTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
 }
 
-declare namespace color {
+declare namespace color_2 {
     export {
         getSegmentIndexColor,
         addColorLUT_2 as addColorLUT,
@@ -1583,7 +1593,7 @@ declare namespace config {
 
 declare namespace config_2 {
     export {
-        color,
+        color_2 as color,
         visibility_2 as visibility,
         style
     }
@@ -1885,7 +1895,7 @@ function debounce(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
-function decimate(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
+function decimate_2(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
 
 // @public (undocumented)
 const _default: {
@@ -3468,6 +3478,8 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
+    cancelInProgress(element: any, config: any, evt: any): void;
+    // (undocumented)
     protected clearEditData(): void;
     // (undocumented)
     protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
@@ -3529,8 +3541,6 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
     // (undocumented)
     triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourHoleProcessingEnabled?: boolean) => void;
-    // (undocumented)
-    undo(element: any, config: any, evt: any): void;
     // (undocumented)
     protected updateAnnotation(livewirePath: LivewirePath): void;
 }
@@ -3864,12 +3874,14 @@ export class PanTool extends BaseTool {
     // (undocumented)
     mouseDragCallback(evt: EventTypes_2.InteractionEventType): void;
     // (undocumented)
+    preMouseDownCallback: (evt: EventTypes_2.InteractionEventType) => boolean;
+    // (undocumented)
     static toolName: any;
     // (undocumented)
     touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
-declare namespace planar {
+declare namespace planar_2 {
     export {
         _default as default,
         filterAnnotationsWithinSlice,
@@ -4059,7 +4071,7 @@ declare namespace polyline {
         getNormal3,
         getNormal2,
         intersectPolyline,
-        decimate,
+        decimate_2 as decimate,
         getFirstLineSegmentIntersectionIndexes,
         getLineSegmentIntersectionsIndexes,
         getLineSegmentIntersectionsCoordinates,
@@ -4714,7 +4726,7 @@ interface ROICachedStats {
 }
 
 // @public (undocumented)
-const roundNumber: typeof utilities_2.roundNumber;
+const roundNumber_2: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -6176,7 +6188,7 @@ function updateVolumeFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, op
 declare namespace utilities {
     export {
         math,
-        planar,
+        planar_2 as planar,
         viewportFilters,
         drawing_2 as drawing,
         debounce,
@@ -6206,7 +6218,7 @@ declare namespace utilities {
         planarFreehandROITool,
         stackPrefetch,
         stackContextPrefetch,
-        roundNumber,
+        roundNumber_2 as roundNumber,
         pointToString,
         polyDataUtils,
         voi,
@@ -6222,7 +6234,7 @@ export { utilities }
 declare namespace vec2 {
     export {
         findClosestPoint,
-        clip as liangBarksyClip
+        clip_2 as liangBarksyClip
     }
 }
 

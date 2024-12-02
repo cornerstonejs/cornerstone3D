@@ -882,6 +882,9 @@ function deepEqual(obj1: unknown, obj2: unknown): boolean;
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
+const DefaultHistoryMemo: HistoryMemo_2;
+
+// @public (undocumented)
 interface DicomDateObject {
     // (undocumented)
     day: number;
@@ -1395,6 +1398,30 @@ function hexToRgb(hex: any): {
     g: number;
     b: number;
 };
+
+declare namespace HistoryMemo {
+    export {
+        Memo,
+        Memoable,
+        HistoryMemo_2 as HistoryMemo,
+        DefaultHistoryMemo
+    }
+}
+
+// @public (undocumented)
+class HistoryMemo_2 {
+    constructor(label?: string, size?: number);
+    // (undocumented)
+    readonly label: any;
+    // (undocumented)
+    push(item: Memo | Memoable): Memo;
+    // (undocumented)
+    redo(items?: number): void;
+    // (undocumented)
+    get size(): any;
+    // (undocumented)
+    undo(items?: number): void;
+}
 
 // @public (undocumented)
 type IBaseVolumeViewport = BaseVolumeViewport;
@@ -2518,6 +2545,16 @@ function makeVolumeMetadata(imageIds: string[]): Metadata;
 
 // @public (undocumented)
 type Mat3 = [number, number, number, number, number, number, number, number, number] | Float32Array;
+
+// @public (undocumented)
+type Memo = {
+    restoreMemo: (undo?: boolean) => void;
+};
+
+// @public (undocumented)
+type Memoable = {
+    createMemo: () => Memo;
+};
 
 // @public (undocumented)
 interface Metadata {
@@ -3904,6 +3941,7 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
+        HistoryMemo,
         generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,

@@ -13,8 +13,8 @@ import ViewportStatus from './ViewportStatus';
 import ImageQualityStatus from './ImageQualityStatus';
 import * as VideoEnums from './VideoEnums';
 import MetadataModules from './MetadataModules';
-import VoxelManagerEnum from './VoxelManagerEnum';
 import { GenerateImageType } from './GenerateImageType';
+import VoxelManagerEnum from './VoxelManagerEnum';
 
 export {
   Events,

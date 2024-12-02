@@ -4,6 +4,8 @@ import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
 
+const { DefaultHistoryMemo } = utilities.HistoryMemo;
+
 /**
  * Abstract base class from which all tools derive.
  * Deals with cleanly merging custom and default configuration, and strategy
@@ -19,6 +21,11 @@ abstract class BaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
+  /**
+   * A memo recording the starting state of a tool.  This will be updated
+   * as changes are made, and reflects the fact that a memo has been created.
+   */
+  protected memo: utilities.HistoryMemo.Memo;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     const initialProps = utilities.deepMerge(defaultToolProps, toolProps);
@@ -203,6 +210,42 @@ abstract class BaseTool {
     throw new Error(
       'getTargetId: viewport must have a getViewReferenceId method'
     );
+  }
+
+  /**
+   * Undo an action
+   */
+  public undo() {
+    DefaultHistoryMemo.undo();
+    this.memo = null;
+  }
+
+  /**
+   * Redo an action (undo the undo)
+   */
+  public redo() {
+    DefaultHistoryMemo.redo();
+  }
+
+  public static createZoomPanMemo(viewport) {
+    // TODO - move this to view callback as a utility
+    const state = {
+      pan: viewport.getPan(),
+      zoom: viewport.getZoom(),
+    };
+    const zoomPanMemo = {
+      restoreMemo: () => {
+        const currentPan = viewport.getPan();
+        const currentZoom = viewport.getZoom();
+        viewport.setZoom(state.zoom);
+        viewport.setPan(state.pan);
+        viewport.render();
+        state.pan = currentPan;
+        state.zoom = currentZoom;
+      },
+    };
+    DefaultHistoryMemo.push(zoomPanMemo);
+    return zoomPanMemo;
   }
 }
 
