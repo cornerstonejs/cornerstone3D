@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.0...v2.5.1) (2024-12-02)
+
+### Bug Fixes
+
+- **Tools:** Update getAnnotation to use set annotation manager ([#1640](https://github.com/cornerstonejs/cornerstone3D/issues/1640)) ([5ae732b](https://github.com/cornerstonejs/cornerstone3D/commit/5ae732b06363b0bfa5db250d05dd92e06ccc53e9))
+
 # [2.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.4.0...v2.5.0) (2024-12-02)
 
 ### Features
