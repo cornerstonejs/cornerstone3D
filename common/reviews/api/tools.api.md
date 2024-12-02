@@ -241,6 +241,7 @@ export class AngleTool extends AnnotationTool {
 type Annotation = {
     annotationUID?: string;
     parentAnnotationUID?: string;
+    interpolationUID?: string;
     childAnnotationUIDs?: string[];
     highlighted?: boolean;
     isLocked?: boolean;
@@ -270,7 +271,7 @@ type Annotation = {
             [key: string]: unknown;
         };
         [key: string]: unknown;
-        cachedStats?: unknown;
+        cachedStats?: Record<string, unknown>;
     };
 };
 
@@ -308,6 +309,8 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
+    // (undocumented)
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
@@ -655,6 +658,15 @@ export abstract class BaseTool {
         restoreMemo: () => void;
     };
     // (undocumented)
+    static defaults: {
+        configuration: {
+            strategies: {};
+            defaultStrategy: any;
+            activeStrategy: any;
+            strategyOptions: {};
+        };
+    };
+    // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
     protected getTargetImageData(targetId: string): Types_2.IImageData | Types_2.CPUIImageData;
@@ -662,6 +674,8 @@ export abstract class BaseTool {
     getToolName(): string;
     // (undocumented)
     protected memo: utilities_2.HistoryMemo.Memo;
+    // (undocumented)
+    static mergeDefaultProps(defaultProps?: {}, additionalProps?: any): any;
     // (undocumented)
     mode: ToolModes;
     // (undocumented)
@@ -676,6 +690,8 @@ export abstract class BaseTool {
     toolGroupId: string;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    get toolName(): string;
     // (undocumented)
     undo(): void;
 }
@@ -821,102 +837,8 @@ declare namespace boundingBox {
 type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
-export class BrushTool extends BaseTool {
+export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
-    // (undocumented)
-    acceptPreview(element?: HTMLDivElement): void;
-    // (undocumented)
-    createEditData(element: any): {
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
-    // (undocumented)
-    protected getOperationData(element?: any): {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        override: {
-            voxelManager: Types_2.IVoxelManager<number>;
-            imageData: vtkImageData;
-        };
-        segmentsLocked: number[];
-        imageId?: string;
-        imageIds?: string[];
-        volumeId?: string;
-        referencedVolumeId?: string;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
     // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
@@ -934,7 +856,7 @@ export class BrushTool extends BaseTool {
     // (undocumented)
     previewCallback: () => void;
     // (undocumented)
-    rejectPreview(element?: HTMLDivElement): void;
+    prg: any;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
@@ -3904,7 +3826,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
@@ -4093,13 +4015,13 @@ interface ProbeAnnotation extends Annotation {
 
 // @public (undocumented)
 export class ProbeTool extends AnnotationTool {
-    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: any);
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, changeType?: ChangeTypes): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
@@ -4133,6 +4055,15 @@ export class ProbeTool extends AnnotationTool {
     isHandleOutsideImage: boolean;
     // (undocumented)
     isPointNearTool(): boolean;
+    // (undocumented)
+    static probeDefaults: {
+        supportedInteractionTypes: string[];
+        configuration: {
+            shadow: boolean;
+            preventHandleOutsideImage: boolean;
+            getTextLines: typeof defaultGetTextLines;
+        };
+    };
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -5215,7 +5146,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel(element: HTMLDivElement): string;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     protected createInterpolatedSplineControl(annotation: any): void;
     // (undocumented)
@@ -5379,6 +5310,8 @@ function stopClip(element: HTMLDivElement, options?: StopClipOptions): void;
 enum StrategyCallbacks {
     // (undocumented)
     AcceptPreview = "acceptPreview",
+    // (undocumented)
+    AddPreview = "addPreview",
     // (undocumented)
     ComputeInnerCircleRadius = "computeInnerCircleRadius",
     // (undocumented)

@@ -25,7 +25,7 @@ import {
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import {
   resetElementCursor,
@@ -107,18 +107,23 @@ class ProbeTool extends AnnotationTool {
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
 
-  constructor(
-    toolProps: PublicToolProps = {},
-    defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {
-        shadow: true,
-        preventHandleOutsideImage: false,
-        getTextLines: defaultGetTextLines,
-      },
-    }
-  ) {
-    super(toolProps, defaultToolProps);
+  public static probeDefaults = {
+    supportedInteractionTypes: ['Mouse', 'Touch'],
+    configuration: {
+      shadow: true,
+      preventHandleOutsideImage: false,
+      getTextLines: defaultGetTextLines,
+    },
+  };
+
+  constructor(toolProps: PublicToolProps = {}, defaultToolProps?) {
+    super(
+      toolProps,
+      AnnotationTool.mergeDefaultProps(
+        ProbeTool.probeDefaults,
+        defaultToolProps
+      )
+    );
   }
 
   // Not necessary for this tool but needs to be defined since it's an abstract
@@ -473,7 +478,7 @@ class ProbeTool extends AnnotationTool {
 
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].value == null
+        data.cachedStats[targetId].value === null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
@@ -481,7 +486,12 @@ class ProbeTool extends AnnotationTool {
           value: null,
         };
 
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+        this._calculateCachedStats(
+          annotation,
+          renderingEngine,
+          enabledElement,
+          ChangeTypes.StatsUpdated
+        );
       } else if (annotation.invalidated) {
         this._calculateCachedStats(annotation, renderingEngine, enabledElement);
 
@@ -566,7 +576,12 @@ class ProbeTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
+  _calculateCachedStats(
+    annotation,
+    renderingEngine,
+    enabledElement,
+    changeType = ChangeTypes.StatsUpdated
+  ) {
     const data = annotation.data;
     const { renderingEngineId, viewport } = enabledElement;
     const { element } = viewport;
@@ -663,7 +678,7 @@ class ProbeTool extends AnnotationTool {
       annotation.invalidated = false;
 
       // Dispatching annotation modified
-      triggerAnnotationModified(annotation, element);
+      triggerAnnotationModified(annotation, element, changeType);
     }
 
     return cachedStats;
@@ -674,7 +689,7 @@ function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { index, value, modalityUnit } = cachedVolumeStats;
 
-  if (value === undefined) {
+  if (value === undefined || !index) {
     return;
   }
 
