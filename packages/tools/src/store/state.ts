@@ -56,4 +56,6 @@ function resetCornerstoneToolsState(): void {
 }
 
 export type { ICornerstoneTools3dState };
+
+window.state = state;
 export { resetCornerstoneToolsState, state, state as default };
