@@ -27,7 +27,7 @@ Therefore, this guide provides additional details on how to configure various co
 
 ## Server Requirements
 
-As HTJ2K is a new encoding (and still not merged into the DICOM standard, althouhg approved for merging), it is not yet widely supported by DICOMweb servers. The various ways that servers support it might change in the future. However, we envision two main ways that this will be implemented in most servers but both require the server to support the DICOMWeb standard and HTJ2K RPCL encoding.
+As HTJ2K is a new encoding (and still not merged into the DICOM standard, although approved for merging), it is not yet widely supported by DICOMweb servers. The various ways that servers support it might change in the future. However, we envision two main ways that this will be implemented in most servers but both require the server to support the DICOMWeb standard and HTJ2K RPCL encoding.
 
 - **HTJ2K Support**: For HTJ2K encoded images, the server must support the streaming of image data
   in a way that respects the HTJ2K RPCL configuration, allowing the client to decode partial data into a displayable image.

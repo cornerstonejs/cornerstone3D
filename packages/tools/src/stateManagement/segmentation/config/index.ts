@@ -1,29 +1,5 @@
 import * as color from './segmentationColor';
 import * as visibility from './segmentationVisibility';
-import {
-  getGlobalConfig,
-  getGlobalRepresentationConfig,
-  getToolGroupSpecificConfig,
-  setGlobalConfig,
-  setGlobalRepresentationConfig,
-  setToolGroupSpecificConfig,
-  setSegmentSpecificConfig,
-  getSegmentSpecificConfig,
-  setSegmentationRepresentationSpecificConfig,
-  getSegmentationRepresentationSpecificConfig,
-} from './segmentationConfig';
+import * as style from './styleHelpers';
 
-export {
-  color,
-  visibility,
-  getGlobalConfig,
-  getGlobalRepresentationConfig,
-  getToolGroupSpecificConfig,
-  setGlobalConfig,
-  setGlobalRepresentationConfig,
-  setToolGroupSpecificConfig,
-  setSegmentSpecificConfig,
-  getSegmentSpecificConfig,
-  setSegmentationRepresentationSpecificConfig,
-  getSegmentationRepresentationSpecificConfig,
-};
+export { color, visibility, style };

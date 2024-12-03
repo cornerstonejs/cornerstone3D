@@ -1,6 +1,6 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes';
+import type { AnnotationSelectionChangeEventDetail } from '../../types/EventTypes';
 import { getAnnotation } from './annotationState';
 
 /*
@@ -52,10 +52,20 @@ function selectAnnotation(
   const detail = makeEventDetail();
   if (!preserveSelected) {
     clearSelectionSet(selectedAnnotationUIDs, detail);
+    const annotation = getAnnotation(annotationUID);
+
+    if (annotation) {
+      annotation.isSelected = true;
+    }
   }
   if (annotationUID && !selectedAnnotationUIDs.has(annotationUID)) {
     selectedAnnotationUIDs.add(annotationUID);
     detail.added.push(annotationUID);
+    const annotation = getAnnotation(annotationUID);
+
+    if (annotation) {
+      annotation.isSelected = true;
+    }
   }
   publish(detail, selectedAnnotationUIDs);
 }
@@ -71,10 +81,13 @@ function deselectAnnotation(annotationUID?: string): void {
   if (annotationUID) {
     if (selectedAnnotationUIDs.delete(annotationUID)) {
       detail.removed.push(annotationUID);
+      const annotation = getAnnotation(annotationUID);
+      annotation.isSelected = false;
     }
   } else {
     clearSelectionSet(selectedAnnotationUIDs, detail);
   }
+
   publish(detail, selectedAnnotationUIDs);
 }
 
@@ -135,6 +148,11 @@ function clearSelectionSet(
   selectionSet.forEach((value) => {
     if (selectionSet.delete(value)) {
       detail.removed.push(value);
+      const annotation = getAnnotation(value);
+
+      if (annotation) {
+        annotation.isSelected = false;
+      }
     }
   });
 }

@@ -1,3 +1,3 @@
-import type IStackViewport from '../RenderingEngine/StackViewport';
+import type { StackViewport } from '../RenderingEngine';
 
-export default IStackViewport;
+export type { StackViewport as default };

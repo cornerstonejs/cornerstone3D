@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -24,12 +24,12 @@ const {
   WindowLevelTool,
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   synchronizers,
   MIPJumpToClickTool,
-  VolumeRotateMouseWheelTool,
   CrosshairsTool,
   TrackballRotateTool,
+  VolumeRotateTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -39,7 +39,7 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;
 
 let renderingEngine;
-const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const StudyInstanceUID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 const renderingEngineId = 'myRenderingEngine';
@@ -324,11 +324,11 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
-  cornerstoneTools.addTool(VolumeRotateMouseWheelTool);
   cornerstoneTools.addTool(CrosshairsTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(VolumeRotateTool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -352,7 +352,7 @@ function setUpToolGroups() {
   [ctToolGroup, ptToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(CrosshairsTool.toolName, {
       getReferenceLineColor,
       getReferenceLineControllable,
@@ -363,7 +363,7 @@ function setUpToolGroups() {
 
   fusionToolGroup.addTool(PanTool.toolName);
   fusionToolGroup.addTool(ZoomTool.toolName);
-  fusionToolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  fusionToolGroup.addTool(StackScrollTool.toolName);
   fusionToolGroup.addTool(CrosshairsTool.toolName, {
     getReferenceLineColor,
     getReferenceLineControllable,
@@ -402,29 +402,31 @@ function setUpToolGroups() {
       ],
     });
 
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Wheel }],
+    });
     toolGroup.setToolPassive(CrosshairsTool.toolName);
   });
 
   // MIP Tool Groups
   mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
-  mipToolGroup.addTool('VolumeRotateMouseWheel');
-  mipToolGroup.addTool('MIPJumpToClickTool', {
+  mipToolGroup.addTool(VolumeRotateTool.toolName);
+  mipToolGroup.setToolActive(VolumeRotateTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
+  mipToolGroup.addTool(MIPJumpToClickTool.toolName, {
     toolGroupId: ptToolGroupId,
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  mipToolGroup.setToolActive('MIPJumpToClickTool', {
+  mipToolGroup.setToolActive(MIPJumpToClickTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  mipToolGroup.setToolActive('VolumeRotateMouseWheel');
 
   mipToolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
 }

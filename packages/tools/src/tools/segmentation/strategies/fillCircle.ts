@@ -20,10 +20,8 @@ const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
-      imageVoxelManager: imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager: segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -67,12 +65,13 @@ const initializeCircle = {
       segmentationImageData.getDimensions()
     );
 
-    segmentationVoxelManager.boundsIJK = boundsIJK;
-    imageVoxelManager.isInObject = createPointInEllipse({
+    operationData.isInObject = createPointInEllipse({
       topLeftWorld,
       bottomRightWorld,
       center,
     });
+
+    operationData.isInObjectBoundsIJK = boundsIJK;
   },
 } as Composition;
 
@@ -126,7 +125,8 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   compositions.setValue,
   initializeCircle,
   compositions.determineSegmentIndex,
-  compositions.preview
+  compositions.preview,
+  compositions.labelmapStatistics
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
@@ -138,7 +138,8 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   compositions.dynamicThreshold,
   compositions.threshold,
   compositions.preview,
-  compositions.islandRemoval
+  compositions.islandRemoval,
+  compositions.labelmapStatistics
 );
 
 /**

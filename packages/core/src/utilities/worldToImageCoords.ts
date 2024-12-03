@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import { metaData } from '..';
-import { Point2, Point3 } from '../types';
+import { get } from '../metaData';
+import type { Point2, Point3 } from '../types';
 
 /**
  * Given the imageId, and 3d coordinates on the world space, it returns the continuos
@@ -16,7 +16,7 @@ function worldToImageCoords(
   imageId: string,
   worldCoords: Point3
 ): Point2 | undefined {
-  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+  const imagePlaneModule = get('imagePlaneModule', imageId);
 
   if (!imagePlaneModule) {
     throw new Error(`No imagePlaneModule found for imageId: ${imageId}`);

@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -22,9 +22,9 @@ console.warn(
 
 const {
   ToolGroupManager,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   ZoomTool,
-  ReferenceLines,
+  ReferenceLinesTool,
   PanTool,
   Enums: csToolsEnums,
   WindowLevelTool,
@@ -94,11 +94,11 @@ addDropDownToToolbar({
   labelText: 'Active Viewport to Change Slab Thickness',
   onSelectedValueChange: (value) => {
     activeViewportId = value as string;
-    toolGroup.setToolDisabled(ReferenceLines.toolName);
-    toolGroup.setToolConfiguration(ReferenceLines.toolName, {
+    toolGroup.setToolDisabled(ReferenceLinesTool.toolName);
+    toolGroup.setToolConfiguration(ReferenceLinesTool.toolName, {
       sourceViewportId: activeViewportId,
     });
-    toolGroup.setToolEnabled(ReferenceLines.toolName);
+    toolGroup.setToolEnabled(ReferenceLinesTool.toolName);
     renderingEngine.render();
   },
 });
@@ -150,7 +150,7 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick: (toggle) => {
     const scrollSlabs = !!toggle;
-    toolGroup.setToolConfiguration(StackScrollMouseWheelTool.toolName, {
+    toolGroup.setToolConfiguration(StackScrollTool.toolName, {
       scrollSlabs,
     });
   },
@@ -167,10 +167,10 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(ReferenceLines);
+  cornerstoneTools.addTool(ReferenceLinesTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -178,10 +178,10 @@ async function run() {
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(WindowLevelTool.toolName, { volumeId });
-  toolGroup.addTool(ReferenceLines.toolName, { volumeId });
+  toolGroup.addTool(ReferenceLinesTool.toolName, { volumeId });
   toolGroup.addTool(PanTool.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -207,14 +207,20 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolEnabled(ReferenceLines.toolName);
-  toolGroup.setToolConfiguration(ReferenceLines.toolName, {
+  toolGroup.setToolEnabled(ReferenceLinesTool.toolName);
+  toolGroup.setToolConfiguration(ReferenceLinesTool.toolName, {
     sourceViewportId: 'CT_AXIAL',
   });
 
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -222,7 +228,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

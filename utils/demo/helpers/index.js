@@ -26,7 +26,9 @@ import setCtTransferFunctionForVolumeActor, {
 import setPetColorMapTransferFunctionForVolumeActor from './setPetColorMapTransferFunctionForVolumeActor';
 import setPetTransferFunctionForVolumeActor from './setPetTransferFunctionForVolumeActor';
 import setTitleAndDescription from './setTitleAndDescription';
-import wadoURICreateImageIds from './WADOURICreateImageIds';
+import { wadoURICreateImageIds } from './WADOURICreateImageIds';
+import { createAndCacheGeometriesFromSurfaces } from './createAndCacheGeometriesFromSurfaces';
+import { createAndCacheGeometriesFromContours } from './createAndCacheGeometriesFromContours';
 
 export {
   addBrushSizeSlider,
@@ -57,4 +59,6 @@ export {
   setPetTransferFunctionForVolumeActor,
   setTitleAndDescription,
   wadoURICreateImageIds,
+  createAndCacheGeometriesFromContours,
+  createAndCacheGeometriesFromSurfaces,
 };

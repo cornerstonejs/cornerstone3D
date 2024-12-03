@@ -1,4 +1,4 @@
-import { Calculator } from '../utilities/math/basic';
+import type { Calculator } from '../utilities/math/basic';
 
 type SharedToolProp = {
   /** supported interactions for the tool */
@@ -7,6 +7,7 @@ type SharedToolProp = {
   configuration?: ToolConfiguration;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ToolConfiguration = Record<string, any> & {
   statsCalculator?: Calculator;
 };

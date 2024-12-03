@@ -1,34 +1,33 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
   geometryLoader,
   RenderingEngine,
   setVolumesForViewports,
-  Types,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addSliderToToolbar,
   addToggleButtonToToolbar,
+  createAndCacheGeometriesFromContours,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
 
 // This is for debugging purposes
-console.warn(
+console.debug(
   'Click on index.ts to open source code for this example --------->'
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -44,14 +43,13 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Contour Segmentation Configuration',
-  'Here we demonstrate how to configure the contour rendering. This example download the contour data.'
+  'Here we demonstrate how to configure the contour rendering. This example downloads the contour data.'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
@@ -68,22 +66,20 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 content.append(instructions);
 
-let planarSegmentationRepresentationUID;
-
+let viewportId;
 // ============================= //
 
 addToggleButtonToToolbar({
   title: 'Hide All Segments',
   onClick: (toggle) => {
-    [
-      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-    ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setSegmentationVisibility(
-        toolGroupId,
-        representationUID,
-        !toggle
-      );
-    });
+    segmentation.config.visibility.setSegmentationRepresentationVisibility(
+      viewportId,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+      !toggle
+    );
   },
 });
 
@@ -91,16 +87,13 @@ addToggleButtonToToolbar({
   title: 'Hide Red Segment',
   onClick: (toggle) => {
     const segmentIndex = 1;
-    [
-      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-    ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setSegmentVisibility(
-        toolGroupId,
-        representationUID,
-        segmentIndex,
-        !toggle
-      );
-    });
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
+      segmentIndex,
+      !toggle
+    );
   },
 });
 
@@ -108,16 +101,13 @@ addToggleButtonToToolbar({
   title: 'Hide Green Segment',
   onClick: (toggle) => {
     const segmentIndex = 2;
-    [
-      { representationUID: planarSegmentationRepresentationUID, toolGroupId },
-    ].forEach(({ representationUID, toolGroupId }) => {
-      segmentation.config.visibility.setSegmentVisibility(
-        toolGroupId,
-        representationUID,
-        segmentIndex,
-        !toggle
-      );
-    });
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewportId,
+      segmentationId,
+      csToolsEnums.SegmentationRepresentations.Contour,
+      segmentIndex,
+      !toggle
+    );
   },
 });
 
@@ -126,38 +116,28 @@ addSliderToToolbar({
   range: [0.1, 10],
   defaultValue: 4,
   onSelectedValueChange: (value) => {
-    segmentation.config.setToolGroupSpecificConfig(toolGroupId, {
-      renderInactiveSegmentations: true,
-      representations: {
-        CONTOUR: {
-          outlineWidthActive: Number(value),
-        },
+    segmentation.config.style.setStyle(
+      {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
       },
-    });
+      {
+        outlineWidth: Number(value),
+      }
+    );
   },
 });
 
 async function addSegmentationsToState() {
-  const circle = await fetch(assetsURL.CircleContour).then((res) => res.json());
-
   // load the contour data
-  const geometryIds = [];
 
-  const promises = circle.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
+  const geometryIds = await createAndCacheGeometriesFromContours(
+    'CircleContour'
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
-      segmentationId: `${segmentationId}`,
+      segmentationId,
       representation: {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
@@ -179,20 +159,17 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -209,7 +186,13 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -217,7 +200,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -233,11 +216,11 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
+  viewportId = 'CT_AXIAL';
 
   const viewportInputArray = [
     {
-      viewportId: viewportId1,
+      viewportId,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
@@ -249,26 +232,21 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
+  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
 
-  // // Add the segmentation representation to the toolgroup
-  const segRepresentations1 = await segmentation.addSegmentationRepresentations(
-    toolGroupId,
-    [
-      {
-        segmentationId: `${segmentationId}`,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]
-  );
-
-  planarSegmentationRepresentationUID = segRepresentations1[0];
+  // Add the segmentation representation to the viewport
+  await segmentation.addSegmentationRepresentations(viewportId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   // Render the image
   renderingEngine.render();

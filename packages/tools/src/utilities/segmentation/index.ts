@@ -1,10 +1,11 @@
 import thresholdVolumeByRange from './thresholdVolumeByRange';
 import rectangleROIThresholdVolumeByRange from './rectangleROIThresholdVolumeByRange';
 import createMergedLabelmapForIndex from './createMergedLabelmapForIndex';
-import isValidRepresentationConfig from './isValidRepresentationConfig';
-import getDefaultRepresentationConfig from './getDefaultRepresentationConfig';
 import createLabelmapVolumeForViewport from './createLabelmapVolumeForViewport';
-import { triggerSegmentationRender } from './triggerSegmentationRender';
+import {
+  triggerSegmentationRender,
+  triggerSegmentationRenderBySegmentationId,
+} from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import floodFill from './floodFill';
 import {
   getBrushSizeForToolGroup,
@@ -14,40 +15,39 @@ import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
+import VolumetricCalculator from './VolumetricCalculator';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
-import { createImageIdReferenceMap } from './createImageIdReferenceMap';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
 import segmentContourAction from './segmentContourAction';
 import { invalidateBrushCursor } from './invalidateBrushCursor';
 import { getUniqueSegmentIndices } from './getUniqueSegmentIndices';
-import { getSegmentAtWorldPoint } from './getSegmentAtWorldPoint';
-import { getSegmentAtLabelmapBorder } from './getSegmentAtLabelmapBorder';
+import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
+import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
-import { getBrushToolInstances } from './utilities';
+import { getBrushToolInstances } from './getBrushToolInstances';
 
 export {
   thresholdVolumeByRange,
   createMergedLabelmapForIndex,
-  isValidRepresentationConfig,
-  getDefaultRepresentationConfig,
   createLabelmapVolumeForViewport,
   rectangleROIThresholdVolumeByRange,
   triggerSegmentationRender,
+  triggerSegmentationRenderBySegmentationId,
   floodFill,
   getBrushSizeForToolGroup,
   setBrushSizeForToolGroup,
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
+  VolumetricCalculator,
   thresholdSegmentationByRange,
-  createImageIdReferenceMap,
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,
   segmentContourAction,
   invalidateBrushCursor,
   getUniqueSegmentIndices,
-  getSegmentAtWorldPoint,
-  getSegmentAtLabelmapBorder,
+  getSegmentIndexAtWorldPoint,
+  getSegmentIndexAtLabelmapBorder,
   getHoveredContourSegmentationAnnotation,
   getBrushToolInstances,
 };

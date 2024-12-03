@@ -1,28 +1,19 @@
-import { getGPUTier } from 'detect-gpu';
-import { SharedArrayBufferModes } from './enums';
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
-let useSharedArrayBuffer = true;
-let sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
-import { deepMerge } from './utilities';
-import { Cornerstone3DConfig } from './types';
+import deepMerge from './utilities/deepMerge';
+import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 
-// TODO: move sharedArrayBuffer into config.
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
-  gpuTier: undefined,
-  detectGPUConfig: {},
+  gpuTier: { tier: 2 }, // Assume medium tier by default
   isMobile: false, // is mobile device
   rendering: {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
-    useNorm16Texture: false,
     strictZSpacingForVolumeViewport: true,
   },
-  // cache
-  enableCacheOptimization: true,
   /**
    * Imports peer modules.
    * This may just fallback to the default import, but many packaging
@@ -62,19 +53,6 @@ function _hasActiveWebGLContext() {
   );
 }
 
-function hasSharedArrayBuffer() {
-  try {
-    /*eslint-disable no-constant-condition */
-    if (new SharedArrayBuffer(0)) {
-      return true;
-    } else {
-      return false;
-    }
-  } catch {
-    return false;
-  }
-}
-
 function _hasNorm16TextureSupport() {
   const gl = _getGLContext();
 
@@ -98,21 +76,27 @@ function isIOS() {
     return (
       navigator.maxTouchPoints &&
       navigator.maxTouchPoints > 2 &&
-      /MacIntel/.test(navigator.platform)
+      navigator.platform.includes('MacIntel')
     );
   }
 }
 
 /**
- * Initialize the cornerstone-core. If the browser has a webgl context and
- * the detected gpu (by detect-gpu library) indicates the GPU is not low end we
- * will use webgl GPU rendering. Otherwise we will use cpu rendering.
+ * Initialize the cornerstone-core. This function checks for WebGL context availability
+ * to determine if GPU rendering is possible. By default, it assumes a medium GPU tier.
  *
- * @param configuration - A configuration object
- * @returns A promise that resolves to true cornerstone has been initialized successfully.
+ * It's the responsibility of the consumer application to provide accurate GPU tier information
+ * if needed. Libraries like 'detect-gpu' can be used for this purpose, and the result can be
+ * passed in the configuration object.
+ *
+ * If a WebGL context is available, GPU rendering will be used. Otherwise, it will fall back
+ * to CPU rendering for supported operations.
+ *
+ * @param configuration - A configuration object, which can include GPU tier information
+ * @returns A promise that resolves to true if cornerstone has been initialized successfully.
  * @category Initialization
  */
-async function init(configuration = config): Promise<boolean> {
+function init(configuration = config): boolean {
   if (csRenderInitialized) {
     return csRenderInitialized;
   }
@@ -121,44 +105,22 @@ async function init(configuration = config): Promise<boolean> {
   config = deepMerge(defaultConfig, configuration);
 
   if (isIOS()) {
-    // iOS devices don't have support for OES_texture_float_linear
-    // and thus we should use native data type if we are on iOS
-    config.rendering.useNorm16Texture = _hasNorm16TextureSupport();
-
-    if (!config.rendering.useNorm16Texture) {
-      if (configuration.rendering?.preferSizeOverAccuracy) {
-        config.rendering.preferSizeOverAccuracy = true;
-      } else {
-        console.log(
-          'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
-        );
-      }
+    if (configuration.rendering?.preferSizeOverAccuracy) {
+      config.rendering.preferSizeOverAccuracy = true;
+    } else {
+      console.log(
+        'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
+      );
     }
   }
 
-  // gpuTier
   const hasWebGLContext = _hasActiveWebGLContext();
   if (!hasWebGLContext) {
     console.log('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    config.gpuTier =
-      config.gpuTier || (await getGPUTier(config.detectGPUConfig));
-    console.log(
-      'CornerstoneRender: Using detect-gpu to get the GPU benchmark:',
-      config.gpuTier
-    );
-    if (config.gpuTier?.tier < 1) {
-      console.log(
-        'CornerstoneRender: GPU is not powerful enough, using CPU rendering'
-      );
-      config.rendering.useCPURendering = true;
-    } else {
-      console.log('CornerstoneRender: using GPU rendering');
-    }
+    console.log('CornerstoneRender: using GPU rendering');
   }
-
-  setUseSharedArrayBuffer(sharedArrayBufferMode);
 
   csRenderInitialized = true;
 
@@ -177,10 +139,12 @@ async function init(configuration = config): Promise<boolean> {
  * @category Initialization
  *
  */
-function setUseCPURendering(status: boolean): void {
+function setUseCPURendering(status: boolean, updateViewports = true): void {
   config.rendering.useCPURendering = status;
   csRenderInitialized = true;
-  _updateRenderingPipelinesForAllViewports();
+  if (updateViewports) {
+    _updateRenderingPipelinesForAllViewports();
+  }
 }
 
 function setPreferSizeOverAccuracy(status: boolean): void {
@@ -222,45 +186,6 @@ function getShouldUseCPURendering(): boolean {
   return config.rendering.useCPURendering;
 }
 
-function setUseSharedArrayBuffer(mode: SharedArrayBufferModes | boolean): void {
-  if (mode == SharedArrayBufferModes.AUTO) {
-    sharedArrayBufferMode = SharedArrayBufferModes.AUTO;
-    const hasSharedBuffer = hasSharedArrayBuffer();
-    if (!hasSharedBuffer) {
-      useSharedArrayBuffer = false;
-      console.warn(
-        `CornerstoneRender: SharedArray Buffer not allowed, performance may be slower.
-        Try ensuring page is cross-origin isolated to enable SharedArrayBuffer.`
-      );
-    } else {
-      useSharedArrayBuffer = true;
-      // eslint-disable-next-line no-console
-      console.log('CornerstoneRender: using SharedArrayBuffer');
-    }
-    return;
-  }
-
-  if (mode == SharedArrayBufferModes.TRUE || mode == true) {
-    sharedArrayBufferMode = SharedArrayBufferModes.TRUE;
-    useSharedArrayBuffer = true;
-    return;
-  }
-
-  if (mode == SharedArrayBufferModes.FALSE || mode == false) {
-    sharedArrayBufferMode = SharedArrayBufferModes.FALSE;
-    useSharedArrayBuffer = false;
-    return;
-  }
-}
-
-function resetUseSharedArrayBuffer(): void {
-  setUseSharedArrayBuffer(sharedArrayBufferMode);
-}
-
-function getShouldUseSharedArrayBuffer(): boolean {
-  return useSharedArrayBuffer;
-}
-
 /**
  *
  * Returns whether or not cornerstone-core has been initialized.
@@ -298,11 +223,11 @@ function setConfiguration(c: Cornerstone3DConfig) {
  * @category Initialization
  */
 function _updateRenderingPipelinesForAllViewports(): void {
-  getRenderingEngines().forEach((engine) =>
-    engine
-      .getViewports()
-      .forEach((viewport) => viewport.updateRenderingPipeline?.())
-  );
+  getRenderingEngines().forEach((engine) => {
+    engine.getViewports().forEach((viewport) => {
+      viewport.updateRenderingPipeline();
+    });
+  });
 }
 
 function getWebWorkerManager() {
@@ -320,13 +245,10 @@ function peerImport(moduleId: string) {
 export {
   init,
   getShouldUseCPURendering,
-  getShouldUseSharedArrayBuffer,
   isCornerstoneInitialized,
   setUseCPURendering,
-  setUseSharedArrayBuffer,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
-  resetUseSharedArrayBuffer,
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,

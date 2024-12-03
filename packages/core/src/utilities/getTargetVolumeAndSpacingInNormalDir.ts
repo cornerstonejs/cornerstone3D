@@ -1,6 +1,6 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
-import { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
+import type { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 import { getVolumeId } from './getVolumeId';
@@ -47,7 +47,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   const { viewPlaneNormal } = camera;
   const volumeActors = viewport.getActors();
 
-  if (!volumeActors || !volumeActors.length) {
+  if (!volumeActors.length) {
     return {
       spacingInNormalDirection: null,
       imageVolume: null,
@@ -59,7 +59,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     .map((va) => {
       // prefer the referenceUID if it is set, since it can be a derived actor
       // and the uid does not necessarily match the volumeId
-      const actorUID = va.referenceId ?? va.uid;
+      const actorUID = va.referencedId ?? va.uid;
       return cache.getVolume(actorUID);
     })
     .filter((iv) => !!iv);
@@ -139,7 +139,7 @@ function getSpacingInNormal(
 ): number {
   const { slabThickness } = viewport.getProperties();
   let spacingInNormalDirection = slabThickness;
-  if (!slabThickness || useSlabThickness === false) {
+  if (!slabThickness || !useSlabThickness) {
     spacingInNormalDirection = getSpacingInNormalDirection(
       imageVolume,
       viewPlaneNormal

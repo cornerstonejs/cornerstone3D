@@ -1,5 +1,5 @@
 export type LoadRequestFunction = (
   url: string,
   imageId: string,
-  ...args: any[]
+  ...args: unknown[]
 ) => Promise<ArrayBuffer>;

@@ -1,6 +1,5 @@
 import { eventTarget, Enums } from '@cornerstonejs/core';
 import { getAnnotationManager } from './stateManagement/annotation/annotationState';
-import { getDefaultSegmentationStateManager } from './stateManagement/segmentation/segmentationState';
 import { Events as TOOLS_EVENTS } from './enums';
 import { addEnabledElement, removeEnabledElement } from './store';
 import { resetCornerstoneToolsState } from './store/state';
@@ -10,13 +9,13 @@ import {
   annotationSelectionListener,
   annotationModifiedListener,
   segmentationDataModifiedEventListener,
-  segmentationRepresentationModifiedEventListener,
-  segmentationRepresentationRemovedEventListener,
   segmentationModifiedListener,
 } from './eventListeners';
 import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 
 import * as ToolGroupManager from './store/ToolGroupManager';
+import { defaultSegmentationStateManager } from './stateManagement/segmentation/SegmentationStateManager';
+import segmentationRepresentationModifiedListener from './eventListeners/segmentation/segmentationRepresentationModifiedListener';
 
 let csToolsInitialized = false;
 
@@ -55,8 +54,7 @@ export function destroy(): void {
 
   // remove all annotation.
   const annotationManager = getAnnotationManager();
-  const segmentationStateManager = getDefaultSegmentationStateManager();
-
+  const segmentationStateManager = defaultSegmentationStateManager;
   annotationManager.restoreAnnotations({});
   segmentationStateManager.resetState();
   csToolsInitialized = false;
@@ -142,14 +140,15 @@ function _addCornerstoneToolsEventListeners() {
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   );
+
   eventTarget.addEventListener(
     TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
-    segmentationRepresentationModifiedEventListener
+    segmentationRepresentationModifiedListener
   );
 
   eventTarget.addEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
-    segmentationRepresentationRemovedEventListener
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_ADDED,
+    segmentationRepresentationModifiedListener
   );
 }
 
@@ -193,14 +192,15 @@ function _removeCornerstoneToolsEventListeners() {
     TOOLS_EVENTS.SEGMENTATION_DATA_MODIFIED,
     segmentationDataModifiedEventListener
   );
+
   eventTarget.removeEventListener(
     TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_MODIFIED,
-    segmentationRepresentationModifiedEventListener
+    segmentationRepresentationModifiedListener
   );
 
   eventTarget.removeEventListener(
-    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_REMOVED,
-    segmentationRepresentationRemovedEventListener
+    TOOLS_EVENTS.SEGMENTATION_REPRESENTATION_ADDED,
+    segmentationRepresentationModifiedListener
   );
 }
 

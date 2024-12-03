@@ -16,6 +16,7 @@ export const checkForScreenshot = async (
   delay = 100
 ) => {
   await page.waitForLoadState('networkidle');
+
   for (let i = 1; i < attempts; i++) {
     try {
       await expect(locator).toHaveScreenshot(screenshotPath, {

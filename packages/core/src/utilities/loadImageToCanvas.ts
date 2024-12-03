@@ -14,25 +14,25 @@ import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import { getConfiguration } from '../init';
-import cache from '../cache';
+import cache from '../cache/cache';
 
 /**
  * The original load image options specified just an image id,  which is optimal
  * for things like thumbnails rendering a single image.
  */
-export type StackLoadImageOptions = {
+export interface StackLoadImageOptions {
   imageId: string;
-};
+}
 
 /**
  * The full image load options allows specifying more parameters for both the
  * presentation and the view so that a specific view can be referenced/displayed.
  */
-export type FullImageLoadOptions = {
+export interface FullImageLoadOptions {
   viewReference: ViewReference;
   viewPresentation: ViewPresentation;
   imageId: undefined;
-};
+}
 
 /**
  * The canvas load position allows for determining the rendered position of
@@ -42,12 +42,12 @@ export type FullImageLoadOptions = {
  * extraneous data such as segmentation and thus not be usable for external
  * computations.)
  */
-export type CanvasLoadPosition = {
+export interface CanvasLoadPosition {
   origin: Point3;
   topRight: Point3;
   bottomLeft: Point3;
   thicknessMm: number;
-};
+}
 
 /**
  * The image canvas can be loaded/set with various view conditions to specify the initial
@@ -168,17 +168,9 @@ export default function loadImageToCanvas(
       );
     }
 
-    const { useNorm16Texture } = getConfiguration().rendering;
-
     // IMPORTANT: Request type should be passed if not the 'interaction'
     // highest priority will be used for the request type in the imageRetrievalPool
     const options = {
-      targetBuffer: {
-        type: useNorm16Texture ? undefined : 'Float32Array',
-      },
-      preScale: {
-        enabled: true,
-      },
       useRGBA: !!useCPURendering,
       requestType,
     };

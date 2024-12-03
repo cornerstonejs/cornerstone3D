@@ -1,9 +1,12 @@
 const path = require('path');
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require('prism-react-renderer').themes.github;
+const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
+  future: {
+    experimental_faster: true,
+  },
   title: 'Cornerstone.js',
   tagline: 'Medical Imaging, Simplified',
   url: 'https://cornerstonejs.org',
@@ -44,9 +47,52 @@ module.exports = {
           label: 'Community',
         },
         {
-          to: '/api',
-          position: 'left',
+          type: 'dropdown',
           label: 'API',
+          position: 'left',
+          items: [
+            {
+              label: 'Core',
+              to: '/docs/api/core',
+            },
+            {
+              label: 'Tools',
+              to: '/docs/api/tools',
+            },
+            {
+              label: 'DICOM Image Loader',
+              to: '/docs/api/dicomImageLoader',
+            },
+            {
+              label: 'NIFTI Volume Loader',
+              to: '/docs/api/nifti-volume-loader',
+            },
+            {
+              label: 'Adapters',
+              to: '/docs/api/adapters',
+            },
+          ],
+        },
+        {
+          to: '/docs/migration-guides/intro',
+          label: '2.0 Migration Guides',
+          position: 'left',
+          className: 'new-badge',
+        },
+        {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownItemsAfter: [
+            {
+              type: 'html',
+              value: '<hr class="dropdown-separator">',
+            },
+            {
+              href: 'https://v1.cornerstonejs.org/',
+              label: '1.0',
+            },
+          ],
+          dropdownActiveClassDisabled: true,
         },
         {
           to: 'docs/help',
@@ -164,9 +210,15 @@ module.exports = {
         docs: {
           breadcrumbs: false,
           sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
           editUrl:
             'https://github.com/cornerstonejs/cornerstone3D/edit/main/packages/docs/',
+          lastVersion: 'current',
+          onlyIncludeVersions: ['current'],
+          versions: {
+            current: {
+              label: `2.0 (Latest)`,
+            },
+          },
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -179,36 +231,30 @@ module.exports = {
       },
     ],
   ],
-  webpack: {
-    jsLoader: (isServer) => ({
-      // Using esbuild instead of babel-loader is recommended
-      // by the docusaurus team to improve build times.
-      // They use it themselves: https://github.com/facebook/docusaurus/blob/1efc6c609185c780c03d6205015b998e3ec24c3a/website/docusaurus.config.js#L96-L102
-      // See https://github.com/facebook/docusaurus/issues/4765#issuecomment-841135926
-      loader: require.resolve('esbuild-loader'),
-      options: {
-        loader: 'tsx',
-        target: isServer ? 'node12' : 'es2017',
-      },
-    }),
-  },
   plugins: [
     require.resolve('./webpackConfigurationPlugin'),
-    [
-      'docusaurus-plugin-typedoc-api',
-      {
-        projectRoot: path.join(__dirname, '../../'),
-        packages: [
-          ...['core', 'tools', 'streaming-image-volume-loader'].map(
-            (pkg) => `packages/${pkg}`
-          ),
-        ],
-        url: 'https://github.com/cornerstonejs/cornerstone3D/tree/main/packages',
-        removeScopes: ['cornerstonejs'],
-        minimal: false,
-        readmes: true,
-        tsconfigName: 'tsconfig.json',
-      },
-    ],
+    ...(() => {
+      const packages = [
+        'core',
+        'tools',
+        'dicomImageLoader',
+        'nifti-volume-loader',
+        'adapters',
+      ];
+
+      const plugins = [];
+      for (const pkg of packages) {
+        plugins.push([
+          'docusaurus-plugin-typedoc',
+          {
+            id: `api-${pkg}`,
+            out: `./docs/api/${pkg}`,
+            entryPoints: [`../${pkg}/src/index.ts`],
+            tsconfig: `../${pkg}/tsconfig.json`,
+          },
+        ]);
+      }
+      return plugins;
+    })(),
   ],
 };

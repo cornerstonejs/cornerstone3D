@@ -1,9 +1,9 @@
-import { cache as cornerstoneCache } from '@cornerstonejs/core';
+import { cache as cornerstoneCache, type Types } from '@cornerstonejs/core';
 import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
-import { getDeduplicatedVTKPolyDataPoints } from '../contours';
+import { getDeduplicatedVTKPolyDataPoints } from './getDeduplicatedVTKPolyDataPoints';
 import { findContoursFromReducedSet } from './contourFinder';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 
@@ -19,12 +19,11 @@ function generateContourSetsFromLabelmap({ segmentations }) {
     console.warn(`No volume found for ${segVolumeId}`);
     return;
   }
+  const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
+  const segData = voxelManager.getCompleteScalarDataArray() as Array<number>;
 
   const numSlices = vol.dimensions[2];
 
-  // NOTE: Workaround for marching squares not finding closed contours at
-  // boundary of image volume, clear pixels along x-y border of volume
-  const segData = vol.imageData.getPointData().getScalars().getData();
   const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
 
   for (let z = 0; z < numSlices; z++) {
@@ -73,9 +72,11 @@ function generateContourSetsFromLabelmap({ segmentations }) {
         for (let i = 0; i < pixelsPerSlice; i++) {
           const value = segData[i + frameStart];
           if (value === segIndex || containedSegmentIndices?.has(value)) {
-            (scalars as any).setValue(i + frameStart, 1);
+            // @ts-ignore
+            scalars.setValue(i + frameStart, 1);
           } else {
-            (scalars as any).setValue(i, 0);
+            // @ts-ignore
+            scalars.setValue(i, 0);
           }
         }
 

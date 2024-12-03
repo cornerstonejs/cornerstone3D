@@ -43,7 +43,6 @@ const { ViewportType } = csEnums;
 
 const {
     Enums: csToolsEnums,
-    SegmentationDisplayTool,
     ToolGroupManager,
     segmentation: csToolsSegmentation,
     utilities: csToolsUtilities
@@ -283,10 +282,8 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
 
     //
     const derivedVolume = await addSegmentationsToState(newSegmentationId);
-    //
-    const derivedVolumeScalarData = derivedVolume.getScalarData();
-    //
-    derivedVolumeScalarData.set(
+
+    derivedVolume?.voxelManager?.setCompleteScalarDataArray?.(
         new Uint8Array(generateToolState.labelmapBufferArray[0])
     );
 
@@ -309,7 +306,7 @@ async function exportSegmentation() {
     // Get active segmentation representation
     const activeSegmentationRepresentation =
         csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
+            viewportIds[0]
         );
 
     const cacheSegmentationVolume = cache.getVolume(
@@ -323,9 +320,8 @@ async function exportSegmentation() {
 
     // Generate fake metadata as an example
     labelmapData.metadata = [];
-    labelmapData.segmentsOnLabelmap.forEach((segmentIndex: number) => {
-        const color = csToolsSegmentation.config.color.getColorForSegmentIndex(
-            toolGroupId,
+    labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
+        const color = csToolsSegmentation.config.color.getSegmentIndexColor(
             activeSegmentationRepresentation.segmentationRepresentationUID,
             segmentIndex
         );
@@ -373,7 +369,7 @@ function removeActiveSegmentation() {
         );
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId, [
+    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId, [
         segmentationRepresentationUID
     ]);
 
@@ -457,6 +453,7 @@ function removeActiveSegment() {
     const volume = cache.getVolume(activeSegmentation.segmentationId);
 
     // Get scalar data
+    // Todo: need to move to the new model with voxel manager
     const scalarData = volume.getScalarData();
 
     //
@@ -605,7 +602,7 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationIdRepresentations(
+            csToolsSegmentation.state.getSegmentationRepresentationsForSegmentation(
                 segmentationId
             );
 
@@ -721,7 +718,7 @@ function restart() {
     cache.removeVolumeLoadObject(volumeId);
 
     //
-    csToolsSegmentation.removeSegmentationsFromToolGroup(toolGroupId);
+    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId);
 
     //
     const segmentationIds = getSegmentationIds();
@@ -741,7 +738,7 @@ function getSegmentationIds() {
 async function addSegmentationsToState(segmentationId: string) {
     // Create a segmentation of the same resolution as the source data
     const derivedVolume =
-        await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+        await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
             volumeId: segmentationId
         });
 
@@ -761,8 +758,22 @@ async function addSegmentationsToState(segmentationId: string) {
         }
     ]);
 
-    // Add the segmentation representation to the toolgroup
-    await csToolsSegmentation.addSegmentationRepresentations(toolGroupId, [
+    // Add the segmentation representation to the viewport
+    await csToolsSegmentation.addSegmentationRepresentations(viewportIds[0], [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+
+    await csToolsSegmentation.addSegmentationRepresentations(viewportIds[1], [
+        {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap
+        }
+    ]);
+
+    await csToolsSegmentation.addSegmentationRepresentations(viewportIds[2], [
         {
             segmentationId,
             type: csToolsEnums.SegmentationRepresentations.Labelmap
@@ -954,8 +965,6 @@ async function run() {
     toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
     addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });
     //
-    cornerstoneTools.addTool(SegmentationDisplayTool);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
 
     // Instantiate a rendering engine
     renderingEngine = new RenderingEngine(renderingEngineId);

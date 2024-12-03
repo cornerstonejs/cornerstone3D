@@ -1,19 +1,16 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  utilities,
-  geometryLoader,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  createAndCacheGeometriesFromContours,
 } from '../../../../utils/demo/helpers';
-import assetsURL from '../../../../utils/assets/assetsURL.json';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -22,13 +19,12 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
   ZoomTool,
   PanTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
@@ -77,20 +73,17 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(SegmentationDisplayTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -107,7 +100,13 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -115,7 +114,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -124,38 +123,24 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  const contour = await fetch(assetsURL.SampleContour).then((res) =>
-    res.json()
+
+  const geometriesInfo = await createAndCacheGeometriesFromContours(
+    'SampleContour'
   );
-
-  // load the contour data
-  const geometryIds = [];
-  const promises = contour.contourSets.map((contourSet) => {
-    const geometryId = contourSet.id;
-    geometryIds.push(geometryId);
-    return geometryLoader.createAndCacheGeometry(geometryId, {
-      type: GeometryType.CONTOUR,
-      geometryData: contourSet as Types.PublicContourSetData,
-    });
-  });
-
-  await Promise.all(promises);
 
   // Add the segmentations to state
   segmentation.addSegmentations([
     {
       segmentationId,
       representation: {
-        // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        // The actual segmentation data, in the case of contour geometry
-        // this is a reference to the geometry data
         data: {
-          geometryIds,
+          geometryIds: geometriesInfo,
         },
       },
     },
   ]);
+
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -185,11 +170,10 @@ async function run() {
   // Set volumes on the viewports
   setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
 
-  // // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  // // Add the segmentation representation to the viewport
+  await segmentation.addContourRepresentationToViewport(viewportId1, [
     {
       segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 

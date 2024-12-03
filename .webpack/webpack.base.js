@@ -17,7 +17,6 @@ const exclude = excludeNodeModulesExcept([]);
 module.exports = (env, argv, { DIST_DIR }) => {
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
   const isProdBuild = argv.mode !== 'development';
-  const outputFilename = isProdBuild ? '[name].umd.min.js' : '[name].umd.js';
 
   const config = {
     devtool: 'eval-source-map',
@@ -44,10 +43,6 @@ module.exports = (env, argv, { DIST_DIR }) => {
     resolve: {
       modules: [path.resolve(PROJECT_ROOT, './node_modules'), SRC_PATH],
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      alias: {
-        '@cornerstonejs/dicom-image-loader':
-          '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
-      },
       fallback: {
         fs: false,
         path: require.resolve('path-browserify'),

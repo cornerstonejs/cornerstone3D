@@ -39,7 +39,7 @@ For curious learners, here are some components that are used (behind the scene) 
 `Cornerstone3D` does not deal with loading images. As we will learn later, `Cornerstone3D` also is capable of rendering `Volumes` in any orientation too.
 Therefore, proper image and volume loaders should be registered with `Cornerstone3D` so that it can work as intended. Examples of such loaders are
 
-- imageLoader: `cornerstoneWADOImageLoader`
+- imageLoader: `cornerstoneDICOMImageLoader`
 - volumeLoader: `cornerstoneStreamingImageVolumeLoader`
 
 ### Metadata Providers

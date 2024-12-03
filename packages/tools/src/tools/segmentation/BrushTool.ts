@@ -5,6 +5,8 @@ import {
   StackViewport,
   eventTarget,
   Enums,
+  BaseVolumeViewport,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
@@ -19,6 +21,7 @@ import { BaseTool } from '../base';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
+  thresholdInsideSphereIsland,
 } from './strategies/fillSphere';
 import { eraseInsideSphere } from './strategies/eraseSphere';
 import {
@@ -39,18 +42,17 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import {
-  config as segmentationConfig,
-  segmentLocking,
-  segmentIndex as segmentIndexController,
-  state as segmentationState,
-  activeSegmentation,
-} from '../../stateManagement/segmentation';
-import {
-  LabelmapSegmentationDataVolume,
-  LabelmapSegmentationDataStack,
-} from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+  getStackSegmentationImageIdsForViewport,
+} from '../../stateManagement/segmentation/segmentationState';
+import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
+import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
+import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -74,20 +76,25 @@ export type PreviewData = {
 class BrushTool extends BaseTool {
   static toolName;
   private _editData: {
+    override: {
+      voxelManager: Types.IVoxelManager<number>;
+      imageData: vtkImageData;
+    };
     segmentsLocked: number[]; //
-    segmentationRepresentationUID?: string;
-    imageIdReferenceMap?: Map<string, string>;
-    volumeId?: string;
+    imageId?: string; // stack labelmap
+    imageIds?: string[]; // stack labelmap
+    volumeId?: string; // volume labelmap
     referencedVolumeId?: string;
   } | null;
   private _hoverData?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brushCursor: any;
     segmentationId: string;
     segmentIndex: number;
-    segmentationRepresentationUID: string;
     segmentColor: [number, number, number, number];
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
+    viewport: Types.IViewport;
   };
 
   private _previewData?: PreviewData = {
@@ -105,13 +112,37 @@ class BrushTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         strategies: {
+          /** Perform fill of the active segment index inside a (2d) circle */
           FILL_INSIDE_CIRCLE: fillInsideCircle,
+          /** Erase (to 0) inside a circle */
           ERASE_INSIDE_CIRCLE: eraseInsideCircle,
+          /** Fill a 3d sphere with the active segment index */
           FILL_INSIDE_SPHERE: fillInsideSphere,
+          /** Erase inside a 3d sphere, clearing any segment index (to 0) */
           ERASE_INSIDE_SPHERE: eraseInsideSphere,
+          /**
+           * Threshold inside a circle, either with a dynamic threshold value
+           * based on the voxels in a 2d plane around the center click.
+           * Performs island removal.
+           */
           THRESHOLD_INSIDE_CIRCLE: thresholdInsideCircle,
+          /**
+           * Threshold inside a sphere, either dynamic or pre-configured.
+           * For dynamic, base the threshold on a 2d CIRCLE around the center click.
+           * Do not perform island removal (this may be slow)
+           * Users may see delays dragging the sphere for large radius values and
+           * for complex mixtures of texture.
+           */
           THRESHOLD_INSIDE_SPHERE: thresholdInsideSphere,
+          /**
+           * Threshold inside a sphere, but also include island removal.
+           * The current implementation of this is fairly fast now, but users may
+           * see delays when island removal occurs on large sections of the volume.
+           */
+          THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL:
+            thresholdInsideSphereIsland,
         },
+
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
@@ -143,14 +174,6 @@ class BrushTool extends BaseTool {
               },
             ],
           },
-          [StrategyCallbacks.RejectPreview]: {
-            method: StrategyCallbacks.RejectPreview,
-            bindings: [
-              {
-                key: 'Escape',
-              },
-            ],
-          },
         },
       },
     }
@@ -179,34 +202,29 @@ class BrushTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const toolGroupId = this.toolGroupId;
-
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
-      throw new Error(
-        'No active segmentation detected, create a segmentation representation before using the brush tool'
-      );
+    const activeSegmentation = getActiveSegmentation(viewport.id);
+    if (!activeSegmentation) {
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message:
+            'No active segmentation detected, create a segmentation representation before using the brush tool',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return null;
     }
 
-    const { segmentationId, type, segmentationRepresentationUID } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeSegmentation;
 
-    if (type === SegmentationRepresentations.Contour) {
-      throw new Error('Not implemented yet');
-    }
+    const segmentsLocked = getLockedSegmentIndices(segmentationId);
 
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
+    const { representationData } = getSegmentation(segmentationId);
 
-    const { representationData } =
-      segmentationState.getSegmentation(segmentationId);
-
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
-
-    if (isVolumeSegmentation(labelmapData, viewport)) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
-        type
+        SegmentationRepresentations.Labelmap
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
@@ -227,7 +245,7 @@ class BrushTool extends BaseTool {
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
       const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referenceId)
+        cache.getVolume(actorEntry.referencedId)
       );
 
       const segmentationVolume = cache.getVolume(volumeId);
@@ -242,43 +260,76 @@ class BrushTool extends BaseTool {
         referencedVolumeId:
           this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
         segmentsLocked,
-        segmentationRepresentationUID,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
 
-      const currentImageId = viewport.getCurrentImageId();
-
-      if (!imageIdReferenceMap.get(currentImageId)) {
+      if (!segmentationImageId) {
         // if there is no stack segmentation slice for the current image
         // we should not allow the user to perform any operation
         return;
       }
 
-      // here we should identify if we can perform sphere manipulation
-      // for these stack of images, if the metadata is not present
-      // to create a volume or if there are inconsistencies between
-      // the image metadata we should not allow the sphere manipulation
-      // and should throw an error or maybe simply just allow circle manipulation
-      // and not sphere manipulation
+      // I hate this, but what can you do sometimes
       if (this.configuration.activeStrategy.includes('SPHERE')) {
-        throw new Error(
-          'Sphere manipulation is not supported for stacks of image segmentations yet'
-        );
-        // Todo: add sphere (volumetric) manipulation support for stacks of images
-        // we should basically check if the stack constructs a valid volume
-        // meaning all the metadata is present and consistent
-        // then we use a VoxelManager mapping to map a volume like appearance
-        // for the stack data.
-        // csUtils.isValidVolume(referencedImageIds
-      }
+        const referencedImageIds = viewport.getImageIds();
+        const isValidVolumeForSphere =
+          csUtils.isValidVolume(referencedImageIds);
 
-      return {
-        imageIdReferenceMap,
-        segmentsLocked,
-        segmentationRepresentationUID,
-      };
+        if (!isValidVolumeForSphere) {
+          throw new Error(
+            'Volume is not reconstructable for sphere manipulation'
+          );
+        }
+
+        const volumeId = `${segmentationId}_${viewport.id}`;
+        const volume = cache.getVolume(volumeId);
+        if (volume) {
+          return {
+            imageId: segmentationImageId,
+            segmentsLocked,
+            override: {
+              voxelManager: volume.voxelManager,
+              imageData: volume.imageData,
+            },
+          };
+        } else {
+          const labelmapImageIds = getStackSegmentationImageIdsForViewport(
+            viewport.id,
+            segmentationId
+          );
+
+          if (!labelmapImageIds || labelmapImageIds.length === 1) {
+            return {
+              imageId: segmentationImageId,
+              segmentsLocked,
+            };
+          }
+
+          // it will return the cached volume if it already exists
+          const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
+            volumeId,
+            labelmapImageIds
+          );
+
+          return {
+            imageId: segmentationImageId,
+            segmentsLocked,
+            override: {
+              voxelManager: volume.voxelManager,
+              imageData: volume.imageData,
+            },
+          };
+        }
+      } else {
+        return {
+          imageId: segmentationImageId,
+          segmentsLocked,
+        };
+      }
     }
   }
 
@@ -288,8 +339,8 @@ class BrushTool extends BaseTool {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
+    // @ts-expect-error
     this._editData = this.createEditData(element);
     this._activateDraw(element);
 
@@ -303,14 +354,13 @@ class BrushTool extends BaseTool {
 
     const hoverData = this._hoverData || this.createHoverData(element);
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      hoverData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportUIDs(hoverData.viewportIdsToRender);
+
+    const operationData = this.getOperationData(element);
 
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.OnInteractionStart
     );
 
@@ -376,10 +426,10 @@ class BrushTool extends BaseTool {
   };
 
   previewCallback = () => {
+    this._previewData.timer = null;
     if (this._previewData.preview) {
       return;
     }
-    this._previewData.timer = null;
     this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
@@ -396,12 +446,8 @@ class BrushTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      segmentColor,
-    } = this.getActiveSegmentationData() || {};
+    const { segmentIndex, segmentationId, segmentColor } =
+      this.getActiveSegmentationData(viewport) || {};
 
     // Center of circle in canvas Coordinates
     const brushCursor = {
@@ -420,40 +466,37 @@ class BrushTool extends BaseTool {
       brushCursor,
       centerCanvas,
       segmentIndex,
+      viewport,
       segmentationId,
-      segmentationRepresentationUID,
       segmentColor,
       viewportIdsToRender,
     };
   }
 
-  private getActiveSegmentationData() {
-    const toolGroupId = this.toolGroupId;
+  private getActiveSegmentationData(viewport) {
+    const viewportId = viewport.id;
+    const activeRepresentation = getActiveSegmentation(viewportId);
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
-      console.warn(
-        'No active segmentation detected, create one before using the brush tool'
-      );
+    if (!activeRepresentation) {
       return;
     }
 
-    const { segmentationRepresentationUID, segmentationId } =
-      activeSegmentationRepresentation;
-    const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const { segmentationId } = activeRepresentation;
+    const segmentIndex = getActiveSegmentIndex(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    if (!segmentIndex) {
+      return;
+    }
+
+    const segmentColor = getSegmentIndexColor(
+      viewportId,
+      segmentationId,
       segmentIndex
     );
 
     return {
       segmentIndex,
       segmentationId,
-      segmentationRepresentationUID,
       segmentColor,
     };
   }
@@ -475,26 +518,19 @@ class BrushTool extends BaseTool {
       return;
     }
 
-    triggerAnnotationRenderForViewportUIDs(
-      getEnabledElement(element).renderingEngine,
-      this._hoverData.viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     this.updateCursor(evt);
 
     const { viewportIdsToRender } = this._hoverData;
 
-    triggerAnnotationRenderForViewportUIDs(
-      renderingEngine,
-      viewportIdsToRender
-    );
+    triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
 
     const delta = vec2.distance(
       currentPoints.canvas,
@@ -526,13 +562,8 @@ class BrushTool extends BaseTool {
 
   protected getOperationData(element?) {
     const editData = this._editData || this.createEditData(element);
-
-    const {
-      segmentIndex,
-      segmentationId,
-      segmentationRepresentationUID,
-      brushCursor,
-    } = this._hoverData || this.createHoverData(element);
+    const { segmentIndex, segmentationId, brushCursor } =
+      this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
     const operationData = {
@@ -545,7 +576,6 @@ class BrushTool extends BaseTool {
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,
-      segmentationRepresentationUID,
       viewUp,
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
@@ -619,7 +649,7 @@ class BrushTool extends BaseTool {
 
     // Note: i don't think this is the best way to implement this
     // but don't think we have a better way to do it for now
-    if (typeof strategy.computeInnerCircleRadius === 'function') {
+    if (typeof strategy?.computeInnerCircleRadius === 'function') {
       strategy.computeInnerCircleRadius({
         configuration: this.configuration,
         viewport,
@@ -664,6 +694,21 @@ class BrushTool extends BaseTool {
       this.acceptPreview(element);
     }
   };
+
+  public getStatistics(element, segmentIndices?) {
+    if (!element) {
+      return;
+    }
+    const enabledElement = getEnabledElement(element);
+    const stats = this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.GetStatistics,
+      segmentIndices
+    );
+
+    return stats;
+  }
 
   /**
    * Cancels any preview view being shown, resetting any segments being shown.
@@ -741,12 +786,13 @@ class BrushTool extends BaseTool {
       return;
     }
     const { data } = this._hoverData.brushCursor;
+    const { viewport } = this._hoverData;
 
     data.invalidated = true;
 
     // Todo: figure out if other brush metadata (other than segment color) should get updated
     // during the brush cursor invalidation
-    const { segmentColor } = this.getActiveSegmentationData() || {};
+    const { segmentColor } = this.getActiveSegmentationData(viewport) || {};
     this._hoverData.brushCursor.metadata.segmentColor = segmentColor;
   }
 

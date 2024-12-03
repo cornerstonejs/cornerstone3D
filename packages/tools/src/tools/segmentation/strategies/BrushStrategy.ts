@@ -6,7 +6,7 @@ import compositions from './compositions';
 import { getStrategyData } from './utils/getStrategyData';
 import { StrategyCallbacks } from '../../../enums';
 import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const { VoxelManager } = csUtils;
 
@@ -18,18 +18,21 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;
   centerWorld: Types.Point3;
+  isInObject: (point: Types.Point3) => boolean;
+  isInObjectBoundsIJK: Types.BoundsIJK;
   viewport: Types.IViewport;
   imageVoxelManager:
-    | csUtils.VoxelManager<number>
-    | csUtils.VoxelManager<Types.RGB>;
-  segmentationVoxelManager: csUtils.VoxelManager<number>;
+    | Types.IVoxelManager<number>
+    | Types.IVoxelManager<Types.RGB>;
+  segmentationVoxelManager: Types.IVoxelManager<number>;
   segmentationImageData: vtkImageData;
-  previewVoxelManager: csUtils.VoxelManager<number>;
+  previewVoxelManager: Types.IVoxelManager<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   configuration?: Record<string, any>;
 };
 
@@ -110,6 +113,9 @@ export default class BrushStrategy {
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
     ),
+    [StrategyCallbacks.GetStatistics]: addSingletonMethod(
+      StrategyCallbacks.GetStatistics
+    ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -140,8 +146,9 @@ export default class BrushStrategy {
         BrushStrategy.childFunctions[key](this, result[key]);
       }
     });
-    this.strategyFunction = (enabledElement, operationData) =>
-      this.fill(enabledElement, operationData);
+    this.strategyFunction = (enabledElement, operationData) => {
+      return this.fill(enabledElement, operationData);
+    };
 
     for (const key of Object.keys(BrushStrategy.childFunctions)) {
       this.strategyFunction[key] = this[key];
@@ -183,15 +190,24 @@ export default class BrushStrategy {
       segmentationVoxelManager,
       previewVoxelManager,
       previewSegmentIndex,
+      segmentIndex,
     } = initializedData;
+
+    const isPreview =
+      previewSegmentIndex && previewVoxelManager.modifiedSlices.size;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfSlices()
+      segmentationVoxelManager.getArrayOfModifiedSlices(),
+      isPreview ? previewSegmentIndex : segmentIndex
     );
+
     // We are only previewing if there is a preview index, and there is at
     // least one slice modified
     if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
+      // reset the modified slices since we are done
+      segmentationVoxelManager.resetModifiedSlices();
+
       return null;
     }
     // Use the original initialized data set to preserve preview info
@@ -216,9 +232,15 @@ export default class BrushStrategy {
       segmentationVoxelManager,
       segmentationImageData,
     } = data;
+
+    const segmentationVoxelManagerToUse =
+      operationData.override?.voxelManager || segmentationVoxelManager;
+    const segmentationImageDataToUse =
+      operationData.override?.imageData || segmentationImageData;
+
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
-      VoxelManager.createHistoryVoxelManager(segmentationVoxelManager);
+      VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
@@ -228,12 +250,13 @@ export default class BrushStrategy {
       ...operationData,
       enabledElement,
       imageVoxelManager,
-      segmentationVoxelManager,
-      segmentationImageData,
+      segmentationVoxelManager: segmentationVoxelManagerToUse,
+      segmentationImageData: segmentationImageDataToUse,
       previewVoxelManager,
       viewport,
-
       centerWorld: null,
+      isInObject: null,
+      isInObjectBoundsIJK: null,
       brushStrategy: this,
     };
 
@@ -319,6 +342,7 @@ export default class BrushStrategy {
   /**
    * Over-written by the strategy composition.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public createIsInThreshold: (operationData: InitializedOperationData) => any;
 }
 
@@ -359,11 +383,11 @@ function addSingletonMethod(name: string, isInitialized = true) {
     }
     brushStrategy[name] = isInitialized
       ? func
-      : (enabledElement, operationData) => {
+      : (enabledElement, operationData, ...args) => {
           // Store the enabled element in the operation data so we can use single
           // argument calls
           operationData.enabledElement = enabledElement;
-          return func.call(brushStrategy, operationData);
+          return func.call(brushStrategy, operationData, ...args);
         };
   };
 }

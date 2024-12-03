@@ -1,8 +1,8 @@
-import { ViewportProperties } from './ViewportProperties';
+import type { ViewportProperties } from './ViewportProperties';
 
 /**
  * WSI Viewport Properties
  */
 export type WSIViewportProperties = ViewportProperties;
 
-export default WSIViewportProperties;
+export type { WSIViewportProperties as default };

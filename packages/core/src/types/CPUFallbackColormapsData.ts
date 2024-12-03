@@ -1,7 +1,5 @@
-import CPUFallbackColormapData from './CPUFallbackColormapData';
+import type CPUFallbackColormapData from './CPUFallbackColormapData';
 
-type CPUFallbackColormapsData = {
-  [key: string]: CPUFallbackColormapData;
-};
+type CPUFallbackColormapsData = Record<string, CPUFallbackColormapData>;
 
-export default CPUFallbackColormapsData;
+export type { CPUFallbackColormapsData };

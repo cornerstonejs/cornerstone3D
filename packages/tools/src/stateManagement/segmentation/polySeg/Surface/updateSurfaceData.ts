@@ -1,12 +1,10 @@
-import { Types, cache } from '@cornerstonejs/core';
-import { getUniqueSegmentIndices } from '../../../../utilities/segmentation';
-import {
-  getSegmentation,
-  getSegmentationRepresentations,
-  getToolGroupIdsWithSegmentation,
-} from '../../segmentationState';
+import type { Types } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
+import { getUniqueSegmentIndices } from '../../../../utilities/segmentation/getUniqueSegmentIndices';
+import { getViewportIdsWithSegmentation } from '../../getViewportIdsWithSegmentation';
+import { getSegmentation } from '../../getSegmentation';
 import { triggerSegmentationModified } from '../../triggerSegmentationEvents';
-import { ToolGroupSpecificRepresentations } from '../../../../types/SegmentationStateTypes';
+import { getSegmentationRepresentation } from '../../getSegmentationRepresentation';
 import { SegmentationRepresentations } from '../../../../enums';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
@@ -26,12 +24,12 @@ export async function updateSurfaceData(segmentationId) {
   if (!indices.length) {
     // means all segments were removed so we need to empty out
     // the geometry data
-    const geometryIds = segmentation.representationData.SURFACE.geometryIds;
+    const geometryIds = segmentation.representationData.Surface.geometryIds;
     geometryIds.forEach((geometryId) => {
       const geometry = cache.getGeometry(geometryId);
       const surface = geometry.data as Types.ISurface;
-      surface.setPoints([]);
-      surface.setPolys([]);
+      surface.points = [];
+      surface.polys = [];
     });
 
     triggerSegmentationModified(segmentationId);
@@ -47,21 +45,19 @@ export async function updateSurfaceData(segmentationId) {
     if (!geometry) {
       // means it is a new segment getting added while we were
       // listening to the segmentation data modified event
-      const toolGroupIds = getToolGroupIdsWithSegmentation(segmentationId);
+      const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
-      return toolGroupIds.map((toolGroupId) => {
-        const segmentationRepresentations = getSegmentationRepresentations(
-          toolGroupId
-        ) as ToolGroupSpecificRepresentations;
-
-        return segmentationRepresentations.map((segmentationRepresentation) => {
-          if (
-            segmentationRepresentation.type !==
-            SegmentationRepresentations.Surface
-          ) {
-            return;
+      return viewportIds.map((viewportId) => {
+        const surfaceRepresentation = getSegmentationRepresentation(
+          viewportId,
+          {
+            segmentationId,
+            type: SegmentationRepresentations.Surface,
           }
-          segmentation.representationData.SURFACE.geometryIds.set(
+        );
+
+        return [surfaceRepresentation].map((surfaceRepresentation) => {
+          segmentation.representationData.Surface.geometryIds.set(
             segmentIndex,
             geometryId
           );
@@ -70,8 +66,7 @@ export async function updateSurfaceData(segmentationId) {
             segmentationId,
             [{ segmentIndex, data }],
             {
-              segmentationRepresentationUID:
-                segmentationRepresentation.segmentationRepresentationUID,
+              segmentationId: surfaceRepresentation.segmentationId,
             }
           );
         });
@@ -80,12 +75,12 @@ export async function updateSurfaceData(segmentationId) {
       // if the geometry already exists and the segmentIndex is
       // still present, update the geometry data
       const surface = geometry.data as Types.ISurface;
-      surface.setPoints(data.points);
-      surface.setPolys(data.polys);
+      surface.points = data.points;
+      surface.polys = data.polys;
     } else {
       const surface = geometry.data as Types.ISurface;
-      surface.setPoints([]);
-      surface.setPolys([]);
+      surface.points = [];
+      surface.polys = [];
     }
   });
 

@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -12,7 +12,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { Statistics } from '../../src/types';
+import type { Statistics } from '../../src/types';
 import { Calculator } from '../../src/utilities/math/basic';
 
 // This is for debugging purposes
@@ -132,21 +132,24 @@ addDropdownToToolbar({
 //Here are the function with all your custom text to show
 function getTextLinesLength(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { length, unit } = cachedVolumeStats;
+  const { length, lengthUnits } = cachedVolumeStats;
 
   // Can be null on load
   if (length === undefined || length === null || isNaN(length)) {
     return;
   }
 
-  const textLines = [`${Math.round(length)} ${unit}`, `(your custom text)`];
+  const textLines = [
+    `${Math.round(length)} ${lengthUnits}`,
+    `(your custom text)`,
+  ];
 
   return textLines;
 }
 
 function getTextLinesRectangle(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, areaUnit, modalityUnit } = cachedVolumeStats;
 
   if (mean === undefined) {
     return;
@@ -162,7 +165,7 @@ function getTextLinesRectangle(data, targetId): string[] {
 
 function getTextLinesProbe(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { index, value, modalityUnit } = cachedVolumeStats;
+  const { index, value } = cachedVolumeStats;
 
   if (value === undefined) {
     return;
@@ -342,7 +345,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

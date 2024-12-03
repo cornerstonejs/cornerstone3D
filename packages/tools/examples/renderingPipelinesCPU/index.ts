@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setUseCPURendering,
   getShouldUseCPURendering,
@@ -22,7 +22,6 @@ console.warn(
 
 const {
   PanTool,
-  StackScrollMouseWheelTool,
   ZoomTool,
   EllipticalROITool,
   ToolGroupManager,
@@ -59,7 +58,6 @@ content.append(instructions);
 
 cornerstoneTools.addTool(PanTool);
 cornerstoneTools.addTool(EllipticalROITool);
-cornerstoneTools.addTool(StackScrollMouseWheelTool);
 cornerstoneTools.addTool(ZoomTool);
 
 const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -67,7 +65,6 @@ const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 toolGroup.addTool(EllipticalROITool.toolName);
 toolGroup.addTool(PanTool.toolName);
 toolGroup.addTool(ZoomTool.toolName);
-toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
 
 toolGroup.setToolActive(EllipticalROITool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -78,7 +75,6 @@ toolGroup.setToolActive(PanTool.toolName, {
 toolGroup.setToolActive(ZoomTool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Secondary }],
 });
-toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
 // ============================= //
 
@@ -116,7 +112,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const renderingEngineId = 'myRenderingEngine';

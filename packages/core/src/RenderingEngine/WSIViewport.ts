@@ -1,13 +1,15 @@
 import { vec3 } from 'gl-matrix';
 import { Events as EVENTS, MetadataModules } from '../enums';
-import {
-  IWSIViewport,
+import type {
   WSIViewportProperties,
   Point3,
   Point2,
   ICamera,
-  WSIViewportInput,
   VOIRange,
+  CPUIImageData,
+  ViewportInput,
+  BoundsIJK,
+  CPUImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -15,8 +17,11 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
-import { triggerEvent } from '../utilities';
+import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
+import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
+import microscopyViewportCss from '../constants/microscopyViewportCss';
+import type { DataSetOptions } from '../types/IViewport';
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -30,7 +35,7 @@ const EVENT_POSTRENDER = 'postrender';
  * example `initDemo.js` for one possible implementation, but the actual
  * implementation of this will depend on your platform.
  */
-class WSIViewport extends Viewport implements IWSIViewport {
+class WSIViewport extends Viewport {
   public modality;
   // Viewport Data
   protected imageIds: string[];
@@ -68,7 +73,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     upper: 255,
   };
 
-  constructor(props: WSIViewportInput) {
+  constructor(props: ViewportInput) {
     super({
       ...props,
       canvas: props.canvas || getOrCreateCanvas(props.element),
@@ -84,6 +89,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     // use absolute positioning internally.
     this.element.style.position = 'relative';
     this.microscopyElement = document.createElement('div');
+    this.microscopyElement.setAttribute('class', 'DicomMicroscopyViewer');
     this.microscopyElement.id = uuidv4();
     this.microscopyElement.innerText = 'Initial';
     this.microscopyElement.style.background = 'grey';
@@ -96,6 +102,12 @@ class WSIViewport extends Viewport implements IWSIViewport {
     cs3dElement.insertBefore(this.microscopyElement, cs3dElement.childNodes[1]);
 
     this.addEventListeners();
+    this.addWidget('DicomMicroscopyViewer', {
+      getEnabled: () => !!this.viewer,
+      setEnabled: () => {
+        this.elementDisabledHandler();
+      },
+    });
     this.resize();
   }
 
@@ -119,6 +131,11 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
   private elementDisabledHandler() {
     this.removeEventListeners();
+    this.viewer?.cleanup();
+    this.viewer = null;
+    const cs3dElement = this.element.firstElementChild;
+    cs3dElement.removeChild(this.microscopyElement);
+    this.microscopyElement = null;
   }
 
   private getImageDataMetadata(imageIndex = 0) {
@@ -144,8 +161,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {
-      rowCosines = <Point3>[1, 0, 0];
-      columnCosines = <Point3>[0, 1, 0];
+      rowCosines = [1, 0, 0] as Point3;
+      columnCosines = [0, 1, 0] as Point3;
     }
 
     const rowCosineVec = vec3.fromValues(
@@ -183,7 +200,7 @@ class WSIViewport extends Viewport implements IWSIViewport {
     this.hasPixelSpacing = !!(width && height);
     return {
       bitsAllocated: 8,
-      numComps: 3,
+      numberOfComponents: 3,
       origin,
       direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
       dimensions: [xVoxels, yVoxels, zVoxels],
@@ -215,44 +232,76 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return null;
   }
 
-  public getImageData() {
+  public getImageData(): CPUIImageData {
     const { metadata } = this;
     if (!metadata) {
-      return;
+      return null;
     }
 
     const { spacing } = metadata;
 
-    return {
+    const imageData = {
+      getDirection: () => metadata.direction,
+      getDimensions: () => metadata.dimensions,
+      getRange: () => [0, 255],
+      getScalarData: () => this.getScalarData(),
+      getSpacing: () => metadata.spacing,
+      worldToIndex: (point: Point3) => {
+        const canvasPoint = this.worldToCanvas(point);
+        const pixelCoord = this.canvasToIndex(canvasPoint);
+        return [pixelCoord[0], pixelCoord[1], 0] as Point3;
+      },
+      indexToWorld: (point: Point3) => {
+        const canvasPoint = this.indexToCanvas([point[0], point[1]]);
+        return this.canvasToWorld(canvasPoint);
+      },
+    };
+    const imageDataReturn = {
       dimensions: metadata.dimensions,
       spacing,
-      numComps: 3,
+      numberOfComponents: 3,
       origin: metadata.origin,
       direction: metadata.direction,
-      metadata: { Modality: this.modality },
-      getScalarData: () => this.getScalarData(),
-      imageData: {
-        getDirection: () => metadata.direction,
-        getDimensions: () => metadata.dimensions,
-        getRange: () => [0, 255],
-        getScalarData: () => this.getScalarData(),
-        getSpacing: () => metadata.spacing,
-        worldToIndex: (point: Point3) => {
-          const canvasPoint = this.worldToCanvas(point);
-          const pixelCoord = this.canvasToIndex(canvasPoint);
-          return [pixelCoord[0], pixelCoord[1], 0];
-        },
-        indexToWorld: (point: Point3) => {
-          const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-          return this.canvasToWorld(canvasPoint);
-        },
+      metadata: {
+        Modality: this.modality,
+        FrameOfReferenceUID: this.frameOfReferenceUID,
       },
+
       hasPixelSpacing: this.hasPixelSpacing,
       calibration: this.calibration,
       preScale: {
         scaled: false,
       },
+      scalarData: this.getScalarData(),
+      imageData,
+      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
+      voxelManager: {
+        forEach: (
+          callback: (args: {
+            value: unknown;
+            index: number;
+            pointIJK: Point3;
+            pointLPS: Point3;
+          }) => void,
+          options?: {
+            boundsIJK?: BoundsIJK;
+            isInObject?: (pointLPS, pointIJK) => boolean;
+            returnPoints?: boolean;
+            imageData;
+          }
+        ) => {
+          return pointInShapeCallback(options.imageData, {
+            pointInShapeFn: options.isInObject ?? (() => true),
+            callback: callback,
+            boundsIJK: options.boundsIJK,
+            returnPoints: options.returnPoints ?? false,
+          });
+        },
+      },
     };
+
+    // @ts-expect-error we need to fully migrate the voxelManager to the new system
+    return imageDataReturn;
   }
 
   /**
@@ -441,11 +490,19 @@ class WSIViewport extends Viewport implements IWSIViewport {
   /**
    * This is a wrapper for setWSI to allow generic behaviour
    */
-  public setDataIds(imageIds: string[]) {
-    const webClient = metaData.get(
-      MetadataModules.WADO_WEB_CLIENT,
-      imageIds[0]
-    );
+  public setDataIds(
+    imageIds: string[],
+    options?: DataSetOptions & {
+      miniNavigationOverlay?: boolean;
+      webClient: unknown;
+    }
+  ) {
+    if (options?.miniNavigationOverlay !== false) {
+      WSIViewport.addMiniNavigationOverlayCss();
+    }
+    const webClient =
+      options?.webClient ||
+      metaData.get(MetadataModules.WADO_WEB_CLIENT, imageIds[0]);
     if (!webClient) {
       throw new Error(
         `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
@@ -506,7 +563,8 @@ class WSIViewport extends Viewport implements IWSIViewport {
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client,
       metadata: volumeImages,
-      controls: [],
+      controls: ['overview', 'position'],
+      retrieveRendered: false,
       bindings: {},
     });
 
@@ -643,10 +701,18 @@ class WSIViewport extends Viewport implements IWSIViewport {
   }
 
   /**
+   * Returns the list of image Ids for the viewport.  Currently only
+   * returns the first/primary image id.
+   * @returns list of strings for image Ids
+   */
+  public getImageIds = (): Array<string> => {
+    return [this.imageIds[0]];
+  };
+
+  /**
    * The transform here is from index to canvas points, so this takes
    * into account the scaling applied and the center location, but nothing to do
-   * with world coordinate transforms.
-   *  Note that the 'index' values are often negative values with respect to the overall
+   * with world coordinate transforms.  Note that the 'index' values are often negative values with respect to the overall
    * image area, as that is what is used internally for the view.
    *
    * @returns A transform from index to canvas points
@@ -668,12 +734,24 @@ class WSIViewport extends Viewport implements IWSIViewport {
     return transform;
   }
 
-  public getReferenceId(): string {
+  public getViewReferenceId(): string {
     return `imageId:${this.getCurrentImageId()}`;
   }
 
   public getCurrentImageIdIndex() {
     return 0;
+  }
+
+  private static overlayCssId = 'overlayCss';
+
+  public static addMiniNavigationOverlayCss() {
+    if (document.getElementById(this.overlayCssId)) {
+      return;
+    }
+    const overlayCss = document.createElement('style');
+    overlayCss.innerText = microscopyViewportCss;
+    overlayCss.setAttribute('id', this.overlayCssId);
+    document.getElementsByTagName('head')[0].append(overlayCss);
   }
 }
 

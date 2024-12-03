@@ -1,11 +1,15 @@
-import { Types, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import { getOptions } from './options';
-import { LoaderXhrRequestError } from '../../types';
+import type { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
+import type {
+  CornerstoneWadoRsLoaderOptions,
+  StreamingData,
+} from '../wadors/loadImage';
 
 const { ProgressiveIterator } = utilities;
-type RetrieveOptions = Types.RetrieveOptions;
 
 /**
  * This function does a streaming parse from an http request, delivering
@@ -13,7 +17,7 @@ type RetrieveOptions = Types.RetrieveOptions;
  * ProgressiveIterator instance.
  *
  * @param url - to request and parse as either multipart or singlepart.
- * @param imageId
+ * @param imageId - the imageId to be used in the returned detail object
  * @param defaultHeaders
  * @returns
  */
@@ -24,10 +28,15 @@ export default function streamRequest(
   options: CornerstoneWadoRsLoaderOptions = {}
 ) {
   const globalOptions = getOptions();
-  const { retrieveOptions = {}, streamingData = {} } = options;
+  const {
+    retrieveOptions = {} as Types.RangeRetrieveOptions,
+    streamingData = {} as StreamingData,
+  } = options;
+
+  // @ts-expect-error
   const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
 
-  const errorInterceptor = (err: any) => {
+  const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
       const error = new Error('request failed') as LoaderXhrRequestError;
       globalOptions.errorInterceptor(error);
@@ -37,7 +46,12 @@ export default function streamRequest(
   // Make the request for the streamable image frame (i.e. HTJ2K)
   const loadIterator = new ProgressiveIterator('streamRequest');
   loadIterator.generate(async (iterator, reject) => {
-    const beforeSendHeaders = globalOptions.beforeSend?.(null, url, defaultHeaders, {});
+    const beforeSendHeaders = globalOptions.beforeSend?.(
+      null,
+      url,
+      defaultHeaders,
+      {}
+    );
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     Object.keys(headers).forEach(function (key) {
@@ -70,7 +84,9 @@ export default function streamRequest(
 
       let readDone = false;
       let encodedData = streamingData.encodedData;
+      // @ts-ignore
       let lastSize = streamingData.lastSize || 0;
+      // @ts-ignore
       streamingData.isPartial = true;
 
       while (!readDone) {
@@ -87,6 +103,7 @@ export default function streamRequest(
           continue;
         }
         lastSize = encodedData.length;
+        // @ts-ignore
         streamingData.isPartial = !done;
         const extracted = extractMultipart(
           contentType,

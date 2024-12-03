@@ -1,5 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
 import {
-  Types,
   Enums,
   getWebWorkerManager,
   eventTarget,
@@ -7,8 +7,9 @@ import {
 } from '@cornerstonejs/core';
 
 import { WorkerTypes } from '../../../enums';
-import { pointToString } from '../../../utilities';
+import { pointToString } from '../../../utilities/pointToString';
 import { registerPolySegWorker } from '../polySeg/registerPolySegWorker';
+import { getSurfaceActorEntry } from './getSegmentationActor';
 const workerManager = getWebWorkerManager();
 
 /**
@@ -30,7 +31,7 @@ export type SurfaceClipResult = {
   numberOfCells: number;
 };
 
-export type PolyDataClipCacheType = Map<string, Map<string, SurfaceClipResult>>;
+export type PolyDataClipCacheType = Map<number, Map<string, SurfaceClipResult>>;
 
 /**
  * a cache from actorUID to cacheId to SurfaceClipResult
@@ -52,13 +53,12 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  *
  * @param surfacesInfo - An array of surfaces information.
  * @param viewport - The volume viewport.
- * @param segmentationRepresentationUID - The UID of the segmentation representation.
- * @returns The cached polydata.
+ * @param segmentationId - The id of the segmentation.
+ * @returns The cached polyData.
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
-  viewport: Types.IVolumeViewport,
-  segmentationRepresentationUID: string
+  viewport: Types.IVolumeViewport
 ) {
   registerPolySegWorker();
   // All planes is an array of planes pairs for each slice, so we should loop over them and
@@ -115,14 +115,14 @@ export async function clipAndCacheSurfacesForViewport(
           },
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
-            polyDataResults.forEach((polyDataResult, surfaceId) => {
-              const actorUID = `${segmentationRepresentationUID}_${surfaceId}`;
+            polyDataResults.forEach((polyDataResult, segmentIndex) => {
+              const segmentIndexNumber = Number(segmentIndex);
               const cacheId = generateCacheId(
                 viewport,
                 camera.viewPlaneNormal,
                 sliceIndex
               );
-              updatePolyDataCache(actorUID, cacheId, polyDataResult);
+              updatePolyDataCache(segmentIndexNumber, cacheId, polyDataResult);
             });
           },
         ],
@@ -132,7 +132,7 @@ export async function clipAndCacheSurfacesForViewport(
       console.error(error);
     });
 
-  triggerWorkerProgress(eventTarget, 1);
+  triggerWorkerProgress(eventTarget, 100);
 
   return polyDataCache;
 }
@@ -174,13 +174,6 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
   });
 }
 
-export function getSurfaceActorUID(
-  segmentationRepresentationUID: string,
-  surfaceId: string
-) {
-  return `${segmentationRepresentationUID}_${surfaceId}`;
-}
-
 // Helper function to generate a cache ID
 export function generateCacheId(viewport, viewPlaneNormal, sliceIndex) {
   return `${viewport.id}-${pointToString(viewPlaneNormal)}-${sliceIndex}`;
@@ -188,16 +181,16 @@ export function generateCacheId(viewport, viewPlaneNormal, sliceIndex) {
 
 // Helper function to update PolyData cache
 export function updatePolyDataCache(
-  actorUID: string,
+  segmentIndex: number,
   cacheId: string,
   polyDataResult: SurfaceClipResult
 ) {
   const { points, lines, numberOfCells } = polyDataResult;
 
-  let actorCache = polyDataCache.get(actorUID);
-  if (!actorCache) {
-    actorCache = new Map<string, SurfaceClipResult>();
-    polyDataCache.set(actorUID, actorCache);
+  let segmentCache = polyDataCache.get(segmentIndex);
+  if (!segmentCache) {
+    segmentCache = new Map<string, SurfaceClipResult>();
+    polyDataCache.set(segmentIndex, segmentCache);
   }
-  actorCache.set(cacheId, { points, lines, numberOfCells });
+  segmentCache.set(cacheId, { points, lines, numberOfCells });
 }

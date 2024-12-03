@@ -1,4 +1,4 @@
-import { Locator } from 'playwright';
+import type { Locator } from 'playwright';
 
 /**
  *
@@ -12,7 +12,7 @@ export const simulateClicksOnElement = async ({
   locator,
   points,
   doubleClick = false,
-  delayBetweenClicks = 100,
+  delayBetweenClicks = 0,
 }: {
   locator: Locator;
   points: { x: number; y: number }[];

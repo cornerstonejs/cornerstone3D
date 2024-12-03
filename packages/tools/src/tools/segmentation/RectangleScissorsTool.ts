@@ -1,12 +1,17 @@
-import { cache, getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  cache,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import { fillInsideRectangle } from './strategies/fillRectangle';
 import { eraseInsideRectangle } from './strategies/eraseRectangle';
@@ -18,9 +23,9 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import {
-  LabelmapSegmentationDataStack,
+import type {
   LabelmapSegmentationDataVolume,
+  LabelmapSegmentationData,
 } from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -31,9 +36,11 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 
-import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import { LabelmapSegmentationData } from '../../types/LabelmapTypes';
-import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getSegmentation,
+  getStackSegmentationImageIdsForViewport,
+} from '../../stateManagement/segmentation/segmentationState';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -44,14 +51,15 @@ import { isVolumeSegmentation } from './strategies/utils/stackVolumeCheck';
  */
 class RectangleScissorsTool extends BaseTool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    //
-    imageIdReferenceMap: Map<string, string>;
+    // volume labelmap
     volumeId: string;
     referencedVolumeId: string;
+    // stack labelmap
+    imageId: string;
     //
-    annotation: any;
+    annotation: Annotation;
     segmentationId: string;
     segmentIndex: number;
     segmentsLocked: number[];
@@ -103,31 +111,31 @@ class RectangleScissorsTool extends BaseTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
-    const toolGroupId = this.toolGroupId;
 
-    const activeSegmentationRepresentation =
-      activeSegmentation.getActiveSegmentationRepresentation(toolGroupId);
-    if (!activeSegmentationRepresentation) {
+    const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+    if (!activeLabelmapSegmentation) {
       throw new Error(
         'No active segmentation detected, create one before using scissors tool'
       );
     }
 
-    const { segmentationRepresentationUID, segmentationId, type } =
-      activeSegmentationRepresentation;
+    const { segmentationId } = activeLabelmapSegmentation;
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
-    const segmentsLocked = segmentLocking.getLockedSegments(segmentationId);
+    const segmentsLocked =
+      segmentLocking.getLockedSegmentIndices(segmentationId);
 
-    const segmentColor = segmentationConfig.color.getColorForSegmentIndex(
-      toolGroupId,
-      segmentationRepresentationUID,
+    const segmentColor = segmentationConfig.color.getSegmentIndexColor(
+      viewport.id,
+      segmentationId,
       segmentIndex
     );
 
@@ -176,12 +184,12 @@ class RectangleScissorsTool extends BaseTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
-      segmentationRepresentationUID,
-    } as any;
+      volumeId: null,
+      referencedVolumeId: null,
+      imageId: null,
+    };
 
-    if (
-      isVolumeSegmentation(labelmapData as LabelmapSegmentationData, viewport)
-    ) {
+    if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
       const segmentation = cache.getVolume(volumeId);
 
@@ -191,12 +199,14 @@ class RectangleScissorsTool extends BaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const { imageIdReferenceMap } =
-        labelmapData as LabelmapSegmentationDataStack;
+      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+        viewport.id,
+        segmentationId
+      );
 
       this.editData = {
         ...this.editData,
-        imageIdReferenceMap,
+        imageId: segmentationImageId,
       };
     }
 
@@ -206,7 +216,7 @@ class RectangleScissorsTool extends BaseTool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return true;
   };
@@ -283,9 +293,7 @@ class RectangleScissorsTool extends BaseTool {
 
     this.editData.hasMoved = true;
 
-    const { renderingEngine } = enabledElement;
-
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
@@ -314,7 +322,6 @@ class RectangleScissorsTool extends BaseTool {
 
     this.editData = null;
     this.isDrawing = false;
-
     this.applyActiveStrategy(enabledElement, operationData);
   };
 
@@ -373,6 +380,7 @@ class RectangleScissorsTool extends BaseTool {
     const data = annotation.data;
     const { points } = data.handles;
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

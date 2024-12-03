@@ -4,8 +4,7 @@ import {
   StackViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import { Types, utilities as coreUtils } from '@cornerstonejs/core';
-
+import type { Types } from '@cornerstonejs/core';
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
 import {
@@ -35,20 +34,23 @@ import {
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
 
-import {
+import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
-import { RectangleROIStartEndThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  RectangleROIStartEndThresholdAnnotation,
+  ROICachedStats,
+} from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
-import { StyleSpecifier } from '../../types/AnnotationStyle';
-import { pointInShapeCallback, roundNumber } from '../../utilities/';
-import { getModalityUnit } from '../../utilities/getModalityUnit';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -66,9 +68,9 @@ const { transformWorldToIndex } = csUtils;
  */
 class RectangleROIStartEndThresholdTool extends RectangleROITool {
   static toolName;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
-    annotation: any;
+    annotation: Annotation;
     viewportIdsToRender: string[];
     handleIndex?: number;
     newAnnotation?: boolean;
@@ -81,6 +83,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       configuration: {
+        // Whether to store point data in the annotation
+        storePointData: false,
         numSlicesToPropagate: 10,
         computePointsInsideVolume: false,
         getTextLines: defaultGetTextLines,
@@ -173,7 +177,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           pointsInVolume: [],
           projectionPoints: [],
           projectionPointsImageIds: [referencedImageId],
-          statistics: [],
+          statistics: [] as unknown as ROICachedStats,
         },
         handles: {
           textBox: {
@@ -223,7 +227,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     evt.preventDefault();
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   };
@@ -259,10 +263,19 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(
-      enabledElement.renderingEngine,
-      viewportIdsToRender
-    );
+    const targetId = this.getTargetId(enabledElement.viewport);
+    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(
+        annotation,
+        targetId,
+        imageVolume,
+        enabledElement
+      );
+    }
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -333,12 +346,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ) {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, viewUp } = metadata;
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     const projectionPoints = data.cachedStats.projectionPoints;
 
     const pointsInsideVolume: Types.Point3[][] = [[]];
-    const image = this.getTargetIdImage(targetId, renderingEngine);
+    const image = this.getTargetImageData(targetId);
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[3];
@@ -365,7 +378,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       ),
     };
 
-    const modalityUnit = getModalityUnit(
+    const modalityUnit = getPixelValueUnits(
       metadata.Modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
@@ -381,7 +394,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       const projectionPoint = projectionPoints[i][0];
 
-      const { dimensions, imageData } = imageVolume;
+      const { dimensions, imageData, voxelManager } = imageVolume;
 
       const worldPos1Index = transformWorldToIndex(imageData, worldPos1);
       //We only need to change the Z of our bounds so we are getting the Z from the current projection point
@@ -429,14 +442,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const pointsInShape = pointInShapeCallback(
-          imageData,
-          () => true,
+        const pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
-          boundsIJK
+          {
+            boundsIJK,
+            imageData,
+            returnPoints: this.configuration.storePointData,
+          }
         );
 
-        //@ts-ignore
         pointsInsideVolume.push(pointsInShape);
       }
     }
@@ -449,7 +463,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       stdDev: stats.stdDev?.value,
       max: stats.max?.value,
       statsArray: stats.array,
-      areaUnit: measureInfo.areaUnits,
+      areaUnit: measureInfo.areaUnit,
       modalityUnit,
     };
   }
@@ -466,6 +480,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // Since we are extending the RectangleROI class, we need to
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
+
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._computePointsInsideVolume(
+        annotation,
+        targetId,
+        imageVolume,
+        enabledElement
+      );
+    }
 
     if (this.configuration.calculatePointsInsideVolume) {
       this._computePointsInsideVolume(
@@ -546,6 +569,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         data.handles.points[0][
           this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
         ] = startCoord;
+        data.startCoordinate = startCoord;
+        data.handles.points[0][
+          this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
+        ] = startCoord;
       }
 
       if (Array.isArray(endCoordinate)) {
@@ -554,16 +581,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           viewplaneNormal
         );
         data.endCoordinate = endCoord;
+        data.endCoordinate = endCoord;
       }
 
-      const roundedStartCoord = coreUtils.roundToPrecision(startCoord);
-      const roundedEndCoord = coreUtils.roundToPrecision(endCoord);
+      const roundedStartCoord = csUtils.roundToPrecision(startCoord);
+      const roundedEndCoord = csUtils.roundToPrecision(endCoord);
 
       const coord = this._getCoordinateForViewplaneNormal(
         focalPoint,
         viewplaneNormal
       );
-      const roundedCoord = coreUtils.roundToPrecision(coord);
+      const roundedCoord = csUtils.roundToPrecision(coord);
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCoord < Math.min(roundedStartCoord, roundedEndCoord) ||
@@ -601,7 +629,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       if (
-        !isAnnotationLocked(annotation) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null &&
         firstOrLastSlice
@@ -789,10 +817,10 @@ function defaultGetTextLines(data): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${roundNumber(stdDev)} ${modalityUnit}`);
+  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
+  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
 
   return textLines;
 }

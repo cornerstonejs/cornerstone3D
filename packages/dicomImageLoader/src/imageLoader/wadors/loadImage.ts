@@ -1,10 +1,13 @@
-import { Enums, utilities, metaData } from '@cornerstonejs/core';
-import type { Types, RetrieveOptions } from '@cornerstonejs/core';
+import {
+  Enums,
+  imageRetrievalPoolManager,
+  utilities,
+} from '@cornerstonejs/core';
+import { Enums as csCoreEnums, type Types } from '@cornerstonejs/core';
 
-import external from '../../externalModules';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
-import { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
+import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
@@ -81,7 +84,7 @@ export function getTransferSyntaxForContentType(contentType: string): string {
 }
 
 function getImageRetrievalPool() {
-  return external.cornerstone.imageRetrievalPoolManager;
+  return imageRetrievalPoolManager;
 }
 
 export interface StreamingData {
@@ -96,7 +99,7 @@ export interface StreamingData {
 
 export interface CornerstoneWadoRsLoaderOptions
   extends DICOMLoaderImageOptions {
-  requestType?: string;
+  requestType?: csCoreEnums.RequestType;
   additionalDetails?: {
     imageId: string;
   };
@@ -105,7 +108,7 @@ export interface CornerstoneWadoRsLoaderOptions
   retrieveType?: string;
   transferSyntaxUID?: string;
   // Retrieve options are stored to provide sub-options for nested calls
-  retrieveOptions?: RetrieveOptions;
+  retrieveOptions?: Types.RangeRetrieveOptions;
   // Streaming data adds information about already streamed results.
   streamingData?: StreamingData;
 }
@@ -194,18 +197,17 @@ function loadImage(
     });
   }
 
-  const requestType = options.requestType || 'interaction';
+  const requestType =
+    options.requestType || csCoreEnums.RequestType.Interaction;
   const additionalDetails = options.additionalDetails || { imageId };
   const priority = options.priority === undefined ? 5 : options.priority;
-  const addToBeginning = options.addToBeginning || false;
   const uri = imageId.substring(7);
 
   imageRetrievalPool.addRequest(
     sendXHR.bind(this, uri, imageId, mediaType),
     requestType,
     additionalDetails,
-    priority,
-    addToBeginning
+    priority
   );
 
   return {

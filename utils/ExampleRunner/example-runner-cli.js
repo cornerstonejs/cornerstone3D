@@ -34,7 +34,7 @@ function getSplittedPath(filePath) {
 }
 
 function validPath(str) {
-  return str.replace(/\\\\/g, '/');
+  return str?.replace(/\\\\/g, '/');
 }
 
 function calculateSubstringSimilarity(a, b) {
@@ -115,10 +115,6 @@ const configuration = {
     { path: 'packages/core/examples', regexp: 'index.ts' },
     { path: 'packages/tools/examples', regexp: 'index.ts' },
     {
-      path: 'packages/streaming-image-volume-loader/examples',
-      regexp: 'index.ts',
-    },
-    {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',
     },
@@ -139,14 +135,11 @@ if (configuration.examples) {
   var buildExample = filterExamples.length === 1;
   var exampleCount = 0;
 
-  console.log('\n=> Extract examples\n');
   configuration.examples.forEach(function (entry) {
     const regexp = entry.regexp
       ? new RegExp(entry.regexp)
       : /example\/index.ts$/;
     let fullPath = path.join(rootPath, entry.path ? entry.path : entry);
-
-    console.warn('', fullPath);
 
     // Single example use case
     examples[fullPath] = {};
@@ -180,7 +173,6 @@ if (configuration.examples) {
         ) {
           currentExamples[exampleName] = './' + file;
           exampleCount++;
-          console.log('  - Found example: ' + exampleName);
           filteredExampleCorrectCase = exampleName;
         } else {
           // store the similarity of the example name to the filter name
@@ -260,11 +252,17 @@ function run() {
   console.log(`\n=> Running examples ${filterExamples.join(', ')}\n`);
 
   // run the build for dicom image loader
-  const currentWD = process.cwd();
+  // const currentWD = process.cwd();
+
+  // for some reason the esm build of the dicom image loader
+  // requires the core to be built first and cannot link it
+  // shell.cd('../../core');
+  // shell.exec(`yarn run build:esm`);
+
   // run the build for dicom image loader
-  shell.cd('../../dicomImageLoader');
-  shell.exec(`yarn run webpack:dynamic-import`);
-  shell.cd(currentWD);
+  // shell.cd('../../dicomImageLoader');
+  // shell.exec(`yarn run build:esm`);
+  // shell.cd(currentWD);
 
   if (buildExample) {
     const exampleName = filteredExampleCorrectCase;
@@ -280,11 +278,13 @@ function run() {
     // console.log('conf', conf);
     shell.ShellString(conf).to(webpackConfigPath);
 
-    shell.cd(exBasePath);
+    // shell.cd(exBasePath);
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
-      `webpack serve --host 0.0.0.0 ${options.https ? '--https' : ''} --progress --config ${webpackConfigPath}`
+      `rspack serve --host 0.0.0.0 ${
+        options.https ? '--https' : ''
+      } --config ${webpackConfigPath}`
     );
   } else {
     console.log('=> To run an example:');

@@ -1,4 +1,5 @@
 import { BasicStatsCalculator } from '../../src/utilities/math/basic';
+import { VolumetricCalculator } from '../../src/utilities/segmentation/VolumetricCalculator';
 
 import { describe, it, expect } from '@jest/globals';
 

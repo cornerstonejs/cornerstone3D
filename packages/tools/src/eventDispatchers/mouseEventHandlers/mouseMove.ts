@@ -1,13 +1,12 @@
 // // State
-import { state } from '../../store';
+import { state } from '../../store/state';
 import { ToolModes } from '../../enums';
 
 // // Util
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
-import { MouseMoveEventType } from '../../types/EventTypes';
-import { initElementCursor } from '../../cursors/elementCursor';
+import type { MouseMoveEventType } from '../../types/EventTypes';
 
 const { Active, Passive } = ToolModes;
 
@@ -67,9 +66,5 @@ export default function mouseMove(evt: MouseMoveEventType) {
   // Annotation activation status changed, redraw the annotations
   if (annotationsNeedToBeRedrawn === true) {
     triggerAnnotationRender(element);
-  }
-
-  if (!state.isInteractingWithTool) {
-    initElementCursor(element, null);
   }
 }

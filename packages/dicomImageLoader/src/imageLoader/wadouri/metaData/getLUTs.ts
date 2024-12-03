@@ -1,5 +1,5 @@
-import { DataSet, Element } from 'dicom-parser';
-import { LutType } from '../../../types';
+import type { DataSet, Element } from 'dicom-parser';
+import type { LutType } from '../../../types';
 
 function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
   let numLUTEntries = lutDataSet.uint16('x00283002', 0);

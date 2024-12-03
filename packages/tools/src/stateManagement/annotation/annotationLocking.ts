@@ -1,12 +1,12 @@
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 import { Events } from '../../enums';
-import { Annotation } from '../../types';
-import { AnnotationLockChangeEventDetail } from '../../types/EventTypes';
+import type { AnnotationLockChangeEventDetail } from '../../types/EventTypes';
+import { getAnnotation } from './annotationState';
 
 /*
  * Constants
  */
-const globalLockedAnnotationsSet: Set<Annotation> = new Set();
+const globalLockedAnnotationUIDsSet: Set<string> = new Set();
 
 /*
  * Interface (Public API)
@@ -17,80 +17,67 @@ const globalLockedAnnotationsSet: Set<Annotation> = new Set();
  *
  * @triggers ANNOTATION_LOCK_CHANGE
  *
- * @param annotation - The annotation instance which will have
+ * @param annotationUID - The UID of the annotation which will have
  * its locked state changed. An event will only be triggered if the locked state
  * of the given annotation instance changed.
  * @param locked - A boolean value indicating if the instance should
  * be locked (true) or not (false)
  */
-function setAnnotationLocked(annotation: Annotation, locked = true): void {
+function setAnnotationLocked(annotationUID: string, locked = true): void {
   const detail = makeEventDetail();
-  if (annotation) {
+  if (annotationUID) {
     if (locked) {
-      lock(annotation, globalLockedAnnotationsSet, detail);
+      lock(annotationUID, globalLockedAnnotationUIDsSet, detail);
     } else {
-      unlock(annotation, globalLockedAnnotationsSet, detail);
+      unlock(annotationUID, globalLockedAnnotationUIDsSet, detail);
     }
   }
-  publish(detail, globalLockedAnnotationsSet);
+  publish(detail, globalLockedAnnotationUIDsSet);
 }
 
 /**
- * Clears all the locked annotation
- *
+ * Clears all the locked annotations
  */
 function unlockAllAnnotations(): void {
   const detail = makeEventDetail();
-  clearLockedAnnotationsSet(globalLockedAnnotationsSet, detail);
-  publish(detail, globalLockedAnnotationsSet);
+  clearLockedAnnotationsSet(globalLockedAnnotationUIDsSet, detail);
+  publish(detail, globalLockedAnnotationUIDsSet);
 }
 
 /**
- * Returns an array of all the annotation that is currently locked
- * @returns An array of tool specific annotation objects.
- *
+ * Returns an array of all the annotation UIDs that are currently locked
+ * @returns An array of annotation UIDs.
  */
-function getAnnotationsLocked(): Array<Annotation> {
-  return Array.from(globalLockedAnnotationsSet);
+function getAnnotationsLocked(): Array<string> {
+  return Array.from(globalLockedAnnotationUIDsSet);
 }
 
 /**
- * Given a Annotation object, return true if it is locked.
- * @param annotation - Annotation
+ * Given an annotation UID, return true if it is locked.
+ * @param annotationUID - Annotation UID
  * @returns A boolean value.
  */
-function isAnnotationLocked(annotation: Annotation): boolean {
-  return globalLockedAnnotationsSet.has(annotation);
+function isAnnotationLocked(annotationUID: string): boolean {
+  return globalLockedAnnotationUIDsSet.has(annotationUID);
 }
 
 /**
- * Get the number of locked annotation objects in the global set of locked annotation
- * objects.
- * @returns The number of locked annotation objects.
- *
+ * Get the number of locked annotation UIDs in the global set of locked annotation UIDs.
+ * @returns The number of locked annotation UIDs.
  */
 function getAnnotationsLockedCount(): number {
-  return globalLockedAnnotationsSet.size;
+  return globalLockedAnnotationUIDsSet.size;
 }
 
 /**
- * Properly initialize the isLocked on annotation, and set it as locked if
- * isLocked is true.
- * @param annotation - The annotation object to be checked.
+ * Properly initialize the isLocked state for an annotation based on its UID.
+ * @param annotationUID - The UID of the annotation to be checked.
  */
-function checkAndDefineIsLockedProperty(annotation: Annotation): void {
-  if (annotation) {
-    const isLocked = !!annotation.isLocked;
-    if (shouldDefineIsLockedProperty(annotation)) {
-      Object.defineProperty(annotation, 'isLocked', {
-        configurable: false,
-        enumerable: true,
-        set: setIsLocked,
-        get: getIsLocked,
-      });
-    }
-    setAnnotationLocked(annotation, isLocked);
-  }
+function checkAndSetAnnotationLocked(annotationUID: string): boolean {
+  const isLocked = isAnnotationLocked(annotationUID);
+  setAnnotationLocked(annotationUID, isLocked);
+
+  return isLocked;
 }
 
 /*
@@ -106,67 +93,55 @@ function makeEventDetail(): AnnotationLockChangeEventDetail {
 }
 
 function lock(
-  annotation: Annotation,
-  lockedAnnotationsSet: Set<Annotation>,
+  annotationUID: string,
+  lockedAnnotationUIDsSet: Set<string>,
   detail: AnnotationLockChangeEventDetail
 ): void {
-  if (!lockedAnnotationsSet.has(annotation)) {
-    lockedAnnotationsSet.add(annotation);
-    detail.added.push(annotation);
+  if (!lockedAnnotationUIDsSet.has(annotationUID)) {
+    lockedAnnotationUIDsSet.add(annotationUID);
+    detail.added.push(annotationUID);
+    const annotation = getAnnotation(annotationUID);
+
+    if (annotation) {
+      annotation.isLocked = true;
+    }
   }
 }
 
 function unlock(
-  annotation: Annotation,
-  lockedAnnotationsSet: Set<Annotation>,
+  annotationUID: string,
+  lockedAnnotationUIDsSet: Set<string>,
   detail: AnnotationLockChangeEventDetail
 ): void {
-  if (lockedAnnotationsSet.delete(annotation)) {
-    detail.removed.push(annotation);
+  if (lockedAnnotationUIDsSet.delete(annotationUID)) {
+    detail.removed.push(annotationUID);
+
+    const annotation = getAnnotation(annotationUID);
+
+    if (annotation) {
+      annotation.isLocked = false;
+    }
   }
 }
 
 function clearLockedAnnotationsSet(
-  lockedAnnotationsSet: Set<Annotation>,
+  lockedAnnotationUIDsSet: Set<string>,
   detail: AnnotationLockChangeEventDetail
 ): void {
-  lockedAnnotationsSet.forEach((annotation) => {
-    unlock(annotation, lockedAnnotationsSet, detail);
+  lockedAnnotationUIDsSet.forEach((annotationUID) => {
+    unlock(annotationUID, lockedAnnotationUIDsSet, detail);
   });
 }
 
 function publish(
   detail: AnnotationLockChangeEventDetail,
-  lockedAnnotationsSet: Set<Annotation>
+  lockedAnnotationUIDsSet: Set<string>
 ) {
   if (detail.added.length > 0 || detail.removed.length > 0) {
-    lockedAnnotationsSet.forEach((item) => void detail.locked.push(item));
+    lockedAnnotationUIDsSet.forEach((item) => void detail.locked.push(item));
     triggerEvent(eventTarget, Events.ANNOTATION_LOCK_CHANGE, detail);
   }
 }
-
-function shouldDefineIsLockedProperty(annotation: Annotation): boolean {
-  const descriptor = Object.getOwnPropertyDescriptor(annotation, 'isLocked');
-  if (descriptor) {
-    return (
-      descriptor.configurable &&
-      (descriptor.set !== setIsLocked || descriptor.get !== getIsLocked)
-    );
-  }
-  return Object.isExtensible(annotation);
-}
-
-function setIsLocked(locked: boolean) {
-  setAnnotationLocked(this as Annotation, locked);
-}
-
-function getIsLocked() {
-  return isAnnotationLocked(this as Annotation);
-}
-
-/*
- * Exports
- */
 
 export {
   setAnnotationLocked,
@@ -174,5 +149,5 @@ export {
   getAnnotationsLockedCount,
   unlockAllAnnotations,
   isAnnotationLocked,
-  checkAndDefineIsLockedProperty,
+  checkAndSetAnnotationLocked,
 };

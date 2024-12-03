@@ -3,10 +3,12 @@ import {
   eventTarget,
   triggerEvent,
   utilities,
+  getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import {
+  addAnnotation,
   getChildAnnotations,
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
@@ -15,7 +17,7 @@ import {
   drawPolyline as drawPolylineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
-import { state } from '../../store';
+import { state } from '../../store/state';
 import {
   Events,
   MouseBindings,
@@ -32,16 +34,13 @@ import type {
   ToolProps,
   AnnotationRenderContext,
 } from '../../types';
-import {
-  math,
-  throttle,
-  roundNumber,
-  triggerAnnotationRenderForViewportIds,
-  getCalibratedLengthUnitsAndScale,
-} from '../../utilities';
-import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
+
+import * as math from '../../utilities/math';
+import throttle from '../../utilities/throttle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -49,12 +48,13 @@ import type {
   AnnotationModifiedEventDetail,
   ContourAnnotationCompletedEventDetail,
 } from '../../types/EventTypes';
-import { ISpline } from '../../types/ISpline';
+import type { ISpline } from '../../types/ISpline';
 import { CardinalSpline } from './splines/CardinalSpline';
 import { LinearSpline } from './splines/LinearSpline';
 import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
+import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -85,9 +85,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
 
-  touchDragCallback: any;
-  mouseDragCallback: any;
-  _throttledCalculateCachedStats: any;
+  _throttledCalculateCachedStats: Function;
   editData: {
     annotation: SplineROIAnnotation;
     viewportIdsToRender: Array<string>;
@@ -226,7 +224,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     this._activateDraw(element);
     evt.preventDefault();
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     return annotation;
   }
@@ -273,11 +271,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
       movingTextBox: false,
     };
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     this._activateModify(element);
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -320,7 +315,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
   };
@@ -345,12 +340,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     // Decide whether there's at least one point is outside image
-    const image = this.getTargetIdImage(
-      this.getTargetId(enabledElement.viewport),
-      enabledElement.renderingEngine
+    const image = this.getTargetImageData(
+      this.getTargetId(enabledElement.viewport)
     );
     const { imageData, dimensions } = image;
     this.isHandleOutsideImage = data.handles.points
@@ -378,7 +371,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       this.fireChangeOnUpdate.changeType = changeType;
     }
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData = null;
     this.isDrawing = false;
@@ -426,7 +419,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     this.editData.lastCanvasPoint = evt.detail.currentPoints.canvas;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
@@ -468,7 +461,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     data.contour.closed = data.contour.closed || closeContour;
     annotation.invalidated = true;
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (data.contour.closed) {
       this._endCallback(evt);
@@ -519,7 +512,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   cancel(element: HTMLDivElement) {
@@ -544,7 +537,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     this.editData = null;
     return annotation.annotationUID;
@@ -720,7 +713,8 @@ class SplineROITool extends ContourSegmentationBaseTool {
           closed: data.contour.closed,
           targetWindingDirection: ContourWindingDirection.Clockwise,
         },
-        viewport
+        viewport,
+        { updateWindingDirection: data.contour.closed }
       );
     });
 
@@ -762,7 +756,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         canvasCoordinates,
         {
           color,
-          lineWidth: Math.max(1, lineWidth),
+          lineWidth,
           handleRadius: '3',
         }
       );
@@ -787,7 +781,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         previewPolylinePoints,
         {
           color: '#9EA0CA',
-          lineDash,
+          lineDash: lineDash as string,
           lineWidth: 1,
         }
       );
@@ -986,7 +980,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       this.getToolName()
     );
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
   private _deleteControlPointByIndex(
@@ -1012,7 +1006,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     annotation.invalidated = true;
 
-    triggerAnnotationRenderForViewportIds(renderingEngine, viewportIdsToRender);
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   }
 
   deleteControlPointCallback = (
@@ -1127,14 +1121,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-      const image = this.getTargetIdImage(targetId, renderingEngine);
+      const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -1163,7 +1157,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnits } = getCalibratedLengthUnitsAndScale(
+      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
         image,
         () => {
           const {
@@ -1204,7 +1198,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
-        areaUnit: areaUnits,
+        areaUnit,
       };
     }
 
@@ -1216,6 +1210,89 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     return cachedStats;
   };
+
+  static hydrate = (
+    viewportId: string,
+    points: Types.Point3[],
+    options?: {
+      annotationUID?: string;
+      splineType?: SplineTypesEnum;
+    }
+  ): SplineROIAnnotation => {
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+    if (!enabledElement) {
+      return;
+    }
+
+    if (points.length < SPLINE_MIN_POINTS) {
+      console.warn('Spline requires at least 3 control points');
+      return;
+    }
+
+    const { viewport } = enabledElement;
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+
+    // This is a workaround to access the protected method getReferencedImageId
+    // we should make those static too
+    const instance = new this();
+
+    const referencedImageId = instance.getReferencedImageId(
+      viewport,
+      points[0],
+      viewPlaneNormal,
+      viewUp
+    );
+
+    // Create appropriate spline instance based on type or default
+    const splineType = options?.splineType || SplineTypesEnum.CatmullRom;
+    const splineConfig = instance._getSplineConfig(splineType);
+    const SplineClass = splineConfig.Class;
+    const splineInstance = new SplineClass();
+    // Convert world points to canvas for the spline
+    const canvasPoints = points.map((point) => viewport.worldToCanvas(point));
+    splineInstance.setControlPoints(canvasPoints);
+
+    const splinePolylineCanvas = splineInstance.getPolylinePoints();
+    const splinePolylineWorld = splinePolylineCanvas.map((point) =>
+      viewport.canvasToWorld(point)
+    );
+
+    const annotation = {
+      annotationUID: options?.annotationUID || utilities.uuidv4(),
+      data: {
+        handles: {
+          points,
+        },
+        label: '',
+        cachedStats: {},
+        spline: {
+          type: splineType,
+          instance: splineInstance,
+        },
+        contour: {
+          closed: true,
+          polyline: splinePolylineWorld,
+        },
+      },
+      highlighted: false,
+      autoGenerated: false,
+      invalidated: true,
+      isLocked: false,
+      isVisible: true,
+      metadata: {
+        toolName: instance.getToolName(),
+        viewPlaneNormal,
+        FrameOfReferenceUID,
+        referencedImageId,
+        ...options,
+      },
+    };
+
+    addAnnotation(annotation, viewport.element);
+
+    triggerAnnotationRenderForViewportIds([viewport.id]);
+  };
 }
 
 function defaultGetTextLines(data, targetId): string[] {
@@ -1226,7 +1303,7 @@ function defaultGetTextLines(data, targetId): string[] {
   if (area) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
-      : `Area: ${roundNumber(area)} ${areaUnit}`;
+      : `Area: ${utilities.roundNumber(area)} ${areaUnit}`;
 
     textLines.push(areaLine);
   }

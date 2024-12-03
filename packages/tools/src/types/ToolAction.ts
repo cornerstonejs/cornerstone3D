@@ -12,7 +12,7 @@ import type { SetToolBindingsType } from './ISetToolModeOptions';
  * to draw an annotation because action has lower priority.
  *
  * Actions are defined in the following way in a annotation tool constructor:
- *
+ * ```
  * class MyAnnotationTool extends AnnotationTool {
  *   constructor(
  *     toolProps: PublicToolProps = {},
@@ -39,7 +39,7 @@ import type { SetToolBindingsType } from './ISetToolModeOptions';
  *     // action code
  *   }
  * }
- *
+ * ```
  * The "method" property may be a string or a javascript function. In case it is
  * a string a function with same name must exists in the tool class. In both ways
  * (string or function) the function is called in the tool's context (`this`)
@@ -51,4 +51,4 @@ type ToolAction = {
   bindings: SetToolBindingsType[];
 };
 
-export default ToolAction;
+export type { ToolAction as default };

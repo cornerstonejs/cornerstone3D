@@ -1,5 +1,5 @@
 import getImageFitScale from './getImageFitScale';
-import { CPUFallbackEnabledElement } from '../../../../types';
+import type { CPUFallbackEnabledElement } from '../../../../types';
 
 /**
  * Adjusts an image's scale and translation so the image is centered and all pixels

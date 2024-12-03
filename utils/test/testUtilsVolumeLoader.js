@@ -1,30 +1,34 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { ImageVolume } from '@cornerstonejs/core';
 import {
-  getVerticalBarRGBVolume,
+  ImageVolume,
+  cache,
+  volumeLoader,
+  utilities,
+} from '@cornerstonejs/core';
+import {
   getVerticalBarVolume,
   getExactRegionVolume,
+  getVerticalBarRGBVolume,
 } from './testUtilsPixelData';
+import { decodeVolumeIdInfo, colors, encodeImageIdInfo } from './testUtils';
 
 /**
- * It creates a volume based on the volumeId name for testing purposes. It splits the volumeId
- * based on "_" and deciphers each field of [ scheme, rows, columns, slices, x_spacing, y_spacing, z_spacing, rgb,
- * startX, startY, startZ, endX, endY, endZ, and valueForSegmentIndex ].
+ * It creates a volume based on the volumeId info for testing purposes. The volumeId is encoded
+ * with JSON-stringified object containing the following properties:
+ * [ loader, name, rows, columns, slices, xSpacing, ySpacing, zSpacing, rgb, pt ]
  *
- * If scheme is not equal to "volumeURIExact", then the volume is created with number of
+ * If name is not equal to "volumeURIExact", then the volume is created with the
  * provided rows, columns, and slices, with spacing in x, y, and z direction, and with
  * each slice having one vertical bar spanning [width/slices] of the image. So for instance
- * myVolume_100_100_10_1_1_1_0 will generate a volume of size 100 by 100 by 10 with spacing
- * of 1 mm in x and y direction and 1 mm in z direction. The volume will have 10 slices, and
- * first slice will have a vertical bar spanning 10 pixels in the first 10% of the image (since
- * there are 10 slices), the second slice will have a vertical bar of value 255 spanning 10 pixels in the
- * second 10% of the image, and so on.
+ * a volumeId encoding { name: 'volumeURI', rows: 100, columns: 100, slices: 10, xSpacing: 1, ySpacing: 1, zSpacing: 1, rgb: 0 }
+ * will generate a volume of size 100 by 100 by 10 with spacing of 1 mm in x, y, and z direction.
+ * The volume will have 10 slices, and first slice will have a vertical bar spanning 10 pixels
+ * in the first 10% of the image (since there are 10 slices), the second slice will have a
+ * vertical bar of value 255 spanning 10 pixels in the second 10% of the image, and so on.
  *
- * If volumeURIExact is provided as the scheme, there will be no automatic generation of the vertical bars
- * for each slice and using the provided startX, startY, startZ, endX, endY, endZ, and valueForSegmentIndex
- * will be used to create the volume that has the exact region specified with value of valueForSegmentIndex
- * (instead of 255).
+ * If "volumeURIExact" is provided as the name, there will be no automatic generation of the vertical bars
+ * for each slice and the volume will be created with an exact region specified.
  *
  * If rgb is true, then the volume will be created with RGB values.
  *
@@ -35,43 +39,43 @@ import {
  * registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader)
  * ````
  *
- * then you can use imageId like: 'fakeVolumeLoader: myVolume_64_64_10_1_1_1_0'
- *
- *
- * @param {volumeId} volumeId
- * @returns Promise that resolves to the image
+ * @param {string} volumeId - Encoded volume information
+ * @returns Promise that resolves to the image volume
  */
 const fakeVolumeLoader = (volumeId) => {
-  const volumeURI = volumeId.split(':')[1];
-  const uriName = volumeURI.split('_')[0];
-  const [
-    _,
+  const volumeInfo = decodeVolumeIdInfo(volumeId);
+
+  const {
+    name,
     rows,
     columns,
     slices,
-    x_spacing,
-    y_spacing,
-    z_spacing,
-    rgb,
-    startX,
-    startY,
-    startZ,
-    endX,
-    endY,
-    endZ,
-    valueForSegmentIndex,
-  ] = volumeURI.split('_').map((v) => parseFloat(v));
-
-  // If uri name is volumeURIExact, it means that the metadata provided
-  // has the start and end indices of the region of interest.
-  let useExactRegion = false;
-  if (uriName === 'volumeURIExact') {
-    useExactRegion = true;
-  }
+    xSpacing: x_spacing,
+    ySpacing: y_spacing,
+    zSpacing: z_spacing,
+    rgb = 0,
+    PT = false,
+    exactRegion = {},
+    id,
+  } = volumeInfo;
 
   const dimensions = [rows, columns, slices];
 
   const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
+
+  const imageIds = new Array(slices).fill().map((_, i) =>
+    encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: id,
+      id: id,
+      rows,
+      columns,
+      xSpacing: x_spacing,
+      ySpacing: y_spacing,
+      rgb: rgb ? 1 : 0,
+      sliceIndex: i,
+    })
+  );
 
   const volumeMetadata = {
     BitsAllocated: rgb ? 24 : 8,
@@ -87,51 +91,80 @@ const fakeVolumeLoader = (volumeId) => {
     Rows: rows,
   };
 
-  let pixelData;
+  const numberOfComponents = rgb ? 3 : 1;
+  // cache the images with their metadata so that when the image is requested, it can be returned
+  // from the cache instead of being created again
+  imageIds.forEach((imageId, i) => {
+    const voxelManager = utilities.VoxelManager.createImageVoxelManager({
+      width: columns,
+      height: rows,
+      scalarData: new Uint8Array(rows * columns * numberOfComponents),
+      numberOfComponents,
+    });
+
+    const image = {
+      rows,
+      columns,
+      width: columns,
+      height: rows,
+      imageId,
+      intercept: 0,
+      slope: 1,
+      invert: false,
+      windowCenter: 40,
+      windowWidth: 400,
+      maxPixelValue: 255,
+      minPixelValue: 0,
+      voxelManager,
+      rowPixelSpacing: y_spacing,
+      columnPixelSpacing: x_spacing,
+      getPixelData: () => voxelManager.getScalarData(),
+      sizeInBytes: rows * columns * numberOfComponents,
+      FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
+      imageFrame: {
+        photometricInterpretation: rgb ? 'RGB' : 'MONOCHROME2',
+      },
+    };
+
+    cache.putImageSync(imageId, image);
+  });
+
+  const volumeVoxelManager =
+    utilities.VoxelManager.createImageVolumeVoxelManager({
+      dimensions,
+      imageIds,
+      numberOfComponents,
+    });
+
   if (rgb) {
-    pixelData = getVerticalBarRGBVolume(rows, columns, slices);
-  } else if (useExactRegion) {
-    pixelData = getExactRegionVolume(
+    getVerticalBarRGBVolume(volumeVoxelManager, rows, columns, slices);
+  } else if (Object.keys(exactRegion).length > 0) {
+    getExactRegionVolume(
+      volumeVoxelManager,
       rows,
       columns,
       slices,
-      startX,
-      startY,
-      startZ,
-      endX,
-      endY,
-      endZ,
-      valueForSegmentIndex
+      exactRegion
     );
   } else {
-    pixelData = getVerticalBarVolume(rows, columns, slices);
+    getVerticalBarVolume(volumeVoxelManager, rows, columns, slices);
   }
 
-  const scalarArray = vtkDataArray.newInstance({
-    name: 'Pixels',
-    numberOfComponents: rgb ? 3 : 1,
-    values: pixelData,
-  });
-
-  const imageData = vtkImageData.newInstance();
-  imageData.setDimensions(dimensions);
-  imageData.setSpacing([1, 1, 1]);
-  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-  imageData.setOrigin([0, 0, 0]);
-  imageData.getPointData().setScalars(scalarArray);
-
+  const imageCache = cache._imageCache;
   const imageVolume = new ImageVolume({
+    dataType: 'Uint8Array',
     volumeId,
     metadata: volumeMetadata,
     dimensions: dimensions,
+    voxelManager: volumeVoxelManager,
     spacing: [1, 1, 1],
     origin: [0, 0, 0],
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    scalarData: pixelData,
-    sizeInBytes: pixelData.byteLength,
-    imageData: imageData,
-    imageIds: [],
+    numberOfComponents,
+    imageIds,
   });
+
+  imageVolume.modified();
 
   return {
     promise: Promise.resolve(imageVolume),

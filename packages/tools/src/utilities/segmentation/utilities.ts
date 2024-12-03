@@ -1,8 +1,7 @@
-import { Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
-import { getToolGroup } from '../../store/ToolGroupManager';
-import BrushTool from '../../tools/segmentation/BrushTool';
 import { getBoundingBoxAroundShapeIJK } from '../boundingBox/getBoundingBoxAroundShape';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 export type ThresholdInformation = {
   volume: Types.IImageVolume;
@@ -10,30 +9,15 @@ export type ThresholdInformation = {
   upper: number;
 };
 
-export function getBrushToolInstances(toolGroupId: string, toolName?: string) {
-  const toolGroup = getToolGroup(toolGroupId);
-
-  if (toolGroup === undefined) {
-    return;
-  }
-
-  const toolInstances = toolGroup._toolInstances;
-
-  if (!Object.keys(toolInstances).length) {
-    return;
-  }
-
-  if (toolName && toolInstances[toolName]) {
-    return [toolInstances[toolName]];
-  }
-
-  // For each tool that has BrushTool as base class, set the brush size.
-  const brushBasedToolInstances = Object.values(toolInstances).filter(
-    (toolInstance) => toolInstance instanceof BrushTool
-  ) as BrushTool[];
-
-  return brushBasedToolInstances;
-}
+export type VolumeInfo = {
+  imageData: vtkImageData;
+  lower: number;
+  upper: number;
+  spacing: Types.Point3;
+  dimensions: Types.Point3;
+  volumeSize: number;
+  voxelManager: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
+};
 
 const equalsCheck = (a, b) => {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -49,27 +33,43 @@ export function getVoxelOverlap(
   voxelSpacing,
   voxelCenter
 ) {
-  const voxelCornersWorld = [];
-  for (let i = 0; i < 2; i++) {
-    for (let j = 0; j < 2; j++) {
-      for (let k = 0; k < 2; k++) {
-        const point = [...voxelCenter]; // Create a new point from voxelCenter
-        point[0] = point[0] + ((i * 2 - 1) * voxelSpacing[0]) / 2;
-        point[1] = point[1] + ((j * 2 - 1) * voxelSpacing[1]) / 2;
-        point[2] = point[2] + ((k * 2 - 1) * voxelSpacing[2]) / 2;
-        voxelCornersWorld.push(point);
-      }
-    }
-  }
-  const voxelCornersIJK = voxelCornersWorld.map(
-    (world) => csUtils.transformWorldToIndex(imageData, world) as Types.Point3
-  );
-  const overlapBounds = getBoundingBoxAroundShapeIJK(
-    voxelCornersIJK,
-    dimensions
-  );
+  // Pre-calculate half spacings
+  const halfSpacingX = voxelSpacing[0] / 2;
+  const halfSpacingY = voxelSpacing[1] / 2;
+  const halfSpacingZ = voxelSpacing[2] / 2;
 
-  return overlapBounds;
+  // Pre-allocate array for 8 corners
+  const voxelCornersIJK = new Array(8);
+
+  // Calculate first corner
+  voxelCornersIJK[0] = csUtils.transformWorldToIndex(imageData, [
+    voxelCenter[0] - halfSpacingX,
+    voxelCenter[1] - halfSpacingY,
+    voxelCenter[2] - halfSpacingZ,
+  ]) as Types.Point3;
+
+  // Define offsets for remaining 7 corners
+  const offsets = [
+    [1, -1, -1],
+    [-1, 1, -1],
+    [1, 1, -1],
+    [-1, -1, 1],
+    [1, -1, 1],
+    [-1, 1, 1],
+    [1, 1, 1],
+  ];
+
+  // Calculate remaining corners
+  for (let i = 0; i < 7; i++) {
+    const [xOff, yOff, zOff] = offsets[i];
+    voxelCornersIJK[i + 1] = csUtils.transformWorldToIndex(imageData, [
+      voxelCenter[0] + xOff * halfSpacingX,
+      voxelCenter[1] + yOff * halfSpacingY,
+      voxelCenter[2] + zOff * halfSpacingZ,
+    ]) as Types.Point3;
+  }
+
+  return getBoundingBoxAroundShapeIJK(voxelCornersIJK, dimensions);
 }
 
 /**
@@ -80,38 +80,38 @@ export function processVolumes(
   thresholdVolumeInformation: ThresholdInformation[]
 ) {
   const { spacing: segmentationSpacing } = segmentationVolume;
-  const scalarData = segmentationVolume.getScalarData();
+  const scalarDataLength =
+    segmentationVolume.voxelManager.getScalarDataLength();
 
   // prepare a list of volume information objects for callback functions
-  const volumeInfoList = [];
+  const volumeInfoList: VolumeInfo[] = [];
   let baseVolumeIdx = 0;
   for (let i = 0; i < thresholdVolumeInformation.length; i++) {
-    const { imageData, spacing, dimensions } =
+    const { imageData, spacing, dimensions, voxelManager } =
       thresholdVolumeInformation[i].volume;
 
     const volumeSize =
-      thresholdVolumeInformation[i].volume.getScalarData().length;
+      thresholdVolumeInformation[i].volume.voxelManager.getScalarDataLength();
     // discover the index of the volume the segmentation data is based on
     if (
-      volumeSize === scalarData.length &&
+      volumeSize === scalarDataLength &&
       equalsCheck(spacing, segmentationSpacing)
     ) {
       baseVolumeIdx = i;
     }
 
     // prepare information used in callback functions
-    const referenceValues = imageData.getPointData().getScalars().getData();
     const lower = thresholdVolumeInformation[i].lower;
     const upper = thresholdVolumeInformation[i].upper;
 
     volumeInfoList.push({
       imageData,
-      referenceValues,
       lower,
       upper,
       spacing,
       dimensions,
       volumeSize,
+      voxelManager,
     });
   }
 
@@ -120,3 +120,37 @@ export function processVolumes(
     baseVolumeIdx,
   };
 }
+
+const segmentIndicesCache = new Map<
+  string,
+  { indices: number[]; isDirty: boolean }
+>();
+
+export const setSegmentationDirty = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached) {
+    cached.isDirty = true;
+  }
+};
+
+export const setSegmentationClean = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached) {
+    cached.isDirty = false;
+  }
+};
+
+export const getCachedSegmentIndices = (segmentationId: string) => {
+  const cached = segmentIndicesCache.get(segmentationId);
+  if (cached && !cached.isDirty) {
+    return cached.indices;
+  }
+  return null;
+};
+
+export const setCachedSegmentIndices = (
+  segmentationId: string,
+  indices: number[]
+) => {
+  segmentIndicesCache.set(segmentationId, { indices, isDirty: false });
+};

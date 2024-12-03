@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -52,6 +52,15 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Disable Viewport',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine?.disableElement(viewportId);
+  },
+});
+
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
@@ -100,21 +109,23 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.WholeSlide,
+    type: ViewportType.WHOLE_SLIDE,
     element,
     defaultOptions: {
-      background: <Types.Point3>[0.2, 0, 0.2],
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IWSIViewport>renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IWSIViewport;
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
   // Set the stack on the viewport
-  await viewport.setWSI(imageIds, client);
+  await viewport.setDataIds(imageIds, { webClient: client });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

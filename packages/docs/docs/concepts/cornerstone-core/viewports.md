@@ -52,6 +52,10 @@ Both `StackViewport` and `VolumeViewport`, `VolumeViewport3D` are created via th
 - Video can include MPEG 4 encoded vide streams. In theory, MPEG2 is also supported,
   but practically the browser doesn't support that.
 
+## Whole Slide Image Viewport
+
+- Suitable for rendering whole slide images
+
 ## Initial Display Area
 
 All viewports inherit from the Viewport class which has a `displayArea` field which can be provided.

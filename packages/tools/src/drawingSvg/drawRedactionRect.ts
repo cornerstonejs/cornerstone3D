@@ -1,14 +1,16 @@
+import type { Types } from '@cornerstonejs/core';
+import type { SVGDrawingHelper } from '../types';
 import _getHash from './_getHash';
 import _setAttributesIfNecessary from './setAttributesIfNecessary';
 import _setNewAttributesIfValid from './setNewAttributesIfValid';
 
 // <rect x="120" y="100" width="100" height="100" />
 export default function drawRedactionRect(
-  svgDrawingHelper: any,
+  svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   rectangleUID: string,
-  start: any,
-  end: any,
+  start: Types.Point2,
+  end: Types.Point2,
   options = {}
 ): void {
   const {

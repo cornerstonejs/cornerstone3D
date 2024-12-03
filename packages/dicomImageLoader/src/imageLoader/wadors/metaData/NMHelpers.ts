@@ -3,8 +3,13 @@ import getValue from './getValue';
 import isNMReconstructable from '../../isNMReconstructable';
 import getNumberValues from './getNumberValues';
 
+/**
+ * Checks if the modality is Nuclear Medicine (NM)
+ * @param metaData The metadata object containing DICOM tags
+ * @returns True if the modality includes 'NM', false otherwise
+ */
 function isNMModality(metaData) {
-  const modality = getValue(metaData['00080060']);
+  const modality = getValue(metaData['00080060']) as string;
 
   return modality.includes('NM');
 }

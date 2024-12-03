@@ -20,17 +20,19 @@ function toWindowLevel(
 
   return { windowWidth, windowCenter };
 }
-
 /**
- * Given a window width and center, return the lower and upper bounds of the window
- * The formulas for the calculation are specified in
- * https://dicom.nema.org/medical/dicom/current/output/html/part03.html#sect_C.11.2.1.2.1
- * if (x <= c - 0.5 - (w-1) /2), then y = ymin
- * else if (x > c - 0.5 + (w-1) /2), then y = ymax
- * else y = ((x - (c - 0.5)) / (w-1) + 0.5) * (ymax- ymin) + ymin
- * @param windowWidth - the width of the window in HU
- * @param windowCenter - The center of the window.
- * @returns a JavaScript object with two properties: lower and upper.
+ * Given a window width and center, return the lower and upper bounds of the window.
+ * The formulas for the calculation are specified in the DICOM standard:
+ * {@link https://dicom.nema.org/medical/dicom/current/output/html/part03.html#sect_C.11.2.1.2.1}
+ *
+ * The window transformation is defined by:
+ * - if `x <= c - 0.5 - (w-1)/2`, then `y = ymin`
+ * - if `x > c - 0.5 + (w-1)/2`, then `y = ymax`
+ * - else `y = ((x - (c - 0.5))/(w-1) + 0.5) * (ymax - ymin) + ymin`
+ *
+ * @param windowWidth - The width of the window in HU
+ * @param windowCenter - The center of the window
+ * @returns An object containing the lower and upper bounds of the window
  */
 function toLowHighRange(
   windowWidth: number,

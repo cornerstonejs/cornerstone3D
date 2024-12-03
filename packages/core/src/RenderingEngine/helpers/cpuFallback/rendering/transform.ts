@@ -1,4 +1,4 @@
-import {
+import type {
   CPUFallbackTransform,
   Point2,
   TransformMatrix2D,

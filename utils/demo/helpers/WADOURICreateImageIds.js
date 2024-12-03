@@ -136,7 +136,7 @@ const sopInstanceUIDs = [
   ['1.3.6.1.4.1.14519.5.2.1.7009.2403.113692692484570386248172588190'],
 ];
 
-export default function wadoURICreateImageIds() {
+export function wadoURICreateImageIds() {
   const seriesUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561';
   const studyUID =
@@ -149,3 +149,30 @@ export default function wadoURICreateImageIds() {
 
   return imageIds;
 }
+
+const ctImageIds = [
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000000.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000001.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000002.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000003.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000004.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000005.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000006.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000007.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000008.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/CT+CT+IMAGES/CT000009.dcm',
+];
+
+const ptImageIds = [
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000000.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000001.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000002.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000003.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000004.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000005.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000006.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000007.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000008.dcm',
+  'wadouri:https://ohif-assets-new.s3.us-east-1.amazonaws.com/ACRIN-Regular/PT+PET+AC/PT000009.dcm',
+];
+export { ctImageIds, ptImageIds };

@@ -1,13 +1,12 @@
-import { Types } from '@cornerstonejs/core';
-import { Annotation } from './AnnotationTypes';
-import IPoints from './IPoints';
-import ITouchPoints from './ITouchPoints';
-import IDistance from './IDistance';
-import { SetToolBindingsType } from './ISetToolModeOptions';
-import { Swipe } from '../enums/Touch';
-import { ToolModes } from '../enums';
-import { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
-import { ChangeTypes } from '../enums';
+import type { Types } from '@cornerstonejs/core';
+import type { Annotation } from './AnnotationTypes';
+import type IPoints from './IPoints';
+import type ITouchPoints from './ITouchPoints';
+import type IDistance from './IDistance';
+import type { SetToolBindingsType } from './ISetToolModeOptions';
+import type { Swipe } from '../enums/Touch';
+import type { ToolModes, ChangeTypes } from '../enums';
+import type { InterpolationROIAnnotation } from './ToolSpecificAnnotationTypes';
 
 /**
  * The normalized interaction event detail
@@ -28,6 +27,8 @@ type NormalizedInteractionEventDetail = {
 type MouseCustomEventDetail = NormalizedInteractionEventDetail & {
   /** The original event object. */
   event: Record<string, unknown> | MouseEvent;
+  /** An override for the buttons to allow setting them separately */
+  buttons?: number;
 };
 
 type TouchCustomEventDetail = NormalizedInteractionEventDetail & {
@@ -164,11 +165,11 @@ type AnnotationSelectionChangeEventDetail = {
  */
 type AnnotationLockChangeEventDetail = {
   // List of instances changed to locked state by the last operation.
-  added: Array<Annotation>;
+  added: Array<string>;
   // List of instances removed from locked state by the last operation.
-  removed: Array<Annotation>;
+  removed: Array<string>;
   // Updated list of currently locked instances
-  locked: Array<Annotation>;
+  locked: Array<string>;
 };
 
 type AnnotationVisibilityChangeEventDetail = {
@@ -231,6 +232,11 @@ type SegmentationDataModifiedEventDetail = {
   /** array of slice indices in a labelmap which have been modified */
   // TODO: This is labelmap-specific and needs to be a labelmap-specific event
   modifiedSlicesToUse?: number[];
+  /**
+   * The segment index being modified as a primary action - other segments
+   * indices may also be modified as a side affect of the primary change.
+   */
+  segmentIndex?: number;
 };
 
 /**
@@ -239,18 +245,22 @@ type SegmentationDataModifiedEventDetail = {
 type SegmentationRenderedEventDetail = {
   /** unique id of the viewport */
   viewportId: string;
-  /** unique id of the toolGroup segmentation belongs to */
-  toolGroupId: string;
+  /** unique id of the segmentation */
+  segmentationId: string;
+  /** type of the segmentation */
+  type: string;
 };
 
 /**
  * EventDetail for when a Segmentation Representation for a toolGroup is modified
  */
 type SegmentationRepresentationModifiedEventDetail = {
-  /** unique id of the toolGroup */
-  toolGroupId: string;
-  /** segmentation representationUID */
-  segmentationRepresentationUID: string;
+  /** segmentationId */
+  segmentationId: string;
+  /** type of the segmentation */
+  type: string;
+  /** viewport */
+  viewportId: string;
 };
 
 /**
@@ -265,10 +275,12 @@ type SegmentationRemovedEventDetail = {
  * EventDetail for when a Segmentation Representation is removed
  */
 type SegmentationRepresentationRemovedEventDetail = {
-  /** unique id of the toolGroup */
-  toolGroupId: string;
-  /** segmentation representationUID */
-  segmentationRepresentationUID: string;
+  /** segmentationId */
+  segmentationId: string;
+  /** type of the segmentation */
+  type: string;
+  /** viewport */
+  viewportId: string;
 };
 
 /**
@@ -276,6 +288,14 @@ type SegmentationRepresentationRemovedEventDetail = {
  */
 type SegmentationModifiedEventDetail = {
   /** unique id of segmentation (not segmentationData), for volumes (labelMaps) it is volumeId */
+  segmentationId: string;
+};
+
+/**
+ * EventDetail for when a Segmentation is added
+ */
+type SegmentationAddedEventDetail = {
+  /** unique id of the segmentation */
   segmentationId: string;
 };
 
@@ -430,7 +450,7 @@ type TouchPressEventDetail = NormalizedInteractionEventDetail &
 type MouseWheelEventDetail = NormalizedInteractionEventDetail &
   MouseCustomEventDetail & {
     /** wheel detail */
-    detail: Record<string, any>;
+    detail: Record<string, unknown>;
     /** wheel information */
     wheel: {
       spinX: number;
@@ -442,19 +462,6 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail &
     /** Mouse Points */
     points: IPoints;
   };
-
-/**
- * Volume Scroll Out of Bounds event detail
- */
-type VolumeScrollOutOfBoundsEventDetail = {
-  volumeId: string;
-  viewport: Types.IVolumeViewport;
-  desiredStepIndex: number;
-  currentStepIndex: number;
-  delta: number; // difference between the desired and current frame
-  numScrollSteps: number; // total scroll steps in the volume
-  currentImageId: string; // get ImageId (ImageIndex for in-plane acquisition)
-};
 
 /////////////////////////////
 //
@@ -582,6 +589,12 @@ type SegmentationModifiedEventType =
   Types.CustomEventType<SegmentationModifiedEventDetail>;
 
 /**
+ * Event for when Segmentation is added
+ */
+type SegmentationAddedEventType =
+  Types.CustomEventType<SegmentationAddedEventDetail>;
+
+/**
  * Event for when a key is pressed
  */
 type KeyDownEventType = Types.CustomEventType<KeyDownEventDetail>;
@@ -684,13 +697,7 @@ type MouseDoubleClickEventType =
  */
 type MouseWheelEventType = Types.CustomEventType<MouseWheelEventDetail>;
 
-/**
- * Event for volume scroll out of bounds
- */
-type VolumeScrollOutOfBoundsEventType =
-  Types.CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
-
-export {
+export type {
   InteractionStartType,
   InteractionEndType,
   InteractionEventType,
@@ -768,6 +775,6 @@ export {
   MouseDoubleClickEventType,
   MouseWheelEventDetail,
   MouseWheelEventType,
-  VolumeScrollOutOfBoundsEventDetail,
-  VolumeScrollOutOfBoundsEventType,
+  SegmentationAddedEventDetail,
+  SegmentationAddedEventType,
 };

@@ -34,24 +34,6 @@ module.exports = (env, argv) => {
     optimization: {
       minimize: true,
     },
-    externals: [
-      {
-        'detect-gpu': {
-          root: 'window',
-          commonjs: 'detect-gpu',
-          commonjs2: 'detect-gpu',
-          amd: 'detect-gpu',
-        },
-      },
-      {
-        'lodash.clonedeep': {
-          root: 'window',
-          commonjs: 'lodash.clonedeep',
-          commonjs2: 'lodash.clonedeep',
-          amd: 'lodash.clonedeep',
-        },
-      },
-    ],
     // plugins: [new webpackBundleAnalyzer.BundleAnalyzerPlugin()],
   });
 };

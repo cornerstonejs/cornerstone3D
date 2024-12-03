@@ -1,4 +1,5 @@
-import { test, Page, Locator } from '@playwright/test';
+import { test } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
 import {
   checkForScreenshot,
   visitExample,
@@ -85,10 +86,10 @@ test.describe('Spline Contour Segmentation Tools', async () => {
   }) => {
     const canvas = await page.locator('canvas');
     const splineStyle = {
-      outlineWidthActive: 1.7,
+      outlineWidth: 1.7,
       outlineOpacity: 0.5,
       fillAlpha: 0,
-      outlineDashActive: 3,
+      outlineDash: 3,
     };
 
     await updateSplineStyleInputs({ page, splineStyle });

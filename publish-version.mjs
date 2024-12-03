@@ -1,6 +1,6 @@
 import { execa } from 'execa';
 import fs from 'fs/promises';
-import glob from 'glob';
+import { glob } from 'glob';
 import path from 'path';
 import os from 'os';
 

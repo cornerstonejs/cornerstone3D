@@ -1,58 +1,39 @@
 import { vec3 } from 'gl-matrix';
-import {
-  canRenderFloatTextures,
-  getConfiguration,
-  getShouldUseSharedArrayBuffer,
-} from '../init';
-import createFloat32SharedArray from './createFloat32SharedArray';
-import createInt16SharedArray from './createInt16SharedArray';
-import createUint16SharedArray from './createUInt16SharedArray';
-import createUint8SharedArray from './createUint8SharedArray';
-import getScalingParameters from './getScalingParameters';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
+import type {
+  ImageVolumeProps,
+  Mat3,
+  PixelDataTypedArrayString,
+  Point3,
+} from '../types';
+import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
-import { ImageVolumeProps, Mat3, Point3 } from '../types';
-import cache from '../cache';
-import { Events } from '../enums';
+import { canRenderFloatTextures } from '../init';
+import cache from '../cache/cache';
 
+// Map constructor names to PixelDataTypedArrayString
+const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
+  Uint8Array: 'Uint8Array',
+  Int16Array: 'Int16Array',
+  Uint16Array: 'Uint16Array',
+  Float32Array: 'Float32Array',
+};
+/**
+ * Generates volume properties from a list of image IDs.
+ *
+ * @param imageIds - An array of image IDs.
+ * @param volumeId - The ID of the volume.
+ * @returns The generated ImageVolumeProps object.
+ */
 function generateVolumePropsFromImageIds(
   imageIds: string[],
   volumeId: string
 ): ImageVolumeProps {
-  const { useNorm16Texture, preferSizeOverAccuracy } =
-    getConfiguration().rendering;
-
-  const use16BitDataType = useNorm16Texture || preferSizeOverAccuracy;
   const volumeMetadata = makeVolumeMetadata(imageIds);
 
-  // For a streaming volume, the data type cannot rely on CSWIL to load
-  // the proper array buffer type. This is because the target buffer container
-  // must be decided ahead of time.
-  // TODO: move this logic into CSWIL to avoid logic duplication.
-  // We check if scaling parameters are negative we choose Int16 instead of
-  // Uint16 for cases where BitsAllocated is 16.
-  const imageIdIndex = Math.floor(imageIds.length / 2);
-  const imageId = imageIds[imageIdIndex];
-  const scalingParameters = getScalingParameters(imageId);
-  const hasNegativeRescale =
-    scalingParameters.rescaleIntercept < 0 ||
-    scalingParameters.rescaleSlope < 0;
-
-  // The prescale is ALWAYS used with modality LUT, so we can assume that
-  // if the rescale slope is not an integer, we need to use Float32
-  const floatAfterScale = hasFloatScalingParameters(scalingParameters);
-  const canRenderFloat = canRenderFloatTextures();
-
-  const {
-    BitsAllocated,
-    PixelRepresentation,
-    PhotometricInterpretation,
-    ImageOrientationPatient,
-    PixelSpacing,
-    Columns,
-    Rows,
-  } = volumeMetadata;
+  const { ImageOrientationPatient, PixelSpacing, Columns, Rows } =
+    volumeMetadata;
 
   const rowCosineVec = vec3.fromValues(
     ImageOrientationPatient[0],
@@ -66,7 +47,6 @@ function generateVolumePropsFromImageIds(
   );
 
   const scanAxisNormal = vec3.create();
-
   vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
 
   const { zSpacing, origin, sortedImageIds } = sortImageIdsAndGetSpacing(
@@ -77,25 +57,76 @@ function generateVolumePropsFromImageIds(
   const numFrames = imageIds.length;
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = <Point3>[PixelSpacing[1], PixelSpacing[0], zSpacing];
-  const dimensions = <Point3>[Columns, Rows, numFrames];
+  const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
+  const dimensions = [Columns, Rows, numFrames].map((it) =>
+    Math.floor(it)
+  ) as Point3;
   const direction = [
     ...rowCosineVec,
     ...colCosineVec,
     ...scanAxisNormal,
   ] as Mat3;
-  const signed = PixelRepresentation === 1;
-  const numComponents = PhotometricInterpretation === 'RGB' ? 3 : 1;
-  const useSharedArrayBuffer = getShouldUseSharedArrayBuffer();
-  const length = dimensions[0] * dimensions[1] * dimensions[2];
-  const handleCache = (sizeInBytes) => {
-    if (!cache.isCacheable(sizeInBytes)) {
-      throw new Error(Events.CACHE_SIZE_EXCEEDED);
-    }
-    cache.decacheIfNecessaryUntilBytesAvailable(sizeInBytes);
-  };
 
-  let scalarData, sizeInBytes;
+  return {
+    dimensions,
+    spacing,
+    origin,
+    dataType: _determineDataType(sortedImageIds, volumeMetadata),
+    direction,
+    metadata: volumeMetadata,
+    imageIds: sortedImageIds,
+    volumeId,
+    voxelManager: null,
+    numberOfComponents:
+      volumeMetadata.PhotometricInterpretation === 'RGB' ? 3 : 1,
+  };
+}
+
+/**
+ * Determines the appropriate data type based on bits allocated and other parameters.
+ * @param BitsAllocated - The number of bits allocated for each pixel.
+ * @param signed - Whether the data is signed.
+ * @param canRenderFloat - Whether float rendering is supported.
+ * @param floatAfterScale - Whether to use float after scaling.
+ * @param hasNegativeRescale - Whether there's a negative rescale.
+ * @returns The determined data type.
+ */
+function _determineDataType(
+  imageIds: string[],
+  volumeMetadata
+): PixelDataTypedArrayString {
+  const { BitsAllocated, PixelRepresentation } = volumeMetadata;
+  const signed = PixelRepresentation === 1;
+
+  // First try to get data type from cache if images are loaded
+  const cachedDataType = _getDataTypeFromCache(imageIds);
+  if (cachedDataType) {
+    return cachedDataType;
+  }
+
+  // Check scaling parameters for first, middle, and last images
+  const [firstIndex, middleIndex, lastIndex] = [
+    0,
+    Math.floor(imageIds.length / 2),
+    imageIds.length - 1,
+  ];
+
+  const scalingParameters = [firstIndex, middleIndex, lastIndex].map((index) =>
+    getScalingParameters(imageIds[index])
+  );
+
+  // Check if any image has negative rescale values
+  const hasNegativeRescale = scalingParameters.some(
+    (params) => params.rescaleIntercept < 0 || params.rescaleSlope < 0
+  );
+
+  // Check if any image has float scaling parameters
+  const floatAfterScale = scalingParameters.some((params) =>
+    hasFloatScalingParameters(params)
+  );
+
+  const canRenderFloat = canRenderFloatTextures();
+
   switch (BitsAllocated) {
     case 8:
       if (signed) {
@@ -103,84 +134,63 @@ function generateVolumePropsFromImageIds(
           '8 Bit signed images are not yet supported by this plugin.'
         );
       }
-      sizeInBytes = length * numComponents;
-      handleCache(sizeInBytes);
-      scalarData = useSharedArrayBuffer
-        ? createUint8SharedArray(length * numComponents)
-        : new Uint8Array(length * numComponents);
-      break;
+      return 'Uint8Array';
 
     case 16:
       // Temporary fix for 16 bit images to use Float32
-      // until the new dicom image loader handler the conversion
-      // correctly
-      if (!use16BitDataType || (canRenderFloat && floatAfterScale)) {
-        sizeInBytes = length * 4;
-        scalarData = useSharedArrayBuffer
-          ? createFloat32SharedArray(length)
-          : new Float32Array(length);
-
-        break;
+      if (canRenderFloat && floatAfterScale) {
+        return 'Float32Array';
       }
-
-      sizeInBytes = length * 2;
       if (signed || hasNegativeRescale) {
-        handleCache(sizeInBytes);
-        scalarData = useSharedArrayBuffer
-          ? createInt16SharedArray(length)
-          : new Int16Array(length);
-        break;
+        return 'Int16Array';
       }
-
       if (!signed && !hasNegativeRescale) {
-        handleCache(sizeInBytes);
-        scalarData = useSharedArrayBuffer
-          ? createUint16SharedArray(length)
-          : new Uint16Array(length);
-        break;
+        return 'Uint16Array';
       }
-
-      // Default to Float32 again
-      sizeInBytes = length * 4;
-      handleCache(sizeInBytes);
-      scalarData = useSharedArrayBuffer
-        ? createFloat32SharedArray(length)
-        : new Float32Array(length);
-      break;
+      return 'Float32Array';
 
     case 24:
-      sizeInBytes = length * numComponents;
-      handleCache(sizeInBytes);
+      return 'Uint8Array';
 
-      // hacky because we don't support alpha channel in dicom
-      scalarData = useSharedArrayBuffer
-        ? createUint8SharedArray(length * numComponents)
-        : new Uint8Array(length * numComponents);
-      break;
     case 32:
-      sizeInBytes = length * 4;
-      handleCache(sizeInBytes);
-      scalarData = useSharedArrayBuffer
-        ? createFloat32SharedArray(length)
-        : new Float32Array(length);
-      break;
+      return 'Float32Array';
+
     default:
       throw new Error(
         `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`
       );
   }
+}
 
-  return {
-    dimensions,
-    spacing,
-    origin,
-    direction,
-    scalarData,
-    sizeInBytes,
-    metadata: volumeMetadata,
-    imageIds: sortedImageIds,
-    volumeId,
-  };
+/**
+ * Attempts to determine data type from cached images
+ */
+function _getDataTypeFromCache(
+  imageIds: string[]
+): PixelDataTypedArrayString | null {
+  // Check first, middle and last images
+  const indices = [0, Math.floor(imageIds.length / 2), imageIds.length - 1];
+  const images = indices.map((i) => cache.getImage(imageIds[i]));
+
+  // Return null if any images are missing
+  if (!images.every(Boolean)) {
+    return null;
+  }
+
+  // Get constructor name from first image's pixel data
+  const constructorName = images[0].getPixelData().constructor.name;
+
+  // Check if all images have same constructor and it's a valid type
+  if (
+    images.every(
+      (img) => img.getPixelData().constructor.name === constructorName
+    ) &&
+    constructorName in constructorToTypedArray
+  ) {
+    return constructorToTypedArray[constructorName];
+  }
+
+  return null;
 }
 
 export { generateVolumePropsFromImageIds };

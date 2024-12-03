@@ -1,7 +1,7 @@
-import { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import type { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import { utilities } from '@cornerstonejs/core';
 import interpolateVec3 from '../../math/vec3/interpolateVec3';
-import { ColorbarCanvasProps } from './types/ColorbarCanvasProps';
+import type { ColorbarCanvasProps } from './types/ColorbarCanvasProps';
 import type { ColorbarImageRange, ColorbarVOIRange } from './types';
 import type { ColorbarSize } from './types/ColorbarSize';
 import {
@@ -208,6 +208,11 @@ class ColorbarCanvas {
 
     const { width, height } = this._canvas;
     const canvasContext = this._canvas.getContext('2d');
+
+    if (!canvasContext) {
+      return;
+    }
+
     const isHorizontal = width > height;
     const maxValue = isHorizontal ? width : height;
     const { _voiRange: voiRange } = this;

@@ -1,6 +1,6 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -23,7 +23,6 @@ console.warn(
 
 const {
   ToolGroupManager,
-  StackScrollMouseWheelTool,
   ZoomTool,
   EllipticalROITool,
   Enums: csToolsEnums,
@@ -77,7 +76,6 @@ const toolGroupId = 'TOOLGROUP';
 // Add tools to Cornerstone3D
 cornerstoneTools.addTool(cornerstoneTools.EllipticalROITool);
 cornerstoneTools.addTool(ZoomTool);
-cornerstoneTools.addTool(StackScrollMouseWheelTool);
 
 // Define a tool group, which defines how mouse events map to tool commands for
 // Any viewport using the group
@@ -86,7 +84,6 @@ const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 // Add the tools to the tool group and specify which volume they are pointing at
 toolGroup.addTool(EllipticalROITool.toolName, { volumeId });
 toolGroup.addTool(ZoomTool.toolName, { volumeId });
-toolGroup.addTool(StackScrollMouseWheelTool.toolName);
 
 // Set the initial state of the tools, here we set one tool active on left click.
 // This means left click will draw that tool.
@@ -108,11 +105,9 @@ toolGroup.setToolActive(ZoomTool.toolName, {
 
 // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
 // hook instead of mouse buttons, it does not need to assign any mouse button.
-toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
 const configToUse = {
   rendering: {
-    useNorm16Texture: false,
     preferSizeOverAccuracy: false,
   },
 };
@@ -124,14 +119,11 @@ async function handleRenderingOptionChange(selectedValue) {
   switch (selectedValue) {
     case 'Prefer size over accuracy':
       configToUse.rendering.preferSizeOverAccuracy = true;
-      configToUse.rendering.useNorm16Texture = false;
       break;
     case 'Use norm 16 texture':
-      configToUse.rendering.useNorm16Texture = true;
       configToUse.rendering.preferSizeOverAccuracy = false;
       break;
     default:
-      configToUse.rendering.useNorm16Texture = false;
       configToUse.rendering.preferSizeOverAccuracy = false;
       break;
   }
@@ -168,7 +160,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

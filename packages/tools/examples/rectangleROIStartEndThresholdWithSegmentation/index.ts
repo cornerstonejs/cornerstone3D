@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   RenderingEngine,
-  Types,
   Enums,
   setVolumesForViewports,
   volumeLoader,
@@ -22,14 +22,13 @@ console.warn(
 );
 
 const {
-  SegmentationDisplayTool,
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
   RectangleROIStartEndThresholdTool,
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   annotation,
 } = cornerstoneTools;
 
@@ -169,12 +168,6 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
     const labelmapVolume = cache.getVolume(segmentationId);
-    const scalarData = labelmapVolume.getScalarData();
-
-    //We set the segmentation to 0
-    for (let i = 0; i < scalarData.length; i++) {
-      scalarData[i] = 0;
-    }
 
     annotations.map((annotation, i) => {
       // @ts-ignore
@@ -182,7 +175,10 @@ addButtonToToolbar({
       for (let i = 0; i < pointsInVolume.length; i++) {
         for (let j = 0; j < pointsInVolume[i].length; j++) {
           if (pointsInVolume[i][j].value > 2) {
-            scalarData[pointsInVolume[i][j].index] = 1;
+            labelmapVolume.voxelManager.setAtIndex(
+              pointsInVolume[i][j].index,
+              1
+            );
           }
         }
       }
@@ -197,7 +193,7 @@ addButtonToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -228,8 +224,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -238,15 +233,13 @@ async function run() {
   // Manipulation Tools
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
   toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: true,
   });
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -268,7 +261,9 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -277,7 +272,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -343,7 +338,7 @@ async function run() {
   );
 
   // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
+  await segmentation.addSegmentationRepresentations(viewportId1, [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
