@@ -15,6 +15,8 @@ import type {
   SVGDrawingHelper,
   ToolProps,
 } from '../../types';
+import { ChangeTypes, Events } from '../../enums';
+
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import ProbeTool from './ProbeTool';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -159,7 +161,7 @@ class DragProbeTool extends ProbeTool {
 
     if (
       !data.cachedStats[targetId] ||
-      data.cachedStats[targetId].value == null
+      (data.cachedStats[targetId] as Record<string, unknown>).value === null
     ) {
       data.cachedStats[targetId] = {
         Modality: null,

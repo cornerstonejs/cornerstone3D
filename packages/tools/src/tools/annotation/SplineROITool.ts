@@ -43,7 +43,10 @@ import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedU
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
-import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  ContourAnnotation,
+  SplineROIAnnotation,
+} from '../../types/ToolSpecificAnnotationTypes';
 import type {
   AnnotationModifiedEventDetail,
   ContourAnnotationCompletedEventDetail,
@@ -851,7 +854,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     points.push(polyline[polyline.length - 1]);
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  protected createAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): ContourAnnotation {
     const contourAnnotation = super.createAnnotation(evt);
     const { world: worldPos } = evt.detail.currentPoints;
     const { type: splineType } = this.configuration.spline;

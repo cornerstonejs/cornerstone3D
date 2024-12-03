@@ -4751,7 +4751,7 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
-    getCurrentImageIdIndex: (volumeId?: string) => number;
+    getCurrentImageIdIndex: (volumeId?: string, useSlabThickness?: boolean) => number;
     // (undocumented)
     getCurrentSlicePixelData(): PixelDataTypedArray;
     // (undocumented)

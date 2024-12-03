@@ -1,4 +1,4 @@
-import { utilities, BaseVolumeViewport } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
@@ -27,8 +27,25 @@ abstract class BaseTool {
    */
   protected memo: utilities.HistoryMemo.Memo;
 
+  /**
+   * Has the defaults associated with the base tool.
+   */
+  static defaults = {
+    configuration: {
+      strategies: {},
+      defaultStrategy: undefined,
+      activeStrategy: undefined,
+      strategyOptions: {},
+    },
+  };
+
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    const initialProps = utilities.deepMerge(defaultToolProps, toolProps);
+    const mergedDefaults = BaseTool.mergeDefaultProps(
+      BaseTool.defaults,
+      defaultToolProps
+    );
+
+    const initialProps = utilities.deepMerge(mergedDefaults, toolProps);
 
     const {
       configuration = {},
@@ -36,18 +53,34 @@ abstract class BaseTool {
       toolGroupId,
     } = initialProps;
 
-    // If strategies are not initialized in the tool config
-    if (!configuration.strategies) {
-      configuration.strategies = {};
-      configuration.defaultStrategy = undefined;
-      configuration.activeStrategy = undefined;
-      configuration.strategyOptions = {};
-    }
-
     this.toolGroupId = toolGroupId;
     this.supportedInteractionTypes = supportedInteractionTypes || [];
     this.configuration = Object.assign({}, configuration);
     this.mode = ToolModes.Disabled;
+  }
+
+  /**
+   * Does a deep merge of property options.  Allows extending the default values
+   * for a child class.
+   *
+   * @param defaultProps - this is a base set of defaults to merge into
+   * @param additionalProps - the additional properties to merge into the default props
+   *
+   * @returns defaultProps if additional props not defined, or a merge into a new object
+   *     containing additionalProps adding onto and overriding defaultProps.
+   */
+  public static mergeDefaultProps(defaultProps = {}, additionalProps?) {
+    if (!additionalProps) {
+      return defaultProps;
+    }
+    return utilities.deepMerge(defaultProps, additionalProps);
+  }
+
+  /**
+   * Newer method for getting the tool name as a property
+   */
+  public get toolName() {
+    return this.getToolName();
   }
 
   /**

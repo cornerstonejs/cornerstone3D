@@ -7,14 +7,17 @@ import type {
   AnnotationRenderContext,
 } from '../../types';
 
-import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
-import type { SplineContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  SplineContourSegmentationAnnotation,
+  ContourAnnotation,
+} from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { SegmentationRepresentations } from '../../enums';
 import ContourBaseTool from './ContourBaseTool';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import InterpolationManager from '../../utilities/segmentation/InterpolationManager/InterpolationManager';
+
 import {
   addContourSegmentationAnnotation,
   removeContourSegmentationAnnotation,
@@ -58,7 +61,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     return true;
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  /**
+   * Creates a contour segmentation annotation
+   */
+  protected createAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): ContourAnnotation {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 

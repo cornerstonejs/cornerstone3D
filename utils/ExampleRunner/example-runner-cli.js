@@ -106,14 +106,11 @@ function levenshteinDistance(a, b) {
   return matrix[b.length][a.length];
 }
 
-// ----------------------------------------------------------------------------
-// Find examples
-// ----------------------------------------------------------------------------
-
 const configuration = {
   examples: [
     { path: 'packages/core/examples', regexp: 'index.ts' },
     { path: 'packages/tools/examples', regexp: 'index.ts' },
+    { path: 'packages/ai/examples', regexp: 'index.ts' },
     {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',
