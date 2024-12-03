@@ -282,7 +282,6 @@ async function loadSegmentation(arrayBuffer: ArrayBuffer) {
 
     //
     const derivedVolume = await addSegmentationsToState(newSegmentationId);
-
     derivedVolume?.voxelManager?.setCompleteScalarDataArray?.(
         new Uint8Array(generateToolState.labelmapBufferArray[0])
     );

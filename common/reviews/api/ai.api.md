@@ -33,7 +33,7 @@ export class ONNXSegmentationController {
         getPromptAnnotations: any;
         promptAnnotationTypes: any;
         models: any;
-        modelName: string;
+        modelName: any;
         previewToolType: string;
     });
     // (undocumented)
@@ -75,7 +75,7 @@ export class ONNXSegmentationController {
     // (undocumented)
     getDirectoryForImageId(session: any, imageId: any): Promise<any>;
     // (undocumented)
-    getFileNameForImageId(imageId: any): any;
+    getFileNameForImageId(imageId: any, extension: any): any;
     // (undocumented)
     protected getPromptAnnotations: (viewport?: any) => cornerstoneTools.Types.Annotations;
     // (undocumented)
@@ -119,18 +119,32 @@ export class ONNXSegmentationController {
     modelHeight: number;
     // (undocumented)
     static MODELS: {
-        sam_b: {
+        sam_l: ({
             name: string;
             url: string;
             size: number;
             key: string;
-        }[];
-        sam_b_int8: {
+            feedType: string;
+        } | {
             name: string;
             url: string;
             size: number;
             key: string;
-        }[];
+            feedType?: undefined;
+        })[];
+        sam_h: ({
+            name: string;
+            url: string;
+            size: number;
+            key: string;
+            feedType: string;
+        } | {
+            name: string;
+            url: string;
+            size: number;
+            key: string;
+            feedType?: undefined;
+        })[];
     };
     // (undocumented)
     modelWidth: number;

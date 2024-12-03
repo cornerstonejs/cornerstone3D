@@ -16,17 +16,18 @@ const preview = {
   enabled: true,
   previewColors,
 };
+
 const configuration = {
   preview,
   strategySpecificConfiguration: {
-    useCenterSegmentIndex: true,
+    useCenterSegmentIndex: false,
   },
 };
 
 const configurationNoPreview = {
   preview: { enabled: false, previewColors },
   strategySpecificConfiguration: {
-    useCenterSegmentIndex: true,
+    useCenterSegmentIndex: false,
   },
 };
 

@@ -746,11 +746,11 @@ export default class VoxelManager<T> {
     }
 
     const _getConstructor = () => {
-      const pixelInfo = getPixelInfo(0);
-      if (!pixelInfo?.pixelData) {
+      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
+      if (!imageVoxelManager) {
         return null;
       }
-      return pixelInfo.pixelData.constructor;
+      return imageVoxelManager.getConstructor();
     };
 
     const voxelManager = new VoxelManager<number | RGB>(dimensions, {
@@ -849,18 +849,18 @@ export default class VoxelManager<T> {
       let maxValue = -Infinity;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { pixelData } = getPixelInfo(
+        const { voxelManager: imageVoxelManager } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (pixelData && SliceDataConstructor) {
+        if (imageVoxelManager && SliceDataConstructor) {
           const sliceStart = sliceIndex * sliceSize;
           const sliceEnd = sliceStart + sliceSize;
           // @ts-ignore
           const sliceData = new SliceDataConstructor(sliceSize);
           // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
-          pixelData.set(sliceData);
+          imageVoxelManager.scalarData = sliceData;
 
           // Update min/max values for this slice
           for (let i = 0; i < sliceData.length; i++) {
@@ -1098,6 +1098,8 @@ export default class VoxelManager<T> {
         scalarData[index] = v;
         return isChanged;
       },
+      _getConstructor: () =>
+        scalarData.constructor as new (length: number) => PixelDataTypedArray,
       _id: '_createNumberVolumeVoxelManager',
     });
     voxels.scalarData = scalarData;
