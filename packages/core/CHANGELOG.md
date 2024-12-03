@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.3...v2.6.0) (2024-12-03)
+
+### Features
+
+- automatic segmentation using onnx to run local AI algorithms ([#1656](https://github.com/cornerstonejs/cornerstone3D/issues/1656)) ([5b5856f](https://github.com/cornerstonejs/cornerstone3D/commit/5b5856fe19eb3ac61fe7877283ed5a7f8a7fa53c))
+
 ## [2.5.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.2...v2.5.3) (2024-12-03)
 
 **Note:** Version bump only for package @cornerstonejs/core
