@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.5.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.1...v2.5.2) (2024-12-03)
+
+### Bug Fixes
+
+- triggered event type when segment rep modified ([#1652](https://github.com/cornerstonejs/cornerstone3D/issues/1652)) ([f18d550](https://github.com/cornerstonejs/cornerstone3D/commit/f18d55003c30a6bd08d3a61b5a09b3ce73a8c420))
+
 ## [2.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.0...v2.5.1) (2024-12-02)
 
 ### Bug Fixes
