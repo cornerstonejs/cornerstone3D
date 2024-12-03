@@ -836,6 +836,9 @@ class VideoViewport extends Viewport {
       return false;
     }
     const match = referencedImageId.match(VideoViewport.frameRangeExtractor);
+    if (!match) {
+      return true;
+    }
     if (!match[2]) {
       return true;
     }
@@ -1130,16 +1133,17 @@ class VideoViewport extends Viewport {
   public addImages(stackInputs: IStackInput[]) {
     const actors = this.getActors();
     stackInputs.forEach((stackInput) => {
-      const image = cache.getImage(stackInput.imageId);
+      const { imageId, ...rest } = stackInput;
+      const image = cache.getImage(imageId);
 
       const imageActor = this.createActorMapper(image);
       const uid = stackInput.actorUID ?? uuidv4();
       if (imageActor) {
-        actors.push({ uid, actor: imageActor });
+        actors.push({ uid, actor: imageActor, referencedId: imageId, ...rest });
         if (stackInput.callback) {
           stackInput.callback({
             imageActor: imageActor as unknown as ImageActor,
-            imageId: stackInput.imageId,
+            imageId,
           });
         }
       }
