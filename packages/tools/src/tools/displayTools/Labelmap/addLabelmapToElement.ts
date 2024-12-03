@@ -98,7 +98,7 @@ async function addLabelmapToElement(
     ];
 
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
-    await addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
+    addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
   }
 
   // Just to make sure if the segmentation data had value before, it gets updated too

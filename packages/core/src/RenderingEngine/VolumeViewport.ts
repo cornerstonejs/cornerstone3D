@@ -32,6 +32,7 @@ import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataFo
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -451,28 +452,30 @@ class VolumeViewport extends BaseVolumeViewport {
    *
    * @returns The slice index in the direction of the view
    */
-  public getCurrentImageIdIndex = (volumeId?: string): number => {
-    const { viewPlaneNormal, focalPoint } = this.getCamera();
-
-    const imageData = this.getImageData(volumeId);
-
-    if (!imageData) {
-      return;
-    }
-
-    const { origin, direction, spacing } = imageData;
-
-    const spacingInNormal = getSpacingInNormalDirection(
-      { direction, spacing },
-      viewPlaneNormal
+  /**
+   * Uses the slice range information to compute the current image id index.
+   * Note that this may be offset from the origin location, or opposite in
+   * direction to the distance from the origin location, as the index is a
+   * complete index from minimum to maximum.
+   *
+   * @returns The slice index in the direction of the view.  This index is in
+   * the same position/size/direction as the scroll utility.  That is,
+   *   scroll(dir)
+   * and
+   *   viewport.setView(viewport.getView({sliceIndex: viewport.getCurrentImageIdIndex()+dir}))
+   *
+   * have the same affect, excluding end/looping conditions.
+   */
+  public getCurrentImageIdIndex = (
+    volumeId?: string,
+    useSlabThickness = true
+  ): number => {
+    const { currentStepIndex } = getVolumeViewportScrollInfo(
+      this,
+      volumeId || this.getVolumeId(),
+      useSlabThickness
     );
-    const sub = vec3.create();
-    vec3.sub(sub, focalPoint, origin);
-    const distance = vec3.dot(sub, viewPlaneNormal);
-
-    // divide by the spacing in the normal direction to get the
-    // number of steps, and subtract 1 to get the index
-    return Math.round(Math.abs(distance) / spacingInNormal);
+    return currentStepIndex;
   };
 
   /**

@@ -407,6 +407,10 @@
       "sculptorTool": {
         "name": "sculptorTool Tool",
         "description": "Demonstrates how to have similar brush tool effects on the contour"
+      },
+      "segmentationAI": {
+        "name": "Segmentation AI Assistance",
+        "description": "Demonstrates how to use AI/ML assistance tools for segmentation creation"
       }
     },
     "tools-advanced": {

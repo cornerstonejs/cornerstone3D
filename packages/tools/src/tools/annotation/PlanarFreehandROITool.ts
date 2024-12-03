@@ -33,7 +33,10 @@ import type {
 } from '../../types';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import { drawLinkedTextBox } from '../../drawingSvg';
-import type { PlanarFreehandROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  ContourAnnotation,
+  PlanarFreehandROIAnnotation,
+} from '../../types/ToolSpecificAnnotationTypes';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
@@ -534,7 +537,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return false;
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  protected createAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): ContourAnnotation {
     const worldPos = evt.detail.currentPoints.world;
     const contourAnnotation = super.createAnnotation(evt);
 

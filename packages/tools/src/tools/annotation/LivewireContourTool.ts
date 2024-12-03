@@ -964,7 +964,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     if (
       !data.cachedStats[targetId] ||
-      data.cachedStats[targetId].areaUnit == null
+      (data.cachedStats[targetId] as Record<string, unknown>)?.areaUnit === null
     ) {
       data.cachedStats[targetId] = {
         Modality: null,
