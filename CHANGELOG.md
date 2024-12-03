@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.6.0...v2.6.1) (2024-12-03)
+
+### Bug Fixes
+
+- **StackViewport:** Add metadata checks in methods and update example info ([#1660](https://github.com/cornerstonejs/cornerstone3D/issues/1660)) ([cf29c45](https://github.com/cornerstonejs/cornerstone3D/commit/cf29c452a6aad769eee73408dab7f81b81140094))
+
 # [2.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.3...v2.6.0) (2024-12-03)
 
 ### Features
