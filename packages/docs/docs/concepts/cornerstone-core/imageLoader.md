@@ -11,7 +11,7 @@ an [`Image Object`](./images.md). Since loading images usually requires a call t
 ## Image Loader Workflow
 
 
-1. `ImageLoaders` register themselves using [`registerImageLoader`](/api/core/namespace/imageLoader#registerImageLoader) API with cornerstone to load specific ImageId URL schemes
+1. `ImageLoaders` register themselves using [`registerImageLoader`](/api/core/namespaces/imageloader/functions/registerimageloader) API with cornerstone to load specific ImageId URL schemes
 2. The application requests to load an image using the `loadImage` API for stack or `createAndCacheVolume` API for volume.
 3. Cornerstone delegates the request to load the image to the `ImageLoader` registered with the URL scheme of the imageId.
 4. The ImageLoader will return an `Image Load Object` containing a Promise which it will resolve with the corresponding Image Object once it has obtained the pixel data. Obtaining the pixel data may require a call to a remote server using `XMLHttpRequest`, decompression of the pixel data (e.g. from JPEG 2000), and conversion of the pixel data into the format that Cornerstone understands (e.g. RGB vs YBR color).
@@ -19,7 +19,7 @@ an [`Image Object`](./images.md). Since loading images usually requires a call t
 
 ## Register Image Loader
 
-You can use [`registerImageLoader`](/api/core/namespace/imageLoader#registerImageLoader) to make an external image loader available to the
+You can use [`registerImageLoader`](/api/core/namespaces/imageloader/functions/registerimageloader) to make an external image loader available to the
 cornerstone library. This function accept a `scheme` which the image loader function (second argument) should act on.
 
 ## Available Image Loaders
