@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.5.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.2...v2.5.3) (2024-12-03)
+
+### Bug Fixes
+
+- delete unused import code of resetCamera ([#1421](https://github.com/cornerstonejs/cornerstone3D/issues/1421)) ([3b968b8](https://github.com/cornerstonejs/cornerstone3D/commit/3b968b8cfc69790615a7209c43c8732a05ea76b5))
+
 ## [2.5.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.5.1...v2.5.2) (2024-12-03)
 
 ### Bug Fixes
