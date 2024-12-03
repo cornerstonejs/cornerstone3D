@@ -52,10 +52,10 @@ export function createPositionCallback(imageData) {
       vec3.add(scaled, worldPosStart, vec3.scale(scaled, rowStep, i)) as Point3
     );
   }
-  for (let j = 0; j < dimensions[0]; j++) {
+  for (let j = 0; j < dimensions[1]; j++) {
     positionJ.push(vec3.scale(scaled, columnStep, j) as Point3);
   }
-  for (let k = 0; k < dimensions[0]; k++) {
+  for (let k = 0; k < dimensions[2]; k++) {
     positionK.push(vec3.scale(scaled, scanAxisStep, k) as Point3);
   }
 

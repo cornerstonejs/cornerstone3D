@@ -97,6 +97,7 @@
   },
   "dependencies": {
     "@types/offscreencanvas": "2019.7.3",
+    "@itk-wasm/morphological-contour-interpolation": "1.0.1",
     "comlink": "^4.4.1",
     "lodash.get": "^4.4.2"
   },

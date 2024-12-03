@@ -859,6 +859,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        configuration: Record<string, any>;
         override: {
             voxelManager: Types_2.IVoxelManager<number>;
             imageData: vtkImageData;
@@ -878,6 +879,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        configuration: Record<string, any>;
         volumeId: string;
         referencedVolumeId: any;
         segmentsLocked: number[] | [];
@@ -893,6 +895,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        configuration: Record<string, any>;
         imageId: string;
         segmentsLocked: number[] | [];
         override: {
@@ -911,6 +914,7 @@ export class BrushTool extends BaseTool {
         viewUp: any;
         strategySpecificConfiguration: any;
         preview: unknown;
+        configuration: Record<string, any>;
         imageId: string;
         segmentsLocked: number[] | [];
         volumeId?: undefined;
@@ -919,6 +923,8 @@ export class BrushTool extends BaseTool {
     };
     // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
+    // (undocumented)
+    interpolate(element: any, config: any): void;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -5391,6 +5397,8 @@ enum StrategyCallbacks {
     Initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
+    // (undocumented)
+    Interpolate = "interpolate",
     // (undocumented)
     OnInteractionEnd = "onInteractionEnd",
     // (undocumented)
