@@ -478,6 +478,10 @@ class StackViewport extends Viewport {
   private getImageDataCPU(): CPUIImageData | undefined {
     const { metadata } = this._cpuFallbackEnabledElement;
 
+    if (!metadata) {
+      return;
+    }
+
     const spacing = metadata.spacing;
     const csImage = this.csImage;
     return {
@@ -942,6 +946,11 @@ class StackViewport extends Viewport {
 
   private getCameraCPU(): Partial<ICamera> {
     const { metadata, viewport } = this._cpuFallbackEnabledElement;
+
+    if (!metadata) {
+      return {};
+    }
+
     const { direction } = metadata;
 
     // focalPoint and position of CPU camera is just a placeholder since
