@@ -443,16 +443,6 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
-   * Returns the imageId index of the current slice in the volume viewport.
-   * Note: this is not guaranteed to be the same as the slice index in the view
-   * To get the slice index in the view (scroll position), use `getSliceIndex()`
-   *
-   * In future we will even delete this method as it should not be used
-   * at all.
-   *
-   * @returns The slice index in the direction of the view
-   */
-  /**
    * Uses the slice range information to compute the current image id index.
    * Note that this may be offset from the origin location, or opposite in
    * direction to the distance from the origin location, as the index is a
@@ -460,9 +450,9 @@ class VolumeViewport extends BaseVolumeViewport {
    *
    * @returns The slice index in the direction of the view.  This index is in
    * the same position/size/direction as the scroll utility.  That is,
-   *   scroll(dir)
+   * ```scroll(dir)```
    * and
-   *   viewport.setView(viewport.getView({sliceIndex: viewport.getCurrentImageIdIndex()+dir}))
+   * ```viewport.setView(viewport.getView({sliceIndex: viewport.getCurrentImageIdIndex()+dir}))```
    *
    * have the same affect, excluding end/looping conditions.
    */
