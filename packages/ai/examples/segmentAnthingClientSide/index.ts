@@ -1,7 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
-  Types,
   imageLoader,
   setVolumesForViewports,
   volumeLoader,
@@ -31,7 +31,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  annotation,
 } = cornerstoneTools;
 
 const configuration = {
@@ -65,16 +64,33 @@ function mlLogger(logName, ...args) {
   element.innerText = args.join(' ');
 }
 
-const ml = new ONNXSegmentationController({
+const models = {
+  sam_b: [
+    {
+      name: 'sam-b-encoder',
+      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
+      size: 180,
+      key: 'encoder',
+    },
+    {
+      name: 'sam-b-decoder',
+      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
+      size: 17,
+      key: 'decoder',
+    },
+  ],
+};
+
+const ai = new ONNXSegmentationController({
   listeners: [mlLogger],
+  models,
+  modelName: 'sam_b',
 });
 
 const { ViewportType, Events } = Enums;
 const { KeyboardBindings, MouseBindings } = csToolsEnums;
-const { state: annotationState } = annotation;
 const { style: toolStyle } = cornerstoneTools.annotation.config;
 const volumeId = 'volumeId';
-const segVolumeId = 'segVolumeId';
 
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
@@ -134,7 +150,7 @@ setTitleAndDescription(
     'markers on the current slice onto the next slice.'
 );
 
-const { canvas, canvasMask } = ml;
+const { canvas, canvasMask } = ai;
 
 const size = `24vw`;
 const content = document.getElementById('content');
@@ -142,7 +158,7 @@ const content = document.getElementById('content');
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
-    ml.clear(activeViewport);
+    ai.clear(activeViewport);
     viewport.render();
   },
 });
@@ -220,7 +236,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     activeViewport = renderingEngine.getViewport(value);
-    ml.initViewport(activeViewport);
+    ai.initViewport(activeViewport);
   },
 });
 
@@ -231,7 +247,7 @@ addButtonToToolbar({
       return;
     }
     cached = false;
-    ml.cacheImageEncodings();
+    ai.cacheImageEncodings();
   },
 });
 
@@ -240,7 +256,7 @@ addButtonToToolbar({
  */
 async function run() {
   // Get the load started here, as it can take a while.
-  ml.initModel();
+  ai.initModel();
 
   // Init Cornerstone and related libraries
   await initDemo();
@@ -331,9 +347,9 @@ async function run() {
 
   // This init model is waiting for completion, whereas the earlier one just
   // starts loading in the background.
-  await ml.initModel();
+  await ai.initModel();
   // Connect the default viewport here to start things off - requires the initModel to be done
-  ml.initViewport(viewport, toolForPreview);
+  ai.initViewport(viewport, toolForPreview);
 
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -381,7 +397,7 @@ async function run() {
       } else if (key === 'Enter') {
         toolForPreview.acceptPreview(element);
       } else if (key === 'n') {
-        ml.interpolateScroll(activeViewport, 1);
+        ai.interpolateScroll(activeViewport, 1);
       }
     })
   );

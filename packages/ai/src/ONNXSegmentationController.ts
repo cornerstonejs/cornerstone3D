@@ -45,8 +45,9 @@ function feedForSam(emb, points, labels, modelSize = [1024, 1024]) {
     labels.length,
   ]);
 
+  const key = (emb.image_embeddings && 'image_embeddings') || 'embeddings';
   return {
-    image_embeddings: cloneTensor(emb.image_embeddings),
+    image_embeddings: cloneTensor(emb[key]),
     point_coords: pointCoords,
     point_labels: pointLabels,
     mask_input: maskInput,
@@ -119,6 +120,8 @@ export default class ONNXSegmentationController {
   public static viewportOptions = {
     displayArea: {
       storeAsInitialCamera: true,
+      // Use nearest neighbour for better results on the model
+      interpolationType: Enums.InterpolationType.NEAREST,
       imageArea: [1, 1],
       imageCanvasPoint: {
         // TODO - fix this so top left corner works
@@ -141,31 +144,33 @@ export default class ONNXSegmentationController {
    * can be used.
    */
   static MODELS = {
-    sam_b: [
+    sam_l: [
       {
-        name: 'sam-b-encoder',
-        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-        size: 180,
+        name: 'sam-l-encoder',
+        url: '/sam_l/vit_l_encoder.onnx',
+        size: 1224,
         key: 'encoder',
+        feedType: 'images',
       },
       {
-        name: 'sam-b-decoder',
-        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
+        name: 'sam-l-decoder',
+        url: '/sam_l/vit_l_decoder.onnx',
         size: 17,
         key: 'decoder',
       },
     ],
-    sam_b_int8: [
+    sam_h: [
       {
-        name: 'sam-b-encoder-int8',
-        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-encoder-int8.onnx',
-        size: 108,
+        name: 'sam-h-encoder',
+        url: '/sam_h/vit_h_encoder.onnx',
+        size: 18,
         key: 'encoder',
+        feedType: 'images',
       },
       {
-        name: 'sam-b-decoder-int8',
-        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b-decoder-int8.onnx',
-        size: 5,
+        name: 'sam-h-decoder',
+        url: '/sam_h/vit_h_decoder.onnx',
+        size: 1,
         key: 'decoder',
       },
     ],
@@ -231,7 +236,7 @@ export default class ONNXSegmentationController {
       getPromptAnnotations: null,
       promptAnnotationTypes: null,
       models: null,
-      modelName: 'sam_b',
+      modelName: null,
       previewToolType: 'ThresholdCircle',
     }
   ) {
@@ -674,9 +679,11 @@ export default class ONNXSegmentationController {
           resizedWidth: this.modelWidth,
           resizedHeight: this.modelHeight,
         });
-        const feed = this.config.isSlimSam
-          ? { pixel_values: t }
-          : { input_image: t };
+        const { feedType = 'input_image' } = this.config.encoder;
+        const feed = (feedType === 'images' && { images: t }) ||
+          (feedType === 'pixelValues' && { pixel_values: t }) || {
+            input_image: t,
+          };
         await imageSession.loader;
         const session = await imageSession.encoder;
         if (!session) {
@@ -820,7 +827,10 @@ export default class ONNXSegmentationController {
     }
     const floatData = this.imageEncodings.get(imageId);
     if (floatData) {
-      this.sharedImageEncoding.image_embeddings.cpuData.set(floatData);
+      const key =
+        (this.sharedImageEncoding.image_embeddings && 'image_embeddings') ||
+        'embeddings';
+      this.sharedImageEncoding[key].cpuData.set(floatData);
       return this.sharedImageEncoding;
     }
   }
@@ -831,7 +841,7 @@ export default class ONNXSegmentationController {
   async loadStorageImageEncoding(session, imageId, index = null) {
     try {
       const root = await this.getDirectoryForImageId(session, imageId);
-      const name = this.getFileNameForImageId(imageId);
+      const name = this.getFileNameForImageId(imageId, this.config.model);
       if (!root || !name) {
         return null;
       }
@@ -857,12 +867,16 @@ export default class ONNXSegmentationController {
     if (!this.sharedImageEncoding) {
       this.sharedImageEncoding = data;
     }
-    const storeData = data.image_embeddings.cpuData;
+    const storeData = (data.image_embeddings || data.embeddings)?.cpuData;
+    if (!storeData) {
+      console.log('Unable to store data', data);
+      return;
+    }
     const writeData = new Float32Array(storeData);
     this.imageEncodings.set(imageId, writeData);
     try {
       const root = await this.getDirectoryForImageId(session, imageId);
-      const name = this.getFileNameForImageId(imageId);
+      const name = this.getFileNameForImageId(imageId, this.config.model);
       if (!root || !name) {
         return;
       }
@@ -871,7 +885,7 @@ export default class ONNXSegmentationController {
       await writable.write(writeData);
       await writable.close();
       // Note, this data is not considered for persistence as it is assumed multiple
-      // series are being worked on.  See the persistance model for adding ahead of
+      // series are being worked on.  See the persistence model for adding ahead of
       // time caching.
     } catch (e) {
       this.log(Loggers.Log, 'Unable to write', imageId, e);
@@ -1050,11 +1064,15 @@ export default class ONNXSegmentationController {
   async loadModels(models, imageSession = this.currentImage) {
     const cache = await caches.open('onnx');
     let missing = 0;
+    const urls = [];
+    // Get the list of urls to download
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const model of Object.values(models) as any[]) {
       const cachedResponse = await cache.match(model.url);
       if (cachedResponse === undefined) {
         missing += model.size;
       }
+      urls.push(model.url);
     }
     if (missing > 0) {
       this.log(
@@ -1083,14 +1101,19 @@ export default class ONNXSegmentationController {
       };
       const model_bytes = await this.fetchAndCacheModel(model.url, model.name);
       const extra_opt = model.opt || {};
-      const sess_opt = { ...opt, ...extra_opt };
+      const sessionOptions = { ...opt, ...extra_opt };
+      this.config[model.key] = model;
       imageSession[model.key] = await ort.InferenceSession.create(
-        model_bytes,
-        sess_opt
+        model_bytes, // `http://localhost:4000${model.url}`,
+        sessionOptions
       );
     }
     const stop = performance.now();
-    this.log(Loggers.Log, `ready, ${(stop - start).toFixed(1)}ms`);
+    this.log(
+      Loggers.Log,
+      `ready, ${(stop - start).toFixed(1)}ms`,
+      urls.join(', ')
+    );
   }
 
   /**
@@ -1125,7 +1148,7 @@ export default class ONNXSegmentationController {
   /**
    * Gets the storage file name for the given imageId
    */
-  getFileNameForImageId(imageId) {
+  getFileNameForImageId(imageId, extension) {
     if (imageId.startsWith('volumeId:')) {
       const sliceIndex = imageId.indexOf('sliceIndex=');
       const focalPoint = imageId.indexOf('&focalPoint=');
@@ -1133,18 +1156,18 @@ export default class ONNXSegmentationController {
         .substring(sliceIndex, focalPoint)
         .replace('&', '.')
         .replace('sliceIndex=', 'volume.');
-      return name;
+      return name + extension;
     }
     const instancesLocation = imageId.indexOf('/instances/');
     if (instancesLocation != -1) {
       const sopLocation = instancesLocation + 11;
       const nextSlash = imageId.indexOf('/', sopLocation);
-      return imageId.substring(sopLocation, nextSlash);
+      return imageId.substring(sopLocation, nextSlash) + extension;
     }
   }
 
   /**
-   * Creates a confgiuration for which encoder/decoder to run.  TODO - move
+   * Creates a configuration for which encoder/decoder to run.  TODO - move
    * this into the constructor.
    */
   getConfig(modelName = 'sam_b') {
