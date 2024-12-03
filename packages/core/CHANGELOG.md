@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.6.1...v2.6.2) (2024-12-03)
+
+### Bug Fixes
+
+- voxelmanager getCompleteScalarData ([#1663](https://github.com/cornerstonejs/cornerstone3D/issues/1663)) ([910c963](https://github.com/cornerstonejs/cornerstone3D/commit/910c963211f477144929b8f2aa7d3250f40bbbba))
+
 ## [2.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.6.0...v2.6.1) (2024-12-03)
 
 ### Bug Fixes
