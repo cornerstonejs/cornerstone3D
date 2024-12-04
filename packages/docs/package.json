@@ -33,11 +33,11 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/adapters": "^2.6.3",
-    "@cornerstonejs/core": "^2.6.3",
-    "@cornerstonejs/dicom-image-loader": "^2.6.3",
-    "@cornerstonejs/nifti-volume-loader": "^2.6.3",
-    "@cornerstonejs/tools": "^2.6.3",
+    "@cornerstonejs/adapters": "^2.6.4",
+    "@cornerstonejs/core": "^2.6.4",
+    "@cornerstonejs/dicom-image-loader": "^2.6.4",
+    "@cornerstonejs/nifti-volume-loader": "^2.6.4",
+    "@cornerstonejs/tools": "^2.6.4",
     "@docusaurus/core": "3.6.1",
     "@docusaurus/faster": "3.6.1",
     "@docusaurus/module-type-aliases": "3.6.1",
