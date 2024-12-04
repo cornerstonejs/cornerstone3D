@@ -1137,6 +1137,9 @@ class Viewport {
     }
 
     const activeCamera = this.getVtkActiveCamera();
+    if (!activeCamera) {
+      return;
+    }
     const focalPoint = activeCamera.getFocalPoint() as Point3;
 
     const zero3 = this.canvasToWorld([0, 0]);
@@ -1301,7 +1304,7 @@ class Viewport {
   protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
     const renderer = this.getRenderer();
 
-    return renderer.getActiveCamera();
+    return renderer?.getActiveCamera();
   }
 
   protected getCameraNoRotation(): ICamera {
@@ -1799,7 +1802,9 @@ class Viewport {
     }
     if (pan) {
       target.pan = this.getPan();
-      vec2.scale(target.pan, target.pan, 1 / initZoom);
+      if (target.pan) {
+        vec2.scale(target.pan, target.pan, 1 / initZoom);
+      }
     }
     return target;
   }

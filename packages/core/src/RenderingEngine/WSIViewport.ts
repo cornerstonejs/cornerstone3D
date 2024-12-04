@@ -330,6 +330,9 @@ class WSIViewport extends Viewport {
     const previousCamera = this.getCamera();
     const { parallelScale, focalPoint } = camera;
     const view = this.getView();
+    if (!view || !this.internalCamera) {
+      return;
+    }
     const { xSpacing } = this.internalCamera;
 
     if (parallelScale) {
@@ -505,7 +508,7 @@ class WSIViewport extends Viewport {
       metaData.get(MetadataModules.WADO_WEB_CLIENT, imageIds[0]);
     if (!webClient) {
       throw new Error(
-        `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
+        `To use setDataIds on WSI data, you must provide metaData for ${imageIds[0]}`
       );
     }
 
@@ -514,14 +517,19 @@ class WSIViewport extends Viewport {
   }
 
   public async setWSI(imageIds: string[], client) {
-    this.microscopyElement.style.background = 'black';
-    this.microscopyElement.innerText = 'Loading';
+    this.disableViewer();
     this.imageIds = imageIds;
     const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
+    if (!DicomMicroscopyViewer) {
+      throw new Error('Dicom Microscopy Viewer not found');
+    }
     this.frameOfReferenceUID = null;
 
     const metadataDicomweb = this.imageIds.map((imageId) => {
       const imageMetadata = client.getDICOMwebMetadata(imageId);
+      if (!imageMetadata) {
+        throw new Error(`Image metadata for ${imageId} not found`);
+      }
 
       Object.defineProperty(imageMetadata, 'isMultiframe', {
         value: imageMetadata.isMultiframe,
@@ -560,7 +568,7 @@ class WSIViewport extends Viewport {
     this.metadataDicomweb = volumeImages;
 
     // Construct viewer instance
-    const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
+    viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client,
       metadata: volumeImages,
       controls: ['overview', 'position'],
@@ -586,6 +594,18 @@ class WSIViewport extends Viewport {
       '--ol-subtle-background-color': 'rgba(78, 78, 78, 0.5)',
       background: 'none',
     });
+  }
+
+  private disableViewer() {
+    this.microscopyElement.style.background = 'black';
+    this.microscopyElement.innerHTML = '';
+    this.microscopyElement.innerText = 'Loading';
+
+    if (!this.viewer) {
+      return;
+    }
+    this.viewer.cleanup();
+    this.viewer = null;
   }
 
   public postrender = () => {
