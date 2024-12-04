@@ -43,3 +43,12 @@ If you previously used
 `noParse: [/(codec)/],`
 
 to avoid parsing codecs in your webpack module, remove that line. The cornerstone3D library now includes the codecs as an ES module.
+
+Also since we are using wasm, you will need to add the following to your webpack configuration in the `module.rules` section:
+
+```javascript
+{
+  test: /\.wasm/,
+  type: 'asset/resource',
+},
+```
