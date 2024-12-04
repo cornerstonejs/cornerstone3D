@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.6.5...v2.7.0) (2024-12-04)
+
+### Features
+
+- **webgpu:** growcut base tools ([#1670](https://github.com/cornerstonejs/cornerstone3D/issues/1670)) ([7494c9e](https://github.com/cornerstonejs/cornerstone3D/commit/7494c9e683cd5d27eb9f6f71d958786381a774d5))
+
 ## [2.6.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.6.4...v2.6.5) (2024-12-04)
 
 **Note:** Version bump only for package @cornerstonejs/tools
