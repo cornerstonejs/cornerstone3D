@@ -428,6 +428,10 @@
       "wholeBodySegment": {
         "name": "Whole Body Segment tool",
         "description": "Demonstrates how to segment the whole body of a region selected by the user that is processed in the gpu"
+      },
+      "SAMClientSide": {
+        "name": "Segmentation AI Assistance",
+        "description": "Demonstrates how to use AI assistance tools for segmentation creation using onnx runtime on the client side"
       }
     },
     "tools-advanced": {

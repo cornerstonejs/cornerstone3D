@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import shaderCode from './growCutShader';
 
 const GB = 1024 * 1024 * 1024;
-const WEBGPU_MEMORY_LIMIT = 2 * GB;
+const WEBGPU_MEMORY_LIMIT = 1.99 * GB;
 
 const DEFAULT_GROWCUT_OPTIONS = {
   windowSize: 3,
@@ -149,7 +149,7 @@ async function runGrowCut(
     maxBufferSize: WEBGPU_MEMORY_LIMIT,
   };
 
-  const adapter = await navigator.gpu.requestAdapter();
+  const adapter = await navigator.gpu?.requestAdapter();
   const device = await adapter.requestDevice({ requiredLimits });
   const BUFFER_SIZE = volumePixelData.byteLength;
 
