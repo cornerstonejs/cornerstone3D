@@ -14,6 +14,9 @@ npm install @cornerstonejs/core
 npm install @cornerstonejs/tools
 npm install @cornerstonejs/dicom-image-loader
 npm install @cornerstonejs/nifti-volume-loader
+
+# To use the polymorphic segmentation converters you need to install the following packages as well
+npm install @icr/polyseg-wasm
 ```
 
 ## YARN
@@ -25,6 +28,9 @@ yarn add @cornerstonejs/core
 yarn add @cornerstonejs/tools
 yarn add @cornerstonejs/dicom-image-loader
 yarn add @cornerstonejs/nifti-volume-loader
+
+# To use the polymorphic segmentation converters you need to install the following packages as well
+yarn add @icr/polyseg-wasm
 ```
 
 ## PNPM
@@ -36,4 +42,7 @@ pnpm install @cornerstonejs/core
 pnpm install @cornerstonejs/tools
 pnpm install @cornerstonejs/dicom-image-loader
 pnpm install @cornerstonejs/nifti-volume-loader
+
+# To use the polymorphic segmentation converters you need to install the following packages as well
+pnpm install @icr/polyseg-wasm
 ```
