@@ -35,7 +35,7 @@ interface VolumeLoaderOptions {
 }
 
 interface DerivedVolumeOptions {
-  volumeId: string;
+  volumeId?: string;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
   };

@@ -669,6 +669,10 @@ export default class VoxelManager<T> {
       numberOfComponents,
       scalarData,
     });
+
+    voxels.clear = () => {
+      scalarData.fill(0);
+    };
     return voxels;
   }
 
@@ -769,6 +773,13 @@ export default class VoxelManager<T> {
       });
     };
 
+    voxelManager.clear = () => {
+      for (const imageId of imageIds) {
+        const image = cache.getImage(imageId);
+        image.voxelManager.clear();
+      }
+    };
+
     // Todo: need a way to make it understand dirty status if pixel data is changed
     voxelManager.getRange = () => {
       // get all the pixel data
@@ -790,8 +801,11 @@ export default class VoxelManager<T> {
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { pixelData } = getPixelInfo(0);
-      return pixelData.length * dimensions[2];
+      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
+      if (!imageVoxelManager) {
+        return 0;
+      }
+      return imageVoxelManager.getScalarDataLength() * dimensions[2];
     };
 
     /**
@@ -805,7 +819,6 @@ export default class VoxelManager<T> {
      */
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
-
       if (!ScalarDataConstructor) {
         return new Uint8Array(0);
       }
@@ -817,12 +830,13 @@ export default class VoxelManager<T> {
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { pixelData } = getPixelInfo(
+        const { voxelManager: imageVoxelManager } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (pixelData) {
+        if (imageVoxelManager) {
           const sliceStart = sliceIndex * sliceSize;
+          const pixelData = imageVoxelManager.getScalarData();
 
           if (numberOfComponents === 1) {
             scalarData.set(pixelData, sliceStart);
@@ -1103,6 +1117,10 @@ export default class VoxelManager<T> {
       _id: '_createNumberVolumeVoxelManager',
     });
     voxels.scalarData = scalarData;
+    voxels.clear = () => {
+      // get the latest scalar data and set that to all 0
+      voxels.scalarData.fill(0);
+    };
 
     voxels.getMiddleSliceData = () => {
       const middleSliceIndex = Math.floor(dimensions[2] / 2);

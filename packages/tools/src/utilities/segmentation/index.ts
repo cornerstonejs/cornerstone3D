@@ -26,6 +26,7 @@ import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
 import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 import { getBrushToolInstances } from './getBrushToolInstances';
+import * as growCut from './growCut';
 
 export {
   thresholdVolumeByRange,
@@ -50,4 +51,5 @@ export {
   getSegmentIndexAtLabelmapBorder,
   getHoveredContourSegmentationAnnotation,
   getBrushToolInstances,
+  growCut,
 };

@@ -100,10 +100,12 @@ addSliderToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  const segmentationVolume1 = volumeLoader.createAndCacheDerivedLabelmapVolume(
+    volumeId,
+    {
       volumeId: segmentationId1,
-    });
+    }
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([

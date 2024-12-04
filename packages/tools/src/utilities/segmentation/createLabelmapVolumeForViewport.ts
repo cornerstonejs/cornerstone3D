@@ -53,7 +53,7 @@ export default async function createLabelmapVolumeForViewport(input: {
   } else {
     // create a labelmap from a reference volume
     const volumeId = viewport.getVolumeId();
-    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
       volumeId: segmentationId,
     });
   }
