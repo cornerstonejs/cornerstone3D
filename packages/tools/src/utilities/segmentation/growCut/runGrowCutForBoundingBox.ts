@@ -20,8 +20,8 @@ type BoundingBoxInfo = {
 type GrowCutBoundingBoxOptions = GrowCutOptions & {
   positiveSeedValue?: number;
   negativeSeedValue?: number;
-  negativePixelRange: [number, number];
-  positivePixelRange: [number, number];
+  negativePixelRange?: [number, number];
+  positivePixelRange?: [number, number];
 };
 
 function _setNegativeSeedValues(
@@ -34,7 +34,6 @@ function _setNegativeSeedValues(
     negativePixelRange = NEGATIVE_PIXEL_RANGE,
   } = options;
   const subVolPixelData = subVolume.voxelManager.getCompleteScalarDataArray();
-  const labelmapData = labelmap.voxelManager.getCompleteScalarDataArray();
   const [width, height, numSlices] = labelmap.dimensions;
   const middleSliceIndex = Math.floor(numSlices / 2);
   const visited = new Array(width * height).fill(false);

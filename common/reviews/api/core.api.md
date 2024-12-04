@@ -1435,7 +1435,8 @@ class HistoryMemo_2 {
     // (undocumented)
     redo(items?: number): void;
     // (undocumented)
-    get size(): any;
+    get size(): number;
+    set size(newSize: number);
     // (undocumented)
     undo(items?: number): void;
 }

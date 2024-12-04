@@ -20,6 +20,10 @@ export enum SegmentationEnum {
   INTERIOR = 3,
   // Exterior means it is outside the island
   EXTERIOR = 4,
+  // Exterior small means it is small enough to flood it
+  INTERIOR_SMALL = -5,
+  // Interior test means the segment is being size tested.
+  INTERIOR_TEST = -6,
 }
 
 /**

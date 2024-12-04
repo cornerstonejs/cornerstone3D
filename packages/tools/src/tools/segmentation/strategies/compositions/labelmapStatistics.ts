@@ -35,6 +35,11 @@ export default {
 
     const spacing = segmentationImageData.getSpacing();
 
+    const { boundsIJK: boundsOrig } = segmentationVoxelManager;
+    if (!boundsOrig) {
+      return VolumetricCalculator.getStatistics({ spacing });
+    }
+
     segmentationVoxelManager.forEach((voxel) => {
       const { value, pointIJK } = voxel;
       if (indicesArr.indexOf(value) === -1) {
