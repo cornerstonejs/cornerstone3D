@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.7.2...v2.7.3) (2024-12-04)
+
+### Bug Fixes
+
+- **camera:** don't try to access renderer if it's undefined ([#1674](https://github.com/cornerstonejs/cornerstone3D/issues/1674)) ([6d03b17](https://github.com/cornerstonejs/cornerstone3D/commit/6d03b17c00ce961f786c25833deaeb25e4f51a10))
+
 ## [2.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.7.1...v2.7.2) (2024-12-04)
 
 **Note:** Version bump only for package root
