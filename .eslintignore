@@ -3,3 +3,4 @@
 *.json
 packages/adapters/config/webpack/*.js
 packages/docs/*.js
+packages/tools/src/utilities/segmentation/growCut/runGrowCut.ts

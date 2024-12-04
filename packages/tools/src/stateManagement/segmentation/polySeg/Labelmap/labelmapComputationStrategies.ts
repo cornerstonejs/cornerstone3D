@@ -133,9 +133,8 @@ async function computeLabelmapFromSurfaceSegmentation(
   let segmentationVolume;
   if (isVolume) {
     const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
-    segmentationVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
-      volumeId
-    );
+    segmentationVolume =
+      volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId);
   } else {
     const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
     const segImages = imageLoader.createAndCacheDerivedLabelmapImages(imageIds);

@@ -2741,13 +2741,7 @@ function getSegmentIndexVisibility(viewportId: string, specifier: {
 function getSignedArea(polyline: Types_2.Point2[]): number;
 
 // @public (undocumented)
-function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData, viewport: any): {
-    boundsIJK: BoundsIJK_2;
-    centerWorld: Types_2.Point3;
-    radiusWorld: number;
-    topLeftWorld: Types_2.Point3;
-    bottomRightWorld: Types_2.Point3;
-};
+function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData): SphereBoundsInfo;
 
 // @public (undocumented)
 function getStackSegmentationImageIdsForViewport(viewportId: string, segmentationId: string): string[];
@@ -2813,6 +2807,52 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 // @public (undocumented)
 type GroupSpecificAnnotations = {
     [toolName: string]: Annotations;
+};
+
+declare namespace growCut {
+    export {
+        runGrowCut as run,
+        runGrowCutForSphere,
+        runGrowCutForBoundingBox,
+        runOneClickGrowCut,
+        SphereInfo,
+        GrowCutOptions as GrowCutSphereOptions,
+        GrowCutBoundingBoxOptions,
+        GrowCutOneClickOptions
+    }
+}
+
+// @public (undocumented)
+type GrowCutBoundingBoxOptions = GrowCutOptions & {
+    positiveSeedValue?: number;
+    negativeSeedValue?: number;
+    negativePixelRange: [number, number];
+    positivePixelRange: [number, number];
+};
+
+// @public (undocumented)
+type GrowCutOneClickOptions = GrowCutOptions & {
+    positiveSeedValue?: number;
+    negativeSeedValue?: number;
+    positiveSeedVariance?: number;
+    negativeSeedVariance?: number;
+    subVolumePaddingPercentage?: number | [number, number, number];
+    subVolumeMinPadding?: number | [number, number, number];
+};
+
+// @public (undocumented)
+type GrowCutOptions = {
+    maxProcessingTime?: number;
+    windowSize?: number;
+    positiveSeedValue?: number;
+    negativeSeedValue?: number;
+    positiveSeedVariance?: number;
+    negativeSeedVariance?: number;
+    inspection?: {
+        numCyclesInterval?: number;
+        numCyclesBelowThreashold?: number;
+        threshold?: number;
+    };
 };
 
 // @public (undocumented)
@@ -4524,6 +4564,34 @@ export class ReferenceLinesTool extends AnnotationDisplayTool {
 }
 
 // @public (undocumented)
+export class RegionSegmentPlusTool extends GrowCutBaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected growCutData: RegionSegmentPlusToolData | null;
+    // (undocumented)
+    preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
+export class RegionSegmentTool extends GrowCutBaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected growCutData: RegionSegmentToolData | null;
+    // (undocumented)
+    preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 function registerCursor(toolName: string, iconContent: string, viewBox: {
     x: number;
     y: number;
@@ -4613,6 +4681,18 @@ interface ROICachedStats {
 
 // @public (undocumented)
 const roundNumber_2: typeof utilities_2.roundNumber;
+
+// @public (undocumented)
+function runGrowCut(referenceVolumeId: string, labelmapVolumeId: string, options?: GrowCutOptions): Promise<void>;
+
+// @public (undocumented)
+function runGrowCutForBoundingBox(referencedVolumeId: string, boundingBoxInfo: BoundingBoxInfo, options?: GrowCutBoundingBoxOptions): Promise<Types_2.IImageVolume>;
+
+// @public (undocumented)
+function runGrowCutForSphere(referencedVolumeId: string, sphereInfo: SphereInfo, viewport: Types_2.IViewport, options?: GrowCutOptions): Promise<Types_2.IImageVolume>;
+
+// @public (undocumented)
+function runOneClickGrowCut(referencedVolumeId: string, worldPosition: Types_2.Point3, viewport: Types_2.IViewport, options?: GrowCutOneClickOptions): Promise<Types_2.IImageVolume>;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -4783,7 +4863,8 @@ declare namespace segmentation_2 {
         getSegmentIndexAtWorldPoint,
         getSegmentIndexAtLabelmapBorder,
         getHoveredContourSegmentationAnnotation,
-        getBrushToolInstances
+        getBrushToolInstances,
+        growCut
     }
 }
 
@@ -5029,6 +5110,12 @@ function showAllAnnotations(): void;
 
 // @public (undocumented)
 function smoothAnnotation(annotation: PlanarFreehandROIAnnotation, options?: SmoothOptions): boolean;
+
+// @public (undocumented)
+type SphereInfo = {
+    center: Types_2.Point3;
+    radius: number;
+};
 
 // @public (undocumented)
 export class SphereScissorsTool extends BaseTool {
@@ -6289,6 +6376,21 @@ class VolumetricCalculator extends BasicStatsCalculator_2 {
         spacing?: number;
         unit?: string;
     }): NamedStatistics;
+}
+
+// @public (undocumented)
+export class WholeBodySegmentTool extends GrowCutBaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected growCutData: WholeBodySegmentToolData | null;
+    // (undocumented)
+    preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    static toolName: any;
 }
 
 declare namespace windowLevel_2 {

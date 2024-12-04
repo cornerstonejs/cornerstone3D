@@ -40,6 +40,9 @@ import CobbAngleTool from './annotation/CobbAngleTool';
 import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
 import KeyImageTool from './annotation/KeyImageTool';
 import AnnotationEraserTool from './AnnotationEraserTool';
+import RegionSegmentTool from './annotation/RegionSegmentTool';
+import RegionSegmentPlusTool from './annotation/RegionSegmentPlusTool';
+import WholeBodySegmentTool from './annotation/WholeBodySegmentTool';
 
 // Segmentation Tools
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool';
@@ -112,4 +115,7 @@ export {
   SculptorTool,
   SegmentSelectTool,
   VolumeRotateTool,
+  RegionSegmentTool,
+  RegionSegmentPlusTool,
+  WholeBodySegmentTool,
 };

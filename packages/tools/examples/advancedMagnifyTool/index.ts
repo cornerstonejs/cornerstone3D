@@ -174,7 +174,7 @@ async function addSegmentationsToState(volumeId: string) {
   }
 
   // Create a segmentation of the same resolution as the source data
-  segmentationVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
+  segmentationVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
     volumeId,
     {
       volumeId: segmentationId,
