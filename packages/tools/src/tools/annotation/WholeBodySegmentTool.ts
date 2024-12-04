@@ -189,7 +189,6 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       },
     };
 
-    // @ts-expect-error
     const options: GrowCutBoundingBoxOptions = {
       positiveSeedValue: segmentIndex,
       negativeSeedValue: 255,

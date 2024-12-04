@@ -18,6 +18,7 @@ import {
   addSegmentIndexDropdown,
   labelmapTools,
   annotationTools,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
@@ -43,6 +44,16 @@ const configuration = {
   },
 };
 const logs = [];
+
+addSliderToToolbar({
+  title: 'P Cutoff',
+  step: 1,
+  range: [1, 255],
+  defaultValue: 64,
+  onSelectedValueChange: (value) => {
+    ai.setPCutoff(value);
+  },
+});
 
 /**
  * Log to the specified logger.

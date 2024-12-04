@@ -2826,8 +2826,8 @@ declare namespace growCut {
 type GrowCutBoundingBoxOptions = GrowCutOptions & {
     positiveSeedValue?: number;
     negativeSeedValue?: number;
-    negativePixelRange: [number, number];
-    positivePixelRange: [number, number];
+    negativePixelRange?: [number, number];
+    positivePixelRange?: [number, number];
 };
 
 // @public (undocumented)
