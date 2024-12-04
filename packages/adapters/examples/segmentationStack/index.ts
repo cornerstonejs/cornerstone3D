@@ -315,12 +315,8 @@ function exportSegmentation() {
             toolGroupId
         );
     // Get active segmentation representation
-    const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-        );
 
-    if (!activeSegmentation || !activeSegmentationRepresentation) {
+    if (!activeSegmentation) {
         return;
     }
 
@@ -330,65 +326,61 @@ function exportSegmentation() {
     ] as cornerstoneTools.Types.LabelmapToolOperationDataStack;
 
     //
-    if (labelmap.imageIdReferenceMap) {
+    if (labelmap.imageIds) {
         //
-        labelmap.imageIdReferenceMap.forEach(
-            async (derivedImagesId: string, imageId: string) => {
-                //
-                await imageLoader.loadAndCacheImage(imageId);
-                //
-                const cacheImage = cache.getImage(imageId);
+        labelmap.imageIds.forEach(async (derivedImagesId: string) => {
+            //
+            await imageLoader.loadAndCacheImage(derivedImagesId);
+            //
+            const cacheImage = cache.getImage(derivedImagesId);
 
-                //
-                const cacheSegmentationImage = cache.getImage(derivedImagesId);
+            //
+            const cacheSegmentationImage = cache.getImage(derivedImagesId);
 
-                // TODO
-                // generateLabelMaps2DFrom3D required "scalarData" and "dimensions"
-                cacheSegmentationImage.scalarData =
-                    cacheSegmentationImage.getPixelData();
-                cacheSegmentationImage.dimensions = [
-                    cacheSegmentationImage.columns,
-                    cacheSegmentationImage.rows,
-                    1
-                ];
+            // TODO
+            // generateLabelMaps2DFrom3D required "scalarData" and "dimensions"
+            cacheSegmentationImage.scalarData =
+                cacheSegmentationImage.getPixelData();
+            cacheSegmentationImage.dimensions = [
+                cacheSegmentationImage.columns,
+                cacheSegmentationImage.rows,
+                1
+            ];
 
-                //
-                const labelmapData =
-                    Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
-                        cacheSegmentationImage
-                    );
-
-                // Generate fake metadata as an example
-                labelmapData.metadata = [];
-                labelmapData.segmentsOnLabelmap.forEach(
-                    (segmentIndex: number) => {
-                        const color =
-                            csToolsSegmentation.config.color.getColorForSegmentIndex(
-                                toolGroupId,
-                                activeSegmentationRepresentation.segmentationRepresentationUID,
-                                segmentIndex
-                            );
-
-                        const segmentMetadata = generateMockMetadata(
-                            segmentIndex,
-                            color
-                        );
-                        labelmapData.metadata[segmentIndex] = segmentMetadata;
-                    }
+            //
+            const labelmapData =
+                Cornerstone3D.Segmentation.generateLabelMaps2DFrom3D(
+                    cacheSegmentationImage
                 );
 
-                // TODO
-                // https://github.com/cornerstonejs/cornerstone3D/issues/1059#issuecomment-2181016046
-                const generatedSegmentation =
-                    Cornerstone3D.Segmentation.generateSegmentation(
-                        [cacheImage, cacheImage],
-                        labelmapData,
-                        metaData
+            // Generate fake metadata as an example
+            labelmapData.metadata = [];
+            labelmapData.segmentsOnLabelmap.forEach((segmentIndex: number) => {
+                const color =
+                    csToolsSegmentation.config.color.getSegmentIndexColor(
+                        viewportIds[0],
+                        activeSegmentation.segmentationId,
+                        segmentIndex
                     );
 
-                downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
-            }
-        );
+                const segmentMetadata = generateMockMetadata(
+                    segmentIndex,
+                    color
+                );
+                labelmapData.metadata[segmentIndex] = segmentMetadata;
+            });
+
+            // TODO
+            // https://github.com/cornerstonejs/cornerstone3D/issues/1059#issuecomment-2181016046
+            const generatedSegmentation =
+                Cornerstone3D.Segmentation.generateSegmentation(
+                    [cacheImage, cacheImage],
+                    labelmapData,
+                    metaData
+                );
+
+            downloadDICOMData(generatedSegmentation.dataset, "mySEG.dcm");
+        });
     }
 }
 
@@ -419,19 +411,15 @@ function removeActiveSegmentation() {
             toolGroupId
         );
     // Get active segmentation representation
-    const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
-        );
 
-    if (!activeSegmentation || !activeSegmentationRepresentation) {
+    if (!activeSegmentation) {
         return;
     }
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0], [
-        activeSegmentationRepresentation.segmentationRepresentationUID
-    ]);
+    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0], {
+        segmentationId: activeSegmentation.segmentationId
+    });
 
     //
     csToolsSegmentation.state.removeSegmentation(
@@ -471,10 +459,15 @@ function plusActiveSegment() {
         return;
     }
 
-    if (activeSegmentation.activeSegmentIndex + 1 <= 255) {
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
+    if (activeSegmentIndex + 1 <= 255) {
         csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
             activeSegmentation.segmentationId,
-            activeSegmentation.activeSegmentIndex + 1
+            activeSegmentIndex + 1
         );
 
         // Update the dropdown
@@ -497,10 +490,15 @@ function minusActiveSegment() {
         return;
     }
 
-    if (activeSegmentation.activeSegmentIndex - 1 >= 1) {
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
+    if (activeSegmentIndex - 1 >= 1) {
         csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
             activeSegmentation.segmentationId,
-            activeSegmentation.activeSegmentIndex - 1
+            activeSegmentIndex - 1
         );
 
         // Update the dropdown
@@ -531,6 +529,11 @@ function removeActiveSegment() {
     //
     const modifiedFrames = new Set<number>();
 
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
     //
     if (labelmap.imageIds) {
         //
@@ -552,10 +555,7 @@ function removeActiveSegment() {
             for (let f = 0; f < numFrames; f++) {
                 //
                 for (let p = 0; p < frameLength; p++) {
-                    if (
-                        pixelData[index] ===
-                        activeSegmentation.activeSegmentIndex
-                    ) {
+                    if (pixelData[index] === activeSegmentIndex) {
                         pixelData[index] = 0;
 
                         modifiedFrames.add(f);
@@ -697,14 +697,9 @@ addDropdownToToolbar({
     onSelectedValueChange: nameAsStringOrNumber => {
         const segmentationId = String(nameAsStringOrNumber);
 
-        const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationRepresentationsForSegmentation(
-                segmentationId
-            );
-
-        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
-            toolGroupId,
-            segmentationRepresentations[0].segmentationRepresentationUID
+        csToolsSegmentation.activeSegmentation.setActiveSegmentation(
+            viewportIds[0],
+            segmentationId
         );
 
         // Update the dropdown
@@ -818,7 +813,7 @@ function restart() {
     });
 
     //
-    csToolsSegmentation.removeSegmentationRepresentation(viewportIds[0]);
+    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0]);
 
     //
     const segmentations = csToolsSegmentation.state.getSegmentations();
@@ -966,7 +961,10 @@ function updateSegmentDropdown() {
     }
 
     //
-    const activeSegmentIndex = activeSegmentation.activeSegmentIndex;
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
 
     const segmentIndices =
         csToolsUtilities.segmentation.getUniqueSegmentIndices(
@@ -1020,8 +1018,12 @@ function updateSegmentLabel() {
             toolGroupId
         );
 
-    label.innerHTML =
-        "Current Active Segment: " + activeSegmentation.activeSegmentIndex;
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
+    label.innerHTML = "Current Active Segment: " + activeSegmentIndex;
 }
 
 function handleFileSelect(evt) {

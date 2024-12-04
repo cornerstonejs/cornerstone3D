@@ -303,13 +303,13 @@ async function exportSegmentation() {
     const csImages = cacheVolume.getCornerstoneImages();
 
     // Get active segmentation representation
-    const activeSegmentationRepresentation =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
             viewportIds[0]
         );
 
     const cacheSegmentationVolume = cache.getVolume(
-        activeSegmentationRepresentation.segmentationId
+        activeSegmentation.segmentationId
     );
 
     //
@@ -321,7 +321,8 @@ async function exportSegmentation() {
     labelmapData.metadata = [];
     labelmapData.segmentsOnLabelmap.forEach(segmentIndex => {
         const color = csToolsSegmentation.config.color.getSegmentIndexColor(
-            activeSegmentationRepresentation.segmentationRepresentationUID,
+            viewportIds[0],
+            activeSegmentation.segmentationId,
             segmentIndex
         );
 
@@ -362,20 +363,22 @@ function removeActiveSegmentation() {
     }
 
     // Get active segmentation representation
-    const { segmentationId, segmentationRepresentationUID } =
-        csToolsSegmentation.activeSegmentation.getActiveSegmentationRepresentation(
-            toolGroupId
+    const activeSegmentation =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            viewportIds[0]
         );
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId, [
-        segmentationRepresentationUID
-    ]);
+    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0], {
+        segmentationId: activeSegmentation.segmentationId
+    });
 
     //
-    csToolsSegmentation.state.removeSegmentation(segmentationId);
+    csToolsSegmentation.state.removeSegmentation(
+        activeSegmentation.segmentationId
+    );
     //
-    cache.removeVolumeLoadObject(segmentationId);
+    cache.removeVolumeLoadObject(activeSegmentation.segmentationId);
 
     // Update the dropdown
     updateSegmentationDropdown();
@@ -396,10 +399,15 @@ function plusActiveSegment() {
         return;
     }
 
-    if (activeSegmentation.activeSegmentIndex + 1 <= 255) {
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
+    if (activeSegmentIndex + 1 <= 255) {
         csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
             activeSegmentation.segmentationId,
-            activeSegmentation.activeSegmentIndex + 1
+            activeSegmentIndex + 1
         );
 
         // Update the dropdown
@@ -422,10 +430,15 @@ function minusActiveSegment() {
         return;
     }
 
-    if (activeSegmentation.activeSegmentIndex - 1 >= 1) {
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
+    if (activeSegmentIndex - 1 >= 1) {
         csToolsSegmentation.segmentIndex.setActiveSegmentIndex(
             activeSegmentation.segmentationId,
-            activeSegmentation.activeSegmentIndex - 1
+            activeSegmentIndex - 1
         );
 
         // Update the dropdown
@@ -453,7 +466,7 @@ function removeActiveSegment() {
 
     // Get scalar data
     // Todo: need to move to the new model with voxel manager
-    const scalarData = volume.getScalarData();
+    const scalarData = volume.voxelManager.getCompleteScalarDataArray();
 
     //
     const frameLength = volume.dimensions[0] * volume.dimensions[1];
@@ -465,11 +478,15 @@ function removeActiveSegment() {
     //
     const modifiedFrames = new Set<number>();
 
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
     //
     for (let f = 0; f < numFrames; f++) {
         //
         for (let p = 0; p < frameLength; p++) {
-            if (scalarData[index] === activeSegmentation.activeSegmentIndex) {
+            if (scalarData[index] === activeSegmentIndex) {
                 scalarData[index] = 0;
 
                 modifiedFrames.add(f);
@@ -601,13 +618,13 @@ addDropdownToToolbar({
         const segmentationId = String(nameAsStringOrNumber);
 
         const segmentationRepresentations =
-            csToolsSegmentation.state.getSegmentationRepresentationsForSegmentation(
+            csToolsSegmentation.state.getSegmentationRepresentationsBySegmentationId(
                 segmentationId
             );
 
-        csToolsSegmentation.activeSegmentation.setActiveSegmentationRepresentation(
-            toolGroupId,
-            segmentationRepresentations[0].segmentationRepresentationUID
+        csToolsSegmentation.activeSegmentation.setActiveSegmentation(
+            viewportIds[0],
+            segmentationRepresentations[0].representations[0].segmentationId
         );
 
         // Update the dropdown
@@ -717,7 +734,7 @@ function restart() {
     cache.removeVolumeLoadObject(volumeId);
 
     //
-    csToolsSegmentation.removeSegmentationRepresentations(toolGroupId);
+    csToolsSegmentation.removeSegmentationRepresentations(viewportIds[0]);
 
     //
     const segmentationIds = getSegmentationIds();
@@ -736,10 +753,12 @@ function getSegmentationIds() {
 
 async function addSegmentationsToState(segmentationId: string) {
     // Create a segmentation of the same resolution as the source data
-    const derivedVolume =
-        await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    const derivedVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(
+        volumeId,
+        {
             volumeId: segmentationId
-        });
+        }
+    );
 
     // Add the segmentations to state
     csToolsSegmentation.addSegmentations([
@@ -869,7 +888,10 @@ function updateSegmentDropdown() {
     }
 
     //
-    const activeSegmentIndex = activeSegmentation.activeSegmentIndex;
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
 
     const segmentIndices =
         csToolsUtilities.segmentation.getUniqueSegmentIndices(
@@ -923,8 +945,12 @@ function updateSegmentLabel() {
             toolGroupId
         );
 
-    label.innerHTML =
-        "Current Active Segment: " + activeSegmentation.activeSegmentIndex;
+    const activeSegmentIndex =
+        csToolsSegmentation.segmentIndex.getActiveSegmentIndex(
+            activeSegmentation.segmentationId
+        );
+
+    label.innerHTML = "Current Active Segment: " + activeSegmentIndex;
 }
 
 function handleFileSelect(evt) {

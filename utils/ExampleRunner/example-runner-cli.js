@@ -253,13 +253,8 @@ function run() {
 
   // for some reason the esm build of the dicom image loader
   // requires the core to be built first and cannot link it
-  // shell.cd('../../core');
+  // shell.exec('yarn run build:esm');
   // shell.exec(`yarn run build:esm`);
-
-  // run the build for dicom image loader
-  // shell.cd('../../dicomImageLoader');
-  // shell.exec(`yarn run build:esm`);
-  // shell.cd(currentWD);
 
   if (buildExample) {
     const exampleName = filteredExampleCorrectCase;

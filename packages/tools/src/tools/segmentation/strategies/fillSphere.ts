@@ -8,7 +8,7 @@ import compositions from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';
 import { createEllipseInPoint } from './fillCircle';
 const { transformWorldToIndex } = csUtils;
-import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
+import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
@@ -35,7 +35,7 @@ const sphereComposition = {
       boundsIJK: newBoundsIJK,
       topLeftWorld,
       bottomRightWorld,
-    } = getSphereBoundsInfo(
+    } = getSphereBoundsInfoFromViewport(
       points.slice(0, 2) as [Types.Point3, Types.Point3],
       segmentationImageData,
       viewport

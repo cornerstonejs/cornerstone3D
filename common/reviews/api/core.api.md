@@ -849,6 +849,13 @@ function createLocalVolume(volumeId: string, options?: LocalVolumeOptions): IIma
 function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): vtkColorTransferFunction;
 
 // @public (undocumented)
+function createSubVolume(referencedVolumeId: string, boundsIJK: AABB3, options?: {
+    targetBuffer?: {
+        type: PixelDataTypedArrayString;
+    };
+}): ImageVolume;
+
+// @public (undocumented)
 export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean): Promise<VolumeActor>;
 
 // @public (undocumented)
@@ -1355,6 +1362,16 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 
 // @public (undocumented)
 function getVolumeActorCorners(volumeActor: any): Point3[];
+
+// @public (undocumented)
+function getVolumeDirectionVectors(imageData: any, camera: any): {
+    worldVecRowDir: vec3;
+    worldVecColDir: vec3;
+    worldVecSliceDir: vec3;
+    ijkVecRowDir: vec3;
+    ijkVecColDir: vec3;
+    ijkVecSliceDir: vec3;
+};
 
 // @public (undocumented)
 const getVolumeId: (targetId: string) => string;
@@ -3720,6 +3737,9 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 function transformWorldToIndex(imageData: any, worldPos: Point3): any;
 
 // @public (undocumented)
+function transformWorldToIndexContinuous(imageData: any, worldPos: Point3): any;
+
+// @public (undocumented)
 export function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
 
 declare namespace Types {
@@ -3964,7 +3984,10 @@ declare namespace utilities {
         deepEqual,
         jumpToSlice,
         scroll_2 as scroll,
-        clip
+        clip,
+        transformWorldToIndexContinuous,
+        createSubVolume,
+        getVolumeDirectionVectors
     }
 }
 export { utilities }

@@ -859,9 +859,11 @@ class LengthTool extends AnnotationTool {
 
       const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      if (this._isInsideVolume(index1, index2, dimensions)) {
+        this.isHandleOutsideImage = false;
+      } else {
+        this.isHandleOutsideImage = true;
+      }
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
