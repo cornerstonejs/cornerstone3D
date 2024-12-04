@@ -439,8 +439,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const { element } = eventDetail;
     const { currentPoints } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
     let closeContour = data.handles.points.length >= 2 && doubleClick;
     let addNewPoint = true;
 

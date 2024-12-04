@@ -29,6 +29,15 @@ export class HistoryMemo {
     return this._size;
   }
 
+  /** Sets the size, clearing all history elements */
+  public set size(newSize: number) {
+    this.ring = new Array<Memo>(newSize);
+    this._size = newSize;
+    this.position = -1;
+    this.redoAvailable = 0;
+    this.undoAvailable = 0;
+  }
+
   /**
    * Undoes up to the given number of items off the ring
    */

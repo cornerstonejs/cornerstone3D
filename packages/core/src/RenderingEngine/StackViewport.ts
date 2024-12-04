@@ -1552,10 +1552,7 @@ class StackViewport extends Viewport {
 
     const { imagePlaneModule, imagePixelModule } = this.buildMetadata(image);
 
-    let rowCosines, columnCosines;
-
-    rowCosines = imagePlaneModule.rowCosines;
-    columnCosines = imagePlaneModule.columnCosines;
+    let { rowCosines, columnCosines } = imagePlaneModule;
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {

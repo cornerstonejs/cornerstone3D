@@ -77,7 +77,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     const { element, currentPoints } = eventData;
     const { world: currentWorldPoint } = currentPoints;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
     const linePoints = this._getHorizontalLineWorldPoints(
       enabledElement,
       currentWorldPoint
@@ -88,13 +88,13 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     triggerAnnotationRenderForViewportUIDs([viewport.id]);
   };
 
-  private _endCallback = (evt: EventTypes.InteractionEventType) => {
+  private _endCallback = async (evt: EventTypes.InteractionEventType) => {
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
-    this.runGrowCut();
+    await this.runGrowCut();
     this._deactivateDraw(element);
 
     this.growCutData = null;
