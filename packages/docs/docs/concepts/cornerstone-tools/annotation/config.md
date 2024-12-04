@@ -65,19 +65,21 @@ Each level of the style hierarchy has a set of styles that can be set. The style
 ### Annotation-level settings
 
 ```js
-import { annotations } from '@cornerstonejs/tools';
+import { annotation } from '@cornerstonejs/tools';
 
 // Annotation Level
 const styles = {
   colorHighlighted: 'rgb(255, 255, 0)',
 };
 
-annotation.config.style.setAnnotationToolStyle(annotationUID, style);
+annotation.config.style.setAnnotationStyles(annotationUID, style);
 ```
 
 ### Viewport-level tool settings
 
 ```js
+import { annotation } from '@cornerstonejs/tools';
+
 // Viewport Level
 const styles = {
   LengthTool: {
@@ -94,6 +96,8 @@ annotation.config.style.setViewportToolStyle(viewportId, styles);
 ### ToolGroup-level tool settings
 
 ```js
+import { annotation } from '@cornerstonejs/tools';
+
 const styles = {
   LengthTool: {
     colorHighlighted: 'rgb(255, 255, 0)',
@@ -109,6 +113,8 @@ annotation.config.style.setToolGroupToolStyles(toolGroupId, styles);
 ### Global(Default)-level tool settings
 
 ```js
+import { annotation } from '@cornerstonejs/tools';
+
 const styles = annotation.config.style.getDefaultToolStyle();
 
 const newStyles = {
