@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.7.0...v2.7.1) (2024-12-04)
+
+### Bug Fixes
+
+- **growcut:** memory limit issue ([#1672](https://github.com/cornerstonejs/cornerstone3D/issues/1672)) ([2516e64](https://github.com/cornerstonejs/cornerstone3D/commit/2516e642d91b8a4f3f331090c5b7609a72a56123))
+
 # [2.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.6.5...v2.7.0) (2024-12-04)
 
 ### Features
