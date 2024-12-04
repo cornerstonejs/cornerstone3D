@@ -201,6 +201,11 @@ function getNumberOfAnnotations(
 
 /**
  * Remove the annotation by UID of the annotation.
+ *
+ * Note - the annotation state is NOT preserved here in the HistoryMemo state.
+ * If you wish to preserve the state, you must call the create annotation memo
+ * BEFORE removing the annotation, and pass the deleting: true flag to it.
+ *
  * @param annotationUID - The unique identifier for the annotation.
  */
 function removeAnnotation(annotationUID: string): void {

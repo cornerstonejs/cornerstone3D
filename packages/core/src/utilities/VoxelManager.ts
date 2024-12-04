@@ -230,9 +230,14 @@ export default class VoxelManager<T> {
    *
    * If the boundsIJK is not provided, the iteration will be over the entire volume/data
    *
-   *
    * If the VoxelManager is backed by a Map, it will only iterate over the stored values.
    * Otherwise, it will iterate over all voxels within the specified or default bounds.
+   *
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the scalar data, map or rle map depending on the VoxelManager
+   *     type.
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public forEach = (
     callback: (args: {
@@ -337,6 +342,11 @@ export default class VoxelManager<T> {
 
   /**
    * Foreach callback optimized for RLE testing
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the rle map (see the rle map for callbacks that work at
+   *     the row or rle level, as those can be faster/more efficient)
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public rleForEach(callback, options?) {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
@@ -437,9 +447,7 @@ export default class VoxelManager<T> {
    * bounds.
    */
   public clear() {
-    if (this.map) {
-      this.map.clear();
-    }
+    this.map?.clear();
     this.boundsIJK.map((bound) => {
       bound[0] = Infinity;
       bound[1] = -Infinity;

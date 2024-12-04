@@ -98,6 +98,9 @@ import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
 import type RGB from './RGB';
+import type { Memo, HistoryMemo } from '../utilities/historyMemo';
+import type { VoxelManager } from '../utilities/VoxelManager';
+import type RLEVoxelMap from '../utilities/RLEVoxelMap';
 import type { ColormapPublic, ColormapRegistration } from './Colormap';
 import type { ViewportProperties } from './ViewportProperties';
 import type {
@@ -300,4 +303,8 @@ export type {
   GeometryLoaderFn,
   ScrollOptions,
   JumpToSliceOptions,
+  Memo,
+  HistoryMemo,
+  VoxelManager,
+  RLEVoxelMap,
 };

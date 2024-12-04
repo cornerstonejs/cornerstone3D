@@ -315,9 +315,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     };
     this._activateModify(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -376,6 +373,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
+    this.doneEditMemo();
     this.editData = null;
     this.isDrawing = false;
   };
@@ -435,8 +433,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
       return;
     }
 
+    // Ensure new changes are captured in a new memo - otherwise some types of
+    // changes get merged when an endCallback is missed.
+    this.doneEditMemo();
+
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
     const { currentPoints } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
     let closeContour = data.handles.points.length >= 2 && doubleClick;
@@ -476,9 +477,16 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box

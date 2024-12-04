@@ -27,6 +27,7 @@ import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBord
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 import { getBrushToolInstances } from './getBrushToolInstances';
 import * as growCut from './growCut';
+import * as LabelmapMemo from './createLabelmapMemo';
 
 export {
   thresholdVolumeByRange,
@@ -52,4 +53,5 @@ export {
   getHoveredContourSegmentationAnnotation,
   getBrushToolInstances,
   growCut,
+  LabelmapMemo,
 };

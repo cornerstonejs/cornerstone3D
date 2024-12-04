@@ -22,6 +22,7 @@ import { getStackSegmentationImageIdsForViewport } from '../../stateManagement/s
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { StrategyCallbacks } from '../../enums';
+import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -94,14 +95,12 @@ export default class LabelmapBaseTool extends BaseTool {
    * initial state.  This memo is then committed once done so that the
    */
   public createMemo(segmentId: string, segmentationVoxelManager, preview) {
-    // TODO: Implement this
-    console.warn('LabelmapBaseTool.createMemo not implemented yet');
-    // this.memo ||= LabelmapMemo.createLabelmapMemo(
-    //   segmentId,
-    //   segmentationVoxelManager,
-    //   preview
-    // );
-    // return this.memo as LabelmapMemo.LabelmapMemo;
+    this.memo ||= LabelmapMemo.createLabelmapMemo(
+      segmentId,
+      segmentationVoxelManager,
+      preview
+    );
+    return this.memo as LabelmapMemo.LabelmapMemo;
   }
 
   createEditData(element) {
@@ -326,6 +325,7 @@ export default class LabelmapBaseTool extends BaseTool {
         this.configuration.strategySpecificConfiguration,
       // Provide the preview information so that data can be used directly
       preview: this._previewData?.preview,
+      createMemo: this.createMemo.bind(this),
     };
     return operationData;
   }
@@ -377,6 +377,9 @@ export default class LabelmapBaseTool extends BaseTool {
     if (!element) {
       return;
     }
+
+    this.doneEditMemo();
+
     const enabledElement = getEnabledElement(element);
 
     this.applyActiveStrategyCallback(
@@ -386,5 +389,7 @@ export default class LabelmapBaseTool extends BaseTool {
     );
     this._previewData.isDrag = false;
     this._previewData.preview = null;
+    // Store the edit memo too
+    this.doneEditMemo();
   }
 }

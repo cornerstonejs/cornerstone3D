@@ -382,6 +382,8 @@ class ArrowAnnotateTool extends AnnotationTool {
         annotation.data.text = text;
 
         triggerAnnotationCompleted(annotation);
+        // This is only new if it wasn't already memoed
+        this.createMemo(element, annotation, { newAnnotation: !!this.memo });
 
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       });
@@ -389,6 +391,7 @@ class ArrowAnnotateTool extends AnnotationTool {
       triggerAnnotationModified(annotation, element);
     }
 
+    this.doneEditMemo();
     this.editData = null;
     this.isDrawing = false;
   };
@@ -398,8 +401,15 @@ class ArrowAnnotateTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const { data } = annotation;
 
     if (movingTextBox) {

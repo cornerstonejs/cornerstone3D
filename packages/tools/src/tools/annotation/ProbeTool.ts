@@ -314,9 +314,6 @@ class ProbeTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -338,8 +335,13 @@ class ProbeTool extends AnnotationTool {
 
     resetElementCursor(element);
 
+    if (newAnnotation) {
+      this.createMemo(element, annotation, { newAnnotation });
+    }
+
     this.editData = null;
     this.isDrawing = false;
+    this.doneEditMemo();
 
     if (
       this.isHandleOutsideImage &&
@@ -361,14 +363,13 @@ class ProbeTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
-    const { annotation, viewportIdsToRender } = this.editData;
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     data.handles.points[0] = [...worldPos] as Types.Point3;
     annotation.invalidated = true;
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };

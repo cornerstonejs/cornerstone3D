@@ -15,10 +15,12 @@ export enum ContourWindingDirection {
 
 export type ContourAnnotationData = {
   data: {
+    cachedStats?: Record<string, unknown>;
     contour: {
       polyline: Types.Point3[];
       closed: boolean;
       windingDirection?: ContourWindingDirection;
+      pointsManager?: Types.IPointsManager<Types.Point3>;
     };
   };
   onInterpolationComplete?: () => void;
