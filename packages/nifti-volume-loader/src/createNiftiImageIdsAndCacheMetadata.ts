@@ -25,7 +25,7 @@ export async function fetchArrayBuffer({
   onHeader,
   loadFullVolume = false,
 }) {
-  const isCompressed = url.endsWith('.gz');
+  const isCompressed = url.includes('.gz');
   let receivedData = new Uint8Array(0);
   let niftiHeader = null;
   const sliceInfo = null;
