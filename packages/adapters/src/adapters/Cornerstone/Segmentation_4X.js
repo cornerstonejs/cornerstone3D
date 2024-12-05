@@ -228,7 +228,7 @@ function _createSegFromImages(images, isMultiframe, options) {
  * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
  *
- * @param  {string[]} imageIds - An array of the imageIds.
+ * @param  {string[]} referencedImageIds - An array for referenced image imageIds.
  * @param  {ArrayBuffer} arrayBuffer - The SEG arrayBuffer.
  * @param  {*} metadataProvider.
  * @param  {obj} options - Options object.
@@ -240,7 +240,7 @@ function _createSegFromImages(images, isMultiframe, options) {
  *                  (available only for the overlapping case).
  */
 async function generateToolState(
-    imageIds,
+    referencedImageIds,
     arrayBuffer,
     metadataProvider,
     options
@@ -260,12 +260,12 @@ async function generateToolState(
 
     const imagePlaneModule = metadataProvider.get(
         "imagePlaneModule",
-        imageIds[0]
+        referencedImageIds[0]
     );
 
     const generalSeriesModule = metadataProvider.get(
         "generalSeriesModule",
-        imageIds[0]
+        referencedImageIds[0]
     );
 
     const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
@@ -326,14 +326,18 @@ async function generateToolState(
     const orientation = checkOrientation(
         multiframe,
         validOrientations,
-        [imagePlaneModule.rows, imagePlaneModule.columns, imageIds.length],
+        [
+            imagePlaneModule.rows,
+            imagePlaneModule.columns,
+            referencedImageIds.length
+        ],
         tolerance
     );
 
     // Pre-compute the sop UID to imageId index map so that in the for loop
     // we don't have to call metadataProvider.get() for each imageId over
     // and over again.
-    const sopUIDImageIdIndexMap = imageIds.reduce((acc, imageId) => {
+    const sopUIDImageIdIndexMap = referencedImageIds.reduce((acc, imageId) => {
         const { sopInstanceUID } = metadataProvider.get(
             "generalImageModule",
             imageId
@@ -347,7 +351,7 @@ async function generateToolState(
         overlapping = checkSEGsOverlapping(
             pixelDataChunks,
             multiframe,
-            imageIds,
+            referencedImageIds,
             validOrientations,
             metadataProvider,
             tolerance,
@@ -388,13 +392,15 @@ async function generateToolState(
     const segmentsOnFrame = [];
 
     const arrayBufferLength =
-        sliceLength * imageIds.length * TypedArrayConstructor.BYTES_PER_ELEMENT;
+        sliceLength *
+        referencedImageIds.length *
+        TypedArrayConstructor.BYTES_PER_ELEMENT;
     const labelmapBufferArray = [];
     labelmapBufferArray[0] = new ArrayBuffer(arrayBufferLength);
 
     // Pre-compute the indices and metadata so that we don't have to call
     // a function for each imageId in the for loop.
-    const imageIdMaps = imageIds.reduce(
+    const imageIdMaps = referencedImageIds.reduce(
         (acc, curr, index) => {
             acc.indices[curr] = index;
             acc.metadata[curr] = metadataProvider.get("instance", curr);
@@ -415,7 +421,7 @@ async function generateToolState(
         labelmapBufferArray,
         pixelDataChunks,
         multiframe,
-        imageIds,
+        referencedImageIds,
         validOrientations,
         metadataProvider,
         tolerance,
@@ -435,7 +441,7 @@ async function generateToolState(
             imageIdIndexBufferIndex,
             multiframe,
             metadataProvider,
-            imageIds
+            referencedImageIds
         );
 
         centroidXYZ.set(segmentIndex, centroids);

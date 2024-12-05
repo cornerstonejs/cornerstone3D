@@ -36,6 +36,10 @@ export default function filterAnnotationsForDisplay(
     // 1. Get the currently displayed imageId from the StackViewport
     const imageId = viewport.getCurrentImageId();
 
+    if (!imageId) {
+      return [];
+    }
+
     // 2. remove the dataLoader scheme since it might be an annotation that was
     // created on the volumeViewport initially and has the volumeLoader scheme
     // but shares the same imageId
