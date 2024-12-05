@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.7.4...v2.8.0) (2024-12-05)
+
+### Features
+
+- Add undo/redo to annotation tools and labelmaps ([#1675](https://github.com/cornerstonejs/cornerstone3D/issues/1675)) ([846d2a0](https://github.com/cornerstonejs/cornerstone3D/commit/846d2a0aa698911578f1592f8d89b6426f0bb111))
+
 ## [2.7.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.7.3...v2.7.4) (2024-12-04)
 
 **Note:** Version bump only for package @cornerstonejs/tools
