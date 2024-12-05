@@ -24,16 +24,11 @@ import {
 } from '../../utilities/contourSegmentation';
 import { triggerAnnotationRenderForToolGroupIds } from '../../utilities/triggerAnnotationRenderForToolGroupIds';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
-import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
-import { getSegmentationRepresentationVisibility } from '../../stateManagement/segmentation/getSegmentationRepresentationVisibility';
 import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentation/getViewportIdsWithSegmentation';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
-import { segmentationStyle } from '../../stateManagement/segmentation/SegmentationStyle';
-import type { ContourStyle } from '../../types/ContourTypes';
-import { internalGetHiddenSegmentIndices } from '../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
 
 /**

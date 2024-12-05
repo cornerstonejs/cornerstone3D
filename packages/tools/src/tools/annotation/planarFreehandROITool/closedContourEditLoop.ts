@@ -56,6 +56,7 @@ function activateClosedContourEdit(
     editCanvasPoints: [canvasPos],
     startCrossingIndex: undefined,
     editIndex: 0,
+    annotation,
   };
 
   this.commonData = {
@@ -146,10 +147,13 @@ function mouseDragClosedContourEditCallback(
   const worldPos = currentPoints.world;
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
-  const { renderingEngine, viewport } = enabledElement;
+  const { viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
-  const { editIndex, editCanvasPoints, startCrossingIndex } = this.editData;
+  const { editIndex, editCanvasPoints, startCrossingIndex, annotation } =
+    this.editData;
+
+  this.createMemo(element, annotation);
 
   const lastCanvasPoint = editCanvasPoints[editCanvasPoints.length - 1];
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
@@ -250,6 +254,7 @@ function finishEditAndStartNewEdit(evt: EventTypes.InteractionEventType): void {
     startCrossingIndex: undefined,
     editIndex: 0,
     snapIndex: undefined,
+    annotation,
   };
 
   triggerAnnotationRenderForViewportIds(viewportIdsToRender);
@@ -438,9 +443,10 @@ function mouseUpClosedContourEditCallback(
  */
 function completeClosedContourEdit(element: HTMLDivElement) {
   const enabledElement = getEnabledElement(element);
-  const { viewport, renderingEngine } = enabledElement;
+  const { viewport } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
+  this.doneEditMemo();
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {

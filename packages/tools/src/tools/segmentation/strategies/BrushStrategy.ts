@@ -7,6 +7,7 @@ import { getStrategyData } from './utils/getStrategyData';
 import { StrategyCallbacks } from '../../../enums';
 import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
 
 const { VoxelManager } = csUtils;
 
@@ -34,6 +35,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   brushStrategy: BrushStrategy;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   configuration?: Record<string, any>;
+  memo?: LabelmapMemo;
 };
 
 export type StrategyFunction = (

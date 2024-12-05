@@ -200,7 +200,7 @@ class CrosshairsTool extends AnnotationTool {
       annotations
     );
 
-    if (annotations.length) {
+    if (annotations?.length) {
       // If found, it will override it by removing the annotation and adding it later
       removeAnnotation(annotations[0].annotationUID);
     }

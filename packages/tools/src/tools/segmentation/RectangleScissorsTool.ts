@@ -39,8 +39,8 @@ import {
 import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
-  getStackSegmentationImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
+import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -49,7 +49,7 @@ import {
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-class RectangleScissorsTool extends BaseTool {
+class RectangleScissorsTool extends LabelmapBaseTool {
   static toolName;
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -318,11 +318,15 @@ class RectangleScissorsTool extends BaseTool {
     const operationData = {
       ...this.editData,
       points: data.handles.points,
+      strategySpecificConfiguration: {},
+      createMemo: this.createMemo.bind(this),
     };
 
     this.editData = null;
     this.isDrawing = false;
     this.applyActiveStrategy(enabledElement, operationData);
+
+    this.doneEditMemo();
   };
 
   /**

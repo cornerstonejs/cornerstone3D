@@ -889,7 +889,7 @@ function deepEqual(obj1: unknown, obj2: unknown): boolean;
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
-const DefaultHistoryMemo: HistoryMemo_2;
+const DefaultHistoryMemo: HistoryMemo;
 
 // @public (undocumented)
 interface DicomDateObject {
@@ -1416,17 +1416,8 @@ function hexToRgb(hex: any): {
     b: number;
 };
 
-declare namespace HistoryMemo {
-    export {
-        Memo,
-        Memoable,
-        HistoryMemo_2 as HistoryMemo,
-        DefaultHistoryMemo
-    }
-}
-
 // @public (undocumented)
-class HistoryMemo_2 {
+class HistoryMemo {
     constructor(label?: string, size?: number);
     // (undocumented)
     readonly label: any;
@@ -1439,6 +1430,15 @@ class HistoryMemo_2 {
     set size(newSize: number);
     // (undocumented)
     undo(items?: number): void;
+}
+
+declare namespace HistoryMemo_2 {
+    export {
+        Memo,
+        Memoable,
+        HistoryMemo,
+        DefaultHistoryMemo
+    }
 }
 
 // @public (undocumented)
@@ -2567,6 +2567,7 @@ type Mat3 = [number, number, number, number, number, number, number, number, num
 // @public (undocumented)
 type Memo = {
     restoreMemo: (undo?: boolean) => void;
+    commitMemo?: () => boolean;
 };
 
 // @public (undocumented)
@@ -2784,7 +2785,7 @@ class PointsManager<T> {
     // (undocumented)
     static create2(initialSize?: number): PointsManager<Point2>;
     // (undocumented)
-    static create3(initialSize?: number): PointsManager<Point3>;
+    static create3(initialSize?: number, points?: Point3[]): PointsManager<Point3>;
     // (undocumented)
     data: Float32Array;
     // (undocumented)
@@ -3883,7 +3884,11 @@ declare namespace Types {
         IBaseVolumeViewport,
         GeometryLoaderFn,
         ScrollOptions_2 as ScrollOptions,
-        JumpToSliceOptions
+        JumpToSliceOptions,
+        Memo,
+        HistoryMemo,
+        VoxelManager,
+        RLEVoxelMap
     }
 }
 export { Types }
@@ -3962,7 +3967,7 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        HistoryMemo,
+        HistoryMemo_2 as HistoryMemo,
         generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,

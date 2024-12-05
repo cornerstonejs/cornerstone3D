@@ -486,6 +486,10 @@
       "dynamicallyAddAnnotations": {
         "name": "Dynamically Add Annotations",
         "description": "Demonstrates how to dynamically add annotations to a viewport"
+      },
+      "toolHistory": {
+        "name": "Tool History",
+        "description": "Demonstrates how to use the tool history to undo and redo tool actions"
       }
     },
     "polymorph-segmentation": {

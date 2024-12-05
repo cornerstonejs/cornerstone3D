@@ -382,6 +382,7 @@ class BrushTool extends LabelmapBaseTool {
       this.applyActiveStrategy(enabledElement, operationData);
     }
 
+    this.doneEditMemo();
     this._deactivateDraw(element);
 
     resetElementCursor(element);
