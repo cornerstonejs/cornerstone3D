@@ -430,7 +430,6 @@ class LengthTool extends AnnotationTool {
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
 
     const {
       annotation,
@@ -441,7 +440,7 @@ class LengthTool extends AnnotationTool {
     } = this.editData;
     const { data } = annotation;
 
-    this.createMemo(element, annotation, { newAnnotation });
+    this.createMemo(eventDetail.element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box
@@ -836,7 +835,7 @@ class LengthTool extends AnnotationTool {
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
+  _calculateCachedStats(annotation, _, enabledElement) {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
 
@@ -893,7 +892,7 @@ class LengthTool extends AnnotationTool {
     return cachedStats;
   }
 
-  _isInsideVolume(index1, index2, dimensions) {
+  _isInsideVolume(index1, index2, dimensions): boolean {
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
