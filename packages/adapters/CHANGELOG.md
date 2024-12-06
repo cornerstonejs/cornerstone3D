@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.8.4](https://github.com/dcmjs-org/dcmjs/compare/v2.8.3...v2.8.4) (2024-12-06)
+
+### Bug Fixes
+
+-   **examples:** stack and volume segmentation ([#1684](https://github.com/dcmjs-org/dcmjs/issues/1684)) ([5149b31](https://github.com/dcmjs-org/dcmjs/commit/5149b31d54dca9ff8d0f24dcf8d432b6df1dd29b))
+
 ## [2.8.3](https://github.com/dcmjs-org/dcmjs/compare/v2.8.2...v2.8.3) (2024-12-06)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
