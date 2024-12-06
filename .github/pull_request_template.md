@@ -4,7 +4,7 @@
 
 <!--
 ⚠️⚠️ Please make sure the checklist section below is complete before submitting your PR.
-To complete the checklist, add an 'x' to each item: [] -> [x]
+To complete the checklist, add an 'x' to each item: [ ] -> [x]
 (PRs that do not have all the checkboxes marked will not be approved)
 -->
 
@@ -64,15 +64,15 @@ but the PR title must comply with it, as it will be used as the commit message
 after the commits are squashed.
 -->
 
-- [] My Pull Request title is descriptive, accurate and follows the
+- [ ] My Pull Request title is descriptive, accurate and follows the
   semantic-release format and guidelines.
 
 #### Code
 
-- [] My code has been well-documented (function documentation, inline comments,
+- [ ] My code has been well-documented (function documentation, inline comments,
   etc.)
 
-- [] I have run the `yarn build:update-api` to update the API documentation, and have
+- [ ] I have run the `yarn build:update-api` to update the API documentation, and have
   committed the changes to this PR. (Read more here https://www.cornerstonejs.org/docs/contribute/update-api)
 
 
@@ -80,14 +80,14 @@ after the commits are squashed.
 
 <!-- https://cornerstonejs.org/ -->
 
-- [] The documentation page has been updated as necessary for any public API
+- [ ] The documentation page has been updated as necessary for any public API
   additions or removals.
 
 #### Tested Environment
 
-- [] "OS: <!--[e.g. Windows 10, macOS 10.15.4]"-->
-- [] "Node version: <!--[e.g. 16.14.0]"-->
-- [] "Browser:
+- [ ] "OS: <!--[e.g. Windows 10, macOS 10.15.4]"-->
+- [ ] "Node version: <!--[e.g. 16.14.0]"-->
+- [ ] "Browser:
   <!--[e.g. Chrome 83.0.4103.116, Firefox 77.0.1, Safari 13.1.1]"-->
 
 <!-- prettier-ignore-start -->
