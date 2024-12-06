@@ -207,6 +207,8 @@ addUploadToToolbar({
         for (const file of files) {
             await readSegmentation(file, state);
         }
+
+        createSegmentationRepresentation();
     },
     container: group2
 });
