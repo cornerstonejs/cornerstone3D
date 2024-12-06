@@ -250,8 +250,8 @@ async function generateToolState(
         tolerance = 1e-3,
         TypedArrayConstructor = Uint8Array,
         maxBytesPerChunk = 199000000,
-        eventTarget,
-        triggerEvent
+        eventTarget = null,
+        triggerEvent = null
     } = options;
     const dicomData = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);

@@ -14,6 +14,11 @@ const eventName = Events.MOUSE_MOVE;
 function mouseMoveListener(evt: MouseEvent) {
   const element = <HTMLDivElement>evt.currentTarget;
   const enabledElement = getEnabledElement(element);
+
+  if (!enabledElement) {
+    return;
+  }
+
   const { renderingEngineId, viewportId } = enabledElement;
 
   const currentPoints = getMouseEventPoints(evt);
