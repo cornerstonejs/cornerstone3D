@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.1...v2.8.2) (2024-12-06)
+
+### Bug Fixes
+
+- **url:** logic that determines if nifti file is compressed ([#1669](https://github.com/cornerstonejs/cornerstone3D/issues/1669)) ([48e5805](https://github.com/cornerstonejs/cornerstone3D/commit/48e580577b1634d5f1b17fd66ba128a079be9471))
+
 ## [2.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.0...v2.8.1) (2024-12-06)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
