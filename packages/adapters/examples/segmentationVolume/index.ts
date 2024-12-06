@@ -24,6 +24,7 @@ console.warn(
 );
 
 const { utilities: csUtilities } = cornerstone;
+const { segmentation: csToolsSegmentation } = cornerstoneTools;
 import {
     readDicom,
     readSegmentation,
@@ -31,7 +32,8 @@ import {
     exportSegmentation,
     handleFileSelect,
     handleDragOver,
-    restart
+    restart,
+    createSegmentation
 } from "../segmentationVolume/utils";
 
 setTitleAndDescription(
@@ -158,6 +160,15 @@ async function loadDicom() {
     renderingEngine.render();
 }
 
+function createSegmentationRepresentation() {
+    const segMap = {
+        [state.viewportIds[0]]: [{ segmentationId: state.segmentationId }],
+        [state.viewportIds[1]]: [{ segmentationId: state.segmentationId }],
+        [state.viewportIds[2]]: [{ segmentationId: state.segmentationId }]
+    };
+
+    csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
+}
 // ============================= //
 addButtonToToolbar({
     id: "LOAD_DICOM",
@@ -191,6 +202,7 @@ addButtonToToolbar({
         });
 
         await loadSegmentation(arrayBuffer, state);
+        createSegmentationRepresentation();
     },
     container: group1
 });
@@ -198,7 +210,20 @@ addButtonToToolbar({
 addUploadToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
-    onChange: (files: FileList) => readDicom(files, state),
+    onChange: async (files: FileList) => {
+        await readDicom(files, state);
+        await loadDicom();
+    },
+    container: group2
+});
+
+addButtonToToolbar({
+    id: "CREATE_SEGMENTATION",
+    title: "Create Empty SEG",
+    onClick: async () => {
+        await createSegmentation(state);
+        createSegmentationRepresentation();
+    },
     container: group2
 });
 
@@ -213,6 +238,8 @@ addUploadToToolbar({
         for (const file of files) {
             await readSegmentation(file, state);
         }
+
+        createSegmentationRepresentation();
     },
     container: group2
 });

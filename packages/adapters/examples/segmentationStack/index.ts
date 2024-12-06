@@ -2,13 +2,11 @@ import { api } from "dicomweb-client";
 
 import * as cornerstone from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
-import * as cornerstoneAdapters from "@cornerstonejs/adapters";
 
 import { dicomMap } from "./demo";
 
 import {
     addButtonToToolbar,
-    addDropdownToToolbar,
     addManipulationBindings,
     addToggleButtonToToolbar,
     addUploadToToolbar,
@@ -26,7 +24,7 @@ console.warn(
 );
 
 const { Enums: csEnums, RenderingEngine, utilities: csUtilities } = cornerstone;
-const { ViewportType } = csEnums;
+const { segmentation: csToolsSegmentation } = cornerstoneTools;
 import {
     readDicom,
     loadDicom,
@@ -36,7 +34,8 @@ import {
     restart,
     getSegmentationIds,
     handleFileSelect,
-    handleDragOver
+    handleDragOver,
+    createSegmentation
 } from "../segmentationVolume/utils";
 
 const referenceImageIds: string[] = [];
@@ -135,6 +134,13 @@ function loadDicom() {
     renderingEngine.render();
 }
 
+function createSegmentationRepresentation() {
+    csToolsSegmentation.addLabelmapRepresentationToViewport(
+        state.viewportIds[0],
+        [{ segmentationId: state.segmentationId }]
+    );
+}
+
 // ============================= //
 addButtonToToolbar({
     id: "LOAD_DICOM",
@@ -169,6 +175,7 @@ addButtonToToolbar({
         });
 
         await loadSegmentation(arrayBuffer, state);
+        createSegmentationRepresentation();
     },
     container: group1
 });
@@ -176,9 +183,19 @@ addButtonToToolbar({
 addUploadToToolbar({
     id: "IMPORT_DICOM",
     title: "Import DICOM",
-    onChange: (files: FileList) => {
-        readDicom(files, state);
-        loadDicom();
+    onChange: async (files: FileList) => {
+        await readDicom(files, state);
+        await loadDicom();
+    },
+    container: group2
+});
+
+addButtonToToolbar({
+    id: "CREATE_SEGMENTATION",
+    title: "Create Empty SEG",
+    onClick: async () => {
+        await createSegmentation(state);
+        createSegmentationRepresentation();
     },
     container: group2
 });
