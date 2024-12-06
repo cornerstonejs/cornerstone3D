@@ -21,7 +21,7 @@ const rspack = require('@rspack/core');
 
 module.exports = {
   mode: 'development',
-  devtool: 'source-map',
+  devtool: 'eval-source-map',
   plugins: [
     new rspack.HtmlRspackPlugin({
       template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template.html',

@@ -4,31 +4,44 @@ import * as cornerstoneDicomImageLoader from "@cornerstonejs/dicom-image-loader"
 import * as cornerstoneAdapters from "@cornerstonejs/adapters";
 import dcmjs from "dcmjs";
 
-const {
-    cache,
-    imageLoader,
-    metaData,
-    utilities: csUtilities,
-    volumeLoader
-} = cornerstone;
+const { cache, imageLoader, metaData } = cornerstone;
 const { segmentation: csToolsSegmentation } = cornerstoneTools;
 const { wadouri } = cornerstoneDicomImageLoader;
 const { downloadDICOMData } = cornerstoneAdapters.helpers;
 const { Cornerstone3D } = cornerstoneAdapters.adaptersSEG;
 
 export async function readDicom(files: FileList, state) {
-    if (files.length <= 1) {
-        console.error(
-            "Viewport volume does not support just one image, it must be two or more images"
-        );
-        return;
-    }
-
     for (const file of files) {
         const imageId = wadouri.fileManager.add(file);
         await imageLoader.loadAndCacheImage(imageId);
         state.referenceImageIds.push(imageId);
     }
+}
+
+export async function createSegmentation(state) {
+    const { referenceImageIds, segmentationId } = state;
+
+    const derivedSegmentationImages =
+        await imageLoader.createAndCacheDerivedLabelmapImages(
+            referenceImageIds
+        );
+
+    const derivedSegmentationImageIds = derivedSegmentationImages.map(
+        image => image.imageId
+    );
+
+    csToolsSegmentation.addSegmentations([
+        {
+            segmentationId,
+            representation: {
+                type: cornerstoneTools.Enums.SegmentationRepresentations
+                    .Labelmap,
+                data: {
+                    imageIds: derivedSegmentationImageIds
+                }
+            }
+        }
+    ]);
 }
 
 export async function readSegmentation(file: File, state) {
@@ -52,8 +65,7 @@ export async function readSegmentation(file: File, state) {
 }
 
 export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
-    const { referenceImageIds, skipOverlapping, viewportIds, segmentationId } =
-        state;
+    const { referenceImageIds, skipOverlapping, segmentationId } = state;
 
     const generateToolState =
         await Cornerstone3D.Segmentation.generateToolState(
@@ -72,35 +84,15 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
         return;
     }
 
-    const derivedSegmentationImages =
-        await imageLoader.createAndCacheDerivedLabelmapImages(
-            referenceImageIds
-        );
+    await createSegmentation(state);
 
-    const derivedSegmentationImageIds = derivedSegmentationImages.map(
-        image => image.imageId
+    const segmentation =
+        csToolsSegmentation.state.getSegmentation(segmentationId);
+
+    const { imageIds } = segmentation.representationData.Labelmap;
+    const derivedSegmentationImages = imageIds.map(imageId =>
+        cache.getImage(imageId)
     );
-
-    csToolsSegmentation.addSegmentations([
-        {
-            segmentationId,
-            representation: {
-                type: cornerstoneTools.Enums.SegmentationRepresentations
-                    .Labelmap,
-                data: {
-                    imageIds: derivedSegmentationImageIds
-                }
-            }
-        }
-    ]);
-
-    const segMap = {
-        [viewportIds[0]]: [{ segmentationId }],
-        [viewportIds[1]]: [{ segmentationId }],
-        [viewportIds[2]]: [{ segmentationId }]
-    };
-
-    await csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
 
     const volumeScalarData = new Uint8Array(
         generateToolState.labelmapBufferArray[0]
