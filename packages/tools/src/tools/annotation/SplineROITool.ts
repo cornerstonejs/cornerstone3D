@@ -1132,6 +1132,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
+
+    if (!enabledElement) {
+      return;
+    }
+
     const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
