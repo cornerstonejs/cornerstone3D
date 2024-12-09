@@ -18,6 +18,7 @@ import {
 } from './addSegmentationRepresentationsToViewport';
 
 import { addSegmentations } from './addSegmentations';
+import addRepresentationData from './internalAddRepresentationData';
 import { updateSegmentations } from './updateSegmentations';
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
@@ -75,4 +76,5 @@ export {
   polySegManager as polySeg,
   removeSegment,
   getLabelmapImageIds,
+  addRepresentationData,
 };

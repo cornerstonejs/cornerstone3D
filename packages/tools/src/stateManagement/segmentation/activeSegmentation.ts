@@ -19,8 +19,7 @@ function getActiveSegmentation(viewportId: string): Segmentation {
  */
 function setActiveSegmentation(
   viewportId: string,
-  segmentationId: string,
-  suppressEvent: boolean = false
+  segmentationId: string
 ): void {
   _setActiveSegmentation(viewportId, segmentationId);
 }
