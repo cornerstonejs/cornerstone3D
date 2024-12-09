@@ -116,6 +116,8 @@ export default class ONNXSegmentationController {
   public static MarkerInclude = 'MarkerInclude';
   /** Default name for a tool for exclusion points */
   public static MarkerExclude = 'MarkerExclude';
+  /** Default name for a tool for box prompt */
+  public static BoxPrompt = 'BoxPrompt';
 
   /** Some viewport options for loadImageToCanvas */
   public static viewportOptions = {
@@ -212,6 +214,7 @@ export default class ONNXSegmentationController {
   protected promptAnnotationTypes = [
     ONNXSegmentationController.MarkerInclude,
     ONNXSegmentationController.MarkerExclude,
+    ONNXSegmentationController.BoxPrompt,
   ];
   /** The type name of the preview tool used for the accept/reject labelmap preview */
   protected previewToolType = 'ThresholdCircle';
@@ -323,7 +326,7 @@ export default class ONNXSegmentationController {
     this.tool = toolGroup.getToolInstance(this.previewToolType);
 
     desiredImage.imageId =
-      viewport.getCurrentImageId() || viewport.getReferenceId();
+      viewport.getCurrentImageId?.() || viewport.getViewReferenceId();
     if (desiredImage.imageId.startsWith('volumeId:')) {
       desiredImage.sampleImageId = viewport.getImageIds(
         viewport.getVolumeId()
@@ -455,7 +458,7 @@ export default class ONNXSegmentationController {
   protected viewportRenderedListener = (_event) => {
     const { viewport, currentImage, desiredImage } = this;
     desiredImage.imageId =
-      viewport.getCurrentImageId() || viewport.getReferenceId();
+      viewport.getCurrentImageId() || viewport.getViewReferenceId();
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
     if (!desiredImage.imageId) {
       return;
@@ -568,6 +571,7 @@ export default class ONNXSegmentationController {
     this.getPromptAnnotations(viewport).forEach((annotation) =>
       annotationState.removeAnnotation(annotation.annotationUID)
     );
+    this.tool.rejectPreview(this.viewport.element);
   }
 
   /**
@@ -602,7 +606,8 @@ export default class ONNXSegmentationController {
       return this.cacheImageEncodings(current, offset, length);
     }
     const imageId =
-      view.referencedImageId || viewport.getReferenceId({ sliceIndex: index });
+      view.referencedImageId ||
+      viewport.getViewReferenceId({ sliceIndex: index });
     if (!imageEncodings.has(imageId)) {
       // Try loading from storage
       await this.loadStorageImageEncoding(current, imageId, index);
@@ -771,7 +776,7 @@ export default class ONNXSegmentationController {
     const { viewport, desiredImage } = this;
     if (!desiredImage.imageId || options.resetImage) {
       desiredImage.imageId =
-        viewport.getCurrentImageId() || viewport.getReferenceId();
+        viewport.getCurrentImageId() || viewport.getViewReferenceId();
       this.currentImage = null;
     }
     // Always use session 0 for the current session
@@ -822,25 +827,34 @@ export default class ONNXSegmentationController {
     ) {
       return;
     }
-    const currentAnnotations = this.getPromptAnnotations();
+    const promptAnnotations = this.getPromptAnnotations();
     this.annotationsNeedUpdating = false;
     this.points = [];
     this.labels = [];
     this.worldPoints = [];
 
-    if (!currentAnnotations?.length) {
+    if (!promptAnnotations?.length) {
       return;
     }
-    for (const annotation of currentAnnotations) {
+    for (const annotation of promptAnnotations) {
       const handle = annotation.data.handles.points[0];
       const point = this.mapAnnotationPoint(handle);
-      const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
-      if (label) {
-        this.worldPoints.push(handle);
+      this.points.push(...point);
+      if (
+        annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt
+      ) {
+        // 2 and 3 are the codes for the handles on a box prompt
+        this.labels.push(2, 3);
+        this.points.push(
+          ...this.mapAnnotationPoint(annotation.data.handles.points[3])
+        );
+      } else {
+        const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
+        if (label) {
+          this.worldPoints.push(handle);
+        }
+        this.labels.push(label);
       }
-      this.points.push(point[0]);
-      this.points.push(point[1]);
-      this.labels.push(label);
     }
     this.runDecode();
   }
@@ -1034,14 +1048,7 @@ export default class ONNXSegmentationController {
       const session = useSession.decoder;
 
       const feed = feedForSam(emb, points, labels);
-      const start = performance.now();
       const res = await session.run(feed);
-      this.log(
-        Loggers.Decoder,
-        `decoder ${useSession.sessionIndex} ${(
-          performance.now() - start
-        ).toFixed(1)} ms`
-      );
 
       for (let i = 0; i < points.length; i += 2) {
         const label = labels[i / 2];
@@ -1241,8 +1248,6 @@ export default class ONNXSegmentationController {
       const pair = vars[i].split('=');
       if (pair[0] in config) {
         config[pair[0]] = decodeURIComponent(pair[1]);
-      } else if (pair[0].length > 0) {
-        throw new Error('unknown argument: ' + pair[0]);
       }
     }
     config.threads = parseInt(String(config.threads));

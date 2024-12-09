@@ -1,4 +1,3 @@
-import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
@@ -8,56 +7,25 @@ import {
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  addButtonToToolbar,
-  addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
   initDemo,
+  addDropdownToToolbar,
+  addButtonToToolbar,
   setTitleAndDescription,
-  addManipulationBindings,
   getLocalUrl,
-  addSegmentIndexDropdown,
-  labelmapTools,
-  annotationTools,
-  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
-// This is for debugging purposes
-console.warn(
-  'Click on index.ts to open source code for this example --------->'
+const { ViewportType, OrientationAxis } = Enums;
+const { MouseBindings, KeyboardBindings } = cornerstoneTools.Enums;
+
+setTitleAndDescription(
+  'Basic Single-Viewport AI Segmentation',
+  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.'
 );
 
-const {
-  ToolGroupManager,
-  Enums: csToolsEnums,
-  segmentation,
-} = cornerstoneTools;
-
-const configuration = {
-  preview: {
-    enabled: true,
-    previewColors: {
-      0: [255, 255, 255, 128],
-      1: [0, 255, 255, 255],
-    },
-  },
-};
+// Logging elements and function
 const logs = [];
-
-addSliderToToolbar({
-  title: 'P Cutoff',
-  step: 1,
-  range: [1, 255],
-  defaultValue: 64,
-  onSelectedValueChange: (value) => {
-    ai.setPCutoff(value);
-  },
-});
-
-/**
- * Log to the specified logger.
- */
 function mlLogger(logName, ...args) {
   console.log(logName, ...args);
   const element = document.getElementById(logName);
@@ -75,6 +43,7 @@ function mlLogger(logName, ...args) {
   element.innerText = args.join(' ');
 }
 
+// Model configuration for segmentation
 const models = {
   sam_b: [
     {
@@ -93,134 +62,104 @@ const models = {
 };
 
 const ai = new ONNXSegmentationController({
-  listeners: [mlLogger],
   models,
   modelName: 'sam_b',
+  listeners: [mlLogger],
 });
+await ai.initModel();
 
-const { ViewportType, Events } = Enums;
-const { KeyboardBindings, MouseBindings } = csToolsEnums;
-const { style: toolStyle } = cornerstoneTools.annotation.config;
+const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
+const renderingEngineId = 'myRenderingEngine';
 const volumeId = 'volumeId';
 
-// Define various constants for the tool definition
-const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
-const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
+let renderingEngine;
+let viewport;
+let activeViewport;
+let currentViewportType = ViewportType.STACK;
 
-const segmentationId = `SEGMENTATION_ID`;
-// Stores information on whether the AI data is encoded in cache
-let cached;
-let toolForPreview;
+// Tools to include: MarkerInclude, MarkerExclude, BoxPrompt, plus pan/zoom/scroll
+const MarkerIncludeToolName = ONNXSegmentationController.MarkerInclude;
+const MarkerExcludeToolName = ONNXSegmentationController.MarkerExclude;
+const BoxPromptToolName = ONNXSegmentationController.BoxPrompt;
 
-const toolMap = new Map(annotationTools);
-const defaultTool = ONNXSegmentationController.MarkerInclude;
-toolMap.set(defaultTool, {
-  baseTool: cornerstoneTools.ProbeTool.toolName,
-  configuration: {
-    ...configuration,
+// Add the base tools we need
+cornerstoneTools.addTool(cornerstoneTools.PanTool);
+cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
+cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
+cornerstoneTools.addTool(cornerstoneTools.ProbeTool); // Needed as a base for MarkerInclude/Exclude
+cornerstoneTools.addTool(cornerstoneTools.RectangleROITool); // Base for BoxPrompt
+
+// Create a tool group and add the needed tools
+const toolGroup =
+  cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
+
+// MarkerInclude - a probe variant
+toolGroup.addToolInstance(
+  MarkerIncludeToolName,
+  cornerstoneTools.ProbeTool.toolName,
+  {
     getTextLines: () => null,
-  },
+  }
+);
+toolGroup.setToolActive(MarkerIncludeToolName, {
+  bindings: [{ mouseButton: MouseBindings.Primary }],
 });
-toolStyle.getDefaultToolStyles()[defaultTool] = { color: 'blue' };
 
-const excludeTool = ONNXSegmentationController.MarkerExclude;
-toolMap.set(excludeTool, {
-  baseTool: cornerstoneTools.ProbeTool.toolName,
+// MarkerExclude - a probe variant with right-click
+toolGroup.addToolInstance(
+  MarkerExcludeToolName,
+  cornerstoneTools.ProbeTool.toolName,
+  {
+    getTextLines: () => null,
+  }
+);
+toolGroup.setToolActive(MarkerExcludeToolName, {
   bindings: [{ mouseButton: MouseBindings.Secondary }],
-  configuration: {
-    ...configuration,
-    getTextLines: () => null,
-  },
 });
-toolStyle.getDefaultToolStyles()[excludeTool] = {
-  color: 'pink',
-  colorSelected: 'red',
-};
 
-for (const [key, value] of labelmapTools.toolMap) {
-  toolMap.set(key, value);
-}
-
-toolMap.set(cornerstoneTools.ZoomTool.toolName, {
+// BoxPrompt - a rectangle ROI variant with Ctrl+click
+toolGroup.addToolInstance(
+  BoxPromptToolName,
+  cornerstoneTools.RectangleROITool.toolName,
+  {
+    getTextLines: () => null,
+  }
+);
+toolGroup.setToolActive(BoxPromptToolName, {
   bindings: [
-    {
-      mouseButton: MouseBindings.Auxiliary,
-      modifierKey: KeyboardBindings.Ctrl,
-    },
+    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Ctrl },
   ],
 });
 
-// ======== Set up page ======== //
+// Pan (middle or Ctrl+drag)
+toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
+  bindings: [
+    { mouseButton: MouseBindings.Auxiliary },
+    { numTouchPoints: 1, modifierKey: KeyboardBindings.Ctrl },
+  ],
+});
 
-setTitleAndDescription(
-  'Segmentation AI',
-  'Here we demonstrate how to use various predictive AI/ML techniques to aid your segmentation.  ' +
-    'The default model here uses "MarkerInclude" and "MarkerExclude" as segmentation AI prompts ' +
-    'for the Segment Anything Model to use to generate a segmentation of the area of interest.  ' +
-    'Then, these prompts can be copied to the next image by pressing the "n" key to interpolate ' +
-    'markers on the current slice onto the next slice.'
-);
+// Zoom (right mouse)
+toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
+  bindings: [{ mouseButton: MouseBindings.Secondary }],
+});
 
-const { canvas, canvasMask } = ai;
+// Stack Scroll (mouse wheel or Alt+drag)
+toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
+  bindings: [
+    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Alt },
+    { mouseButton: MouseBindings.Wheel },
+  ],
+});
 
-const size = `24vw`;
 const content = document.getElementById('content');
+const viewportContainer = document.createElement('div');
+viewportContainer.style.width = '512px';
+viewportContainer.style.height = '512px';
+viewportContainer.style.position = 'relative';
+content.appendChild(viewportContainer);
 
-addButtonToToolbar({
-  title: 'Clear',
-  onClick: () => {
-    ai.clear(activeViewport);
-    viewport.render();
-  },
-});
-
-const viewportGrid = document.createElement('div');
-let renderingEngine;
-let viewport, volumeViewport, activeViewport;
-
-viewportGrid.style.width = '99vw';
-
-const viewportId = 'Stack';
-const viewportIds = [viewportId, 'AXIAL', 'SAGITAL', 'CORONAL'];
-
-const elements = [];
-for (const id of viewportIds) {
-  const el = document.createElement('div');
-  elements.push(el);
-  el.oncontextmenu = () => false;
-  el.id = id;
-
-  Object.assign(el.style, {
-    width: size,
-    height: size,
-    display: 'inline-block',
-  });
-  viewportGrid.appendChild(el);
-}
-const [element0, element1, element2, element3] = elements;
-// Uncomment these to show the canvas/mask overlays separately
-// viewportGrid.appendChild(canvas);
-// viewportGrid.appendChild(canvasMask);
-
-Object.assign(canvas.style, {
-  width: size,
-  height: size,
-  display: 'inline-block',
-  background: 'red',
-});
-
-Object.assign(canvasMask.style, {
-  width: size,
-  height: size,
-  display: 'inline-block',
-  background: 'black',
-});
-
-// viewportGrid.appendChild(canvas);
-// viewportGrid.appendChild(canvasMask);
-
-content.appendChild(viewportGrid);
-
+// Logging elements on the page
 const encoderLatency = document.createElement('div');
 encoderLatency.id = 'encoder';
 content.appendChild(encoderLatency);
@@ -233,56 +172,69 @@ const logDiv = document.createElement('div');
 logDiv.id = 'status';
 content.appendChild(logDiv);
 
-// ============================= //
-addDropdownToToolbar({
-  options: { map: toolMap, defaultValue: defaultTool },
-  toolGroupId: [toolGroupId, volumeToolGroupId],
-});
-
-addSegmentIndexDropdown(segmentationId);
-
-addDropdownToToolbar({
-  options: {
-    values: viewportIds,
-  },
-  onSelectedValueChange: (value) => {
-    activeViewport = renderingEngine.getViewport(value);
-    ai.initViewport(activeViewport);
-  },
-});
-
 addButtonToToolbar({
-  title: 'Cache',
+  title: 'Clear',
   onClick: () => {
-    if (cached !== undefined) {
-      return;
-    }
-    cached = false;
-    ai.cacheImageEncodings();
+    ai.clear(activeViewport);
+    viewport.render();
   },
 });
 
-/**
- * Runs the demo
- */
-async function run() {
-  // Get the load started here, as it can take a while.
-  ai.initModel();
+const viewportId = 'CURRENT_VIEWPORT';
 
-  // Init Cornerstone and related libraries
+addDropdownToToolbar({
+  options: { values: ['stack', 'sagittal'] },
+  onSelectedValueChange: async (value) => {
+    currentViewportType =
+      value === 'stack' ? ViewportType.STACK : ViewportType.ORTHOGRAPHIC;
+    await updateViewport();
+  },
+});
+
+async function updateViewport() {
   await initDemo();
 
-  // Define tool groups to add the segmentation display tool to
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup, { toolMap });
-  // The threshold circle has preview turned on by default, so use it as the
-  // tool to get/apply previews with.
-  toolForPreview = toolGroup.getToolInstance('ThresholdCircle');
+  if (renderingEngine) {
+    renderingEngine.destroy();
+  }
 
-  const volumeToolGroup = ToolGroupManager.createToolGroup(volumeToolGroupId);
-  addManipulationBindings(volumeToolGroup, { toolMap });
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Get Cornerstone imageIds and fetch metadata into RAM
+  const viewportInput = {
+    viewportId,
+    element: viewportContainer,
+    type: currentViewportType,
+    defaultOptions: {},
+  };
+
+  if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
+    viewportInput.defaultOptions.orientation = OrientationAxis.SAGITTAL;
+  }
+
+  renderingEngine.setViewports([viewportInput]);
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  const imageIds = await createAndLoadData();
+  if (currentViewportType === ViewportType.STACK) {
+    viewport = renderingEngine.getViewport(viewportId);
+    await viewport.setStack(imageIds);
+    viewport.render();
+  } else {
+    // For sagittal, create volume and set it
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds,
+    });
+    volume.load();
+    await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
+    viewport = renderingEngine.getViewport(viewportId);
+    viewport.render();
+  }
+
+  activeViewport = viewport;
+  ai.initViewport(viewport);
+}
+
+async function createAndLoadData() {
   const imageIdsFull = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
@@ -291,130 +243,7 @@ async function run() {
     wadoRsRoot:
       getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
   });
-
-  const imageIds = imageIdsFull.reverse(); // .slice(35, 45);
-  // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
-  renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportInputArray = [
-    {
-      viewportId: viewportId,
-      type: ViewportType.STACK,
-      element: element0,
-      defaultOptions: {
-        background: <Types.Point3>[0.2, 0, 0.2],
-      },
-    },
-    {
-      viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element1,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0.2, 0],
-      },
-    },
-    {
-      viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0.2, 0],
-      },
-    },
-    {
-      viewportId: viewportIds[3],
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
-      },
-    },
-  ];
-
-  renderingEngine.setViewports(viewportInputArray);
-  toolGroup.addViewport(viewportId, renderingEngineId);
-  volumeToolGroup.addViewport(viewportIds[1], renderingEngineId);
-  volumeToolGroup.addViewport(viewportIds[2], renderingEngineId);
-  volumeToolGroup.addViewport(viewportIds[3], renderingEngineId);
-
-  // Get the stack viewport that was created
-  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
-  activeViewport = viewport;
-
-  // Add a segmentation that will contains the contour annotations
-  const segmentationImages =
-    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
-
-  const segmentationImageIds = segmentationImages.map((image) => image.imageId);
-
-  // Set the stack on the viewport
-  await viewport.setStack(imageIds);
-  viewport.setOptions(ONNXSegmentationController.viewportOptions);
-
-  // This init model is waiting for completion, whereas the earlier one just
-  // starts loading in the background.
-  await ai.initModel();
-  // Connect the default viewport here to start things off - requires the initModel to be done
-  ai.initViewport(viewport, toolForPreview);
-
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
-
-  volume.load();
-
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    viewportIds.slice(1)
-  );
-
-  // Render the image
-
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIds: segmentationImageIds,
-        },
-      },
-    },
-  ]);
-
-  const segMap = {
-    [viewportIds[0]]: [{ segmentationId }],
-    [viewportIds[1]]: [{ segmentationId }],
-    [viewportIds[2]]: [{ segmentationId }],
-    [viewportIds[3]]: [{ segmentationId }],
-  };
-
-  // Create a segmentation representation associated to the toolGroupId
-  await segmentation.addLabelmapRepresentationToViewportMap(segMap);
-
-  elements.forEach((element) =>
-    element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
-      const { key } = evt.detail;
-      const { element } = activeViewport;
-      if (key === 'Escape') {
-        cornerstoneTools.cancelActiveManipulations(element);
-        toolForPreview.rejectPreview(element);
-      } else if (key === 'Enter') {
-        toolForPreview.acceptPreview(element);
-      } else if (key === 'n') {
-        ai.interpolateScroll(activeViewport, 1);
-      }
-    })
-  );
-
-  // volumeViewport.setViewReference(viewport.getViewReference());
-  // volumeViewport.setViewPresentation(viewport.getViewPresentation());
+  return imageIdsFull.reverse();
 }
 
-run();
+updateViewport();

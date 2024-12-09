@@ -73,6 +73,7 @@ export default class LabelmapBaseTool extends BaseTool {
     volumeId?: string; // volume labelmap
     referencedVolumeId?: string;
   } | null;
+
   protected _hoverData?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brushCursor: any;
@@ -84,7 +85,7 @@ export default class LabelmapBaseTool extends BaseTool {
     viewport: Types.IViewport;
   };
 
-  protected _previewData?: PreviewData = {
+  public static previewData?: PreviewData = {
     preview: null,
     element: null,
     timerStart: 0,
@@ -95,6 +96,11 @@ export default class LabelmapBaseTool extends BaseTool {
 
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
+  }
+
+  // Gets a shared preview data
+  protected get _previewData() {
+    return LabelmapBaseTool.previewData;
   }
 
   /**
@@ -345,6 +351,7 @@ export default class LabelmapBaseTool extends BaseTool {
     element = this._previewData.element,
     options?: { acceptReject: boolean }
   ) {
+    const { _previewData } = this;
     const acceptReject = options?.acceptReject;
     if (acceptReject === true) {
       this.acceptPreview(element);
@@ -352,13 +359,13 @@ export default class LabelmapBaseTool extends BaseTool {
       this.rejectPreview(element);
     }
     const enabledElement = getEnabledElement(element);
-    this._previewData.preview = this.applyActiveStrategyCallback(
+    _previewData.preview = this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.AddPreview
     );
-    this._previewData.isDrag = true;
-    return this._previewData.preview;
+    _previewData.isDrag = true;
+    return _previewData.preview;
   }
 
   /**
