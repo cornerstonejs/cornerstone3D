@@ -30,6 +30,7 @@ import {
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { fillInsideCircle } from './strategies';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -422,9 +423,22 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    const instance = new this({}, {});
-    const preview = instance.addPreview(viewport.element);
+    const brushInstance = new LabelmapBaseTool(
+      {},
+      {
+        configuration: {
+          strategies: {
+            FILL_INSIDE_CIRCLE: fillInsideCircle,
+          },
+          activeStrategy: 'FILL_INSIDE_CIRCLE',
+        },
+      }
+    );
+    const preview = brushInstance.addPreview(viewport.element);
+
+    // @ts-expect-error
     const { memo, segmentationId } = preview;
+    // @ts-expect-error
     const previewVoxels = memo?.voxelManager || preview.previewVoxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;
@@ -497,7 +511,7 @@ export default class LabelmapBaseTool extends BaseTool {
       }
     }
 
-    const slices = previewVoxels.getArrayOfSlices();
+    const slices = previewVoxels.getArrayOfModifiedSlices();
     triggerSegmentationDataModified(segmentationId, slices);
   }
 }

@@ -891,8 +891,6 @@ export class BrushTool extends LabelmapBaseTool {
     // (undocumented)
     previewCallback: () => void;
     // (undocumented)
-    prg: any;
-    // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
     static toolName: any;
@@ -3072,6 +3070,9 @@ type InteractionStartType = Types_2.CustomEventType<InteractionStartEventDetail>
 type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
+function internalAddRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
+
+// @public (undocumented)
 type InterpolationROIAnnotation = ContourAnnotation & ContourSegmentationAnnotationData & {
     metadata: {
         annotationUID?: string;
@@ -3145,6 +3146,32 @@ interface ISculptToolShape {
     renderShape(svgDrawingHelper: SVGDrawingHelper, canvasLocation: Types_2.Point2, options: any): void;
     // (undocumented)
     updateToolSize(canvasCoords: Types_2.Point2, viewport: Types_2.IViewport, activeAnnotation: ContourAnnotation): void;
+}
+
+// @public (undocumented)
+class IslandRemoval {
+    // (undocumented)
+    static covers(rle: any, row: any): boolean;
+    // (undocumented)
+    fillSegments: (index: number) => boolean;
+    // (undocumented)
+    floodFillSegmentIsland(): number;
+    // (undocumented)
+    initialize(viewport: any, segmentationVoxels: any, options: any): boolean;
+    // (undocumented)
+    previewSegmentIndex: number;
+    // (undocumented)
+    previewVoxelManager: Types_2.VoxelManager<number>;
+    // (undocumented)
+    removeExternalIslands(): void;
+    // (undocumented)
+    removeInternalIslands(): number[];
+    // (undocumented)
+    segmentIndex: number;
+    // (undocumented)
+    segmentSet: Types_2.RLEVoxelMap<SegmentationEnum>;
+    // (undocumented)
+    selectedPoints: Types_2.Point3[];
 }
 
 // @public (undocumented)
@@ -3796,6 +3823,26 @@ type NormalizedMouseEventType = Types_2.CustomEventType<MouseCustomEventDetail>;
 
 // @public (undocumented)
 type NormalizedTouchEventType = Types_2.CustomEventType<TouchCustomEventDetail>;
+
+// @public (undocumented)
+function normalizeViewportPlane(viewport: Types_2.IViewport, boundsIJK: Types_2.BoundsIJK): {
+    toIJK: any;
+    boundsIJKPrime: any;
+    fromIJK: any;
+    error: string;
+} | {
+    boundsIJKPrime: any;
+    toIJK: (ijkPrime: any) => any;
+    fromIJK: (ijk: any) => any;
+    type: string;
+    error?: undefined;
+} | {
+    boundsIJKPrime: any;
+    toIJK: ([j, k, i]: [any, any, any]) => any[];
+    fromIJK: ([i, j, k]: [any, any, any]) => any[];
+    type: string;
+    error?: undefined;
+};
 
 declare namespace orientation_2 {
     export {
@@ -4933,7 +4980,8 @@ declare namespace segmentation {
         helpers,
         polySegManager as polySeg,
         removeSegment,
-        getLabelmapImageIds
+        getLabelmapImageIds,
+        internalAddRepresentationData as addRepresentationData
     }
 }
 export { segmentation }
@@ -4963,7 +5011,8 @@ declare namespace segmentation_2 {
         getHoveredContourSegmentationAnnotation,
         getBrushToolInstances,
         growCut,
-        LabelmapMemo
+        LabelmapMemo,
+        IslandRemoval as islandRemoval
     }
 }
 
@@ -5140,7 +5189,7 @@ declare namespace selection {
 }
 
 // @public (undocumented)
-function setActiveSegmentation(viewportId: string, segmentationId: string, suppressEvent?: boolean): void;
+function setActiveSegmentation(viewportId: string, segmentationId: string): void;
 
 // @public (undocumented)
 function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): void;
@@ -6296,7 +6345,9 @@ declare namespace utilities {
         contourSegmentation,
         annotationHydration,
         getClosestImageIdForStackViewport,
-        pointInSurroundingSphereCallback
+        pointInSurroundingSphereCallback,
+        normalizeViewportPlane,
+        IslandRemoval as islandRemoval
     }
 }
 export { utilities }

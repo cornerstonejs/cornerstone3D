@@ -35,7 +35,6 @@ import LabelmapBaseTool from './LabelmapBaseTool';
 class BrushTool extends LabelmapBaseTool {
   static toolName;
 
-  prg;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
