@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
 
@@ -11,8 +12,8 @@ import { SegmentationRepresentations } from '../../../enums';
 function getActorEntry(
   viewportId: string,
   segmentationId: string,
-  filterFn: (actor: unknown) => boolean
-) {
+  filterFn: (actor: Types.ActorEntry) => boolean
+): Types.ActorEntry | undefined {
   const enabledElement = getEnabledElementByViewportId(viewportId);
 
   if (!enabledElement) {
