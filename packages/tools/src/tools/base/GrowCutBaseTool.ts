@@ -267,67 +267,14 @@ class GrowCutBaseTool extends BaseTool {
     }
   }
 
-  private async _getReferencedVolumeIdFromStackViewport(
-    viewport: Types.IViewport
-  ) {
-    if (!(viewport instanceof StackViewport)) {
-      return;
-    }
-
-    const imageIds = viewport.getImageIds();
-    const image = cache.getImage(imageIds[0]);
-
-    // Check if the stack images has already been assigned to a buffer view
-    if (image.bufferView?.volumeId) {
-      return image.bufferView?.volumeId;
-    }
-
-    const volume = await csUtils.convertStackViewportToVolume({
-      viewport,
-    });
-
-    return volume.volumeId;
-  }
-
-  private async _getLabelmapVolumeIdFromStackViewport(
-    viewport: Types.IViewport,
-    segmentationId: string,
-    toolGroupId: string
-  ) {
-    if (!(viewport instanceof StackViewport)) {
-      return;
-    }
-
-    const { representationData } =
-      segmentationState.getSegmentation(segmentationId);
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
-    const { imageIdReferenceMap } = <LabelmapSegmentationDataStack>labelmapData;
-
-    if (!imageIdReferenceMap) {
-      return;
-    }
-
-    await convertStackToVolumeSegmentation({
-      segmentationId,
-      options: {
-        toolGroupId: toolGroupId,
-      },
-    });
-
-    const { representationData: newRepresentationData } =
-      segmentationState.getSegmentation(segmentationId);
-    const newLabelmapData =
-      newRepresentationData[SegmentationRepresentations.Labelmap];
-
-    return (<LabelmapSegmentationDataVolume>newLabelmapData).volumeId;
-  }
-
   protected async getLabelmapSegmentationData(viewport: Types.IViewport) {
-    const { toolGroupId } = this;
-    const { segmentationId } = activeSegmentation.getActiveSegmentation(
-      viewport.id
-    );
+    const activeSeg = activeSegmentation.getActiveSegmentation(viewport.id);
+
+    if (!activeSeg) {
+      throw new Error('No active segmentation found');
+    }
+
+    const { segmentationId } = activeSeg;
 
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
@@ -335,21 +282,11 @@ class GrowCutBaseTool extends BaseTool {
       segmentationState.getSegmentation(segmentationId);
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-    let { volumeId: labelmapVolumeId, referencedVolumeId } =
+    const { volumeId: labelmapVolumeId, referencedVolumeId } =
       labelmapData as LabelmapSegmentationDataVolume;
 
     if (!labelmapVolumeId) {
-      labelmapVolumeId = await this._getLabelmapVolumeIdFromStackViewport(
-        viewport,
-        segmentationId,
-        toolGroupId
-      );
-    }
-
-    if (!referencedVolumeId) {
-      referencedVolumeId = await this._getReferencedVolumeIdFromStackViewport(
-        viewport
-      );
+      throw new Error('Labelmap volume id not found - not implemented');
     }
 
     return {

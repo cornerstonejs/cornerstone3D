@@ -12,35 +12,24 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   setPetTransferFunctionForVolumeActor,
-  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
-const DEFAULT_SEGMENT_CONFIG = {
-  fillAlpha: 0.1,
-  outlineOpacity: 1,
-  outlineWidthActive: 3,
-};
 
 const {
   ToolGroupManager,
   Enums: csToolsEnums,
   PanTool,
   ZoomTool,
-  StackScrollMouseWheelTool,
+  StackScrollTool,
   synchronizers,
   WholeBodySegmentTool,
-  SegmentationDisplayTool,
   segmentation,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-
-const { createCameraPositionSynchronizer, createVOISynchronizer } =
-  synchronizers;
 
 let renderingEngine;
 const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
@@ -58,19 +47,9 @@ let ctImageIds;
 let ptImageIds;
 let ctVolume;
 let ptVolume;
-const axialCameraSynchronizerId = 'AXIAL_CAMERA_SYNCHRONIZER_ID';
-const sagittalCameraSynchronizerId = 'SAGITTAL_CAMERA_SYNCHRONIZER_ID';
-const coronalCameraSynchronizerId = 'CORONAL_CAMERA_SYNCHRONIZER_ID';
-const ctVoiSynchronizerId = 'CT_VOI_SYNCHRONIZER_ID';
-const ptVoiSynchronizerId = 'PT_VOI_SYNCHRONIZER_ID';
-let axialCameraPositionSynchronizer;
-let sagittalCameraPositionSynchronizer;
-let coronalCameraPositionSynchronizer;
-let ctVoiSynchronizer;
-let ptVoiSynchronizer;
 const viewportIds = {
-  CT: { AXIAL: 'CT_AXIAL', SAGITTAL: 'CT_SAGITTAL', CORONAL: 'CT_CORONAL' },
-  PT: { AXIAL: 'PT_AXIAL', SAGITTAL: 'PT_SAGITTAL', CORONAL: 'PT_CORONAL' },
+  CT: { AXIAL: 'CT_AXIAL', SAGITTAL: 'CT_SAGITTAL' },
+  PT: { AXIAL: 'PT_AXIAL', SAGITTAL: 'PT_SAGITTAL' },
 };
 const segmentationId = 'MY_SEGMENTATION_ID';
 
@@ -84,9 +63,10 @@ addButtonToToolbar({
   title: 'Clear segmentation',
   onClick: async () => {
     const labelmapVolume = cache.getVolume(segmentationId);
-    const labelmapData = labelmapVolume.getScalarData();
+    const voxelManager = labelmapVolume.voxelManager;
 
-    labelmapData.fill(0);
+    voxelManager.clear();
+
     segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
       segmentationId
     );
@@ -157,9 +137,8 @@ async function setUpToolGroups() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
+  cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(WholeBodySegmentTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -170,18 +149,15 @@ async function setUpToolGroups() {
 
   ctToolGroup.addViewport(viewportIds.CT.AXIAL, renderingEngineId);
   ctToolGroup.addViewport(viewportIds.CT.SAGITTAL, renderingEngineId);
-  ctToolGroup.addViewport(viewportIds.CT.CORONAL, renderingEngineId);
   ptToolGroup.addViewport(viewportIds.PT.AXIAL, renderingEngineId);
   ptToolGroup.addViewport(viewportIds.PT.SAGITTAL, renderingEngineId);
-  ptToolGroup.addViewport(viewportIds.PT.CORONAL, renderingEngineId);
 
   // Manipulation Tools
   for (const toolGroup of [ctToolGroup, ptToolGroup]) {
     toolGroup.addTool(PanTool.toolName);
     toolGroup.addTool(ZoomTool.toolName);
-    toolGroup.addTool(StackScrollMouseWheelTool.toolName);
+    toolGroup.addTool(StackScrollTool.toolName);
     toolGroup.addTool(WholeBodySegmentTool.toolName);
-    toolGroup.addTool(SegmentationDisplayTool.toolName);
 
     toolGroup.setToolActive(WholeBodySegmentTool.toolName, {
       bindings: [
@@ -205,72 +181,14 @@ async function setUpToolGroups() {
       ],
     });
 
-    toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
-    toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
-
-    // Add the segmentation representation to the toolgroup
-    await segmentation.addSegmentationRepresentations(toolGroup.id, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-      },
-    ]);
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Wheel,
+        },
+      ],
+    });
   }
-}
-
-function setUpSynchronizers() {
-  axialCameraPositionSynchronizer = createCameraPositionSynchronizer(
-    axialCameraSynchronizerId
-  );
-  sagittalCameraPositionSynchronizer = createCameraPositionSynchronizer(
-    sagittalCameraSynchronizerId
-  );
-  coronalCameraPositionSynchronizer = createCameraPositionSynchronizer(
-    coronalCameraSynchronizerId
-  );
-  ctVoiSynchronizer = createVOISynchronizer(ctVoiSynchronizerId, undefined);
-  ptVoiSynchronizer = createVOISynchronizer(ptVoiSynchronizerId, undefined);
-  // Add viewports to camera synchronizers
-  [viewportIds.CT.AXIAL, viewportIds.PT.AXIAL].forEach((viewportId) => {
-    axialCameraPositionSynchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-  [viewportIds.CT.SAGITTAL, viewportIds.PT.SAGITTAL].forEach((viewportId) => {
-    sagittalCameraPositionSynchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-  [viewportIds.CT.CORONAL, viewportIds.PT.CORONAL].forEach((viewportId) => {
-    coronalCameraPositionSynchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-
-  // Add viewports to VOI synchronizers
-  [
-    viewportIds.CT.AXIAL,
-    viewportIds.CT.SAGITTAL,
-    viewportIds.CT.CORONAL,
-  ].forEach((viewportId) => {
-    ctVoiSynchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-  [
-    viewportIds.PT.AXIAL,
-    viewportIds.PT.SAGITTAL,
-    viewportIds.PT.CORONAL,
-  ].forEach((viewportId) => {
-    ptVoiSynchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
 }
 
 function getPtImageIds() {
@@ -288,27 +206,6 @@ function getCtImageIds() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot,
   });
-}
-
-async function addSegmentationsToState() {
-  // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(ctVolumeId, {
-    volumeId: segmentationId,
-  });
-
-  // Add the segmentations to state
-  segmentation.addSegmentations([
-    {
-      segmentationId,
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          volumeId: segmentationId,
-          referencedVolumeId: ctVolumeId,
-        },
-      },
-    },
-  ]);
 }
 
 async function setUpDisplay() {
@@ -332,14 +229,6 @@ async function setUpDisplay() {
       },
     },
     {
-      viewportId: viewportIds.CT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element1_3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-      },
-    },
-    {
       viewportId: viewportIds.PT.AXIAL,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2_1,
@@ -357,15 +246,6 @@ async function setUpDisplay() {
         background: <Types.Point3>[1, 1, 1],
       },
     },
-    {
-      viewportId: viewportIds.PT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element2_3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[1, 1, 1],
-      },
-    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -380,10 +260,9 @@ async function setUpDisplay() {
     [
       {
         volumeId: ctVolumeId,
-        callback: setCtTransferFunctionForVolumeActor,
       },
     ],
-    [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL, viewportIds.CT.CORONAL]
+    [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL]
   );
 
   await setVolumesForViewports(
@@ -394,57 +273,11 @@ async function setUpDisplay() {
         callback: setPetTransferFunctionForVolumeActor,
       },
     ],
-    [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL, viewportIds.PT.CORONAL]
+    [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL]
   );
-
-  initializeCameraSync(renderingEngine);
 
   // Render the viewports
   renderingEngine.render();
-}
-
-function updateLabelmapSegmentationConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.LABELMAP,
-    DEFAULT_SEGMENT_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
-function initializeCameraSync(renderingEngine) {
-  // The fusion scene is the target as it is scaled to both volumes.
-  // TODO -> We should have a more generic way to do this,
-  // So that when all data is added we can synchronize zoom/position before interaction.
-
-  const axialCtViewport = renderingEngine.getViewport(viewportIds.CT.AXIAL);
-  const sagittalCtViewport = renderingEngine.getViewport(
-    viewportIds.CT.SAGITTAL
-  );
-  const coronalCtViewport = renderingEngine.getViewport(viewportIds.CT.CORONAL);
-
-  const axialPtViewport = renderingEngine.getViewport(viewportIds.PT.AXIAL);
-  const sagittalPtViewport = renderingEngine.getViewport(
-    viewportIds.PT.SAGITTAL
-  );
-  const coronalPtViewport = renderingEngine.getViewport(viewportIds.PT.CORONAL);
-
-  initCameraSynchronization(axialPtViewport, axialCtViewport);
-  initCameraSynchronization(sagittalPtViewport, sagittalCtViewport);
-  initCameraSynchronization(coronalPtViewport, coronalCtViewport);
-
-  renderingEngine.render();
-}
-
-function initCameraSynchronization(sViewport, tViewport) {
-  // Initialise the sync as they viewports will have
-  // Different initial zoom levels for viewports of different sizes.
-
-  const camera = sViewport.getCamera();
-
-  tViewport.setCamera(camera);
 }
 
 /**
@@ -470,17 +303,39 @@ async function run() {
     imageIds: ptImageIds,
   });
 
-  addSegmentationsToState();
+  // Create a segmentation of the same resolution as the source data
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(ctVolumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: {
+          volumeId: segmentationId,
+          referencedVolumeId: ctVolumeId,
+        },
+      },
+    },
+  ]);
 
   // Display needs to be set up first so that we have viewport to reference for tools and synchronizers.
   await setUpDisplay();
 
-  // Update the labelmap segmentation config
-  updateLabelmapSegmentationConfig();
-
   // Tools and synchronizers can be set up in any order.
   await setUpToolGroups();
-  setUpSynchronizers();
+
+  const segMap = {
+    [viewportIds.CT.AXIAL]: [{ segmentationId }],
+    [viewportIds.CT.SAGITTAL]: [{ segmentationId }],
+    [viewportIds.PT.AXIAL]: [{ segmentationId }],
+    [viewportIds.PT.SAGITTAL]: [{ segmentationId }],
+  };
+
+  await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 }
 
 run();

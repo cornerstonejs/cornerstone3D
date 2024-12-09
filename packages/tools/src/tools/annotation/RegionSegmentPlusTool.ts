@@ -3,7 +3,6 @@ import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 
 import { growCut } from '../../utilities/segmentation';
-import type { GrowCutOneClickOptions as RegionSegmentPlusOptions } from '../../utilities/segmentation/growCut';
 import GrowCutBaseTool from '../base/GrowCutBaseTool';
 import type {
   GrowCutToolData,
@@ -66,7 +65,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   protected getRemoveIslandData(
     growCutData: RegionSegmentPlusToolData
   ): RemoveIslandData {
-    const { worldPoint } = this.growCutData;
+    const { worldPoint } = growCutData;
 
     return {
       worldIslandPoints: [worldPoint],

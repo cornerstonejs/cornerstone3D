@@ -30,7 +30,6 @@ const DEFAULT_SEGMENT_CONFIG = {
 
 const {
   RegionSegmentPlusTool,
-  SegmentationDisplayTool,
   segmentation,
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -110,15 +109,15 @@ addButtonToToolbar({
   title: 'Clear segmentation',
   onClick: async () => {
     const labelmapVolume = cache.getVolume(segmentationId);
-    const labelmapData = labelmapVolume.getScalarData();
+    const voxelManager = labelmapVolume.voxelManager;
 
-    labelmapData.fill(0);
+    voxelManager.clear();
+
     segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
       segmentationId
     );
   },
 });
-
 addSliderToToolbar({
   title: 'Positive threshold (40%)',
   range: [0, 100],
@@ -173,7 +172,7 @@ const updateSeedVariancesConfig = cstUtils.throttle(
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedSegmentationVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -192,17 +191,6 @@ async function addSegmentationsToState() {
   ]);
 }
 
-function updateLabelmapSegmentationConfig() {
-  const globalSegmentationConfig = segmentation.config.getGlobalConfig();
-
-  Object.assign(
-    globalSegmentationConfig.representations.LABELMAP,
-    DEFAULT_SEGMENT_CONFIG
-  );
-
-  segmentation.config.setGlobalConfig(globalSegmentationConfig);
-}
-
 /**
  * Runs the demo
  */
@@ -212,7 +200,6 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(RegionSegmentPlusTool);
-  cornerstoneTools.addTool(SegmentationDisplayTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -220,7 +207,6 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(RegionSegmentPlusTool.toolName);
-  toolGroup.addTool(SegmentationDisplayTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -231,8 +217,6 @@ async function run() {
       },
     ],
   });
-
-  toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
   addManipulationBindings(toolGroup);
 
@@ -301,21 +285,18 @@ async function run() {
     [viewportIdAxial, viewportIdCoronal, viewportIdSagittal]
   );
 
-  // Update the labelmap segmentation config
-  updateLabelmapSegmentationConfig();
-
   // Set the tool group on the viewport
   toolGroup.addViewport(viewportIdAxial, renderingEngineId);
   toolGroup.addViewport(viewportIdCoronal, renderingEngineId);
   toolGroup.addViewport(viewportIdSagittal, renderingEngineId);
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(toolGroupId, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  const segMap = {
+    [viewportIdAxial]: [{ segmentationId }],
+    [viewportIdCoronal]: [{ segmentationId }],
+    [viewportIdSagittal]: [{ segmentationId }],
+  };
+
+  await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 }
 
 run();
