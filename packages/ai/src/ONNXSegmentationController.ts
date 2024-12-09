@@ -3,6 +3,14 @@ import { utilities, eventTarget, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
+import {
+  segmentation as cstSegmentation,
+  LabelmapBaseTool,
+} from '@cornerstonejs/tools';
+
+const { strategies } = cstSegmentation;
+const { fillInsideCircle } = strategies;
+
 // @ts-ignore
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
@@ -14,6 +22,7 @@ const { Events: toolsEvents } = cornerstoneTools.Enums;
 
 const { segmentation } = cornerstoneTools;
 const { filterAnnotationsForDisplay } = cornerstoneTools.utilities.planar;
+const { IslandRemoval } = cornerstoneTools.utilities;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
@@ -115,6 +124,8 @@ export default class ONNXSegmentationController {
   public static MarkerInclude = 'MarkerInclude';
   /** Default name for a tool for exclusion points */
   public static MarkerExclude = 'MarkerExclude';
+  /** Default name for a tool for box prompt */
+  public static BoxPrompt = 'BoxPrompt';
 
   /** Some viewport options for loadImageToCanvas */
   public static viewportOptions = {
@@ -139,6 +150,7 @@ export default class ONNXSegmentationController {
   modelWidth = 1024;
   modelHeight = 1024;
 
+  tool;
   /**
    * Defines the URL endpoints and render sizes/setup for the various models that
    * can be used.
@@ -184,12 +196,12 @@ export default class ONNXSegmentationController {
   private config;
   private points = [];
   private labels = [];
+  private worldPoints = new Array<Types.Point3>();
 
   private loadingAI: Promise<unknown>;
 
   protected viewport;
   protected excludeTool = ONNXSegmentationController.MarkerExclude;
-  protected tool;
   protected currentImage;
   private listeners = [console.log];
   protected desiredImage = {
@@ -210,10 +222,25 @@ export default class ONNXSegmentationController {
   protected promptAnnotationTypes = [
     ONNXSegmentationController.MarkerInclude,
     ONNXSegmentationController.MarkerExclude,
+    ONNXSegmentationController.BoxPrompt,
   ];
-  /** The type name of the preview tool used for the accept/reject labelmap preview */
-  protected previewToolType = 'ThresholdCircle';
 
+  /**
+   * Fill internal islands by size, and consider islands at the edge to
+   * be included as internal.
+   */
+  protected islandFillOptions = {
+    maxInternalRemove: 16,
+    fillInternalEdge: true,
+  };
+
+  /**
+   * The p cutoff to apply, values p and above are included.
+   * The values are pixel values, so 0 means everything, while 255 means
+   * only certainly included.  A value of 64 seems reasonable as it omits low probability areas,
+   * but most areas are >190 in actual practice.
+   */
+  protected pCutoff = 64;
   /**
    * Configure the ML Controller.  No parameters are required, and will default
    * to the basic set of controls using MarkerInclude/Exclude and the default SAM
@@ -237,7 +264,7 @@ export default class ONNXSegmentationController {
       promptAnnotationTypes: null,
       models: null,
       modelName: null,
-      previewToolType: 'ThresholdCircle',
+      islandFillOptions: undefined,
     }
   ) {
     if (options.listeners) {
@@ -251,8 +278,9 @@ export default class ONNXSegmentationController {
     if (options.models) {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
-    this.previewToolType = options.previewToolType || this.previewToolType;
     this.config = this.getConfig(options.modelName);
+    this.islandFillOptions =
+      options.islandFillOptions ?? this.islandFillOptions;
   }
 
   /**
@@ -268,14 +296,20 @@ export default class ONNXSegmentationController {
     return this.loadingAI;
   }
 
+  public setPCutoff(cutoff: number) {
+    this.pCutoff = cutoff;
+    this.annotationsNeedUpdating = true;
+    this.tryLoad();
+  }
+
   /**
-   * Connects a viewport up to get anotations and updates
+   * Connects a viewport up to get annotations and updates
    * Note that only one viewport at a time is permitted as the model needs to
    * load data about the active viewport.  This method will disconnect a previous
    * viewport automatically.
    *
    * The viewport must have a labelmap segmentation registered, as well as a
-   * tool which extendds LabelmapBaseTool to use for setting the preview view
+   * tool which extends LabelmapBaseTool to use for setting the preview view
    * once the decode is completed.  This is provided as toolForPreview
    *
    * @param viewport - a viewport to listen for annotations and rendered events
@@ -289,14 +323,31 @@ export default class ONNXSegmentationController {
     }
     this.currentImage = null;
     this.viewport = viewport;
-    const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroupForViewport(
-      viewport.id,
-      viewport.getRenderingEngine()?.id
+
+    const brushInstance = new LabelmapBaseTool(
+      {},
+      {
+        configuration: {
+          strategies: {
+            FILL_INSIDE_CIRCLE: fillInsideCircle,
+          },
+          activeStrategy: 'FILL_INSIDE_CIRCLE',
+          preview: {
+            enabled: true,
+            previewColors: {
+              0: [255, 255, 255, 128],
+              1: [0, 255, 255, 192],
+              2: [255, 0, 255, 255],
+            },
+          },
+        },
+      }
     );
-    this.tool = toolGroup.getToolInstance(this.previewToolType);
+
+    this.tool = brushInstance;
 
     desiredImage.imageId =
-      viewport.getCurrentImageId() || viewport.getReferenceId();
+      viewport.getCurrentImageId?.() || viewport.getViewReferenceId();
     if (desiredImage.imageId.startsWith('volumeId:')) {
       desiredImage.sampleImageId = viewport.getImageIds(
         viewport.getVolumeId()
@@ -324,6 +375,14 @@ export default class ONNXSegmentationController {
     }
   }
 
+  public acceptPreview(element) {
+    this.tool.acceptPreview(element);
+  }
+
+  public rejectPreview(element) {
+    this.tool.rejectPreview(element);
+  }
+
   /**
    * The interpolateScroll checks to see if there are any annotations on the
    * current image in the specified viewport, and if so, scrolls in the given
@@ -339,6 +398,7 @@ export default class ONNXSegmentationController {
    */
   public async interpolateScroll(viewport = this.viewport, dir = 1) {
     const { element } = viewport;
+
     this.tool.acceptPreview(element);
     const promptAnnotations = this.getPromptAnnotations(viewport);
 
@@ -428,7 +488,7 @@ export default class ONNXSegmentationController {
   protected viewportRenderedListener = (_event) => {
     const { viewport, currentImage, desiredImage } = this;
     desiredImage.imageId =
-      viewport.getCurrentImageId() || viewport.getReferenceId();
+      viewport.getCurrentImageId() || viewport.getViewReferenceId();
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
     if (!desiredImage.imageId) {
       return;
@@ -541,6 +601,7 @@ export default class ONNXSegmentationController {
     this.getPromptAnnotations(viewport).forEach((annotation) =>
       annotationState.removeAnnotation(annotation.annotationUID)
     );
+    this.tool.rejectPreview(this.viewport.element);
   }
 
   /**
@@ -575,7 +636,8 @@ export default class ONNXSegmentationController {
       return this.cacheImageEncodings(current, offset, length);
     }
     const imageId =
-      view.referencedImageId || viewport.getReferenceId({ sliceIndex: index });
+      view.referencedImageId ||
+      viewport.getViewReferenceId({ sliceIndex: index });
     if (!imageEncodings.has(imageId)) {
       // Try loading from storage
       await this.loadStorageImageEncoding(current, imageId, index);
@@ -744,7 +806,7 @@ export default class ONNXSegmentationController {
     const { viewport, desiredImage } = this;
     if (!desiredImage.imageId || options.resetImage) {
       desiredImage.imageId =
-        viewport.getCurrentImageId() || viewport.getReferenceId();
+        viewport.getCurrentImageId() || viewport.getViewReferenceId();
       this.currentImage = null;
     }
     // Always use session 0 for the current session
@@ -795,20 +857,34 @@ export default class ONNXSegmentationController {
     ) {
       return;
     }
-    const currentAnnotations = this.getPromptAnnotations();
+    const promptAnnotations = this.getPromptAnnotations();
     this.annotationsNeedUpdating = false;
     this.points = [];
     this.labels = [];
-    if (!currentAnnotations?.length) {
+    this.worldPoints = [];
+
+    if (!promptAnnotations?.length) {
       return;
     }
-    for (const annotation of currentAnnotations) {
+    for (const annotation of promptAnnotations) {
       const handle = annotation.data.handles.points[0];
       const point = this.mapAnnotationPoint(handle);
-      const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
-      this.points.push(point[0]);
-      this.points.push(point[1]);
-      this.labels.push(label);
+      this.points.push(...point);
+      if (
+        annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt
+      ) {
+        // 2 and 3 are the codes for the handles on a box prompt
+        this.labels.push(2, 3);
+        this.points.push(
+          ...this.mapAnnotationPoint(annotation.data.handles.points[3])
+        );
+      } else {
+        const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
+        if (label) {
+          this.worldPoints.push(handle);
+        }
+        this.labels.push(label);
+      }
     }
     this.runDecode();
   }
@@ -901,7 +977,7 @@ export default class ONNXSegmentationController {
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
-    const { previewSegmentIndex, memo, segmentationId } = preview;
+    const { previewSegmentIndex, memo, segmentationId, segmentIndex } = preview;
     const previewVoxelManager =
       memo?.voxelManager || preview.previewVoxelManager;
     const { dimensions } = previewVoxelManager;
@@ -934,13 +1010,34 @@ export default class ONNXSegmentationController {
         // 4 values - RGBA - per pixel
         const maskIndex = 4 * (i + j * this.maxWidth);
         const v = data[maskIndex];
-        if (v > 0) {
+        if (v > this.pCutoff) {
           previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
         } else {
           previewVoxelManager.setAtIJKPoint(ijkPoint, null);
         }
       }
     }
+
+    const voxelManager =
+      previewVoxelManager.sourceVoxelManager || previewVoxelManager;
+
+    if (this.islandFillOptions) {
+      const islandRemoval = new IslandRemoval(this.islandFillOptions);
+      if (
+        islandRemoval.initialize(viewport, voxelManager, {
+          previewSegmentIndex,
+          segmentIndex,
+          points: this.worldPoints.map((point) =>
+            imageData.worldToIndex(point).map(Math.round)
+          ),
+        })
+      ) {
+        islandRemoval.floodFillSegmentIsland();
+        islandRemoval.removeExternalIslands();
+        islandRemoval.removeInternalIslands();
+      }
+    }
+
     triggerSegmentationDataModified(segmentationId);
   }
 
@@ -981,14 +1078,7 @@ export default class ONNXSegmentationController {
       const session = useSession.decoder;
 
       const feed = feedForSam(emb, points, labels);
-      const start = performance.now();
       const res = await session.run(feed);
-      this.log(
-        Loggers.Decoder,
-        `decoder ${useSession.sessionIndex} ${(
-          performance.now() - start
-        ).toFixed(1)} ms`
-      );
 
       for (let i = 0; i < points.length; i += 2) {
         const label = labels[i / 2];
@@ -1188,8 +1278,6 @@ export default class ONNXSegmentationController {
       const pair = vars[i].split('=');
       if (pair[0] in config) {
         config[pair[0]] = decodeURIComponent(pair[1]);
-      } else if (pair[0].length > 0) {
-        throw new Error('unknown argument: ' + pair[0]);
       }
     }
     config.threads = parseInt(String(config.threads));

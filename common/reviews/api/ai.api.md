@@ -34,12 +34,16 @@ export class ONNXSegmentationController {
         promptAnnotationTypes: any;
         models: any;
         modelName: any;
-        previewToolType: string;
+        islandFillOptions: any;
     });
+    // (undocumented)
+    acceptPreview(element: any): void;
     // (undocumented)
     protected annotationModifiedListener: (_event?: any) => void;
     // (undocumented)
     protected annotationsNeedUpdating: boolean;
+    // (undocumented)
+    static BoxPrompt: string;
     // (undocumented)
     protected boxRadius: number;
     // (undocumented)
@@ -96,6 +100,11 @@ export class ONNXSegmentationController {
     // (undocumented)
     protected isGpuInUse: boolean;
     // (undocumented)
+    protected islandFillOptions: {
+        maxInternalRemove: number;
+        fillInternalEdge: boolean;
+    };
+    // (undocumented)
     protected load(): Promise<void>;
     // (undocumented)
     loadModels(models: any, imageSession?: any): Promise<void>;
@@ -149,19 +158,23 @@ export class ONNXSegmentationController {
     // (undocumented)
     modelWidth: number;
     // (undocumented)
-    protected previewToolType: string;
+    protected pCutoff: number;
     // (undocumented)
     protected promptAnnotationTypes: string[];
+    // (undocumented)
+    rejectPreview(element: any): void;
     // (undocumented)
     restoreImageEncoding(session: any, imageId: any): Promise<any>;
     // (undocumented)
     protected runDecode(): Promise<void>;
     // (undocumented)
+    setPCutoff(cutoff: number): void;
+    // (undocumented)
     protected sharedImageEncoding: any;
     // (undocumented)
     storeImageEncoding(session: any, imageId: any, data: any): Promise<void>;
     // (undocumented)
-    protected tool: any;
+    tool: any;
     // (undocumented)
     tryLoad(options?: {
         resetImage: boolean;

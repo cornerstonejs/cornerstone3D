@@ -1,11 +1,13 @@
-import { getRenderingEngine } from '@cornerstonejs/core';
+import { getRenderingEngine, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 
 import { growCut } from '../../utilities/segmentation';
-import type { GrowCutOneClickOptions as RegionSegmentPlusOptions } from '../../utilities/segmentation/growCut';
 import GrowCutBaseTool from '../base/GrowCutBaseTool';
-import type { GrowCutToolData } from '../base/GrowCutBaseTool';
+import type {
+  GrowCutToolData,
+  RemoveIslandData,
+} from '../base/GrowCutBaseTool';
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
@@ -23,6 +25,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
+        islandRemoval: {
+          /**
+           * Enable/disable island removal
+           */
+          enabled: true,
+        },
       },
     }
   ) {
@@ -36,43 +44,57 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const { currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
 
-    super.preMouseDownCallback(evt);
+    await super.preMouseDownCallback(evt);
+
+    this.growCutData = csUtils.deepMerge(this.growCutData, {
+      worldPoint,
+      islandRemoval: {
+        worldIslandPoints: [worldPoint],
+      },
+    });
+
     this.growCutData.worldPoint = worldPoint;
+    this.growCutData.islandRemoval = {
+      worldIslandPoints: [worldPoint],
+    };
     this.runGrowCut();
 
     return true;
   }
 
-  protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {
+  protected getRemoveIslandData(
+    growCutData: RegionSegmentPlusToolData
+  ): RemoveIslandData {
+    const { worldPoint } = growCutData;
+
+    return {
+      worldIslandPoints: [worldPoint],
+    };
+  }
+
+  protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { segmentIndex, referencedVolumeId },
+      segmentation: { referencedVolumeId },
       renderingEngineId,
       viewportId,
       worldPoint,
-    } = this.growCutData;
+      options,
+    } = growCutData;
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
 
-    const {
-      positiveSeedVariance,
-      negativeSeedVariance,
+    const { subVolumePaddingPercentage } = this.configuration;
+    const mergedOptions = {
+      ...options,
       subVolumePaddingPercentage,
-    } = this.configuration;
-
-    const options: RegionSegmentPlusOptions = {
-      positiveSeedValue: segmentIndex,
-      negativeSeedValue: 255,
-      positiveSeedVariance: positiveSeedVariance,
-      negativeSeedVariance: negativeSeedVariance,
-      subVolumePaddingPercentage: subVolumePaddingPercentage,
     };
 
-    return await growCut.runOneClickGrowCut(
+    return growCut.runOneClickGrowCut(
       referencedVolumeId,
       worldPoint,
       viewport,
-      options
+      mergedOptions
     );
   }
 }

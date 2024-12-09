@@ -43,6 +43,7 @@ import AnnotationEraserTool from './AnnotationEraserTool';
 import RegionSegmentTool from './annotation/RegionSegmentTool';
 import RegionSegmentPlusTool from './annotation/RegionSegmentPlusTool';
 import WholeBodySegmentTool from './annotation/WholeBodySegmentTool';
+import LabelmapBaseTool from './segmentation/LabelmapBaseTool';
 
 // Segmentation Tools
 import RectangleScissorsTool from './segmentation/RectangleScissorsTool';
@@ -55,6 +56,8 @@ import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
+
+import * as strategies from './segmentation/strategies';
 
 export {
   // ~~ BASE
@@ -118,4 +121,6 @@ export {
   RegionSegmentTool,
   RegionSegmentPlusTool,
   WholeBodySegmentTool,
+  LabelmapBaseTool,
+  strategies,
 };

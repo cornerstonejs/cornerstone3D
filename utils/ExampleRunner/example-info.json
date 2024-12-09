@@ -410,6 +410,10 @@
       "sculptorTool": {
         "name": "sculptorTool Tool",
         "description": "Demonstrates how to have similar brush tool effects on the contour"
+      },
+      "labelmapEditWithContour": {
+        "name": "Labelmap Editing with Contour",
+        "description": "Use contour tools to edit the labelmap"
       }
     },
     "advanced-gpu-segmentation": {

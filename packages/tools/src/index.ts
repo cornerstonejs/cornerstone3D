@@ -75,6 +75,7 @@ import {
   RegionSegmentPlusTool,
   RegionSegmentTool,
   WholeBodySegmentTool,
+  LabelmapBaseTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -170,4 +171,5 @@ export {
   RegionSegmentPlusTool,
   RegionSegmentTool,
   WholeBodySegmentTool,
+  LabelmapBaseTool,
 };

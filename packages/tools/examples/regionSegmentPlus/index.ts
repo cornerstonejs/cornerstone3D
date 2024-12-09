@@ -13,6 +13,7 @@ import {
   createInfoSection,
   addManipulationBindings,
   addButtonToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -26,6 +27,7 @@ const {
   segmentation,
   ToolGroupManager,
   Enums: csToolsEnums,
+  utilities: cstUtils,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
@@ -39,6 +41,7 @@ const viewportIdCoronal = 'CT_VOLUME_CORONAL';
 const viewportIdSagittal = 'CT_VOLUME_SAGITTAL';
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+let toolGroup;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -83,22 +86,87 @@ content.appendChild(info);
 // ==[ Toolbar ]================================================================
 
 addButtonToToolbar({
+  title: 'Shrink',
+  onClick: async () => {
+    toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).shrink();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Expand',
+  onClick: async () => {
+    toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).expand();
+  },
+});
+
+addButtonToToolbar({
   title: 'Clear segmentation',
   onClick: async () => {
     const labelmapVolume = cache.getVolume(segmentationId);
-    labelmapVolume.voxelManager.clear();
+    const voxelManager = labelmapVolume.voxelManager;
+
+    voxelManager.clear();
 
     segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
       segmentationId
     );
   },
 });
+addSliderToToolbar({
+  title: 'Positive threshold (40%)',
+  range: [0, 100],
+  defaultValue: 40,
+  label: {
+    html: 'test',
+  },
+  onSelectedValueChange: (value: string) => {
+    updateSeedVariancesConfig({ positiveSeedVariance: value });
+  },
+  updateLabelOnChange: (value: string, label: HTMLElement) => {
+    label.innerHTML = `Positive threshold (${value}%)`;
+  },
+});
+
+addSliderToToolbar({
+  title: 'Negative threshold (90%)',
+  range: [0, 100],
+  defaultValue: 90,
+  label: {
+    html: 'test',
+  },
+  onSelectedValueChange: (value: string) => {
+    updateSeedVariancesConfig({ negativeSeedVariance: value });
+  },
+  updateLabelOnChange: (value: string, label: HTMLElement) => {
+    label.innerHTML = `Negative threshold (${value}%)`;
+  },
+});
 
 // =============================================================================
 
+const updateSeedVariancesConfig = cstUtils.throttle(
+  ({ positiveSeedVariance, negativeSeedVariance }) => {
+    const toolInstance = toolGroup.getToolInstance(
+      RegionSegmentPlusTool.toolName
+    );
+    const { configuration: config } = toolInstance;
+
+    if (positiveSeedVariance !== undefined) {
+      config.positiveSeedVariance = Number(positiveSeedVariance) / 100;
+    }
+
+    if (negativeSeedVariance !== undefined) {
+      config.negativeSeedVariance = Number(negativeSeedVariance) / 100;
+    }
+
+    toolInstance.refresh();
+  },
+  1000
+);
+
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -129,7 +197,7 @@ async function run() {
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
   toolGroup.addTool(RegionSegmentPlusTool.toolName);
@@ -148,6 +216,7 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
+    // PT
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
     SeriesInstanceUID:
@@ -216,32 +285,12 @@ async function run() {
   toolGroup.addViewport(viewportIdSagittal, renderingEngineId);
 
   const segMap = {
-    [viewportIdAxial]: [
-      {
-        segmentationId,
-      },
-    ],
-    [viewportIdCoronal]: [
-      {
-        segmentationId,
-      },
-    ],
-    [viewportIdSagittal]: [
-      {
-        segmentationId,
-      },
-    ],
+    [viewportIdAxial]: [{ segmentationId }],
+    [viewportIdCoronal]: [{ segmentationId }],
+    [viewportIdSagittal]: [{ segmentationId }],
   };
-  // Add the segmentation representation to the toolgroup
+
   await segmentation.addLabelmapRepresentationToViewportMap(segMap);
-
-  const viewport = renderingEngine.getViewport(
-    viewportIdCoronal
-  ) as Types.IVolumeViewport;
-
-  viewport.setProperties({
-    interpolationType: Enums.InterpolationType.NEAREST,
-  });
 }
 
 run();
