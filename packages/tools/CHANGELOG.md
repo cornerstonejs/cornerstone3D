@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.6...v2.9.0) (2024-12-09)
+
+### Features
+
+- add grow shrink to growcut tools and box prompt to sam model ([#1690](https://github.com/cornerstonejs/cornerstone3D/issues/1690)) ([c46ab42](https://github.com/cornerstonejs/cornerstone3D/commit/c46ab42b5ce299ef6e8095af12912693a5f29ce1))
+
 ## [2.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.5...v2.8.6) (2024-12-09)
 
 **Note:** Version bump only for package @cornerstonejs/tools
