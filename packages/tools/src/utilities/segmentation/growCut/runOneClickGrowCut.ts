@@ -14,10 +14,6 @@ const SUBVOLUME_PADDING_PERCENTAGE = 0.2;
 const SUBVOLUME_MIN_PADDING = 5;
 
 type GrowCutOneClickOptions = GrowCutOptions & {
-  positiveSeedValue?: number;
-  negativeSeedValue?: number;
-  positiveSeedVariance?: number;
-  negativeSeedVariance?: number;
   subVolumePaddingPercentage?: number | [number, number, number];
   subVolumeMinPadding?: number | [number, number, number];
 };

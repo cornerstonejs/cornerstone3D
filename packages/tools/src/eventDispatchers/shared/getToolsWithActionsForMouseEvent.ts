@@ -47,7 +47,7 @@ export default function getToolsWithActionsForMouseEvent(
     const action = actions.find(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (action: any) =>
-        action.bindings.length &&
+        action.bindings?.length &&
         action.bindings.some(
           (binding) =>
             binding.mouseButton === mouseButton &&

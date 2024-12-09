@@ -19,8 +19,6 @@ type BoundingBoxInfo = {
 };
 
 type GrowCutBoundingBoxOptions = GrowCutOptions & {
-  positiveSeedValue?: number;
-  negativeSeedValue?: number;
   negativePixelRange?: [number, number];
   positivePixelRange?: [number, number];
 };

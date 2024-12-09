@@ -1,4 +1,4 @@
-import { getRenderingEngine } from '@cornerstonejs/core';
+import { getRenderingEngine, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 
@@ -45,7 +45,15 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const { currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
 
-    super.preMouseDownCallback(evt);
+    await super.preMouseDownCallback(evt);
+
+    this.growCutData = csUtils.deepMerge(this.growCutData, {
+      worldPoint,
+      islandRemoval: {
+        worldIslandPoints: [worldPoint],
+      },
+    });
+
     this.growCutData.worldPoint = worldPoint;
     this.growCutData.islandRemoval = {
       worldIslandPoints: [worldPoint],
@@ -55,7 +63,9 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     return true;
   }
 
-  protected getRemoveIslandData(): RemoveIslandData {
+  protected getRemoveIslandData(
+    growCutData: RegionSegmentPlusToolData
+  ): RemoveIslandData {
     const { worldPoint } = this.growCutData;
 
     return {
@@ -63,36 +73,29 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     };
   }
 
-  protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {
+  protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { segmentIndex, referencedVolumeId },
+      segmentation: { referencedVolumeId },
       renderingEngineId,
       viewportId,
       worldPoint,
-    } = this.growCutData;
+      options,
+    } = growCutData;
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
 
-    const {
-      positiveSeedVariance,
-      negativeSeedVariance,
+    const { subVolumePaddingPercentage } = this.configuration;
+    const mergedOptions = {
+      ...options,
       subVolumePaddingPercentage,
-    } = this.configuration;
-
-    const options: RegionSegmentPlusOptions = {
-      positiveSeedValue: segmentIndex,
-      negativeSeedValue: 255,
-      positiveSeedVariance: positiveSeedVariance,
-      negativeSeedVariance: negativeSeedVariance,
-      subVolumePaddingPercentage: subVolumePaddingPercentage,
     };
 
-    return await growCut.runOneClickGrowCut(
+    return growCut.runOneClickGrowCut(
       referencedVolumeId,
       worldPoint,
       viewport,
-      options
+      mergedOptions
     );
   }
 }

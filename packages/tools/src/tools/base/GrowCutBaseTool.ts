@@ -3,8 +3,9 @@ import {
   utilities as csUtils,
   cache,
   getRenderingEngine,
+  type Types,
+  StackViewport,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
 import type {
@@ -59,13 +60,16 @@ type RemoveIslandData = {
 
 class GrowCutBaseTool extends BaseTool {
   static toolName;
-
   protected growCutData: GrowCutToolData | null;
+  private static lastGrowCutCommand = null;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     const baseToolProps = csUtils.deepMerge(
       {
         configuration: {
+          positiveSeedVariance: 0.1,
+          negativeSeedVariance: 0.9,
+          shrinkExpandIncrement: 0.05,
           islandRemoval: {
             /**
              * Enable/disable island removal
@@ -95,7 +99,7 @@ class GrowCutBaseTool extends BaseTool {
       segmentIndex,
       labelmapVolumeId,
       referencedVolumeId,
-    } = this.getLabelmapSegmentationData(viewport);
+    } = await this.getLabelmapSegmentationData(viewport);
 
     if (!this._isOrthogonalView(viewport, referencedVolumeId)) {
       throw new Error('Oblique view is not supported yet');
@@ -121,25 +125,83 @@ class GrowCutBaseTool extends BaseTool {
     return true;
   }
 
-  protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {
+  public shrink() {
+    this._runLastCommand({
+      shrinkExpandAmount: -this.configuration.shrinkExpandIncrement,
+    });
+  }
+
+  public expand() {
+    this._runLastCommand({
+      shrinkExpandAmount: this.configuration.shrinkExpandIncrement,
+    });
+  }
+
+  public refresh() {
+    this._runLastCommand();
+  }
+
+  protected async getGrowCutLabelmap(
+    _growCutData: GrowCutToolData
+  ): Promise<Types.IImageVolume> {
     throw new Error('Not implemented');
   }
 
   protected async runGrowCut() {
+    const { growCutData, configuration: config } = this;
     const {
       segmentation: { segmentationId, segmentIndex, labelmapVolumeId },
-    } = this.growCutData;
+    } = growCutData;
+
+    const hasSeedVarianceData =
+      config.positiveSeedVariance !== undefined &&
+      config.negativeSeedVariance !== undefined;
+
     const labelmap = cache.getVolume(labelmapVolumeId);
-    const growcutLabelmap = await this.getGrowCutLabelmap();
+    let shrinkExpandValue = 0;
 
-    this.applyGrowCutLabelmap(
-      segmentationId,
-      segmentIndex,
-      labelmap,
-      growcutLabelmap
-    );
+    const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
+      const { positiveSeedVariance, negativeSeedVariance } = config;
+      let newPositiveSeedVariance = undefined;
+      let newNegativeSeedVariance = undefined;
 
-    // this._removeIslands(this.growCutData);
+      shrinkExpandValue += shrinkExpandAmount;
+
+      if (hasSeedVarianceData) {
+        newPositiveSeedVariance = positiveSeedVariance + shrinkExpandValue;
+        newNegativeSeedVariance = negativeSeedVariance + shrinkExpandValue;
+      }
+
+      const updatedGrowCutData = Object.assign({}, growCutData, {
+        options: {
+          positiveSeedValue: segmentIndex,
+          negativeSeedValue: 255,
+          positiveSeedVariance: newPositiveSeedVariance,
+          negativeSeedVariance: newNegativeSeedVariance,
+        },
+      });
+
+      const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
+
+      this.applyGrowCutLabelmap(
+        segmentationId,
+        segmentIndex,
+        labelmap,
+        growcutLabelmap
+      );
+
+      this._removeIslands(growCutData);
+    };
+
+    // run and store the command for later execution
+    await growCutCommand();
+
+    // Only growcut with seed variance data can shrink/expand
+    if (hasSeedVarianceData) {
+      GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
+    }
+
+    this.growCutData = null;
   }
 
   protected applyGrowCutLabelmap(
@@ -150,8 +212,7 @@ class GrowCutBaseTool extends BaseTool {
   ) {
     const srcLabelmapData =
       sourceLabelmap.voxelManager.getCompleteScalarDataArray();
-    const targetLabelmapData =
-      targetLabelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
+    const tgtVoxelManager = targetLabelmap.voxelManager;
 
     const [srcColumns, srcRows, srcNumSlices] = sourceLabelmap.dimensions;
     const [tgtColumns, tgtRows] = targetLabelmap.dimensions;
@@ -169,7 +230,7 @@ class GrowCutBaseTool extends BaseTool {
         //   - from world space to volume index space
         //
         // TODO: create a matrix that coverts the coordinates from sub-volume
-        // index space to volume index space without getting into world space.
+        // index space to volume index space without getting into world space
         const srcRowIJK: Types.Point3 = [0, srcRow, srcSlice];
         const rowVoxelWorld = transformIndexToWorld(
           sourceLabelmap.imageData,
@@ -185,17 +246,138 @@ class GrowCutBaseTool extends BaseTool {
           tgtColumn + tgtRow * tgtColumns + tgtSlice * tgtPixelsPerSlice;
 
         for (let column = 0; column < srcColumns; column++) {
-          targetLabelmapData[tgtOffset + column] =
+          const labelmapValue =
             srcLabelmapData[srcOffset + column] === segmentIndex
               ? segmentIndex
               : 0;
+
+          tgtVoxelManager.setAtIndex(tgtOffset + column, labelmapValue);
         }
       }
     }
 
-    targetLabelmap.voxelManager.setCompleteScalarDataArray(targetLabelmapData);
-
     triggerSegmentationDataModified(segmentationId);
+  }
+
+  private _runLastCommand({ shrinkExpandAmount = 0 } = {}) {
+    const cmd = GrowCutBaseTool.lastGrowCutCommand;
+
+    if (cmd) {
+      cmd({ shrinkExpandAmount });
+    }
+  }
+
+  private async _getReferencedVolumeIdFromStackViewport(
+    viewport: Types.IViewport
+  ) {
+    if (!(viewport instanceof StackViewport)) {
+      return;
+    }
+
+    const imageIds = viewport.getImageIds();
+    const image = cache.getImage(imageIds[0]);
+
+    // Check if the stack images has already been assigned to a buffer view
+    if (image.bufferView?.volumeId) {
+      return image.bufferView?.volumeId;
+    }
+
+    const volume = await csUtils.convertStackViewportToVolume({
+      viewport,
+    });
+
+    return volume.volumeId;
+  }
+
+  private async _getLabelmapVolumeIdFromStackViewport(
+    viewport: Types.IViewport,
+    segmentationId: string,
+    toolGroupId: string
+  ) {
+    if (!(viewport instanceof StackViewport)) {
+      return;
+    }
+
+    const { representationData } =
+      segmentationState.getSegmentation(segmentationId);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
+    const { imageIdReferenceMap } = <LabelmapSegmentationDataStack>labelmapData;
+
+    if (!imageIdReferenceMap) {
+      return;
+    }
+
+    await convertStackToVolumeSegmentation({
+      segmentationId,
+      options: {
+        toolGroupId: toolGroupId,
+      },
+    });
+
+    const { representationData: newRepresentationData } =
+      segmentationState.getSegmentation(segmentationId);
+    const newLabelmapData =
+      newRepresentationData[SegmentationRepresentations.Labelmap];
+
+    return (<LabelmapSegmentationDataVolume>newLabelmapData).volumeId;
+  }
+
+  protected async getLabelmapSegmentationData(viewport: Types.IViewport) {
+    const { toolGroupId } = this;
+    const { segmentationId } = activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+
+    const segmentIndex =
+      segmentIndexController.getActiveSegmentIndex(segmentationId);
+    const { representationData } =
+      segmentationState.getSegmentation(segmentationId);
+    const labelmapData =
+      representationData[SegmentationRepresentations.Labelmap];
+    let { volumeId: labelmapVolumeId, referencedVolumeId } =
+      labelmapData as LabelmapSegmentationDataVolume;
+
+    if (!labelmapVolumeId) {
+      labelmapVolumeId = await this._getLabelmapVolumeIdFromStackViewport(
+        viewport,
+        segmentationId,
+        toolGroupId
+      );
+    }
+
+    if (!referencedVolumeId) {
+      referencedVolumeId = await this._getReferencedVolumeIdFromStackViewport(
+        viewport
+      );
+    }
+
+    return {
+      segmentationId,
+      segmentIndex,
+      labelmapVolumeId,
+      referencedVolumeId,
+    };
+  }
+
+  protected _isOrthogonalView(
+    viewport: Types.IViewport,
+    referencedVolumeId: string
+  ) {
+    const volume = cache.getVolume(referencedVolumeId);
+    const volumeImageData = volume.imageData;
+    const camera = viewport.getCamera();
+    const { ijkVecColDir, ijkVecSliceDir } = csUtils.getVolumeDirectionVectors(
+      volumeImageData,
+      camera
+    );
+
+    return [ijkVecColDir, ijkVecSliceDir].every(
+      (vec) =>
+        csUtils.isEqual(Math.abs(vec[0]), 1) ||
+        csUtils.isEqual(Math.abs(vec[1]), 1) ||
+        csUtils.isEqual(Math.abs(vec[2]), 1)
+    );
   }
 
   protected getRemoveIslandData(
@@ -270,47 +452,27 @@ class GrowCutBaseTool extends BaseTool {
     });
   }
 
-  protected getLabelmapSegmentationData(viewport: Types.IViewport) {
-    const { segmentationId } = activeSegmentation.getActiveSegmentation(
-      viewport.id
-    );
-    const segmentIndex =
-      segmentIndexController.getActiveSegmentIndex(segmentationId);
-    const { representationData } =
-      segmentationState.getSegmentation(segmentationId);
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
+  // protected getLabelmapSegmentationData(viewport: Types.IViewport) {
+  //   const { segmentationId } = activeSegmentation.getActiveSegmentation(
+  //     viewport.id
+  //   );
+  //   const segmentIndex =
+  //     segmentIndexController.getActiveSegmentIndex(segmentationId);
+  //   const { representationData } =
+  //     segmentationState.getSegmentation(segmentationId);
+  //   const labelmapData =
+  //     representationData[SegmentationRepresentations.Labelmap];
 
-    const { volumeId: labelmapVolumeId, referencedVolumeId } =
-      labelmapData as LabelmapSegmentationDataVolume;
+  //   const { volumeId: labelmapVolumeId, referencedVolumeId } =
+  //     labelmapData as LabelmapSegmentationDataVolume;
 
-    return {
-      segmentationId,
-      segmentIndex,
-      labelmapVolumeId,
-      referencedVolumeId,
-    };
-  }
-
-  protected _isOrthogonalView(
-    viewport: Types.IViewport,
-    referencedVolumeId: string
-  ) {
-    const volume = cache.getVolume(referencedVolumeId);
-    const volumeImageData = volume.imageData;
-    const camera = viewport.getCamera();
-    const { ijkVecColDir, ijkVecSliceDir } = csUtils.getVolumeDirectionVectors(
-      volumeImageData,
-      camera
-    );
-
-    return [ijkVecColDir, ijkVecSliceDir].every(
-      (vec) =>
-        csUtils.isEqual(Math.abs(vec[0]), 1) ||
-        csUtils.isEqual(Math.abs(vec[1]), 1) ||
-        csUtils.isEqual(Math.abs(vec[2]), 1)
-    );
-  }
+  //   return {
+  //     segmentationId,
+  //     segmentIndex,
+  //     labelmapVolumeId,
+  //     referencedVolumeId,
+  //   };
+  // }
 }
 
 GrowCutBaseTool.toolName = 'GrowCutBaseTool';

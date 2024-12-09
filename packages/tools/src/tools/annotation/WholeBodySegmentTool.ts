@@ -92,7 +92,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       worldPoint
     );
 
-    super.preMouseDownCallback(evt);
+    await super.preMouseDownCallback(evt);
     this.growCutData.horizontalLines = [linePoints, linePoints];
     this._activateDraw(element);
 
@@ -187,13 +187,13 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     );
   }
 
-  protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {
+  protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
       segmentation: { segmentIndex, referencedVolumeId },
       renderingEngineId,
       viewportId,
       horizontalLines,
-    } = this.growCutData;
+    } = growCutData;
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
     const [line1, line2] = horizontalLines;
@@ -427,6 +427,6 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
   }
 }
 
-WholeBodySegmentTool.toolName = 'WholeBodySegmentTool';
+WholeBodySegmentTool.toolName = 'WholeBodySegment';
 
 export default WholeBodySegmentTool;

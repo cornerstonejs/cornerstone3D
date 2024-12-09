@@ -22,6 +22,12 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
+const DEFAULT_SEGMENT_CONFIG = {
+  fillAlpha: 0.1,
+  outlineOpacity: 1,
+  outlineWidthActive: 3,
+};
+
 const {
   RegionSegmentTool,
   segmentation,
@@ -97,43 +103,53 @@ content.appendChild(info);
 // ==[ Toolbar ]================================================================
 
 addButtonToToolbar({
-  title: 'Clear segmentation',
+  title: 'Shrink',
   onClick: async () => {
-    const labelmapVolume = cache.getVolume(segmentationId);
-    labelmapVolume.voxelManager.clear();
-
-    segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
-      segmentationId
-    );
+    toolGroup.getToolInstance(RegionSegmentTool.toolName).shrink();
   },
 });
 
-// addSliderToToolbar({
-//   title: 'Positive threshold (50%)',
-//   range: [0, 100],
-//   defaultValue: 50,
-//   onSelectedValueChange: (value: string) => {
-//     updateSeedVariancesConfig({ positiveSeedVariance: value });
-//   },
-//   updateLabelOnChange: (value: string, label: HTMLElement) => {
-//     label.innerHTML = `Positive threshold (${value}%)`;
-//   },
-// });
+addButtonToToolbar({
+  title: 'Expand',
+  onClick: async () => {
+    toolGroup.getToolInstance(RegionSegmentTool.toolName).expand();
+  },
+});
 
-// addSliderToToolbar({
-//   title: 'Negative threshold (90%)',
-//   range: [0, 100],
-//   defaultValue: 90,
-//   label: {
-//     html: 'test',
-//   },
-//   onSelectedValueChange: (value: string) => {
-//     updateSeedVariancesConfig({ negativeSeedVariance: value });
-//   },
-//   updateLabelOnChange: (value: string, label: HTMLElement) => {
-//     label.innerHTML = `Negative threshold (${value}%)`;
-//   },
-// });
+addButtonToToolbar({
+  title: 'Clear segmentation',
+  onClick: async () => {
+    const labelmapVolume = cache.getVolume(segmentationId);
+    labelmapVolume?.voxelManager?.clear();
+  },
+});
+
+addSliderToToolbar({
+  title: 'Positive threshold (50%)',
+  range: [0, 100],
+  defaultValue: 50,
+  onSelectedValueChange: (value: string) => {
+    updateSeedVariancesConfig({ positiveSeedVariance: value });
+  },
+  updateLabelOnChange: (value: string, label: HTMLElement) => {
+    label.innerHTML = `Positive threshold (${value}%)`;
+  },
+});
+
+addSliderToToolbar({
+  title: 'Negative threshold (90%)',
+  range: [0, 100],
+  defaultValue: 90,
+  label: {
+    html: 'test',
+  },
+  onSelectedValueChange: (value: string) => {
+    updateSeedVariancesConfig({ negativeSeedVariance: value });
+  },
+  updateLabelOnChange: (value: string, label: HTMLElement) => {
+    label.innerHTML = `Negative threshold (${value}%)`;
+  },
+});
 
 // =============================================================================
 
