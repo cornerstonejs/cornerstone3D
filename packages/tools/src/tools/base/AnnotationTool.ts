@@ -558,8 +558,10 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           annotation,
           deleting
         );
+        const { viewport } = getEnabledElement(element) || {};
+        viewport?.setViewReference(annotation.metadata);
         if (state.deleting === true) {
-          // Handle undeletion - note the state of deleting is internally
+          // Handle un deletion - note the state of deleting is internally
           // true/false/undefined to mean delete/re-create as these are opposite actions.
           state.deleting = false;
           Object.assign(annotation.data, state.data);
@@ -585,7 +587,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           state.data = newState.data;
           addAnnotation(annotation, element);
           setAnnotationSelected(annotation.annotationUID, true);
-          getEnabledElement(element)?.viewport.render();
+          viewport?.render();
           return;
         }
         if (state.deleting === false) {
@@ -595,7 +597,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           state.data = newState.data;
           setAnnotationSelected(annotation.annotationUID);
           removeAnnotation(annotation.annotationUID);
-          getEnabledElement(element)?.viewport.render();
+          viewport?.render();
           return;
         }
         const currentAnnotation = getAnnotation(annotationUID);
