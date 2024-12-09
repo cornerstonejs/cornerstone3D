@@ -24,9 +24,17 @@ import type {
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { growCut } from '../../utilities/segmentation';
 import type { GrowCutBoundingBoxOptions } from '../../utilities/segmentation/growCut';
-import type { GrowCutToolData } from '../base/GrowCutBaseTool';
+import type {
+  GrowCutToolData,
+  RemoveIslandData,
+} from '../base/GrowCutBaseTool';
 import GrowCutBaseTool from '../base/GrowCutBaseTool';
 
+// Positive and negative threshold/range (defaults to CT hounsfield ranges)
+// https://www.sciencedirect.com/topics/medicine-and-dentistry/hounsfield-scale
+const NEGATIVE_PIXEL_RANGE = [-Infinity, -995];
+const POSITIVE_PIXEL_RANGE = [0, 1900];
+const ISLAND_PIXEL_RANGE = [1000, 1900];
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
 type HorizontalLine = [Types.Point3, Types.Point3];
@@ -43,7 +51,29 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {},
+      configuration: {
+        /**
+         * Range that shall be used to set voxel as positive seeds
+         */
+        positivePixelRange: POSITIVE_PIXEL_RANGE,
+        /**
+         * Range that shall be used to set voxel as negative seeds
+         */
+        negativePixelRange: NEGATIVE_PIXEL_RANGE,
+        islandRemoval: {
+          /**
+           * Enable/disable island removal
+           */
+          enabled: true,
+          /**
+           * Range that shall be used to set a voxel as a valid island voxel. In
+           * this case all island that contains a valid voxel shall not be removed
+           * after running removeIsland() method. This is useful to do not add the
+           * bed the segmented data.
+           */
+          islandPixelRange: ISLAND_PIXEL_RANGE,
+        },
+      },
     }
   ) {
     super(toolProps, defaultToolProps);
@@ -189,9 +219,12 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       },
     };
 
+    const config = this.configuration;
     const options: GrowCutBoundingBoxOptions = {
       positiveSeedValue: segmentIndex,
       negativeSeedValue: 255,
+      negativePixelRange: config.negativePixelRange,
+      positivePixelRange: config.positivePixelRange,
     };
 
     return growCut.runGrowCutForBoundingBox(
@@ -199,6 +232,46 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       boundingBoxInfo,
       options
     );
+  }
+
+  protected getRemoveIslandData(): RemoveIslandData {
+    const {
+      segmentation: { segmentIndex, referencedVolumeId, labelmapVolumeId },
+    } = this.growCutData;
+    const referencedVolume = cache.getVolume(referencedVolumeId);
+    const labelmapVolume = cache.getVolume(labelmapVolumeId);
+    const referencedVolumeData =
+      referencedVolume.voxelManager.getCompleteScalarDataArray();
+    const labelmapData =
+      labelmapVolume.voxelManager.getCompleteScalarDataArray();
+    const { islandPixelRange } = this.configuration.islandRemoval;
+    const islandPointIndexes = [];
+
+    // Working with a range is not accurate enough because it may also include
+    // the bed in case a high pixel intensity is found on it. It may also not
+    // include the expected region in case there are no high density bones in
+    // the expected island.
+    //
+    // TODO: improve how it looks for pixels in the islands that need to be segmented
+    for (let i = 0, len = labelmapData.length; i < len; i++) {
+      if (labelmapData[i] !== segmentIndex) {
+        continue;
+      }
+
+      // Keep all islands that has at least one pixel in the `islandPixelRange` range
+      const pixelValue = referencedVolumeData[i];
+
+      if (
+        pixelValue >= islandPixelRange[0] &&
+        pixelValue <= islandPixelRange[1]
+      ) {
+        islandPointIndexes.push(i);
+      }
+    }
+
+    return {
+      islandPointIndexes,
+    };
   }
 
   private _activateDraw(element: HTMLDivElement): void {

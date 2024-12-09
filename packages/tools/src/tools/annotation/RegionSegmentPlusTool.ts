@@ -5,7 +5,10 @@ import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 import { growCut } from '../../utilities/segmentation';
 import type { GrowCutOneClickOptions as RegionSegmentPlusOptions } from '../../utilities/segmentation/growCut';
 import GrowCutBaseTool from '../base/GrowCutBaseTool';
-import type { GrowCutToolData } from '../base/GrowCutBaseTool';
+import type {
+  GrowCutToolData,
+  RemoveIslandData,
+} from '../base/GrowCutBaseTool';
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
@@ -23,6 +26,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
+        islandRemoval: {
+          /**
+           * Enable/disable island removal
+           */
+          enabled: true,
+        },
       },
     }
   ) {
@@ -38,9 +47,20 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     super.preMouseDownCallback(evt);
     this.growCutData.worldPoint = worldPoint;
+    this.growCutData.islandRemoval = {
+      worldIslandPoints: [worldPoint],
+    };
     this.runGrowCut();
 
     return true;
+  }
+
+  protected getRemoveIslandData(): RemoveIslandData {
+    const { worldPoint } = this.growCutData;
+
+    return {
+      worldIslandPoints: [worldPoint],
+    };
   }
 
   protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {

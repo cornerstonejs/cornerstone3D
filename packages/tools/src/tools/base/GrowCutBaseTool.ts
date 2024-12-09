@@ -2,6 +2,7 @@ import {
   getEnabledElement,
   utilities as csUtils,
   cache,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
@@ -21,6 +22,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
+import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -34,8 +36,25 @@ type GrowCutToolData = {
     labelmapVolumeId: string;
     referencedVolumeId: string;
   };
+  islandRemoval?: {
+    worldIslandPoints: Types.Point3[];
+  };
   viewportId: string;
   renderingEngineId: string;
+};
+
+/**
+ * Island removal data which currently includes only coordinates from islands
+ * that should not be removed by `IslandRemoval` class. Coordinates my be provided
+ * in world space, index space or theirs indices in the data array.
+ */
+type RemoveIslandData = {
+  // Coordinates in world space from islands that should not be removed
+  worldIslandPoints?: Types.Point3[];
+  // Coordinates in index space from islands that should not be removed
+  ijkIslandPoints?: Types.Point3[];
+  // Coordinate indices from islands that should not be removed
+  islandPointIndexes?: number[];
 };
 
 class GrowCutBaseTool extends BaseTool {
@@ -44,7 +63,21 @@ class GrowCutBaseTool extends BaseTool {
   protected growCutData: GrowCutToolData | null;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    super(toolProps, defaultToolProps);
+    const baseToolProps = csUtils.deepMerge(
+      {
+        configuration: {
+          islandRemoval: {
+            /**
+             * Enable/disable island removal
+             */
+            enabled: false,
+          },
+        },
+      },
+      defaultToolProps
+    );
+
+    super(toolProps, baseToolProps);
   }
 
   async preMouseDownCallback(
@@ -105,6 +138,8 @@ class GrowCutBaseTool extends BaseTool {
       labelmap,
       growcutLabelmap
     );
+
+    // this._removeIslands(this.growCutData);
   }
 
   protected applyGrowCutLabelmap(
@@ -163,6 +198,70 @@ class GrowCutBaseTool extends BaseTool {
     triggerSegmentationDataModified(segmentationId);
   }
 
+  protected getRemoveIslandData(
+    _growCutData: GrowCutToolData
+  ): RemoveIslandData {
+    // Child class with island removal enabled needs to override this method
+    return;
+  }
+
+  private _removeIslands(growCutData: GrowCutToolData) {
+    const { islandRemoval: config } = this.configuration;
+
+    if (!config.enabled) {
+      return;
+    }
+
+    const {
+      segmentation: { segmentIndex, labelmapVolumeId },
+      renderingEngineId,
+      viewportId,
+    } = growCutData;
+
+    const labelmap = cache.getVolume(labelmapVolumeId);
+    const removeIslandData = this.getRemoveIslandData(growCutData);
+
+    if (!removeIslandData) {
+      return;
+    }
+
+    const [width, height] = labelmap.dimensions;
+    const numPixelsPerSlice = width * height;
+    const { worldIslandPoints = [], islandPointIndexes = [] } =
+      removeIslandData;
+    let ijkIslandPoints = [...(removeIslandData?.ijkIslandPoints ?? [])];
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    const { voxelManager } = labelmap;
+    const islandRemoval = new IslandRemoval();
+
+    ijkIslandPoints = ijkIslandPoints.concat(
+      worldIslandPoints.map((worldPoint) =>
+        transformWorldToIndex(labelmap.imageData, worldPoint)
+      )
+    );
+
+    ijkIslandPoints = ijkIslandPoints.concat(
+      islandPointIndexes.map((pointIndex) => {
+        const x = pointIndex % width;
+        const y = Math.floor(pointIndex / width) % height;
+        const z = Math.floor(pointIndex / numPixelsPerSlice);
+
+        return [x, y, z];
+      })
+    );
+
+    islandRemoval.initialize(viewport, voxelManager, {
+      points: ijkIslandPoints,
+      previewSegmentIndex: segmentIndex,
+      segmentIndex,
+    });
+
+    islandRemoval.floodFillSegmentIsland();
+    islandRemoval.removeExternalIslands();
+    islandRemoval.removeInternalIslands();
+  }
+
   protected getSegmentStyle({ segmentationId, viewportId, segmentIndex }) {
     return getSVGStyleForSegment({
       segmentationId,
@@ -217,4 +316,4 @@ class GrowCutBaseTool extends BaseTool {
 GrowCutBaseTool.toolName = 'GrowCutBaseTool';
 
 export default GrowCutBaseTool;
-export type { GrowCutToolData };
+export type { GrowCutToolData, RemoveIslandData };
