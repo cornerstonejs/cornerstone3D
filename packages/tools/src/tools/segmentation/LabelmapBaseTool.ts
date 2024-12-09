@@ -329,7 +329,7 @@ export default class LabelmapBaseTool extends BaseTool {
       segmentIndex,
       previewColors:
         this.configuration.preview?.enabled || this._previewData.preview
-          ? this.configuration.preview.previewColors
+          ? this.configuration.preview?.previewColors
           : null,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,

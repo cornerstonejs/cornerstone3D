@@ -3,6 +3,14 @@ import { utilities, eventTarget, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
+import {
+  segmentation as cstSegmentation,
+  LabelmapBaseTool,
+} from '@cornerstonejs/tools';
+
+const { strategies } = cstSegmentation;
+const { fillInsideCircle } = strategies;
+
 // @ts-ignore
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
@@ -142,6 +150,7 @@ export default class ONNXSegmentationController {
   modelWidth = 1024;
   modelHeight = 1024;
 
+  tool;
   /**
    * Defines the URL endpoints and render sizes/setup for the various models that
    * can be used.
@@ -193,7 +202,6 @@ export default class ONNXSegmentationController {
 
   protected viewport;
   protected excludeTool = ONNXSegmentationController.MarkerExclude;
-  protected tool;
   protected currentImage;
   private listeners = [console.log];
   protected desiredImage = {
@@ -216,8 +224,6 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.MarkerExclude,
     ONNXSegmentationController.BoxPrompt,
   ];
-  /** The type name of the preview tool used for the accept/reject labelmap preview */
-  protected previewToolType = 'ThresholdCircle';
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
@@ -258,7 +264,6 @@ export default class ONNXSegmentationController {
       promptAnnotationTypes: null,
       models: null,
       modelName: null,
-      previewToolType: 'ThresholdCircle',
       islandFillOptions: undefined,
     }
   ) {
@@ -273,7 +278,6 @@ export default class ONNXSegmentationController {
     if (options.models) {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
-    this.previewToolType = options.previewToolType || this.previewToolType;
     this.config = this.getConfig(options.modelName);
     this.islandFillOptions =
       options.islandFillOptions ?? this.islandFillOptions;
@@ -319,11 +323,28 @@ export default class ONNXSegmentationController {
     }
     this.currentImage = null;
     this.viewport = viewport;
-    const toolGroup = cornerstoneTools.ToolGroupManager.getToolGroupForViewport(
-      viewport.id,
-      viewport.getRenderingEngine()?.id
+
+    const brushInstance = new LabelmapBaseTool(
+      {},
+      {
+        configuration: {
+          strategies: {
+            FILL_INSIDE_CIRCLE: fillInsideCircle,
+          },
+          activeStrategy: 'FILL_INSIDE_CIRCLE',
+          preview: {
+            enabled: true,
+            previewColors: {
+              0: [255, 255, 255, 128],
+              1: [0, 255, 255, 192],
+              2: [255, 0, 255, 255],
+            },
+          },
+        },
+      }
     );
-    this.tool = toolGroup.getToolInstance(this.previewToolType);
+
+    this.tool = brushInstance;
 
     desiredImage.imageId =
       viewport.getCurrentImageId?.() || viewport.getViewReferenceId();
@@ -354,6 +375,14 @@ export default class ONNXSegmentationController {
     }
   }
 
+  public acceptPreview(element) {
+    this.tool.acceptPreview(element);
+  }
+
+  public rejectPreview(element) {
+    this.tool.rejectPreview(element);
+  }
+
   /**
    * The interpolateScroll checks to see if there are any annotations on the
    * current image in the specified viewport, and if so, scrolls in the given
@@ -369,6 +398,7 @@ export default class ONNXSegmentationController {
    */
   public async interpolateScroll(viewport = this.viewport, dir = 1) {
     const { element } = viewport;
+
     this.tool.acceptPreview(element);
     const promptAnnotations = this.getPromptAnnotations(viewport);
 

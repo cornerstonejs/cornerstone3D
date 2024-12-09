@@ -17,7 +17,9 @@ import {
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
 const { ViewportType, OrientationAxis } = Enums;
-const { MouseBindings, KeyboardBindings } = cornerstoneTools.Enums;
+const { MouseBindings, SegmentationRepresentations, Events } =
+  cornerstoneTools.Enums;
+const { segmentation } = cornerstoneTools;
 
 setTitleAndDescription(
   'Basic Single-Viewport AI Segmentation',
@@ -66,7 +68,6 @@ const ai = new ONNXSegmentationController({
   modelName: 'sam_b',
   listeners: [mlLogger],
 });
-await ai.initModel();
 
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
@@ -75,7 +76,7 @@ const volumeId = 'volumeId';
 let renderingEngine;
 let viewport;
 let activeViewport;
-let currentViewportType = ViewportType.STACK;
+const currentViewportType = ViewportType.STACK;
 
 // Tools to include: MarkerInclude, MarkerExclude, BoxPrompt, plus pan/zoom/scroll
 const MarkerIncludeToolName = ONNXSegmentationController.MarkerInclude;
@@ -93,6 +94,9 @@ cornerstoneTools.addTool(cornerstoneTools.RectangleROITool); // Base for BoxProm
 const toolGroup =
   cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
 
+toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
+toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
+toolGroup.addTool(cornerstoneTools.PanTool.toolName);
 // MarkerInclude - a probe variant
 toolGroup.addToolInstance(
   MarkerIncludeToolName,
@@ -113,9 +117,6 @@ toolGroup.addToolInstance(
     getTextLines: () => null,
   }
 );
-toolGroup.setToolActive(MarkerExcludeToolName, {
-  bindings: [{ mouseButton: MouseBindings.Secondary }],
-});
 
 // BoxPrompt - a rectangle ROI variant with Ctrl+click
 toolGroup.addToolInstance(
@@ -126,17 +127,12 @@ toolGroup.addToolInstance(
   }
 );
 toolGroup.setToolActive(BoxPromptToolName, {
-  bindings: [
-    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Ctrl },
-  ],
+  bindings: [{ mouseButton: MouseBindings.Primary }],
 });
 
 // Pan (middle or Ctrl+drag)
 toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
-  bindings: [
-    { mouseButton: MouseBindings.Auxiliary },
-    { numTouchPoints: 1, modifierKey: KeyboardBindings.Ctrl },
-  ],
+  bindings: [{ mouseButton: MouseBindings.Auxiliary }],
 });
 
 // Zoom (right mouse)
@@ -146,10 +142,7 @@ toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
 
 // Stack Scroll (mouse wheel or Alt+drag)
 toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
-  bindings: [
-    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Alt },
-    { mouseButton: MouseBindings.Wheel },
-  ],
+  bindings: [{ mouseButton: MouseBindings.Wheel }],
 });
 
 const content = document.getElementById('content');
@@ -172,6 +165,9 @@ const logDiv = document.createElement('div');
 logDiv.id = 'status';
 content.appendChild(logDiv);
 
+// disable context menu
+viewportContainer.oncontextmenu = () => false;
+
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
@@ -183,19 +179,34 @@ addButtonToToolbar({
 const viewportId = 'CURRENT_VIEWPORT';
 
 addDropdownToToolbar({
-  options: { values: ['stack', 'sagittal'] },
-  onSelectedValueChange: async (value) => {
-    currentViewportType =
-      value === 'stack' ? ViewportType.STACK : ViewportType.ORTHOGRAPHIC;
-    await updateViewport();
+  options: {
+    values: [MarkerIncludeToolName, MarkerExcludeToolName, BoxPromptToolName],
+    defaultValue: MarkerIncludeToolName,
+  },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
+
+    // Disable all AI tools first
+    toolGroup.setToolDisabled(MarkerIncludeToolName);
+    toolGroup.setToolDisabled(MarkerExcludeToolName);
+    toolGroup.setToolDisabled(BoxPromptToolName);
+
+    // Enable the selected tool
+    toolGroup.setToolActive(name, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
   },
 });
+
+const segmentationId = 'segmentationId';
 
 async function updateViewport() {
   await initDemo();
 
   if (renderingEngine) {
-    renderingEngine.destroy();
+    // renderingEngine.destroy();
+    segmentation.removeAllSegmentationRepresentations();
+    segmentation.removeAllSegmentations();
   }
 
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -215,6 +226,7 @@ async function updateViewport() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   const imageIds = await createAndLoadData();
+
   if (currentViewportType === ViewportType.STACK) {
     viewport = renderingEngine.getViewport(viewportId);
     await viewport.setStack(imageIds);
@@ -230,8 +242,47 @@ async function updateViewport() {
     viewport.render();
   }
 
+  // Add a segmentation that will contains the contour annotations
+  const segmentationImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
+
+  const segmentationImageIds = segmentationImages.map((image) => image.imageId);
+
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: SegmentationRepresentations.Labelmap,
+        data: {
+          imageIds: segmentationImageIds,
+        },
+      },
+    },
+  ]);
+
+  const segMap = {
+    [viewport.id]: [{ segmentationId }],
+  };
+
+  // Create a segmentation representation associated to the toolGroupId
+  await segmentation.addLabelmapRepresentationToViewportMap(segMap);
+
   activeViewport = viewport;
+  await ai.initModel();
   ai.initViewport(viewport);
+
+  viewport.element.addEventListener(Events.KEY_DOWN, (evt) => {
+    const { key } = evt.detail;
+    const { element } = activeViewport;
+    if (key === 'Escape') {
+      cornerstoneTools.cancelActiveManipulations(element);
+      ai.rejectPreview(element);
+    } else if (key === 'Enter') {
+      ai.acceptPreview(element);
+    } else if (key === 'n') {
+      ai.interpolateScroll(activeViewport, 1);
+    }
+  });
 }
 
 async function createAndLoadData() {

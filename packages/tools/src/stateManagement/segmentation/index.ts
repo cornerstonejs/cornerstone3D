@@ -33,6 +33,7 @@ import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 import { removeSegment } from './removeSegment';
 import { getLabelmapImageIds } from './getLabelmapImageIds';
+import * as strategies from './../../tools/segmentation/strategies';
 
 import {
   removeAllSegmentations,
@@ -77,4 +78,5 @@ export {
   removeSegment,
   getLabelmapImageIds,
   addRepresentationData,
+  strategies,
 };
