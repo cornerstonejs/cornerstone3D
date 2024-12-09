@@ -556,7 +556,9 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
-    isSuvScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, imageId?: string): boolean;
+    static isSuvScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, imageId?: string): boolean;
+    // (undocumented)
+    isSuvScaled: typeof AnnotationTool.isSuvScaled;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations?: Annotations) => boolean;
     // (undocumented)
@@ -3810,6 +3812,10 @@ type NamedStatistics = {
         name: 'circumference';
     };
     pointsInShape?: Types_2.IPointsManager<Types_2.Point3>;
+    maxIJKs?: Array<{
+        value: number;
+        pointIJK: Types_2.Point3;
+    }>;
     array: Statistics[];
 };
 
@@ -6532,6 +6538,12 @@ class VolumetricCalculator extends BasicStatsCalculator_2 {
         spacing?: number;
         unit?: string;
     }): NamedStatistics;
+    // (undocumented)
+    static statsCallback(data: {
+        value: number | Types_2.RGB;
+        pointLPS?: Types_2.Point3;
+        pointIJK?: Types_2.Point3;
+    }): void;
 }
 
 // @public (undocumented)

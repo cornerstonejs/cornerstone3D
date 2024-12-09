@@ -383,7 +383,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param imageId - The annotation imageId
    * @returns
    */
-  isSuvScaled(
+  public static isSuvScaled(
     viewport: Types.IStackViewport | Types.IVolumeViewport,
     targetId: string,
     imageId?: string
@@ -397,6 +397,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       imageId && metaData.get('scalingModule', imageId);
     return typeof scalingModule?.suvbw === 'number';
   }
+
+  isSuvScaled = AnnotationTool.isSuvScaled;
 
   /**
    * Get the style that will be applied to all annotations such as length, cobb
