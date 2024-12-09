@@ -14,6 +14,7 @@ const { Events: toolsEvents } = cornerstoneTools.Enums;
 
 const { segmentation } = cornerstoneTools;
 const { filterAnnotationsForDisplay } = cornerstoneTools.utilities.planar;
+const { IslandRemoval } = cornerstoneTools.utilities;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
@@ -184,6 +185,7 @@ export default class ONNXSegmentationController {
   private config;
   private points = [];
   private labels = [];
+  private worldPoints = new Array<Types.Point3>();
 
   private loadingAI: Promise<unknown>;
 
@@ -215,6 +217,22 @@ export default class ONNXSegmentationController {
   protected previewToolType = 'ThresholdCircle';
 
   /**
+   * Fill internal islands by size, and consider islands at the edge to
+   * be included as internal.
+   */
+  protected islandFillOptions = {
+    maxInternalRemove: 16,
+    fillInternalEdge: true,
+  };
+
+  /**
+   * The p cutoff to apply, values p and above are included.
+   * The values are pixel values, so 0 means everything, while 255 means
+   * only certainly included.  A value of 64 seems reasonable as it omits low probability areas,
+   * but most areas are >190 in actual practice.
+   */
+  protected pCutoff = 64;
+  /**
    * Configure the ML Controller.  No parameters are required, and will default
    * to the basic set of controls using MarkerInclude/Exclude and the default SAM
    * model for segmentation.
@@ -238,6 +256,7 @@ export default class ONNXSegmentationController {
       models: null,
       modelName: null,
       previewToolType: 'ThresholdCircle',
+      islandFillOptions: undefined,
     }
   ) {
     if (options.listeners) {
@@ -253,6 +272,8 @@ export default class ONNXSegmentationController {
     }
     this.previewToolType = options.previewToolType || this.previewToolType;
     this.config = this.getConfig(options.modelName);
+    this.islandFillOptions =
+      options.islandFillOptions ?? this.islandFillOptions;
   }
 
   /**
@@ -268,14 +289,20 @@ export default class ONNXSegmentationController {
     return this.loadingAI;
   }
 
+  public setPCutoff(cutoff: number) {
+    this.pCutoff = cutoff;
+    this.annotationsNeedUpdating = true;
+    this.tryLoad();
+  }
+
   /**
-   * Connects a viewport up to get anotations and updates
+   * Connects a viewport up to get annotations and updates
    * Note that only one viewport at a time is permitted as the model needs to
    * load data about the active viewport.  This method will disconnect a previous
    * viewport automatically.
    *
    * The viewport must have a labelmap segmentation registered, as well as a
-   * tool which extendds LabelmapBaseTool to use for setting the preview view
+   * tool which extends LabelmapBaseTool to use for setting the preview view
    * once the decode is completed.  This is provided as toolForPreview
    *
    * @param viewport - a viewport to listen for annotations and rendered events
@@ -799,6 +826,8 @@ export default class ONNXSegmentationController {
     this.annotationsNeedUpdating = false;
     this.points = [];
     this.labels = [];
+    this.worldPoints = [];
+
     if (!currentAnnotations?.length) {
       return;
     }
@@ -806,6 +835,9 @@ export default class ONNXSegmentationController {
       const handle = annotation.data.handles.points[0];
       const point = this.mapAnnotationPoint(handle);
       const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
+      if (label) {
+        this.worldPoints.push(handle);
+      }
       this.points.push(point[0]);
       this.points.push(point[1]);
       this.labels.push(label);
@@ -901,7 +933,7 @@ export default class ONNXSegmentationController {
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
-    const { previewSegmentIndex, memo, segmentationId } = preview;
+    const { previewSegmentIndex, memo, segmentationId, segmentIndex } = preview;
     const previewVoxelManager =
       memo?.voxelManager || preview.previewVoxelManager;
     const { dimensions } = previewVoxelManager;
@@ -934,13 +966,34 @@ export default class ONNXSegmentationController {
         // 4 values - RGBA - per pixel
         const maskIndex = 4 * (i + j * this.maxWidth);
         const v = data[maskIndex];
-        if (v > 0) {
+        if (v > this.pCutoff) {
           previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
         } else {
           previewVoxelManager.setAtIJKPoint(ijkPoint, null);
         }
       }
     }
+
+    const voxelManager =
+      previewVoxelManager.sourceVoxelManager || previewVoxelManager;
+
+    if (this.islandFillOptions) {
+      const islandRemoval = new IslandRemoval(this.islandFillOptions);
+      if (
+        islandRemoval.initialize(viewport, voxelManager, {
+          previewSegmentIndex,
+          segmentIndex,
+          points: this.worldPoints.map((point) =>
+            imageData.worldToIndex(point).map(Math.round)
+          ),
+        })
+      ) {
+        islandRemoval.floodFillSegmentIsland();
+        islandRemoval.removeExternalIslands();
+        islandRemoval.removeInternalIslands();
+      }
+    }
+
     triggerSegmentationDataModified(segmentationId);
   }
 

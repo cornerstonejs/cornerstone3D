@@ -49,7 +49,7 @@ import * as contourSegmentation from './contourSegmentation';
 import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCallback';
 const roundNumber = utilities.roundNumber;
 import normalizeViewportPlane from './normalizeViewportPlane';
-import islandRemoval from './segmentation/islandRemoval';
+import IslandRemoval from './segmentation/islandRemoval';
 
 export {
   math,
@@ -93,5 +93,5 @@ export {
   getClosestImageIdForStackViewport,
   pointInSurroundingSphereCallback,
   normalizeViewportPlane,
-  islandRemoval,
+  IslandRemoval,
 };

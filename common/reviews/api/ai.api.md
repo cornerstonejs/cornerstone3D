@@ -35,6 +35,7 @@ export class ONNXSegmentationController {
         models: any;
         modelName: any;
         previewToolType: string;
+        islandFillOptions: any;
     });
     // (undocumented)
     protected annotationModifiedListener: (_event?: any) => void;
@@ -96,6 +97,11 @@ export class ONNXSegmentationController {
     // (undocumented)
     protected isGpuInUse: boolean;
     // (undocumented)
+    protected islandFillOptions: {
+        maxInternalRemove: number;
+        fillInternalEdge: boolean;
+    };
+    // (undocumented)
     protected load(): Promise<void>;
     // (undocumented)
     loadModels(models: any, imageSession?: any): Promise<void>;
@@ -149,6 +155,8 @@ export class ONNXSegmentationController {
     // (undocumented)
     modelWidth: number;
     // (undocumented)
+    protected pCutoff: number;
+    // (undocumented)
     protected previewToolType: string;
     // (undocumented)
     protected promptAnnotationTypes: string[];
@@ -156,6 +164,8 @@ export class ONNXSegmentationController {
     restoreImageEncoding(session: any, imageId: any): Promise<any>;
     // (undocumented)
     protected runDecode(): Promise<void>;
+    // (undocumented)
+    setPCutoff(cutoff: number): void;
     // (undocumented)
     protected sharedImageEncoding: any;
     // (undocumented)

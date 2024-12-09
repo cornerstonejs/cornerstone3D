@@ -28,7 +28,7 @@ import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegm
 import { getBrushToolInstances } from './getBrushToolInstances';
 import * as growCut from './growCut';
 import * as LabelmapMemo from './createLabelmapMemo';
-import islandRemoval from './islandRemoval';
+import IslandRemoval from './islandRemoval';
 
 export {
   thresholdVolumeByRange,
@@ -55,5 +55,5 @@ export {
   getBrushToolInstances,
   growCut,
   LabelmapMemo,
-  islandRemoval,
+  IslandRemoval,
 };

@@ -17,6 +17,10 @@ export enum SegmentationEnum {
   INTERIOR = -3,
   // Exterior means it is outside the island
   EXTERIOR = -4,
+  // Exterior small means it is small enough to flood it
+  INTERIOR_SMALL = -5,
+  // Interior test means the segment is being size tested.
+  INTERIOR_TEST = -6,
 }
 
 /**
@@ -58,6 +62,21 @@ export default class IslandRemoval {
    * island.
    */
   selectedPoints: Types.Point3[];
+
+  // Options to control the fill
+  /** Fill out to edges, assuming they are smaller in size than maxInternalRemove */
+  private fillInternalEdge = false;
+  /** Maximum internal size of an island to remove */
+  private maxInternalRemove = 128;
+
+  constructor(options?: {
+    maxInternalRemove?: number;
+    fillInternalEdge?: boolean;
+  }) {
+    this.maxInternalRemove =
+      options?.maxInternalRemove ?? this.maxInternalRemove;
+    this.fillInternalEdge = options?.fillInternalEdge ?? this.fillInternalEdge;
+  }
 
   /**
    * Initializes the island fill.  This is used by providing a viewport
@@ -248,7 +267,7 @@ export default class IslandRemoval {
    */
   public removeInternalIslands() {
     const { segmentSet, previewVoxelManager, previewSegmentIndex } = this;
-    const { height, normalizer } = segmentSet;
+    const { height, normalizer, width } = segmentSet;
     const { toIJK } = normalizer;
 
     segmentSet.forEachRow((baseIndex, row) => {
@@ -258,6 +277,11 @@ export default class IslandRemoval {
           continue;
         }
         if (!lastRle) {
+          if (this.fillInternalEdge && rle.start > 0) {
+            for (let iPrime = 0; iPrime < rle.start; iPrime++) {
+              segmentSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
+            }
+          }
           lastRle = rle;
           continue;
         }
@@ -265,6 +289,11 @@ export default class IslandRemoval {
           segmentSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
         }
         lastRle = rle;
+      }
+      if (this.fillInternalEdge && lastRle?.end < width) {
+        for (let iPrime = lastRle.end; iPrime < width; iPrime++) {
+          segmentSet.set(baseIndex + iPrime, SegmentationEnum.INTERIOR);
+        }
       }
     });
     // Next, remove the island sets which are adjacent to an opening
@@ -277,8 +306,13 @@ export default class IslandRemoval {
       const rowPrev = jPrime > 0 ? segmentSet.getRun(jPrime - 1, kPrime) : null;
       const rowNext =
         jPrime + 1 < height ? segmentSet.getRun(jPrime + 1, kPrime) : null;
-      const prevCovers = IslandRemoval.covers(rle, rowPrev);
-      const nextCovers = IslandRemoval.covers(rle, rowNext);
+      const isLast = jPrime === height - 1;
+      const isFirst = jPrime === 0;
+      const prevCovers =
+        IslandRemoval.covers(rle, rowPrev) ||
+        (isFirst && this.fillInternalEdge);
+      const nextCovers =
+        IslandRemoval.covers(rle, rowNext) || (isLast && this.fillInternalEdge);
       if (rle.end - rle.start > 2 && (!prevCovers || !nextCovers)) {
         segmentSet.floodFill(
           rle.start,
@@ -290,10 +324,31 @@ export default class IslandRemoval {
       }
     });
 
+    // Measure the size of all the interior islands, marking them as exterior
+    // when they are too big, or as INTERIOR_SMALL otherwise
+    segmentSet.forEach((baseIndex, rle) => {
+      if (rle.value !== SegmentationEnum.INTERIOR) {
+        // Already filled/handled
+        return;
+      }
+      const [, jPrime, kPrime] = segmentSet.toIJK(baseIndex);
+      const size = segmentSet.floodFill(
+        rle.start,
+        jPrime,
+        kPrime,
+        SegmentationEnum.INTERIOR_TEST
+      );
+      const isBig = size > this.maxInternalRemove;
+      const newType = isBig
+        ? SegmentationEnum.EXTERIOR
+        : SegmentationEnum.INTERIOR_SMALL;
+      segmentSet.floodFill(rle.start, jPrime, kPrime, newType);
+    });
+
     // Finally, for all the islands, fill them in with the preview colour as
     // they are now internal
     segmentSet.forEach((baseIndex, rle) => {
-      if (rle.value !== SegmentationEnum.INTERIOR) {
+      if (rle.value !== SegmentationEnum.INTERIOR_SMALL) {
         return;
       }
       for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {

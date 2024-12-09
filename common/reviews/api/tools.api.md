@@ -3150,6 +3150,10 @@ interface ISculptToolShape {
 
 // @public (undocumented)
 class IslandRemoval {
+    constructor(options?: {
+        maxInternalRemove?: number;
+        fillInternalEdge?: boolean;
+    });
     // (undocumented)
     static covers(rle: any, row: any): boolean;
     // (undocumented)
@@ -4711,6 +4715,8 @@ export class RegionSegmentPlusTool extends GrowCutBaseTool {
     // (undocumented)
     protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
     // (undocumented)
+    protected getRemoveIslandData(): RemoveIslandData;
+    // (undocumented)
     protected growCutData: RegionSegmentPlusToolData | null;
     // (undocumented)
     preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
@@ -5012,7 +5018,7 @@ declare namespace segmentation_2 {
         getBrushToolInstances,
         growCut,
         LabelmapMemo,
-        IslandRemoval as islandRemoval
+        IslandRemoval
     }
 }
 
@@ -6347,7 +6353,7 @@ declare namespace utilities {
         getClosestImageIdForStackViewport,
         pointInSurroundingSphereCallback,
         normalizeViewportPlane,
-        IslandRemoval as islandRemoval
+        IslandRemoval
     }
 }
 export { utilities }
@@ -6533,6 +6539,8 @@ export class WholeBodySegmentTool extends GrowCutBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected getRemoveIslandData(): RemoveIslandData;
     // (undocumented)
     protected growCutData: WholeBodySegmentToolData | null;
     // (undocumented)
