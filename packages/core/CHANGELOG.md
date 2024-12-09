@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.5...v2.8.6) (2024-12-09)
+
+### Bug Fixes
+
+- register ImageCPRMapper ([#1689](https://github.com/cornerstonejs/cornerstone3D/issues/1689)) ([ca62c98](https://github.com/cornerstonejs/cornerstone3D/commit/ca62c98b5b7126001f268c5607d43f99509f6c7a)), closes [#1677](https://github.com/cornerstonejs/cornerstone3D/issues/1677)
+
 ## [2.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.4...v2.8.5) (2024-12-09)
 
 **Note:** Version bump only for package @cornerstonejs/core
