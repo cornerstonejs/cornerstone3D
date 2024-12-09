@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.4...v2.8.5) (2024-12-09)
+
+### Bug Fixes
+
+- **SplineROI:** prevent destructive property access when enabledElement is undefined ([#1687](https://github.com/cornerstonejs/cornerstone3D/issues/1687)) ([8a28af1](https://github.com/cornerstonejs/cornerstone3D/commit/8a28af1e23b46f1edb2f576843ac46b269353c20)), closes [#1634](https://github.com/cornerstonejs/cornerstone3D/issues/1634)
+
 ## [2.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.3...v2.8.4) (2024-12-06)
 
 **Note:** Version bump only for package @cornerstonejs/tools
