@@ -2483,6 +2483,15 @@ function extractWindowLevelRegionToolData(viewport: any): {
 };
 
 // @public (undocumented)
+const fillInsideCircle: (enabledElement: any, operationData: any) => unknown;
+
+// @public (undocumented)
+const fillInsideRectangle: (enabledElement: any, operationData: any) => unknown;
+
+// @public (undocumented)
+function fillOutsideCircle(): void;
+
+// @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
 
 // @public (undocumented)
@@ -2901,18 +2910,12 @@ declare namespace growCut {
 
 // @public (undocumented)
 type GrowCutBoundingBoxOptions = GrowCutOptions & {
-    positiveSeedValue?: number;
-    negativeSeedValue?: number;
     negativePixelRange?: [number, number];
     positivePixelRange?: [number, number];
 };
 
 // @public (undocumented)
 type GrowCutOneClickOptions = GrowCutOptions & {
-    positiveSeedValue?: number;
-    negativeSeedValue?: number;
-    positiveSeedVariance?: number;
-    negativeSeedVariance?: number;
     subVolumePaddingPercentage?: number | [number, number, number];
     subVolumeMinPadding?: number | [number, number, number];
 };
@@ -3368,6 +3371,173 @@ type KeyUpEventDetail = KeyDownEventDetail;
 
 // @public (undocumented)
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
+
+// @public (undocumented)
+export class LabelmapBaseTool extends BaseTool {
+    constructor(toolProps: any, defaultToolProps: any);
+    // (undocumented)
+    acceptPreview(element?: HTMLDivElement): void;
+    // (undocumented)
+    addPreview(element?: HTMLDivElement, options?: {
+        acceptReject: boolean;
+    }): unknown;
+    // (undocumented)
+    createEditData(element: any): {
+        volumeId: string;
+        referencedVolumeId: any;
+        segmentsLocked: number[] | [];
+        imageId?: undefined;
+        override?: undefined;
+    } | {
+        imageId: string;
+        segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+    } | {
+        imageId: string;
+        segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
+    };
+    // (undocumented)
+    protected createHoverData(element: any, centerCanvas?: any): {
+        brushCursor: {
+            metadata: {
+                viewPlaneNormal: Types_2.Point3;
+                viewUp: Types_2.Point3;
+                FrameOfReferenceUID: string;
+                referencedImageId: string;
+                toolName: string;
+                segmentColor: Types_2.Color;
+            };
+            data: {};
+        };
+        centerCanvas: any;
+        segmentIndex: number;
+        viewport: Types_2.IStackViewport | VolumeViewport;
+        segmentationId: string;
+        segmentColor: Types_2.Color;
+        viewportIdsToRender: string[];
+    };
+    // (undocumented)
+    createMemo(segmentId: string, segmentationVoxelManager: any, preview: any): LabelmapMemo.LabelmapMemo;
+    // (undocumented)
+    protected _editData: {
+        override: {
+            voxelManager: Types_2.IVoxelManager<number>;
+            imageData: vtkImageData;
+        };
+        segmentsLocked: number[];
+        imageId?: string;
+        imageIds?: string[];
+        volumeId?: string;
+        referencedVolumeId?: string;
+    } | null;
+    // (undocumented)
+    protected getActiveSegmentationData(viewport: any): {
+        segmentIndex: number;
+        segmentationId: string;
+        segmentColor: Types_2.Color;
+    };
+    // (undocumented)
+    protected getOperationData(element?: any): {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        override: {
+            voxelManager: Types_2.IVoxelManager<number>;
+            imageData: vtkImageData;
+        };
+        segmentsLocked: number[];
+        imageId?: string;
+        imageIds?: string[];
+        volumeId?: string;
+        referencedVolumeId?: string;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        volumeId: string;
+        referencedVolumeId: any;
+        segmentsLocked: number[] | [];
+        imageId?: undefined;
+        override?: undefined;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        imageId: string;
+        segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        imageId: string;
+        segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
+    };
+    // (undocumented)
+    protected _hoverData?: {
+        brushCursor: any;
+        segmentationId: string;
+        segmentIndex: number;
+        segmentColor: [number, number, number, number];
+        viewportIdsToRender: string[];
+        centerCanvas?: Array<number>;
+        viewport: Types_2.IViewport;
+    };
+    // (undocumented)
+    static previewData?: PreviewData;
+    // (undocumented)
+    protected get _previewData(): PreviewData;
+    // (undocumented)
+    rejectPreview(element?: HTMLDivElement): void;
+    // (undocumented)
+    static viewportContoursToLabelmap(viewport: Types_2.IViewport, options?: {
+        removeContours: boolean;
+    }): void;
+}
 
 declare namespace LabelmapMemo {
     export {
@@ -4719,9 +4889,9 @@ export class ReferenceLinesTool extends AnnotationDisplayTool {
 export class RegionSegmentPlusTool extends GrowCutBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    protected getGrowCutLabelmap(growCutData: any): Promise<Types_2.IImageVolume>;
     // (undocumented)
-    protected getRemoveIslandData(): RemoveIslandData;
+    protected getRemoveIslandData(growCutData: RegionSegmentPlusToolData): RemoveIslandData;
     // (undocumented)
     protected growCutData: RegionSegmentPlusToolData | null;
     // (undocumented)
@@ -4734,7 +4904,7 @@ export class RegionSegmentPlusTool extends GrowCutBaseTool {
 export class RegionSegmentTool extends GrowCutBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    protected getGrowCutLabelmap(growCutData: any): Promise<Types_2.IImageVolume>;
     // (undocumented)
     protected growCutData: RegionSegmentToolData | null;
     // (undocumented)
@@ -4993,7 +5163,8 @@ declare namespace segmentation {
         polySegManager as polySeg,
         removeSegment,
         getLabelmapImageIds,
-        internalAddRepresentationData as addRepresentationData
+        internalAddRepresentationData as addRepresentationData,
+        strategies
     }
 }
 export { segmentation }
@@ -5553,6 +5724,15 @@ type Statistics = {
 // @public (undocumented)
 function stopClip(element: HTMLDivElement, options?: StopClipOptions): void;
 
+declare namespace strategies {
+    export {
+        fillInsideRectangle,
+        thresholdInsideRectangle,
+        fillInsideCircle,
+        fillOutsideCircle
+    }
+}
+
 // @public (undocumented)
 enum StrategyCallbacks {
     // (undocumented)
@@ -5746,6 +5926,9 @@ type TextBoxHandle = {
     };
     worldPosition: Types_2.Point3;
 };
+
+// @public (undocumented)
+const thresholdInsideRectangle: (enabledElement: any, operationData: any) => unknown;
 
 // @public (undocumented)
 function thresholdSegmentationByRange(segmentationVolume: Types_2.IImageVolume, segmentationIndex: number, thresholdVolumeInformation: ThresholdInformation[], overlapType: number): Types_2.IImageVolume;
@@ -6550,7 +6733,7 @@ class VolumetricCalculator extends BasicStatsCalculator_2 {
 export class WholeBodySegmentTool extends GrowCutBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    protected getGrowCutLabelmap(): Promise<Types_2.IImageVolume>;
+    protected getGrowCutLabelmap(growCutData: any): Promise<Types_2.IImageVolume>;
     // (undocumented)
     protected getRemoveIslandData(): RemoveIslandData;
     // (undocumented)
