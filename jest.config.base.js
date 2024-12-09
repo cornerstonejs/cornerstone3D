@@ -7,7 +7,7 @@ module.exports = {
   // roots: ['<rootDir>/src'],
   testMatch: ['<rootDir>/test/**/*.jest.js'],
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
-  testEnvironment: 'jsdom',
+  testEnvironment: require.resolve('./utils/fixJSDOMJest.js'),
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx'],
   transformIgnorePatterns: ['<rootDir>/node_modules/(?!@kitware/.*)'],
   moduleNameMapper: {

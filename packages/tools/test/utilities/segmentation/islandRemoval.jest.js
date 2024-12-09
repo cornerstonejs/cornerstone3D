@@ -3,6 +3,7 @@ import {
   utilities,
   Enums,
   cache,
+  volumeLoader,
   setUseCPURendering,
 } from '@cornerstonejs/core';
 import {
@@ -13,17 +14,17 @@ import {
   afterEach,
   beforeAll,
 } from '@jest/globals';
-import IslandRemoval from '../../../src/utilities/segmentation/IslandRemoval';
+import IslandRemoval from '../../../src/utilities/segmentation/islandRemoval';
 
 const { OrientationAxis, ViewportType } = Enums;
 const { VoxelManager } = utilities;
 
 const dimensions = [32, 32, 5];
 const [width, height, depth] = dimensions;
-const size = width * height * depth;
-const scalarData = new Uint8Array(size);
+const imageSize = width * height * depth;
 const viewportId = 'viewportId';
 const renderingEngineId = 'renderingEngineId';
+const volumeId = 'volumeId';
 
 describe('IslandRemove', function () {
   let islandRemoval, segmentationVoxels, renderingEngine, viewport;
@@ -37,11 +38,18 @@ describe('IslandRemove', function () {
   beforeEach(() => {
     cache.purgeCache();
     islandRemoval = new IslandRemoval();
-    scalarData.fill(0);
-    segmentationVoxels = VoxelManager.createVolumeVoxelManager(
+    const scalarData = new Uint8Array(imageSize);
+
+    const volume = volumeLoader.createLocalVolume(volumeId, {
       dimensions,
-      scalarData
-    );
+      spacing: [1, 1, 1],
+      scalarData,
+      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      origin: [0, 0, 0],
+    });
+
+    segmentationVoxels = volume.voxelManager;
+
     renderingEngine = new RenderingEngine(renderingEngineId);
     createViewport(renderingEngine, OrientationAxis.ACQUISITION, width, height);
     viewport = renderingEngine.getViewport(viewportId);
@@ -51,7 +59,7 @@ describe('IslandRemove', function () {
 
   afterEach(() => {
     cache.purgeCache();
-    renderingEngine.destroy();
+    renderingEngine?.destroy();
   });
 
   it('fills center', () => {

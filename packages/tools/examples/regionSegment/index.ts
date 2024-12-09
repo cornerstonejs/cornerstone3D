@@ -22,12 +22,6 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const DEFAULT_SEGMENT_CONFIG = {
-  fillAlpha: 0.1,
-  outlineOpacity: 1,
-  outlineWidthActive: 3,
-};
-
 const {
   RegionSegmentTool,
   segmentation,
