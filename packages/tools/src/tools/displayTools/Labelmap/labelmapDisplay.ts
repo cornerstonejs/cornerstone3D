@@ -283,6 +283,7 @@ function _setLabelmapColorAndOpacity(
   ofun.setClamping(false);
   const labelmapActor = labelmapActorEntry.actor as vtkVolume;
 
+  // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get('preLoad') || { preLoad: null };
 
   if (preLoad) {
@@ -479,12 +480,13 @@ async function _addLabelmapToViewport(
   segmentationId: string,
   config: LabelmapRenderingConfig
 ): Promise<Types.ActorEntry | undefined> {
-  return await addLabelmapToElement(
+  const result = await addLabelmapToElement(
     viewport.element,
     labelmapData,
     segmentationId,
     config
   );
+  return result || undefined;
 }
 
 export default {

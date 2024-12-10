@@ -9,6 +9,8 @@ import {
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../../enums';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 
 const internalCache = new Map() as Map<
   string,
@@ -45,7 +47,8 @@ export async function addVolumesAsIndependentComponents({
   // need to remove the old actor/mapper and convert it to a new one
   // which the segmentation data is added as a second component to the volume data
   const defaultActor = viewport.getDefaultActor();
-  const { actor, uid, callback } = defaultActor;
+  const { actor } = defaultActor as { actor: vtkVolume };
+  const { uid, callback } = defaultActor;
 
   const referenceVolumeId = viewport.getVolumeId();
 
@@ -104,7 +107,9 @@ export async function addVolumesAsIndependentComponents({
   const mapper = convertMapperToNotSharedMapper(oldMapper as vtkVolumeMapper);
   actor.setMapper(mapper);
 
-  mapper.setBlendMode(Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND);
+  mapper.setBlendMode(
+    Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND as unknown as BlendMode
+  );
 
   const arrayAgain = mapper.getInputData().getPointData().getArray(0);
 
@@ -140,85 +145,85 @@ export async function addVolumesAsIndependentComponents({
     load,
   };
 
-  function onSegmentationDataModified(evt) {
-    // update the second component of the array with the new segmentation data
-    const { segmentationId, modifiedSlicesToUse } = evt.detail;
-    const { representationData } = getSegmentation(segmentationId);
-    const { volumeId } = representationData.LABELMAP;
+  // function onSegmentationDataModified(evt) {
+  //   // update the second component of the array with the new segmentation data
+  //   const { segmentationId, modifiedSlicesToUse } = evt.detail;
+  //   const { representationData } = getSegmentation(segmentationId);
+  //   const { volumeId } = representationData.LABELMAP;
 
-    if (volumeId !== segVolumeId) {
-      return;
-    }
+  //   if (volumeId !== segVolumeId) {
+  //     return;
+  //   }
 
-    const { scalarData } = cache.getVolume(volumeId);
+  //   const { scalarData } = cache.getVolume(volumeId);
 
-    const array = mapper.getInputData().getPointData().getArray(0);
-    const baseData = array.getData();
-    const newComp = 2;
-    const dims = segImageData.getDimensions();
+  //   const array = mapper.getInputData().getPointData().getArray(0);
+  //   const baseData = array.getData();
+  //   const newComp = 2;
+  //   const dims = segImageData.getDimensions();
 
-    const slices = modifiedSlicesToUse?.length
-      ? modifiedSlicesToUse
-      : Array.from({ length: dims[2] }, (_, i) => i);
+  //   const slices = modifiedSlicesToUse?.length
+  //     ? modifiedSlicesToUse
+  //     : Array.from({ length: dims[2] }, (_, i) => i);
 
-    for (const z of slices) {
-      for (let y = 0; y < dims[1]; ++y) {
-        for (let x = 0; x < dims[0]; ++x) {
-          const iTuple = x + dims[0] * (y + dims[1] * z);
-          baseData[iTuple * newComp + 1] = scalarData[iTuple];
-        }
-      }
-    }
+  //   for (const z of slices) {
+  //     for (let y = 0; y < dims[1]; ++y) {
+  //       for (let x = 0; x < dims[0]; ++x) {
+  //         const iTuple = x + dims[0] * (y + dims[1] * z);
+  //         baseData[iTuple * newComp + 1] = scalarData[iTuple];
+  //       }
+  //     }
+  //   }
 
-    array.setData(baseData);
-    const newMapper = viewport.getDefaultActor().actor.getMapper();
-    newMapper.modified();
-  }
+  //   array.setData(baseData);
+  //   const newMapper = viewport.getDefaultActor().actor.getMapper();
+  //   newMapper.modified();
+  // }
 
-  eventTarget.addEventListener(
-    Events.SEGMENTATION_DATA_MODIFIED,
-    onSegmentationDataModified
-  );
+  // eventTarget.addEventListener(
+  //   Events.SEGMENTATION_DATA_MODIFIED,
+  //   onSegmentationDataModified
+  // );
 
-  eventTarget.addEventListener(
-    Events.SEGMENTATION_REPRESENTATION_REMOVED,
-    async (evt) => {
-      eventTarget.removeEventListener(
-        Events.SEGMENTATION_DATA_MODIFIED,
-        onSegmentationDataModified
-      );
+  // eventTarget.addEventListener(
+  //   Events.SEGMENTATION_REPRESENTATION_REMOVED,
+  //   async (evt) => {
+  //     eventTarget.removeEventListener(
+  //       Events.SEGMENTATION_DATA_MODIFIED,
+  //       onSegmentationDataModified
+  //     );
 
-      const actorEntry = viewport.getActor(uid);
-      const { callback } = actorEntry;
-      const { element, id } = viewport;
-      viewport.removeActors([uid]);
+  //     const actorEntry = viewport.getActor(uid);
+  //     const { callback } = actorEntry;
+  //     const { element, id } = viewport;
+  //     viewport.removeActors([uid]);
 
-      const actor = await createVolumeActor(
-        {
-          volumeId: uid,
-          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-          callback: ({ volumeActor }) => {
-            if (callback) {
-              callback({
-                volumeActor,
-                volumeId,
-              });
-            }
-          },
-        },
-        element,
-        id
-      );
+  //     const actor = await createVolumeActor(
+  //       {
+  //         volumeId: uid,
+  //         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+  //         callback: ({ volumeActor }) => {
+  //           if (callback) {
+  //             callback({
+  //               volumeActor,
+  //               volumeId,
+  //             });
+  //           }
+  //         },
+  //       },
+  //       element,
+  //       id
+  //     );
 
-      viewport.addActor({ actor, uid });
+  //     viewport.addActor({ actor, uid });
 
-      viewport.render();
-    }
-  );
+  //     viewport.render();
+  //   }
+  // );
 
-  return {
-    uid,
-    actor,
-    load,
-  };
+  // return {
+  //   uid,
+  //   actor,
+  //   load,
+  // };
 }

@@ -9,7 +9,7 @@ const { BlendMode } = vtkConstants;
  * then it will not show any difference unless MAXIMUM_INTENSITY_BLEND is set on the viewport
  * as the blend.
  */
-enum BlendModes {
+export enum BlendModes {
   /** composite blending - suitable for compositing multiple images */
   COMPOSITE = BlendMode.COMPOSITE_BLEND,
   /** maximum intensity projection */

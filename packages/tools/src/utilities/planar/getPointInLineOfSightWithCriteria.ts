@@ -69,7 +69,7 @@ export function getPointsInLineOfSight(
   const points: Types.Point3[] = [];
 
   // Sample points in the positive normal direction
-  let currentPos = [...worldPos];
+  let currentPos = [...worldPos] as Types.Point3;
   while (_inBounds(currentPos, bounds)) {
     points.push([...currentPos]);
     currentPos[0] += normalDirection[0] * step;
