@@ -31,6 +31,16 @@ type IVolumeInput = {
   blendMode?: BlendModes;
   /** Slab thickness of the volume - by default it is 0.05*/
   slabThickness?: number;
+  /**
+   * If a volume input has an independent component flag set, it means it requests
+   * to not create another separate volume actor/mapper, but to use the same
+   * default volume actor/mapper and insert the volume data as a separate
+   * component into the old mapper data. This is often used for segmentations on
+   * MIPs where the segmentation cannot be rendered as a separate volume actor
+   * since during the blend mode calculation, the ray steps require the knowledge
+   * of the original volume data + segmentation data.
+   */
+  useIndependentComponents?: boolean;
   /** other metadata that is needed for the volume */
   [key: string]: unknown;
 };

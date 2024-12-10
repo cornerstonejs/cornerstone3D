@@ -18,6 +18,8 @@ enum BlendModes {
   MINIMUM_INTENSITY_BLEND = BlendMode.MINIMUM_INTENSITY_BLEND,
   /** average intensity projection */
   AVERAGE_INTENSITY_BLEND = BlendMode.AVERAGE_INTENSITY_BLEND,
+  /** MIP labelmap */
+  LABELMAP_EDGE_PROJECTION_BLEND = BlendMode.LABELMAP_EDGE_PROJECTION_BLEND,
 }
 
 export default BlendModes;

@@ -23,12 +23,15 @@ interface createVolumeActorInterface {
 }
 
 /**
- * Given a volumeId, it creates a vtk volume actor and returns it. If
- * callback is provided, it will be called with the volume actor and the
- * volumeId. If blendMode is provided, it will be set on the volume actor.
+ * Creates a volume actor based on the provided properties.
  *
- * @param props - createVolumeActorInterface
- * @returns A promise that resolves to a VolumeActor.
+ * @param props - The properties for creating the volume actor.
+ * @param element - The HTMLDivElement where the volume actor will be rendered.
+ * @param viewportId - The ID of the viewport where the volume actor will be displayed.
+ * @param suppressEvents - Optional. Specifies whether to suppress triggering events. Default is false.
+ * @param useNativeDataType - Optional. Specifies whether to use the native data type. Default is false.
+ * @returns A promise that resolves to the created volume actor.
+ * @throws An error if the imageVolume with the specified ID does not exist.
  */
 async function createVolumeActor(
   props: createVolumeActorInterface,
