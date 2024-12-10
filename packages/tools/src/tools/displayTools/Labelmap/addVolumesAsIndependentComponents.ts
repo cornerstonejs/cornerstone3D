@@ -7,7 +7,7 @@ import {
   createVolumeActor,
   type Types,
 } from '@cornerstonejs/core';
-import { Events } from '../../../enums';
+import { Events, SegmentationRepresentations } from '../../../enums';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 const internalCache = new Map() as Map<
@@ -53,7 +53,6 @@ export async function addVolumesAsIndependentComponents({
     return {
       uid,
       actor,
-      load,
     };
   }
   const volumeInputArray = volumeInputs;
@@ -117,12 +116,22 @@ export async function addVolumesAsIndependentComponents({
   actor.getProperty().setForceNearestInterpolation(1, true);
   actor.getProperty().setIndependentComponents(true);
 
-  viewport.addActor({ actor, uid, callback, referencedId: referenceVolumeId });
+  viewport.addActor({
+    actor,
+    uid,
+    callback,
+    referencedId: referenceVolumeId,
+    representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+  });
 
   internalCache.set(uid, {
     added: true,
     segmentationRepresentationUID: `${segmentationId}`,
     originalBlendMode: viewport.getBlendMode(),
+  });
+
+  actor.set({
+    preLoad: load,
   });
 
   return {

@@ -280,13 +280,18 @@ function _setLabelmapColorAndOpacity(
     }
   }
 
-  const labelmapActor = labelmapActorEntry.actor as vtkVolume;
-  labelmapActor.getProperty().setRGBTransferFunction(0, cfun);
-
   ofun.setClamping(false);
+  const labelmapActor = labelmapActorEntry.actor as vtkVolume;
 
-  labelmapActor.getProperty().setScalarOpacity(0, ofun);
-  labelmapActor.getProperty().setInterpolationTypeToNearest();
+  const { preLoad } = labelmapActor.get('preLoad') || { preLoad: null };
+
+  if (preLoad) {
+    preLoad({ cfun, ofun, actor: labelmapActor });
+  } else {
+    labelmapActor.getProperty().setRGBTransferFunction(0, cfun);
+    labelmapActor.getProperty().setScalarOpacity(0, ofun);
+    labelmapActor.getProperty().setInterpolationTypeToNearest();
+  }
 
   if (renderOutline) {
     // @ts-ignore - fix type in vtk
@@ -473,8 +478,8 @@ async function _addLabelmapToViewport(
   labelmapData: LabelmapSegmentationData,
   segmentationId: string,
   config: LabelmapRenderingConfig
-): Promise<void> {
-  await addLabelmapToElement(
+): Promise<Types.ActorEntry | undefined> {
+  return await addLabelmapToElement(
     viewport.element,
     labelmapData,
     segmentationId,
