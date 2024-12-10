@@ -1,3 +1,4 @@
+import { imageLoader } from "@cornerstonejs/core";
 import {
     log,
     data as dcmjsData,
@@ -447,7 +448,13 @@ async function generateToolState(
         centroidXYZ.set(segmentIndex, centroids);
     });
 
+    const derivedImages = await sliceLabelmapBufferArray({
+        labelmapBufferArray,
+        referencedImageIds
+    });
+
     return {
+        derivedImages,
         labelmapBufferArray,
         segMetadata,
         segmentsOnFrame,
@@ -455,6 +462,31 @@ async function generateToolState(
         centroids: centroidXYZ,
         overlappingSegments
     };
+}
+
+async function sliceLabelmapBufferArray({
+    labelmapBufferArray,
+    referencedImageIds
+}) {
+    const derivedImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+        referencedImageIds
+    );
+
+    const volumeScalarData = new Uint8Array(labelmapBufferArray[0]);
+
+    for (let i = 0; i < derivedImages.length; i++) {
+        const voxelManager = derivedImages[i].voxelManager;
+        const scalarData = voxelManager.getScalarData();
+        scalarData.set(
+            volumeScalarData.slice(
+                i * scalarData.length,
+                (i + 1) * scalarData.length
+            )
+        );
+        voxelManager.setScalarData(scalarData);
+    }
+
+    return derivedImages;
 }
 
 // function insertPixelDataPerpendicular(
