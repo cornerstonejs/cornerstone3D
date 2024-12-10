@@ -2,6 +2,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type CanvasActor from '../RenderingEngine/CanvasActor';
+import type { BlendModes } from '../enums';
 
 export type Actor = vtkActor;
 export type VolumeActor = vtkVolume;
@@ -26,6 +27,16 @@ export interface ActorEntry {
   /** clipping filter applied to actor surfaces*/
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clippingFilter?: any;
+  /** blend mode */
+  blendMode?: BlendModes;
+  /** callbacks that run after actor creation */
+  callbacks?: ({
+    volumeActor,
+    volumeId,
+  }: {
+    volumeActor: VolumeActor;
+    volumeId: string;
+  }) => void;
   /**  */
   [key: string]: unknown;
 }
