@@ -68,14 +68,19 @@ async function addLabelmapToElement(
       await _handleMissingVolume(labelMapData);
     }
 
+    const blendMode =
+      config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+
+    const useIndependentComponents =
+      blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
+
     const volumeInputs: Types.IVolumeInput[] = [
       {
         volumeId,
         visibility,
         representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
-        useIndependentComponents: config?.useIndependentComponents ?? false,
-        blendMode:
-          config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+        useIndependentComponents,
+        blendMode,
       },
     ];
 

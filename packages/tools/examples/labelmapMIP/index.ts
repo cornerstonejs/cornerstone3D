@@ -197,7 +197,6 @@ async function run() {
         segmentationId,
         config: {
           blendMode: BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
-          useIndependentComponents: true,
         },
       },
     ]);

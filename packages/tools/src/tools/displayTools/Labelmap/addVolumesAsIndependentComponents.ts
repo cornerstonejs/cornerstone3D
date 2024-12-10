@@ -68,7 +68,6 @@ export async function addVolumesAsIndependentComponents({
   }
 
   const { volumeId } = volumeInputArray[0];
-  const segVolumeId = volumeId;
 
   const segImageVolume = await volumeLoader.loadVolume(volumeId);
 

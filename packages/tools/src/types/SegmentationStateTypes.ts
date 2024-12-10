@@ -60,10 +60,6 @@ export type LabelmapRenderingConfig = {
   cfun: vtkColorTransferFunction;
   ofun: vtkPiecewiseFunction;
   colorLUTIndex: number;
-  // whether the segmentation is used as independent component
-  // or not, if you don't want segmentation on MIP, you don't
-  // need to touch this
-  useIndependentComponents?: boolean;
   // segmentation blend mode if desired
   blendMode?: coreEnums.BlendModes;
 };
@@ -145,7 +141,6 @@ export type RepresentationPublicInput = {
   type?: Enums.SegmentationRepresentations;
   config?: {
     colorLUTOrIndex?: Types.ColorLUT | number;
-    useIndependentComponents?: boolean;
     blendMode?: coreEnums.BlendModes;
   };
 };

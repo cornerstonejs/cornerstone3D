@@ -2486,7 +2486,6 @@ type IVolumeInput = {
     callback?: VolumeInputCallback;
     blendMode?: BlendModes;
     slabThickness?: number;
-    useIndependentComponents?: boolean;
     [key: string]: unknown;
 };
 
