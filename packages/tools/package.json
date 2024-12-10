@@ -97,7 +97,6 @@
   },
   "dependencies": {
     "@types/offscreencanvas": "2019.7.3",
-    "@cornerstonejs/core": "^2.9.0",
     "comlink": "^4.4.1",
     "lodash.get": "^4.4.2"
   },
@@ -105,6 +104,7 @@
     "canvas": "^2.11.2"
   },
   "peerDependencies": {
+    "@cornerstonejs/core": "^2.9.0",
     "@kitware/vtk.js": "32.1.1",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
