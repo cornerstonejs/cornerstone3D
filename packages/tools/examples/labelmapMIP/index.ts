@@ -28,6 +28,7 @@ const {
   Enums: csToolsEnums,
   segmentation,
   VolumeRotateTool,
+  StackScrollTool,
 } = cornerstoneTools;
 
 const { ViewportType, BlendModes } = Enums;
@@ -76,11 +77,14 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
   cornerstoneTools.addTool(VolumeRotateTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  const toolGroup2 = ToolGroupManager.createToolGroup('mipToolGroup');
 
-  toolGroup.addTool(VolumeRotateTool.toolName);
+  toolGroup2.addTool(VolumeRotateTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -124,9 +128,12 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup2.addViewport(viewportId2, renderingEngineId);
 
-  toolGroup.setToolActive(VolumeRotateTool.toolName, {
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
+  toolGroup2.setToolActive(VolumeRotateTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
   // Set the volume to load
@@ -162,6 +169,9 @@ async function run() {
   fillVolumeLabelmapWithMockData({
     volumeId: segmentationId,
     cornerstone,
+    innerRadius: 20,
+    outerRadius: 30,
+    scale: [1, 2, 1],
   });
 
   // Add the segmentations to state
