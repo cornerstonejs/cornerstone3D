@@ -5,8 +5,10 @@ import {
   volumeLoader,
   eventTarget,
   createVolumeActor,
+  type Types,
 } from '@cornerstonejs/core';
 import { Events } from '../../../enums';
+import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 const internalCache = new Map() as Map<
   string,
@@ -34,12 +36,18 @@ export async function addVolumesAsIndependentComponents({
   viewport,
   volumeInputs,
   segmentationId,
+}: {
+  viewport: Types.IVolumeViewport;
+  volumeInputs: Types.IVolumeInput[];
+  segmentationId: string;
 }) {
   // if we are adding the segmentation as independent component we basically
   // need to remove the old actor/mapper and convert it to a new one
   // which the segmentation data is added as a second component to the volume data
   const defaultActor = viewport.getDefaultActor();
   const { actor, uid, callback } = defaultActor;
+
+  const referenceVolumeId = viewport.getVolumeId();
 
   if (internalCache.get(uid)?.added) {
     return {
@@ -72,10 +80,12 @@ export async function addVolumesAsIndependentComponents({
   const segScalarData =
     segImageVolume.voxelManager.getCompleteScalarDataArray();
 
-  const { imageData: baseImageData } = viewport.getImageData();
+  // const { imageData: baseImageData } = viewport.getImageData();
 
-  const array = baseImageData.getPointData().getArray(0);
-  const baseData = array.getData();
+  // const array = baseImageData.getPointData().getArray(0);
+  // const baseData = array.getData();
+  const baseVolume = cache.getVolume(referenceVolumeId);
+  const baseData = baseVolume.voxelManager.getCompleteScalarDataArray();
 
   const newComp = 2;
   const cubeData = new Float32Array(newComp * baseData.length);
@@ -92,8 +102,7 @@ export async function addVolumesAsIndependentComponents({
 
   viewport.removeActors([uid]);
   const oldMapper = actor.getMapper();
-  const mapper = convertMapperToNotSharedMapper(oldMapper);
-
+  const mapper = convertMapperToNotSharedMapper(oldMapper as vtkVolumeMapper);
   actor.setMapper(mapper);
 
   mapper.setBlendMode(Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND);
@@ -108,7 +117,7 @@ export async function addVolumesAsIndependentComponents({
   actor.getProperty().setForceNearestInterpolation(1, true);
   actor.getProperty().setIndependentComponents(true);
 
-  viewport.addActor({ actor, uid, callback });
+  viewport.addActor({ actor, uid, callback, referencedId: referenceVolumeId });
 
   internalCache.set(uid, {
     added: true,

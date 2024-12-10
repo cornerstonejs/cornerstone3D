@@ -27,9 +27,11 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
+  VolumeRotateTool,
 } = cornerstoneTools;
 
 const { ViewportType, BlendModes } = Enums;
+const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -38,8 +40,8 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 // Create the viewports
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
+const viewportId1 = 'CT_LEFT';
+const viewportId2 = 'CT_MIP';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -73,9 +75,12 @@ content.appendChild(viewportGrid);
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+  cornerstoneTools.addTool(VolumeRotateTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  toolGroup.addTool(VolumeRotateTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -121,6 +126,9 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
 
+  toolGroup.setToolActive(VolumeRotateTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
   // Set the volume to load
   volume.load();
 
@@ -169,14 +177,21 @@ async function run() {
     },
   ]);
 
-  const segmentationRepresentation = {
-    segmentationId,
-  };
+  await segmentation.addLabelmapRepresentationToViewport(viewportId1, [
+    { segmentationId },
+  ]);
 
-  await segmentation.addLabelmapRepresentationToViewportMap({
-    [viewportId1]: [segmentationRepresentation],
-    [viewportId2]: [segmentationRepresentation],
-  });
+  setTimeout(() => {
+    segmentation.addLabelmapRepresentationToViewport(viewportId2, [
+      {
+        segmentationId,
+        config: {
+          blendMode: BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
+          useIndependentComponents: true,
+        },
+      },
+    ]);
+  }, 1000);
 
   triggerSegmentationDataModified(segmentationId);
 }

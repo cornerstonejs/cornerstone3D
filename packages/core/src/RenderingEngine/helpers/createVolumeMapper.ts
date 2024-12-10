@@ -3,6 +3,7 @@ import { getConfiguration } from '../../init';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
@@ -51,7 +52,19 @@ export default function createVolumeMapper(
 export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   const volumeMapper = vtkVolumeMapper.newInstance();
   volumeMapper.setBlendMode(sharedMapper.getBlendMode());
-  volumeMapper.setInputData(sharedMapper.getInputData());
+
+  const imageData = sharedMapper.getInputData();
+  const { voxelManager } = imageData.get('voxelManager');
+  const values = voxelManager.getCompleteScalarDataArray();
+
+  const scalarArray = vtkDataArray.newInstance({
+    name: `Pixels`,
+    values,
+  });
+
+  imageData.getPointData().setScalars(scalarArray);
+
+  volumeMapper.setInputData(imageData);
   volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());
   volumeMapper.setSampleDistance(sharedMapper.getSampleDistance());
   return volumeMapper;

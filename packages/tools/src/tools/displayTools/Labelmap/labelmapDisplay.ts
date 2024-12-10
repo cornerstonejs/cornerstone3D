@@ -31,7 +31,9 @@ import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/get
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
-const MAX_NUMBER_COLORS = 255;
+// 255 itself is used as preview color, so basically
+// we have 254 colors to use for the segments if we are using the preview.
+export const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
 let polySegConversionInProgress = false;
@@ -84,7 +86,7 @@ async function render(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
   representation: LabelmapRepresentation
 ): Promise<void> {
-  const { segmentationId } = representation;
+  const { segmentationId, config } = representation;
 
   const segmentation = getSegmentation(segmentationId);
 
@@ -133,7 +135,12 @@ async function render(
   if (viewport instanceof VolumeViewport) {
     if (!labelmapActorEntry) {
       // only add the labelmap to ToolGroup viewports if it is not already added
-      await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
+      await _addLabelmapToViewport(
+        viewport,
+        labelmapData,
+        segmentationId,
+        config
+      );
     }
 
     labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
@@ -152,7 +159,12 @@ async function render(
 
     if (!labelmapActorEntry) {
       // only add the labelmap to ToolGroup viewports if it is not already added
-      await _addLabelmapToViewport(viewport, labelmapData, segmentationId);
+      await _addLabelmapToViewport(
+        viewport,
+        labelmapData,
+        segmentationId,
+        config
+      );
     }
 
     labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
@@ -459,9 +471,15 @@ function _needsTransferFunctionUpdate(
 async function _addLabelmapToViewport(
   viewport: Types.IVolumeViewport | Types.IStackViewport,
   labelmapData: LabelmapSegmentationData,
-  segmentationId: string
+  segmentationId: string,
+  config: LabelmapRenderingConfig
 ): Promise<void> {
-  await addLabelmapToElement(viewport.element, labelmapData, segmentationId);
+  await addLabelmapToElement(
+    viewport.element,
+    labelmapData,
+    segmentationId,
+    config
+  );
 }
 
 export default {
