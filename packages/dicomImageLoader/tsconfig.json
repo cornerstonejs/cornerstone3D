@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist/esm",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "paths": {
+      "@cornerstonejs/core": ["./packages/core/src"],
+    }
   },
   "include": ["./src/**/*"],
   "exclude": ["./codecs/**/*"]
