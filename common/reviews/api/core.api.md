@@ -19,7 +19,7 @@ import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // @public (undocumented)
 interface AABB2 {
@@ -58,6 +58,13 @@ interface ActorEntry {
     [key: string]: unknown;
     // (undocumented)
     actor: Actor | VolumeActor | ImageActor | ICanvasActor;
+    // (undocumented)
+    blendMode?: BlendModes;
+    // (undocumented)
+    callbacks?: ({ volumeActor, volumeId, }: {
+        volumeActor: VolumeActor;
+        volumeId: string;
+    }) => void;
     // (undocumented)
     clippingFilter?: any;
     // (undocumented)
@@ -252,6 +259,8 @@ enum BlendModes {
     // (undocumented)
     COMPOSITE,
     // (undocumented)
+    LABELMAP_EDGE_PROJECTION_BLEND,
+    // (undocumented)
     MAXIMUM_INTENSITY_BLEND,
     // (undocumented)
     MINIMUM_INTENSITY_BLEND
@@ -438,6 +447,9 @@ enum ContourType {
     // (undocumented)
     OPEN_PLANAR = "OPEN_PLANAR"
 }
+
+// @public (undocumented)
+export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper): vtkVolumeMapper;
 
 // @public (undocumented)
 function convertStackToVolumeViewport({ viewport, options, }: {
@@ -2474,6 +2486,7 @@ type IVolumeInput = {
     callback?: VolumeInputCallback;
     blendMode?: BlendModes;
     slabThickness?: number;
+    useIndependentComponents?: boolean;
     [key: string]: unknown;
 };
 
@@ -2803,7 +2816,7 @@ class PointsManager<T> {
     // (undocumented)
     getPointArray(index: number): T;
     // (undocumented)
-    getTypedArray(): Float32Array;
+    getTypedArray(): Float32Array<ArrayBufferLike>;
     // (undocumented)
     protected grow(additionalSize?: number, growSize?: number): void;
     // (undocumented)
@@ -3169,7 +3182,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     getRun: (j: number, k: number) => RLERun<T>[];
     // (undocumented)
-    static getScalarData: (ArrayType?: Uint8ClampedArrayConstructor) => Uint8ClampedArray;
+    static getScalarData: (ArrayType?: Uint8ClampedArrayConstructor) => Uint8ClampedArray<any>;
     // (undocumented)
     has(index: number): boolean;
     // (undocumented)
@@ -4777,6 +4790,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
     addVolumes(volumeInputArray: IVolumeInput[], immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
+    getBlendMode(filterActorUIDs?: string[]): BlendModes;
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)

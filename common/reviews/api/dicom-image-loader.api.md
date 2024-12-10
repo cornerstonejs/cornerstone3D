@@ -212,7 +212,7 @@ percentComplete: number;
 }> | Promise<{
     contentType: string;
     imageQualityStatus: ImageQualityStatus_2;
-    pixelData: Uint8Array;
+    pixelData: Uint8Array<any>;
     extractDone?: undefined;
     tokenIndex?: undefined;
     responseHeaders?: undefined;
