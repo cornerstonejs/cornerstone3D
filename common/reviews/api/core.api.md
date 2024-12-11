@@ -2815,7 +2815,7 @@ class PointsManager<T> {
     // (undocumented)
     getPointArray(index: number): T;
     // (undocumented)
-    getTypedArray(): Float32Array<ArrayBufferLike>;
+    getTypedArray(): Float32Array;
     // (undocumented)
     protected grow(additionalSize?: number, growSize?: number): void;
     // (undocumented)
@@ -3181,7 +3181,7 @@ class RLEVoxelMap<T> {
     // (undocumented)
     getRun: (j: number, k: number) => RLERun<T>[];
     // (undocumented)
-    static getScalarData: (ArrayType?: Uint8ClampedArrayConstructor) => Uint8ClampedArray<any>;
+    static getScalarData: (ArrayType?: Uint8ClampedArrayConstructor) => Uint8ClampedArray;
     // (undocumented)
     has(index: number): boolean;
     // (undocumented)
