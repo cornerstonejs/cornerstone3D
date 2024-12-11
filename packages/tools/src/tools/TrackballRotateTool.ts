@@ -103,7 +103,12 @@ class TrackballRotateTool extends BaseTool {
               return;
             }
             const { viewport } = element;
+
+            const viewPresentation = viewport.getViewPresentation();
+
             viewport.resetCamera();
+
+            viewport.setViewPresentation(viewPresentation);
             viewport.render();
           });
 
