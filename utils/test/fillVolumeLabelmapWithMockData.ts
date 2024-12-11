@@ -4,6 +4,9 @@
  * @param options.volumeId - The ID of the volume.
  * @param options.cornerstone - The cornerstone core object.
  * @param options.centerOffset - The offset of the center of the ellipsoid from the center of the volume.
+ * @param options.innerRadius - The radius of the inner ellipsoid (defaults to dimensions[0]/8).
+ * @param options.outerRadius - The radius of the outer ellipsoid (defaults to dimensions[0]/4).
+ * @param options.scale - Scale factors [x, y, z] to create oval shapes (defaults to [1, 1, 1]).
  */
 export function fillVolumeLabelmapWithMockData({
   volumeId: segVolumeId,
@@ -11,6 +14,7 @@ export function fillVolumeLabelmapWithMockData({
   centerOffset = [0, 0, 0],
   innerRadius = null,
   outerRadius = null,
+  scale = [1, 1, 1],
 }) {
   const segmentationVolume = cornerstone.cache.getVolume(segVolumeId);
   const { dimensions, voxelManager } = segmentationVolume;
@@ -30,9 +34,9 @@ export function fillVolumeLabelmapWithMockData({
     for (let y = 0; y < dimensions[1]; y++) {
       for (let x = 0; x < dimensions[0]; x++) {
         const distanceFromCenter = Math.sqrt(
-          (x - center[0]) * (x - center[0]) +
-            (y - center[1]) * (y - center[1]) +
-            (z - center[2]) * (z - center[2])
+          (x - center[0]) * scale[0] * ((x - center[0]) * scale[0]) +
+            (y - center[1]) * scale[1] * ((y - center[1]) * scale[1]) +
+            (z - center[2]) * scale[2] * ((z - center[2]) * scale[2])
         );
         if (distanceFromCenter < innerRadius) {
           voxelManager.setAtIndex(voxelIndex, 1);

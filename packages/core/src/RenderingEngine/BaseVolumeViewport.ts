@@ -842,8 +842,6 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
-      //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
-      this.viewportProperties.slabThickness = slabThickness;
     }
   }
 

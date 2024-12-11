@@ -27,7 +27,6 @@ const {
   SegmentSelectTool,
   segmentation,
   PlanarFreehandContourSegmentationTool,
-  utilities: cstUtils,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;

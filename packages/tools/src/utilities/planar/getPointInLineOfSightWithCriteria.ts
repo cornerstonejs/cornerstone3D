@@ -1,4 +1,3 @@
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 /**
@@ -17,70 +16,77 @@ import type { Types } from '@cornerstonejs/core';
  * is 0.25 which means steps = 1/4 of the spacing in the normal direction.
  * @returns the World pos of the point that passes the criteriaFunction
  */
-export default function getPointInLineOfSightWithCriteria(
+export function getPointInLineOfSightWithCriteria(
   viewport: Types.IVolumeViewport,
   worldPos: Types.Point3,
   targetVolumeId: string,
   criteriaFunction: (intensity: number, point: Types.Point3) => Types.Point3,
   stepSize = 0.25
 ): Types.Point3 {
-  // 1. Getting the camera from the event details
-  const camera = viewport.getCamera();
-  const { position: cameraPosition } = camera;
+  const points = getPointsInLineOfSight(viewport, worldPos, {
+    targetVolumeId,
+    stepSize,
+  });
 
-  // 2. Calculating the spacing in the normal direction, this will get
-  // used as the step size for iterating over the points in the line of sight
+  let pickedPoint;
+
+  for (const point of points) {
+    const intensity = viewport.getIntensityFromWorld(point);
+    const pointToPick = criteriaFunction(intensity, point);
+    if (pointToPick) {
+      pickedPoint = pointToPick;
+    }
+  }
+
+  return pickedPoint;
+}
+
+/**
+ * Calculates and returns an array of points in the line of sight between the camera and a target volume.
+ * @param viewport - The volume viewport.
+ * @param worldPos - The world position of the camera.
+ * @param targetVolumeId - The ID of the target volume.
+ * @param stepSize - The step size for iterating along the line of sight. Default is 0.25.
+ * @returns An array of points in the line of sight.
+ */
+export function getPointsInLineOfSight(
+  viewport: Types.IVolumeViewport,
+  worldPos: Types.Point3,
+  { targetVolumeId, stepSize }: { targetVolumeId: string; stepSize: number }
+): Types.Point3[] {
+  const camera = viewport.getCamera();
+  const { viewPlaneNormal: normalDirection } = camera;
   const { spacingInNormalDirection } =
     csUtils.getTargetVolumeAndSpacingInNormalDir(
       viewport,
       camera,
       targetVolumeId
     );
-  // 2.1 Making sure, we are not missing any point
-  const step = spacingInNormalDirection * stepSize;
 
-  // 3. Getting the bounds of the viewports. Search for brightest point is
-  // limited to the visible bound
-  // Todo: this might be a problem since bounds will change to spatial bounds.
+  const step = spacingInNormalDirection * stepSize || 1;
   const bounds = viewport.getBounds();
-  const xMin = bounds[0];
-  const xMax = bounds[1];
 
-  // 5. Calculating the line, we use a parametric line definition
-  const vector = <Types.Point3>[0, 0, 0];
+  const points: Types.Point3[] = [];
 
-  // 5.1 Point coordinate on the line
-  let point = <Types.Point3>[0, 0, 0];
-
-  // 5.2 Calculating the line direction, and storing in vector
-  vtkMath.subtract(worldPos, cameraPosition, vector);
-
-  let pickedPoint;
-
-  // 6. Iterating over the line from the lower bound to the upper bound, with the
-  // specified step size
-  for (let pointT = xMin; pointT <= xMax; pointT = pointT + step) {
-    // 6.1 Calculating the point x location
-    point = [pointT, 0, 0];
-    // 6.2 Calculating the point y,z location based on the line equation
-    const t = (pointT - cameraPosition[0]) / vector[0];
-    point[1] = t * vector[1] + cameraPosition[1];
-    point[2] = t * vector[2] + cameraPosition[2];
-
-    // 6.3 Checking if the points is inside the bounds
-    if (_inBounds(point, bounds)) {
-      // 6.4 Getting the intensity of the point
-      const intensity = viewport.getIntensityFromWorld(point);
-      // 6.5 Passing the intensity to the maximum value functions which decides
-      // whether the current point is of interest based on some criteria
-      const pointToPick = criteriaFunction(intensity, point);
-      if (pointToPick) {
-        pickedPoint = pointToPick;
-      }
-    }
+  // Sample points in the positive normal direction
+  let currentPos = [...worldPos] as Types.Point3;
+  while (_inBounds(currentPos, bounds)) {
+    points.push([...currentPos]);
+    currentPos[0] += normalDirection[0] * step;
+    currentPos[1] += normalDirection[1] * step;
+    currentPos[2] += normalDirection[2] * step;
   }
 
-  return pickedPoint;
+  // Sample points in the negative normal direction
+  currentPos = [...worldPos];
+  while (_inBounds(currentPos, bounds)) {
+    points.push([...currentPos]);
+    currentPos[0] -= normalDirection[0] * step;
+    currentPos[1] -= normalDirection[1] * step;
+    currentPos[2] -= normalDirection[2] * step;
+  }
+
+  return points;
 }
 
 /**
@@ -93,12 +99,13 @@ const _inBounds = function (
   bounds: Array<number>
 ): boolean {
   const [xMin, xMax, yMin, yMax, zMin, zMax] = bounds;
+  const padding = 10;
   return (
-    point[0] > xMin &&
-    point[0] < xMax &&
-    point[1] > yMin &&
-    point[1] < yMax &&
-    point[2] > zMin &&
-    point[2] < zMax
+    point[0] > xMin + padding &&
+    point[0] < xMax - padding &&
+    point[1] > yMin + padding &&
+    point[1] < yMax - padding &&
+    point[2] > zMin + padding &&
+    point[2] < zMax - padding
   );
 };
