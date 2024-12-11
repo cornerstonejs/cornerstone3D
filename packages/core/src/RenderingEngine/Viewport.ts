@@ -880,20 +880,15 @@ class Viewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
+    let zoom = 1;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
-      const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
-
-      const initZoom = this.getZoom();
-      const fitZoom = this.getZoom(this.fitToCanvasCamera);
-      const absZoom = Math.min(1 / requireX, 1 / requireY);
-      const applyZoom = (absZoom * initZoom) / fitZoom;
-      this.setZoom(applyZoom, false);
+      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+      // Don't set as initial camera because then the zoom interactions don't
+      // work consistently.
+      // TODO: Add a better method to handle initial camera
+      this.setZoom(this.insetImageMultiplier * zoom);
     }
-
-    // getting the image info
-    // getting the image info
     if (imageCanvasPoint) {
       const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
         imageCanvasPoint;
@@ -902,9 +897,9 @@ class Viewport {
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
       const [imageX, imageY] = imagePoint || canvasPoint;
-      const useZoom = 1;
-      const imagePanX = useZoom * imgWidth * (0.5 - imageX);
-      const imagePanY = useZoom * imgHeight * (0.5 - imageY);
+      const imagePanX =
+        (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
+      const imagePanY = zoom * canvasHeight * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
