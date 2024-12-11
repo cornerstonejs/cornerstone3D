@@ -14,7 +14,6 @@ import {
   getSegmentIndexAtWorldPoint,
 } from '../../utilities/segmentation';
 import { state } from '../../store/state';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type {
   Segmentation,
   SegmentationRepresentation,

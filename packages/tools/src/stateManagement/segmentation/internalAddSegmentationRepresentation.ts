@@ -21,6 +21,7 @@ function internalAddSegmentationRepresentation(
   // need to be able to override from the outside
   const renderingConfig: RenderingConfig = {
     colorLUTIndex: getColorLUTIndex(config),
+    ...config,
   };
 
   defaultSegmentationStateManager.addSegmentationRepresentation(

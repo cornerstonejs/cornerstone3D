@@ -1895,6 +1895,7 @@ const _default: {
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
     isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
     filterAnnotationsWithinSamePlane: typeof filterAnnotationsWithinSamePlane;
+    getPointsInLineOfSight: typeof getPointsInLineOfSight;
 };
 
 // @public (undocumented)
@@ -2768,6 +2769,12 @@ function getPoint(points: any, idx: any): Types_2.Point3;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+
+// @public (undocumented)
+function getPointsInLineOfSight(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, { targetVolumeId, stepSize }: {
+    targetVolumeId: string;
+    stepSize: number;
+}): Types_2.Point3[];
 
 // @public (undocumented)
 function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
@@ -4140,7 +4147,8 @@ declare namespace planar_2 {
         filterAnnotationsForDisplay,
         getPointInLineOfSightWithCriteria,
         isPlaneIntersectingAABB,
-        filterAnnotationsWithinSamePlane
+        filterAnnotationsWithinSamePlane,
+        getPointsInLineOfSight
     }
 }
 
