@@ -83,7 +83,7 @@
     "@types/jasmine": "^4.3.1",
     "@types/jest": "^29.5.12",
     "@types/karma": "^6.3.3",
-    "@types/node": "^18.16.3",
+    "@types/node": "^20.14.8",
     "@types/react": "^17.0.58",
     "@types/react-dom": "^17.0.20",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
