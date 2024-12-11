@@ -17,6 +17,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import { SegmentationRepresentations } from '../../src/enums';
 import { triggerSegmentationDataModified } from '../../src/stateManagement/segmentation/triggerSegmentationEvents';
+import { BrushTool, SegmentSelectTool } from '../../src/tools';
 
 // This is for debugging purposes
 console.warn(
@@ -78,6 +79,8 @@ async function run() {
   await initDemo();
   cornerstoneTools.addTool(VolumeRotateTool);
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(SegmentSelectTool);
+  cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -85,6 +88,13 @@ async function run() {
 
   toolGroup2.addTool(VolumeRotateTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
+
+  [toolGroup, toolGroup2].forEach((toolGroup) => {
+    toolGroup?.addTool(SegmentSelectTool.toolName);
+    toolGroup?.addToolInstance('SphereBrush', BrushTool.toolName, {
+      activeStrategy: 'FILL_INSIDE_SPHERE',
+    });
+  });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -133,9 +143,18 @@ async function run() {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
+  toolGroup.setToolActive('SphereBrush', {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+
+  toolGroup.setToolActive(SegmentSelectTool.toolName);
+
   toolGroup2.setToolActive(VolumeRotateTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
+
+  toolGroup2.setToolActive(SegmentSelectTool.toolName);
+
   // Set the volume to load
   volume.load();
 
@@ -173,6 +192,27 @@ async function run() {
     outerRadius: 30,
     scale: [1, 2, 1],
   });
+
+  segmentation.config.style.setStyle(
+    {
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      viewportId: viewportId1,
+    },
+    {
+      fillAlpha: 0.0,
+      activeSegmentOutlineWidthDelta: 3,
+    }
+  );
+
+  segmentation.config.style.setStyle(
+    {
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      viewportId: viewportId2,
+    },
+    {
+      activeSegmentOutlineWidthDelta: 3,
+    }
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([

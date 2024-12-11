@@ -11,6 +11,8 @@ import { Events, SegmentationRepresentations } from '../../../enums';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 const internalCache = new Map() as Map<
   string,
@@ -77,26 +79,27 @@ export async function addVolumesAsIndependentComponents({
     );
   }
 
+  const segVoxelManager = segImageVolume.voxelManager;
+
   const { imageData: segImageData } = segImageVolume;
-  const segScalarData =
-    segImageVolume.voxelManager.getCompleteScalarDataArray();
-
-  // const { imageData: baseImageData } = viewport.getImageData();
-
-  // const array = baseImageData.getPointData().getArray(0);
-  // const baseData = array.getData();
   const baseVolume = cache.getVolume(referenceVolumeId);
-  const baseData = baseVolume.voxelManager.getCompleteScalarDataArray();
+  const baseVoxelManager = baseVolume.voxelManager;
 
   const newComp = 2;
-  const cubeData = new Float32Array(newComp * baseData.length);
+  const cubeData = new Float32Array(
+    newComp * baseVolume.voxelManager.getScalarDataLength()
+  );
   const dims = segImageData.getDimensions();
   for (let z = 0; z < dims[2]; ++z) {
     for (let y = 0; y < dims[1]; ++y) {
       for (let x = 0; x < dims[0]; ++x) {
         const iTuple = x + dims[0] * (y + dims[1] * z);
-        cubeData[iTuple * newComp + 0] = baseData[iTuple];
-        cubeData[iTuple * newComp + 1] = segScalarData[iTuple];
+        cubeData[iTuple * newComp + 0] = baseVoxelManager.getAtIndex(
+          iTuple
+        ) as number;
+        cubeData[iTuple * newComp + 1] = segVoxelManager.getAtIndex(
+          iTuple
+        ) as number;
       }
     }
   }
@@ -138,91 +141,87 @@ export async function addVolumesAsIndependentComponents({
     preLoad: load,
   });
 
+  // Todo: this is really ugly this shouldn't be here at all
+  function onSegmentationDataModified(evt) {
+    // update the second component of the array with the new segmentation data
+    const { segmentationId, modifiedSlicesToUse } = evt.detail;
+    const { representationData } = getSegmentation(segmentationId);
+    const { volumeId: segVolumeId } =
+      representationData.Labelmap as LabelmapSegmentationDataVolume;
+
+    if (segVolumeId !== segImageVolume.volumeId) {
+      return;
+    }
+
+    const segmentationVolume = cache.getVolume(segVolumeId);
+    const segVoxelManager = segmentationVolume.voxelManager;
+
+    const array = mapper.getInputData().getPointData().getArray(0);
+    const baseData = array.getData();
+    const newComp = 2;
+    const dims = segImageData.getDimensions();
+
+    const slices = modifiedSlicesToUse?.length
+      ? modifiedSlicesToUse
+      : Array.from({ length: dims[2] }, (_, i) => i);
+
+    for (const z of slices) {
+      for (let y = 0; y < dims[1]; ++y) {
+        for (let x = 0; x < dims[0]; ++x) {
+          const iTuple = x + dims[0] * (y + dims[1] * z);
+          baseData[iTuple * newComp + 1] = segVoxelManager.getAtIndex(
+            iTuple
+          ) as number;
+        }
+      }
+    }
+
+    array.setData(baseData);
+  }
+
+  eventTarget.addEventListener(
+    Events.SEGMENTATION_DATA_MODIFIED,
+    onSegmentationDataModified
+  );
+
+  eventTarget.addEventListener(
+    Events.SEGMENTATION_REPRESENTATION_REMOVED,
+    async (evt) => {
+      eventTarget.removeEventListener(
+        Events.SEGMENTATION_DATA_MODIFIED,
+        onSegmentationDataModified
+      );
+
+      const actorEntry = viewport.getActor(uid);
+      const { element, id } = viewport;
+      viewport.removeActors([uid]);
+
+      const actor = await createVolumeActor(
+        {
+          volumeId: uid,
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+          callback: ({ volumeActor }) => {
+            if (actorEntry.callback) {
+              // @ts-expect-error
+              actorEntry.callback({
+                volumeActor,
+                volumeId,
+              });
+            }
+          },
+        },
+        element,
+        id
+      );
+
+      viewport.addActor({ actor, uid });
+
+      viewport.render();
+    }
+  );
+
   return {
     uid,
     actor,
-    load,
   };
-
-  // function onSegmentationDataModified(evt) {
-  //   // update the second component of the array with the new segmentation data
-  //   const { segmentationId, modifiedSlicesToUse } = evt.detail;
-  //   const { representationData } = getSegmentation(segmentationId);
-  //   const { volumeId } = representationData.LABELMAP;
-
-  //   if (volumeId !== segVolumeId) {
-  //     return;
-  //   }
-
-  //   const { scalarData } = cache.getVolume(volumeId);
-
-  //   const array = mapper.getInputData().getPointData().getArray(0);
-  //   const baseData = array.getData();
-  //   const newComp = 2;
-  //   const dims = segImageData.getDimensions();
-
-  //   const slices = modifiedSlicesToUse?.length
-  //     ? modifiedSlicesToUse
-  //     : Array.from({ length: dims[2] }, (_, i) => i);
-
-  //   for (const z of slices) {
-  //     for (let y = 0; y < dims[1]; ++y) {
-  //       for (let x = 0; x < dims[0]; ++x) {
-  //         const iTuple = x + dims[0] * (y + dims[1] * z);
-  //         baseData[iTuple * newComp + 1] = scalarData[iTuple];
-  //       }
-  //     }
-  //   }
-
-  //   array.setData(baseData);
-  //   const newMapper = viewport.getDefaultActor().actor.getMapper();
-  //   newMapper.modified();
-  // }
-
-  // eventTarget.addEventListener(
-  //   Events.SEGMENTATION_DATA_MODIFIED,
-  //   onSegmentationDataModified
-  // );
-
-  // eventTarget.addEventListener(
-  //   Events.SEGMENTATION_REPRESENTATION_REMOVED,
-  //   async (evt) => {
-  //     eventTarget.removeEventListener(
-  //       Events.SEGMENTATION_DATA_MODIFIED,
-  //       onSegmentationDataModified
-  //     );
-
-  //     const actorEntry = viewport.getActor(uid);
-  //     const { callback } = actorEntry;
-  //     const { element, id } = viewport;
-  //     viewport.removeActors([uid]);
-
-  //     const actor = await createVolumeActor(
-  //       {
-  //         volumeId: uid,
-  //         blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-  //         callback: ({ volumeActor }) => {
-  //           if (callback) {
-  //             callback({
-  //               volumeActor,
-  //               volumeId,
-  //             });
-  //           }
-  //         },
-  //       },
-  //       element,
-  //       id
-  //     );
-
-  //     viewport.addActor({ actor, uid });
-
-  //     viewport.render();
-  //   }
-  // );
-
-  // return {
-  //   uid,
-  //   actor,
-  //   load,
-  // };
 }
