@@ -28,7 +28,6 @@ const viewportId = 'CT_STACK';
 // Get the rendering engine
 let renderingEngine, viewport;
 
-// Add these imports at the top with other imports
 import {
   PanTool,
   ZoomTool,
@@ -38,7 +37,6 @@ import {
 
 const { MouseBindings } = csToolsEnums;
 
-// Add after the renderingEngineId constant
 const toolGroupId = 'STACK_POSITION_TOOL_GROUP';
 
 // ======== Set up page ======== //
@@ -215,16 +213,13 @@ addButtonToToolbar({
   },
 });
 
-// Add before the run() function
 function initializeTools() {
-  // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Create a tool group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  // Add tools to the tool group
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
