@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.11.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.5...v2.11.6) (2024-12-12)
+
+### Bug Fixes
+
+- **segmentation:** fix segmentation for video viewports ([#1595](https://github.com/cornerstonejs/cornerstone3D/issues/1595)) ([4056d98](https://github.com/cornerstonejs/cornerstone3D/commit/4056d983e0a2f142196f8336222fc6b1f121863e))
+
 ## [2.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.4...v2.11.5) (2024-12-12)
 
 ### Bug Fixes
