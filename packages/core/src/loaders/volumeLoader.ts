@@ -3,6 +3,7 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import { ImageVolume } from '../cache/classes/ImageVolume';
 import cache from '../cache/cache';
 import Events from '../enums/Events';
+import type VoxelManagerEnum from '../enums/VoxelManagerEnum';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 
@@ -34,10 +35,11 @@ interface VolumeLoaderOptions {
 }
 
 interface DerivedVolumeOptions {
-  volumeId: string;
+  volumeId?: string;
   targetBuffer?: {
     type: PixelDataTypedArrayString;
   };
+  voxelRepresentation?: VoxelManagerEnum;
 }
 
 export interface LocalVolumeOptions {
@@ -204,6 +206,7 @@ export function createAndCacheDerivedVolume(
   }
 
   let { volumeId } = options;
+  const { voxelRepresentation } = options;
 
   if (volumeId === undefined) {
     volumeId = uuidv4();
@@ -235,6 +238,7 @@ export function createAndCacheDerivedVolume(
   // images
   const derivedImages = createAndCacheDerivedImages(referencedImageIds, {
     targetBuffer: options.targetBuffer,
+    voxelRepresentation,
   });
 
   const dataType = derivedImages[0].dataType;
@@ -316,6 +320,8 @@ export function createAndCacheVolumeFromImagesSync(
   if (cachedVolume) {
     return cachedVolume;
   }
+
+  // Todo: implement rle based voxel manager here for ultrasound later
 
   const volumeProps = generateVolumePropsFromImageIds(imageIds, volumeId);
 
@@ -503,7 +509,10 @@ export function createAndCacheDerivedLabelmapVolume(
 ): IImageVolume {
   return createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
-    targetBuffer: { type: 'Uint8Array' },
+    targetBuffer: {
+      type: 'Uint8Array',
+      ...options?.targetBuffer,
+    },
   });
 }
 

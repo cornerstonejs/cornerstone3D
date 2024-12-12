@@ -93,9 +93,10 @@ class PaintFillTool extends BaseTool {
 
     let dimensions: Types.Point3;
     let direction: Types.Mat3;
-    let scalarData: Types.PixelDataTypedArray;
     let index: Types.Point3;
     let voxelManager;
+
+    this.doneEditMemo();
 
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
@@ -196,7 +197,8 @@ class PaintFillTool extends BaseTool {
     fixedDimensionValue: number,
     floodFillResult: FloodFillResult
   ): number[] => {
-    const { boundaries } = floodFillResult;
+    // TODO - call the boundary function as it proceeds
+    const { flooded: boundaries } = floodFillResult;
 
     if (fixedDimension === 2) {
       return [fixedDimensionValue];

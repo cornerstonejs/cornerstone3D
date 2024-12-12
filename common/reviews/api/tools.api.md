@@ -14,7 +14,7 @@ import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import type { vtkCamera } from '@kitware/vtk.js/Rendering/Core/Camera';
-import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
@@ -44,13 +44,7 @@ declare namespace activeSegmentation {
 }
 
 // @public (undocumented)
-function addAnnotation(annotation: Annotation, annotationGroupSelector: AnnotationGroupSelector): string;
-
-// @public (undocumented)
 const addCanvasPointsToArray: (element: HTMLDivElement, canvasPoints: Types_2.Point2[], newCanvasPoint: Types_2.Point2, commonData: PlanarFreehandROICommonData) => number;
-
-// @public (undocumented)
-function addChildAnnotation(parentAnnotation: Annotation, childAnnotation: Annotation): void;
 
 // @public (undocumented)
 function addColorLUT(colorLUT: Types_2.ColorLUT, index?: number): number;
@@ -246,6 +240,7 @@ export class AngleTool extends AnnotationTool {
 type Annotation = {
     annotationUID?: string;
     parentAnnotationUID?: string;
+    interpolationUID?: string;
     childAnnotationUIDs?: string[];
     highlighted?: boolean;
     isLocked?: boolean;
@@ -275,7 +270,7 @@ type Annotation = {
             [key: string]: unknown;
         };
         [key: string]: unknown;
-        cachedStats?: unknown;
+        cachedStats?: Record<string, unknown>;
     };
 };
 
@@ -314,7 +309,9 @@ type AnnotationCompletedEventType = Types_2.CustomEventType<AnnotationCompletedE
 // @public (undocumented)
 export abstract class AnnotationDisplayTool extends BaseTool {
     // (undocumented)
-    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    // (undocumented)
+    filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations;
     // (undocumented)
     protected getReferencedImageId(viewport: Types_2.IViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3, viewUp?: Types_2.Point3): string;
     // (undocumented)
@@ -512,6 +509,39 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
     // (undocumented)
+    static createAnnotationMemo(element: any, annotation: Annotation, options?: {
+        newAnnotation?: boolean;
+        deleting?: boolean;
+    }): {
+        restoreMemo: () => void;
+    };
+    // (undocumented)
+    protected static createAnnotationState(annotation: Annotation, deleting?: boolean): {
+        annotationUID: string;
+        data: {
+            [key: string]: unknown;
+            handles?: {
+                points?: Types_2.Point3[];
+                activeHandleIndex?: number | null;
+                textBox?: {
+                    hasMoved?: boolean;
+                    worldPosition?: Types_2.Point3;
+                    worldBoundingBox?: {
+                        topLeft: Types_2.Point3;
+                        topRight: Types_2.Point3;
+                        bottomLeft: Types_2.Point3;
+                        bottomRight: Types_2.Point3;
+                    };
+                };
+                [key: string]: unknown;
+            };
+            cachedStats?: Record<string, unknown>;
+        };
+        deleting: boolean;
+    };
+    // (undocumented)
+    protected createMemo(element: any, annotation: any, options?: any): void;
+    // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
         styleSpecifier: StyleSpecifier;
@@ -525,7 +555,9 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
-    isSuvScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, imageId?: string): boolean;
+    static isSuvScaled(viewport: Types_2.IStackViewport | Types_2.IVolumeViewport, targetId: string, imageId?: string): boolean;
+    // (undocumented)
+    isSuvScaled: typeof AnnotationTool.isSuvScaled;
     // (undocumented)
     mouseMoveCallback: (evt: EventTypes_2.MouseMoveEventType, filteredAnnotations?: Annotations) => boolean;
     // (undocumented)
@@ -656,13 +688,34 @@ export abstract class BaseTool {
     // (undocumented)
     configuration: Record<string, any>;
     // (undocumented)
+    static createZoomPanMemo(viewport: any): {
+        restoreMemo: () => void;
+    };
+    // (undocumented)
+    static defaults: {
+        configuration: {
+            strategies: {};
+            defaultStrategy: any;
+            activeStrategy: any;
+            strategyOptions: {};
+        };
+    };
+    // (undocumented)
+    doneEditMemo(): void;
+    // (undocumented)
     protected getTargetId(viewport: Types_2.IViewport): string | undefined;
     // (undocumented)
     protected getTargetImageData(targetId: string): Types_2.IImageData | Types_2.CPUIImageData;
     // (undocumented)
     getToolName(): string;
     // (undocumented)
+    protected memo: utilities_2.HistoryMemo.Memo;
+    // (undocumented)
+    static mergeDefaultProps(defaultProps?: {}, additionalProps?: any): any;
+    // (undocumented)
     mode: ToolModes;
+    // (undocumented)
+    redo(): void;
     // (undocumented)
     setActiveStrategy(strategyName: string): void;
     // (undocumented)
@@ -673,6 +726,10 @@ export abstract class BaseTool {
     toolGroupId: string;
     // (undocumented)
     static toolName: any;
+    // (undocumented)
+    get toolName(): string;
+    // (undocumented)
+    undo(): void;
 }
 
 declare namespace BasicStatsCalculator {
@@ -816,102 +873,8 @@ declare namespace boundingBox {
 type BoundsIJK_2 = Types_2.BoundsIJK;
 
 // @public (undocumented)
-export class BrushTool extends BaseTool {
+export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
-    // (undocumented)
-    acceptPreview(element?: HTMLDivElement): void;
-    // (undocumented)
-    createEditData(element: any): {
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
-    // (undocumented)
-    protected getOperationData(element?: any): {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        override: {
-            voxelManager: Types_2.IVoxelManager<number>;
-            imageData: vtkImageData;
-        };
-        segmentsLocked: number[];
-        imageId?: string;
-        imageIds?: string[];
-        volumeId?: string;
-        referencedVolumeId?: string;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
     // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
     // (undocumented)
@@ -928,8 +891,6 @@ export class BrushTool extends BaseTool {
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     previewCallback: () => void;
-    // (undocumented)
-    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
@@ -987,6 +948,8 @@ enum ChangeTypes {
     Completed = "Completed",
     // (undocumented)
     HandlesUpdated = "HandlesUpdated",
+    // (undocumented)
+    History = "History",
     // (undocumented)
     InitialSetup = "InitialSetup",
     // (undocumented)
@@ -1258,7 +1221,7 @@ export class CircleROITool extends AnnotationTool {
 }
 
 // @public (undocumented)
-export class CircleScissorsTool extends BaseTool {
+export class CircleScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -1282,6 +1245,7 @@ export class CircleScissorsTool extends BaseTool {
         hasMoved?: boolean;
         imageId: string;
         centerCanvas?: Array<number>;
+        memo?: LabelmapMemo_2;
     } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
@@ -1298,10 +1262,7 @@ export class CircleScissorsTool extends BaseTool {
 }
 
 // @public (undocumented)
-function clearParentAnnotation(annotation: Annotation): void;
-
-// @public (undocumented)
-function clip(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip_2(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
@@ -1398,6 +1359,8 @@ export class CobbAngleTool extends AnnotationTool {
         isNearSecondLine: boolean;
     };
     // (undocumented)
+    _dragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
+    // (undocumented)
     editData: {
         annotation: Annotation;
         viewportIdsToRender: string[];
@@ -1408,6 +1371,8 @@ export class CobbAngleTool extends AnnotationTool {
         isNearFirstLine?: boolean;
         isNearSecondLine?: boolean;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
     getArcsStartEndPoints: ({ firstLine, secondLine, mid1, mid2, }: {
         firstLine: any;
@@ -1433,10 +1398,6 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     _mouseDownCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
     // (undocumented)
-    _mouseDragCallback: (evt: EventTypes_2.MouseDragEventType | EventTypes_2.MouseMoveEventType) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: EventTypes_2.MouseUpEventType | EventTypes_2.MouseClickEventType) => void;
-    // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: Function;
@@ -1446,7 +1407,7 @@ export class CobbAngleTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
 }
 
-declare namespace color {
+declare namespace color_2 {
     export {
         getSegmentIndexColor,
         addColorLUT_2 as addColorLUT,
@@ -1582,7 +1543,7 @@ declare namespace config {
 
 declare namespace config_2 {
     export {
-        color,
+        color_2 as color,
         visibility_2 as visibility,
         style
     }
@@ -1618,10 +1579,12 @@ type ContourAnnotationCompletedEventDetail = AnnotationCompletedEventDetail & {
 // @public (undocumented)
 type ContourAnnotationData = {
     data: {
+        cachedStats?: Record<string, unknown>;
         contour: {
             polyline: Types_2.Point3[];
             closed: boolean;
             windingDirection?: ContourWindingDirection;
+            pointsManager?: Types_2.IPointsManager<Types_2.Point3>;
         };
     };
     onInterpolationComplete?: () => void;
@@ -1713,6 +1676,23 @@ function createCameraPositionSynchronizer(synchronizerName: string): Synchronize
 function createImageSliceSynchronizer(synchronizerName: string): Synchronizer;
 
 // @public (undocumented)
+function createLabelmapMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.IVoxelManager<T>, preview?: InitializedOperationData): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: Types_2.IVoxelManager<number>;
+    voxelManager: Types_2.IVoxelManager<number>;
+    memo: LabelmapMemo_2;
+    preview: InitializedOperationData;
+} | {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: Types_2.IVoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+};
+
+// @public (undocumented)
 function createLabelmapVolumeForViewport(input: {
     viewportId: string;
     renderingEngineId: string;
@@ -1730,6 +1710,26 @@ function createPresentationViewSynchronizer(synchronizerName: string, options?: 
 
 // @public (undocumented)
 function createPresentationViewSynchronizer_2(synchronizerName: string): Synchronizer;
+
+// @public (undocumented)
+function createPreviewMemo(segmentationId: string, preview: InitializedOperationData): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: Types_2.IVoxelManager<number>;
+    voxelManager: Types_2.IVoxelManager<number>;
+    memo: LabelmapMemo_2;
+    preview: InitializedOperationData;
+};
+
+// @public (undocumented)
+function createRleMemo<T>(segmentationId: string, segmentationVoxelManager: Types_2.IVoxelManager<T>): {
+    segmentationId: string;
+    restoreMemo: typeof restoreMemo;
+    commitMemo: typeof commitMemo;
+    segmentationVoxelManager: Types_2.IVoxelManager<T>;
+    voxelManager: utilities_2.VoxelManager<T>;
+};
 
 // @public (undocumented)
 const createStackImageSynchronizer: typeof createImageSliceSynchronizer;
@@ -1884,7 +1884,7 @@ function debounce(func: Function, wait?: number, options?: {
 }): Function;
 
 // @public (undocumented)
-function decimate(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
+function decimate_2(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point2[];
 
 // @public (undocumented)
 const _default: {
@@ -1894,6 +1894,7 @@ const _default: {
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
     isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
     filterAnnotationsWithinSamePlane: typeof filterAnnotationsWithinSamePlane;
+    getPointsInLineOfSight: typeof getPointsInLineOfSight;
 };
 
 // @public (undocumented)
@@ -2473,6 +2474,15 @@ function extractWindowLevelRegionToolData(viewport: Types_2.IVolumeViewport | Ty
 };
 
 // @public (undocumented)
+const fillInsideCircle: (enabledElement: any, operationData: any) => unknown;
+
+// @public (undocumented)
+const fillInsideRectangle: (enabledElement: any, operationData: any) => unknown;
+
+// @public (undocumented)
+function fillOutsideCircle(): void;
+
+// @public (undocumented)
 function filterAnnotationsForDisplay(viewport: Types_2.IViewport, annotations: Annotations, filterOptions?: Types_2.ReferenceCompatibleOptions): Annotations;
 
 // @public (undocumented)
@@ -2508,12 +2518,13 @@ type FloodFillOptions = {
     onBoundary?: (x: number, y: number, z?: number) => void;
     equals?: (a: any, b: any) => boolean;
     diagonals?: boolean;
+    bounds?: Map<number, Types_2.Point2 | Types_2.Point3>;
+    filter?: (point: any) => boolean;
 };
 
 // @public (undocumented)
 type FloodFillResult = {
     flooded: Types_2.Point2[] | Types_2.Point3[];
-    boundaries: Types_2.Point2[] | Types_2.Point3[];
 };
 
 // @public (undocumented)
@@ -2575,28 +2586,16 @@ function getActiveSegmentation(viewportId: string): Segmentation;
 function getActiveSegmentIndex(segmentationId: string): number | undefined;
 
 // @public (undocumented)
-function getAllAnnotations(): Annotations;
-
-// @public (undocumented)
 function getAllSynchronizers(): Array<Synchronizer>;
 
 // @public (undocumented)
 function getAllToolGroups(): Array<ToolGroup>;
 
 // @public (undocumented)
-function getAnnotation(annotationUID: string): Annotation;
-
-// @public (undocumented)
-function getAnnotationManager(): FrameOfReferenceSpecificAnnotationManager;
-
-// @public (undocumented)
 function getAnnotationNearPoint(element: HTMLDivElement, canvasPoint: Types_2.Point2, proximity?: number): Annotation | null;
 
 // @public (undocumented)
 function getAnnotationNearPointOnEnabledElement(enabledElement: Types_2.IEnabledElement, point: Types_2.Point2, proximity: number): Annotation | null;
-
-// @public (undocumented)
-function getAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): Annotations;
 
 // @public (undocumented)
 function getAnnotationsLocked(): Array<string>;
@@ -2657,9 +2656,6 @@ const getCalibratedProbeUnitsAndValue: (image: any, handles: any) => {
 
 // @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
-
-// @public (undocumented)
-function getChildAnnotations(annotation: Annotation): Annotation[];
 
 // @public (undocumented)
 function getClosestImageIdForStackViewport(viewport: StackViewport, worldPos: Types_2.Point3, viewPlaneNormal: Types_2.Point3): string;
@@ -2756,19 +2752,19 @@ function getNormal2(polyline: Types_2.Point2[]): Types_2.Point3;
 function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 
 // @public (undocumented)
-function getNumberOfAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): number;
-
-// @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
-
-// @public (undocumented)
-function getParentAnnotation(annotation: Annotation): Annotation;
 
 // @public (undocumented)
 function getPoint(points: any, idx: any): Types_2.Point3;
 
 // @public (undocumented)
 function getPointInLineOfSightWithCriteria(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, targetVolumeId: string, criteriaFunction: (intensity: number, point: Types_2.Point3) => Types_2.Point3, stepSize?: number): Types_2.Point3;
+
+// @public (undocumented)
+function getPointsInLineOfSight(viewport: Types_2.IVolumeViewport, worldPos: Types_2.Point3, { targetVolumeId, stepSize }: {
+    targetVolumeId: string;
+    stepSize: number;
+}): Types_2.Point3[];
 
 // @public (undocumented)
 function getPolyDataPointIndexes(polyData: vtkPolyData): any[];
@@ -2828,13 +2824,7 @@ function getSegmentIndexVisibility(viewportId: string, specifier: {
 function getSignedArea(polyline: Types_2.Point2[]): number;
 
 // @public (undocumented)
-function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData, viewport: any): {
-    boundsIJK: BoundsIJK_2;
-    centerWorld: Types_2.Point3;
-    radiusWorld: number;
-    topLeftWorld: Types_2.Point3;
-    bottomRightWorld: Types_2.Point3;
-};
+function getSphereBoundsInfo(circlePoints: [Types_2.Point3, Types_2.Point3], imageData: vtkImageData): SphereBoundsInfo;
 
 // @public (undocumented)
 function getStackSegmentationImageIdsForViewport(viewportId: string, segmentationId: string): string[];
@@ -2900,6 +2890,46 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 // @public (undocumented)
 type GroupSpecificAnnotations = {
     [toolName: string]: Annotations;
+};
+
+declare namespace growCut {
+    export {
+        runGrowCut as run,
+        runGrowCutForSphere,
+        runGrowCutForBoundingBox,
+        runOneClickGrowCut,
+        SphereInfo,
+        GrowCutOptions as GrowCutSphereOptions,
+        GrowCutBoundingBoxOptions,
+        GrowCutOneClickOptions
+    }
+}
+
+// @public (undocumented)
+type GrowCutBoundingBoxOptions = GrowCutOptions & {
+    negativePixelRange?: [number, number];
+    positivePixelRange?: [number, number];
+};
+
+// @public (undocumented)
+type GrowCutOneClickOptions = GrowCutOptions & {
+    subVolumePaddingPercentage?: number | [number, number, number];
+    subVolumeMinPadding?: number | [number, number, number];
+};
+
+// @public (undocumented)
+type GrowCutOptions = {
+    maxProcessingTime?: number;
+    windowSize?: number;
+    positiveSeedValue?: number;
+    negativeSeedValue?: number;
+    positiveSeedVariance?: number;
+    negativeSeedVariance?: number;
+    inspection?: {
+        numCyclesInterval?: number;
+        numCyclesBelowThreashold?: number;
+        threshold?: number;
+    };
 };
 
 // @public (undocumented)
@@ -3042,6 +3072,9 @@ type InteractionStartType = Types_2.CustomEventType<InteractionStartEventDetail>
 type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
+function internalAddRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
+
+// @public (undocumented)
 type InterpolationROIAnnotation = ContourAnnotation & ContourSegmentationAnnotationData & {
     metadata: {
         annotationUID?: string;
@@ -3068,9 +3101,6 @@ function intersectLine(line1Start: Types_2.Point2, line1End: Types_2.Point2, lin
 
 // @public (undocumented)
 function intersectPolyline(sourcePolyline: Types_2.Point2[], targetPolyline: Types_2.Point2[]): boolean;
-
-// @public (undocumented)
-function invalidateAnnotation(annotation: Annotation): void;
 
 // @public (undocumented)
 function invalidateBrushCursor(toolGroupId: string): void;
@@ -3118,6 +3148,36 @@ interface ISculptToolShape {
     renderShape(svgDrawingHelper: SVGDrawingHelper, canvasLocation: Types_2.Point2, options: any): void;
     // (undocumented)
     updateToolSize(canvasCoords: Types_2.Point2, viewport: Types_2.IViewport, activeAnnotation: ContourAnnotation): void;
+}
+
+// @public (undocumented)
+class IslandRemoval {
+    constructor(options?: {
+        maxInternalRemove?: number;
+        fillInternalEdge?: boolean;
+    });
+    // (undocumented)
+    static covers(rle: any, row: any): boolean;
+    // (undocumented)
+    fillSegments: (index: number) => boolean;
+    // (undocumented)
+    floodFillSegmentIsland(): number;
+    // (undocumented)
+    initialize(viewport: any, segmentationVoxels: any, options: any): boolean;
+    // (undocumented)
+    previewSegmentIndex: number;
+    // (undocumented)
+    previewVoxelManager: Types_2.VoxelManager<number>;
+    // (undocumented)
+    removeExternalIslands(): void;
+    // (undocumented)
+    removeInternalIslands(): number[];
+    // (undocumented)
+    segmentIndex: number;
+    // (undocumented)
+    segmentSet: Types_2.RLEVoxelMap<SegmentationEnum>;
+    // (undocumented)
+    selectedPoints: Types_2.Point3[];
 }
 
 // @public (undocumented)
@@ -3310,6 +3370,192 @@ type KeyUpEventDetail = KeyDownEventDetail;
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
 
 // @public (undocumented)
+export class LabelmapBaseTool extends BaseTool {
+    constructor(toolProps: any, defaultToolProps: any);
+    // (undocumented)
+    acceptPreview(element?: HTMLDivElement): void;
+    // (undocumented)
+    addPreview(element?: HTMLDivElement, options?: {
+        acceptReject: boolean;
+    }): unknown;
+    // (undocumented)
+    createEditData(element: any): {
+        volumeId: string;
+        referencedVolumeId: any;
+        segmentsLocked: number[] | [];
+        imageId?: undefined;
+        override?: undefined;
+    } | {
+        imageId: string;
+        segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+    } | {
+        imageId: string;
+        segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
+    };
+    // (undocumented)
+    protected createHoverData(element: any, centerCanvas?: any): {
+        brushCursor: {
+            metadata: {
+                viewPlaneNormal: Types_2.Point3;
+                viewUp: Types_2.Point3;
+                FrameOfReferenceUID: string;
+                referencedImageId: string;
+                toolName: string;
+                segmentColor: Types_2.Color;
+            };
+            data: {};
+        };
+        centerCanvas: any;
+        segmentIndex: number;
+        viewport: Types_2.IStackViewport | VolumeViewport;
+        segmentationId: string;
+        segmentColor: Types_2.Color;
+        viewportIdsToRender: string[];
+    };
+    // (undocumented)
+    createMemo(segmentId: string, segmentationVoxelManager: any, preview: any): LabelmapMemo.LabelmapMemo;
+    // (undocumented)
+    protected _editData: {
+        override: {
+            voxelManager: Types_2.IVoxelManager<number>;
+            imageData: vtkImageData;
+        };
+        segmentsLocked: number[];
+        imageId?: string;
+        imageIds?: string[];
+        volumeId?: string;
+        referencedVolumeId?: string;
+    } | null;
+    // (undocumented)
+    protected getActiveSegmentationData(viewport: any): {
+        segmentIndex: number;
+        segmentationId: string;
+        segmentColor: Types_2.Color;
+    };
+    // (undocumented)
+    protected getOperationData(element?: any): {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        override: {
+            voxelManager: Types_2.IVoxelManager<number>;
+            imageData: vtkImageData;
+        };
+        segmentsLocked: number[];
+        imageId?: string;
+        imageIds?: string[];
+        volumeId?: string;
+        referencedVolumeId?: string;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        volumeId: string;
+        referencedVolumeId: any;
+        segmentsLocked: number[] | [];
+        imageId?: undefined;
+        override?: undefined;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        imageId: string;
+        segmentsLocked: number[] | [];
+        override: {
+            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
+            imageData: vtkImageData;
+        };
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+    } | {
+        points: any;
+        segmentIndex: number;
+        previewColors: any;
+        viewPlaneNormal: any;
+        toolGroupId: string;
+        segmentationId: string;
+        viewUp: any;
+        strategySpecificConfiguration: any;
+        preview: unknown;
+        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
+        imageId: string;
+        segmentsLocked: number[] | [];
+        volumeId?: undefined;
+        referencedVolumeId?: undefined;
+        override?: undefined;
+    };
+    // (undocumented)
+    protected _hoverData?: {
+        brushCursor: any;
+        segmentationId: string;
+        segmentIndex: number;
+        segmentColor: [number, number, number, number];
+        viewportIdsToRender: string[];
+        centerCanvas?: Array<number>;
+        viewport: Types_2.IViewport;
+    };
+    // (undocumented)
+    static previewData?: PreviewData;
+    // (undocumented)
+    protected get _previewData(): PreviewData;
+    // (undocumented)
+    rejectPreview(element?: HTMLDivElement): void;
+    // (undocumented)
+    static viewportContoursToLabelmap(viewport: Types_2.IViewport, options?: {
+        removeContours: boolean;
+    }): void;
+}
+
+declare namespace LabelmapMemo {
+    export {
+        createLabelmapMemo,
+        restoreMemo,
+        createRleMemo,
+        createPreviewMemo,
+        LabelmapMemo_2 as LabelmapMemo
+    }
+}
+
+// @public (undocumented)
+type LabelmapMemo_2 = Types_2.Memo & {
+    segmentationVoxelManager: Types_2.IVoxelManager<number>;
+    voxelManager: Types_2.IVoxelManager<number>;
+    redoVoxelManager?: Types_2.IVoxelManager<number>;
+    undoVoxelManager?: Types_2.IVoxelManager<number>;
+    memo?: LabelmapMemo_2;
+};
+
+// @public (undocumented)
 type LabelmapStyle = BaseLabelmapStyle & InactiveLabelmapStyle;
 
 // @public (undocumented)
@@ -3329,6 +3575,7 @@ type LabelmapToolOperationData = {
     };
     preview: any;
     toolGroupId: string;
+    createMemo: (segmentId: any, segmentVoxels: any, previewVoxels?: any, previewMemo?: any) => LabelmapMemo_2;
 };
 
 // @public (undocumented)
@@ -3457,6 +3704,8 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
+    cancelInProgress(element: any, config: any, evt: any): void;
+    // (undocumented)
     protected clearEditData(): void;
     // (undocumented)
     protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
@@ -3518,8 +3767,6 @@ export class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationModified: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes) => void;
     // (undocumented)
     triggerChangeEvent: (annotation: LivewireContourAnnotation, enabledElement: Types_2.IEnabledElement, changeType?: ChangeTypes, contourHoleProcessingEnabled?: boolean) => void;
-    // (undocumented)
-    undo(element: any, config: any, evt: any): void;
     // (undocumented)
     protected updateAnnotation(livewirePath: LivewirePath): void;
 }
@@ -3732,6 +3979,10 @@ type NamedStatistics = {
         name: 'circumference';
     };
     pointsInShape?: Types_2.IPointsManager<Types_2.Point3>;
+    maxIJKs?: Array<{
+        value: number;
+        pointIJK: Types_2.Point3;
+    }>;
     array: Statistics[];
 };
 
@@ -3749,6 +4000,26 @@ type NormalizedMouseEventType = Types_2.CustomEventType<MouseCustomEventDetail>;
 
 // @public (undocumented)
 type NormalizedTouchEventType = Types_2.CustomEventType<TouchCustomEventDetail>;
+
+// @public (undocumented)
+function normalizeViewportPlane(viewport: Types_2.IViewport, boundsIJK: Types_2.BoundsIJK): {
+    toIJK: any;
+    boundsIJKPrime: any;
+    fromIJK: any;
+    error: string;
+} | {
+    boundsIJKPrime: any;
+    toIJK: (ijkPrime: any) => any;
+    fromIJK: (ijk: any) => any;
+    type: string;
+    error?: undefined;
+} | {
+    boundsIJKPrime: any;
+    toIJK: ([j, k, i]: [any, any, any]) => any[];
+    fromIJK: ([i, j, k]: [any, any, any]) => any[];
+    type: string;
+    error?: undefined;
+};
 
 declare namespace orientation_2 {
     export {
@@ -3858,7 +4129,7 @@ export class PanTool extends BaseTool {
     touchDragCallback(evt: EventTypes_2.InteractionEventType): void;
 }
 
-declare namespace planar {
+declare namespace planar_2 {
     export {
         _default as default,
         filterAnnotationsWithinSlice,
@@ -3866,7 +4137,8 @@ declare namespace planar {
         filterAnnotationsForDisplay,
         getPointInLineOfSightWithCriteria,
         isPlaneIntersectingAABB,
-        filterAnnotationsWithinSamePlane
+        filterAnnotationsWithinSamePlane,
+        getPointsInLineOfSight
     }
 }
 
@@ -3914,7 +4186,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel: (element: HTMLDivElement) => void;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     filterInteractableAnnotationsForElement(element: HTMLDivElement, annotations: Annotations): Annotations | undefined;
     // (undocumented)
@@ -4048,7 +4320,7 @@ declare namespace polyline {
         getNormal3,
         getNormal2,
         intersectPolyline,
-        decimate,
+        decimate_2 as decimate,
         getFirstLineSegmentIntersectionIndexes,
         getLineSegmentIntersectionsIndexes,
         getLineSegmentIntersectionsCoordinates,
@@ -4103,13 +4375,13 @@ interface ProbeAnnotation extends Annotation {
 
 // @public (undocumented)
 export class ProbeTool extends AnnotationTool {
-    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: any);
     // (undocumented)
     _activateModify: (element: any) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => ProbeAnnotation;
     // (undocumented)
-    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any): any;
+    _calculateCachedStats(annotation: any, renderingEngine: any, enabledElement: any, changeType?: ChangeTypes): any;
     // (undocumented)
     cancel: (element: HTMLDivElement) => string;
     // (undocumented)
@@ -4143,6 +4415,15 @@ export class ProbeTool extends AnnotationTool {
     isHandleOutsideImage: boolean;
     // (undocumented)
     isPointNearTool(): boolean;
+    // (undocumented)
+    static probeDefaults: {
+        supportedInteractionTypes: string[];
+        configuration: {
+            shadow: boolean;
+            preventHandleOutsideImage: boolean;
+            getTextLines: typeof defaultGetTextLines;
+        };
+    };
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -4466,7 +4747,7 @@ declare namespace rectangleROITool {
 }
 
 // @public (undocumented)
-export class RectangleScissorsTool extends BaseTool {
+export class RectangleScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -4603,25 +4884,46 @@ export class ReferenceLinesTool extends AnnotationDisplayTool {
 }
 
 // @public (undocumented)
+export class RegionSegmentPlusTool extends GrowCutBaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected getGrowCutLabelmap(growCutData: any): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected getRemoveIslandData(growCutData: RegionSegmentPlusToolData): RemoveIslandData;
+    // (undocumented)
+    protected growCutData: RegionSegmentPlusToolData | null;
+    // (undocumented)
+    preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
+export class RegionSegmentTool extends GrowCutBaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected getGrowCutLabelmap(growCutData: any): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected growCutData: RegionSegmentToolData | null;
+    // (undocumented)
+    preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    static toolName: any;
+}
+
+// @public (undocumented)
 function registerCursor(toolName: string, iconContent: string, viewBox: {
     x: number;
     y: number;
 }): void;
 
 // @public (undocumented)
-function removeAllAnnotations(): void;
-
-// @public (undocumented)
 function removeAllSegmentationRepresentations(): void;
 
 // @public (undocumented)
 function removeAllSegmentations(): void;
-
-// @public (undocumented)
-function removeAnnotation(annotationUID: string): void;
-
-// @public (undocumented)
-function removeAnnotations(toolName: string, annotationGroupSelector: AnnotationGroupSelector): void;
 
 // @public (undocumented)
 function removeColorLUT(colorLUTIndex: number): void;
@@ -4681,13 +4983,13 @@ type RepresentationsData = {
 type RepresentationStyle = LabelmapStyle | ContourStyle | SurfaceStyle;
 
 // @public (undocumented)
-function resetAnnotationManager(): void;
-
-// @public (undocumented)
 function resetElementCursor(element: HTMLDivElement): void;
 
 // @public (undocumented)
 function resetToGlobalStyle(): void;
+
+// @public (undocumented)
+function restoreMemo(isUndo?: boolean): void;
 
 // @public (undocumented)
 interface ROICachedStats {
@@ -4703,7 +5005,19 @@ interface ROICachedStats {
 }
 
 // @public (undocumented)
-const roundNumber: typeof utilities_2.roundNumber;
+const roundNumber_2: typeof utilities_2.roundNumber;
+
+// @public (undocumented)
+function runGrowCut(referenceVolumeId: string, labelmapVolumeId: string, options?: GrowCutOptions): Promise<void>;
+
+// @public (undocumented)
+function runGrowCutForBoundingBox(referencedVolumeId: string, boundingBoxInfo: BoundingBoxInfo, options?: GrowCutBoundingBoxOptions): Promise<Types_2.IImageVolume>;
+
+// @public (undocumented)
+function runGrowCutForSphere(referencedVolumeId: string, sphereInfo: SphereInfo, viewport: Types_2.IViewport, options?: GrowCutOptions): Promise<Types_2.IImageVolume>;
+
+// @public (undocumented)
+function runOneClickGrowCut(referencedVolumeId: string, worldPosition: Types_2.Point3, viewport: Types_2.IViewport, options?: GrowCutOneClickOptions): Promise<Types_2.IImageVolume>;
 
 // @public (undocumented)
 interface ScaleOverlayAnnotation extends Annotation {
@@ -4846,7 +5160,9 @@ declare namespace segmentation {
         helpers,
         polySegManager as polySeg,
         removeSegment,
-        getLabelmapImageIds
+        getLabelmapImageIds,
+        internalAddRepresentationData as addRepresentationData,
+        strategies
     }
 }
 export { segmentation }
@@ -4874,7 +5190,10 @@ declare namespace segmentation_2 {
         getSegmentIndexAtWorldPoint,
         getSegmentIndexAtLabelmapBorder,
         getHoveredContourSegmentationAnnotation,
-        getBrushToolInstances
+        getBrushToolInstances,
+        growCut,
+        LabelmapMemo,
+        IslandRemoval
     }
 }
 
@@ -5051,16 +5370,13 @@ declare namespace selection {
 }
 
 // @public (undocumented)
-function setActiveSegmentation(viewportId: string, segmentationId: string, suppressEvent?: boolean): void;
+function setActiveSegmentation(viewportId: string, segmentationId: string): void;
 
 // @public (undocumented)
 function setActiveSegmentIndex(segmentationId: string, segmentIndex: number): void;
 
 // @public (undocumented)
 function setAnnotationLocked(annotationUID: string, locked?: boolean): void;
-
-// @public (undocumented)
-function setAnnotationManager(annotationManager: any): void;
 
 // @public (undocumented)
 function setAnnotationSelected(annotationUID: string, selected?: boolean, preserveSelected?: boolean): void;
@@ -5125,7 +5441,13 @@ function showAllAnnotations(): void;
 function smoothAnnotation(annotation: PlanarFreehandROIAnnotation, options?: SmoothOptions): boolean;
 
 // @public (undocumented)
-export class SphereScissorsTool extends BaseTool {
+type SphereInfo = {
+    center: Types_2.Point3;
+    radius: number;
+};
+
+// @public (undocumented)
+export class SphereScissorsTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
     _activateDraw: (element: any) => void;
@@ -5240,7 +5562,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     cancel(element: HTMLDivElement): string;
     // (undocumented)
-    protected createAnnotation(evt: EventTypes_2.InteractionEventType): Annotation;
+    protected createAnnotation(evt: EventTypes_2.InteractionEventType): ContourAnnotation;
     // (undocumented)
     protected createInterpolatedSplineControl(annotation: any): void;
     // (undocumented)
@@ -5341,26 +5663,25 @@ export class StackScrollTool extends BaseTool {
 // @public (undocumented)
 export let state: ICornerstoneTools3dState;
 
-declare namespace state_2 {
-    export {
-        getAllAnnotations,
-        getAnnotations,
-        getParentAnnotation,
-        getChildAnnotations,
-        clearParentAnnotation,
-        addChildAnnotation,
-        getNumberOfAnnotations,
-        addAnnotation,
-        removeAnnotation,
-        removeAnnotations,
-        removeAllAnnotations,
-        setAnnotationManager,
-        getAnnotationManager,
-        resetAnnotationManager,
-        invalidateAnnotation,
-        getAnnotation
-    }
-}
+// @public (undocumented)
+const state_2: {
+    resetAnnotationManager: typeof resetAnnotationManager;
+    getAllAnnotations: typeof annotationState.getAllAnnotations;
+    getAnnotations: typeof annotationState.getAnnotations;
+    getParentAnnotation: typeof annotationState.getParentAnnotation;
+    getChildAnnotations: typeof annotationState.getChildAnnotations;
+    clearParentAnnotation: typeof annotationState.clearParentAnnotation;
+    addChildAnnotation: typeof annotationState.addChildAnnotation;
+    getNumberOfAnnotations: typeof annotationState.getNumberOfAnnotations;
+    addAnnotation: typeof annotationState.addAnnotation;
+    removeAnnotation: typeof annotationState.removeAnnotation;
+    removeAnnotations: typeof annotationState.removeAnnotations;
+    removeAllAnnotations: typeof annotationState.removeAllAnnotations;
+    setAnnotationManager: typeof annotationState.setAnnotationManager;
+    getAnnotationManager: typeof annotationState.getAnnotationManager;
+    invalidateAnnotation: typeof annotationState.invalidateAnnotation;
+    getAnnotation: typeof annotationState.getAnnotation;
+};
 
 declare namespace state_3 {
     export {
@@ -5401,10 +5722,21 @@ type Statistics = {
 // @public (undocumented)
 function stopClip(element: HTMLDivElement, options?: StopClipOptions): void;
 
+declare namespace strategies {
+    export {
+        fillInsideRectangle,
+        thresholdInsideRectangle,
+        fillInsideCircle,
+        fillOutsideCircle
+    }
+}
+
 // @public (undocumented)
 enum StrategyCallbacks {
     // (undocumented)
     AcceptPreview = "acceptPreview",
+    // (undocumented)
+    AddPreview = "addPreview",
     // (undocumented)
     ComputeInnerCircleRadius = "computeInnerCircleRadius",
     // (undocumented)
@@ -5592,6 +5924,9 @@ type TextBoxHandle = {
     };
     worldPosition: Types_2.Point3;
 };
+
+// @public (undocumented)
+const thresholdInsideRectangle: (enabledElement: any, operationData: any) => unknown;
 
 // @public (undocumented)
 function thresholdSegmentationByRange(segmentationVolume: Types_2.IImageVolume, segmentationIndex: number, thresholdVolumeInformation: ThresholdInformation[], overlapType: number): Types_2.IImageVolume;
@@ -6165,7 +6500,7 @@ function updateVolumeFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, op
 declare namespace utilities {
     export {
         math,
-        planar,
+        planar_2 as planar,
         viewportFilters,
         drawing_2 as drawing,
         debounce,
@@ -6195,7 +6530,7 @@ declare namespace utilities {
         planarFreehandROITool,
         stackPrefetch,
         stackContextPrefetch,
-        roundNumber,
+        roundNumber_2 as roundNumber,
         pointToString,
         polyDataUtils,
         voi,
@@ -6203,7 +6538,9 @@ declare namespace utilities {
         contourSegmentation,
         annotationHydration,
         getClosestImageIdForStackViewport,
-        pointInSurroundingSphereCallback
+        pointInSurroundingSphereCallback,
+        normalizeViewportPlane,
+        IslandRemoval
     }
 }
 export { utilities }
@@ -6211,7 +6548,7 @@ export { utilities }
 declare namespace vec2 {
     export {
         findClosestPoint,
-        clip as liangBarksyClip
+        clip_2 as liangBarksyClip
     }
 }
 
@@ -6257,6 +6594,8 @@ export class VideoRedactionTool extends AnnotationTool {
     // (undocumented)
     _deactivateModify: (element: any) => void;
     // (undocumented)
+    _dragCallback: (evt: any) => void;
+    // (undocumented)
     editData: {
         annotation: Annotation;
         viewportUIDsToRender: string[];
@@ -6264,6 +6603,8 @@ export class VideoRedactionTool extends AnnotationTool {
         newAnnotation?: boolean;
         hasMoved?: boolean;
     } | null;
+    // (undocumented)
+    _endCallback: (evt: any) => void;
     // (undocumented)
     getHandleNearImagePoint: (element: any, annotation: any, canvasCoords: any, proximity: any) => any;
     // (undocumented)
@@ -6292,10 +6633,6 @@ export class VideoRedactionTool extends AnnotationTool {
     _isInsideVolume: (index1: any, index2: any, dimensions: any) => boolean;
     // (undocumented)
     isPointNearTool: (element: any, annotation: any, canvasCoords: any, proximity: any) => boolean;
-    // (undocumented)
-    _mouseDragCallback: (evt: any) => void;
-    // (undocumented)
-    _mouseUpCallback: (evt: any) => void;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
@@ -6382,6 +6719,29 @@ class VolumetricCalculator extends BasicStatsCalculator_2 {
         spacing?: number;
         unit?: string;
     }): NamedStatistics;
+    // (undocumented)
+    static statsCallback(data: {
+        value: number | Types_2.RGB;
+        pointLPS?: Types_2.Point3;
+        pointIJK?: Types_2.Point3;
+    }): void;
+}
+
+// @public (undocumented)
+export class WholeBodySegmentTool extends GrowCutBaseTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    protected getGrowCutLabelmap(growCutData: any): Promise<Types_2.IImageVolume>;
+    // (undocumented)
+    protected getRemoveIslandData(): RemoveIslandData;
+    // (undocumented)
+    protected growCutData: WholeBodySegmentToolData | null;
+    // (undocumented)
+    preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
+    // (undocumented)
+    renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
+    // (undocumented)
+    static toolName: any;
 }
 
 declare namespace windowLevel_2 {

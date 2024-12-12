@@ -222,7 +222,7 @@ const optionsValues = [
 // ============================= //
 
 // Create a reference to the threshold dropdown element
-let thresholdDropdownElement;
+const thresholdDropdownElement = null;
 
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
@@ -363,7 +363,7 @@ function segmentationModifiedCallback(evt) {
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 

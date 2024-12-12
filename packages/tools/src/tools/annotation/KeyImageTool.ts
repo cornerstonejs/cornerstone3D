@@ -26,9 +26,9 @@ import type {
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
+  Annotation,
 } from '../../types';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import type { Annotation } from '../../types';
 
 type Point2 = Types.Point2;
 
@@ -75,7 +75,7 @@ class KeyImageTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
@@ -115,6 +115,8 @@ class KeyImageTool extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     });
+
+    this.createMemo(element, annotation, { newAnnotation: true });
 
     return annotation;
   };
@@ -180,6 +182,8 @@ class KeyImageTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
+    this.doneEditMemo();
+
     this._deactivateModify(element);
     resetElementCursor(element);
   };
@@ -212,7 +216,7 @@ class KeyImageTool extends AnnotationTool {
     }
 
     const annotation = clickedAnnotation as Annotation;
-
+    this.createMemo(element, annotation);
     this.configuration.changeTextCallback(
       clickedAnnotation,
       evt.detail,
@@ -221,6 +225,7 @@ class KeyImageTool extends AnnotationTool {
 
     this.isDrawing = false;
 
+    this.doneEditMemo();
     // This double click was handled and the dialogue was displayed.
     // No need for any other listener to handle it too - stopImmediatePropagation
     // helps ensure this primarily so that no other listeners on the target element

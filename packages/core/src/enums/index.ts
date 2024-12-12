@@ -14,6 +14,7 @@ import ImageQualityStatus from './ImageQualityStatus';
 import * as VideoEnums from './VideoEnums';
 import MetadataModules from './MetadataModules';
 import { GenerateImageType } from './GenerateImageType';
+import VoxelManagerEnum from './VoxelManagerEnum';
 
 export {
   Events,
@@ -31,5 +32,6 @@ export {
   VideoEnums,
   MetadataModules,
   ImageQualityStatus,
+  VoxelManagerEnum,
   GenerateImageType,
 };

@@ -5,6 +5,7 @@ import type {
   LabelmapSegmentationDataVolume,
 } from './LabelmapTypes';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { LabelmapMemo } from '../utilities/segmentation/createLabelmapMemo';
 
 type LabelmapToolOperationData = {
   segmentationId: string;
@@ -33,6 +34,16 @@ type LabelmapToolOperationData = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   preview: any;
   toolGroupId: string;
+  /**
+   * Creates a labelmap memo, given the preview information and segment voxels.
+   * May return an already existing one when used for extension.
+   */
+  createMemo: (
+    segmentId,
+    segmentVoxels,
+    previewVoxels?,
+    previewMemo?
+  ) => LabelmapMemo;
 };
 
 type LabelmapToolOperationDataStack = LabelmapToolOperationData &

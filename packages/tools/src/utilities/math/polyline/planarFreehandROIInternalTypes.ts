@@ -20,6 +20,7 @@ type PlanarFreehandROIEditData = {
   // The index on the prevCanvasPoints that the edit line should snap to in the
   // edit preview.
   snapIndex?: number;
+  newAnnotation?: boolean;
 };
 
 type PlanarFreehandROICommonData = {

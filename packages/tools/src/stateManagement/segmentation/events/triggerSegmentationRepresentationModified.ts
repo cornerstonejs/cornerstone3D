@@ -23,7 +23,7 @@ export function triggerSegmentationRepresentationModified(
 
   triggerEvent(
     eventTarget,
-    Events.SEGMENTATION_REPRESENTATION_ADDED,
+    Events.SEGMENTATION_REPRESENTATION_MODIFIED,
     eventDetail
   );
 }

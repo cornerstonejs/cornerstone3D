@@ -1,23 +1,13 @@
-import {
-  utilities as csUtils,
-  cache,
-  getEnabledElement,
-  StackViewport,
-  eventTarget,
-  Enums,
-  BaseVolumeViewport,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 
-import type { Types } from '@cornerstonejs/core';
 import type {
   PublicToolProps,
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
 } from '../../types';
-import { BaseTool } from '../base';
 import {
   fillInsideSphere,
   thresholdInsideSphere,
@@ -29,12 +19,7 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import {
-  Events,
-  ToolModes,
-  SegmentationRepresentations,
-  StrategyCallbacks,
-} from '../../enums';
+import { Events, ToolModes, StrategyCallbacks } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -42,69 +27,13 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import {
-  getCurrentLabelmapImageIdForViewport,
-  getSegmentation,
-  getStackSegmentationImageIdsForViewport,
-} from '../../stateManagement/segmentation/segmentationState';
-import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
-import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
-import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
-import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
-
-/**
- * A type for preview data/information, used to setup previews on hover, or
- * maintain the preview information.
- */
-export type PreviewData = {
-  /**
-   *  The preview data returned from the strategy
-   */
-  preview: unknown;
-  timer?: number;
-  timerStart: number;
-  startPoint: Types.Point2;
-  element: HTMLDivElement;
-  isDrag: boolean;
-};
+import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
  * @public
  */
-class BrushTool extends BaseTool {
+class BrushTool extends LabelmapBaseTool {
   static toolName;
-  private _editData: {
-    override: {
-      voxelManager: Types.IVoxelManager<number>;
-      imageData: vtkImageData;
-    };
-    segmentsLocked: number[]; //
-    imageId?: string; // stack labelmap
-    imageIds?: string[]; // stack labelmap
-    volumeId?: string; // volume labelmap
-    referencedVolumeId?: string;
-  } | null;
-  private _hoverData?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    brushCursor: any;
-    segmentationId: string;
-    segmentIndex: number;
-    segmentColor: [number, number, number, number];
-    viewportIdsToRender: string[];
-    centerCanvas?: Array<number>;
-    viewport: Types.IViewport;
-  };
-
-  private _previewData?: PreviewData = {
-    preview: null,
-    element: null,
-    timerStart: 0,
-    timer: null,
-    startPoint: [NaN, NaN],
-    isDrag: false,
-  };
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -142,6 +71,7 @@ class BrushTool extends BaseTool {
           THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL:
             thresholdInsideSphereIsland,
         },
+
         strategySpecificConfiguration: {
           THRESHOLD: {
             threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
@@ -195,141 +125,6 @@ class BrushTool extends BaseTool {
   private disableCursor() {
     this._hoverData = undefined;
     this.rejectPreview();
-  }
-
-  createEditData(element) {
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    const activeSegmentation = getActiveSegmentation(viewport.id);
-    if (!activeSegmentation) {
-      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-        detail: {
-          type: 'Segmentation',
-          message:
-            'No active segmentation detected, create a segmentation representation before using the brush tool',
-        },
-        cancelable: true,
-      });
-      eventTarget.dispatchEvent(event);
-      return null;
-    }
-
-    const { segmentationId } = activeSegmentation;
-
-    const segmentsLocked = getLockedSegmentIndices(segmentationId);
-
-    const { representationData } = getSegmentation(segmentationId);
-
-    if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
-      const actors = viewport.getActors();
-
-      const isStackViewport = viewport instanceof StackViewport;
-
-      if (isStackViewport) {
-        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-          detail: {
-            type: 'Segmentation',
-            message: 'Cannot perform brush operation on the selected viewport',
-          },
-          cancelable: true,
-        });
-        eventTarget.dispatchEvent(event);
-        return null;
-      }
-
-      // we used to take the first actor here but we should take the one that is
-      // probably the same size as the segmentation volume
-      const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referencedId)
-      );
-
-      const segmentationVolume = cache.getVolume(volumeId);
-
-      const referencedVolumeIdToThreshold =
-        volumes.find((volume) =>
-          csUtils.isEqual(volume.dimensions, segmentationVolume.dimensions)
-        )?.volumeId || volumes[0]?.volumeId;
-
-      return {
-        volumeId,
-        referencedVolumeId:
-          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
-        segmentsLocked,
-      };
-    } else {
-      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
-        viewport.id,
-        segmentationId
-      );
-
-      if (!segmentationImageId) {
-        // if there is no stack segmentation slice for the current image
-        // we should not allow the user to perform any operation
-        return;
-      }
-
-      // I hate this, but what can you do sometimes
-      if (this.configuration.activeStrategy.includes('SPHERE')) {
-        const referencedImageIds = viewport.getImageIds();
-        const isValidVolumeForSphere =
-          csUtils.isValidVolume(referencedImageIds);
-
-        if (!isValidVolumeForSphere) {
-          throw new Error(
-            'Volume is not reconstructable for sphere manipulation'
-          );
-        }
-
-        const volumeId = `${segmentationId}_${viewport.id}`;
-        const volume = cache.getVolume(volumeId);
-        if (volume) {
-          return {
-            imageId: segmentationImageId,
-            segmentsLocked,
-            override: {
-              voxelManager: volume.voxelManager,
-              imageData: volume.imageData,
-            },
-          };
-        } else {
-          const labelmapImageIds = getStackSegmentationImageIdsForViewport(
-            viewport.id,
-            segmentationId
-          );
-
-          if (!labelmapImageIds || labelmapImageIds.length === 1) {
-            return {
-              imageId: segmentationImageId,
-              segmentsLocked,
-            };
-          }
-
-          // it will return the cached volume if it already exists
-          const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
-            volumeId,
-            labelmapImageIds
-          );
-
-          return {
-            imageId: segmentationImageId,
-            segmentsLocked,
-            override: {
-              voxelManager: volume.voxelManager,
-              imageData: volume.imageData,
-            },
-          };
-        }
-      } else {
-        return {
-          imageId: segmentationImageId,
-          segmentsLocked,
-        };
-      }
-    }
   }
 
   preMouseDownCallback = (
@@ -436,70 +231,6 @@ class BrushTool extends BaseTool {
     );
   };
 
-  private createHoverData(element, centerCanvas?) {
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const viewportIdsToRender = [viewport.id];
-
-    const { segmentIndex, segmentationId, segmentColor } =
-      this.getActiveSegmentationData(viewport) || {};
-
-    // Center of circle in canvas Coordinates
-    const brushCursor = {
-      metadata: {
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId: '',
-        toolName: this.getToolName(),
-        segmentColor,
-      },
-      data: {},
-    };
-
-    return {
-      brushCursor,
-      centerCanvas,
-      segmentIndex,
-      viewport,
-      segmentationId,
-      segmentColor,
-      viewportIdsToRender,
-    };
-  }
-
-  private getActiveSegmentationData(viewport) {
-    const viewportId = viewport.id;
-    const activeRepresentation = getActiveSegmentation(viewportId);
-
-    if (!activeRepresentation) {
-      return;
-    }
-
-    const { segmentationId } = activeRepresentation;
-    const segmentIndex = getActiveSegmentIndex(segmentationId);
-
-    if (!segmentIndex) {
-      return;
-    }
-
-    const segmentColor = getSegmentIndexColor(
-      viewportId,
-      segmentationId,
-      segmentIndex
-    );
-
-    return {
-      segmentIndex,
-      segmentationId,
-      segmentColor,
-    };
-  }
-
   /**
    * Updates the cursor position and whether it is showing or not.
    * Can be over-ridden to add more cursor details or a preview.
@@ -558,31 +289,6 @@ class BrushTool extends BaseTool {
     this._previewData.isDrag = true;
     this._previewData.startPoint = currentPoints.canvas;
   };
-
-  protected getOperationData(element?) {
-    const editData = this._editData || this.createEditData(element);
-    const { segmentIndex, segmentationId, brushCursor } =
-      this._hoverData || this.createHoverData(element);
-    const { data, metadata = {} } = brushCursor || {};
-    const { viewPlaneNormal, viewUp } = metadata;
-    const operationData = {
-      ...editData,
-      points: data?.handles?.points,
-      segmentIndex,
-      previewColors: this.configuration.preview.enabled
-        ? this.configuration.preview.previewColors
-        : null,
-      viewPlaneNormal,
-      toolGroupId: this.toolGroupId,
-      segmentationId,
-      viewUp,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
-      // Provide the preview information so that data can be used directly
-      preview: this._previewData?.preview,
-    };
-    return operationData;
-  }
 
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
@@ -675,6 +381,7 @@ class BrushTool extends BaseTool {
       this.applyActiveStrategy(enabledElement, operationData);
     }
 
+    this.doneEditMemo();
     this._deactivateDraw(element);
 
     resetElementCursor(element);
@@ -707,41 +414,6 @@ class BrushTool extends BaseTool {
     );
 
     return stats;
-  }
-
-  /**
-   * Cancels any preview view being shown, resetting any segments being shown.
-   */
-  public rejectPreview(element = this._previewData.element) {
-    if (!element || !this._previewData.preview) {
-      return;
-    }
-    const enabledElement = getEnabledElement(element);
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      this.getOperationData(element),
-      StrategyCallbacks.RejectPreview
-    );
-    this._previewData.preview = null;
-    this._previewData.isDrag = false;
-  }
-
-  /**
-   * Accepts a preview, marking it as the active segment.
-   */
-  public acceptPreview(element = this._previewData.element) {
-    if (!element) {
-      return;
-    }
-    const enabledElement = getEnabledElement(element);
-
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      this.getOperationData(element),
-      StrategyCallbacks.AcceptPreview
-    );
-    this._previewData.isDrag = false;
-    this._previewData.preview = null;
   }
 
   /**

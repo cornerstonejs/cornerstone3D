@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
 import {
+  type Types,
   getEnabledElement,
   addVolumesToViewports,
   addImageSlicesToViewports,
@@ -21,6 +21,8 @@ import {
   triggerSegmentationModified,
 } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { SegmentationRepresentations } from '../../../enums';
+import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
+import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
 
 const { uuidv4 } = utilities;
 
@@ -37,8 +39,9 @@ const { uuidv4 } = utilities;
 async function addLabelmapToElement(
   element: HTMLDivElement,
   labelMapData: LabelmapSegmentationData,
-  segmentationId: string
-): Promise<void> {
+  segmentationId: string,
+  config: LabelmapRenderingConfig
+): Promise<void | { uid: string; actor }> {
   const enabledElement = getEnabledElement(element);
   const { renderingEngine, viewport } = enabledElement;
   const { id: viewportId } = viewport;
@@ -65,23 +68,53 @@ async function addLabelmapToElement(
       await _handleMissingVolume(labelMapData);
     }
 
+    const blendMode =
+      config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+
+    const useIndependentComponents =
+      blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
+
     const volumeInputs: Types.IVolumeInput[] = [
       {
         volumeId,
         visibility,
-        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+        useIndependentComponents,
+        blendMode,
       },
     ];
 
-    // Add labelmap volumes to the viewports to be be rendered, but not force the render
-    await addVolumesToViewports(
-      renderingEngine,
-      volumeInputs,
-      [viewportId],
-      immediateRender,
-      suppressEvents
-    );
+    /*
+     * Having independent components for the segmentation data means that we are
+     * dding the segmentation as a separate component (e.g., component 2) to the
+     * volume data (component 1, index 0). If the base data is color data, which
+     * is an independent component itself, this approach will not work. I'm unsure what
+     * a Maximum Intensity Projection (MIP) of color data would be, but it's not
+     * the same as the MIP of grayscale data.
+     * Another limitation is that if we have multiple segmentation volumes, we
+     * cannot add them as independent components to the volume data since the current
+     * logic is limited to one. The shader code needs to be updated to handle
+     * multiple independent components.
+     * Todo: add a check here to identify if the base data is color data and fallback
+     * to the default behavior.
+     */
+    if (!volumeInputs[0].useIndependentComponents) {
+      await addVolumesToViewports(
+        renderingEngine,
+        volumeInputs,
+        [viewportId],
+        immediateRender,
+        suppressEvents
+      );
+    } else {
+      const result = await addVolumesAsIndependentComponents({
+        viewport,
+        volumeInputs,
+        segmentationId,
+      });
+
+      return result;
+    }
   } else {
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
@@ -98,7 +131,7 @@ async function addLabelmapToElement(
     ];
 
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
-    await addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
+    addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
   }
 
   // Just to make sure if the segmentation data had value before, it gets updated too

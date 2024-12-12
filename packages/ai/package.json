@@ -1,0 +1,59 @@
+{
+  "name": "@cornerstonejs/ai",
+  "version": "2.11.2",
+  "description": "AI and ML Interfaces for Cornerstone3D",
+  "files": [
+    "dist"
+  ],
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "directories": {
+    "build": "dist"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "jest --testTimeout 60000",
+    "clean": "rimraf dist",
+    "build": "yarn run build:esm",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "build:all": "yarn run build:esm",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
+    "start": "tsc --project ./tsconfig.json --watch",
+    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+    "lint": "eslint --fix ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dcmjs-org/dcmjs.git"
+  },
+  "author": "@cornerstonejs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
+  },
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/ai/README.md",
+  "dependencies": {
+    "@babel/runtime-corejs2": "^7.17.8",
+    "buffer": "^6.0.3",
+    "dcmjs": "^0.29.8",
+    "gl-matrix": "^3.4.3",
+    "lodash.clonedeep": "^4.5.0",
+    "ndarray": "^1.0.19",
+    "onnxruntime-common": "1.17.1",
+    "onnxruntime-web": "1.17.1"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": "^2.11.2",
+    "@cornerstonejs/tools": "^2.11.2"
+  }
+}

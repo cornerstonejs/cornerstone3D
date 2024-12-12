@@ -13,7 +13,7 @@ export default {
       segmentsLocked,
       segmentationImageData,
       segmentationVoxelManager,
-      previewVoxelManager: previewVoxelManager,
+      previewVoxelManager,
       brushStrategy,
       centerIJK,
     } = operationData;

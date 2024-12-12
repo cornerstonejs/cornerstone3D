@@ -43,7 +43,10 @@ import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedU
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
-import type { SplineROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import type {
+  ContourAnnotation,
+  SplineROIAnnotation,
+} from '../../types/ToolSpecificAnnotationTypes';
 import type {
   AnnotationModifiedEventDetail,
   ContourAnnotationCompletedEventDetail,
@@ -312,9 +315,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     };
     this._activateModify(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -373,6 +373,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
+    this.doneEditMemo();
     this.editData = null;
     this.isDrawing = false;
   };
@@ -432,17 +433,25 @@ class SplineROITool extends ContourSegmentationBaseTool {
       return;
     }
 
+    // Ensure new changes are captured in a new memo - otherwise some types of
+    // changes get merged when an endCallback is missed.
+    this.doneEditMemo();
+
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const { currentPoints } = eventDetail;
+    const { currentPoints, element } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
     let closeContour = data.handles.points.length >= 2 && doubleClick;
     let addNewPoint = true;
 
+    if (data.handles.points.length) {
+      this.createMemo(element, annotation, {
+        newAnnotation: data.handles.points.length === 1,
+      });
+    }
+
     // Check if user clicked on the first point to close the curve
     if (data.handles.points.length >= 3) {
+      this.createMemo(element, annotation);
       const { instance: spline } = data.spline;
       const closestControlPoint = spline.getClosestControlPointWithinDistance(
         canvasPoint,
@@ -475,9 +484,16 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box
@@ -851,7 +867,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     points.push(polyline[polyline.length - 1]);
   }
 
-  protected createAnnotation(evt: EventTypes.InteractionEventType): Annotation {
+  protected createAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): ContourAnnotation {
     const contourAnnotation = super.createAnnotation(evt);
     const { world: worldPos } = evt.detail.currentPoints;
     const { type: splineType } = this.configuration.spline;
@@ -1121,6 +1139,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
+
+    if (!enabledElement) {
+      return;
+    }
+
     const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;

@@ -36,6 +36,8 @@ import {
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import LabelmapBaseTool from './LabelmapBaseTool';
+import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -44,7 +46,7 @@ import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
  * for the segmentation to modify. You can use SegmentationModule to set the active
  * segmentation and segmentIndex.
  */
-class CircleScissorsTool extends BaseTool {
+class CircleScissorsTool extends LabelmapBaseTool {
   static toolName;
   editData: {
     annotation: Annotation;
@@ -61,6 +63,7 @@ class CircleScissorsTool extends BaseTool {
     hasMoved?: boolean;
     imageId: string;
     centerCanvas?: Array<number>;
+    memo?: LabelmapMemo;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -295,12 +298,15 @@ class CircleScissorsTool extends BaseTool {
       viewPlaneNormal,
       viewUp,
       strategySpecificConfiguration: {},
+      createMemo: this.createMemo.bind(this),
     };
 
     this.editData = null;
     this.isDrawing = false;
 
     this.applyActiveStrategy(enabledElement, operationData);
+
+    this.doneEditMemo();
   };
 
   /**

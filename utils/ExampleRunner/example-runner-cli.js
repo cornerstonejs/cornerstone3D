@@ -106,14 +106,11 @@ function levenshteinDistance(a, b) {
   return matrix[b.length][a.length];
 }
 
-// ----------------------------------------------------------------------------
-// Find examples
-// ----------------------------------------------------------------------------
-
 const configuration = {
   examples: [
     { path: 'packages/core/examples', regexp: 'index.ts' },
     { path: 'packages/tools/examples', regexp: 'index.ts' },
+    { path: 'packages/ai/examples', regexp: 'index.ts' },
     {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',
@@ -256,13 +253,8 @@ function run() {
 
   // for some reason the esm build of the dicom image loader
   // requires the core to be built first and cannot link it
-  // shell.cd('../../core');
+  // shell.exec('yarn run build:esm');
   // shell.exec(`yarn run build:esm`);
-
-  // run the build for dicom image loader
-  // shell.cd('../../dicomImageLoader');
-  // shell.exec(`yarn run build:esm`);
-  // shell.cd(currentWD);
 
   if (buildExample) {
     const exampleName = filteredExampleCorrectCase;

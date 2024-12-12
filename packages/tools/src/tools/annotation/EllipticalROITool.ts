@@ -463,9 +463,6 @@ class EllipticalROITool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -483,6 +480,8 @@ class EllipticalROITool extends AnnotationTool {
       return;
     }
 
+    this.doneEditMemo();
+
     // Elliptical ROI tool should reset its highlight to false on mouse up (as opposed
     // to other tools that keep it highlighted until the user moves. The reason
     // is that we use top-left and bottom-right handles to define the ellipse,
@@ -494,8 +493,6 @@ class EllipticalROITool extends AnnotationTool {
     this._deactivateDraw(element);
 
     resetElementCursor(element);
-
-    const { renderingEngine } = getEnabledElement(element);
 
     this.editData = null;
     this.isDrawing = false;
@@ -521,11 +518,14 @@ class EllipticalROITool extends AnnotationTool {
     const { currentPoints } = eventDetail;
     const currentCanvasPoints = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
 
     //////
-    const { annotation, viewportIdsToRender, centerWorld } = this.editData;
+    const { annotation, viewportIdsToRender, centerWorld, newAnnotation } =
+      this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3);
     const { data } = annotation;
 
@@ -557,8 +557,14 @@ class EllipticalROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
     const { data } = annotation;
 
     if (movingTextBox) {

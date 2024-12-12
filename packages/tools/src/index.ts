@@ -72,6 +72,10 @@ import {
   SegmentSelectTool,
   WindowLevelRegionTool,
   VolumeRotateTool,
+  RegionSegmentPlusTool,
+  RegionSegmentTool,
+  WholeBodySegmentTool,
+  LabelmapBaseTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -164,4 +168,8 @@ export {
   utilities,
   cursors,
   VolumeRotateTool,
+  RegionSegmentPlusTool,
+  RegionSegmentTool,
+  WholeBodySegmentTool,
+  LabelmapBaseTool,
 };
