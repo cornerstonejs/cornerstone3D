@@ -9,7 +9,6 @@ import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWi
 import type { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
-import { PixelDataTypedArray as PixelDataTypedArray_2 } from 'packages/core/dist/esm/types';
 import type { Range as Range_2 } from '@kitware/vtk.js/types';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';

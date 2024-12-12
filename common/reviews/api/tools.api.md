@@ -1008,6 +1008,13 @@ declare namespace CINETypes {
     }
 }
 
+declare namespace circle {
+    export {
+        getCanvasCircleRadius,
+        getCanvasCircleCorners
+    }
+}
+
 // @public (undocumented)
 interface CircleROIAnnotation extends Annotation {
     // (undocumented)
@@ -2655,6 +2662,12 @@ const getCalibratedProbeUnitsAndValue: (image: any, handles: any) => {
 };
 
 // @public (undocumented)
+function getCanvasCircleCorners(circleCanvasPoints: canvasCoordinates): Array<Types_2.Point2>;
+
+// @public (undocumented)
+function getCanvasCircleRadius(circleCanvasPoints: canvasCoordinates): number;
+
+// @public (undocumented)
 function getCanvasEllipseCorners(ellipseCanvasPoints: CanvasCoordinates): Array<Types_2.Point2>;
 
 // @public (undocumented)
@@ -3817,6 +3830,7 @@ declare namespace math {
     export {
         aabb,
         BasicStatsCalculator,
+        circle,
         ellipse,
         lineSegment,
         point,
