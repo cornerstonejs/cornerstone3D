@@ -202,16 +202,16 @@ function handleNiftiHeader(data): {
   }
 }
 
-async function fetchAndAllocateNiftiVolume(volumeId) {
-  const niftiURL = volumeId.substring(NIFTI_LOADER_SCHEME.length + 1);
+async function fetchAndAllocateNiftiVolume(url) {
+  const niftiURL = url;
 
   const onProgress = (loaded, total) => {
-    const data = { volumeId, loaded, total };
+    const data = { volumeId: url, loaded, total };
     triggerEvent(eventTarget, Events.NIFTI_VOLUME_PROGRESS, { data });
   };
 
   const onLoad = () => {
-    const data = { volumeId };
+    const data = { volumeId: url };
     triggerEvent(eventTarget, Events.NIFTI_VOLUME_LOADED, { data });
   };
 
