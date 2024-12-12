@@ -284,7 +284,7 @@ function _setLabelmapColorAndOpacity(
   const labelmapActor = labelmapActorEntry.actor as vtkVolume;
 
   // @ts-ignore - fix type in vtk
-  const { preLoad } = labelmapActor.get('preLoad') || { preLoad: null };
+  const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
 
   if (preLoad) {
     preLoad({ cfun, ofun, actor: labelmapActor });
