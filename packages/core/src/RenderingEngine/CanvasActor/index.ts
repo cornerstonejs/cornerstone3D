@@ -103,6 +103,10 @@ export default class CanvasActor {
     );
   }
 
+  public setMapper(mapper: CanvasMapper) {
+    this.mapper = mapper;
+  }
+
   public render(viewport: IViewport, context: CanvasRenderingContext2D): void {
     if (!this.visibility) {
       return;
