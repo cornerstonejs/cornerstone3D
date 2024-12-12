@@ -2,6 +2,7 @@ import type {
   IStackViewport,
   IStackInput,
   IRenderingEngine,
+  IVideoViewport,
 } from '../../types';
 
 /**
@@ -38,8 +39,10 @@ function addImageSlicesToViewports(
     }
   }
 
-  viewportIds.forEach(async (viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId)
+  viewportIds.forEach((viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId) as
+      | IStackViewport
+      | IVideoViewport;
     viewport.addImages(stackInputs);
   });
 }
