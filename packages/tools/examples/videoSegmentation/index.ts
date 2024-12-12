@@ -30,7 +30,6 @@ const {
   Enums: csToolsEnums,
   BrushTool,
   segmentation,
-  utilities: cstUtils,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
