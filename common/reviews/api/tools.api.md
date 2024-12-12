@@ -9,7 +9,6 @@ import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWi
 import type { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
-import { PixelDataTypedArray as PixelDataTypedArray_2 } from 'packages/core/dist/esm/types';
 import type { Range as Range_2 } from '@kitware/vtk.js/types';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -2464,23 +2463,14 @@ declare namespace EventTypes_2 {
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function extractWindowLevelRegionToolData(viewport: any): {
-    scalarData: PixelDataTypedArray_2;
+function extractWindowLevelRegionToolData(viewport: Types_2.IVolumeViewport | Types_2.IStackViewport): {
+    scalarData: Types_2.PixelDataTypedArray;
     minPixelValue: number;
     maxPixelValue: number;
     width: number;
     height: number;
     rows: number;
     columns: number;
-} | {
-    scalarData: any;
-    width: any;
-    height: any;
-    minPixelValue: number;
-    maxPixelValue: number;
-    rows: any;
-    columns: any;
-    color: any;
 };
 
 // @public (undocumented)
