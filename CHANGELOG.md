@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.4...v2.11.5) (2024-12-12)
+
+### Bug Fixes
+
+- **utilities/math:** export circle math utilities ([#1703](https://github.com/cornerstonejs/cornerstone3D/issues/1703)) ([1a7b7d6](https://github.com/cornerstonejs/cornerstone3D/commit/1a7b7d6ba83e0647afdd0f92a367bedecbad3295))
+
 ## [2.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.3...v2.11.4) (2024-12-12)
 
 ### Bug Fixes
