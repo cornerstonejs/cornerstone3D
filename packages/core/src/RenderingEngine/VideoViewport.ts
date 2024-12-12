@@ -172,9 +172,10 @@ class VideoViewport extends Viewport {
 
     let rowCosines = imagePlaneModule.rowCosines as Point3;
     let columnCosines = imagePlaneModule.columnCosines as Point3;
+    const usingDefaultValues = imagePlaneModule.usingDefaultValues;
 
     // if null or undefined
-    if (rowCosines == null || columnCosines == null) {
+    if (usingDefaultValues || rowCosines == null || columnCosines == null) {
       rowCosines = [1, 0, 0] as Point3;
       columnCosines = [0, 1, 0] as Point3;
     }
