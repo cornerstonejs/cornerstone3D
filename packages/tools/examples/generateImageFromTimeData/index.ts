@@ -289,12 +289,9 @@ async function run() {
     imageIds,
   });
 
-  computedVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
-    volumeId,
-    {
-      volumeId: computedVolumeId,
-    }
-  );
+  computedVolume = volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: computedVolumeId,
+  });
 
   // Set the volume to load
   volume.load();

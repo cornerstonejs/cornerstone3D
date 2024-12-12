@@ -8,13 +8,11 @@ import {
 } from '@cornerstonejs/core';
 import {
   initDemo,
-  createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  encodeVolumeIdInfo,
   fakeImageLoader,
   fakeVolumeLoader,
 } from '../../../../utils/test/testUtils';
@@ -37,7 +35,7 @@ const { MouseBindings } = csToolsEnums;
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-// const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -79,17 +77,6 @@ instructions.innerText =
 
 content.append(instructions);
 // ============================= //
-
-const volumeId = encodeVolumeIdInfo({
-  loader: 'fakeVolumeLoader',
-  name: 'volumeURI',
-  rows: 100,
-  columns: 100,
-  slices: 10,
-  xSpacing: 1,
-  ySpacing: 1,
-  zSpacing: 1,
-});
 
 /**
  * Runs the demo

@@ -194,7 +194,7 @@ async function run() {
 
   const segmentationVolumeId = 'SEGMENTATION_VOLUME_ID';
 
-  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationVolumeId,
   });
 

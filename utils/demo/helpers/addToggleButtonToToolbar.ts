@@ -36,4 +36,6 @@ export default function addToggleButtonToToolbar({
 
   container = container ?? document.getElementById('demo-toolbar');
   container.append(button);
+
+  return button;
 }

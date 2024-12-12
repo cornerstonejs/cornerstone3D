@@ -1,7 +1,8 @@
 import { Enums as csToolsEnums, ToolGroupManager } from '@cornerstonejs/tools';
 const { MouseBindings } = csToolsEnums;
 
-import createElement, { configElement } from './createElement';
+import type { configElement } from './createElement';
+import createElement from './createElement';
 import addLabelToToolbar from './addLabelToToolbar';
 
 export type optionTypeDefaultValue =
@@ -9,6 +10,7 @@ export type optionTypeDefaultValue =
   | { defaultIndex?: number };
 
 export type optionTypeValues =
+  | { labels?: string[] }
   | { values: number[] | string[] }
   | { map: Map<string | number, any> };
 
@@ -30,6 +32,7 @@ export default function addDropDownToToolbar(config: configDropdown): void {
   const {
     map,
     values = [...map.keys()],
+    labels,
     defaultValue,
     defaultIndex = defaultValue === undefined && 0,
   } = config.options as any;
@@ -96,7 +99,7 @@ export default function addDropDownToToolbar(config: configDropdown): void {
     const elOption = document.createElement('option');
     const stringValue = String(value);
     elOption.value = stringValue;
-    elOption.innerText = stringValue;
+    elOption.innerText = labels?.[index] ?? stringValue;
 
     if (value === defaultValue || index === defaultIndex) {
       elOption.selected = true;
@@ -108,6 +111,8 @@ export default function addDropDownToToolbar(config: configDropdown): void {
 
     elSelect.append(elOption);
   });
+
+  return elSelect;
 }
 
 function changeActiveTool(toolGroupIds: string[], newSelectedToolName) {

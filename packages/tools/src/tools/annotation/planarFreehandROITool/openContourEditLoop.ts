@@ -36,6 +36,7 @@ function activateOpenContourEdit(
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
+  this.doneEditMemo();
 
   const prevCanvasPoints = annotation.data.contour.polyline.map(
     viewport.worldToCanvas
@@ -139,7 +140,7 @@ function mouseDragOpenContourEditCallback(
   const worldPos = currentPoints.world;
   const canvasPos = currentPoints.canvas;
   const enabledElement = getEnabledElement(element);
-  const { renderingEngine, viewport } = enabledElement;
+  const { viewport } = enabledElement;
 
   const { viewportIdsToRender, xDir, yDir, spacing } = this.commonData;
   const { editIndex, editCanvasPoints, startCrossingIndex } = this.editData;
@@ -148,6 +149,8 @@ function mouseDragOpenContourEditCallback(
   const lastWorldPoint = viewport.canvasToWorld(lastCanvasPoint);
 
   const worldPosDiff = vec3.create();
+
+  this.createMemo(element, this.commonData.annotation);
 
   vec3.subtract(worldPosDiff, worldPos, lastWorldPoint);
 
@@ -238,6 +241,8 @@ function openContourEditOverwriteEnd(
   this.isEditingOpen = false;
   this.editData = undefined;
   this.commonData = undefined;
+
+  this.doneEditMemo();
 
   // Jump to a normal line edit now.
   this.deactivateOpenContourEdit(element);
@@ -548,9 +553,11 @@ function mouseUpOpenContourEditCallback(
  */
 function completeOpenContourEdit(element: HTMLDivElement) {
   const enabledElement = getEnabledElement(element);
-  const { viewport, renderingEngine } = enabledElement;
+  const { viewport } = enabledElement;
 
   const { annotation, viewportIdsToRender } = this.commonData;
+
+  this.doneEditMemo();
   const { fusedCanvasPoints, prevCanvasPoints } = this.editData;
 
   if (fusedCanvasPoints) {

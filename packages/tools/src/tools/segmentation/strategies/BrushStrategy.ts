@@ -7,6 +7,7 @@ import { getStrategyData } from './utils/getStrategyData';
 import { StrategyCallbacks } from '../../../enums';
 import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
 
 const { VoxelManager } = csUtils;
 
@@ -34,6 +35,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   brushStrategy: BrushStrategy;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   configuration?: Record<string, any>;
+  memo?: LabelmapMemo;
 };
 
 export type StrategyFunction = (
@@ -113,6 +115,10 @@ export default class BrushStrategy {
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
     ),
+    [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
+    [StrategyCallbacks.GetStatistics]: addSingletonMethod(
+      StrategyCallbacks.GetStatistics
+    ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -187,11 +193,16 @@ export default class BrushStrategy {
       segmentationVoxelManager,
       previewVoxelManager,
       previewSegmentIndex,
+      segmentIndex,
     } = initializedData;
+
+    const isPreview =
+      previewSegmentIndex && previewVoxelManager.modifiedSlices.size;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfModifiedSlices()
+      segmentationVoxelManager.getArrayOfModifiedSlices(),
+      isPreview ? previewSegmentIndex : segmentIndex
     );
 
     // We are only previewing if there is a preview index, and there is at
@@ -232,9 +243,7 @@ export default class BrushStrategy {
 
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
-      VoxelManager.createHistoryVoxelManager({
-        sourceVoxelManager: segmentationVoxelManagerToUse,
-      });
+      VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
@@ -304,6 +313,28 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: LabelmapToolOperationDataAny
   ) => void;
+
+  /**
+   * Adds a preview to the view, without filling it with any contents, returning
+   * the initialized preview data.
+   */
+  public addPreview = (
+    enabledElement,
+    operationData: LabelmapToolOperationDataAny
+  ) => {
+    const initializedData = this.initialize(
+      enabledElement,
+      operationData,
+      StrategyCallbacks.AddPreview
+    );
+
+    if (!initializedData) {
+      // Happens when there is no label map
+      return;
+    }
+
+    return initializedData.preview || initializedData;
+  };
 
   /**
    * Accept the preview, making it part of the overall segmentation
@@ -377,11 +408,11 @@ function addSingletonMethod(name: string, isInitialized = true) {
     }
     brushStrategy[name] = isInitialized
       ? func
-      : (enabledElement, operationData) => {
+      : (enabledElement, operationData, ...args) => {
           // Store the enabled element in the operation data so we can use single
           // argument calls
           operationData.enabledElement = enabledElement;
-          return func.call(brushStrategy, operationData);
+          return func.call(brushStrategy, operationData, ...args);
         };
   };
 }

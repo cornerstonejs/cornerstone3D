@@ -71,7 +71,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const wadoRsRoot = 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
@@ -119,7 +119,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ctVolume.load();
+  await ctVolume.load();
 
   // Define a volume in memory
   const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
@@ -127,7 +127,7 @@ async function run() {
   });
 
   // Set the volume to load
-  ptVolume.load();
+  await ptVolume.load();
 
   // Set the volume on the viewport
   viewport.setVolumes([
@@ -166,7 +166,7 @@ async function run() {
       Math.floor(evt.clientX - rect.left),
       Math.floor(evt.clientY - rect.top),
     ] as Types.Point2;
-    // Convert canvas coordiantes to world coordinates
+    // Convert canvas coordinates to world coordinates
     const worldPos = viewport.canvasToWorld(canvasPos);
 
     canvasPosElement.innerText = `canvas: (${canvasPos[0]}, ${canvasPos[1]})`;

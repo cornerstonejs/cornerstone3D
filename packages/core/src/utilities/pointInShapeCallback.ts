@@ -1,7 +1,8 @@
-import { vec3 } from 'gl-matrix';
+import type { vec3 } from 'gl-matrix';
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type BoundsIJK from '../types/BoundsIJK';
 import type { CPUImageData, Point3 } from '../types';
+import { createPositionCallback } from './createPositionCallback';
 
 export type PointInShape = {
   value: number;
@@ -44,35 +45,29 @@ export interface PointInShapeOptions {
 }
 
 /**
- * @deprecated
- * You should use the voxelManager.forEach method instead.
- * This method is deprecated and will be removed in a future version.
- *
  * For each point in the image (If boundsIJK is not provided, otherwise, for each
  * point in the provided bounding box), It runs the provided callback IF the point
  * passes the provided criteria to be inside the shape (which is defined by the
  * provided pointInShapeFn)
  *
+ * You must record points in the callback function if you wish to have an array
+ * of the called points.
+ *
  * @param imageData - The image data object.
- * @param options - Configuration options for the shape callback.
- * @returns An array of points in the shape if returnPoints is true, otherwise undefined.
+ * @param dimensions - The dimensions of the image.
+ * @param pointInShapeFn - A function that takes a point in LPS space and returns
+ * true if the point is in the shape and false if it is not.
+ * @param callback - A function that will be called for
+ * every point in the shape.
+ * @param boundsIJK - The bounds of the volume in IJK coordinates.
  */
 export function pointInShapeCallback(
   imageData: vtkImageData | CPUImageData,
   options: PointInShapeOptions
 ): Array<PointInShape> | undefined {
-  const {
-    pointInShapeFn,
-    callback,
-    boundsIJK,
-    returnPoints = false,
-    // Destructure other options here as needed
-  } = options;
-
-  let iMin, iMax, jMin, jMax, kMin, kMax;
+  const { pointInShapeFn, callback, boundsIJK, returnPoints = false } = options;
 
   let scalarData;
-  const { numComps } = imageData as unknown as { numComps: number };
 
   // if getScalarData is a method on imageData
   if ((imageData as CPUImageData).getScalarData) {
@@ -84,77 +79,62 @@ export function pointInShapeCallback(
       .getData();
   }
 
-  if (!scalarData) {
-    console.warn('No scalar data found for imageData', imageData);
-    return;
-  }
-
   const dimensions = imageData.getDimensions();
 
-  if (!boundsIJK) {
-    iMin = 0;
-    iMax = dimensions[0];
-    jMin = 0;
-    jMax = dimensions[1];
-    kMin = 0;
-    kMax = dimensions[2];
-  } else {
-    [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = boundsIJK;
-  }
+  const defaultBoundsIJK = [
+    [0, dimensions[0]],
+    [0, dimensions[1]],
+    [0, dimensions[2]],
+  ];
+  const bounds = boundsIJK || defaultBoundsIJK;
 
-  const start = vec3.fromValues(iMin, jMin, kMin);
+  const pointsInShape = iterateOverPointsInShape({
+    imageData,
+    bounds,
+    scalarData,
+    pointInShapeFn,
+    callback,
+  });
 
-  const direction = imageData.getDirection();
-  const rowCosines = direction.slice(0, 3);
-  const columnCosines = direction.slice(3, 6);
-  const scanAxisNormal = direction.slice(6, 9);
+  return returnPoints ? pointsInShape : undefined;
+}
 
-  const spacing = imageData.getSpacing();
-  const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing;
+export function iterateOverPointsInShape({
+  imageData,
+  bounds,
+  scalarData,
+  pointInShapeFn,
+  callback,
+}) {
+  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = bounds;
+  const { numComps } = imageData as { numComps: number };
+  const dimensions = imageData.getDimensions();
 
-  // @ts-ignore will be fixed in vtk-master
-  const worldPosStart = imageData.indexToWorld(start);
-
-  const rowStep = vec3.fromValues(
-    rowCosines[0] * rowSpacing,
-    rowCosines[1] * rowSpacing,
-    rowCosines[2] * rowSpacing
-  );
-
-  const columnStep = vec3.fromValues(
-    columnCosines[0] * columnSpacing,
-    columnCosines[1] * columnSpacing,
-    columnCosines[2] * columnSpacing
-  );
-
-  const scanAxisStep = vec3.fromValues(
-    scanAxisNormal[0] * scanAxisSpacing,
-    scanAxisNormal[1] * scanAxisSpacing,
-    scanAxisNormal[2] * scanAxisSpacing
-  );
+  const indexToWorld = createPositionCallback(imageData);
+  const pointIJK = [0, 0, 0] as Point3;
 
   const xMultiple =
     numComps ||
     scalarData.length / dimensions[2] / dimensions[1] / dimensions[0];
   const yMultiple = dimensions[0] * xMultiple;
   const zMultiple = dimensions[1] * yMultiple;
-
   const pointsInShape: Array<PointInShape> = [];
 
-  const currentPos = vec3.clone(worldPosStart);
-
   for (let k = kMin; k <= kMax; k++) {
-    const startPosJ = vec3.clone(currentPos);
+    pointIJK[2] = k;
+    const indexK = k * zMultiple;
 
     for (let j = jMin; j <= jMax; j++) {
-      const startPosI = vec3.clone(currentPos);
+      pointIJK[1] = j;
+      const indexJK = indexK + j * yMultiple;
 
       for (let i = iMin; i <= iMax; i++) {
-        const pointIJK: Point3 = [i, j, k];
+        pointIJK[0] = i;
+        const pointLPS = indexToWorld(pointIJK);
 
         // The current world position (pointLPS) is now in currentPos
-        if (pointInShapeFn(currentPos as Point3, pointIJK)) {
-          const index = k * zMultiple + j * yMultiple + i * xMultiple;
+        if (pointInShapeFn(pointLPS, pointIJK)) {
+          const index = indexJK + i * xMultiple;
           let value;
           if (xMultiple > 2) {
             value = [
@@ -170,32 +150,56 @@ export function pointInShapeCallback(
             value,
             index,
             pointIJK,
-            pointLPS: currentPos.slice(),
+            pointLPS: pointLPS.slice(),
           });
-          if (callback) {
-            callback({
-              value,
-              index,
-              pointIJK,
-              pointLPS: currentPos as Point3,
-            });
-          }
+
+          callback({ value, index, pointIJK, pointLPS });
         }
-
-        // Increment currentPos by rowStep for the next iteration
-        vec3.add(currentPos, currentPos, rowStep);
       }
-
-      // Reset currentPos to the start of the next J line and increment by columnStep
-      vec3.copy(currentPos, startPosI);
-      vec3.add(currentPos, currentPos, columnStep);
     }
-
-    // Reset currentPos to the start of the next K slice and increment by scanAxisStep
-    vec3.copy(currentPos, startPosJ);
-    vec3.add(currentPos, currentPos, scanAxisStep);
   }
 
-  // Modify the return statement
-  return returnPoints ? pointsInShape : undefined;
+  return pointsInShape;
+}
+
+export function iterateOverPointsInShapeVoxelManager({
+  voxelManager,
+  bounds,
+  imageData,
+  pointInShapeFn,
+  callback,
+}) {
+  const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = bounds;
+  const indexToWorld = createPositionCallback(imageData);
+  const pointIJK = [0, 0, 0] as Point3;
+  const pointsInShape: Array<PointInShape> = [];
+
+  for (let k = kMin; k <= kMax; k++) {
+    pointIJK[2] = k;
+
+    for (let j = jMin; j <= jMax; j++) {
+      pointIJK[1] = j;
+
+      for (let i = iMin; i <= iMax; i++) {
+        pointIJK[0] = i;
+        const pointLPS = indexToWorld(pointIJK);
+
+        if (pointInShapeFn(pointLPS, pointIJK)) {
+          const index = voxelManager.toIndex(pointIJK);
+          const value = voxelManager.getAtIndex(index);
+
+          pointsInShape.push({
+            value,
+            index,
+            pointIJK: [...pointIJK],
+            pointLPS: pointLPS.slice(),
+          });
+
+          callback?.({ value, index, pointIJK, pointLPS });
+        }
+      }
+    }
+  }
+
+  return pointsInShape;
 }

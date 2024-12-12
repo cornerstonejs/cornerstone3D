@@ -1,3 +1,4 @@
+import type { Types } from '@cornerstonejs/core';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
 
@@ -11,8 +12,8 @@ import { SegmentationRepresentations } from '../../../enums';
 function getActorEntry(
   viewportId: string,
   segmentationId: string,
-  filterFn: (actor: unknown) => boolean
-) {
+  filterFn: (actor: Types.ActorEntry) => boolean
+): Types.ActorEntry | undefined {
   const enabledElement = getEnabledElementByViewportId(viewportId);
 
   if (!enabledElement) {
@@ -78,7 +79,7 @@ export function getSurfaceActorEntry(
   return getActorEntry(viewportId, segmentationId, (actor) =>
     // @ts-expect-error
     actor.representationUID?.startsWith(
-      `${segmentationId}-${SegmentationRepresentations.Surface}-${segmentIndex}`
+      getSurfaceRepresentationUID(segmentationId, segmentIndex)
     )
   );
 }
@@ -99,4 +100,17 @@ export function getSurfaceActorUID(
 
   const actorEntry = getSurfaceActorEntry(viewportId, segmentationId, segIndex);
   return actorEntry?.uid;
+}
+
+/**
+ * Generates a unique identifier for a surface representation of a segmentation segment
+ * @param segmentationId - The ID of the segmentation
+ * @param segmentIndex - Optional index of the specific segment within the segmentation
+ * @returns A string UID combining the segmentation ID, surface representation type, and segment index
+ */
+export function getSurfaceRepresentationUID(
+  segmentationId: string,
+  segmentIndex?: number | string
+) {
+  return `${segmentationId}-${SegmentationRepresentations.Surface}-${segmentIndex}`;
 }

@@ -15,6 +15,7 @@ import {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
+import VolumetricCalculator from './VolumetricCalculator';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
@@ -25,6 +26,9 @@ import { getSegmentIndexAtWorldPoint } from './getSegmentIndexAtWorldPoint';
 import { getSegmentIndexAtLabelmapBorder } from './getSegmentIndexAtLabelmapBorder';
 import { getHoveredContourSegmentationAnnotation } from './getHoveredContourSegmentationAnnotation';
 import { getBrushToolInstances } from './getBrushToolInstances';
+import * as growCut from './growCut';
+import * as LabelmapMemo from './createLabelmapMemo';
+import IslandRemoval from './islandRemoval';
 
 export {
   thresholdVolumeByRange,
@@ -38,6 +42,7 @@ export {
   setBrushSizeForToolGroup,
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
+  VolumetricCalculator,
   thresholdSegmentationByRange,
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,
@@ -48,4 +53,7 @@ export {
   getSegmentIndexAtLabelmapBorder,
   getHoveredContourSegmentationAnnotation,
   getBrushToolInstances,
+  growCut,
+  LabelmapMemo,
+  IslandRemoval,
 };

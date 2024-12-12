@@ -18,7 +18,13 @@ import type {
 export default function getViewportImageCornersInWorld(
   viewport: IStackViewport | IVolumeViewport
 ): Point3[] {
-  const { imageData, dimensions } = viewport.getImageData() as IImageData;
+  const { imageData, dimensions } =
+    (viewport.getImageData() as IImageData) || {};
+
+  if (!imageData || !dimensions) {
+    return [];
+  }
+
   const { canvas } = viewport;
 
   // we should consider the device pixel ratio since we are

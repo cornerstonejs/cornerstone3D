@@ -1,6 +1,5 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -17,10 +16,13 @@ export default {
     const {
       segmentsLocked,
       segmentIndex,
-      previewVoxelManager,
       previewSegmentIndex,
       segmentationVoxelManager,
+      memo,
     } = operationData;
+
+    const previewVoxelManager =
+      memo?.voxelManager || operationData.previewVoxelManager;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);
 

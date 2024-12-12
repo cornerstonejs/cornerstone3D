@@ -2,16 +2,17 @@ import { VoxelManager } from '../../src/utilities';
 import RLEVoxelMap from '../../src/utilities/RLEVoxelMap';
 import { describe, it, expect, beforeEach } from '@jest/globals';
 
-const dimension = [64, 128, 4];
+const size = [64, 128, 4];
 
 const ijkPoint = [4, 2, 2];
 const rleMap = new RLEVoxelMap(64, 128, 4);
+const voxelMap = VoxelManager.createLazyVoxelManager({ dimensions: size });
 
 const j = 4;
 const baseIndex = j * 64;
+const i = 2;
 
-// @bill - fix this please
-xdescribe('RLEVoxelMap', () => {
+describe('RLEVoxelMap', () => {
   beforeEach(() => {
     rleMap.clear();
   });
@@ -80,7 +81,9 @@ xdescribe('RLEVoxelMap', () => {
 
   describe('RLEVoxelManager', () => {
     it('sets', () => {
-      const map = VoxelManager.createRLEVoxelManager({ dimension });
+      const map = VoxelManager.createRLEVolumeVoxelManager({
+        dimensions: size,
+      });
       map.setAtIJK(...ijkPoint, 15);
       expect(map.getAtIJK(...ijkPoint)).toBe(15);
       expect(map.getAtIJKPoint(ijkPoint)).toBe(15);

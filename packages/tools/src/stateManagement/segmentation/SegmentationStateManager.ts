@@ -135,25 +135,6 @@ export default class SegmentationStateManager {
    * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
    * ```
    */
-  // updateSegmentation(
-  //   segmentationId: string,
-  //   payload: Partial<Segmentation>
-  // ): void {
-  //   this.updateState((state) => {
-  //     const segmentation = state.segmentations.find(
-  //       (segmentation) => segmentation.segmentationId === segmentationId
-  //     );
-  //     if (!segmentation) {
-  //       return;
-  //     }
-  //     state.segmentations = state.segmentations.map((segmentation) => {
-  //       if (segmentation.segmentationId === segmentationId) {
-  //         return { ...segmentation, ...payload };
-  //       }
-  //       return segmentation;
-  //     });
-  //   });
-  // }
   updateSegmentation(
     segmentationId: string,
     payload: Partial<Segmentation>
@@ -326,7 +307,8 @@ export default class SegmentationStateManager {
       type,
       active: true,
       visible: true,
-      colorLUTIndex: 0,
+      // @ts-ignore
+      colorLUTIndex: renderingConfig?.colorLUTIndex || 0,
       segments: segmentReps,
       config: {
         ...getDefaultRenderingConfig(type),

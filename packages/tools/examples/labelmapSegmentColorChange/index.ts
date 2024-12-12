@@ -115,7 +115,7 @@ addButtonToToolbar({
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
 
-  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId1,
   });
 
@@ -161,7 +161,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const smallVolumeImageIds = [imageIds[0], imageIds[1]];
@@ -220,10 +220,10 @@ async function run() {
       segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
       config: {
-        colorLUT: [
+        colorLUTOrIndex: [
           [0, 0, 0, 0],
-          [125, 152, 180, 255],
-          [125, 152, 20, 255],
+          [0, 0, 255, 255],
+          [255, 255, 0, 255],
         ],
       },
     },

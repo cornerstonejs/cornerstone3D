@@ -1,9 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
-  utilities,
   Enums,
-  getRenderingEngine,
   cache,
   volumeLoader,
 } from '@cornerstonejs/core';
@@ -14,11 +12,36 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import {
+  AngleTool,
+  ArrowAnnotateTool,
+  CircleROITool,
+  EllipticalROITool,
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
+  SplineROITool,
+} from '@cornerstonejs/tools';
+import { createToolUI } from './toolSpecificUI';
+import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
+import { STACK_VIEWPORT_ID, VOLUME_VIEWPORT_ID } from './constants';
 
 // This is for debugging purposes
-console.warn(
+console.debug(
   'Click on index.ts to open source code for this example --------->'
 );
+
+const tools = [
+  AngleTool,
+  ArrowAnnotateTool,
+  EllipticalROITool,
+  SplineROITool,
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
+  CircleROITool,
+];
+const toolNames = tools.map((tool) => tool.toolName);
 
 const { ViewportType } = Enums;
 const { MouseBindings } = cornerstoneTools.Enums;
@@ -31,9 +54,8 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const viewportsInfo = [
   {
     toolGroupId: 'STACK_TOOLGROUP_ID',
-    segmentationEnabled: false,
     viewportInput: {
-      viewportId: 'CT_STACK_AXIAL',
+      viewportId: STACK_VIEWPORT_ID,
       type: ViewportType.STACK,
       element: null,
       defaultOptions: {
@@ -44,12 +66,12 @@ const viewportsInfo = [
   {
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     viewportInput: {
-      viewportId: 'CT_VOLUME_AXIAL',
+      viewportId: VOLUME_VIEWPORT_ID,
       type: ViewportType.ORTHOGRAPHIC,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 255, 0],
+        background: <Types.Point3>[0.2, 0.2, 0.2],
       },
     },
   },
@@ -57,10 +79,11 @@ const viewportsInfo = [
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Dynamically Add Annotations',
-  'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.'
+  'Enter the image coords or world coords and press Enter to add an annotation. (Left) Stack Viewport, (Right) Volume Viewport.' +
+    'These example provide canvas and image coordinates for the tools. Which internally convert to world coordinates. If you have the world' +
+    'coordinates, you can use them directly to add an annotation using each annotation static method.'
 );
 
-const demoToolbar = document.getElementById('demo-toolbar');
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -71,50 +94,7 @@ viewportGrid.style.height = '500px';
 viewportGrid.style.paddingTop = '5px';
 viewportGrid.style.gap = '5px';
 
-content.appendChild(viewportGrid);
-
-// Add input elements for Image Coords
-const canvasCoordsForm = document.createElement('form');
-canvasCoordsForm.style.marginBottom = '10px';
-canvasCoordsForm.innerHTML = `
-  <label style="margin-right: 20px;">Canvas Coords: Start [x, y]:</label>
-  <input  style="width:40px " type="number" id="start-i" placeholder="Start x" value="0">
-  <input  style="width:40px" type="number" id="start-j" placeholder="Start y" value="0">
-  <label style="margin-left: 52px; margin-right: 21px;">End [i, j]:</label>
-  <input  style="width:40px" type="number" id="end-i" placeholder="End i" value="100">
-  <input  style="width:40px" type="number" id="end-j" placeholder="End j" value="100">
-  <button  style="  margin-left: 52px;" type="button" id="add-canvas-coords-stack">Add Stack</button>
-  <button   type="button" id="add-image-coords-volume">Add Volume</button>
-`;
-const imageCoordsForm = document.createElement('form');
-imageCoordsForm.style.marginBottom = '10px';
-imageCoordsForm.innerHTML = `
-  <label style="margin-right: 20px;">Image Coords: Start [i, j]:</label>
-  <input  style="width:40px " type="number" id="start-i" placeholder="Start i" value="0">
-  <input  style="width:40px" type="number" id="start-j" placeholder="Start j" value="0">
-  <label style="margin-left: 52px; margin-right: 21px;">End [i, j]:</label>
-  <input  style="width:40px" type="number" id="end-i" placeholder="End i" value="100">
-  <input  style="width:40px" type="number" id="end-j" placeholder="End j" value="100">
-  <button  style="  margin-left: 52px;" type="button" id="add-image-coords-stack">Add Stack</button>
-  <button   type="button" id="add-image-coords-volume">Add Volume</button>
-
-`;
-
-// Add input elements for World Coords
-const worldCoordsForm = document.createElement('form');
-worldCoordsForm.style.marginBottom = '10px';
-worldCoordsForm.innerHTML = `
-  <label>World Coords: Start [x, y, z]:</label>
-  <input  style="width:40px" type="number" id="start-x" placeholder="Start x" value="0">
-  <input  style="width:40px" type="number" id="start-y" placeholder="Start y" value="0">
-  <input  style="width:40px" type="number" id="start-z" placeholder="Start z" value="0">
-  <label>End [x, y, z]:</label>
-  <input  style="width:40px" type="number" id="end-x" placeholder="End x" value="0">
-  <input  style="width:40px" type="number" id="end-y" placeholder="End y" value="0">
-  <input  style="width:40px" type="number" id="end-z" placeholder="End z" value="0">
-  <button type="button" id="add-world-coords-stack">Add Stack</button>
-  <button type="button" id="add-world-coords-volume">Add Volume</button>
-`;
+content?.appendChild(viewportGrid);
 
 const mousePosDiv = document.createElement('div');
 
@@ -126,149 +106,59 @@ worldPosElement.innerText = 'world:';
 
 mousePosDiv.appendChild(canvasPosElement);
 mousePosDiv.appendChild(worldPosElement);
-content.appendChild(mousePosDiv);
-demoToolbar.appendChild(canvasCoordsForm);
-demoToolbar.appendChild(imageCoordsForm);
-demoToolbar.appendChild(worldCoordsForm);
+content?.appendChild(mousePosDiv);
 
-// Event listeners for the buttons
-document
-  .getElementById('add-image-coords-stack')
-  .addEventListener('click', () => {
-    const start = [
-      parseFloat(
-        (document.getElementById('start-i') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-j') as HTMLInputElement).value
-      ),
-    ];
-    const end = [
-      parseFloat((document.getElementById('end-i') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-j') as HTMLInputElement).value),
-    ];
+const demoToolbar = document.getElementById('demo-toolbar');
+addDropDownToToolbar({
+  options: {
+    values: toolNames,
+  },
+  labelText: 'Select Tool',
+  container: demoToolbar,
+  onSelectedValueChange: (toolName: string) => {
+    // Clear existing UI
+    const forms = demoToolbar.querySelectorAll('form');
+    forms.forEach((form) => form.remove());
 
-    addProgrammaticAnnotation(start, end, 'CT_STACK_AXIAL', 'image');
-  });
+    // Create new UI for selected tool
+    const toolUI = createToolUI(toolName, {
+      toolName,
+      renderingEngineId,
+      content,
+      demoToolbar,
+    });
 
-document
-  .getElementById('add-canvas-coords-stack')
-  .addEventListener('click', () => {
-    const start = [
-      parseFloat(
-        (document.getElementById('start-i') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-j') as HTMLInputElement).value
-      ),
-    ];
-    const end = [
-      parseFloat((document.getElementById('end-i') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-j') as HTMLInputElement).value),
-    ];
+    if (toolUI) {
+      toolUI.forms.forEach((form) => demoToolbar?.appendChild(form));
+    }
 
-    addProgrammaticAnnotation(start, end, 'CT_STACK_AXIAL', 'canvas');
-  });
+    // Update active tool in toolGroups
+    toolGroupIds.forEach((toolGroupId) => {
+      const toolGroup =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupId);
+      if (toolGroup) {
+        // Deactivate current tool
+        const currentTool = toolGroup.getActivePrimaryMouseButtonTool();
+        if (currentTool) {
+          toolGroup.setToolPassive(currentTool);
+        }
+        // Activate new tool
+        toolGroup.setToolActive(toolName);
+      }
+    });
+  },
+});
 
-document
-  .getElementById('add-image-coords-volume')
-  .addEventListener('click', () => {
-    const start = [
-      parseFloat(
-        (document.getElementById('start-i') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-j') as HTMLInputElement).value
-      ),
-    ];
-    const end = [
-      parseFloat((document.getElementById('end-i') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-j') as HTMLInputElement).value),
-    ];
+const { forms } = createToolUI(toolNames[0], {
+  toolName: toolNames[0],
+  renderingEngineId,
+  content,
+  demoToolbar,
+});
 
-    addProgrammaticAnnotation(start, end, 'CT_VOLUME_AXIAL', 'image');
-  });
-
-document
-  .getElementById('add-world-coords-stack')
-  .addEventListener('click', () => {
-    const start = [
-      parseFloat(
-        (document.getElementById('start-x') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-y') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-z') as HTMLInputElement).value
-      ),
-    ];
-    const end = [
-      parseFloat((document.getElementById('end-x') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-y') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-z') as HTMLInputElement).value),
-    ];
-
-    addProgrammaticAnnotation(start, end, 'CT_STACK_AXIAL', null);
-  });
-
-document
-  .getElementById('add-world-coords-volume')
-  .addEventListener('click', () => {
-    const start = [
-      parseFloat(
-        (document.getElementById('start-x') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-y') as HTMLInputElement).value
-      ),
-      parseFloat(
-        (document.getElementById('start-z') as HTMLInputElement).value
-      ),
-    ];
-    const end = [
-      parseFloat((document.getElementById('end-x') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-y') as HTMLInputElement).value),
-      parseFloat((document.getElementById('end-z') as HTMLInputElement).value),
-    ];
-
-    addProgrammaticAnnotation(start, end, 'CT_VOLUME_AXIAL');
-  });
-
-const addProgrammaticAnnotation = (
-  start: number[],
-  end: number[],
-  viewportId: string,
-  type?: string
-) => {
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-  if (type === 'image') {
-    // convert image coords to world coords
-    start = utilities.imageToWorldCoords(viewport.getCurrentImageId(), <
-      Types.Point2
-    >[...start]);
-    end = utilities.imageToWorldCoords(viewport.getCurrentImageId(), <
-      Types.Point2
-    >[...end]);
-  } else if (type === 'canvas') {
-    // convert canvas coords to world coords
-    start = viewport.canvasToWorld(<Types.Point2>[...start]);
-    end = viewport.canvasToWorld(<Types.Point2>[...end]);
-  }
-
-  cornerstoneTools.utilities.annotationHydration(viewport, 'Length', [
-    start as Types.Point3,
-    end as Types.Point3,
-  ]);
-
-  cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds([
-    viewport.id,
-  ]);
-  viewport.render();
-};
+forms.forEach((form) => {
+  demoToolbar.appendChild(form);
+});
 
 async function initializeVolumeViewport(
   viewport: Types.IVolumeViewport,
@@ -364,9 +254,12 @@ function initializeToolGroup(toolGroupId) {
   toolGroup = cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(cornerstoneTools.LengthTool.toolName);
+  tools.forEach((tool) => {
+    toolGroup.addTool(tool.toolName);
+  });
+
   toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
-  toolGroup.setToolPassive(cornerstoneTools.LengthTool.toolName);
+  toolGroup.setToolPassive(toolNames[0]);
   toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
     bindings: [
       {
@@ -382,15 +275,24 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(cornerstoneTools.LengthTool);
+  tools.forEach((tool) => {
+    cornerstoneTools.addTool(tool);
+  });
   cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
 
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const stackImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.55651399101931177647030363790032',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.87075509829481869121008947712950',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+  const volumeImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -407,7 +309,7 @@ async function run() {
       renderingEngine,
       toolGroup,
       viewportInfo,
-      imageIds
+      i === 0 ? stackImageIds : volumeImageIds
     );
   }
 }

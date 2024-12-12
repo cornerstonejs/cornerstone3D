@@ -125,7 +125,8 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   compositions.setValue,
   initializeCircle,
   compositions.determineSegmentIndex,
-  compositions.preview
+  compositions.preview,
+  compositions.labelmapStatistics
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
@@ -137,7 +138,8 @@ const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
   compositions.dynamicThreshold,
   compositions.threshold,
   compositions.preview,
-  compositions.islandRemoval
+  compositions.islandRemoval,
+  compositions.labelmapStatistics
 );
 
 /**

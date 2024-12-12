@@ -3,7 +3,9 @@ import * as CONSTANTS from './constants';
 import { Events } from './enums';
 import RenderingEngine from './RenderingEngine';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
-import createVolumeMapper from './RenderingEngine/helpers/createVolumeMapper';
+import createVolumeMapper, {
+  convertMapperToNotSharedMapper,
+} from './RenderingEngine/helpers/createVolumeMapper';
 import getOrCreateCanvas from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
@@ -13,6 +15,7 @@ import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
+
 import {
   getRenderingEngine,
   getRenderingEngines,
@@ -158,4 +161,5 @@ export {
   cornerstoneStreamingDynamicImageVolumeLoader,
   StreamingDynamicImageVolume,
   StreamingImageVolume,
+  convertMapperToNotSharedMapper,
 };

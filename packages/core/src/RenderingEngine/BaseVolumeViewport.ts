@@ -842,8 +842,6 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
-      //We need to set the current slab thickness here since setSlabThickness is define in VolumeViewport
-      this.viewportProperties.slabThickness = slabThickness;
     }
   }
 
@@ -1790,7 +1788,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const querySeparator = volumeId.includes('?') ? '&' : '?';
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
       ','
-    )}&focalPoint=${focalPoint.join(',')}`;
+    )}`;
   }
 
   private _addVolumeId(volumeId: string): void {

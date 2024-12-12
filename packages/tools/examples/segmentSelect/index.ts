@@ -27,7 +27,6 @@ const {
   SegmentSelectTool,
   segmentation,
   PlanarFreehandContourSegmentationTool,
-  utilities: cstUtils,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -245,7 +244,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   );
 
   // Create a segmentation of the same resolution as the source data
-  await cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  cornerstone.volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: volumeSegLabelmapId,
   });
 

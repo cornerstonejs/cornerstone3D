@@ -200,7 +200,7 @@ class CrosshairsTool extends AnnotationTool {
       annotations
     );
 
-    if (annotations.length) {
+    if (annotations?.length) {
       // If found, it will override it by removing the annotation and adding it later
       removeAnnotation(annotations[0].annotationUID);
     }
@@ -1888,21 +1888,13 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   _checkIfViewportsRenderingSameScene = (viewport, otherViewport) => {
-    const actors = viewport.getActors();
-    const otherViewportActors = otherViewport.getActors();
+    const volumeIds = viewport.getAllVolumeIds();
+    const otherVolumeIds = otherViewport.getAllVolumeIds();
 
-    let sameScene = true;
-
-    actors.forEach((actor) => {
-      if (
-        actors.length !== otherViewportActors.length ||
-        otherViewportActors.find(({ uid }) => uid === actor.uid) === undefined
-      ) {
-        sameScene = false;
-      }
-    });
-
-    return sameScene;
+    return (
+      volumeIds.length === otherVolumeIds.length &&
+      volumeIds.every((id) => otherVolumeIds.includes(id))
+    );
   };
 
   _jump = (enabledElement, jumpWorld) => {

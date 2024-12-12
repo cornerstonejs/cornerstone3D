@@ -20,9 +20,12 @@ import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
-import transformWorldToIndex from './transformWorldToIndex';
+import transformWorldToIndex, {
+  transformWorldToIndexContinuous,
+} from './transformWorldToIndex';
 import transformIndexToWorld from './transformIndexToWorld';
 import loadImageToCanvas from './loadImageToCanvas';
+import * as HistoryMemo from './historyMemo';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import worldToImageCoords from './worldToImageCoords';
@@ -88,6 +91,8 @@ import { deepClone } from './deepClone';
 import { jumpToSlice } from './jumpToSlice';
 import scroll from './scroll';
 import clip from './clip';
+import createSubVolume from './createSubVolume';
+import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -159,6 +164,7 @@ export {
   isValidVolume,
   genericMetadataProvider,
   isVideoTransferSyntax,
+  HistoryMemo,
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
@@ -182,4 +188,7 @@ export {
   jumpToSlice,
   scroll,
   clip,
+  transformWorldToIndexContinuous,
+  createSubVolume,
+  getVolumeDirectionVectors,
 };

@@ -8,7 +8,7 @@ import compositions from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';
 import { createEllipseInPoint } from './fillCircle';
 const { transformWorldToIndex } = csUtils;
-import { getSphereBoundsInfo } from '../../../utilities/getSphereBoundsInfo';
+import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
@@ -35,7 +35,7 @@ const sphereComposition = {
       boundsIJK: newBoundsIJK,
       topLeftWorld,
       bottomRightWorld,
-    } = getSphereBoundsInfo(
+    } = getSphereBoundsInfoFromViewport(
       points.slice(0, 2) as [Types.Point3, Types.Point3],
       segmentationImageData,
       viewport
@@ -57,7 +57,8 @@ const SPHERE_STRATEGY = new BrushStrategy(
   compositions.setValue,
   sphereComposition,
   compositions.determineSegmentIndex,
-  compositions.preview
+  compositions.preview,
+  compositions.labelmapStatistics
 );
 
 /**
@@ -69,6 +70,13 @@ const SPHERE_STRATEGY = new BrushStrategy(
 const fillInsideSphere = SPHERE_STRATEGY.strategyFunction;
 
 const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
+  'SphereThreshold',
+  ...SPHERE_STRATEGY.compositions,
+  compositions.dynamicThreshold,
+  compositions.threshold
+);
+
+const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
   'SphereThreshold',
   ...SPHERE_STRATEGY.compositions,
   compositions.dynamicThreshold,
@@ -84,6 +92,8 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
  */
 
 const thresholdInsideSphere = SPHERE_THRESHOLD_STRATEGY.strategyFunction;
+const thresholdInsideSphereIsland =
+  SPHERE_THRESHOLD_STRATEGY_ISLAND.strategyFunction;
 
 /**
  * Fill outside a sphere with the given segment index in the given operation data. The
@@ -95,4 +105,9 @@ export function fillOutsideSphere(): void {
   throw new Error('fill outside sphere not implemented');
 }
 
-export { fillInsideSphere, thresholdInsideSphere, SPHERE_STRATEGY };
+export {
+  fillInsideSphere,
+  thresholdInsideSphere,
+  SPHERE_STRATEGY,
+  thresholdInsideSphereIsland,
+};

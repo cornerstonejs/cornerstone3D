@@ -4,8 +4,9 @@ import {
   initDemo,
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
-  wadoURICreateImageIds,
 } from '../../../../utils/demo/helpers';
+
+import { ctImageIds } from '../../../../utils/demo/helpers/WADOURICreateImageIds';
 
 // This is for debugging purposes
 console.warn(
@@ -36,7 +37,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const imageIds = wadoURICreateImageIds();
+  const imageIds = ctImageIds;
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';

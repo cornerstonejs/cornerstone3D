@@ -1,7 +1,7 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "2.2.7",
-  "description": "",
+  "version": "2.11.3",
+  "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
@@ -59,8 +59,7 @@
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "build": "yarn run build:esm",
-    "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
-    "build:all": "yarn run build:esm && yarn run build:umd",
+    "build:all": "yarn run build:esm",
     "dev": "tsc --project ./tsconfig.json --watch",
     "format-check": "npx eslint ./src --quiet",
     "api-check": "api-extractor --debug run ",
@@ -68,7 +67,7 @@
     "prepublishOnly": "yarn run build"
   },
   "dependencies": {
-    "@kitware/vtk.js": "32.1.0",
+    "@kitware/vtk.js": "32.1.1",
     "comlink": "^4.4.1",
     "gl-matrix": "^3.4.3"
   },

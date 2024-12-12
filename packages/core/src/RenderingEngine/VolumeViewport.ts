@@ -32,6 +32,7 @@ import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataFo
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -202,6 +203,12 @@ class VolumeViewport extends BaseVolumeViewport {
 
   protected setCameraClippingRange() {
     const activeCamera = this.getVtkActiveCamera();
+
+    if (!activeCamera) {
+      console.warn('No active camera found');
+      return;
+    }
+
     if (activeCamera.getParallelProjection()) {
       // which makes more sense. However, in situations like MPR where the camera is
       // oblique, the slab thickness might not be sufficient.
@@ -266,6 +273,38 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetCamera();
   }
 
+  /**
+   * Gets the blend mode for the volume viewport. If filterActorUIDs is provided,
+   * it will return the blend mode for the first matching actor. Otherwise, it returns
+   * the blend mode of the first actor.
+   *
+   * @param filterActorUIDs - Optional array of actor UIDs to filter by
+   * @returns The blend mode of the matched actor
+   */
+  public getBlendMode(filterActorUIDs?: string[]): BlendModes {
+    const actorEntries = this.getActors();
+    const actorForBlend =
+      filterActorUIDs?.length > 0
+        ? actorEntries.find((actorEntry) =>
+            filterActorUIDs.includes(actorEntry.uid)
+          )
+        : actorEntries[0];
+
+    return (
+      actorForBlend?.blendMode ||
+      // @ts-ignore vtk incorrect typing
+      actorForBlend?.actor.getMapper().getBlendMode()
+    );
+  }
+
+  /**
+   * Sets the blend mode for actors in the volume viewport. Can optionally filter which
+   * actors to apply the blend mode to using filterActorUIDs.
+   *
+   * @param blendMode - The blend mode to set
+   * @param filterActorUIDs - Optional array of actor UIDs to filter which actors to update
+   * @param immediate - Whether to render the viewport immediately after setting the blend mode
+   */
   public setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs = [],
@@ -273,7 +312,7 @@ class VolumeViewport extends BaseVolumeViewport {
   ): void {
     let actorEntries = this.getActors();
 
-    if (filterActorUIDs && filterActorUIDs.length > 0) {
+    if (filterActorUIDs?.length > 0) {
       actorEntries = actorEntries.filter((actorEntry: ActorEntry) => {
         return filterActorUIDs.includes(actorEntry.uid);
       });
@@ -285,6 +324,7 @@ class VolumeViewport extends BaseVolumeViewport {
       const mapper = actor.getMapper();
       // @ts-ignore vtk incorrect typing
       mapper.setBlendMode?.(blendMode);
+      actorEntry.blendMode = blendMode;
     });
 
     if (immediate) {
@@ -400,7 +440,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     let actorEntries = this.getActors();
 
-    if (filterActorUIDs && filterActorUIDs.length > 0) {
+    if (filterActorUIDs?.length > 0) {
       actorEntries = actorEntries.filter((actorEntry) => {
         return filterActorUIDs.includes(actorEntry.uid);
       });
@@ -442,37 +482,29 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   /**
-   * Returns the imageId index of the current slice in the volume viewport.
-   * Note: this is not guaranteed to be the same as the slice index in the view
-   * To get the slice index in the view (scroll position), use `getSliceIndex()`
+   * Uses the slice range information to compute the current image id index.
+   * Note that this may be offset from the origin location, or opposite in
+   * direction to the distance from the origin location, as the index is a
+   * complete index from minimum to maximum.
    *
-   * In future we will even delete this method as it should not be used
-   * at all.
+   * @returns The slice index in the direction of the view.  This index is in
+   * the same position/size/direction as the scroll utility.  That is,
+   * ```scroll(dir)```
+   * and
+   * ```viewport.setView(viewport.getView({sliceIndex: viewport.getCurrentImageIdIndex()+dir}))```
    *
-   * @returns The slice index in the direction of the view
+   * have the same affect, excluding end/looping conditions.
    */
-  public getCurrentImageIdIndex = (volumeId?: string): number => {
-    const { viewPlaneNormal, focalPoint } = this.getCamera();
-
-    const imageData = this.getImageData(volumeId);
-
-    if (!imageData) {
-      return;
-    }
-
-    const { origin, direction, spacing } = imageData;
-
-    const spacingInNormal = getSpacingInNormalDirection(
-      { direction, spacing },
-      viewPlaneNormal
+  public getCurrentImageIdIndex = (
+    volumeId?: string,
+    useSlabThickness = true
+  ): number => {
+    const { currentStepIndex } = getVolumeViewportScrollInfo(
+      this,
+      volumeId || this.getVolumeId(),
+      useSlabThickness
     );
-    const sub = vec3.create();
-    vec3.sub(sub, focalPoint, origin);
-    const distance = vec3.dot(sub, viewPlaneNormal);
-
-    // divide by the spacing in the normal direction to get the
-    // number of steps, and subtract 1 to get the index
-    return Math.round(Math.abs(distance) / spacingInNormal);
+    return currentStepIndex;
   };
 
   /**

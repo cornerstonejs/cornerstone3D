@@ -8,25 +8,18 @@ import { getBoundingBoxAroundShapeIJK } from './boundingBox';
 
 const { transformWorldToIndex } = csUtils;
 
-/**
- * Given an imageData, and the great circle top and bottom points of a sphere,
- * this function will run the callback for each point of the imageData that is
- * within the sphere defined by the great circle points. If the viewport
- * is provided, region of interest will be an accurate approximation of the
- * sphere (using viewport camera), and the resulting performance will be
- * better.
- *
- * @privateRemarks great circle also known as orthodrome is the intersection of
- * the sphere and the plane that passes through the center of the sphere
- *
- * @param imageData - The volume imageData
- * @param circlePoints - bottom and top points of the great circle in world coordinates
- * @param callback - A callback function that will be called for each point in the shape.
- */
-function getSphereBoundsInfo(
+type SphereBoundsInfo = {
+  boundsIJK: BoundsIJK;
+  centerWorld: Types.Point3;
+  radiusWorld: number;
+  topLeftWorld: Types.Point3;
+  bottomRightWorld: Types.Point3;
+};
+
+function _getSphereBoundsInfo(
   circlePoints: [Types.Point3, Types.Point3],
   imageData: vtkImageData,
-  viewport
+  directionVectors
 ): {
   boundsIJK: BoundsIJK;
   centerWorld: Types.Point3;
@@ -46,20 +39,13 @@ function getSphereBoundsInfo(
   // sphere radius in world
   const radiusWorld = vec3.distance(bottom, top) / 2;
 
-  if (!viewport) {
-    throw new Error(
-      'viewport is required in order to calculate the sphere bounds'
-    );
-  }
-
-  const { boundsIJK, topLeftWorld, bottomRightWorld } =
-    _computeBoundsIJKWithCamera(
-      imageData,
-      viewport,
-      circlePoints,
-      centerWorld,
-      radiusWorld
-    );
+  const { boundsIJK, topLeftWorld, bottomRightWorld } = _computeBoundsIJK(
+    imageData,
+    directionVectors,
+    circlePoints,
+    centerWorld,
+    radiusWorld
+  );
 
   return {
     boundsIJK,
@@ -70,16 +56,62 @@ function getSphereBoundsInfo(
   };
 }
 
-function _computeBoundsIJKWithCamera(
-  imageData,
-  viewport,
-  circlePoints,
-  centerWorld,
-  radiusWorld
-) {
-  const [bottom, top] = circlePoints;
+/**
+ * Returns the bounds, center, radius and top-left/bottom-right coordinates of a
+ * sphere for a given circle and imageData. The region of interest will be an
+ * accurate approximation of the sphere using the direction vectors from imageData.
+ *
+ * @privateRemarks great circle also known as orthodrome is the intersection of
+ * the sphere and the plane that passes through the center of the sphere
+ *
+ * @param imageData - Volume imageData
+ * @param circlePoints - Bottom and top points of the great circle in world coordinates
+ */
+function getSphereBoundsInfo(
+  circlePoints: [Types.Point3, Types.Point3],
+  imageData: vtkImageData
+): SphereBoundsInfo {
+  const direction = imageData.getDirection();
+  const rowCosine = vec3.fromValues(direction[0], direction[1], direction[2]);
+  const columnCosine = vec3.fromValues(
+    direction[3],
+    direction[4],
+    direction[5]
+  );
+  const scanAxis = vec3.fromValues(direction[6], direction[7], direction[8]);
+  const viewPlaneNormal = vec3.negate(vec3.create(), scanAxis);
 
-  const dimensions = imageData.getDimensions() as Types.Point3;
+  const directionVectors = {
+    row: rowCosine as Types.Point3,
+    column: columnCosine as Types.Point3,
+    normal: viewPlaneNormal as Types.Point3,
+  };
+
+  return _getSphereBoundsInfo(circlePoints, imageData, directionVectors);
+}
+
+/**
+ * Returns the bounds, center, radius and top-left/bottom-right coordinates of a
+ * sphere for a given circle, imageData and a viewport. The region of interest
+ * will be an accurate approximation of the sphere (using viewport camera)
+ *
+ * @privateRemarks great circle also known as orthodrome is the intersection of
+ * the sphere and the plane that passes through the center of the sphere
+ *
+ * @param imageData - Volume imageData
+ * @param circlePoints - Bottom and top points of the great circle in world coordinates
+ * @param viewport - Viewport
+ */
+function getSphereBoundsInfoFromViewport(
+  circlePoints: [Types.Point3, Types.Point3],
+  imageData: vtkImageData,
+  viewport
+): SphereBoundsInfo {
+  if (!viewport) {
+    throw new Error(
+      'viewport is required in order to calculate the sphere bounds'
+    );
+  }
 
   const camera = viewport.getCamera();
 
@@ -100,6 +132,30 @@ function _computeBoundsIJKWithCamera(
 
   vec3.cross(viewRight, viewUp, viewPlaneNormal);
 
+  const directionVectors = {
+    row: viewRight as Types.Point3,
+    normal: viewPlaneNormal as Types.Point3,
+    column: vec3.negate(vec3.create(), viewUp) as Types.Point3,
+  };
+
+  return _getSphereBoundsInfo(circlePoints, imageData, directionVectors);
+}
+
+function _computeBoundsIJK(
+  imageData,
+  directionVectors,
+  circlePoints,
+  centerWorld,
+  radiusWorld
+) {
+  // const [bottom, top] = circlePoints;
+  const dimensions = imageData.getDimensions() as Types.Point3;
+  const {
+    row: rowCosine,
+    column: columnCosine,
+    normal: vecNormal,
+  } = directionVectors;
+
   // we need to find the bounding box of the sphere in the image, e.g., the
   // topLeftWorld and bottomRightWorld points of the bounding box.
   // We go from the sphereCenter in the normal direction of amount radius, and
@@ -109,12 +165,23 @@ function _computeBoundsIJKWithCamera(
   const topLeftWorld = vec3.create();
   const bottomRightWorld = vec3.create();
 
-  vec3.scaleAndAdd(topLeftWorld, top, viewPlaneNormal, radiusWorld);
-  vec3.scaleAndAdd(bottomRightWorld, bottom, viewPlaneNormal, -radiusWorld);
+  // vec3.scaleAndAdd(topLeftWorld, top, viewPlaneNormal, radiusWorld);
+  // vec3.scaleAndAdd(bottomRightWorld, bottom, viewPlaneNormal, -radiusWorld);
+
+  vec3.scaleAndAdd(topLeftWorld, centerWorld, vecNormal, radiusWorld);
+  vec3.scaleAndAdd(bottomRightWorld, centerWorld, vecNormal, -radiusWorld);
+
+  vec3.scaleAndAdd(topLeftWorld, topLeftWorld, columnCosine, -radiusWorld);
+  vec3.scaleAndAdd(
+    bottomRightWorld,
+    bottomRightWorld,
+    columnCosine,
+    radiusWorld
+  );
 
   // go in the direction of viewRight with the value of radius
-  vec3.scaleAndAdd(topLeftWorld, topLeftWorld, viewRight, -radiusWorld);
-  vec3.scaleAndAdd(bottomRightWorld, bottomRightWorld, viewRight, radiusWorld);
+  vec3.scaleAndAdd(topLeftWorld, topLeftWorld, rowCosine, -radiusWorld);
+  vec3.scaleAndAdd(bottomRightWorld, bottomRightWorld, rowCosine, radiusWorld);
 
   // In order to correctly come up with the boundsIJK, we need to consider
   // all the points IJK to get the bounds, since the viewport might have
@@ -142,4 +209,5 @@ function _computeBoundsIJKWithCamera(
   return { boundsIJK, topLeftWorld, bottomRightWorld };
 }
 
-export { getSphereBoundsInfo };
+export { getSphereBoundsInfo, getSphereBoundsInfoFromViewport };
+export type { SphereBoundsInfo };

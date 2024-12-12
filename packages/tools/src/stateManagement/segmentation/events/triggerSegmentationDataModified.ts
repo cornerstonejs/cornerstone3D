@@ -10,11 +10,13 @@ import { setSegmentationDirty } from '../../../utilities/segmentation/utilities'
  */
 export function triggerSegmentationDataModified(
   segmentationId: string,
-  modifiedSlicesToUse?: number[]
+  modifiedSlicesToUse?: number[],
+  segmentIndex?: number
 ): void {
   const eventDetail: SegmentationDataModifiedEventDetail = {
     segmentationId,
     modifiedSlicesToUse,
+    segmentIndex,
   };
 
   // set it to dirty to force the next call to getUniqueSegmentIndices to

@@ -9,10 +9,12 @@ import type {
   CPUImageData,
   IVoxelManager,
   IRLEVoxelMap,
+  Point2,
 } from '../types';
 import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
 
 /**
  * Have a default size for cached RLE encoded images.  This is hard to guess
@@ -36,7 +38,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: IVoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
-  public numberOfComponents = 1;
+  public readonly numberOfComponents;
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
 
@@ -47,14 +49,17 @@ export default class VoxelManager<T> {
   // a limit on the number of slices to cache since it can grow indefinitely
   private _sliceDataCache = null as Map<string, PixelDataTypedArray>;
 
+  public readonly _id: string;
+
   points: Set<number>;
   width: number;
   frameSize: number;
-  _get: (index: number) => T;
-  _set: (index: number, v: T) => boolean;
-  _getConstructor?: () => new (length: number) => PixelDataTypedArray;
+  readonly _get: (index: number) => T;
+  readonly _set: (index: number, v: T) => boolean;
+  readonly _getConstructor?: () => new (length: number) => PixelDataTypedArray;
   _getScalarDataLength?: () => number;
-  _getScalarData?: () => PixelDataTypedArray;
+  _getScalarData?: () => ArrayLike<number>;
+  _updateScalarData?: (scalarData: ArrayLike<number>) => PixelDataTypedArray;
   _getSliceData: (args: {
     sliceIndex: number;
     slicePlane: number;
@@ -64,19 +69,35 @@ export default class VoxelManager<T> {
    * Creates a generic voxel value accessor, with access to the values
    * provided by the _get and optionally _set values.
    * @param dimensions - for the voxel volume
-   * @param _get - called to get a value by index
-   * @param _set  - called when setting a value
+   * @param options._get - called to get a value by index
+   * @param options._set  - called when setting a value
    */
   constructor(
     dimensions,
-    _get: (index: number) => T,
-    _set?: (index: number, v: T) => boolean
+    options: {
+      _get: (index: number) => T;
+      _set?: (index: number, v: T) => boolean;
+      _getScalarData?: () => ArrayLike<number>;
+      _id?: string;
+      _updateScalarData?: (
+        scalarData: ArrayLike<number>
+      ) => PixelDataTypedArray;
+      numberOfComponents?: number;
+      scalarData?: ArrayLike<number>;
+      _getConstructor?: () => new (length: number) => PixelDataTypedArray;
+    }
   ) {
     this.dimensions = dimensions;
     this.width = dimensions[0];
     this.frameSize = this.width * dimensions[1];
-    this._get = _get;
-    this._set = _set;
+    this._get = options._get;
+    this._set = options._set;
+    this._id = options._id || '';
+    this._getConstructor = options._getConstructor;
+    this.numberOfComponents = this.numberOfComponents || 1;
+    this.scalarData = options.scalarData as PixelDataTypedArray;
+    this._getScalarData = options._getScalarData;
+    this._updateScalarData = options._updateScalarData;
   }
 
   /**
@@ -123,6 +144,29 @@ export default class VoxelManager<T> {
    * Gets the value at the given index.
    */
   public getAtIndex = (index) => this._get(index);
+
+  /** Gets the min/max pair - as array for RGB */
+  public getMinMax() {
+    let min, max;
+    const callback = ({ value: v }) => {
+      const isArray = Array.isArray(v);
+      if (min === undefined) {
+        min = isArray ? [...v] : v;
+        max = isArray ? [...v] : v;
+      }
+      if (isArray) {
+        for (let i = 0; i < v.length; i++) {
+          min[i] = Math.min(min[i], v[i]);
+          max[i] = Math.max(max[i], v[i]);
+        }
+      } else {
+        min = Math.min(min, v);
+        max = Math.max(max, v);
+      }
+    };
+    this.forEach(callback, { boundsIJK: this.getDefaultBounds() });
+    return { min, max };
+  }
 
   /**
    * Sets the value at the given index
@@ -186,9 +230,14 @@ export default class VoxelManager<T> {
    *
    * If the boundsIJK is not provided, the iteration will be over the entire volume/data
    *
-   *
    * If the VoxelManager is backed by a Map, it will only iterate over the stored values.
    * Otherwise, it will iterate over all voxels within the specified or default bounds.
+   *
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the scalar data, map or rle map depending on the VoxelManager
+   *     type.
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public forEach = (
     callback: (args: {
@@ -220,96 +269,26 @@ export default class VoxelManager<T> {
     const pointsInShape = [];
 
     if (useLPSTransform) {
-      const { imageData } = options;
-      const direction = imageData.getDirection();
-      const rowCosines = direction.slice(0, 3);
-      const columnCosines = direction.slice(3, 6);
-      const scanAxisNormal = direction.slice(6, 9);
-
-      const spacing = imageData.getSpacing();
-      const [rowSpacing, columnSpacing, scanAxisSpacing] = spacing;
-
-      // @ts-ignore will
-
-      const start = vec3.fromValues(iMin, jMin, kMin);
-
-      // @ts-ignore will be fixed in vtk-master
-      const worldPosStart = imageData.indexToWorld(start);
-
-      const rowStep = vec3.fromValues(
-        rowCosines[0] * rowSpacing,
-        rowCosines[1] * rowSpacing,
-        rowCosines[2] * rowSpacing
-      );
-
-      const columnStep = vec3.fromValues(
-        columnCosines[0] * columnSpacing,
-        columnCosines[1] * columnSpacing,
-        columnCosines[2] * columnSpacing
-      );
-
-      const scanAxisStep = vec3.fromValues(
-        scanAxisNormal[0] * scanAxisSpacing,
-        scanAxisNormal[1] * scanAxisSpacing,
-        scanAxisNormal[2] * scanAxisSpacing
-      );
-
-      const currentPos = vec3.clone(worldPosStart) as Point3;
-
-      for (let k = kMin; k <= kMax; k++) {
-        // Todo: There is an optimized version of this in the currently closed source
-        // code - it is quite noticeably faster as it pre-generates i,j,k arrays
-        // and adds the three numbers for each dimension. That version actually works
-        // with sparse data voxel managers, whereas this one doesn't
-        const startPosJ = vec3.clone(currentPos);
-
-        for (let j = jMin; j <= jMax; j++) {
-          const startPosI = vec3.clone(currentPos);
-
-          for (let i = iMin; i <= iMax; i++) {
-            const pointIJK = [i, j, k] as Point3;
-
-            // The current world position (pointLPS) is now in currentPos
-            if (isInObject(currentPos, pointIJK)) {
-              const index = this.toIndex(pointIJK);
-
-              const value = this._get(index);
-
-              if (returnPoints) {
-                pointsInShape.push({
-                  value,
-                  index,
-                  pointIJK,
-                  pointLPS: currentPos.slice(),
-                });
-              }
-
-              if (callback) {
-                callback({ value, index, pointIJK, pointLPS: currentPos });
-              }
-            }
-
-            // Increment currentPos by rowStep for the next iteration
-            vec3.add(currentPos, currentPos, rowStep);
-          }
-
-          // Reset currentPos to the start of the next J line and increment by columnStep
-          vec3.copy(currentPos, startPosI);
-          vec3.add(currentPos, currentPos, columnStep);
-        }
-
-        // Reset currentPos to the start of the next K slice and increment by scanAxisStep
-        vec3.copy(currentPos, startPosJ);
-        vec3.add(currentPos, currentPos, scanAxisStep);
-      }
-
+      const pointsInShape = iterateOverPointsInShapeVoxelManager({
+        voxelManager: this,
+        imageData: options.imageData,
+        bounds: [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ],
+        pointInShapeFn: isInObject,
+        callback,
+      });
       return pointsInShape;
     }
 
     // We don't need the complex LPS calculations and we can just iterate over the data
     // in the IJK coordinate system
-
     if (this.map) {
+      if (this.map instanceof RLEVoxelMap) {
+        return this.rleForEach(callback, options);
+      }
       // Optimize this for only values in the map
       for (const index of this.map.keys()) {
         const pointIJK = this.toIJK(index);
@@ -362,21 +341,66 @@ export default class VoxelManager<T> {
   };
 
   /**
+   * Foreach callback optimized for RLE testing
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the rle map (see the rle map for callbacks that work at
+   *     the row or rle level, as those can be faster/more efficient)
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
+   */
+  public rleForEach(callback, options?) {
+    const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
+    const { isWithinObject } = options || {};
+    const map = this.map as RLEVoxelMap<T>;
+    map.defaultValue = undefined;
+    for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+      for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+        const row = map.getRun(j, k);
+        if (!row) {
+          continue;
+        }
+        for (const rle of row) {
+          const { start, end, value } = rle;
+          const baseIndex = this.toIndex([0, j, k]);
+          for (let i = start; i < end; i++) {
+            const callbackArguments = {
+              value,
+              index: baseIndex + i,
+              pointIJK: [i, j, k],
+            };
+            if (isWithinObject?.(callbackArguments) === false) {
+              continue;
+            }
+            callback(callbackArguments);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Retrieves the scalar data.
    * If the scalar data is already available, it will be returned.
    * Otherwise, if the `_getScalarData` method is defined, it will be called to retrieve the scalar data.
    * If neither the scalar data nor the `_getScalarData` method is available, an error will be thrown.
    *
+   * @param storeScalarData - a parameter to allow storing the scalar data rather than throwing it away
+   *     each time.
    * @returns The scalar data.
    * @throws {Error} If no scalar data is available.
    */
-  public getScalarData() {
+  public getScalarData(storeScalarData = false): PixelDataTypedArray {
     if (this.scalarData) {
+      this._updateScalarData?.(this.scalarData);
       return this.scalarData;
     }
 
     if (this._getScalarData) {
-      return this._getScalarData();
+      const scalarData = this._getScalarData();
+      if (storeScalarData) {
+        console.log('Not transient, should store value', scalarData);
+      }
+      return scalarData as PixelDataTypedArray;
     }
 
     throw new Error('No scalar data available');
@@ -423,9 +447,7 @@ export default class VoxelManager<T> {
    * bounds.
    */
   public clear() {
-    if (this.map) {
-      this.map.clear();
-    }
+    this.map?.clear();
     this.boundsIJK.map((bound) => {
       bound[0] = Infinity;
       bound[1] = -Infinity;
@@ -434,6 +456,10 @@ export default class VoxelManager<T> {
     this.points?.clear();
   }
 
+  /**
+   * @returns a constructor for a typed array for the pixel data of the given length
+   *     and the right type.  Defaults to float32array.
+   */
   public getConstructor(): new (length: number) => PixelDataTypedArray {
     if (this.scalarData) {
       return this.scalarData.constructor as new (
@@ -630,23 +656,31 @@ export default class VoxelManager<T> {
     scalarData;
     numberOfComponents;
   }): VoxelManager<RGB> {
-    const voxels = new VoxelManager<RGB>(
-      dimensions,
-      (index) => {
+    const voxels = new VoxelManager<RGB>(dimensions, {
+      _get: (index) => {
         index *= numberOfComponents;
-        return [scalarData[index++], scalarData[index++], scalarData[index++]];
+        return [
+          scalarData[index++],
+          scalarData[index++],
+          scalarData[index++],
+        ] as RGB;
       },
-      (index, v) => {
+      _id: '_createRGBScalarVolumeVoxelManager',
+      _set: (index, v) => {
         index *= 3;
         const isChanged = !isEqual(scalarData[index], v);
         scalarData[index++] = v[0];
         scalarData[index++] = v[1];
         scalarData[index++] = v[2];
         return isChanged;
-      }
-    );
-    voxels.numberOfComponents = numberOfComponents;
-    voxels.scalarData = scalarData;
+      },
+      numberOfComponents,
+      scalarData,
+    });
+
+    voxels.clear = () => {
+      scalarData.fill(0);
+    };
     return voxels;
   }
 
@@ -670,6 +704,9 @@ export default class VoxelManager<T> {
 
     function getPixelInfo(index) {
       const sliceIndex = Math.floor(index / pixelsPerSlice);
+      if (sliceIndex < 0 || sliceIndex >= dimensions[2]) {
+        return {};
+      }
       const imageId = imageIds[sliceIndex];
 
       if (!imageId) {
@@ -684,73 +721,57 @@ export default class VoxelManager<T> {
         return { pixelData: null, pixelIndex: null };
       }
 
-      const pixelData = image.voxelManager.getScalarData();
-      const pixelIndex = (index % pixelsPerSlice) * numberOfComponents;
+      const voxelManager = image.voxelManager;
+      const pixelIndex = index % pixelsPerSlice;
 
-      return { pixelData, pixelIndex };
+      return { voxelManager, pixelIndex };
     }
 
     function getVoxelValue(index) {
-      const { pixelData, pixelIndex } = getPixelInfo(index);
+      const { voxelManager: imageVoxelManager, pixelIndex } =
+        getPixelInfo(index);
 
-      if (!pixelData || pixelIndex === null) {
+      if (!imageVoxelManager || pixelIndex === null) {
         return null;
       }
 
-      if (numberOfComponents === 1) {
-        return pixelData[pixelIndex];
-      } else {
-        return [
-          pixelData[pixelIndex],
-          pixelData[pixelIndex + 1],
-          pixelData[pixelIndex + 2],
-        ] as RGB;
-      }
+      return imageVoxelManager.getAtIndex(pixelIndex) as number | RGB;
     }
 
     function setVoxelValue(index, v) {
-      const { pixelData, pixelIndex } = getPixelInfo(index);
+      const { voxelManager: imageVoxelManager, pixelIndex } =
+        getPixelInfo(index);
 
-      if (!pixelData || pixelIndex === null) {
+      if (!imageVoxelManager || pixelIndex === null) {
         return false;
       }
 
-      let isChanged = false;
+      const currentValue = imageVoxelManager.getAtIndex(pixelIndex);
+      const isChanged = !isEqual(v, currentValue);
 
-      if (numberOfComponents === 1) {
-        if (pixelData[pixelIndex] !== v) {
-          pixelData[pixelIndex] = v as number;
-          isChanged = true;
-        }
-      } else {
-        const rgbValue = v as RGB;
-        for (let i = 0; i < numberOfComponents; i++) {
-          if (pixelData[pixelIndex + i] !== rgbValue[i]) {
-            pixelData[pixelIndex + i] = rgbValue[i];
-            isChanged = true;
-          }
-        }
+      if (!isChanged) {
+        return isChanged;
       }
+      imageVoxelManager.setAtIndex(pixelIndex, v as number);
 
-      return isChanged;
+      return true;
     }
 
-    const voxelManager = new VoxelManager(
-      dimensions,
-      (index) => getVoxelValue(index),
-      (index, v) => setVoxelValue(index, v)
-    );
-
-    voxelManager.numberOfComponents = numberOfComponents;
-
-    // @ts-ignore
-    voxelManager._getConstructor = () => {
-      const pixelInfo = getPixelInfo(0);
-      if (!pixelInfo.pixelData) {
+    const _getConstructor = () => {
+      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
+      if (!imageVoxelManager) {
         return null;
       }
-      return pixelInfo.pixelData.constructor;
+      return imageVoxelManager.getConstructor();
     };
+
+    const voxelManager = new VoxelManager<number | RGB>(dimensions, {
+      _get: getVoxelValue,
+      _set: setVoxelValue,
+      numberOfComponents,
+      _getConstructor,
+      _id: 'createImageVolumeVoxelManager',
+    });
 
     voxelManager.getMiddleSliceData = () => {
       const middleSliceIndex = Math.floor(dimensions[2] / 2);
@@ -758,6 +779,13 @@ export default class VoxelManager<T> {
         sliceIndex: middleSliceIndex,
         slicePlane: 2,
       });
+    };
+
+    voxelManager.clear = () => {
+      for (const imageId of imageIds) {
+        const image = cache.getImage(imageId);
+        image.voxelManager.clear();
+      }
     };
 
     // Todo: need a way to make it understand dirty status if pixel data is changed
@@ -768,6 +796,11 @@ export default class VoxelManager<T> {
       for (const imageId of imageIds) {
         const image = cache.getImage(imageId);
 
+        // Skip if image not loaded yet
+        if (!image) {
+          continue;
+        }
+
         // min and max pixel value is correct, //todo this is not true
         // for dynamically changing data such as labelmaps in segmentation
         if (image.minPixelValue < minValue) {
@@ -777,12 +810,21 @@ export default class VoxelManager<T> {
           maxValue = image.maxPixelValue;
         }
       }
+
+      // If no images were loaded yet, return default range
+      if (minValue === Infinity && maxValue === -Infinity) {
+        return [0, 0];
+      }
+
       return [minValue, maxValue];
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { pixelData } = getPixelInfo(0);
-      return pixelData.length * dimensions[2];
+      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
+      if (!imageVoxelManager) {
+        return 0;
+      }
+      return imageVoxelManager.getScalarDataLength() * dimensions[2];
     };
 
     /**
@@ -796,7 +838,6 @@ export default class VoxelManager<T> {
      */
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
-
       if (!ScalarDataConstructor) {
         return new Uint8Array(0);
       }
@@ -808,12 +849,13 @@ export default class VoxelManager<T> {
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { pixelData } = getPixelInfo(
+        const { voxelManager: imageVoxelManager } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (pixelData) {
+        if (imageVoxelManager) {
           const sliceStart = sliceIndex * sliceSize;
+          const pixelData = imageVoxelManager.getScalarData();
 
           if (numberOfComponents === 1) {
             scalarData.set(pixelData, sliceStart);
@@ -840,18 +882,18 @@ export default class VoxelManager<T> {
       let maxValue = -Infinity;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { pixelData } = getPixelInfo(
+        const { voxelManager: imageVoxelManager } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (pixelData && SliceDataConstructor) {
+        if (imageVoxelManager && SliceDataConstructor) {
           const sliceStart = sliceIndex * sliceSize;
           const sliceEnd = sliceStart + sliceSize;
           // @ts-ignore
           const sliceData = new SliceDataConstructor(sliceSize);
           // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
-          pixelData.set(sliceData);
+          imageVoxelManager.scalarData = sliceData;
 
           // Update min/max values for this slice
           for (let i = 0; i < sliceData.length; i++) {
@@ -977,14 +1019,13 @@ export default class VoxelManager<T> {
     });
 
     // Create a VoxelManager that will manage the active voxel group
-    const voxelManager = new VoxelManager(
-      dimensions,
-      (index) => voxelGroups[timePoint]._get(index),
+    const voxelManager = new VoxelManager<number | RGB>(dimensions, {
+      _get: (index) => voxelGroups[timePoint]._get(index),
       // @ts-ignore
-      (index, v) => voxelGroups[timePoint]._set(index, v)
-    ) as IVoxelManager<number> | IVoxelManager<RGB>;
-
-    voxelManager.numberOfComponents = numberOfComponents;
+      _set: (index, v) => voxelGroups[timePoint]._set(index, v),
+      numberOfComponents,
+      _id: 'createScalarDynamicVolumeVoxelManager',
+    }) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.getScalarDataLength = () => {
       return voxelGroups[timePoint].getScalarDataLength();
@@ -1083,16 +1124,22 @@ export default class VoxelManager<T> {
     dimensions: Point3;
     scalarData: PixelDataTypedArray;
   }): IVoxelManager<number> {
-    const voxels = new VoxelManager<number>(
-      dimensions,
-      (index) => scalarData[index],
-      (index, v) => {
+    const voxels = new VoxelManager<number>(dimensions, {
+      _get: (index) => scalarData[index],
+      _set: (index, v) => {
         const isChanged = scalarData[index] !== v;
         scalarData[index] = v;
         return isChanged;
-      }
-    );
+      },
+      _getConstructor: () =>
+        scalarData.constructor as new (length: number) => PixelDataTypedArray,
+      _id: '_createNumberVolumeVoxelManager',
+    });
     voxels.scalarData = scalarData;
+    voxels.clear = () => {
+      // get the latest scalar data and set that to all 0
+      voxels.scalarData.fill(0);
+    };
 
     voxels.getMiddleSliceData = () => {
       const middleSliceIndex = Math.floor(dimensions[2] / 2);
@@ -1116,11 +1163,11 @@ export default class VoxelManager<T> {
     dimension: Point3;
   }): IVoxelManager<T> {
     const map = new Map<number, T>();
-    const voxelManager = new VoxelManager(
-      dimension,
-      map.get.bind(map),
-      (index, v) => map.set(index, v) && true
-    );
+    const voxelManager = new VoxelManager<T>(dimension, {
+      _get: map.get.bind(map),
+      _set: (index, v) => map.set(index, v) && true,
+      _id: 'createMapVoxelManager',
+    });
     voxelManager.map = map;
     return voxelManager;
   }
@@ -1137,10 +1184,9 @@ export default class VoxelManager<T> {
   }): VoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelManager;
-    const voxelManager = new VoxelManager(
-      dimensions,
-      (index) => map.get(index),
-      function (index, v) {
+    const voxelManager = new VoxelManager(dimensions, {
+      _get: (index) => map.get(index),
+      _set: function (index, v) {
         if (!map.has(index)) {
           const oldV = this.sourceVoxelManager.getAtIndex(index);
           if (oldV === v) {
@@ -1152,10 +1198,51 @@ export default class VoxelManager<T> {
           map.delete(index);
         }
         this.sourceVoxelManager.setAtIndex(index, v);
-      }
-    );
+      },
+      _id: 'createHistoryVoxelManager',
+    });
     voxelManager.map = map;
     voxelManager.scalarData = sourceVoxelManager.scalarData;
+    voxelManager.sourceVoxelManager = sourceVoxelManager;
+    return voxelManager;
+  }
+
+  /**
+   * Creates a history remembering voxel manager, based on the RLE endpoint
+   * rather than a map endpoint.
+   * This will remember the original values in the voxels, and will apply the
+   * update to the underlying source voxel manager.
+   */
+  public static createRLEHistoryVoxelManager<T>(
+    sourceVoxelManager: VoxelManager<T>
+  ): VoxelManager<T> {
+    const { dimensions } = sourceVoxelManager;
+    const map = new RLEVoxelMap<T>(dimensions[0], dimensions[1], dimensions[2]);
+    const voxelManager = new VoxelManager<T>(dimensions, {
+      _get: (index) => map.get(index),
+      _set: function (index, v) {
+        const originalV = map.get(index);
+        if (originalV === undefined) {
+          const oldV = this.sourceVoxelManager.getAtIndex(index);
+          if (oldV === v || (oldV === undefined && v === 0) || v === null) {
+            // No-op
+            return false;
+          }
+          map.set(index, oldV ?? 0);
+        } else if (v === originalV || v === null) {
+          map.delete(index);
+          v = originalV;
+        }
+        this.sourceVoxelManager.setAtIndex(index, v);
+      },
+      _getScalarData: RLEVoxelMap.getScalarData,
+      _updateScalarData: (scalarData) => {
+        map.updateScalarData(scalarData as PixelDataTypedArray);
+        return scalarData as PixelDataTypedArray;
+      },
+      _id: 'createRLEHistoryVoxelManager',
+    });
+    voxelManager.map = map;
     voxelManager.sourceVoxelManager = sourceVoxelManager;
     return voxelManager;
   }
@@ -1176,10 +1263,10 @@ export default class VoxelManager<T> {
     const [width, height] = dimensions;
     const planeSize = width * height;
 
-    const voxelManager = new VoxelManager(
-      dimensions,
-      (index) => map.get(Math.floor(index / planeSize))[index % planeSize],
-      (index, v) => {
+    const voxelManager = new VoxelManager(dimensions, {
+      _get: (index) =>
+        map.get(Math.floor(index / planeSize))[index % planeSize],
+      _set: (index, v) => {
         const k = Math.floor(index / planeSize);
         let layer = map.get(k);
         if (!layer) {
@@ -1188,8 +1275,9 @@ export default class VoxelManager<T> {
         }
         layer[index % planeSize] = v;
         return true;
-      }
-    );
+      },
+      _id: 'createLazyVoxelManager',
+    });
     voxelManager.map = map;
     return voxelManager;
   }
@@ -1198,7 +1286,7 @@ export default class VoxelManager<T> {
    * Creates a RLE based voxel manager.  This is effective for storing
    * segmentation maps or already RLE encoded data such as ultrasounds.
    */
-  public static createRLEVoxelManager<T>({
+  public static createRLEVolumeVoxelManager<T>({
     dimensions,
   }: {
     dimensions: Point3;
@@ -1206,18 +1294,35 @@ export default class VoxelManager<T> {
     const [width, height, depth] = dimensions;
     const map = new RLEVoxelMap<T>(width, height, depth);
 
-    const voxelManager = new VoxelManager<T>(
-      dimensions,
-      (index) => map.get(index),
-      (index, v) => {
+    const voxelManager = new VoxelManager<T>(dimensions, {
+      _get: (index) => map.get(index),
+      _set: (index, v) => {
         map.set(index, v);
         return true;
-      }
-    );
+      },
+      _getScalarData: RLEVoxelMap.getScalarData,
+      _updateScalarData: (scalarData) => {
+        map.updateScalarData(scalarData as PixelDataTypedArray);
+        return scalarData as PixelDataTypedArray;
+      },
+      _id: 'createRLEVolumeVoxelManager',
+    });
     voxelManager.map = map;
     // @ts-ignore
     voxelManager.getPixelData = map.getPixelData.bind(map);
+    // @ts-ignore
     return voxelManager;
+  }
+
+  public static createRLEImageVoxelManager<T>({
+    dimensions,
+  }: {
+    dimensions: Point2;
+  }): VoxelManager<T> {
+    const [width, height] = dimensions;
+    return VoxelManager.createRLEVolumeVoxelManager<T>({
+      dimensions: [width, height, 1],
+    });
   }
 
   /**
@@ -1244,7 +1349,7 @@ export default class VoxelManager<T> {
     // This case occurs when the image data is a dummy image data set
     // created just to prevent exceptions in the caching logic.  Then, the
     // RLE voxel manager can be created to store the data instead.
-    image.voxelManager = VoxelManager.createRLEVoxelManager<number>({
+    image.voxelManager = VoxelManager.createRLEVolumeVoxelManager<number>({
       dimensions: [width, height, 1],
     });
     // The RLE voxel manager knows how to get scalar data pixel data representations.

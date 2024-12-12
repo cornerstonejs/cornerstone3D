@@ -1,38 +1,14 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
-import { defaultFrameOfReferenceSpecificAnnotationManager } from './FrameOfReferenceSpecificAnnotationManager';
 import type { Annotations, Annotation } from '../../types/AnnotationTypes';
-import type { AnnotationGroupSelector } from '../../types';
-import { getAnnotation } from './getAnnotation';
+import type { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 import {
   triggerAnnotationAddedForElement,
   triggerAnnotationAddedForFOR,
   triggerAnnotationRemoved,
 } from './helpers/state';
-import { checkAndSetAnnotationLocked } from './annotationLocking';
-import {
-  checkAndDefineCachedStatsProperty,
-  checkAndDefineTextBoxProperty,
-} from './utilities/defineProperties';
-import { checkAndSetAnnotationVisibility } from './annotationVisibility';
 
 // our default annotation manager
-let defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
-
-const preprocessingFn = (annotation: Annotation) => {
-  annotation = checkAndDefineTextBoxProperty(annotation);
-  annotation = checkAndDefineCachedStatsProperty(annotation);
-
-  const uid = annotation.annotationUID;
-  const isLocked = checkAndSetAnnotationLocked(uid);
-  annotation.isLocked = isLocked;
-
-  const isVisible = checkAndSetAnnotationVisibility(uid);
-  annotation.isVisible = isVisible;
-
-  return annotation;
-};
-
-defaultManager.setPreprocessingFn(preprocessingFn);
+let defaultManager;
 
 /**
  * It returns the default annotations manager.
@@ -46,13 +22,8 @@ function getAnnotationManager() {
  * Set the annotation manager to be used for rendering, adding, removing, etc.
  * @param annotationManager - The annotation manager to be used
  */
-function setAnnotationManager(annotationManager) {
+function setAnnotationManager(annotationManager: IAnnotationManager) {
   defaultManager = annotationManager;
-}
-
-// set back to default frameOfReferenceSpecificAnnotationManager
-function resetAnnotationManager() {
-  defaultManager = defaultFrameOfReferenceSpecificAnnotationManager;
 }
 
 /**
@@ -75,6 +46,15 @@ function getAnnotations(
   const manager = getAnnotationManager();
   const groupKey = manager.getGroupKey(annotationGroupSelector);
   return manager.getAnnotations(groupKey, toolName) as Annotations;
+}
+
+/**
+ * Get the Annotation object by its UID
+ * @param annotationUID - The unique identifier of the annotation.
+ */
+function getAnnotation(annotationUID: string): Annotation {
+  const manager = getAnnotationManager();
+  return manager.getAnnotation(annotationUID);
 }
 
 function getAllAnnotations(): Annotations {
@@ -221,6 +201,11 @@ function getNumberOfAnnotations(
 
 /**
  * Remove the annotation by UID of the annotation.
+ *
+ * Note - the annotation state is NOT preserved here in the HistoryMemo state.
+ * If you wish to preserve the state, you must call the create annotation memo
+ * BEFORE removing the annotation, and pass the deleting: true flag to it.
+ *
  * @param annotationUID - The unique identifier for the annotation.
  */
 function removeAnnotation(annotationUID: string): void {
@@ -313,7 +298,6 @@ export {
   // annotation manager
   setAnnotationManager,
   getAnnotationManager,
-  resetAnnotationManager,
   invalidateAnnotation,
   getAnnotation,
 };

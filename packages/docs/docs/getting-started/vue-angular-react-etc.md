@@ -43,3 +43,38 @@ If you previously used
 `noParse: [/(codec)/],`
 
 to avoid parsing codecs in your webpack module, remove that line. The cornerstone3D library now includes the codecs as an ES module.
+
+Also since we are using wasm, you will need to add the following to your webpack configuration in the `module.rules` section:
+
+```javascript
+{
+  test: /\.wasm/,
+  type: 'asset/resource',
+},
+```
+
+## Svelte + Vite
+
+Similar to the configuration above, use the CommonJS plugin converting commonjs to esm. Otherwise, it will be pending at `await viewport.setStack(stack);`, the image will not be rendered.
+
+```javascript
+import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { viteCommonjs } from "@originjs/vite-plugin-commonjs"
+
+export default defineConfig({
+	plugins: [
+		svelte(),
+		viteCommonjs(),
+	],
+	optimizeDeps: {
+		exclude: ["@cornerstonejs/dicom-image-loader"],
+    include: ["dicom-parser"],
+  }
+})
+```
+
+:::note Tip
+If you are using `sveltekit`, and config like `plugins: [ sveltekit(), viteCommonjs() ]`, `viteCommonjs()` may not work.
+Try replace `sveltekit` with `vite-plugin-svelte` and it will work.
+:::

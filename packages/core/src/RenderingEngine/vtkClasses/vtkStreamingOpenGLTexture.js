@@ -4,6 +4,19 @@ import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 
 /**
+ * Converts the input data array to the specified data type
+ * @param {TypedArray} data - The source data array
+ * @param {string} targetDataType - The target data type to convert to
+ * @returns {TypedArray} The converted data array
+ */
+function convertDataType(data, targetDataType) {
+  const Constructor = getConstructorFromType(targetDataType);
+  const convertedData = new Constructor(data.length);
+  convertedData.set(data);
+  return convertedData;
+}
+
+/**
  * vtkStreamingOpenGLTexture - A derived class of the core vtkOpenGLTexture.
  * This class has methods to update the texture memory on the GPU slice by slice
  * in an efficient yet GPU-architecture friendly manner.
@@ -41,6 +54,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       data,
       preferSizeOverAccuracy
     );
+  };
+
+  const superUpdate = publicAPI.updateVolumeInfoForGL;
+
+  publicAPI.updateVolumeInfoForGL = (dataType, numComps) => {
+    const isScalingApplied = superUpdate(dataType, numComps);
+    model.volumeInfo.dataComputedScale = [1];
+    model.volumeInfo.dataComputedOffset = [0];
+    return isScalingApplied;
   };
 
   /**
@@ -109,11 +131,16 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
           continue;
         }
 
-        const data = image.voxelManager.getScalarData();
+        let data = image.voxelManager.getScalarData();
         const gl = model.context;
 
-        const dataType = data.constructor.name;
-        const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
+        if (volume.dataType !== data.constructor.name) {
+          data = convertDataType(data, volume.dataType);
+        }
+
+        const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
+          data,
+        ]);
 
         // Bind the texture
         publicAPI.bind();
@@ -181,8 +208,13 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       const gl = model.context;
 
-      const dataType = data.constructor.name;
-      const [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [data]);
+      if (volume.dataType !== data.constructor.name) {
+        data = convertDataType(data, volume.dataType);
+      }
+
+      const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
+        data,
+      ]);
 
       // Bind the texture
       publicAPI.bind();

@@ -14,3 +14,7 @@ export default function transformWorldToIndex(imageData, worldPos: Point3) {
 
   return index;
 }
+
+export function transformWorldToIndexContinuous(imageData, worldPos: Point3) {
+  return imageData.worldToIndex(worldPos);
+}

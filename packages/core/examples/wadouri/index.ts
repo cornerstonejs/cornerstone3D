@@ -5,11 +5,17 @@ import {
   getRenderingEngine,
   init as csRenderInit,
 } from '@cornerstonejs/core';
+
+import { init as initLoader } from '@cornerstonejs/dicom-image-loader';
 import {
   addButtonToToolbar,
   setTitleAndDescription,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
+import {
+  ctImageIds,
+  ptImageIds,
+} from '../../../../utils/demo/helpers/WADOURICreateImageIds';
 
 // This is for debugging purposes
 console.warn(
@@ -30,39 +36,9 @@ element.style.height = '500px';
 content.appendChild(element);
 // ============================= //
 
-const studyUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125112931.11';
-const contentType = 'application%2Fdicom';
-const wadoURIRoot = 'https://server.dcmjs.org/dcm4chee-arc/aets/DCM4CHEE/wado';
-
-const ctSeriesUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125113028.6';
-const ctObjectUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125113100.3';
-
-const ptSeriesUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125112950.1';
-const ptObjectUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125112959.5';
-
 // Instantiate a rendering engine
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
-
-const createWADOURIImageId = (params) => {
-  return `wadouri:${params.wadoURIRoot}?requestType=WADO&studyUID=${params.studyUID}&seriesUID=${params.seriesUID}&objectUID=${params.objectUID}&contentType=${params.contentType}`;
-};
-
-const ctImageId = createWADOURIImageId({
-  wadoURIRoot,
-  studyUID,
-  seriesUID: ctSeriesUID,
-  objectUID: ctObjectUID,
-  contentType,
-});
-
-const ptImageId = createWADOURIImageId({
-  wadoURIRoot,
-  studyUID,
-  seriesUID: ptSeriesUID,
-  objectUID: ptObjectUID,
-  contentType,
-});
 
 addButtonToToolbar({
   title: 'Load CT Image',
@@ -75,7 +51,7 @@ addButtonToToolbar({
       viewportId
     ) as Types.IStackViewport;
 
-    viewport.setStack([ctImageId]);
+    viewport.setStack(ctImageIds);
   },
 });
 
@@ -90,7 +66,7 @@ addButtonToToolbar({
       viewportId
     ) as Types.IStackViewport;
 
-    viewport.setStack([ptImageId]);
+    viewport.setStack(ptImageIds);
   },
 });
 /**
@@ -99,6 +75,7 @@ addButtonToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await csRenderInit();
+  await initLoader();
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -107,9 +84,6 @@ async function run() {
     viewportId,
     type: ViewportType.STACK,
     element,
-    defaultOptions: {
-      background: [0.2, 0, 0.2] as Types.Point3,
-    },
   };
 
   renderingEngine.enableElement(viewportInput);
@@ -120,7 +94,7 @@ async function run() {
   ) as Types.IStackViewport;
 
   // Define a stack containing a single image
-  const stack = [ctImageId];
+  const stack = ctImageIds;
 
   // Set the stack on the viewport
   await viewport.setStack(stack);

@@ -1301,6 +1301,11 @@ class Viewport {
   protected getVtkActiveCamera(): vtkCamera | vtkSlabCamera {
     const renderer = this.getRenderer();
 
+    if (!renderer) {
+      console.warn('No renderer found for the viewport');
+      return null;
+    }
+
     return renderer.getActiveCamera();
   }
 

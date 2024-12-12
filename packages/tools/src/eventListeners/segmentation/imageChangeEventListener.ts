@@ -17,7 +17,17 @@ import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helper
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 
 const enable = function (element: HTMLDivElement): void {
-  const { viewport } = getEnabledElement(element);
+  if (!element) {
+    return;
+  }
+
+  const enabledElement = getEnabledElement(element);
+
+  if (!enabledElement) {
+    return;
+  }
+
+  const { viewport } = enabledElement;
 
   if (viewport instanceof BaseVolumeViewport) {
     return;

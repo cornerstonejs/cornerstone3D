@@ -27,7 +27,8 @@
     "module": "Preserve",
     "moduleResolution": "Bundler",
     "declaration": true,
-    "sourceMap": false
+    "sourceMap": false,
+    "typeRoots": ["./node_modules/@webgpu/types", "./node_modules/@types"]
   },
   "exclude": [
     "node_modules",

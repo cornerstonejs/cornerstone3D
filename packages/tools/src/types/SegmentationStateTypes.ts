@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Enums as coreEnums, Types } from '@cornerstonejs/core';
 import type * as Enums from '../enums';
 import type { ContourSegmentationData } from './ContourTypes';
 import type { LabelmapSegmentationData } from './LabelmapTypes';
@@ -59,6 +59,9 @@ export type Segmentation = {
 export type LabelmapRenderingConfig = {
   cfun: vtkColorTransferFunction;
   ofun: vtkPiecewiseFunction;
+  colorLUTIndex: number;
+  // segmentation blend mode if desired
+  blendMode?: coreEnums.BlendModes;
 };
 
 export type ContourRenderingConfig = {};
@@ -137,6 +140,7 @@ export type RepresentationPublicInput = {
   segmentationId: string;
   type?: Enums.SegmentationRepresentations;
   config?: {
-    colorLUTOrIndex?: Types.ColorLUT[] | number;
+    colorLUTOrIndex?: Types.ColorLUT | number;
+    blendMode?: coreEnums.BlendModes;
   };
 };

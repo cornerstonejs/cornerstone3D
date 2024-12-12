@@ -1,4 +1,5 @@
-import { RenderingEngine, Types, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -15,7 +16,6 @@ console.warn(
 const {
   PanTool,
   WindowLevelTool,
-  StackScrollMouseWheelTool,
   ZoomTool,
   LengthTool,
   PlanarRotateTool,
@@ -28,19 +28,14 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const leftClickTools = [
-  WindowLevelTool.toolName,
-  PlanarRotateTool.toolName,
-  ETDRSGridTool.toolName,
-  LengthTool.toolName,
-];
+const leftClickTools = [ETDRSGridTool.toolName];
 const defaultLeftClickTool = leftClickTools[0];
 let currentLeftClickTool = leftClickTools[0];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Basic Stack Manipulation',
-  'Manipulation tools for a stack viewport'
+  'ETDRS Grid Tool',
+  'Tool for drawing an ETDRS grid on a stack viewport'
 );
 
 const content = document.getElementById('content');
@@ -94,11 +89,8 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollMouseWheelTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(PlanarRotateTool);
   cornerstoneTools.addTool(ETDRSGridTool);
-  cornerstoneTools.addTool(LengthTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -108,10 +100,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollMouseWheelTool.toolName, { loop: false });
-  toolGroup.addTool(PlanarRotateTool.toolName);
   toolGroup.addTool(ETDRSGridTool.toolName);
-  toolGroup.addTool(LengthTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
@@ -138,7 +127,6 @@ async function run() {
   });
   // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
   // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -146,7 +134,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

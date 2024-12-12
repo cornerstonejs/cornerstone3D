@@ -293,7 +293,7 @@ class VideoViewport extends Viewport {
     });
   }
 
-  public async setVideoURL(videoURL: string) {
+  private async setVideoURL(videoURL: string) {
     return new Promise((resolve) => {
       this.videoElement.src = videoURL;
       this.videoElement.preload = 'auto';

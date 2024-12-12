@@ -100,10 +100,12 @@ addSliderToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  const segmentationVolume1 =
-    await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  const segmentationVolume1 = volumeLoader.createAndCacheDerivedLabelmapVolume(
+    volumeId,
+    {
       volumeId: segmentationId1,
-    });
+    }
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -146,7 +148,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const smallVolumeImageIds = [imageIds[0], imageIds[1]];

@@ -1842,6 +1842,15 @@ migration
 import { roundNumber } from '@cornerstonejs/core/utilities';
 ```
 
+### jumpToSlice
+
+The utility has been relocated from `@cornerstonejs/tools` utilities to `@cornerstonejs/core/utilities`.
+migration
+
+```js
+import { jumpToSlice } from '@cornerstonejs/core/utilities';
+```
+
 ### pointInShapeCallback
 
 ### 1. New Import Path
