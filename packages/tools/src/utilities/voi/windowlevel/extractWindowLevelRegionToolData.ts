@@ -6,7 +6,7 @@ import {
 } from '@cornerstonejs/core';
 
 function extractWindowLevelRegionToolData(
-  viewport: VolumeViewport | StackViewport
+  viewport: Types.IVolumeViewport | Types.IStackViewport
 ) {
   if (viewport instanceof VolumeViewport) {
     return extractImageDataVolume(viewport);

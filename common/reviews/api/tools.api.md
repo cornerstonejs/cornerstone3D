@@ -2462,7 +2462,7 @@ declare namespace EventTypes_2 {
 function extend2DBoundingBoxInViewAxis(boundsIJK: [Types_2.Point2, Types_2.Point2, Types_2.Point2], numSlicesToProject: number): [Types_2.Point2, Types_2.Point2, Types_2.Point2];
 
 // @public (undocumented)
-function extractWindowLevelRegionToolData(viewport: VolumeViewport | StackViewport): {
+function extractWindowLevelRegionToolData(viewport: Types_2.IVolumeViewport | Types_2.IStackViewport): {
     scalarData: Types_2.PixelDataTypedArray;
     minPixelValue: number;
     maxPixelValue: number;
