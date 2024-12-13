@@ -868,8 +868,8 @@ class Viewport {
     );
     const canvasEdge = this.worldToCanvas(
       imageData.indexToWorld([
-        dimensions[0] - 1,
-        dimensions[1] - 1,
+        dimensions[0],
+        dimensions[1],
         dimensions[2],
       ]) as Point3
     );
@@ -880,16 +880,31 @@ class Viewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = 1;
+    let zoom = this.getZoom() / this.insetImageMultiplier;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
-      zoom = Math.min(this.getZoom() / areaX, this.getZoom() / areaY);
+
+      const currentScale = Math.max(
+        Math.abs(imgWidth / canvasWidth),
+        Math.abs(imgHeight / canvasHeight)
+      );
+      const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
+      const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
+      const initZoom = this.getZoom();
+      const fitZoom = this.getZoom(this.fitToCanvasCamera);
+
+      const absZoom =
+        requireX > requireY ? currentScale / requireX : currentScale / requireY;
+      const applyZoom = (absZoom * initZoom) / fitZoom;
+
+      zoom = applyZoom;
       // Don't set as initial camera because then the zoom interactions don't
       // work consistently.
       // TODO: Add a better method to handle initial camera
-      this.setZoom(this.insetImageMultiplier * zoom);
+      this.setZoom(this.insetImageMultiplier * zoom, false);
     }
     if (imageCanvasPoint) {
+      console.log('Starting pan update zoom=', zoom);
       const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
         imageCanvasPoint;
       const [canvasX, canvasY] = canvasPoint;
@@ -897,14 +912,27 @@ class Viewport {
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
       const [imageX, imageY] = imagePoint || canvasPoint;
+      const useZoom = zoom;
       const imagePanX =
-        (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
-      const imagePanY = zoom * canvasHeight * (0.5 - imageY);
+        this.insetImageMultiplier * useZoom * imgWidth * (0.5 - imageX);
+      const imagePanY =
+        this.insetImageMultiplier * useZoom * imgHeight * (0.5 - imageY);
+
+      // const imagePanX =
+      //   (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
+      // const imagePanY = zoom * canvasHeight * (0.5 - imageY);
 
       const newPositionX = imagePanX + canvasPanX;
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
+      console.log(
+        'delta point',
+        newPositionX,
+        this.getPan()[0],
+        imagePanX,
+        canvasPanX
+      );
       // Use getPan from current for the setting
       vec2.add(deltaPoint2, deltaPoint2, this.getPan());
       // The pan is part of the display area settings, not the initial camera, so

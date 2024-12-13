@@ -116,11 +116,23 @@ function createDisplayArea(
 const displayAreas = new Map();
 displayAreas.set('Center with border', createDisplayArea(1.1, 0.5));
 displayAreas.set('Center Full', createDisplayArea(1, 0.5));
+displayAreas.set('Center Half', createDisplayArea(2, 0.5));
 displayAreas.set('Left Top', createDisplayArea(1, 0));
 displayAreas.set('Right Top', createDisplayArea(1, [1, 0]));
+displayAreas.set('Center Left/Top', createDisplayArea(2, 0, 0.5));
+displayAreas.set('Center Right/Bottom', createDisplayArea(2, 1, 0.5));
+displayAreas.set('Left Top', createDisplayArea(1, 0));
 displayAreas.set('Left Bottom', createDisplayArea(1, [0, 1]));
 displayAreas.set('Right Bottom', createDisplayArea(1, [1, 1]));
-displayAreas.set('Left Top Half', createDisplayArea([2, 0.1], 0, undefined));
+displayAreas.set(
+  'Left Top Half 2, 0.1',
+  createDisplayArea([2, 0.1], 0, undefined)
+);
+displayAreas.set(
+  'Left Top Half 0.1, 2',
+  createDisplayArea([0.1, 2], 0, undefined)
+);
+displayAreas.set('Left Top Half 2,2', createDisplayArea(2, 0, undefined));
 displayAreas.set('Right Top Half', createDisplayArea([0.1, 2], [1, 0]));
 displayAreas.set('Left Bottom Half', createDisplayArea(2, [0, 1]));
 displayAreas.set('Right Bottom Half', createDisplayArea(2, [1, 1]));
@@ -297,6 +309,20 @@ async function run() {
   const instructions = document.createElement('p');
   instructions.innerText = 'Middle Click: Pan\nRight Click: Zoom';
   content.appendChild(instructions);
+
+  const svgNode = document.getElementsByClassName('svg-layer').item(0);
+  const divNode = document.createElement('div');
+  divNode.setAttribute(
+    'style',
+    'left:25%; top: 25%; width:25%; height:25%; border: 1px solid green; position: absolute'
+  );
+  svgNode.parentNode.insertBefore(divNode, svgNode.nextSibling);
+  const div2Node = document.createElement('div');
+  div2Node.setAttribute(
+    'style',
+    'left: 50%; top: 50%; width:25%; height:25%; border: 1px solid red; position: absolute'
+  );
+  divNode.parentNode.insertBefore(div2Node, divNode.nextSibling);
 }
 
 run();
