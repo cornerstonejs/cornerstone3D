@@ -12,7 +12,6 @@ import {
   Enums as NiftiEnums,
   cornerstoneNiftiImageLoader,
   createNiftiImageIdsAndCacheMetadata,
-  init as niftiInit,
 } from '@cornerstonejs/nifti-volume-loader';
 
 import { addDropdownToToolbar, initDemo } from '../../../../utils/demo/helpers';
@@ -131,13 +130,6 @@ const niftiURL =
   'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${niftiURL}`; // VolumeId with loader id + volume id
-
-niftiInit({
-  beforeSend: (xhr, headers, url) => {
-    headers['Cornerstone3D-Is-Awesome'] = 'True';
-    return headers;
-  },
-});
 
 async function setup() {
   await initDemo();
