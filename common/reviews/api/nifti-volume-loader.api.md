@@ -48,6 +48,9 @@ declare namespace helpers {
 export { helpers }
 
 // @public (undocumented)
+export function init(options?: LoaderOptions): void;
+
+// @public (undocumented)
 function makeVolumeMetadata(niftiHeader: any, orientation: any, pixelRepresentation: any): {
     volumeMetadata: Types.Metadata;
     dimensions: Types.Point3;
