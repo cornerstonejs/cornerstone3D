@@ -541,7 +541,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const annotation = annotations[
         i
       ] as RectangleROIStartEndThresholdAnnotation;
-      const { annotationUID, data } = annotation;
+      const { annotationUID, data, metadata } = annotation;
       const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
 
@@ -693,7 +693,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           continue;
         }
 
-        const textLines = this.configuration.getTextLines(data);
+        const textLines = this.configuration.getTextLines(data, metadata);
         if (!textLines || textLines.length === 0) {
           continue;
         }
