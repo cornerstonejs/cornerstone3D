@@ -804,9 +804,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
  * target volume enclosed by the rectangle.
  *
  * @param data - The annotation tool-specific data.
- * @param targetId - The volumeId of the volume to display the stats for.
+ * @param metadata - The metadata annotation.
  */
-function defaultGetTextLines(data): string[] {
+function defaultGetTextLines(data, _metadata): string[] {
   const cachedVolumeStats = data.cachedStats.statistics;
 
   const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
