@@ -74,16 +74,16 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
             metaData,
             {
                 skipOverlapping
-            }
+            },
+            1e-3,
+            5
         );
-
-    if (generateToolState.labelmapBufferArray.length !== 1) {
+    if (generateToolState.labelMapImages.length <= 0) {
         alert(
             "Overlapping segments in your segmentation are not supported yet. You can turn on the skipOverlapping option but it will override the overlapping segments."
         );
         return;
     }
-
     await createSegmentation(state);
 
     const segmentation =
@@ -94,19 +94,10 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
         cache.getImage(imageId)
     );
 
-    const volumeScalarData = new Uint8Array(
-        generateToolState.labelmapBufferArray[0]
-    );
-
     for (let i = 0; i < derivedSegmentationImages.length; i++) {
         const voxelManager = derivedSegmentationImages[i].voxelManager;
         const scalarData = voxelManager.getScalarData();
-        scalarData.set(
-            volumeScalarData.slice(
-                i * scalarData.length,
-                (i + 1) * scalarData.length
-            )
-        );
+        scalarData.set(generateToolState.labelMapImages[i].getPixelData());
         voxelManager.setScalarData(scalarData);
     }
 }

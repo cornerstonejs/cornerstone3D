@@ -1,5 +1,6 @@
 import Segmentation_3X from "./Segmentation_3X";
 import Segmentation_4X from "./Segmentation_4X";
+import Segmentation_5X from "./SegmentationByImages";
 
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
@@ -59,6 +60,16 @@ function generateToolState(
     tolerance = 1e-3,
     cornerstoneToolsVersion = 4
 ) {
+    if (cornerstoneToolsVersion === 5) {
+        return Segmentation_5X.generateToolState(
+            imageIds,
+            arrayBuffer,
+            metadataProvider,
+            skipOverlapping,
+            tolerance
+        );
+    }
+
     if (cornerstoneToolsVersion === 4) {
         return Segmentation_4X.generateToolState(
             imageIds,

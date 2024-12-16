@@ -19,14 +19,16 @@ function generateToolState(
     arrayBuffer,
     metadataProvider,
     skipOverlapping = false,
-    tolerance = 1e-3
+    tolerance = 1e-3,
+    cs3dVersion = 4
 ) {
     return generateToolStateCornerstoneLegacy(
         imageIds,
         arrayBuffer,
         metadataProvider,
         skipOverlapping,
-        tolerance
+        tolerance,
+        cs3dVersion
     );
 }
 
