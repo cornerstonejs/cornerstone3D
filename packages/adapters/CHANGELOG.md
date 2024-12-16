@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.12.0](https://github.com/dcmjs-org/dcmjs/compare/v2.11.7...v2.12.0) (2024-12-16)
+
+### Features
+
+-   **adapters:** default to creation of labelmap images in 2D instead of a volume ([#1692](https://github.com/dcmjs-org/dcmjs/issues/1692)) ([960b75a](https://github.com/dcmjs-org/dcmjs/commit/960b75a2ebed3a141ceefcf4f38fb6de388a4ca0))
+
 ## [2.11.7](https://github.com/dcmjs-org/dcmjs/compare/v2.11.6...v2.11.7) (2024-12-13)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "2.11.7",
+    "version": "2.12.0",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "module": "./dist/esm/index.js",
     "types": "./dist/esm/index.d.ts",
