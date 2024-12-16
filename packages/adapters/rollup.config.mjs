@@ -9,7 +9,14 @@ const pkg = JSON.parse(readFileSync("package.json", { encoding: "utf8" }));
 export default [
     // ESM configuration
     {
-        external: ["dcmjs", "gl-matrix", "ndarray", "@cornerstonejs/tools"],
+        external: [
+            "dcmjs",
+            "gl-matrix",
+            "ndarray",
+            "@cornerstonejs/tools",
+            "@cornerstonejs/core",
+            "@kitware/vtk.js"
+        ],
         input: pkg.src || "src/index.ts",
         output: [
             {
