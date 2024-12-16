@@ -78,12 +78,7 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
             1e-3,
             5
         );
-    if (generateToolState.labelMapImages.length <= 0) {
-        alert(
-            "Overlapping segments in your segmentation are not supported yet. You can turn on the skipOverlapping option but it will override the overlapping segments."
-        );
-        return;
-    }
+
     await createSegmentation(state);
 
     const segmentation =
