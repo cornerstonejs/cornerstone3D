@@ -92,10 +92,12 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
         cache.getImage(imageId)
     );
 
+    const labelmapImagesNonOverlapping = generateToolState.labelMapImages[0];
+
     for (let i = 0; i < derivedSegmentationImages.length; i++) {
         const voxelManager = derivedSegmentationImages[i].voxelManager;
         const scalarData = voxelManager.getScalarData();
-        scalarData.set(generateToolState.labelMapImages[i].getPixelData());
+        scalarData.set(labelmapImagesNonOverlapping[i].getPixelData());
         voxelManager.setScalarData(scalarData);
     }
 }

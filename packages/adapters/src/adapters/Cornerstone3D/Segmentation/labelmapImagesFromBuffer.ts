@@ -217,7 +217,8 @@ async function createLabelmapsFromBufferInternal(
     });
 
     return {
-        labelMapImages,
+        // array of array since there might be overlapping segments
+        labelMapImages: [labelMapImages],
         segMetadata,
         segmentsOnFrame,
         segmentsOnFrameArray,
