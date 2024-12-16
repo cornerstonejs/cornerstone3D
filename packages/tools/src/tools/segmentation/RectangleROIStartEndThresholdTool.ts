@@ -693,7 +693,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           continue;
         }
 
-        const textLines = this.configuration.getTextLines(data, metadata);
+        const textLines = this.configuration.getTextLines(data, { metadata });
         if (!textLines || textLines.length === 0) {
           continue;
         }
@@ -804,9 +804,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
  * target volume enclosed by the rectangle.
  *
  * @param data - The annotation tool-specific data.
- * @param metadata - The metadata annotation.
+ * @param _context - Associated data to annotation.
  */
-function defaultGetTextLines(data, _metadata): string[] {
+function defaultGetTextLines(data, _context = {}): string[] {
   const cachedVolumeStats = data.cachedStats.statistics;
 
   const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
