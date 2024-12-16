@@ -498,7 +498,6 @@ class RectangleROITool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };

@@ -48,6 +48,8 @@ import * as voi from './voi';
 import * as contourSegmentation from './contourSegmentation';
 import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCallback';
 const roundNumber = utilities.roundNumber;
+import normalizeViewportPlane from './normalizeViewportPlane';
+import IslandRemoval from './segmentation/islandRemoval';
 
 export {
   math,
@@ -90,4 +92,6 @@ export {
   annotationHydration,
   getClosestImageIdForStackViewport,
   pointInSurroundingSphereCallback,
+  normalizeViewportPlane,
+  IslandRemoval,
 };

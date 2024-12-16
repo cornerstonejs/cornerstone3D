@@ -1,5 +1,5 @@
 import { BasicStatsCalculator } from '../../src/utilities/math/basic';
-import { VolumetricCalculator } from '../../src/utilities/segmentation/VolumetricCalculator';
+import VolumetricCalculator from '../../src/utilities/segmentation/VolumetricCalculator';
 
 import { describe, it, expect } from '@jest/globals';
 
@@ -54,6 +54,91 @@ describe('Calculator', function () {
       }
       const stats = BasicStatsCalculator.getStatistics({ spacing: [1, 1] });
       expect(stats.pointsInShape.length).toBe(count);
+    });
+  });
+
+  describe('VolumetricCalculator', () => {
+    it('should work with no points', () => {
+      const stats = VolumetricCalculator.getStatistics({ spacing: [1, 1] });
+      expect(stats.volume.value).toBeNaN();
+      expect(stats.count.value).toBe(0);
+      expect(stats.min.value).toBe(Infinity);
+    });
+
+    it('should not remember pointsLPS list', () => {
+      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      for (let value = 0; value < count; value++) {
+        VolumetricCalculator.statsCallback({
+          value,
+          pointLPS: [value, value, value],
+        });
+      }
+      const stats = VolumetricCalculator.getStatistics({ spacing: [1, 1] });
+      expect(stats.pointsInShape).toBeNull();
+    });
+
+    it('should find top value locations for points', () => {
+      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      const bigCount = 25;
+      for (let value = 0; value < bigCount; value++) {
+        VolumetricCalculator.statsCallback({
+          value,
+          pointIJK: [value, value, value],
+        });
+      }
+      const stats = VolumetricCalculator.getStatistics({ spacing: [1, 1] });
+      expect(stats.maxIJKs.length).toBe(10);
+      const values = stats.maxIJKs.map((it) => it.value);
+      expect(values[0]).toBe(15);
+      expect(values[9]).toBe(24);
+    });
+
+    it('should find reversed duplicated values', () => {
+      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      const bigCount = 25;
+      for (let value = 0; value < bigCount; value++) {
+        VolumetricCalculator.statsCallback({
+          value,
+          pointIJK: [value, value, value],
+        });
+      }
+      for (let value = bigCount - 1; value >= 0; value--) {
+        VolumetricCalculator.statsCallback({
+          value,
+          pointIJK: [-value, value, value],
+        });
+      }
+      const stats = VolumetricCalculator.getStatistics({ spacing: [1, 1] });
+      expect(stats.maxIJKs.length).toBe(10);
+      const values = stats.maxIJKs.map((it) => it.value);
+      expect(values[0]).toBe(20);
+      expect(values[9]).toBe(24);
+      expect(values[1]).toBe(20);
+      expect(values[8]).toBe(24);
+    });
+
+    it('should find duplicated values', () => {
+      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      const bigCount = 25;
+      for (let value = 0; value < bigCount; value++) {
+        VolumetricCalculator.statsCallback({
+          value,
+          pointIJK: [value, value, value],
+        });
+      }
+      for (let value = 0; value < bigCount; value++) {
+        VolumetricCalculator.statsCallback({
+          value,
+          pointIJK: [-value, value, value],
+        });
+      }
+      const stats = VolumetricCalculator.getStatistics({ spacing: [1, 1] });
+      expect(stats.maxIJKs.length).toBe(10);
+      const values = stats.maxIJKs.map((it) => it.value);
+      expect(values[0]).toBe(20);
+      expect(values[9]).toBe(24);
+      expect(values[1]).toBe(20);
+      expect(values[8]).toBe(24);
     });
   });
 });

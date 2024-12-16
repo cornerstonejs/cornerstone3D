@@ -304,7 +304,7 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
  * This is an async function return the result, or you can provide an optional
  * callbackFn that is called with the results.
  */
-async function decodeImageFrame(
+export async function decodeImageFrame(
   imageFrame,
   transferSyntax,
   pixelData,

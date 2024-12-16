@@ -18,6 +18,7 @@ import {
 } from './addSegmentationRepresentationsToViewport';
 
 import { addSegmentations } from './addSegmentations';
+import addRepresentationData from './internalAddRepresentationData';
 import { updateSegmentations } from './updateSegmentations';
 import * as activeSegmentation from './activeSegmentation';
 import * as segmentLocking from './segmentLocking';
@@ -32,6 +33,7 @@ import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 import { removeSegment } from './removeSegment';
 import { getLabelmapImageIds } from './getLabelmapImageIds';
+import * as strategies from './../../tools/segmentation/strategies';
 
 import {
   removeAllSegmentations,
@@ -75,4 +77,6 @@ export {
   polySegManager as polySeg,
   removeSegment,
   getLabelmapImageIds,
+  addRepresentationData,
+  strategies,
 };

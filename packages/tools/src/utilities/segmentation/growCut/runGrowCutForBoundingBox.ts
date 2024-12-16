@@ -7,6 +7,7 @@ const POSITIVE_SEED_VALUE = 254;
 const NEGATIVE_SEED_VALUE = 255;
 
 // Positive and negative threshold/range (defaults to CT hounsfield ranges)
+// //www.sciencedirect.com/topics/medicine-and-dentistry/hounsfield-scale
 const NEGATIVE_PIXEL_RANGE = [-Infinity, -995];
 const POSITIVE_PIXEL_RANGE = [0, 1900];
 
@@ -18,8 +19,6 @@ type BoundingBoxInfo = {
 };
 
 type GrowCutBoundingBoxOptions = GrowCutOptions & {
-  positiveSeedValue?: number;
-  negativeSeedValue?: number;
   negativePixelRange?: [number, number];
   positivePixelRange?: [number, number];
 };

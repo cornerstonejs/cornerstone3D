@@ -129,11 +129,6 @@ function _determineDataType(
 
   switch (BitsAllocated) {
     case 8:
-      if (signed) {
-        throw new Error(
-          '8 Bit signed images are not yet supported by this plugin.'
-        );
-      }
       return 'Uint8Array';
 
     case 16:

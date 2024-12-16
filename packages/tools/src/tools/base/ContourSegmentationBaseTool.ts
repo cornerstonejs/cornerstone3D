@@ -36,6 +36,8 @@ import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleF
  * and unregister contour segmentation annotations.
  */
 abstract class ContourSegmentationBaseTool extends ContourBaseTool {
+  static PreviewSegmentIndex = 255;
+
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
     if (this.configuration.interpolation?.enabled) {

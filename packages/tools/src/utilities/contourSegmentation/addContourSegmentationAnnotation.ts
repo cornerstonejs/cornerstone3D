@@ -25,9 +25,13 @@ export function addContourSegmentationAnnotation(
     segmentation.representationData.Contour = { annotationUIDsMap: new Map() };
   }
 
-  const { annotationUIDsMap } = segmentation.representationData.Contour;
+  let { annotationUIDsMap } = segmentation.representationData.Contour;
 
-  let annotationsUIDsSet = annotationUIDsMap.get(segmentIndex);
+  if (!annotationUIDsMap) {
+    annotationUIDsMap = new Map();
+  }
+
+  let annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
 
   if (!annotationsUIDsSet) {
     annotationsUIDsSet = new Set();

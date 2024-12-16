@@ -6,6 +6,7 @@ import Events from './enums/Events';
 import { NIFTI_LOADER_SCHEME } from './constants';
 import makeVolumeMetadata from './helpers/makeVolumeMetadata';
 import { getArrayConstructor } from './helpers/dataTypeCodeHelper';
+import { getOptions } from './internal';
 
 export const urlsMap = new Map();
 const NIFTI1_HEADER_SIZE = 348;
@@ -34,8 +35,20 @@ export async function fetchArrayBuffer({
   const receivedLength = 0;
   const signal = controller.signal;
 
+  const options = getOptions();
+  const defaultHeaders = {} as Record<string, string>;
+  const beforeSendHeaders = options.beforeSend?.(null, defaultHeaders, url);
+
+  const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
+
+  Object.keys(headers).forEach(function (key) {
+    if (headers[key] === null) {
+      headers[key] = undefined;
+    }
+  });
+
   try {
-    const response = await fetch(url, { signal });
+    const response = await fetch(url, { signal, headers });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -202,16 +215,16 @@ function handleNiftiHeader(data): {
   }
 }
 
-async function fetchAndAllocateNiftiVolume(volumeId) {
-  const niftiURL = volumeId.substring(NIFTI_LOADER_SCHEME.length + 1);
+async function fetchAndAllocateNiftiVolume(url) {
+  const niftiURL = url;
 
   const onProgress = (loaded, total) => {
-    const data = { volumeId, loaded, total };
+    const data = { volumeId: url, loaded, total };
     triggerEvent(eventTarget, Events.NIFTI_VOLUME_PROGRESS, { data });
   };
 
   const onLoad = () => {
-    const data = { volumeId };
+    const data = { volumeId: url };
     triggerEvent(eventTarget, Events.NIFTI_VOLUME_LOADED, { data });
   };
 

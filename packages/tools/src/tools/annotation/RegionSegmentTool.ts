@@ -38,7 +38,10 @@ class RegionSegmentTool extends GrowCutBaseTool {
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
-      configuration: {},
+      configuration: {
+        positiveSeedVariance: 0.5,
+        negativeSeedVariance: 0.9,
+      },
     }
   ) {
     super(toolProps, defaultToolProps);
@@ -53,7 +56,7 @@ class RegionSegmentTool extends GrowCutBaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    super.preMouseDownCallback(evt);
+    await super.preMouseDownCallback(evt);
 
     Object.assign(this.growCutData, {
       circleCenterPoint: worldPoint,
@@ -94,14 +97,15 @@ class RegionSegmentTool extends GrowCutBaseTool {
     triggerAnnotationRenderForViewportUIDs([viewport.id]);
   };
 
-  protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {
+  protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { segmentIndex, referencedVolumeId },
+      segmentation: { referencedVolumeId },
       renderingEngineId,
       viewportId,
       circleCenterPoint,
       circleBorderPoint,
-    } = this.growCutData;
+      options,
+    } = growCutData;
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
     const worldCircleRadius = vec3.len(
@@ -115,10 +119,6 @@ class RegionSegmentTool extends GrowCutBaseTool {
     const sphereInfo = {
       center: circleCenterPoint,
       radius: worldCircleRadius,
-    };
-    const options: GrowCutSphereOptions = {
-      positiveSeedValue: segmentIndex,
-      negativeSeedValue: 255,
     };
 
     return growCut.runGrowCutForSphere(

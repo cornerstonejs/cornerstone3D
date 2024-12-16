@@ -2,8 +2,10 @@ import {
   getEnabledElement,
   utilities as csUtils,
   cache,
+  getRenderingEngine,
+  type Types,
+  StackViewport,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
 import type {
@@ -21,6 +23,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
+import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -34,17 +37,51 @@ type GrowCutToolData = {
     labelmapVolumeId: string;
     referencedVolumeId: string;
   };
+  islandRemoval?: {
+    worldIslandPoints: Types.Point3[];
+  };
   viewportId: string;
   renderingEngineId: string;
 };
 
+/**
+ * Island removal data which currently includes only coordinates from islands
+ * that should not be removed by `IslandRemoval` class. Coordinates my be provided
+ * in world space, index space or theirs indices in the data array.
+ */
+type RemoveIslandData = {
+  // Coordinates in world space from islands that should not be removed
+  worldIslandPoints?: Types.Point3[];
+  // Coordinates in index space from islands that should not be removed
+  ijkIslandPoints?: Types.Point3[];
+  // Coordinate indices from islands that should not be removed
+  islandPointIndexes?: number[];
+};
+
 class GrowCutBaseTool extends BaseTool {
   static toolName;
-
   protected growCutData: GrowCutToolData | null;
+  private static lastGrowCutCommand = null;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
-    super(toolProps, defaultToolProps);
+    const baseToolProps = csUtils.deepMerge(
+      {
+        configuration: {
+          positiveSeedVariance: 0.1,
+          negativeSeedVariance: 0.9,
+          shrinkExpandIncrement: 0.05,
+          islandRemoval: {
+            /**
+             * Enable/disable island removal
+             */
+            enabled: false,
+          },
+        },
+      },
+      defaultToolProps
+    );
+
+    super(toolProps, baseToolProps);
   }
 
   async preMouseDownCallback(
@@ -62,7 +99,7 @@ class GrowCutBaseTool extends BaseTool {
       segmentIndex,
       labelmapVolumeId,
       referencedVolumeId,
-    } = this.getLabelmapSegmentationData(viewport);
+    } = await this.getLabelmapSegmentationData(viewport);
 
     if (!this._isOrthogonalView(viewport, referencedVolumeId)) {
       throw new Error('Oblique view is not supported yet');
@@ -88,23 +125,83 @@ class GrowCutBaseTool extends BaseTool {
     return true;
   }
 
-  protected async getGrowCutLabelmap(): Promise<Types.IImageVolume> {
+  public shrink() {
+    this._runLastCommand({
+      shrinkExpandAmount: -this.configuration.shrinkExpandIncrement,
+    });
+  }
+
+  public expand() {
+    this._runLastCommand({
+      shrinkExpandAmount: this.configuration.shrinkExpandIncrement,
+    });
+  }
+
+  public refresh() {
+    this._runLastCommand();
+  }
+
+  protected async getGrowCutLabelmap(
+    _growCutData: GrowCutToolData
+  ): Promise<Types.IImageVolume> {
     throw new Error('Not implemented');
   }
 
   protected async runGrowCut() {
+    const { growCutData, configuration: config } = this;
     const {
       segmentation: { segmentationId, segmentIndex, labelmapVolumeId },
-    } = this.growCutData;
-    const labelmap = cache.getVolume(labelmapVolumeId);
-    const growcutLabelmap = await this.getGrowCutLabelmap();
+    } = growCutData;
 
-    this.applyGrowCutLabelmap(
-      segmentationId,
-      segmentIndex,
-      labelmap,
-      growcutLabelmap
-    );
+    const hasSeedVarianceData =
+      config.positiveSeedVariance !== undefined &&
+      config.negativeSeedVariance !== undefined;
+
+    const labelmap = cache.getVolume(labelmapVolumeId);
+    let shrinkExpandValue = 0;
+
+    const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
+      const { positiveSeedVariance, negativeSeedVariance } = config;
+      let newPositiveSeedVariance = undefined;
+      let newNegativeSeedVariance = undefined;
+
+      shrinkExpandValue += shrinkExpandAmount;
+
+      if (hasSeedVarianceData) {
+        newPositiveSeedVariance = positiveSeedVariance + shrinkExpandValue;
+        newNegativeSeedVariance = negativeSeedVariance + shrinkExpandValue;
+      }
+
+      const updatedGrowCutData = Object.assign({}, growCutData, {
+        options: {
+          positiveSeedValue: segmentIndex,
+          negativeSeedValue: 255,
+          positiveSeedVariance: newPositiveSeedVariance,
+          negativeSeedVariance: newNegativeSeedVariance,
+        },
+      });
+
+      const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
+
+      this.applyGrowCutLabelmap(
+        segmentationId,
+        segmentIndex,
+        labelmap,
+        growcutLabelmap
+      );
+
+      this._removeIslands(growCutData);
+    };
+
+    // run and store the command for later execution
+    await growCutCommand();
+
+    // Only growcut with seed variance data can shrink/expand
+    if (hasSeedVarianceData) {
+      GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
+    }
+
+    this.growCutData = null;
   }
 
   protected applyGrowCutLabelmap(
@@ -115,8 +212,7 @@ class GrowCutBaseTool extends BaseTool {
   ) {
     const srcLabelmapData =
       sourceLabelmap.voxelManager.getCompleteScalarDataArray();
-    const targetLabelmapData =
-      targetLabelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
+    const tgtVoxelManager = targetLabelmap.voxelManager;
 
     const [srcColumns, srcRows, srcNumSlices] = sourceLabelmap.dimensions;
     const [tgtColumns, tgtRows] = targetLabelmap.dimensions;
@@ -134,7 +230,7 @@ class GrowCutBaseTool extends BaseTool {
         //   - from world space to volume index space
         //
         // TODO: create a matrix that coverts the coordinates from sub-volume
-        // index space to volume index space without getting into world space.
+        // index space to volume index space without getting into world space
         const srcRowIJK: Types.Point3 = [0, srcRow, srcSlice];
         const rowVoxelWorld = transformIndexToWorld(
           sourceLabelmap.imageData,
@@ -150,40 +246,48 @@ class GrowCutBaseTool extends BaseTool {
           tgtColumn + tgtRow * tgtColumns + tgtSlice * tgtPixelsPerSlice;
 
         for (let column = 0; column < srcColumns; column++) {
-          targetLabelmapData[tgtOffset + column] =
+          const labelmapValue =
             srcLabelmapData[srcOffset + column] === segmentIndex
               ? segmentIndex
               : 0;
+
+          tgtVoxelManager.setAtIndex(tgtOffset + column, labelmapValue);
         }
       }
     }
 
-    targetLabelmap.voxelManager.setCompleteScalarDataArray(targetLabelmapData);
-
     triggerSegmentationDataModified(segmentationId);
   }
 
-  protected getSegmentStyle({ segmentationId, viewportId, segmentIndex }) {
-    return getSVGStyleForSegment({
-      segmentationId,
-      segmentIndex,
-      viewportId,
-    });
+  private _runLastCommand({ shrinkExpandAmount = 0 } = {}) {
+    const cmd = GrowCutBaseTool.lastGrowCutCommand;
+
+    if (cmd) {
+      cmd({ shrinkExpandAmount });
+    }
   }
 
-  protected getLabelmapSegmentationData(viewport: Types.IViewport) {
-    const { segmentationId } = activeSegmentation.getActiveSegmentation(
-      viewport.id
-    );
+  protected async getLabelmapSegmentationData(viewport: Types.IViewport) {
+    const activeSeg = activeSegmentation.getActiveSegmentation(viewport.id);
+
+    if (!activeSeg) {
+      throw new Error('No active segmentation found');
+    }
+
+    const { segmentationId } = activeSeg;
+
     const segmentIndex =
       segmentIndexController.getActiveSegmentIndex(segmentationId);
     const { representationData } =
       segmentationState.getSegmentation(segmentationId);
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-
     const { volumeId: labelmapVolumeId, referencedVolumeId } =
       labelmapData as LabelmapSegmentationDataVolume;
+
+    if (!labelmapVolumeId) {
+      throw new Error('Labelmap volume id not found - not implemented');
+    }
 
     return {
       segmentationId,
@@ -212,9 +316,103 @@ class GrowCutBaseTool extends BaseTool {
         csUtils.isEqual(Math.abs(vec[2]), 1)
     );
   }
+
+  protected getRemoveIslandData(
+    _growCutData: GrowCutToolData
+  ): RemoveIslandData {
+    // Child class with island removal enabled needs to override this method
+    return;
+  }
+
+  private _removeIslands(growCutData: GrowCutToolData) {
+    const { islandRemoval: config } = this.configuration;
+
+    if (!config.enabled) {
+      return;
+    }
+
+    const {
+      segmentation: { segmentIndex, labelmapVolumeId },
+      renderingEngineId,
+      viewportId,
+    } = growCutData;
+
+    const labelmap = cache.getVolume(labelmapVolumeId);
+    const removeIslandData = this.getRemoveIslandData(growCutData);
+
+    if (!removeIslandData) {
+      return;
+    }
+
+    const [width, height] = labelmap.dimensions;
+    const numPixelsPerSlice = width * height;
+    const { worldIslandPoints = [], islandPointIndexes = [] } =
+      removeIslandData;
+    let ijkIslandPoints = [...(removeIslandData?.ijkIslandPoints ?? [])];
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    const { voxelManager } = labelmap;
+    const islandRemoval = new IslandRemoval();
+
+    ijkIslandPoints = ijkIslandPoints.concat(
+      worldIslandPoints.map((worldPoint) =>
+        transformWorldToIndex(labelmap.imageData, worldPoint)
+      )
+    );
+
+    ijkIslandPoints = ijkIslandPoints.concat(
+      islandPointIndexes.map((pointIndex) => {
+        const x = pointIndex % width;
+        const y = Math.floor(pointIndex / width) % height;
+        const z = Math.floor(pointIndex / numPixelsPerSlice);
+
+        return [x, y, z];
+      })
+    );
+
+    islandRemoval.initialize(viewport, voxelManager, {
+      points: ijkIslandPoints,
+      previewSegmentIndex: segmentIndex,
+      segmentIndex,
+    });
+
+    islandRemoval.floodFillSegmentIsland();
+    islandRemoval.removeExternalIslands();
+    islandRemoval.removeInternalIslands();
+  }
+
+  protected getSegmentStyle({ segmentationId, viewportId, segmentIndex }) {
+    return getSVGStyleForSegment({
+      segmentationId,
+      segmentIndex,
+      viewportId,
+    });
+  }
+
+  // protected getLabelmapSegmentationData(viewport: Types.IViewport) {
+  //   const { segmentationId } = activeSegmentation.getActiveSegmentation(
+  //     viewport.id
+  //   );
+  //   const segmentIndex =
+  //     segmentIndexController.getActiveSegmentIndex(segmentationId);
+  //   const { representationData } =
+  //     segmentationState.getSegmentation(segmentationId);
+  //   const labelmapData =
+  //     representationData[SegmentationRepresentations.Labelmap];
+
+  //   const { volumeId: labelmapVolumeId, referencedVolumeId } =
+  //     labelmapData as LabelmapSegmentationDataVolume;
+
+  //   return {
+  //     segmentationId,
+  //     segmentIndex,
+  //     labelmapVolumeId,
+  //     referencedVolumeId,
+  //   };
+  // }
 }
 
 GrowCutBaseTool.toolName = 'GrowCutBaseTool';
 
 export default GrowCutBaseTool;
-export type { GrowCutToolData };
+export type { GrowCutToolData, RemoveIslandData };

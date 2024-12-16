@@ -438,13 +438,20 @@ class SplineROITool extends ContourSegmentationBaseTool {
     this.doneEditMemo();
 
     const eventDetail = evt.detail;
-    const { currentPoints } = eventDetail;
+    const { currentPoints, element } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
     let closeContour = data.handles.points.length >= 2 && doubleClick;
     let addNewPoint = true;
 
+    if (data.handles.points.length) {
+      this.createMemo(element, annotation, {
+        newAnnotation: data.handles.points.length === 1,
+      });
+    }
+
     // Check if user clicked on the first point to close the curve
     if (data.handles.points.length >= 3) {
+      this.createMemo(element, annotation);
       const { instance: spline } = data.spline;
       const closestControlPoint = spline.getClosestControlPointWithinDistance(
         canvasPoint,

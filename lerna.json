@@ -1,11 +1,12 @@
 {
-  "version": "2.8.5",
+  "version": "2.11.7",
   "packages": [
     "packages/core",
     "packages/tools",
     "packages/adapters",
     "packages/nifti-volume-loader",
-    "packages/dicomImageLoader"
+    "packages/dicomImageLoader",
+    "packages/ai"
   ],
   "npmClient": "yarn"
 }

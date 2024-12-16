@@ -15,6 +15,7 @@ import {
 import * as NiftiReader from 'nifti-reader-js';
 import { Events } from './enums';
 import { modalityScaleNifti } from './helpers';
+import { getOptions } from './internal';
 
 type NiftiDataFetchState =
   | {
@@ -39,7 +40,22 @@ function fetchArrayBuffer({
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
+
+    const defaultHeaders = {} as Record<string, string>;
+    const options = getOptions();
+
+    const beforeSendHeaders = options.beforeSend(xhr, defaultHeaders, url);
+
+    const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
+
     xhr.responseType = 'arraybuffer';
+
+    Object.keys(headers).forEach(function (key) {
+      if (headers[key] === null) {
+        return;
+      }
+      xhr.setRequestHeader(key, headers[key]);
+    });
 
     const onLoadHandler = function (e) {
       if (onload && typeof onload === 'function') {

@@ -23,6 +23,14 @@ import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { StrategyCallbacks } from '../../enums';
 import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
+import {
+  getAllAnnotations,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState';
+import { filterAnnotationsForDisplay } from '../../utilities/planar';
+import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
+import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { fillInsideCircle } from './strategies';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -65,6 +73,7 @@ export default class LabelmapBaseTool extends BaseTool {
     volumeId?: string; // volume labelmap
     referencedVolumeId?: string;
   } | null;
+
   protected _hoverData?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brushCursor: any;
@@ -76,7 +85,7 @@ export default class LabelmapBaseTool extends BaseTool {
     viewport: Types.IViewport;
   };
 
-  protected _previewData?: PreviewData = {
+  public static previewData?: PreviewData = {
     preview: null,
     element: null,
     timerStart: 0,
@@ -87,6 +96,11 @@ export default class LabelmapBaseTool extends BaseTool {
 
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
+  }
+
+  // Gets a shared preview data
+  protected get _previewData() {
+    return LabelmapBaseTool.previewData;
   }
 
   /**
@@ -315,7 +329,7 @@ export default class LabelmapBaseTool extends BaseTool {
       segmentIndex,
       previewColors:
         this.configuration.preview?.enabled || this._previewData.preview
-          ? this.configuration.preview.previewColors
+          ? this.configuration.preview?.previewColors
           : null,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
@@ -337,6 +351,7 @@ export default class LabelmapBaseTool extends BaseTool {
     element = this._previewData.element,
     options?: { acceptReject: boolean }
   ) {
+    const { _previewData } = this;
     const acceptReject = options?.acceptReject;
     if (acceptReject === true) {
       this.acceptPreview(element);
@@ -344,13 +359,13 @@ export default class LabelmapBaseTool extends BaseTool {
       this.rejectPreview(element);
     }
     const enabledElement = getEnabledElement(element);
-    this._previewData.preview = this.applyActiveStrategyCallback(
+    _previewData.preview = this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.AddPreview
     );
-    this._previewData.isDrag = true;
-    return this._previewData.preview;
+    _previewData.isDrag = true;
+    return _previewData.preview;
   }
 
   /**
@@ -391,5 +406,119 @@ export default class LabelmapBaseTool extends BaseTool {
     this._previewData.preview = null;
     // Store the edit memo too
     this.doneEditMemo();
+  }
+
+  /**
+   * This function converts contours on this view into labelmap data, using the
+   * handle[0] state
+   */
+  public static viewportContoursToLabelmap(
+    viewport: Types.IViewport,
+    options?: { removeContours: boolean }
+  ) {
+    const removeContours = options?.removeContours ?? true;
+    const annotations = getAllAnnotations();
+    const viewAnnotations = filterAnnotationsForDisplay(viewport, annotations);
+    if (!viewAnnotations?.length) {
+      return;
+    }
+    const contourAnnotations = viewAnnotations.filter(
+      // @ts-expect-error
+      (annotation) => annotation.data.contour?.polyline?.length
+    );
+    if (!contourAnnotations.length) {
+      return;
+    }
+
+    const brushInstance = new LabelmapBaseTool(
+      {},
+      {
+        configuration: {
+          strategies: {
+            FILL_INSIDE_CIRCLE: fillInsideCircle,
+          },
+          activeStrategy: 'FILL_INSIDE_CIRCLE',
+        },
+      }
+    );
+    const preview = brushInstance.addPreview(viewport.element);
+
+    // @ts-expect-error
+    const { memo, segmentationId } = preview;
+    // @ts-expect-error
+    const previewVoxels = memo?.voxelManager || preview.previewVoxelManager;
+    const segmentationVoxels =
+      previewVoxels.sourceVoxelManager || previewVoxels;
+    const { dimensions } = previewVoxels;
+
+    // Create an undo history for the operation
+    // Iterate through the canvas space in canvas index coordinates
+    const imageData = viewport
+      .getDefaultActor()
+      .actor.getMapper()
+      .getInputData();
+
+    for (const annotation of contourAnnotations) {
+      const boundsIJK = [
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+        [Infinity, -Infinity],
+      ];
+
+      // @ts-expect-error
+      const { polyline } = annotation.data.contour;
+      for (const point of polyline) {
+        const indexPoint = imageData.worldToIndex(point);
+        indexPoint.forEach((v, idx) => {
+          boundsIJK[idx][0] = Math.min(boundsIJK[idx][0], v);
+          boundsIJK[idx][1] = Math.max(boundsIJK[idx][1], v);
+        });
+      }
+
+      boundsIJK.forEach((bound, idx) => {
+        bound[0] = Math.round(Math.max(0, bound[0]));
+        bound[1] = Math.round(Math.min(dimensions[idx] - 1, bound[1]));
+      });
+
+      const activeIndex = getActiveSegmentIndex(segmentationId);
+      const startPoint = annotation.data.handles?.[0] || polyline[0];
+      const startIndex = imageData.worldToIndex(startPoint).map(Math.round);
+      const startValue = segmentationVoxels.getAtIJKPoint(startIndex) || 0;
+      let hasZeroIndex = false;
+      let hasPositiveIndex = false;
+      for (const polyPoint of polyline) {
+        const polyIndex = imageData.worldToIndex(polyPoint).map(Math.round);
+        const polyValue = segmentationVoxels.getAtIJKPoint(polyIndex);
+        if (polyValue === startValue) {
+          hasZeroIndex = true;
+        } else if (polyValue >= 0) {
+          hasPositiveIndex = true;
+        }
+      }
+      const hasBoth = hasZeroIndex && hasPositiveIndex;
+      const segmentIndex = hasBoth
+        ? startValue
+        : startValue === 0
+        ? activeIndex
+        : 0;
+      for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
+        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
+          for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
+            const worldPoint = imageData.indexToWorld([i, j, k]);
+            const isContained = isPointInsidePolyline3D(worldPoint, polyline);
+            if (isContained) {
+              previewVoxels.setAtIJK(i, j, k, segmentIndex);
+            }
+          }
+        }
+      }
+
+      if (removeContours) {
+        removeAnnotation(annotation.annotationUID);
+      }
+    }
+
+    const slices = previewVoxels.getArrayOfModifiedSlices();
+    triggerSegmentationDataModified(segmentationId, slices);
   }
 }

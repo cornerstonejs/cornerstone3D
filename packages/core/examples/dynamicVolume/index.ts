@@ -9,7 +9,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetTransferFunctionForVolumeActor,
   addSliderToToolbar,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
