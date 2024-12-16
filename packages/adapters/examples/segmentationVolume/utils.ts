@@ -68,15 +68,13 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
     const { referenceImageIds, skipOverlapping, segmentationId } = state;
 
     const generateToolState =
-        await Cornerstone3D.Segmentation.generateToolState(
+        await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
             referenceImageIds,
             arrayBuffer,
-            metaData,
             {
+                metadataProvider: metaData,
                 skipOverlapping
-            },
-            1e-3,
-            5
+            }
         );
     if (generateToolState.labelMapImages.length <= 0) {
         alert(

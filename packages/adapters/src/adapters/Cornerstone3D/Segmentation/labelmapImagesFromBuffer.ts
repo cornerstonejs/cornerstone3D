@@ -1,7 +1,7 @@
 import { imageLoader } from "@cornerstonejs/core";
 import { data as dcmjsData, normalizers, utilities } from "dcmjs";
 import ndarray from "ndarray";
-import checkOrientation from "../helpers/checkOrientation";
+import checkOrientation from "../../helpers/checkOrientation";
 import {
     alignPixelDataWithSourceData,
     calculateCentroid,
@@ -12,27 +12,13 @@ import {
     getValidOrientations,
     readFromUnpackedChunks,
     unpackPixelData
-} from "./Segmentation_4X";
+} from "../../Cornerstone/Segmentation_4X";
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 const { decode } = utilities.compression;
-/**
- * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
- * derive cornerstoneTools toolState and brush metadata.
- *
- * @param  {string[]} referencedImageIds - An array for referenced image imageIds.
- * @param  {ArrayBuffer} arrayBuffer - The SEG arrayBuffer.
- * @param  {*} metadataProvider.
- * @param  {obj} options - Options object.
- *
- * @return {[]ArrayBuffer}a list of array buffer for each labelMap
- * @return {Object} an object from which the segment metadata can be derived
- * @return {[][][]} 2D list containing the track of segments per frame
- * @return {[][][]} 3D list containing the track of segments per frame for each labelMap
- *                  (available only for the overlapping case).
- */
-async function generateToolState(
+
+async function createLabelmapsFromBufferInternal(
     referencedImageIds,
     arrayBuffer,
     metadataProvider,
@@ -78,8 +64,6 @@ async function generateToolState(
 
     // Get IOP from ref series, compute supported orientations:
     const validOrientations = getValidOrientations(ImageOrientationPatient);
-
-    const sliceLength = multiframe.Columns * multiframe.Rows;
     const segMetadata = getSegmentMetadata(multiframe, SeriesInstanceUID);
 
     const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
@@ -99,7 +83,7 @@ async function generateToolState(
         );
 
         if (multiframe.BitsStored === 1) {
-            console.warn("No implementation for rle + bitbacking.");
+            console.warn("No implementation for rle + bit packing.");
 
             return;
         }
@@ -386,4 +370,4 @@ export function insertPixelDataPlanar(
     });
 }
 
-export default { generateToolState };
+export { createLabelmapsFromBufferInternal };
