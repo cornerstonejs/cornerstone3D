@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.12.2...v2.12.3) (2024-12-18)
+
+### Bug Fixes
+
+- passing metadata to getTextLines callback in annotation tools ([#1710](https://github.com/cornerstonejs/cornerstone3D/issues/1710)) ([67618fa](https://github.com/cornerstonejs/cornerstone3D/commit/67618fad3e1ea8c7458b0dea0d9cc4f32a8de203))
+
 ## [2.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.12.1...v2.12.2) (2024-12-18)
 
 **Note:** Version bump only for package @cornerstonejs/tools
