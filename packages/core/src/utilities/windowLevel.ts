@@ -41,10 +41,18 @@ function toLowHighRange(
   lower: number;
   upper: number;
 } {
-  const lower = windowCenter - 0.5 - (windowWidth - 1) / 2;
-  const upper = windowCenter - 0.5 + (windowWidth - 1) / 2;
+  if (windowWidth < 1 || windowCenter < 1) {
+    // use fallback
+    return {
+      lower: windowCenter - windowWidth / 2,
+      upper: windowCenter + windowWidth / 2,
+    };
+  }
 
-  return { lower, upper };
+  return {
+    lower: windowCenter - 0.5 - (windowWidth - 1) / 2,
+    upper: windowCenter - 0.5 + (windowWidth - 1) / 2,
+  };
 }
 
 export { toWindowLevel, toLowHighRange };
