@@ -900,6 +900,12 @@ export class BrushTool extends LabelmapBaseTool {
 }
 
 // @public (undocumented)
+class BSpline extends CubicSpline {
+    // (undocumented)
+    protected getTransformMatrix(): number[];
+}
+
+// @public (undocumented)
 function calculateMinMaxMean(pixelLuminance: any, globalMin: any, globalMax: any): {
     min: any;
     max: any;
@@ -937,10 +943,27 @@ Types_2.Point2
 ];
 
 // @public (undocumented)
+class CardinalSpline extends CubicSpline {
+    constructor(props?: CardinalSplineProps);
+    // (undocumented)
+    get fixedScale(): boolean;
+    // (undocumented)
+    protected getTransformMatrix(): number[];
+    // (undocumented)
+    get scale(): number;
+    set scale(scale: number);
+}
+
+// @public (undocumented)
 type CardinalSplineProps = SplineProps & {
     scale?: number;
     fixedScale?: boolean;
 };
+
+// @public (undocumented)
+class CatmullRomSpline extends CardinalSpline {
+    constructor();
+}
 
 // @public (undocumented)
 enum ChangeTypes {
@@ -1861,6 +1884,14 @@ export class CrosshairsTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes) => void;
     // (undocumented)
     _unsubscribeToViewportNewVolumeSet(viewportsInfo: any): void;
+}
+
+// @public (undocumented)
+abstract class CubicSpline extends Spline {
+    // (undocumented)
+    protected getPreviewCurveSegments(controlPointPreview: Types_2.Point2, closeSpline: boolean): SplineCurveSegment[];
+    // (undocumented)
+    protected getSplineCurves(): SplineCurveSegment[];
 }
 
 // @public (undocumented)
@@ -3681,6 +3712,11 @@ export class LengthTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation) => void;
 }
 
+// @public (undocumented)
+class LinearSpline extends CardinalSpline {
+    constructor();
+}
+
 declare namespace lineSegment {
     export {
         distanceToPoint_2 as distanceToPoint,
@@ -4456,6 +4492,24 @@ function projectTo2D(polyline: Types_2.Point3[]): {
 type PublicToolProps = SharedToolProp & {
     name?: string;
 };
+
+// @public (undocumented)
+class QuadraticBezier extends QuadraticSpline {
+    // (undocumented)
+    protected getTransformMatrix(): number[];
+    // (undocumented)
+    hasTangentPoints(): boolean;
+}
+
+// @public (undocumented)
+abstract class QuadraticSpline extends Spline {
+    // (undocumented)
+    protected getLineSegments(): SplineLineSegment[];
+    // (undocumented)
+    getPreviewCurveSegments(controlPointPreview: Types_2.Point2, closeSpline: boolean): SplineCurveSegment[];
+    // (undocumented)
+    protected getSplineCurves(): SplineCurveSegment[];
+}
 
 declare namespace rectangle {
     export {
@@ -5502,6 +5556,70 @@ export class SphereScissorsTool extends LabelmapBaseTool {
 }
 
 // @public (undocumented)
+abstract class Spline implements ISpline {
+    constructor(props?: SplineProps);
+    // (undocumented)
+    get aabb(): Types_2.AABB2;
+    // (undocumented)
+    addControlPoint(point: Types_2.Point2): void;
+    // (undocumented)
+    addControlPointAtU(u: number): ControlPointInfo;
+    // (undocumented)
+    addControlPoints(points: Types_2.Point2[]): void;
+    // (undocumented)
+    clearControlPoints(): void;
+    // (undocumented)
+    get closed(): boolean;
+    set closed(closed: boolean);
+    // (undocumented)
+    containsPoint(point: Types_2.Point2): boolean;
+    // (undocumented)
+    protected get controlPoints(): Types_2.Point2[];
+    // (undocumented)
+    deleteControlPointByIndex(index: number): boolean;
+    // (undocumented)
+    get fixedResolution(): boolean;
+    // (undocumented)
+    getClosestControlPoint(point: Types_2.Point2): ClosestControlPoint;
+    // (undocumented)
+    getClosestControlPointWithinDistance(point: Types_2.Point2, maxDist: number): ClosestControlPoint;
+    // (undocumented)
+    getClosestPoint(point: Types_2.Point2): ClosestSplinePoint;
+    // (undocumented)
+    getClosestPointOnControlPointLines(point: Types_2.Point2): ClosestPoint;
+    // (undocumented)
+    getControlPoints(): Types_2.Point2[];
+    // (undocumented)
+    getPolylinePoints(): Types_2.Point2[];
+    // (undocumented)
+    protected abstract getPreviewCurveSegments(controlPointPreview: Types_2.Point2, closeSpline: boolean): SplineCurveSegment[];
+    // (undocumented)
+    getPreviewPolylinePoints(controlPointPreview: Types_2.Point2, closeDistance: number): Types_2.Point2[];
+    // (undocumented)
+    protected abstract getSplineCurves(): SplineCurveSegment[];
+    // (undocumented)
+    protected abstract getTransformMatrix(): number[];
+    // (undocumented)
+    hasTangentPoints(): boolean;
+    // (undocumented)
+    get invalidated(): boolean;
+    protected set invalidated(invalidated: boolean);
+    // (undocumented)
+    isPointNearCurve(point: Types_2.Point2, maxDist: number): boolean;
+    // (undocumented)
+    get length(): number;
+    // (undocumented)
+    get numControlPoints(): number;
+    // (undocumented)
+    get resolution(): number;
+    set resolution(resolution: number);
+    // (undocumented)
+    setControlPoints(points: Types_2.Point2[]): void;
+    // (undocumented)
+    updateControlPoint(index: number, newControlPoint: Types_2.Point2): void;
+}
+
+// @public (undocumented)
 type SplineContourSegmentationAnnotation = SplineROIAnnotation & ContourSegmentationAnnotationData;
 
 // @public (undocumented)
@@ -5634,6 +5752,20 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     triggerChangeEvent: (annotation: SplineROIAnnotation, enabledElement: Types_2.IEnabledElement, changeType: ChangeTypes, contourHoleProcessingEnabled: any) => void;
 }
+
+declare namespace splines {
+    export {
+        BSpline,
+        CardinalSpline,
+        CatmullRomSpline,
+        CubicSpline,
+        LinearSpline,
+        QuadraticBezier,
+        QuadraticSpline,
+        Spline
+    }
+}
+export { splines }
 
 // @public (undocumented)
 const stackContextPrefetch: {
