@@ -97,7 +97,9 @@ function xhrRequest(
         if (options.onreadystatechange) {
           options.onreadystatechange(event, params);
 
-          return;
+          // This should not return, because if a hook is defined, that function
+          // will be called but the image load promise will never resolve.
+          // return;
         }
 
         // Default action
