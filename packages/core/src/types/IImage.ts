@@ -3,7 +3,7 @@ import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
-import type { ImageQualityStatus } from '../enums';
+import type { ImageQualityStatus, VOILUTFunctionType } from '../enums';
 import type IImageCalibration from './IImageCalibration';
 import type RGB from './RGB';
 import type IImageFrame from './IImageFrame';
@@ -59,7 +59,7 @@ interface IImage {
   /** windowWidth from metadata */
   windowWidth: number[] | number;
   /** voiLUTFunction from metadata */
-  voiLUTFunction: string;
+  voiLUTFunction: VOILUTFunctionType;
   /** function that returns the pixelData as an array */
   getPixelData: () => PixelDataTypedArray;
   getCanvas: () => HTMLCanvasElement;

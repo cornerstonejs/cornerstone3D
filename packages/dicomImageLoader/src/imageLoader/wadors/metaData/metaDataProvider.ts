@@ -262,9 +262,10 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.VOI_LUT) {
     return {
-      // TODO VOT LUT Sequence
       windowCenter: getNumberValues(metaData['00281050'], 1),
       windowWidth: getNumberValues(metaData['00281051'], 1),
+      voiLUTFunction: getValue(metaData['00281056']),
+      // TODO VOT LUT Sequence
     };
   }
 

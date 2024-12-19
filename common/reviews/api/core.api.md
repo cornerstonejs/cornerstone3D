@@ -721,6 +721,7 @@ interface CPUFallbackViewport {
     voi?: {
         windowWidth: number;
         windowCenter: number;
+        voiLUTFunction: VOILUTFunctionType;
     };
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
@@ -1722,7 +1723,7 @@ interface IImage {
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
-    voiLUTFunction: string;
+    voiLUTFunction: VOILUTFunctionType;
     // (undocumented)
     voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
     // (undocumented)
@@ -3717,7 +3718,7 @@ class TargetEventListeners {
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
-function toLowHighRange(windowWidth: number, windowCenter: number): {
+function toLowHighRange(windowWidth: number, windowCenter: number, voiLUTFunction?: VOILUTFunctionType): {
     lower: number;
     upper: number;
 };
@@ -4608,6 +4609,8 @@ interface VOI {
 enum VOILUTFunctionType {
     // (undocumented)
     LINEAR = "LINEAR",
+    // (undocumented)
+    LINEAR_EXACT = "LINEAR_EXACT",
     // (undocumented)
     SAMPLED_SIGMOID = "SIGMOID"
 }

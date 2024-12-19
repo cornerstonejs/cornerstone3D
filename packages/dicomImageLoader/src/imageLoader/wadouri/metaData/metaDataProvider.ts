@@ -213,6 +213,7 @@ export function metadataForDataset(
         modalityLUTOutputPixelRepresentation,
         dataSet.elements.x00283010
       ),
+      voiLUTFunction: dataSet.string('x00281056'),
     };
   }
 
