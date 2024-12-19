@@ -161,8 +161,14 @@ class WindowLevelTool extends BaseTool {
 
     windowWidth = Math.max(windowWidth, 1);
 
+    const voiLutFunction = viewport.getProperties().VOILUTFunction;
+
     // Convert back to range
-    return utilities.windowLevel.toLowHighRange(windowWidth, windowCenter);
+    return utilities.windowLevel.toLowHighRange(
+      windowWidth,
+      windowCenter,
+      voiLutFunction
+    );
   }
 
   _getMultiplierFromDynamicRange(viewport, volumeId) {

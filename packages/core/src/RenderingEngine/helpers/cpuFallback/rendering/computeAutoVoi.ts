@@ -23,6 +23,7 @@ export default function computeAutoVoi(
     viewport.voi = {
       windowWidth: ww,
       windowCenter: wc,
+      voiLUTFunction: image.voiLUTFunction,
     };
   } else {
     viewport.voi.windowWidth = ww;
