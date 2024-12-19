@@ -85,8 +85,8 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
     const imageIdIndex = Math.floor(imageIds.length / 2);
     const imageId = imageIds[imageIdIndex];
     const voiLutModule = metaData.get('voiLutModule', imageId);
-    voi.voiLUTFunction = voiLutModule.voiLUTFunction;
-    if (voiLutModule?.windowWidth && voiLutModule.windowCenter) {
+    if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
+      voi.voiLUTFunction = voiLutModule.voiLUTFunction;
       const { windowWidth, windowCenter } = voiLutModule;
       const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
       const center = Array.isArray(windowCenter)
