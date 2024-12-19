@@ -164,8 +164,6 @@ interface DICOMLoaderIImage extends Types_2.IImage {
     totalTimeInMS?: number;
     // (undocumented)
     transferSyntaxUID?: string;
-    // (undocumented)
-    voiLUTFunction: string | undefined;
 }
 
 // @public (undocumented)
