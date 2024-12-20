@@ -7,6 +7,5 @@ export interface DICOMLoaderIImage extends Types.IImage {
   totalTimeInMS?: number;
   data?: DataSet;
   imageFrame?: Types.IImageFrame;
-  voiLUTFunction: string | undefined;
   transferSyntaxUID?: string;
 }

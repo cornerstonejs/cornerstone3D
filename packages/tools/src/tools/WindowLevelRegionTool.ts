@@ -355,9 +355,12 @@ class WindowLevelRegionTool extends AnnotationTool {
     );
     const windowCenter = minMaxMean.mean;
 
+    const voiLutFunction = viewport.getProperties().VOILUTFunction;
+
     const voiRange = utilities.windowLevel.toLowHighRange(
       windowWidth,
-      windowCenter
+      windowCenter,
+      voiLutFunction
     );
 
     viewport.setProperties({ voiRange });

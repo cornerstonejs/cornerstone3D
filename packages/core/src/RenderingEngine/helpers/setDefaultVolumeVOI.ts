@@ -81,11 +81,12 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
 function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   const { imageIds, metadata } = imageVolume;
   let voi;
-  if (imageIds.length) {
+  if (imageIds?.length) {
     const imageIdIndex = Math.floor(imageIds.length / 2);
     const imageId = imageIds[imageIdIndex];
     const voiLutModule = metaData.get('voiLutModule', imageId);
-    if (voiLutModule?.windowWidth && voiLutModule.windowCenter) {
+    if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
+      voi.voiLUTFunction = voiLutModule.voiLUTFunction;
       const { windowWidth, windowCenter } = voiLutModule;
       const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
       const center = Array.isArray(windowCenter)
@@ -104,7 +105,8 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   if (voi && (voi.windowWidth !== 0 || voi.windowCenter !== 0)) {
     const { lower, upper } = windowLevel.toLowHighRange(
       Number(voi.windowWidth),
-      Number(voi.windowCenter)
+      Number(voi.windowCenter),
+      voi.voiLUTFunction
     );
     return { lower, upper };
   }
