@@ -87,7 +87,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
     const voiLutModule = metaData.get('voiLutModule', imageId);
     if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
       voi = {};
-      voi.voiLUTFunction = voiLutModule.voiLUTFunction;
+      voi.voiLUTFunction = voiLutModule?.voiLUTFunction;
       const { windowWidth, windowCenter } = voiLutModule;
       const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
       const center = Array.isArray(windowCenter)
