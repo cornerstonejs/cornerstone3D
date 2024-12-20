@@ -20,6 +20,7 @@ import VolumeRotateTool from './VolumeRotateTool';
 
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
+import LabelTool from './annotation/LabelTool';
 import LengthTool from './annotation/LengthTool';
 import HeightTool from './annotation/HeightTool';
 import ProbeTool from './annotation/ProbeTool';
@@ -81,6 +82,7 @@ export {
   OverlayGridTool,
   SegmentationIntersectionTool,
   BidirectionalTool,
+  LabelTool,
   LengthTool,
   HeightTool,
   ProbeTool,
