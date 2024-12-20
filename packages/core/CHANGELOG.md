@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.1...v2.14.2) (2024-12-20)
+
+### Bug Fixes
+
+- **voi:** convert voi to an object before setting a property ([#1723](https://github.com/cornerstonejs/cornerstone3D/issues/1723)) ([7eaea78](https://github.com/cornerstonejs/cornerstone3D/commit/7eaea78d8755165bec50a5df7f64ed2f610a642b))
+
 ## [2.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.0...v2.14.1) (2024-12-20)
 
 **Note:** Version bump only for package @cornerstonejs/core
