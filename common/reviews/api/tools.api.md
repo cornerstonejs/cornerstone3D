@@ -4464,7 +4464,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     isHandleOutsideImage: boolean;
     // (undocumented)
-    isPointNearTool(): boolean;
+    isPointNearTool(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): boolean;
     // (undocumented)
     static probeDefaults: {
         supportedInteractionTypes: string[];
