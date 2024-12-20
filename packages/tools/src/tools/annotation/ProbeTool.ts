@@ -126,10 +126,20 @@ class ProbeTool extends AnnotationTool {
     );
   }
 
-  // Not necessary for this tool but needs to be defined since it's an abstract
-  // method from the parent class.
-  isPointNearTool(): boolean {
-    return false;
+  isPointNearTool(
+    element: HTMLDivElement,
+    annotation: ProbeAnnotation,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): boolean {
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const { data } = annotation;
+    const point = data.handles.points[0];
+    const annotationCanvasCoordinate = viewport.worldToCanvas(point);
+
+    return vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity;
   }
 
   toolSelectedCallback() {}
@@ -471,7 +481,10 @@ class ProbeTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const { color } = this.getAnnotationStyle({ annotation, styleSpecifier });
+      const { color, lineWidth } = this.getAnnotationStyle({
+        annotation,
+        styleSpecifier,
+      });
 
       if (!data.cachedStats) {
         data.cachedStats = {};
@@ -545,7 +558,7 @@ class ProbeTool extends AnnotationTool {
         annotationUID,
         handleGroupUID,
         [canvasCoordinates],
-        { color }
+        { color, lineWidth }
       );
 
       renderStatus = true;
