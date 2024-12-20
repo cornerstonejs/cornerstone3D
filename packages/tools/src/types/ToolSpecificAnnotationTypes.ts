@@ -358,6 +358,15 @@ export interface ArrowAnnotation extends Annotation {
   };
 }
 
+export interface LabelAnnotation extends Annotation {
+  data: {
+    text: string;
+    handles: {
+      points: Types.Point3[];
+    };
+  };
+}
+
 export interface AngleAnnotation extends Annotation {
   data: {
     handles: {

@@ -17,6 +17,7 @@ import {
   ArrowAnnotateTool,
   CircleROITool,
   EllipticalROITool,
+  LabelTool,
   LengthTool,
   ProbeTool,
   RectangleROITool,
@@ -32,6 +33,7 @@ console.debug(
 );
 
 const tools = [
+  LabelTool,
   AngleTool,
   ArrowAnnotateTool,
   EllipticalROITool,
