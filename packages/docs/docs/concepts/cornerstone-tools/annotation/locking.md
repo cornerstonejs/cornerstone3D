@@ -28,5 +28,5 @@ annotation.locking.unlockAllAnnotations();
 ## Read more
 
 :::note TIP
-Read more about the locking API [here](/api/tools/namespace/annotation#locking)
+Read more about the locking API [here](/docs/api/tools/namespaces/annotation/namespaces/locking)
 :::
