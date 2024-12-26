@@ -18,7 +18,7 @@ export default function drawArrow(
   const { color, width, lineWidth, lineDash } = Object.assign(
     {
       color: 'rgb(0, 255, 0)',
-      width: '2',
+      width: 2,
       lineWidth: undefined,
       lineDash: undefined,
     },
@@ -31,52 +31,6 @@ export default function drawArrow(
     width,
     lineWidth,
     lineDash,
+    markerEndId: 'arrow',
   });
-
-  // Drawing the head arrow with two lines
-  // Variables to be used when creating the arrow
-  const headLength = 10;
-  const angle = Math.atan2(end[1] - start[1], end[0] - start[0]);
-
-  const firstLine = {
-    start: [
-      end[0] - headLength * Math.cos(angle - Math.PI / 7),
-      end[1] - headLength * Math.sin(angle - Math.PI / 7),
-    ] as Types.Point2,
-    end: end,
-  };
-
-  const secondLine = {
-    start: [
-      end[0] - headLength * Math.cos(angle + Math.PI / 7),
-      end[1] - headLength * Math.sin(angle + Math.PI / 7),
-    ] as Types.Point2,
-    end: end,
-  };
-
-  drawLine(
-    svgDrawingHelper,
-    annotationUID,
-    '2',
-    firstLine.start,
-    firstLine.end,
-    {
-      color,
-      width,
-      lineWidth,
-    }
-  );
-
-  drawLine(
-    svgDrawingHelper,
-    annotationUID,
-    '3',
-    secondLine.start,
-    secondLine.end,
-    {
-      color,
-      width,
-      lineWidth,
-    }
-  );
 }

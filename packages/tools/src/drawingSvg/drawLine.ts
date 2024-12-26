@@ -11,7 +11,15 @@ export default function drawLine(
   lineUID: string,
   start: Types.Point2,
   end: Types.Point2,
-  options = {},
+  options: {
+    color?: string;
+    width?: number;
+    lineWidth?: number;
+    lineDash?: string;
+    markerStartId?: string;
+    markerEndId?: string;
+    shadow?: boolean;
+  },
   dataId = ''
 ): void {
   // if length is NaN return
@@ -19,16 +27,15 @@ export default function drawLine(
     return;
   }
 
-  const { color, width, lineWidth, lineDash, shadow } = Object.assign(
-    {
-      color: 'rgb(0, 255, 0)',
-      width: '2',
-      lineWidth: undefined,
-      lineDash: undefined,
-      shadow: undefined,
-    },
-    options
-  );
+  const {
+    color = 'rgb(0, 255, 0)',
+    width = 10,
+    lineWidth,
+    lineDash,
+    markerStartId = null,
+    markerEndId = null,
+    shadow = false,
+  } = options;
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
@@ -36,9 +43,18 @@ export default function drawLine(
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
-  const dropShadowStyle = shadow
-    ? `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`
-    : '';
+  const layerId = svgDrawingHelper.svgLayerElement.id;
+  const dropShadowStyle = shadow ? `filter:url(#shadow-${layerId});` : '';
+  const arrow = svgDrawingHelper.svgLayerElement.querySelector(
+    `#${markerEndId}-${layerId}`
+  );
+
+  if (arrow) {
+    arrow.setAttribute('fill', color);
+    const newstrokeWidth = strokeWidth >= 4 ? 3 : 6;
+    arrow.setAttribute('markerWidth', `${newstrokeWidth}`);
+    arrow.setAttribute('markerHeight', `${newstrokeWidth}`);
+  }
 
   const attributes = {
     x1: `${start[0]}`,
@@ -49,6 +65,8 @@ export default function drawLine(
     style: dropShadowStyle,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
+    'marker-start': markerStartId ? `url(#${markerStartId}-${layerId})` : '',
+    'marker-end': markerEndId ? `url(#${markerEndId}-${layerId})` : '',
   };
 
   if (existingLine) {
