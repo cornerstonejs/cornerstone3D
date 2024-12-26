@@ -6797,6 +6797,8 @@ declare namespace viewport {
 class ViewportColorbar extends Colorbar {
     constructor(props: ViewportColorbarProps);
     // (undocumented)
+    destroy(): void;
+    // (undocumented)
     get element(): HTMLDivElement;
     // (undocumented)
     get enabledElement(): Types_2.IEnabledElement;
