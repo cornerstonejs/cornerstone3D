@@ -1134,16 +1134,18 @@ class EllipticalROITool extends AnnotationTool {
         pixelUnitsOptions
       );
 
-      const pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          boundsIJK,
-          imageData,
-          isInObject: (pointLPS) =>
-            pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-          returnPoints: this.configuration.storePointData,
-        }
-      );
+      const pointsInShape = this.configuration.storePointData
+        ? voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              boundsIJK,
+              imageData,
+              isInObject: (pointLPS) =>
+                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+              returnPoints: this.configuration.storePointData,
+            }
+          )
+        : null;
 
       const stats = this.configuration.statsCalculator.getStatistics();
       cachedStats[targetId] = {
