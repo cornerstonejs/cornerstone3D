@@ -42,8 +42,11 @@ export function removeAllSegmentations(): void {
   const segmentations = segmentationStateManager.getState().segmentations;
 
   // Remove each segmentation
-  segmentations.forEach((segmentation) => {
-    removeSegmentation(segmentation.segmentationId);
+  const segmentationIds = segmentations.map(
+    (segmentation) => segmentation.segmentationId
+  );
+  segmentationIds.forEach((segmentationId) => {
+    removeSegmentation(segmentationId);
   });
 
   // Clear the state
