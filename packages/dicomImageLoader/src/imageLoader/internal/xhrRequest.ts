@@ -136,6 +136,16 @@ function xhrRequest(
           percentComplete = Math.round((loaded / total) * 100);
         }
 
+        const eventData = {
+          url,
+          imageId,
+          loaded,
+          total,
+          percentComplete,
+        };
+
+        triggerEvent(eventTarget, 'cornerstoneimageloadprogress', eventData);
+
         // Action
         if (options.onprogress) {
           options.onprogress(oProgress, params);
