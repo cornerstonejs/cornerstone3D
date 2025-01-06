@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.3...v2.14.4) (2025-01-06)
+
+### Bug Fixes
+
+- emit event on image load progress ([#1735](https://github.com/cornerstonejs/cornerstone3D/issues/1735)) ([db8314b](https://github.com/cornerstonejs/cornerstone3D/commit/db8314b811c6469e4e21ef07cb8e6201bc02d0c0))
+- **xhr:** onreadystatechange hook bug with promise never resolving. ([#1720](https://github.com/cornerstonejs/cornerstone3D/issues/1720)) ([afbab70](https://github.com/cornerstonejs/cornerstone3D/commit/afbab70375783d03455dc5f6da11ef82aee0777d))
+
 ## [2.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.2...v2.14.3) (2025-01-06)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
