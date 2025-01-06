@@ -124,11 +124,15 @@ const cornerstoneDICOMImageLoader: {
         setOptions: setOptions;
         getOptions: getOptions;
     };
+    decodeImageFrame: typeof decodeImageFrame;
 };
 export default cornerstoneDICOMImageLoader;
 
 // @public (undocumented)
 export function createImage(imageId: string, pixelData: ByteArray, transferSyntax: string, options?: DICOMLoaderImageOptions): Promise<DICOMLoaderIImage | Types_2.IImageFrame>;
+
+// @public (undocumented)
+export function decodeImageFrame(imageFrame: any, transferSyntax: any, pixelData: any, decodeConfig: any, options: any, callbackFn: any): Promise<any>;
 
 // @public (undocumented)
 export function decodeJPEGBaseline8BitColor(imageFrame: Types_2.IImageFrame, pixelData: ByteArray, canvas: HTMLCanvasElement): Promise<Types_2.IImageFrame>;
@@ -160,8 +164,6 @@ interface DICOMLoaderIImage extends Types_2.IImage {
     totalTimeInMS?: number;
     // (undocumented)
     transferSyntaxUID?: string;
-    // (undocumented)
-    voiLUTFunction: string | undefined;
 }
 
 // @public (undocumented)

@@ -273,6 +273,38 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetCamera();
   }
 
+  /**
+   * Gets the blend mode for the volume viewport. If filterActorUIDs is provided,
+   * it will return the blend mode for the first matching actor. Otherwise, it returns
+   * the blend mode of the first actor.
+   *
+   * @param filterActorUIDs - Optional array of actor UIDs to filter by
+   * @returns The blend mode of the matched actor
+   */
+  public getBlendMode(filterActorUIDs?: string[]): BlendModes {
+    const actorEntries = this.getActors();
+    const actorForBlend =
+      filterActorUIDs?.length > 0
+        ? actorEntries.find((actorEntry) =>
+            filterActorUIDs.includes(actorEntry.uid)
+          )
+        : actorEntries[0];
+
+    return (
+      actorForBlend?.blendMode ||
+      // @ts-ignore vtk incorrect typing
+      actorForBlend?.actor.getMapper().getBlendMode()
+    );
+  }
+
+  /**
+   * Sets the blend mode for actors in the volume viewport. Can optionally filter which
+   * actors to apply the blend mode to using filterActorUIDs.
+   *
+   * @param blendMode - The blend mode to set
+   * @param filterActorUIDs - Optional array of actor UIDs to filter which actors to update
+   * @param immediate - Whether to render the viewport immediately after setting the blend mode
+   */
   public setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs = [],
@@ -280,7 +312,7 @@ class VolumeViewport extends BaseVolumeViewport {
   ): void {
     let actorEntries = this.getActors();
 
-    if (filterActorUIDs && filterActorUIDs.length > 0) {
+    if (filterActorUIDs?.length > 0) {
       actorEntries = actorEntries.filter((actorEntry: ActorEntry) => {
         return filterActorUIDs.includes(actorEntry.uid);
       });
@@ -292,6 +324,7 @@ class VolumeViewport extends BaseVolumeViewport {
       const mapper = actor.getMapper();
       // @ts-ignore vtk incorrect typing
       mapper.setBlendMode?.(blendMode);
+      actorEntry.blendMode = blendMode;
     });
 
     if (immediate) {
@@ -407,7 +440,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     let actorEntries = this.getActors();
 
-    if (filterActorUIDs && filterActorUIDs.length > 0) {
+    if (filterActorUIDs?.length > 0) {
       actorEntries = actorEntries.filter((actorEntry) => {
         return filterActorUIDs.includes(actorEntry.uid);
       });

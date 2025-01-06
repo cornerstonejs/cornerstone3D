@@ -18,6 +18,7 @@ import * as cursors from './cursors';
 import * as Types from './types';
 import * as annotation from './stateManagement/annotation';
 import * as segmentation from './stateManagement/segmentation';
+import * as splines from './tools/annotation/splines';
 
 import {
   BaseTool,
@@ -172,4 +173,6 @@ export {
   RegionSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  // Spline classes
+  splines,
 };

@@ -20,6 +20,7 @@ import { default as getPixelData } from './imageLoader/wadors/getPixelData';
 import { internal } from './imageLoader/internal/index';
 import * as constants from './constants';
 import type * as Types from './types';
+import { decodeImageFrame } from './decodeImageFrameWorker';
 
 const cornerstoneDICOMImageLoader = {
   constants,
@@ -40,6 +41,7 @@ const cornerstoneDICOMImageLoader = {
   isColorImage,
   isJPEGBaseline8BitColor,
   internal,
+  decodeImageFrame,
 };
 
 export {
@@ -61,6 +63,7 @@ export {
   isColorImage,
   isJPEGBaseline8BitColor,
   internal,
+  decodeImageFrame,
 };
 
 export type { Types };

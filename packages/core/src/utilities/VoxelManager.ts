@@ -796,6 +796,11 @@ export default class VoxelManager<T> {
       for (const imageId of imageIds) {
         const image = cache.getImage(imageId);
 
+        // Skip if image not loaded yet
+        if (!image) {
+          continue;
+        }
+
         // min and max pixel value is correct, //todo this is not true
         // for dynamically changing data such as labelmaps in segmentation
         if (image.minPixelValue < minValue) {
@@ -805,6 +810,12 @@ export default class VoxelManager<T> {
           maxValue = image.maxPixelValue;
         }
       }
+
+      // If no images were loaded yet, return default range
+      if (minValue === Infinity && maxValue === -Infinity) {
+        return [0, 0];
+      }
+
       return [minValue, maxValue];
     };
 

@@ -17,7 +17,7 @@ export default function (
   canvasImageDataData: Uint8ClampedArray
 ): void {
   let start = now();
-  const pixelData = image.voxelManager.getScalarData();
+  const pixelData = image.getPixelData();
 
   image.stats.lastGetPixelDataTime = now() - start;
 

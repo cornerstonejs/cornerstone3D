@@ -42,7 +42,7 @@ module.exports = {
           label: 'Examples',
         },
         {
-          href: 'https://ohif.org/community/',
+          href: 'https://ohif.org/collaborate',
           position: 'left',
           label: 'Community',
         },
@@ -74,7 +74,7 @@ module.exports = {
           ],
         },
         {
-          to: '/docs/migration-guides/intro',
+          to: '/docs/migration-guides/2x/general',
           label: '2.0 Migration Guides',
           position: 'left',
           className: 'new-badge',

@@ -3,6 +3,111 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.3...v2.14.4) (2025-01-06)
+
+### Bug Fixes
+
+- emit event on image load progress ([#1735](https://github.com/cornerstonejs/cornerstone3D/issues/1735)) ([db8314b](https://github.com/cornerstonejs/cornerstone3D/commit/db8314b811c6469e4e21ef07cb8e6201bc02d0c0))
+- **xhr:** onreadystatechange hook bug with promise never resolving. ([#1720](https://github.com/cornerstonejs/cornerstone3D/issues/1720)) ([afbab70](https://github.com/cornerstonejs/cornerstone3D/commit/afbab70375783d03455dc5f6da11ef82aee0777d))
+
+## [2.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.2...v2.14.3) (2025-01-06)
+
+**Note:** Version bump only for package root
+
+## [2.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.1...v2.14.2) (2024-12-20)
+
+### Bug Fixes
+
+- **voi:** convert voi to an object before setting a property ([#1723](https://github.com/cornerstonejs/cornerstone3D/issues/1723)) ([7eaea78](https://github.com/cornerstonejs/cornerstone3D/commit/7eaea78d8755165bec50a5df7f64ed2f610a642b))
+
+## [2.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.0...v2.14.1) (2024-12-20)
+
+**Note:** Version bump only for package root
+
+# [2.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.13.0...v2.14.0) (2024-12-20)
+
+### Features
+
+- **probe:** isPointNearTool for probe tool, and use line width from config ([#1721](https://github.com/cornerstonejs/cornerstone3D/issues/1721)) ([90c1a98](https://github.com/cornerstonejs/cornerstone3D/commit/90c1a98965584df7154cb39b43f60ae187f5e399))
+
+# [2.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.12.3...v2.13.0) (2024-12-20)
+
+### Features
+
+- **voi:** add linear exact voi lut function ([#1717](https://github.com/cornerstonejs/cornerstone3D/issues/1717)) ([faf3b9d](https://github.com/cornerstonejs/cornerstone3D/commit/faf3b9ded5dc42ef9fdd6d2f36aecb1e56cefeb7))
+
+## [2.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.12.2...v2.12.3) (2024-12-18)
+
+### Bug Fixes
+
+- passing metadata to getTextLines callback in annotation tools ([#1710](https://github.com/cornerstonejs/cornerstone3D/issues/1710)) ([67618fa](https://github.com/cornerstonejs/cornerstone3D/commit/67618fad3e1ea8c7458b0dea0d9cc4f32a8de203))
+
+## [2.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.12.1...v2.12.2) (2024-12-18)
+
+**Note:** Version bump only for package root
+
+## [2.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.12.0...v2.12.1) (2024-12-18)
+
+**Note:** Version bump only for package root
+
+# [2.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.7...v2.12.0) (2024-12-16)
+
+### Features
+
+- **adapters:** default to creation of labelmap images in 2D instead of a volume ([#1692](https://github.com/cornerstonejs/cornerstone3D/issues/1692)) ([960b75a](https://github.com/cornerstonejs/cornerstone3D/commit/960b75a2ebed3a141ceefcf4f38fb6de388a4ca0))
+
+## [2.11.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.6...v2.11.7) (2024-12-13)
+
+### Bug Fixes
+
+- **nifti-loader:** Add custom header support to nifti loader to support auth headers or any custom headers ([#1708](https://github.com/cornerstonejs/cornerstone3D/issues/1708)) ([182e369](https://github.com/cornerstonejs/cornerstone3D/commit/182e369d202035db4acb7757360d919532320042))
+
+## [2.11.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.5...v2.11.6) (2024-12-12)
+
+### Bug Fixes
+
+- **segmentation:** fix segmentation for video viewports ([#1595](https://github.com/cornerstonejs/cornerstone3D/issues/1595)) ([4056d98](https://github.com/cornerstonejs/cornerstone3D/commit/4056d983e0a2f142196f8336222fc6b1f121863e))
+
+## [2.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.4...v2.11.5) (2024-12-12)
+
+### Bug Fixes
+
+- **utilities/math:** export circle math utilities ([#1703](https://github.com/cornerstonejs/cornerstone3D/issues/1703)) ([1a7b7d6](https://github.com/cornerstonejs/cornerstone3D/commit/1a7b7d6ba83e0647afdd0f92a367bedecbad3295))
+
+## [2.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.3...v2.11.4) (2024-12-12)
+
+### Bug Fixes
+
+- nifti 8 bit ([#1706](https://github.com/cornerstonejs/cornerstone3D/issues/1706)) ([7579285](https://github.com/cornerstonejs/cornerstone3D/commit/757928586febc21a432c04019b85df9ee274dc8e))
+
+## [2.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.2...v2.11.3) (2024-12-12)
+
+### Bug Fixes
+
+- **types:** type fixes ([#1638](https://github.com/cornerstonejs/cornerstone3D/issues/1638)) ([87626a5](https://github.com/cornerstonejs/cornerstone3D/commit/87626a5e9df3db493396aac3820657544a96daa9))
+
+## [2.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.1...v2.11.2) (2024-12-11)
+
+### Bug Fixes
+
+- average blend mode and trackball rotate reset camera ([#1700](https://github.com/cornerstonejs/cornerstone3D/issues/1700)) ([0f3f4a0](https://github.com/cornerstonejs/cornerstone3D/commit/0f3f4a02be784d1b97afafa8da58f5cd89e7a572))
+
+## [2.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.11.0...v2.11.1) (2024-12-11)
+
+**Note:** Version bump only for package root
+
+# [2.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.10.0...v2.11.0) (2024-12-11)
+
+### Features
+
+- move to node 20 ([#1698](https://github.com/cornerstonejs/cornerstone3D/issues/1698)) ([426e912](https://github.com/cornerstonejs/cornerstone3D/commit/426e912890f3b8467f24c97f7523e6d84cb46c88))
+
+# [2.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.9.0...v2.10.0) (2024-12-11)
+
+### Features
+
+- **labelmap:** render properly on mip viewports ([#1693](https://github.com/cornerstonejs/cornerstone3D/issues/1693)) ([701f44c](https://github.com/cornerstonejs/cornerstone3D/commit/701f44ce34b29492a89ab8ea64088941291ee416))
+
 # [2.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.8.6...v2.9.0) (2024-12-09)
 
 ### Features

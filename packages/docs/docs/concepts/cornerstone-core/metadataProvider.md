@@ -29,7 +29,7 @@ and if any metadata provider can provide that type for the given image ID, you g
 example, to easily provide application-specific information such as ground truth or patient information.
 
 Cornerstone core and tools also automatically request various types of metadata for displayed images. A list of standard
-metadata modules can be found in the [MetadataModules section](/api/core/namespace/Enums#MetadataModules) of the API reference.
+metadata modules can be found in the [MetadataModules section](/docs/api/core/namespaces/enums/enumerations/metadatamodules/) of the API reference.
 Many of these modules conform to the DICOM standard. If you want to implement them in a [custom metadata
 provider](../../how-to-guides/custom-metadata-provider.md), it is easiest to look at how an existing metadata provider
 implements them, such as the [WADOURI metadata

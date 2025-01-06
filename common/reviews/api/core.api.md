@@ -19,7 +19,7 @@ import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // @public (undocumented)
 interface AABB2 {
@@ -58,6 +58,13 @@ interface ActorEntry {
     [key: string]: unknown;
     // (undocumented)
     actor: Actor | VolumeActor | ImageActor | ICanvasActor;
+    // (undocumented)
+    blendMode?: BlendModes;
+    // (undocumented)
+    callbacks?: ({ volumeActor, volumeId, }: {
+        volumeActor: VolumeActor;
+        volumeId: string;
+    }) => void;
     // (undocumented)
     clippingFilter?: any;
     // (undocumented)
@@ -252,6 +259,8 @@ enum BlendModes {
     // (undocumented)
     COMPOSITE,
     // (undocumented)
+    LABELMAP_EDGE_PROJECTION_BLEND,
+    // (undocumented)
     MAXIMUM_INTENSITY_BLEND,
     // (undocumented)
     MINIMUM_INTENSITY_BLEND
@@ -438,6 +447,9 @@ enum ContourType {
     // (undocumented)
     OPEN_PLANAR = "OPEN_PLANAR"
 }
+
+// @public (undocumented)
+export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper): vtkVolumeMapper;
 
 // @public (undocumented)
 function convertStackToVolumeViewport({ viewport, options, }: {
@@ -709,6 +721,7 @@ interface CPUFallbackViewport {
     voi?: {
         windowWidth: number;
         windowCenter: number;
+        voiLUTFunction: VOILUTFunctionType;
     };
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
@@ -1710,7 +1723,7 @@ interface IImage {
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
-    voiLUTFunction: string;
+    voiLUTFunction: VOILUTFunctionType;
     // (undocumented)
     voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
     // (undocumented)
@@ -3705,7 +3718,7 @@ class TargetEventListeners {
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
-function toLowHighRange(windowWidth: number, windowCenter: number): {
+function toLowHighRange(windowWidth: number, windowCenter: number, voiLUTFunction?: VOILUTFunctionType): {
     lower: number;
     upper: number;
 };
@@ -4597,6 +4610,8 @@ enum VOILUTFunctionType {
     // (undocumented)
     LINEAR = "LINEAR",
     // (undocumented)
+    LINEAR_EXACT = "LINEAR_EXACT",
+    // (undocumented)
     SAMPLED_SIGMOID = "SIGMOID"
 }
 
@@ -4777,6 +4792,8 @@ export class VolumeViewport extends BaseVolumeViewport {
     constructor(props: ViewportInput);
     // (undocumented)
     addVolumes(volumeInputArray: IVolumeInput[], immediate?: boolean, suppressEvents?: boolean): Promise<void>;
+    // (undocumented)
+    getBlendMode(filterActorUIDs?: string[]): BlendModes;
     // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)

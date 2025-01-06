@@ -56,6 +56,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     );
   };
 
+  const superUpdate = publicAPI.updateVolumeInfoForGL;
+
+  publicAPI.updateVolumeInfoForGL = (dataType, numComps) => {
+    const isScalingApplied = superUpdate(dataType, numComps);
+    model.volumeInfo.dataComputedScale = [1];
+    model.volumeInfo.dataComputedOffset = [0];
+    return isScalingApplied;
+  };
+
   /**
    * This function updates the GPU texture memory to match the current
    * representation of data held in RAM.

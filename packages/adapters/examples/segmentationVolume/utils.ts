@@ -68,21 +68,14 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
     const { referenceImageIds, skipOverlapping, segmentationId } = state;
 
     const generateToolState =
-        await Cornerstone3D.Segmentation.generateToolState(
+        await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
             referenceImageIds,
             arrayBuffer,
-            metaData,
             {
+                metadataProvider: metaData,
                 skipOverlapping
             }
         );
-
-    if (generateToolState.labelmapBufferArray.length !== 1) {
-        alert(
-            "Overlapping segments in your segmentation are not supported yet. You can turn on the skipOverlapping option but it will override the overlapping segments."
-        );
-        return;
-    }
 
     await createSegmentation(state);
 
@@ -94,19 +87,12 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
         cache.getImage(imageId)
     );
 
-    const volumeScalarData = new Uint8Array(
-        generateToolState.labelmapBufferArray[0]
-    );
+    const labelmapImagesNonOverlapping = generateToolState.labelMapImages[0];
 
     for (let i = 0; i < derivedSegmentationImages.length; i++) {
         const voxelManager = derivedSegmentationImages[i].voxelManager;
         const scalarData = voxelManager.getScalarData();
-        scalarData.set(
-            volumeScalarData.slice(
-                i * scalarData.length,
-                (i + 1) * scalarData.length
-            )
-        );
+        scalarData.set(labelmapImagesNonOverlapping[i].getPixelData());
         voxelManager.setScalarData(scalarData);
     }
 }
