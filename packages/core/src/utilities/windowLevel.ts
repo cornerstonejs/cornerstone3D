@@ -30,7 +30,7 @@ function toWindowLevel(
  *
  * LINEAR (default):
  * - Uses the DICOM standard formula from C.11.2.1.2.1:
- *   if x <= c - 0.5 - (w-1)/2 => lower bound
+ *   if x =< c - 0.5 - (w-1)/2 => lower bound
  *   if x > c - 0.5 + (w-1)/2 => upper bound
  *
  * LINEAR_EXACT (C.11.2.1.3.2):
