@@ -5,6 +5,7 @@ import vtkOpenGLActor2D from '@kitware/vtk.js/Rendering/OpenGL/Actor2D';
 import vtkOpenGLCamera from '@kitware/vtk.js/Rendering/OpenGL/Camera';
 import vtkOpenGLGlyph3DMapper from '@kitware/vtk.js/Rendering/OpenGL/Glyph3DMapper';
 import vtkOpenGLImageMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageMapper';
+import vtkOpenGLImageCPRMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageCPRMapper';
 import vtkOpenGLImageSlice from '@kitware/vtk.js/Rendering/OpenGL/ImageSlice';
 import vtkOpenGLPixelSpaceCallbackMapper from '@kitware/vtk.js/Rendering/OpenGL/PixelSpaceCallbackMapper';
 import vtkOpenGLPolyDataMapper from '@kitware/vtk.js/Rendering/OpenGL/PolyDataMapper';
@@ -117,6 +118,7 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride('vtkCamera', vtkOpenGLCamera.newInstance);
   registerOverride('vtkGlyph3DMapper', vtkOpenGLGlyph3DMapper.newInstance);
   registerOverride('vtkImageMapper', vtkOpenGLImageMapper.newInstance);
+  registerOverride('vtkImageCPRMapper', vtkOpenGLImageCPRMapper.newInstance);
   registerOverride('vtkImageSlice', vtkOpenGLImageSlice.newInstance);
   registerOverride('vtkMapper', vtkOpenGLPolyDataMapper.newInstance);
   registerOverride(

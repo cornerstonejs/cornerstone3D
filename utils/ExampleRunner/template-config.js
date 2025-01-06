@@ -2,6 +2,7 @@ const path = require('path');
 
 const csRenderBasePath = path.resolve('packages/core/src/index');
 const csToolsBasePath = path.resolve('packages/tools/src/index');
+const csAiBasePath = path.resolve('packages/ai/src/index');
 const csAdapters = path.resolve('packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
@@ -20,7 +21,7 @@ const rspack = require('@rspack/core');
 
 module.exports = {
   mode: 'development',
-  devtool: 'source-map',
+  devtool: 'eval-source-map',
   plugins: [
     new rspack.HtmlRspackPlugin({
       template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template.html',
@@ -35,6 +36,11 @@ module.exports = {
           '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
           to: '${destPath.replace(/\\/g, '/')}',
           noErrorOnMissing: true,
+        },
+        {
+          from:
+            '../../../node_modules/onnxruntime-web/dist',
+          to: '${destPath.replace(/\\/g, '/')}/dist',
         },
       ],
     }),
@@ -60,6 +66,7 @@ module.exports = {
     alias: {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/ai': '${csAiBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/nifti-volume-loader': '${csNiftiPath.replace(
         /\\/g,
         '/'

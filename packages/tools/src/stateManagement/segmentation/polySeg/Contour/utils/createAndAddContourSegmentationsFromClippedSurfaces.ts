@@ -72,7 +72,7 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
 
         addAnnotation(contourSegmentationAnnotation, viewport.element);
 
-        const currentSet = annotationUIDsMap.get(segmentIndex) || new Set();
+        const currentSet = annotationUIDsMap?.get(segmentIndex) || new Set();
         currentSet.add(contourSegmentationAnnotation.annotationUID);
         annotationUIDsMap.set(segmentIndex, currentSet);
       }

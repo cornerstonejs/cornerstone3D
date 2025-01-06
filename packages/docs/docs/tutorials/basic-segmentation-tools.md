@@ -105,7 +105,7 @@ We need another volume for segmentation (we don't want to modify the CT volume f
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // Create a segmentation of the same resolution as the source data for the CT volume
-await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
   volumeId: segmentationId,
 });
 ```
@@ -334,7 +334,7 @@ async function run() {
   const segmentationId = 'MY_SEGMENTATION_ID';
 
   // Create a segmentation of the same resolution as the source data for the CT volume
-  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 

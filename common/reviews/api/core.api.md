@@ -19,7 +19,7 @@ import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // @public (undocumented)
 interface AABB2 {
@@ -58,6 +58,13 @@ interface ActorEntry {
     [key: string]: unknown;
     // (undocumented)
     actor: Actor | VolumeActor | ImageActor | ICanvasActor;
+    // (undocumented)
+    blendMode?: BlendModes;
+    // (undocumented)
+    callbacks?: ({ volumeActor, volumeId, }: {
+        volumeActor: VolumeActor;
+        volumeId: string;
+    }) => void;
     // (undocumented)
     clippingFilter?: any;
     // (undocumented)
@@ -252,6 +259,8 @@ enum BlendModes {
     // (undocumented)
     COMPOSITE,
     // (undocumented)
+    LABELMAP_EDGE_PROJECTION_BLEND,
+    // (undocumented)
     MAXIMUM_INTENSITY_BLEND,
     // (undocumented)
     MINIMUM_INTENSITY_BLEND
@@ -438,6 +447,9 @@ enum ContourType {
     // (undocumented)
     OPEN_PLANAR = "OPEN_PLANAR"
 }
+
+// @public (undocumented)
+export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper): vtkVolumeMapper;
 
 // @public (undocumented)
 function convertStackToVolumeViewport({ viewport, options, }: {
@@ -709,6 +721,7 @@ interface CPUFallbackViewport {
     voi?: {
         windowWidth: number;
         windowCenter: number;
+        voiLUTFunction: VOILUTFunctionType;
     };
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
@@ -849,6 +862,13 @@ function createLocalVolume(volumeId: string, options?: LocalVolumeOptions): IIma
 function createSigmoidRGBTransferFunction(voiRange: VOIRange, approximationNodes?: number): vtkColorTransferFunction;
 
 // @public (undocumented)
+function createSubVolume(referencedVolumeId: string, boundsIJK: AABB3, options?: {
+    targetBuffer?: {
+        type: PixelDataTypedArrayString;
+    };
+}): ImageVolume;
+
+// @public (undocumented)
 export function createVolumeActor(props: createVolumeActorInterface, element: HTMLDivElement, viewportId: string, suppressEvents?: boolean): Promise<VolumeActor>;
 
 // @public (undocumented)
@@ -882,7 +902,7 @@ function deepEqual(obj1: unknown, obj2: unknown): boolean;
 const deepMerge: (target?: {}, source?: {}, optionsArgument?: any) => any;
 
 // @public (undocumented)
-const DefaultHistoryMemo: HistoryMemo_2;
+const DefaultHistoryMemo: HistoryMemo;
 
 // @public (undocumented)
 interface DicomDateObject {
@@ -1357,6 +1377,16 @@ function getVoiFromSigmoidRGBTransferFunction(cfun: vtkColorTransferFunction): [
 function getVolumeActorCorners(volumeActor: any): Point3[];
 
 // @public (undocumented)
+function getVolumeDirectionVectors(imageData: any, camera: any): {
+    worldVecRowDir: vec3;
+    worldVecColDir: vec3;
+    worldVecSliceDir: vec3;
+    ijkVecRowDir: vec3;
+    ijkVecColDir: vec3;
+    ijkVecSliceDir: vec3;
+};
+
+// @public (undocumented)
 const getVolumeId: (targetId: string) => string;
 
 // @public (undocumented)
@@ -1399,17 +1429,8 @@ function hexToRgb(hex: any): {
     b: number;
 };
 
-declare namespace HistoryMemo {
-    export {
-        Memo,
-        Memoable,
-        HistoryMemo_2 as HistoryMemo,
-        DefaultHistoryMemo
-    }
-}
-
 // @public (undocumented)
-class HistoryMemo_2 {
+class HistoryMemo {
     constructor(label?: string, size?: number);
     // (undocumented)
     readonly label: any;
@@ -1418,9 +1439,19 @@ class HistoryMemo_2 {
     // (undocumented)
     redo(items?: number): void;
     // (undocumented)
-    get size(): any;
+    get size(): number;
+    set size(newSize: number);
     // (undocumented)
     undo(items?: number): void;
+}
+
+declare namespace HistoryMemo_2 {
+    export {
+        Memo,
+        Memoable,
+        HistoryMemo,
+        DefaultHistoryMemo
+    }
 }
 
 // @public (undocumented)
@@ -1692,7 +1723,7 @@ interface IImage {
     // (undocumented)
     voiLUT?: CPUFallbackLUT;
     // (undocumented)
-    voiLUTFunction: string;
+    voiLUTFunction: VOILUTFunctionType;
     // (undocumented)
     voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
     // (undocumented)
@@ -2549,6 +2580,7 @@ type Mat3 = [number, number, number, number, number, number, number, number, num
 // @public (undocumented)
 type Memo = {
     restoreMemo: (undo?: boolean) => void;
+    commitMemo?: () => boolean;
 };
 
 // @public (undocumented)
@@ -2766,7 +2798,7 @@ class PointsManager<T> {
     // (undocumented)
     static create2(initialSize?: number): PointsManager<Point2>;
     // (undocumented)
-    static create3(initialSize?: number): PointsManager<Point3>;
+    static create3(initialSize?: number, points?: Point3[]): PointsManager<Point3>;
     // (undocumented)
     data: Float32Array;
     // (undocumented)
@@ -3686,7 +3718,7 @@ class TargetEventListeners {
 function threePlaneIntersection(firstPlane: Plane, secondPlane: Plane, thirdPlane: Plane): Point3;
 
 // @public (undocumented)
-function toLowHighRange(windowWidth: number, windowCenter: number): {
+function toLowHighRange(windowWidth: number, windowCenter: number, voiLUTFunction?: VOILUTFunctionType): {
     lower: number;
     upper: number;
 };
@@ -3718,6 +3750,9 @@ type TransformMatrix2D = [number, number, number, number, number, number];
 
 // @public (undocumented)
 function transformWorldToIndex(imageData: any, worldPos: Point3): any;
+
+// @public (undocumented)
+function transformWorldToIndexContinuous(imageData: any, worldPos: Point3): any;
 
 // @public (undocumented)
 export function triggerEvent(el: EventTarget, type: string, detail?: unknown): boolean;
@@ -3862,7 +3897,11 @@ declare namespace Types {
         IBaseVolumeViewport,
         GeometryLoaderFn,
         ScrollOptions_2 as ScrollOptions,
-        JumpToSliceOptions
+        JumpToSliceOptions,
+        Memo,
+        HistoryMemo,
+        VoxelManager,
+        RLEVoxelMap
     }
 }
 export { Types }
@@ -3941,7 +3980,7 @@ declare namespace utilities {
         isValidVolume,
         metadataProvider_2 as genericMetadataProvider,
         isVideoTransferSyntax,
-        HistoryMemo,
+        HistoryMemo_2 as HistoryMemo,
         generateVolumePropsFromImageIds,
         getBufferConfiguration,
         VoxelManager,
@@ -3964,7 +4003,10 @@ declare namespace utilities {
         deepEqual,
         jumpToSlice,
         scroll_2 as scroll,
-        clip
+        clip,
+        transformWorldToIndexContinuous,
+        createSubVolume,
+        getVolumeDirectionVectors
     }
 }
 export { utilities }
@@ -4568,6 +4610,8 @@ enum VOILUTFunctionType {
     // (undocumented)
     LINEAR = "LINEAR",
     // (undocumented)
+    LINEAR_EXACT = "LINEAR_EXACT",
+    // (undocumented)
     SAMPLED_SIGMOID = "SIGMOID"
 }
 
@@ -4749,9 +4793,11 @@ export class VolumeViewport extends BaseVolumeViewport {
     // (undocumented)
     addVolumes(volumeInputArray: IVolumeInput[], immediate?: boolean, suppressEvents?: boolean): Promise<void>;
     // (undocumented)
+    getBlendMode(filterActorUIDs?: string[]): BlendModes;
+    // (undocumented)
     getCurrentImageId: () => string | undefined;
     // (undocumented)
-    getCurrentImageIdIndex: (volumeId?: string) => number;
+    getCurrentImageIdIndex: (volumeId?: string, useSlabThickness?: boolean) => number;
     // (undocumented)
     getCurrentSlicePixelData(): PixelDataTypedArray;
     // (undocumented)

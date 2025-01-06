@@ -18,6 +18,7 @@ import * as cursors from './cursors';
 import * as Types from './types';
 import * as annotation from './stateManagement/annotation';
 import * as segmentation from './stateManagement/segmentation';
+import * as splines from './tools/annotation/splines';
 
 import {
   BaseTool,
@@ -72,6 +73,10 @@ import {
   SegmentSelectTool,
   WindowLevelRegionTool,
   VolumeRotateTool,
+  RegionSegmentPlusTool,
+  RegionSegmentTool,
+  WholeBodySegmentTool,
+  LabelmapBaseTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -164,4 +169,10 @@ export {
   utilities,
   cursors,
   VolumeRotateTool,
+  RegionSegmentPlusTool,
+  RegionSegmentTool,
+  WholeBodySegmentTool,
+  LabelmapBaseTool,
+  // Spline classes
+  splines,
 };

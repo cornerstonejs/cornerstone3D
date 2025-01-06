@@ -321,7 +321,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as CircleROIStartEndThresholdAnnotation;
-      const { annotationUID, data } = annotation;
+      const { annotationUID, data, metadata } = annotation;
       const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
 
@@ -502,7 +502,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           };
           continue;
         }
-        const textLines = this.configuration.getTextLines(data);
+        const textLines = this.configuration.getTextLines(data, { metadata });
         if (!textLines || textLines.length === 0) {
           continue;
         }
@@ -881,9 +881,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
  * target volume enclosed by the rectangle.
  *
  * @param data - The annotation tool-specific data.
- * @param targetId - The volumeId of the volume to display the stats for.
+ * @param _context - Associated data to annotation.
  */
-function defaultGetTextLines(data): string[] {
+function defaultGetTextLines(data, _context = {}): string[] {
   const cachedVolumeStats = data.cachedStats.statistics;
 
   const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;

@@ -3,6 +3,176 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.2](https://github.com/dcmjs-org/dcmjs/compare/v2.14.1...v2.14.2) (2024-12-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.14.1](https://github.com/dcmjs-org/dcmjs/compare/v2.14.0...v2.14.1) (2024-12-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.14.0](https://github.com/dcmjs-org/dcmjs/compare/v2.13.0...v2.14.0) (2024-12-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.13.0](https://github.com/dcmjs-org/dcmjs/compare/v2.12.3...v2.13.0) (2024-12-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.12.3](https://github.com/dcmjs-org/dcmjs/compare/v2.12.2...v2.12.3) (2024-12-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.12.2](https://github.com/dcmjs-org/dcmjs/compare/v2.12.1...v2.12.2) (2024-12-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.12.1](https://github.com/dcmjs-org/dcmjs/compare/v2.12.0...v2.12.1) (2024-12-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.12.0](https://github.com/dcmjs-org/dcmjs/compare/v2.11.7...v2.12.0) (2024-12-16)
+
+### Features
+
+-   **adapters:** default to creation of labelmap images in 2D instead of a volume ([#1692](https://github.com/dcmjs-org/dcmjs/issues/1692)) ([960b75a](https://github.com/dcmjs-org/dcmjs/commit/960b75a2ebed3a141ceefcf4f38fb6de388a4ca0))
+
+## [2.11.7](https://github.com/dcmjs-org/dcmjs/compare/v2.11.6...v2.11.7) (2024-12-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.11.6](https://github.com/dcmjs-org/dcmjs/compare/v2.11.5...v2.11.6) (2024-12-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.11.5](https://github.com/dcmjs-org/dcmjs/compare/v2.11.4...v2.11.5) (2024-12-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.11.4](https://github.com/dcmjs-org/dcmjs/compare/v2.11.3...v2.11.4) (2024-12-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.11.3](https://github.com/dcmjs-org/dcmjs/compare/v2.11.2...v2.11.3) (2024-12-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.11.2](https://github.com/dcmjs-org/dcmjs/compare/v2.11.1...v2.11.2) (2024-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.11.1](https://github.com/dcmjs-org/dcmjs/compare/v2.11.0...v2.11.1) (2024-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.11.0](https://github.com/dcmjs-org/dcmjs/compare/v2.10.0...v2.11.0) (2024-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.10.0](https://github.com/dcmjs-org/dcmjs/compare/v2.9.0...v2.10.0) (2024-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.9.0](https://github.com/dcmjs-org/dcmjs/compare/v2.8.6...v2.9.0) (2024-12-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.8.6](https://github.com/dcmjs-org/dcmjs/compare/v2.8.5...v2.8.6) (2024-12-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.8.5](https://github.com/dcmjs-org/dcmjs/compare/v2.8.4...v2.8.5) (2024-12-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.8.4](https://github.com/dcmjs-org/dcmjs/compare/v2.8.3...v2.8.4) (2024-12-06)
+
+### Bug Fixes
+
+-   **examples:** stack and volume segmentation ([#1684](https://github.com/dcmjs-org/dcmjs/issues/1684)) ([5149b31](https://github.com/dcmjs-org/dcmjs/commit/5149b31d54dca9ff8d0f24dcf8d432b6df1dd29b))
+
+## [2.8.3](https://github.com/dcmjs-org/dcmjs/compare/v2.8.2...v2.8.3) (2024-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.8.2](https://github.com/dcmjs-org/dcmjs/compare/v2.8.1...v2.8.2) (2024-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.8.1](https://github.com/dcmjs-org/dcmjs/compare/v2.8.0...v2.8.1) (2024-12-06)
+
+### Bug Fixes
+
+-   **examples:** fix the stack and volume segmentation adapters example ([#1680](https://github.com/dcmjs-org/dcmjs/issues/1680)) ([85e8ca4](https://github.com/dcmjs-org/dcmjs/commit/85e8ca4bda0a2948565ac88c9ddd07aa2b02f2d3))
+
+# [2.8.0](https://github.com/dcmjs-org/dcmjs/compare/v2.7.4...v2.8.0) (2024-12-05)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.7.4](https://github.com/dcmjs-org/dcmjs/compare/v2.7.3...v2.7.4) (2024-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.7.3](https://github.com/dcmjs-org/dcmjs/compare/v2.7.2...v2.7.3) (2024-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.7.2](https://github.com/dcmjs-org/dcmjs/compare/v2.7.1...v2.7.2) (2024-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.7.1](https://github.com/dcmjs-org/dcmjs/compare/v2.7.0...v2.7.1) (2024-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.7.0](https://github.com/dcmjs-org/dcmjs/compare/v2.6.5...v2.7.0) (2024-12-04)
+
+### Features
+
+-   **webgpu:** growcut base tools ([#1670](https://github.com/dcmjs-org/dcmjs/issues/1670)) ([7494c9e](https://github.com/dcmjs-org/dcmjs/commit/7494c9e683cd5d27eb9f6f71d958786381a774d5))
+
+## [2.6.5](https://github.com/dcmjs-org/dcmjs/compare/v2.6.4...v2.6.5) (2024-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.6.4](https://github.com/dcmjs-org/dcmjs/compare/v2.6.3...v2.6.4) (2024-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.6.3](https://github.com/dcmjs-org/dcmjs/compare/v2.6.2...v2.6.3) (2024-12-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.6.2](https://github.com/dcmjs-org/dcmjs/compare/v2.6.1...v2.6.2) (2024-12-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.6.1](https://github.com/dcmjs-org/dcmjs/compare/v2.6.0...v2.6.1) (2024-12-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.6.0](https://github.com/dcmjs-org/dcmjs/compare/v2.5.3...v2.6.0) (2024-12-03)
+
+### Features
+
+-   automatic segmentation using onnx to run local AI algorithms ([#1656](https://github.com/dcmjs-org/dcmjs/issues/1656)) ([5b5856f](https://github.com/dcmjs-org/dcmjs/commit/5b5856fe19eb3ac61fe7877283ed5a7f8a7fa53c))
+
+## [2.5.3](https://github.com/dcmjs-org/dcmjs/compare/v2.5.2...v2.5.3) (2024-12-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.5.2](https://github.com/dcmjs-org/dcmjs/compare/v2.5.1...v2.5.2) (2024-12-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [2.5.1](https://github.com/dcmjs-org/dcmjs/compare/v2.5.0...v2.5.1) (2024-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [2.5.0](https://github.com/dcmjs-org/dcmjs/compare/v2.4.0...v2.5.0) (2024-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 # [2.4.0](https://github.com/dcmjs-org/dcmjs/compare/v2.3.3...v2.4.0) (2024-11-29)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

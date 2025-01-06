@@ -343,9 +343,6 @@ class LengthTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -387,9 +384,6 @@ class LengthTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -415,9 +409,6 @@ class LengthTool extends AnnotationTool {
     this._deactivateDraw(element);
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     if (
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
@@ -426,6 +417,7 @@ class LengthTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    this.doneEditMemo();
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -440,9 +432,16 @@ class LengthTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box
@@ -869,9 +868,11 @@ class LengthTool extends AnnotationTool {
 
       const length = this._calculateLength(worldPos1, worldPos2) / scale;
 
-      this._isInsideVolume(index1, index2, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      if (this._isInsideVolume(index1, index2, dimensions)) {
+        this.isHandleOutsideImage = false;
+      } else {
+        this.isHandleOutsideImage = true;
+      }
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
       // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either

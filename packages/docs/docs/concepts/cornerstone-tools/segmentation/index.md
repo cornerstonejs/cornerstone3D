@@ -22,8 +22,6 @@ Similar relationship structure has been adapted in popular medical imaging softw
 such as [3D Slicer](https://www.slicer.org/) with the addition of [polymorph segmentation](https://github.com/PerkLab/PolySeg).
 :::
 
-
-
 ## API
 
 `Segmentation` related functions and classes are available in the `segmentation` module.
@@ -32,13 +30,13 @@ such as [3D Slicer](https://www.slicer.org/) with the addition of [polymorph seg
 import { segmentation } from '@cornerstonejs/tools';
 
 // segmentation state holding all segmentations and their toolGroup specific representations
-segmentations.state.XYZ;
+segmentation.state.XYZ;
 
 // active segmentation methods (set/get)
-segmentations.activeSegmentation.XYZ;
+segmentation.activeSegmentation.XYZ;
 
 // locking for a segment index (set/get)
-segmentations.locking.XYZ;
+segmentation.locking.XYZ;
 
 // segment index manipulations (set/get)
 segmentations.segmentIndex.XYZ;

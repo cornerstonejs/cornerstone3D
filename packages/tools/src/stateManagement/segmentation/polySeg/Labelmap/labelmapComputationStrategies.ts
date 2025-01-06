@@ -66,7 +66,9 @@ async function computeLabelmapFromContourSegmentation(
   segmentationId,
   options: PolySegConversionOptions = {}
 ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
-  const isVolume = options.viewport instanceof VolumeViewport ?? true;
+  const isVolume = options.viewport
+    ? options.viewport instanceof VolumeViewport
+    : true;
 
   if (isVolume && !options.viewport) {
     // Todo: we don't have support for volume viewport without providing the
@@ -103,7 +105,7 @@ async function computeLabelmapFromSurfaceSegmentation(
   options: PolySegConversionOptions = {}
 ): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
   const { viewport } = options;
-  const isVolume = viewport instanceof VolumeViewport ?? true;
+  const isVolume = viewport ? viewport instanceof VolumeViewport : true;
 
   const segmentIndices = options.segmentIndices?.length
     ? options.segmentIndices
@@ -133,9 +135,8 @@ async function computeLabelmapFromSurfaceSegmentation(
   let segmentationVolume;
   if (isVolume) {
     const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
-    segmentationVolume = await volumeLoader.createAndCacheDerivedLabelmapVolume(
-      volumeId
-    );
+    segmentationVolume =
+      volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId);
   } else {
     const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
     const segImages = imageLoader.createAndCacheDerivedLabelmapImages(imageIds);

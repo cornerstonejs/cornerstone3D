@@ -26,15 +26,9 @@ class PanTool extends BaseTool {
     this._dragCallback(evt);
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
-    this.memo = null;
-    return false;
-  };
-
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
-    this.memo ||= PanTool.createZoomPanMemo(enabledElement.viewport);
 
     const deltaPointsWorld = deltaPoints.world;
     // This occurs when the mouse event is fired but the mouse hasn't moved a full pixel yet (high resolution mice)

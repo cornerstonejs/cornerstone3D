@@ -32,14 +32,12 @@ For more information, please refer to the [frameworks](../../getting-started/vue
 
 You need to modify your Vite and Webpack configurations to correctly import the Cornerstone3D library. Check each framework's repository for more details.
 
-
 ## Removal of SharedArrayBuffer
 
 We have streamlined the process of loading volumes without sacrificing speed by eliminating the need for shared array buffers. This change resolves issues across various frameworks, where previously, specific security headers were required. Now, you can remove any previously set headers, which lowers the barrier for adopting Cornerstone 3D in frameworks that didn't support those headers. Shared array buffers are no longer necessary, and all related headers can be removed.
 
 You can remove `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` from your custom headers if you don't need them in other
 aspects of your app.
-
 
 ## Typescript Version
 
@@ -76,6 +74,9 @@ Starting with Cornerstone3D 2.x, we will no longer ship the CommonJS (CJS) and U
 Both Node.js and modern browsers now support ECMAScript Modules (ESM) by default.
 </details>
 
+:::note Tip
+If you must use CJS, for example, if you are using `dicom-image-loader` and `dicom-parser`, you need to use `vite-plugin-commonjs` to convert CommonJS to ESM. For more information, please refer to the [Frameworks](../../getting-started/vue-angular-react-etc.md) page.
+:::
 
 ## Package Exports
 

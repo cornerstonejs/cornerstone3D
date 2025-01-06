@@ -47,7 +47,11 @@ const generateSegmentationDefaultOptions = {
  * @param  {Object} userOptions Options to pass to the segmentation derivation and `fillSegmentation`.
  * @returns {Blob}
  */
-function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
+export function generateSegmentation(
+    images,
+    inputLabelmaps3D,
+    userOptions = {}
+) {
     const isMultiframe = images[0].imageId.includes("?frame");
     const segmentation = _createSegFromImages(
         images,
@@ -67,7 +71,11 @@ function generateSegmentation(images, inputLabelmaps3D, userOptions = {}) {
  *
  * @returns {object} The filled segmentation object.
  */
-function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
+export function fillSegmentation(
+    segmentation,
+    inputLabelmaps3D,
+    userOptions = {}
+) {
     const options = Object.assign(
         {},
         generateSegmentationDefaultOptions,
@@ -194,7 +202,7 @@ function fillSegmentation(segmentation, inputLabelmaps3D, userOptions = {}) {
     return segmentation;
 }
 
-function _getLabelmapsFromReferencedFrameIndicies(
+export function _getLabelmapsFromReferencedFrameIndicies(
     labelmap3D,
     referencedFrameIndicies
 ) {
@@ -218,7 +226,7 @@ function _getLabelmapsFromReferencedFrameIndicies(
  * @param  {Boolean} isMultiframe Whether the images are multiframe.
  * @returns {Object}              The Seg derived dataSet.
  */
-function _createSegFromImages(images, isMultiframe, options) {
+export function _createSegFromImages(images, isMultiframe, options) {
     const multiframe = getDatasetsFromImages(images, isMultiframe);
 
     return new SegmentationDerivation([multiframe], options);
@@ -228,7 +236,7 @@ function _createSegFromImages(images, isMultiframe, options) {
  * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
  *
- * @param  {string[]} imageIds - An array of the imageIds.
+ * @param  {string[]} referencedImageIds - An array for referenced image imageIds.
  * @param  {ArrayBuffer} arrayBuffer - The SEG arrayBuffer.
  * @param  {*} metadataProvider.
  * @param  {obj} options - Options object.
@@ -239,8 +247,8 @@ function _createSegFromImages(images, isMultiframe, options) {
  * @return {[][][]} 3D list containing the track of segments per frame for each labelMap
  *                  (available only for the overlapping case).
  */
-async function generateToolState(
-    imageIds,
+export async function generateToolState(
+    referencedImageIds,
     arrayBuffer,
     metadataProvider,
     options
@@ -250,8 +258,8 @@ async function generateToolState(
         tolerance = 1e-3,
         TypedArrayConstructor = Uint8Array,
         maxBytesPerChunk = 199000000,
-        eventTarget,
-        triggerEvent
+        eventTarget = null,
+        triggerEvent = null
     } = options;
     const dicomData = DicomMessage.readFile(arrayBuffer);
     const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
@@ -260,12 +268,12 @@ async function generateToolState(
 
     const imagePlaneModule = metadataProvider.get(
         "imagePlaneModule",
-        imageIds[0]
+        referencedImageIds[0]
     );
 
     const generalSeriesModule = metadataProvider.get(
         "generalSeriesModule",
-        imageIds[0]
+        referencedImageIds[0]
     );
 
     const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
@@ -326,14 +334,18 @@ async function generateToolState(
     const orientation = checkOrientation(
         multiframe,
         validOrientations,
-        [imagePlaneModule.rows, imagePlaneModule.columns, imageIds.length],
+        [
+            imagePlaneModule.rows,
+            imagePlaneModule.columns,
+            referencedImageIds.length
+        ],
         tolerance
     );
 
     // Pre-compute the sop UID to imageId index map so that in the for loop
     // we don't have to call metadataProvider.get() for each imageId over
     // and over again.
-    const sopUIDImageIdIndexMap = imageIds.reduce((acc, imageId) => {
+    const sopUIDImageIdIndexMap = referencedImageIds.reduce((acc, imageId) => {
         const { sopInstanceUID } = metadataProvider.get(
             "generalImageModule",
             imageId
@@ -347,7 +359,7 @@ async function generateToolState(
         overlapping = checkSEGsOverlapping(
             pixelDataChunks,
             multiframe,
-            imageIds,
+            referencedImageIds,
             validOrientations,
             metadataProvider,
             tolerance,
@@ -388,13 +400,15 @@ async function generateToolState(
     const segmentsOnFrame = [];
 
     const arrayBufferLength =
-        sliceLength * imageIds.length * TypedArrayConstructor.BYTES_PER_ELEMENT;
+        sliceLength *
+        referencedImageIds.length *
+        TypedArrayConstructor.BYTES_PER_ELEMENT;
     const labelmapBufferArray = [];
     labelmapBufferArray[0] = new ArrayBuffer(arrayBufferLength);
 
     // Pre-compute the indices and metadata so that we don't have to call
     // a function for each imageId in the for loop.
-    const imageIdMaps = imageIds.reduce(
+    const imageIdMaps = referencedImageIds.reduce(
         (acc, curr, index) => {
             acc.indices[curr] = index;
             acc.metadata[curr] = metadataProvider.get("instance", curr);
@@ -415,7 +429,7 @@ async function generateToolState(
         labelmapBufferArray,
         pixelDataChunks,
         multiframe,
-        imageIds,
+        referencedImageIds,
         validOrientations,
         metadataProvider,
         tolerance,
@@ -435,7 +449,7 @@ async function generateToolState(
             imageIdIndexBufferIndex,
             multiframe,
             metadataProvider,
-            imageIds
+            referencedImageIds
         );
 
         centroidXYZ.set(segmentIndex, centroids);
@@ -633,7 +647,7 @@ async function generateToolState(
  *
  * @returns {String}     Returns the imageId
  */
-function findReferenceSourceImageId(
+export function findReferenceSourceImageId(
     multiframe,
     frameSegment,
     imageIds,
@@ -730,7 +744,7 @@ function findReferenceSourceImageId(
  *  @returns {boolean} Returns a flag if segmentations overlapping
  */
 
-function checkSEGsOverlapping(
+export function checkSEGsOverlapping(
     pixelData,
     multiframe,
     imageIds,
@@ -861,7 +875,7 @@ function checkSEGsOverlapping(
     return false;
 }
 
-function insertOverlappingPixelDataPlanar(
+export function insertOverlappingPixelDataPlanar(
     segmentsOnFrame,
     segmentsOnFrameArray,
     labelmapBufferArray,
@@ -1064,7 +1078,7 @@ function insertOverlappingPixelDataPlanar(
     }
 }
 
-const getSegmentIndex = (multiframe, frame) => {
+export const getSegmentIndex = (multiframe, frame) => {
     const { PerFrameFunctionalGroupsSequence, SharedFunctionalGroupsSequence } =
         multiframe;
     const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[frame];
@@ -1078,7 +1092,7 @@ const getSegmentIndex = (multiframe, frame) => {
         : undefined;
 };
 
-function insertPixelDataPlanar(
+export function insertPixelDataPlanar(
     segmentsOnFrame,
     segmentsOnFrameArray,
     labelmapBufferArray,
@@ -1271,7 +1285,7 @@ function insertPixelDataPlanar(
  * @param  {Object} options    Options for the unpacking.
  * @return {Uint8Array}      The unpacked pixelData.
  */
-function unpackPixelData(multiframe, options) {
+export function unpackPixelData(multiframe, options) {
     const segType = multiframe.SegmentationType;
 
     let data;
@@ -1311,7 +1325,7 @@ function unpackPixelData(multiframe, options) {
     return pixelData;
 }
 
-function getUnpackedChunks(data, maxBytesPerChunk) {
+export function getUnpackedChunks(data, maxBytesPerChunk) {
     var bitArray = new Uint8Array(data);
     var chunks = [];
 
@@ -1342,7 +1356,7 @@ function getUnpackedChunks(data, maxBytesPerChunk) {
  * @param  {Object}   sopUIDImageIdIndexMap A map of SOPInstanceUIDs to imageIds.
  * @return {String}                        The corresponding imageId.
  */
-function getImageIdOfSourceImageBySourceImageSequence(
+export function getImageIdOfSourceImageBySourceImageSequence(
     SourceImageSequence,
     sopUIDImageIdIndexMap
 ) {
@@ -1370,7 +1384,7 @@ function getImageIdOfSourceImageBySourceImageSequence(
  *
  * @return {String}                                   The corresponding imageId.
  */
-function getImageIdOfSourceImagebyGeometry(
+export function getImageIdOfSourceImagebyGeometry(
     ReferencedSeriesInstanceUID,
     FrameOfReferenceUID,
     PerFrameFunctionalGroup,
@@ -1431,7 +1445,7 @@ function getImageIdOfSourceImagebyGeometry(
  * @param  {Object} sopUIDImageIdIndexMap A map of SOPInstanceUIDs to imageIds.
  * @return {String}                  The imageId that corresponds to the sopInstanceUid.
  */
-function getImageIdOfReferencedFrame(
+export function getImageIdOfReferencedFrame(
     sopInstanceUid,
     frameNumber,
     sopUIDImageIdIndexMap
@@ -1453,7 +1467,7 @@ function getImageIdOfReferencedFrame(
  * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
  * @return {Number[8][6]} An array of valid orientations.
  */
-function getValidOrientations(iop) {
+export function getValidOrientations(iop) {
     const orientations = [];
 
     // [0,  1,  2]: 0,   0hf,   0vf
@@ -1485,7 +1499,7 @@ function getValidOrientations(iop) {
  * @param {Number} tolerance.
  * @return {Ndarray} The aligned pixelData.
  */
-function alignPixelDataWithSourceData(
+export function alignPixelDataWithSourceData(
     pixelData2D,
     iop,
     orientations,
@@ -1532,7 +1546,7 @@ function alignPixelDataWithSourceData(
     }
 }
 
-function getSegmentMetadata(multiframe, seriesInstanceUid) {
+export function getSegmentMetadata(multiframe, seriesInstanceUid) {
     const segmentSequence = multiframe.SegmentSequence;
     let data = [];
 
@@ -1558,7 +1572,7 @@ function getSegmentMetadata(multiframe, seriesInstanceUid) {
  * @param {number} length - The number of bytes to read.
  * @returns {Uint8Array} A new Uint8Array containing the requested bytes.
  */
-function readFromUnpackedChunks(chunks, offset, length) {
+export function readFromUnpackedChunks(chunks, offset, length) {
     const mapping = getUnpackedOffsetAndLength(chunks, offset, length);
 
     // If all the data is in one chunk, we can just slice that chunk
@@ -1596,7 +1610,7 @@ function readFromUnpackedChunks(chunks, offset, length) {
     }
 }
 
-function getUnpackedOffsetAndLength(chunks, offset, length) {
+export function getUnpackedOffsetAndLength(chunks, offset, length) {
     var totalBytes = chunks.reduce((total, chunk) => total + chunk.length, 0);
 
     if (offset < 0 || offset + length > totalBytes) {
@@ -1625,7 +1639,7 @@ function getUnpackedOffsetAndLength(chunks, offset, length) {
     };
 }
 
-function calculateCentroid(
+export function calculateCentroid(
     imageIdIndexBufferIndex,
     multiframe,
     metadataProvider,
@@ -1726,4 +1740,3 @@ const Segmentation = {
 };
 
 export default Segmentation;
-export { fillSegmentation, generateSegmentation, generateToolState };

@@ -12,6 +12,9 @@
     "tools-advanced": {
       "description": "Advanced Tools library"
     },
+    "advanced-gpu-segmentation": {
+      "description": "GPU Segmentation Tools"
+    },
     "polymorph-segmentation": {
       "description": "Polymorph Segmentation"
     },
@@ -148,7 +151,7 @@
       }
     },
     "tools-basic": {
-      "etdrsGrid" : {
+      "etdrsGrid": {
         "name": "ETDRS Grid Tool",
         "description": "Demonstrates how to use the ETDRS Grid tool. An ETDRS Grid (Early Treatment Diabetic Retinopathy Study Grid) is a standardized grid used in ophthalmology to assess macular thickness and retinal changes."
       },
@@ -261,7 +264,7 @@
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       }
     },
-    "viewports" : {
+    "viewports": {
       "video": {
         "name": "Video Display",
         "description": "Basic video display"
@@ -303,7 +306,7 @@
         "description": "WSI with length and other annotation tools"
       }
     },
-    "tools-segmentation" : {
+    "tools-segmentation": {
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
@@ -407,6 +410,32 @@
       "sculptorTool": {
         "name": "sculptorTool Tool",
         "description": "Demonstrates how to have similar brush tool effects on the contour"
+      },
+      "labelmapEditWithContour": {
+        "name": "Labelmap Editing with Contour",
+        "description": "Use contour tools to edit the labelmap"
+      }
+    },
+    "advanced-gpu-segmentation": {
+      "regionSegment": {
+        "name": "Region Segment Tool",
+        "description": "Demonstrates how to create a segmentation after drawing a 3D sphere and running grow cut algorithm in the GPU"
+      },
+      "regionSegmentPlus": {
+        "name": "Region Segment Plus Tool",
+        "description": "Demonstrates how to create a segmentation with a single click and running grow cut algorithm in the gpu"
+      },
+      "growCutLabelmap": {
+        "name": "Custom Brush Grow Cut",
+        "description": "Demonstrates how to run grow cut algorithm in the GPU on a labelmap with positive and negative seeds"
+      },
+      "wholeBodySegment": {
+        "name": "Whole Body Segment tool",
+        "description": "Demonstrates how to segment the whole body of a region selected by the user that is processed in the gpu"
+      },
+      "SAMClientSide": {
+        "name": "Segmentation AI Assistance",
+        "description": "Demonstrates how to use AI assistance tools for segmentation creation using onnx runtime on the client side"
       }
     },
     "tools-advanced": {
@@ -461,14 +490,18 @@
       "dynamicallyAddAnnotations": {
         "name": "Dynamically Add Annotations",
         "description": "Demonstrates how to dynamically add annotations to a viewport"
+      },
+      "toolHistory": {
+        "name": "Tool History",
+        "description": "Demonstrates how to use the tool history to undo and redo tool actions"
       }
     },
-    "polymorph-segmentation":{
-      "PolySegWasmContourToStackLabelmap":{
+    "polymorph-segmentation": {
+      "PolySegWasmContourToStackLabelmap": {
         "name": "Convert contour segmentation to stack labelmap",
         "description": "Demonstrates how to convert a contour segmentation to a stack labelmap"
       },
-      "PolySegWasmContourToVolumeLabelmap":{
+      "PolySegWasmContourToVolumeLabelmap": {
         "name": "Convert contour segmentation to volume labelmap",
         "description": "Demonstrates how to convert a contour segmentation to a volume labelmap"
       },
@@ -476,27 +509,27 @@
         "name": "Convert contour segmentation to surface",
         "description": "Demonstrates how to convert a contour segmentation to a closed surface"
       },
-      "PolySegWasmStackLabelmapToSurface":{
+      "PolySegWasmStackLabelmapToSurface": {
         "name": "Convert stack labelmap to surface",
         "description": "Demonstrates how to convert a stack labelmap to a closed surface"
       },
-      "PolySegWasmVolumeLabelmapToSurface":{
+      "PolySegWasmVolumeLabelmapToSurface": {
         "name": "Convert volume labelmap to surface",
         "description": "Demonstrates how to convert a volume labelmap to a closed surface"
       },
-      "PolySegWasmSurfaceToVolumeLabelmap":{
+      "PolySegWasmSurfaceToVolumeLabelmap": {
         "name": "Convert surface to volume labelmap",
         "description": "Demonstrates how to convert a closed surface to a volume labelmap"
       },
-      "PolySegWasmSurfaceToStackLabelmap":{
+      "PolySegWasmSurfaceToStackLabelmap": {
         "name": "Convert surface to stack labelmap",
         "description": "Demonstrates how to convert a closed surface to a stack labelmap"
       },
-      "PolySegWasmVolumeLabelmapToContour":{
+      "PolySegWasmVolumeLabelmapToContour": {
         "name": "Convert volume labelmap to contour",
         "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
       },
-      "PolySegWasmSurfaceToContour":{
+      "PolySegWasmSurfaceToContour": {
         "name": "Convert surface to contour",
         "description": "Demonstrates how to convert a closed surface to a contour segmentation"
       }

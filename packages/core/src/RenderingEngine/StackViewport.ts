@@ -478,6 +478,10 @@ class StackViewport extends Viewport {
   private getImageDataCPU(): CPUIImageData | undefined {
     const { metadata } = this._cpuFallbackEnabledElement;
 
+    if (!metadata) {
+      return;
+    }
+
     const spacing = metadata.spacing;
     const csImage = this.csImage;
     return {
@@ -942,6 +946,11 @@ class StackViewport extends Viewport {
 
   private getCameraCPU(): Partial<ICamera> {
     const { metadata, viewport } = this._cpuFallbackEnabledElement;
+
+    if (!metadata) {
+      return {};
+    }
+
     const { direction } = metadata;
 
     // focalPoint and position of CPU camera is just a placeholder since
@@ -1339,9 +1348,14 @@ class StackViewport extends Viewport {
       viewport.voi = {
         windowWidth: wwToUse,
         windowCenter: wcToUse,
+        voiLUTFunction: image.voiLUTFunction,
       };
 
-      const { lower, upper } = windowLevelUtil.toLowHighRange(wwToUse, wcToUse);
+      const { lower, upper } = windowLevelUtil.toLowHighRange(
+        wwToUse,
+        wcToUse,
+        image.voiLUTFunction
+      );
       voiRange = { lower, upper };
     } else {
       const { lower, upper } = voiRange;
@@ -1354,6 +1368,7 @@ class StackViewport extends Viewport {
         viewport.voi = {
           windowWidth: 0,
           windowCenter: 0,
+          voiLUTFunction: image.voiLUTFunction,
         };
       }
 
@@ -1543,10 +1558,7 @@ class StackViewport extends Viewport {
 
     const { imagePlaneModule, imagePixelModule } = this.buildMetadata(image);
 
-    let rowCosines, columnCosines;
-
-    rowCosines = imagePlaneModule.rowCosines;
-    columnCosines = imagePlaneModule.columnCosines;
+    let { rowCosines, columnCosines } = imagePlaneModule;
 
     // if null or undefined
     if (rowCosines == null || columnCosines == null) {
@@ -2282,8 +2294,12 @@ class StackViewport extends Viewport {
       this._cpuFallbackEnabledElement.viewport.colormap
     );
 
-    const { windowCenter, windowWidth } = viewport.voi;
-    this.voiRange = windowLevelUtil.toLowHighRange(windowWidth, windowCenter);
+    const { windowCenter, windowWidth, voiLUTFunction } = viewport.voi;
+    this.voiRange = windowLevelUtil.toLowHighRange(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
 
     this._cpuFallbackEnabledElement.image = image;
     this._cpuFallbackEnabledElement.metadata = {
@@ -2515,9 +2531,13 @@ class StackViewport extends Viewport {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.globalDefaultProperties.voiRange;
     }
-    const { windowCenter, windowWidth } = image;
+    const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    let voiRange = this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
+    let voiRange = this._getVOIRangeFromWindowLevel(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
 
     // Get the range for the PT since if it is prescaled
     // we set a default range of 0-5
@@ -2552,7 +2572,8 @@ class StackViewport extends Viewport {
 
   private _getVOIRangeFromWindowLevel(
     windowWidth: number | number[],
-    windowCenter: number | number[]
+    windowCenter: number | number[],
+    voiLUTFunction: VOILUTFunctionType = VOILUTFunctionType.LINEAR
   ): { lower: number; upper: number } | undefined {
     let center, width;
 
@@ -2566,7 +2587,7 @@ class StackViewport extends Viewport {
 
     // If center and width are defined, convert them to low-high range
     if (center !== undefined && width !== undefined) {
-      return windowLevelUtil.toLowHighRange(width, center);
+      return windowLevelUtil.toLowHighRange(width, center, voiLUTFunction);
     }
   }
 
@@ -2943,9 +2964,13 @@ class StackViewport extends Viewport {
   };
 
   private _getVOIRangeForCurrentImage() {
-    const { windowCenter, windowWidth } = this.csImage;
+    const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
 
-    return this._getVOIRangeFromWindowLevel(windowWidth, windowCenter);
+    return this._getVOIRangeFromWindowLevel(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
   }
 
   private _getValidVOILUTFunction(

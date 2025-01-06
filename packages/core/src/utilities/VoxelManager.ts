@@ -230,9 +230,14 @@ export default class VoxelManager<T> {
    *
    * If the boundsIJK is not provided, the iteration will be over the entire volume/data
    *
-   *
    * If the VoxelManager is backed by a Map, it will only iterate over the stored values.
    * Otherwise, it will iterate over all voxels within the specified or default bounds.
+   *
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the scalar data, map or rle map depending on the VoxelManager
+   *     type.
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public forEach = (
     callback: (args: {
@@ -337,6 +342,11 @@ export default class VoxelManager<T> {
 
   /**
    * Foreach callback optimized for RLE testing
+   * @param callback - a callback to call with `value, index, pointIJK` for
+   *     every point in the rle map (see the rle map for callbacks that work at
+   *     the row or rle level, as those can be faster/more efficient)
+   * @param options - has an optional isWIthinObject to test to see if hte callback
+   *        should be called or not.
    */
   public rleForEach(callback, options?) {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
@@ -437,9 +447,7 @@ export default class VoxelManager<T> {
    * bounds.
    */
   public clear() {
-    if (this.map) {
-      this.map.clear();
-    }
+    this.map?.clear();
     this.boundsIJK.map((bound) => {
       bound[0] = Infinity;
       bound[1] = -Infinity;
@@ -669,6 +677,10 @@ export default class VoxelManager<T> {
       numberOfComponents,
       scalarData,
     });
+
+    voxels.clear = () => {
+      scalarData.fill(0);
+    };
     return voxels;
   }
 
@@ -769,6 +781,13 @@ export default class VoxelManager<T> {
       });
     };
 
+    voxelManager.clear = () => {
+      for (const imageId of imageIds) {
+        const image = cache.getImage(imageId);
+        image.voxelManager.clear();
+      }
+    };
+
     // Todo: need a way to make it understand dirty status if pixel data is changed
     voxelManager.getRange = () => {
       // get all the pixel data
@@ -776,6 +795,11 @@ export default class VoxelManager<T> {
       let maxValue = -Infinity;
       for (const imageId of imageIds) {
         const image = cache.getImage(imageId);
+
+        // Skip if image not loaded yet
+        if (!image) {
+          continue;
+        }
 
         // min and max pixel value is correct, //todo this is not true
         // for dynamically changing data such as labelmaps in segmentation
@@ -786,6 +810,12 @@ export default class VoxelManager<T> {
           maxValue = image.maxPixelValue;
         }
       }
+
+      // If no images were loaded yet, return default range
+      if (minValue === Infinity && maxValue === -Infinity) {
+        return [0, 0];
+      }
+
       return [minValue, maxValue];
     };
 
@@ -808,7 +838,6 @@ export default class VoxelManager<T> {
      */
     voxelManager.getCompleteScalarDataArray = () => {
       const ScalarDataConstructor = voxelManager._getConstructor();
-
       if (!ScalarDataConstructor) {
         return new Uint8Array(0);
       }
@@ -826,6 +855,7 @@ export default class VoxelManager<T> {
         if (imageVoxelManager && pixelIndex !== null) {
           const sliceStart = sliceIndex * sliceSize;
           const pixelData = imageVoxelManager.getScalarData();
+
           if (numberOfComponents === 1) {
             scalarData.set(pixelData, sliceStart);
           } else {
@@ -851,18 +881,18 @@ export default class VoxelManager<T> {
       let maxValue = -Infinity;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { pixelData } = getPixelInfo(
+        const { voxelManager: imageVoxelManager } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (pixelData && SliceDataConstructor) {
+        if (imageVoxelManager && SliceDataConstructor) {
           const sliceStart = sliceIndex * sliceSize;
           const sliceEnd = sliceStart + sliceSize;
           // @ts-ignore
           const sliceData = new SliceDataConstructor(sliceSize);
           // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
-          pixelData.set(sliceData);
+          imageVoxelManager.scalarData = sliceData;
 
           // Update min/max values for this slice
           for (let i = 0; i < sliceData.length; i++) {
@@ -1100,9 +1130,15 @@ export default class VoxelManager<T> {
         scalarData[index] = v;
         return isChanged;
       },
+      _getConstructor: () =>
+        scalarData.constructor as new (length: number) => PixelDataTypedArray,
       _id: '_createNumberVolumeVoxelManager',
     });
     voxels.scalarData = scalarData;
+    voxels.clear = () => {
+      // get the latest scalar data and set that to all 0
+      voxels.scalarData.fill(0);
+    };
 
     voxels.getMiddleSliceData = () => {
       const middleSliceIndex = Math.floor(dimensions[2] / 2);
