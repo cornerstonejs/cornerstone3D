@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.5...v2.14.6) (2025-01-06)
+
+### Bug Fixes
+
+- **ViewportColorbar:** Add destroy method ([#1731](https://github.com/cornerstonejs/cornerstone3D/issues/1731)) ([38c506c](https://github.com/cornerstonejs/cornerstone3D/commit/38c506c31eef668e91974617185c6e45c24d0bec))
+
 ## [2.14.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.4...v2.14.5) (2025-01-06)
 
 ### Bug Fixes
