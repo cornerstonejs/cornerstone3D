@@ -340,33 +340,6 @@ class BrushTool extends LabelmapBaseTool {
     this._previewData.startPoint = currentPoints.canvas;
   };
 
-  protected getOperationData(element?) {
-    const editData = this._editData || this.createEditData(element);
-    const { segmentIndex, segmentationId, brushCursor } =
-      this._hoverData || this.createHoverData(element);
-    const { data, metadata = {} } = brushCursor || {};
-    const { viewPlaneNormal, viewUp } = metadata;
-    const operationData = {
-      ...editData,
-      points: data?.handles?.points,
-      segmentIndex,
-      previewColors:
-        this.configuration.preview?.enabled || this._previewData.preview
-          ? this.configuration.preview.previewColors
-          : null,
-      viewPlaneNormal,
-      toolGroupId: this.toolGroupId,
-      segmentationId,
-      viewUp,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
-      // Provide the preview information so that data can be used directly
-      preview: this._previewData?.preview,
-      configuration: this.configuration,
-    };
-    return operationData;
-  }
-
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
