@@ -31,6 +31,7 @@ export type ModelType = {
   name: string;
   key: string;
   url: string;
+  size: number;
   opt?: Record<string, unknown>;
 };
 
