@@ -866,7 +866,7 @@ class VideoViewport extends Viewport {
   public getViewReference(
     viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
-    let sliceIndex = viewRefSpecifier?.sliceIndex ?? this.getSliceIndex();
+    let sliceIndex = viewRefSpecifier?.sliceIndex;
     if (!sliceIndex) {
       sliceIndex = this.isPlaying
         ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
