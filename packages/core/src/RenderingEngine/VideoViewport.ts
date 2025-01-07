@@ -812,10 +812,8 @@ class VideoViewport extends Viewport {
     let { imageURI } = options;
     const { referencedImageId, sliceIndex: sliceIndex } = viewRef;
     if (!super.isReferenceViewable(viewRef)) {
-      console.log('Video reference not viewable', viewRef);
       return false;
     }
-    console.log('Testing video reference viewable', viewRef);
 
     const imageId = this.getCurrentImageId();
     if (!imageURI) {
