@@ -91,7 +91,7 @@ export default function updateContourPolyline(
       polyline.reverse();
     }
 
-    const handlePoints = data.handles.points.map((p) => worldToCanvas(p));
+    const handlePoints = (data.handles?.points ?? []).map(worldToCanvas);
 
     if (handlePoints.length > 2) {
       const currentHandlesWindingDirection =
