@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.8...v2.14.9) (2025-01-07)
+
+### Bug Fixes
+
+- **video:** Slice range was broken for key image setting on video ([#1737](https://github.com/cornerstonejs/cornerstone3D/issues/1737)) ([9c48c74](https://github.com/cornerstonejs/cornerstone3D/commit/9c48c7450803ab455d65a6c6f02d683027b1ba38))
+
+## [2.14.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.7...v2.14.8) (2025-01-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [2.14.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.6...v2.14.7) (2025-01-06)
 
 **Note:** Version bump only for package @cornerstonejs/core

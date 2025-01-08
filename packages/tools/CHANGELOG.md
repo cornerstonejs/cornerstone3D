@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.8...v2.14.9) (2025-01-07)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [2.14.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.7...v2.14.8) (2025-01-07)
+
+### Bug Fixes
+
+- **tools:** Add support for additional region data types and length variants ([#1736](https://github.com/cornerstonejs/cornerstone3D/issues/1736)) ([397dea0](https://github.com/cornerstonejs/cornerstone3D/commit/397dea08b7be18368d9264843b7cc8891b14806e))
+
 ## [2.14.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.6...v2.14.7) (2025-01-06)
 
 ### Bug Fixes
