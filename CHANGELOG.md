@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.9...v2.14.10) (2025-01-09)
+
+### Bug Fixes
+
+- **tools:** safely access handle points ([#1739](https://github.com/cornerstonejs/cornerstone3D/issues/1739)) ([9fe63af](https://github.com/cornerstonejs/cornerstone3D/commit/9fe63af35b0de623b6df2ae23883f62d871c34b6))
+
 ## [2.14.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.8...v2.14.9) (2025-01-07)
 
 ### Bug Fixes
