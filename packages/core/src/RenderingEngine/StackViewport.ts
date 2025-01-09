@@ -93,6 +93,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
+import { frameRangeUtils } from '../utilities';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -3122,9 +3123,20 @@ class StackViewport extends Viewport {
   ): ViewReference {
     const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
     const reference = super.getViewReference(viewRefSpecifier);
-    const referencedImageId = this.imageIds[sliceIndex as number];
+    let referencedImageId =
+      this.imageIds[this.imageIds.length === 1 ? 0 : (sliceIndex as number)];
     if (!referencedImageId) {
       return;
+    }
+    const iSliceNumber = sliceIndex as number;
+    if (this.imageIds.length === 1 && iSliceNumber > 0) {
+      if (iSliceNumber >= this.getNumberOfSlices()) {
+        return;
+      }
+      referencedImageId = frameRangeUtils.n(
+        referencedImageId,
+        iSliceNumber + 1
+      );
     }
     reference.referencedImageId = referencedImageId;
     if (this.getCurrentImageIdIndex() !== sliceIndex) {

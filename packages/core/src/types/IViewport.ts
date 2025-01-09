@@ -19,6 +19,10 @@ export interface ViewReferenceSpecifier {
    * volumes, or two viewports showing different orientations or slab thicknesses.
    */
   sliceIndex?: number | [number, number];
+
+  /** The frame number for a multiframe */
+  frameNumber?: number;
+
   /**
    * Specifies to get a view reference that refers to the generic frame of
    * reference rather than to a specific volume or stack.  Thus, the view
