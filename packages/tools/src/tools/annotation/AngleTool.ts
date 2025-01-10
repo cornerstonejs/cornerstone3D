@@ -45,6 +45,7 @@ import type {
 } from '../../types';
 import type { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class AngleTool extends AnnotationTool {
   static toolName;
@@ -721,6 +722,10 @@ class AngleTool extends AnnotationTool {
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
+      }
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
       }
 
       if (activeHandleCanvasCoords) {

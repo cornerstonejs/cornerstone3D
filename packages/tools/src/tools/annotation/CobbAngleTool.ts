@@ -47,6 +47,7 @@ import type {
 } from '../../types';
 import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName;
@@ -720,6 +721,10 @@ class CobbAngleTool extends AnnotationTool {
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
+      }
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
       }
 
       if (activeHandleCanvasCoords) {
