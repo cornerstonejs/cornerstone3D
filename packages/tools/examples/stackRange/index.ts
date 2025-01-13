@@ -2,14 +2,12 @@ import type { Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
-  addToggleButtonToToolbar,
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   addManipulationBindings,
-  addVideoTime,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -21,6 +19,9 @@ console.warn(
 const {
   KeyImageTool,
   VideoRedactionTool,
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
 
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -70,11 +71,7 @@ content.append(instructions);
 // ============================= //
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'videoViewportId';
-const baseEventDetail = {
-  viewportId,
-  renderingEngineId,
-};
+const viewportId = 'viewportId';
 
 let viewport;
 
@@ -88,7 +85,13 @@ addButtonToToolbar({
   },
 });
 
-const toolsNames = [KeyImageTool.toolName, VideoRedactionTool.toolName];
+const toolsNames = [
+  KeyImageTool.toolName,
+  VideoRedactionTool.toolName,
+  LengthTool.toolName,
+  ProbeTool.toolName,
+  RectangleROITool.toolName,
+];
 let selectedToolName = toolsNames[0];
 
 addDropdownToToolbar({
@@ -129,35 +132,13 @@ addButtonToToolbar({
   },
 });
 
-function togglePlay(toggle = undefined) {
-  if (toggle === undefined) {
-    toggle = viewport.togglePlayPause();
-  } else if (toggle) {
-    viewport.play();
-  } else {
-    viewport.pause();
-  }
-}
-
 addButtonToToolbar({
   id: 'Set Range [',
   title: 'Start Range',
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
-      const frame = viewport.getFrameNumber();
-      const range = Array.isArray(rangeSelection)
-        ? rangeSelection
-        : [rangeSelection, viewport.numberOfFrames];
-      range[0] = frame;
-      range[1] = Math.max(frame, range[1]);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        range as [number, number],
-        baseEventDetail
-      );
-      viewport.setFrameRange(range);
+      annotationFrameRange.setStartRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -169,35 +150,31 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
-      const frame = viewport.getFrameNumber();
-      const range = Array.isArray(rangeSelection)
-        ? rangeSelection
-        : [rangeSelection, viewport.getNumberOfSlices()];
-      range[1] = frame;
-      range[0] = Math.min(frame, range[0]);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        range as [number, number],
-        baseEventDetail
-      );
+      annotationFrameRange.setEndRange(viewport, annotation);
       viewport.render();
     }
   },
 });
 
 addButtonToToolbar({
-  id: 'Remove Range',
-  title: 'Remove Range',
+  id: 'Select Series',
+  title: 'Select Series',
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      togglePlay(false);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        viewport.getFrameNumber(),
-        baseEventDetail
-      );
+      annotationFrameRange.setRange(viewport, annotation);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Select Current',
+  title: 'Select Current',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      annotationFrameRange.setSingle(viewport, annotation);
       viewport.render();
     }
   },
@@ -229,14 +206,11 @@ function updateAnnotationDiv(uid) {
   const { toolName } = metadata;
   const range = annotationFrameRange.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
-  const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
     data.label || data.text
   } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
-    <b>Range:</b> Frames: ${rangeArr.join('-')} Times ${rangeArr
-    .map((it) => Math.round((it * 10) / fps) / 10)
-    .join('-')}<br />
+    <b>Range:</b> Frames: ${rangeArr.join('-')}<br />
   `;
 }
 
@@ -296,18 +270,19 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '2.16.124.113643.100.10.2.97089913110630123934763297639331145050',
+      '1.3.6.1.4.1.53684.1.1.2.4037847388.8168.1651298318.32092078',
     SeriesInstanceUID:
-      '2.16.124.113643.100.10.2.31433191110799088099930530803211617773',
+      '1.3.6.1.4.1.53684.1.1.3.4037847388.8168.1651298319.32092097',
     wadoRsRoot: 'http://localhost:5000/dicomweb/', // getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-
-  const { StackScrollTool } = cornerstoneTools;
 
   addAnnotationListeners();
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
   cornerstoneTools.addTool(VideoRedactionTool);
+  cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(ProbeTool);
+  cornerstoneTools.addTool(RectangleROITool);
 
   // Add tools to Cornerstone3D
 
@@ -319,6 +294,9 @@ async function run() {
   // Add tools to the tool group
   toolGroup.addTool(KeyImageTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(ProbeTool.toolName);
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(RectangleROITool.toolName);
 
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
@@ -362,7 +340,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  viewport.setStack([imageIds[0]], 1);
+  viewport.setStack(imageIds, 1);
 }
 
 run();

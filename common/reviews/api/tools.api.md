@@ -329,18 +329,23 @@ class AnnotationFrameRange {
     // (undocumented)
     protected static frameRangeExtractor: RegExp;
     // (undocumented)
-    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
+    protected static framesToImageId(imageId: string, range: FramesRange_2 | string): string;
     // (undocumented)
     static framesToString(range: any): string;
     // (undocumented)
     static getFrameRange(annotation: Annotation): number | [number, number];
     // (undocumented)
-    protected static imageIdToFrames(imageId: string): FramesRange;
+    protected static imageIdToFrames(imageId: string): FramesRange_2;
     // (undocumented)
-    static setFrameRange(annotation: Annotation, range: FramesRange | string, eventBase?: {
-        viewportId: any;
-        renderingEngineId: any;
-    }): void;
+    static setEndRange(viewport: any, annotation: any, endRange?: any): void;
+    // (undocumented)
+    static setRange(viewport: any, annotation: any, startRange?: number, endRange?: number): void;
+    // (undocumented)
+    static setSingle(viewport: any, annotation: any, current?: any): void;
+    // (undocumented)
+    static setStartRange(viewport: any, annotation: any, startRange?: any): void;
+    // (undocumented)
+    static setViewportFrameRange(viewport: any, specifier: any): void;
 }
 
 // @public (undocumented)
@@ -507,7 +512,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotation(...annotationBaseData: any[]): Annotation;
     // (undocumented)
-    static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
+    static createAnnotationForViewport<T extends Annotation>(viewport: any, ...annotationBaseData: any[]): T;
     // (undocumented)
     static createAnnotationMemo(element: any, annotation: Annotation, options?: {
         newAnnotation?: boolean;
@@ -979,6 +984,8 @@ enum ChangeTypes {
     Interaction = "Interaction",
     // (undocumented)
     InterpolationUpdated = "InterpolationUpdated",
+    // (undocumented)
+    MetadataReferenceModified = "MetadataReferenceModified",
     // (undocumented)
     StatsUpdated = "StatsUpdated"
 }

@@ -1188,6 +1188,20 @@ interface FlipDirection {
 }
 
 // @public (undocumented)
+class FrameRangeUtils {
+    // (undocumented)
+    protected static frameRangeExtractor: RegExp;
+    // (undocumented)
+    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
+    // (undocumented)
+    static framesToString(range: any): string;
+    // (undocumented)
+    protected static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static multiframeImageId(imageId: string, frameNumber?: number): string;
+}
+
+// @public (undocumented)
 interface GeneralSeriesModuleMetadata {
     // (undocumented)
     modality: string;
@@ -3415,7 +3429,7 @@ export class StackViewport extends Viewport {
     // (undocumented)
     getCornerstoneImage: () => IImage;
     // (undocumented)
-    getCurrentImageId: () => string;
+    getCurrentImageId: (index?: number) => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
@@ -3914,6 +3928,7 @@ function updateVTKImageDataWithCornerstoneImage(sourceImageData: vtkImageData, i
 
 declare namespace utilities {
     export {
+        FrameRangeUtils as frameRangeUtils,
         eventListener,
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
@@ -4042,7 +4057,7 @@ export class VideoViewport extends Viewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
-    getCurrentImageId(): string;
+    getCurrentImageId(index?: number): string;
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
@@ -4329,7 +4344,7 @@ export class Viewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
-    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean | unknown;
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -4566,33 +4581,32 @@ interface ViewPresentationSelector {
 }
 
 // @public (undocumented)
-interface ViewReference {
-    // (undocumented)
-    bounds?: BoundsLPS;
-    // (undocumented)
-    cameraFocalPoint?: Point3;
-    // (undocumented)
+type ViewReference = {
     FrameOfReferenceUID?: string;
-    // (undocumented)
     referencedImageId?: string;
-    // (undocumented)
-    sliceIndex?: number | [number, number];
-    // (undocumented)
+    referencedImageUri?: string;
+    cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
-    // (undocumented)
     viewUp?: Point3;
-    // (undocumented)
+    sliceIndex?: number;
+    sliceRangeEnd?: number;
+    sliceSet?: Set<number>;
     volumeId?: string;
-}
+    bounds?: BoundsLPS;
+};
 
 // @public (undocumented)
 interface ViewReferenceSpecifier {
     // (undocumented)
     forFrameOfReference?: boolean;
     // (undocumented)
+    frameNumber?: number;
+    // (undocumented)
     points?: Point3[];
     // (undocumented)
-    sliceIndex?: number | [number, number];
+    sliceIndex?: number;
+    // (undocumented)
+    sliceRangeEnd?: number;
     // (undocumented)
     volumeId?: string;
 }

@@ -93,7 +93,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
-import { frameRangeUtils } from '../utilities';
+import frameRangeUtils from '../utilities/frameRangeUtils';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -3036,48 +3036,67 @@ class StackViewport extends Viewport {
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
+    const testIndex = this.getCurrentImageIdIndex();
+    const currentImageId = this.imageIds[testIndex];
+    if (!currentImageId || !viewRef) {
+      return false;
+    }
+    const {
+      referencedImageId,
+      sliceIndex,
+      sliceRangeEnd = sliceIndex,
+    } = viewRef;
+
+    // Optimize the return for the exact match cases
+    if (referencedImageId && sliceIndex !== undefined) {
+      if (
+        testIndex >= sliceIndex &&
+        testIndex <= sliceRangeEnd &&
+        this.imageIds[sliceIndex] === referencedImageId
+      ) {
+        return true;
+      }
+      if (
+        options.withNavigation &&
+        this.imageIds[sliceIndex] == referencedImageId
+      ) {
+        return true;
+      }
+
+      // Optimize the test for being viewable by defining the URI version
+      // This allows an endsWith test
+      viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
+      const { referencedImageUri } = viewRef;
+
+      if (
+        testIndex >= sliceIndex &&
+        testIndex <= sliceRangeEnd &&
+        this.imageIds[sliceIndex]?.endsWith(referencedImageUri)
+      ) {
+        return true;
+      }
+      if (
+        options.withNavigation &&
+        this.imageIds[sliceIndex]?.endsWith(referencedImageUri)
+      ) {
+        return true;
+      }
+      if (
+        options.asOverlay &&
+        this.matchImagesForOverlay(currentImageId, referencedImageId)
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
 
-    const { referencedImageId, sliceIndex } = viewRef;
-
-    if (viewRef.volumeId && !referencedImageId) {
+    if (viewRef.volumeId) {
       return options.asVolume;
-    }
-
-    let testIndex = this.getCurrentImageIdIndex();
-    let currentImageId = this.imageIds[testIndex];
-
-    if (options.withNavigation && typeof sliceIndex === 'number') {
-      testIndex = sliceIndex;
-      currentImageId = this.imageIds[testIndex];
-    }
-
-    if (!currentImageId) {
-      return false;
-    }
-
-    if (options.asOverlay && referencedImageId) {
-      const matchedImageId = this.matchImagesForOverlay(
-        currentImageId,
-        referencedImageId
-      );
-      if (matchedImageId) {
-        return true;
-      }
-    }
-
-    let { imageURI } = options;
-
-    if (!imageURI) {
-      // Remove the dataLoader scheme since that can change
-      imageURI = imageIdToURI(currentImageId);
-    }
-    const referencedImageURI = imageIdToURI(referencedImageId);
-    const matches = referencedImageURI === imageURI;
-    if (matches) {
-      return matches;
     }
 
     // if camera focal point is provided, we can use that as a point
@@ -3133,7 +3152,7 @@ class StackViewport extends Viewport {
       if (iSliceNumber >= this.getNumberOfSlices()) {
         return;
       }
-      referencedImageId = frameRangeUtils.n(
+      referencedImageId = frameRangeUtils.multiframeImageId(
         referencedImageId,
         iSliceNumber + 1
       );
@@ -3211,8 +3230,10 @@ class StackViewport extends Viewport {
    * Returns the currently rendered imageId
    * @returns string for imageId
    */
-  public getCurrentImageId = (): string => {
-    return this.imageIds[this.currentImageIdIndex];
+  public getCurrentImageId = (
+    index = this.getCurrentImageIdIndex()
+  ): string => {
+    return this.imageIds[index];
   };
 
   /**

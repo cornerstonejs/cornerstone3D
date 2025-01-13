@@ -1,10 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  eventTarget,
-  triggerEvent,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addToggleButtonToToolbar,
@@ -167,19 +162,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
-      const frame = viewport.getFrameNumber();
-      const range = Array.isArray(rangeSelection)
-        ? rangeSelection
-        : [rangeSelection, viewport.numberOfFrames];
-      range[0] = frame;
-      range[1] = Math.max(frame, range[1]);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        range as [number, number],
-        baseEventDetail
-      );
-      viewport.setFrameRange(range);
+      annotationFrameRange.setStartRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -191,36 +174,31 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
-      const frame = viewport.getFrameNumber();
-      const range = Array.isArray(rangeSelection)
-        ? rangeSelection
-        : [rangeSelection, viewport.getNumberOfSlices()];
-      range[1] = frame;
-      range[0] = Math.min(frame, range[0]);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        range as [number, number],
-        baseEventDetail
-      );
-      viewport.setFrameRange(range);
+      annotationFrameRange.setEndRange(viewport, annotation);
       viewport.render();
     }
   },
 });
 
 addButtonToToolbar({
-  id: 'Remove Range',
-  title: 'Remove Range',
+  id: 'Select Series',
+  title: 'Select Series',
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      togglePlay(false);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        viewport.getFrameNumber(),
-        baseEventDetail
-      );
+      annotationFrameRange.setRange(viewport, annotation);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Select Current',
+  title: 'Select Current',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      annotationFrameRange.setSingle(viewport, annotation);
       viewport.render();
     }
   },
@@ -252,6 +230,7 @@ function updateAnnotationDiv(uid) {
   const { toolName } = metadata;
   const range = annotationFrameRange.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
+  console.log('rangeArr=', range, rangeArr);
   const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${

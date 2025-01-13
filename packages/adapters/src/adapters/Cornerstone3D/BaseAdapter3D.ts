@@ -53,7 +53,10 @@ export default class BaseAdapter3D {
         return state;
     }
 
-    public static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    public static getTID300RepresentationArguments(
+        tool,
+        worldToImageCoords
+    ): Record<string, unknown> {
         const { data, metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;

@@ -771,13 +771,8 @@ class VideoViewport extends Viewport {
    *
    * @returns an imageID for video
    */
-  public getCurrentImageId() {
-    const current = this.imageId.replace(
-      '/frames/1',
-      this.isPlaying
-        ? `/frames/${this.frameRange[0]}-${this.frameRange[1]}`
-        : `/frames/${this.getFrameNumber()}`
-    );
+  public getCurrentImageId(index = this.getCurrentImageIdIndex()) {
+    const current = this.imageId.replace('/frames/1', `/frames/${index + 1}`);
     return current;
   }
 
@@ -810,7 +805,7 @@ class VideoViewport extends Viewport {
     options: ReferenceCompatibleOptions = {}
   ): boolean {
     let { imageURI } = options;
-    const { referencedImageId, sliceIndex: sliceIndex } = viewRef;
+    const { referencedImageId, sliceIndex, sliceRangeEnd } = viewRef;
     if (!super.isReferenceViewable(viewRef)) {
       return false;
     }
@@ -827,8 +822,8 @@ class VideoViewport extends Viewport {
       return true;
     }
     const currentIndex = this.getSliceIndex();
-    if (Array.isArray(sliceIndex)) {
-      return currentIndex >= sliceIndex[0] && currentIndex <= sliceIndex[1];
+    if (sliceRangeEnd) {
+      return currentIndex >= sliceIndex && currentIndex <= sliceRangeEnd;
     }
     if (sliceIndex !== undefined) {
       return currentIndex === sliceIndex;
@@ -866,16 +861,17 @@ class VideoViewport extends Viewport {
   public getViewReference(
     viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
-    let sliceIndex = viewRefSpecifier?.sliceIndex;
-    if (!sliceIndex) {
-      sliceIndex = this.isPlaying
-        ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
-        : this.getCurrentImageIdIndex();
-    }
+    const sliceIndex =
+      viewRefSpecifier?.sliceIndex ??
+      (this.isPlaying ? this.frameRange[0] : this.getCurrentImageIdIndex());
+    const sliceRangeEnd =
+      viewRefSpecifier?.sliceRangeEnd ??
+      (this.isPlaying ? this.frameRange[1] - 1 : undefined);
     return {
       ...super.getViewReference(viewRefSpecifier),
       referencedImageId: this.getViewReferenceId(viewRefSpecifier),
-      sliceIndex: sliceIndex,
+      sliceIndex,
+      sliceRangeEnd,
     };
   }
 

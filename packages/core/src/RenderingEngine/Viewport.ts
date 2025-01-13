@@ -1756,7 +1756,7 @@ class Viewport {
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
-  ): boolean | unknown {
+  ): boolean {
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()

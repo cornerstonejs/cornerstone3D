@@ -18,7 +18,11 @@ export interface ViewReferenceSpecifier {
    * and cannot be shared across different view types such as stacks and
    * volumes, or two viewports showing different orientations or slab thicknesses.
    */
-  sliceIndex?: number | [number, number];
+  sliceIndex?: number;
+  /**
+   * The end index - this requires sliceIndex to be specified.
+   */
+  sliceRangeEnd?: number;
 
   /** The frame number for a multiframe */
   frameNumber?: number;
@@ -88,7 +92,7 @@ export interface ReferenceCompatibleOptions {
  * to it later, as well as determining whether specific views should show annotations
  * or other overlay information.
  */
-export interface ViewReference {
+export type ViewReference = {
   /**
    * The FrameOfReferenceUID
    */
@@ -101,8 +105,16 @@ export interface ViewReference {
    *
    * The naming of this particular attribute matches the DICOM SR naming for the
    * referenced image, as well as historical naming in CS3D.
+   *
+   * For range/selection, this must be the starting range referenced image id
    */
   referencedImageId?: string;
+
+  /**
+   * An internal URI version of hte referencedImageId, used for performance
+   * while checking the referenced image id.
+   */
+  referencedImageUri?: string;
 
   /**
    * The focal point of the camera in world space.
@@ -126,7 +138,7 @@ export interface ViewReference {
    */
   viewUp?: Point3;
   /**
-   * The slice index or range for this view.
+   * The slice index for the image of interest
    * <b>NOTE</b> The slice index is relative to the volume or stack of images.
    * You cannot apply a slice index from one volume to another as they do NOT
    * apply.   The referencedImageId should belong to the volume you are trying
@@ -139,7 +151,19 @@ export interface ViewReference {
    * within the stack of images - subsequent slice indexes can be at opposite
    * ends or can be co-incident but separate types of images.
    */
-  sliceIndex?: number | [number, number];
+  sliceIndex?: number;
+  /**
+   * An end of a slice range.  This is used to indicate the end of the slices
+   * where the sliceIndex is the first point.  This is a positive value if defined,
+   * so can be tested for `sliceRangeEnd`.
+   */
+  sliceRangeEnd?: number;
+  /**
+   * A set of slice indexes actually in this object.  The values in this set
+   * must be in [sliceIndex, sliceRangeEnd], and if this is not set, then
+   * the entire range is considered in the set.
+   */
+  sliceSet?: Set<number>;
 
   /**
    * VolumeId that the referencedImageId was chosen from
@@ -150,7 +174,7 @@ export interface ViewReference {
    * particular bounds or not.  This will be in world coordinates.
    */
   bounds?: BoundsLPS;
-}
+};
 
 /**
  * A view presentation stores information about how the view is presented to the

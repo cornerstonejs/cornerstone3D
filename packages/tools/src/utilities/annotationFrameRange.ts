@@ -1,6 +1,7 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 import Events from '../enums/Events';
 import type { Annotation } from '../types';
+import { ChangeTypes } from '../enums';
 
 export type FramesRange = [number, number] | number;
 
@@ -47,32 +48,88 @@ export default class AnnotationFrameRange {
     );
   }
 
-  /**
-   * Sets the range of frames to associate with the given annotation.
-   * The range can be a single frame number (1 based according to DICOM),
-   * or a range of values in the format `min-max` where min, max are inclusive
-   * Modifies the referencedImageID to specify the updated URL.
-   */
-  public static setFrameRange(
-    annotation: Annotation,
-    range: FramesRange | string,
-    eventBase?: { viewportId; renderingEngineId }
+  public static setStartRange(
+    viewport,
+    annotation,
+    startRange = viewport.getCurrentImageIdIndex()
   ) {
-    const { referencedImageId } = annotation.metadata;
-    annotation.metadata.referencedImageId = this.framesToImageId(
-      referencedImageId,
-      range
+    this.setRange(viewport, annotation, startRange);
+  }
+
+  public static setEndRange(
+    viewport,
+    annotation,
+    endRange = viewport.getCurrentImageIdIndex()
+  ) {
+    this.setRange(viewport, annotation, undefined, endRange);
+  }
+
+  /**
+   * Sets a range of images in the current viewport to be selected.
+   * This only works on stack and video viewports currently.
+   */
+  public static setRange(
+    viewport,
+    annotation,
+    startRange?: number,
+    endRange?: number
+  ) {
+    const { metadata } = annotation;
+
+    if (startRange === undefined) {
+      startRange = metadata.sliceIndex < endRange ? metadata.sliceIndex : 0;
+      if (endRange === undefined) {
+        endRange = viewport.getNumberOfSlices() - 1;
+      }
+    }
+    if (endRange === undefined) {
+      endRange =
+        metadata.sliceRangeEnd >= startRange
+          ? metadata.sliceRangeEnd
+          : viewport.getNumberOfSlices() - 1;
+    }
+    metadata.sliceRangeEnd = Math.max(startRange, endRange);
+    metadata.sliceIndex = Math.min(startRange, endRange);
+    metadata.referencedImageId = viewport.getCurrentImageId(
+      metadata.sliceIndex
     );
+    metadata.referencedImageUri = undefined;
+    if (metadata.sliceRangeEnd === metadata.sliceIndex) {
+      metadata.sliceRangeEnd = undefined;
+    }
+
+    // Send an event with metadata reference modified set to true so that
+    // any isReferenceViewable checks can be redone if needed.
     const eventDetail = {
-      ...eventBase,
+      viewportId: viewport.id,
+      renderingEngineId: viewport.renderingEngineId,
+      changeType: ChangeTypes.MetadataReferenceModified,
       annotation,
     };
+
     triggerEvent(eventTarget, Events.ANNOTATION_MODIFIED, eventDetail);
+    this.setViewportFrameRange(viewport, metadata);
+  }
+
+  public static setSingle(
+    viewport,
+    annotation,
+    current = viewport.getCurrentImageIdIndex()
+  ) {
+    this.setRange(viewport, annotation, current, current);
   }
 
   public static getFrameRange(
     annotation: Annotation
   ): number | [number, number] {
-    return this.imageIdToFrames(annotation.metadata.referencedImageId);
+    const { metadata } = annotation;
+    const { sliceIndex, sliceRangeEnd } = metadata;
+    return sliceRangeEnd ? [sliceIndex + 1, sliceRangeEnd + 1] : sliceIndex + 1;
+  }
+
+  public static setViewportFrameRange(viewport, specifier) {
+    if (viewport.setFrameRange && specifier.sliceRangeEnd) {
+      viewport.setFrameRange(specifier.sliceIndex, specifier.sliceRangeEnd);
+    }
   }
 }
