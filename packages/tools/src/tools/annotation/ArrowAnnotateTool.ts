@@ -44,6 +44,7 @@ import type {
 } from '../../types';
 import type { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName;
@@ -740,6 +741,16 @@ class ArrowAnnotateTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed');
+        return renderStatus;
+      }
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
+
       if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
 
@@ -785,12 +796,6 @@ class ArrowAnnotateTool extends AnnotationTool {
       }
 
       renderStatus = true;
-
-      // If rendering engine has been destroyed while rendering
-      if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
-        return renderStatus;
-      }
 
       if (!text) {
         continue;
