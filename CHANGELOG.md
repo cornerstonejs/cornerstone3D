@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.1...v2.15.2) (2025-01-14)
+
+### Bug Fixes
+
+- **probe:** Allow for the handle size for the probe tool to be specified in the configuration ([#1750](https://github.com/cornerstonejs/cornerstone3D/issues/1750)) ([3483d1c](https://github.com/cornerstonejs/cornerstone3D/commit/3483d1caf7207abe49842e3489a72e3b4d97b28b))
+
 ## [2.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.0...v2.15.1) (2025-01-14)
 
 ### Bug Fixes
