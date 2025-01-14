@@ -1,5 +1,3 @@
-import { AnnotationTool } from '../base';
-
 import {
   getEnabledElement,
   VolumeViewport,
@@ -9,35 +7,15 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import {
-  getCalibratedAspect,
-  getCalibratedLengthUnitsAndScale,
-} from '../../utilities/getCalibratedUnits';
-import throttle from '../../utilities/throttle';
-import {
-  addAnnotation,
-  getAnnotations,
-  removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
-import {
-  triggerAnnotationCompleted,
-  triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
-import {
-  drawCircle as drawCircleSvg,
-  drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store/state';
-import { Events } from '../../enums';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
-import {
-  resetElementCursor,
-  hideElementCursor,
-} from '../../cursors/elementCursor';
+  Enums,
+  AnnotationTool,
+  annotation,
+  utilities,
+  drawing,
+  state,
+  cursors,
+} from '../../index';
+
 import type {
   EventTypes,
   ToolHandle,
@@ -48,17 +26,33 @@ import type {
   Annotation,
 } from '../../types';
 import type { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
-import {
-  getCanvasCircleCorners,
-  getCanvasCircleRadius,
-} from '../../utilities/math/circle';
-import { pointInEllipse } from '../../utilities/math/ellipse';
-import { BasicStatsCalculator } from '../../utilities/math/basic';
+
+const { Events } = Enums;
+const { addAnnotation, getAnnotations, removeAnnotation } = annotation.state;
+const { isAnnotationLocked } = annotation.locking;
+const { getCanvasCircleCorners, getCanvasCircleRadius } = utilities.math.circle;
+const { pointInEllipse } = utilities.math.ellipse;
+const { BasicStatsCalculator } = utilities.math;
+const {
+  drawHandles: drawHandlesSvg,
+  drawCircle: drawCircleSvg,
+  drawLinkedTextBox: drawLinkedTextBoxSvg,
+} = drawing;
+const { getTextBoxCoordsCanvas } = utilities.drawing;
+const { getWorldWidthAndHeightFromTwoPoints } = utilities.planar;
+const {
+  getCalibratedAspect,
+  getCalibratedLengthUnitsAndScale,
+  getPixelValueUnits,
+} = utilities;
+const { getViewportIdsWithToolToRender } = utilities.viewportFilters;
+const { triggerAnnotationRenderForViewportIds, throttle } = utilities;
+const { triggerAnnotationCompleted, triggerAnnotationModified } =
+  annotation.state;
+const { resetElementCursor, hideElementCursor } = cursors.elementCursor;
+const { isAnnotationVisible } = annotation.visibility;
+const { isViewportPreScaled } = utilities.viewport;
 
 const { transformWorldToIndex } = csUtils;
 
