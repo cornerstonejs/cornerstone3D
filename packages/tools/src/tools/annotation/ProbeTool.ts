@@ -113,6 +113,7 @@ class ProbeTool extends AnnotationTool {
       shadow: true,
       preventHandleOutsideImage: false,
       getTextLines: defaultGetTextLines,
+      handleRadius: '6',
     },
   };
 
@@ -558,7 +559,7 @@ class ProbeTool extends AnnotationTool {
         annotationUID,
         handleGroupUID,
         [canvasCoordinates],
-        { color, lineWidth }
+        { color, lineWidth, handleRadius: this.configuration.handleRadius }
       );
 
       renderStatus = true;
