@@ -835,7 +835,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     canvasCoordinates,
     calibratedScale,
   }) {
-    const { scale, areaUnit, units } = calibratedScale;
+    const { scale, areaUnit, unit } = calibratedScale;
 
     // Using an arbitrary start point (canvasPoint), calculate the
     // mm spacing for the canvas in the X and Y directions.
@@ -975,7 +975,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
        */
       areaUnit,
       modalityUnit,
-      unit: units,
+      unit,
     };
   }
 
