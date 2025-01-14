@@ -46,10 +46,15 @@ function activateDraw(
     getMouseModifierKey(evt.detail.event) ===
     this.configuration.contourHoleAdditionModifierKey;
 
-  const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
-    viewport,
-    this.configuration.subPixelResolution
-  );
+  const { spacing, xDir, yDir } =
+    getSubPixelSpacingAndXYDirections(
+      viewport,
+      this.configuration.subPixelResolution
+    ) || {};
+
+  if (!spacing || !xDir || !yDir) {
+    return;
+  }
 
   this.drawData = {
     canvasPoints: [canvasPos],
