@@ -157,14 +157,14 @@ export default function sortImageIdsAndGetSpacing(
   // If possible, we use the sliceThickness, but we warn about this dicom file
   // weirdness. If sliceThickness is not available, we set to 1 just to render
   if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
-    if (sliceThickness && spacingBetweenSlices) {
+    if (!sliceThickness && spacingBetweenSlices) {
       console.log('Could not calculate zSpacing. Using spacingBetweenSlices');
-      zSpacing = spacingBetweenSlices;
+      zSpacing = Math.abs(spacingBetweenSlices);
     } else if (sliceThickness) {
       console.log(
         'Could not calculate zSpacing and no spacingBetweenSlices. Using sliceThickness'
       );
-      zSpacing = sliceThickness;
+      zSpacing = Math.abs(sliceThickness);
     } else {
       console.log(
         'Could not calculate zSpacing. The VolumeViewport visualization is compromised. Setting zSpacing to 1 to render'
