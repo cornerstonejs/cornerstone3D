@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.12...v2.15.0) (2025-01-14)
+
+### Features
+
+- **vtk:** upgrade version ([#1749](https://github.com/cornerstonejs/cornerstone3D/issues/1749)) ([6853e59](https://github.com/cornerstonejs/cornerstone3D/commit/6853e59a8279ddab95763e5b8ee1f870871a6646))
+
 ## [2.14.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.11...v2.14.12) (2025-01-14)
 
 ### Bug Fixes

@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.15.0](https://github.com/dcmjs-org/dcmjs/compare/v2.14.12...v2.15.0) (2025-01-14)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
 ## [2.14.12](https://github.com/dcmjs-org/dcmjs/compare/v2.14.11...v2.14.12) (2025-01-14)
 
 **Note:** Version bump only for package @cornerstonejs/ai
