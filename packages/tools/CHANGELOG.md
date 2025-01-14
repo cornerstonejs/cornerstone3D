@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.14.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.11...v2.14.12) (2025-01-14)
+
+### Bug Fixes
+
+- **ColorbarCanvas:** Fix colorbar rendering issue on small window widths ([#1649](https://github.com/cornerstonejs/cornerstone3D/issues/1649)) ([a2d6518](https://github.com/cornerstonejs/cornerstone3D/commit/a2d651869fd34dac589e2c20f287011203cd22cb))
+
 ## [2.14.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.10...v2.14.11) (2025-01-10)
 
 ### Bug Fixes
