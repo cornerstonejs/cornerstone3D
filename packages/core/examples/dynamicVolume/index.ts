@@ -81,7 +81,6 @@ function addTimePointSlider(volume) {
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-  console.debug('here');
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.79767489559005369769092179787138169587',

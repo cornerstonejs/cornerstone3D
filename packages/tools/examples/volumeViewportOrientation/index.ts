@@ -76,7 +76,6 @@ async function run() {
   await initDemo();
   addTool(StackScrollTool);
   addTool(ZoomTool);
-  debugger;
 
   // Using a oblique acquired image to demonstrate the orientation of the volume
   // in default (acquisition plane mode)
