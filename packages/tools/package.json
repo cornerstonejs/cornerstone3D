@@ -105,7 +105,7 @@
   },
   "peerDependencies": {
     "@cornerstonejs/core": "^2.14.12",
-    "@kitware/vtk.js": "32.1.1",
+    "@kitware/vtk.js": "32.9.0",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",
