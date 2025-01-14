@@ -76,6 +76,7 @@ async function run() {
   await initDemo();
   addTool(StackScrollTool);
   addTool(ZoomTool);
+  debugger;
 
   // Using a oblique acquired image to demonstrate the orientation of the volume
   // in default (acquisition plane mode)
@@ -106,7 +107,6 @@ async function run() {
       },
     ],
   });
-  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -123,6 +123,7 @@ async function run() {
   };
 
   renderingEngine.enableElement(viewportInput);
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
