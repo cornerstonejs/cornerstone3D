@@ -131,11 +131,13 @@ interface SetVOIOptions {
  * the documentation section of this website.
  */
 class StackViewport extends Viewport {
-  private imageIds: string[];
+  private imageIds: string[] = [];
+  private imageIdsMap = new Map<string, number>();
+
   // current imageIdIndex that is rendered in the viewport
-  private currentImageIdIndex: number;
+  private currentImageIdIndex = 0;
   // the imageIdIndex that is targeted to be loaded with scrolling but has not initiated loading yet
-  private targetImageIdIndex: number;
+  private targetImageIdIndex = 0;
   // setTimeout if the image is debounced to be loaded
   private debouncedTimeout: number;
   /**
@@ -200,7 +202,6 @@ class StackViewport extends Viewport {
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
-    this.imageIds = [];
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
     this.resetCamera();
@@ -1827,6 +1828,11 @@ class StackViewport extends Viewport {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
+    this.imageIdsMap.clear();
+    imageIds.forEach((imageId, index) => {
+      this.imageIdsMap.set(imageId, index);
+      this.imageIdsMap.set(imageIdToURI(imageId), index);
+    });
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
     const imageRetrieveConfiguration = metaData.get(
@@ -3048,47 +3054,18 @@ class StackViewport extends Viewport {
     } = viewRef;
 
     // Optimize the return for the exact match cases
-    if (referencedImageId && sliceIndex !== undefined) {
-      if (
-        testIndex >= sliceIndex &&
-        testIndex <= sliceRangeEnd &&
-        this.imageIds[sliceIndex] === referencedImageId
-      ) {
+    if (referencedImageId) {
+      if (referencedImageId === currentImageId) {
         return true;
       }
-      if (
-        options.withNavigation &&
-        this.imageIds[sliceIndex] == referencedImageId
-      ) {
+      const foundSliceIndex = this.imageIdsMap.get(referencedImageId);
+      if (foundSliceIndex === undefined) {
+        return false;
+      }
+      if (options.withNavigation) {
         return true;
       }
-
-      // Optimize the test for being viewable by defining the URI version
-      // This allows an endsWith test
-      viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
-      const { referencedImageUri } = viewRef;
-
-      if (
-        testIndex >= sliceIndex &&
-        testIndex <= sliceRangeEnd &&
-        this.imageIds[sliceIndex]?.endsWith(referencedImageUri)
-      ) {
-        return true;
-      }
-      if (
-        options.withNavigation &&
-        this.imageIds[sliceIndex]?.endsWith(referencedImageUri)
-      ) {
-        return true;
-      }
-      if (
-        options.asOverlay &&
-        this.matchImagesForOverlay(currentImageId, referencedImageId)
-      ) {
-        return true;
-      }
-
-      return false;
+      return testIndex >= foundSliceIndex && testIndex <= sliceRangeEnd;
     }
 
     if (!super.isReferenceViewable(viewRef, options)) {
@@ -3242,7 +3219,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageId is in viewport
    */
   public hasImageId = (imageId: string): boolean => {
-    return this.imageIds.includes(imageId);
+    return this.imageIdsMap.has(imageId);
   };
 
   /**
@@ -3251,14 +3228,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    const imageIds = this.imageIds;
-    for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) {
-        return true;
-      }
-    }
-
-    return false;
+    return this.imageIdsMap.has(imageIdToURI(imageURI));
   };
 
   private getCPUFallbackError(method: string): Error {
