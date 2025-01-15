@@ -252,11 +252,6 @@ function selectNextAnnotation(direction) {
   if (!annotation) {
     return;
   }
-  console.log(
-    'Navigating to',
-    annotation.metadata.sliceIndex,
-    annotation.metadata.referencedImageId
-  );
   viewport.setViewReference(annotation.metadata);
 }
 
@@ -270,10 +265,11 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.53684.1.1.2.4037847388.8168.1651298318.32092078',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.53684.1.1.3.4037847388.8168.1651298319.32092097',
-    wadoRsRoot: 'http://localhost:5000/dicomweb/', // getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   addAnnotationListeners();

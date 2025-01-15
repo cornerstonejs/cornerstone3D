@@ -3061,6 +3061,15 @@ class StackViewport extends Viewport {
       viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
       const { referencedImageUri } = viewRef;
       const foundSliceIndex = this.imageIdsMap.get(referencedImageUri);
+      if (options.asOverlay) {
+        const matchedImageId = this.matchImagesForOverlay(
+          currentImageId,
+          referencedImageId
+        );
+        if (matchedImageId) {
+          return true;
+        }
+      }
       if (foundSliceIndex === undefined) {
         return false;
       }
@@ -3119,22 +3128,11 @@ class StackViewport extends Viewport {
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { sliceIndex = this.getCurrentImageIdIndex(), sliceRangeEnd } =
-      viewRefSpecifier;
+    const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
     const reference = super.getViewReference(viewRefSpecifier);
-    let referencedImageId =
-      this.imageIds[this.imageIds.length === 1 ? 0 : sliceIndex];
+    const referencedImageId = this.getCurrentImageId(sliceIndex);
     if (!referencedImageId) {
       return;
-    }
-    if (this.imageIds.length === 1 && sliceIndex > 0) {
-      if (sliceIndex >= this.getNumberOfSlices()) {
-        return;
-      }
-      referencedImageId = frameRangeUtils.multiframeImageId(
-        referencedImageId,
-        sliceIndex + 1
-      );
     }
     reference.referencedImageId = referencedImageId;
     if (this.getCurrentImageIdIndex() !== sliceIndex) {
