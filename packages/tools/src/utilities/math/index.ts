@@ -7,6 +7,7 @@ import * as point from './point';
 import * as polyline from './polyline';
 import * as rectangle from './rectangle';
 import * as vec2 from './vec2';
+import * as angle from './angle';
 
 export {
   aabb,
@@ -18,4 +19,5 @@ export {
   polyline,
   rectangle,
   vec2,
+  angle,
 };

@@ -64,6 +64,9 @@ function addContourRepresentationToViewportMap(viewportInputMap: {
 function addContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
 
 // @public (undocumented)
+function addEnabledElement(evt: Types_2.EventTypes.ElementEnabledEvent): void;
+
+// @public (undocumented)
 function addLabelmapRepresentationToViewport(viewportId: string, labelmapInputArray: RepresentationPublicInput[]): void;
 
 // @public (undocumented)
@@ -155,6 +158,12 @@ export class AdvancedMagnifyTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation) => void;
 }
 
+declare namespace angle {
+    export {
+        angleBetweenLines
+    }
+}
+
 // @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
@@ -181,6 +190,9 @@ interface AngleAnnotation extends Annotation {
         };
     };
 }
+
+// @public (undocumented)
+function angleBetweenLines(line1: Line, line2: Line): number;
 
 // @public (undocumented)
 export class AngleTool extends AnnotationTool {
@@ -1928,6 +1940,7 @@ function decimate_2(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point
 const _default: {
     filterAnnotationsWithinSlice: typeof filterAnnotationsWithinSlice;
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
+    getWorldWidthAndHeightFromTwoPoints: typeof getWorldWidthAndHeightFromTwoPoints;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
     isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
@@ -2799,6 +2812,9 @@ function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
+function getPixelValueUnits(modality: string, imageId: string, options: pixelUnitsOptions): string;
+
+// @public (undocumented)
 function getPoint(points: any, idx: any): Types_2.Point3;
 
 // @public (undocumented)
@@ -2932,6 +2948,12 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 };
 
 // @public (undocumented)
+function getWorldWidthAndHeightFromTwoPoints(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, worldPos1: Types_2.Point3, worldPos2: Types_2.Point3): {
+    worldWidth: number;
+    worldHeight: number;
+};
+
+// @public (undocumented)
 type GroupSpecificAnnotations = {
     [toolName: string]: Annotations;
 };
@@ -2983,6 +3005,9 @@ function hasCustomStyle(specifier: {
     type?: SegmentationRepresentations;
     segmentIndex?: number;
 }): boolean;
+
+// @public (undocumented)
+function hasTool(ToolClass: any): boolean;
 
 // @public (undocumented)
 export class HeightTool extends AnnotationTool {
@@ -3872,7 +3897,8 @@ declare namespace math {
         point,
         polyline,
         rectangle,
-        vec2
+        vec2,
+        angle
     }
 }
 
@@ -4184,6 +4210,7 @@ declare namespace planar_2 {
         _default as default,
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
+        getWorldWidthAndHeightFromTwoPoints,
         filterAnnotationsForDisplay,
         getPointInLineOfSightWithCriteria,
         isPlaneIntersectingAABB,
@@ -5004,6 +5031,9 @@ function removeContourRepresentation(viewportId: string, segmentationId: string,
 function removeContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
 
 // @public (undocumented)
+function removeEnabledElement(elementDisabledEvt: Types_2.EventTypes.ElementDisabledEvent): void;
+
+// @public (undocumented)
 function removeLabelmapRepresentation(viewportId: string, segmentationId: string, immediate?: boolean): void;
 
 // @public (undocumented)
@@ -5813,6 +5843,12 @@ export let state: ICornerstoneTools3dState;
 // @public (undocumented)
 const state_2: {
     resetAnnotationManager: typeof resetAnnotationManager;
+    triggerAnnotationAddedForElement: typeof annotationStateHelpers.triggerAnnotationAddedForElement;
+    triggerAnnotationAddedForFOR: typeof annotationStateHelpers.triggerAnnotationAddedForFOR;
+    triggerAnnotationRemoved: typeof annotationStateHelpers.triggerAnnotationRemoved;
+    triggerAnnotationModified: typeof annotationStateHelpers.triggerAnnotationModified;
+    triggerAnnotationCompleted: typeof annotationStateHelpers.triggerAnnotationCompleted;
+    triggerContourAnnotationCompleted: typeof annotationStateHelpers.triggerContourAnnotationCompleted;
     getAllAnnotations: typeof annotationState.getAllAnnotations;
     getAnnotations: typeof annotationState.getAnnotations;
     getParentAnnotation: typeof annotationState.getParentAnnotation;
@@ -5868,6 +5904,23 @@ type Statistics = {
 
 // @public (undocumented)
 function stopClip(element: HTMLDivElement, options?: StopClipOptions): void;
+
+declare namespace store {
+    export {
+        addTool,
+        hasTool,
+        removeTool,
+        addEnabledElement,
+        removeEnabledElement,
+        cancelActiveManipulations,
+        svgNodeCache,
+        ToolGroupManager,
+        SynchronizerManager,
+        Synchronizer,
+        state
+    }
+}
+export { store }
 
 declare namespace strategies {
     export {
@@ -5979,6 +6032,9 @@ class SVGMouseCursor extends ImageMouseCursor {
     // (undocumented)
     static getDefinedCursor(name: string, pointer?: boolean, color?: string): MouseCursor;
 }
+
+// @public (undocumented)
+let svgNodeCache: {};
 
 // @public (undocumented)
 type SVGPoint_2 = {
@@ -6661,6 +6717,7 @@ declare namespace utilities {
         getCalibratedLengthUnitsAndScale,
         getCalibratedProbeUnitsAndValue,
         getCalibratedAspect,
+        getPixelValueUnits,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,
