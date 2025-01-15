@@ -3058,7 +3058,9 @@ class StackViewport extends Viewport {
       if (referencedImageId === currentImageId) {
         return true;
       }
-      const foundSliceIndex = this.imageIdsMap.get(referencedImageId);
+      viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
+      const { referencedImageUri } = viewRef;
+      const foundSliceIndex = this.imageIdsMap.get(referencedImageUri);
       if (foundSliceIndex === undefined) {
         return false;
       }
@@ -3117,21 +3119,21 @@ class StackViewport extends Viewport {
   public getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
-    const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
+    const { sliceIndex = this.getCurrentImageIdIndex(), sliceRangeEnd } =
+      viewRefSpecifier;
     const reference = super.getViewReference(viewRefSpecifier);
     let referencedImageId =
-      this.imageIds[this.imageIds.length === 1 ? 0 : (sliceIndex as number)];
+      this.imageIds[this.imageIds.length === 1 ? 0 : sliceIndex];
     if (!referencedImageId) {
       return;
     }
-    const iSliceNumber = sliceIndex as number;
-    if (this.imageIds.length === 1 && iSliceNumber > 0) {
-      if (iSliceNumber >= this.getNumberOfSlices()) {
+    if (this.imageIds.length === 1 && sliceIndex > 0) {
+      if (sliceIndex >= this.getNumberOfSlices()) {
         return;
       }
       referencedImageId = frameRangeUtils.multiframeImageId(
         referencedImageId,
-        iSliceNumber + 1
+        sliceIndex + 1
       );
     }
     reference.referencedImageId = referencedImageId;
@@ -3153,24 +3155,19 @@ class StackViewport extends Viewport {
    * Assumes that the slice index is correct for this viewport
    */
   public setViewReference(viewRef: ViewReference): void {
-    if (!viewRef) {
+    if (!viewRef?.referencedImageId) {
       return;
     }
-    const { referencedImageId, sliceIndex } = viewRef;
-    if (
-      typeof sliceIndex === 'number' &&
-      referencedImageId &&
-      referencedImageId === this.imageIds[sliceIndex]
-    ) {
-      this.scroll(sliceIndex - this.targetImageIdIndex);
-    } else {
-      const foundIndex = this.imageIds.indexOf(referencedImageId);
-      if (foundIndex !== -1) {
-        this.scroll(foundIndex - this.targetImageIdIndex);
-      } else {
-        throw new Error('Unsupported - referenced image id not found');
-      }
+    const { referencedImageId } = viewRef;
+    viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
+    const { referencedImageUri } = viewRef;
+    const sliceIndex = this.imageIdsMap.get(referencedImageUri);
+    if (sliceIndex === undefined) {
+      console.error(`No image URI found for ${referencedImageUri}`);
+      return;
     }
+
+    this.scroll(sliceIndex - this.targetImageIdIndex);
   }
 
   /**
@@ -3178,10 +3175,7 @@ class StackViewport extends Viewport {
    * `imageId:<imageId>` URN format.
    */
   public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
-    if (Array.isArray(sliceIndex)) {
-      throw new Error('Use of slice ranges for stacks not supported');
-    }
+    const { sliceIndex = this.currentImageIdIndex } = specifier;
     return `imageId:${this.imageIds[sliceIndex]}`;
   }
 
@@ -3228,7 +3222,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    return this.imageIdsMap.has(imageIdToURI(imageURI));
+    return this.imageIdsMap.has(imageURI);
   };
 
   private getCPUFallbackError(method: string): Error {
