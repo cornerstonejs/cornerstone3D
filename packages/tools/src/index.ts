@@ -7,6 +7,7 @@ import {
   Synchronizer,
   cancelActiveManipulations,
 } from './store';
+import { state } from './store/state';
 import * as store from './store';
 import * as CONSTANTS from './constants';
 
@@ -152,6 +153,7 @@ export {
   SynchronizerManager,
   PaintFillTool,
   Types,
+  state,
   // ToolGroups
   ToolGroupManager,
   // tools,
