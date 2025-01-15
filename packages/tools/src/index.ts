@@ -8,6 +8,7 @@ import {
   cancelActiveManipulations,
 } from './store';
 import { state } from './store/state';
+import * as store from './store';
 import * as CONSTANTS from './constants';
 
 // Name spaces
@@ -155,6 +156,8 @@ export {
   state,
   // ToolGroups
   ToolGroupManager,
+  // tools,
+  store,
   // Enums
   Enums,
   // Constants
