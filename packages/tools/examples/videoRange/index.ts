@@ -26,7 +26,7 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { annotationFrameRange } = cornerstoneTools.utilities;
+const { AnnotationMultiSelect } = cornerstoneTools.utilities;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -162,7 +162,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      annotationFrameRange.setStartRange(viewport, annotation);
+      AnnotationMultiSelect.setStartRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -174,7 +174,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      annotationFrameRange.setEndRange(viewport, annotation);
+      AnnotationMultiSelect.setEndRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -186,7 +186,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      annotationFrameRange.setRange(viewport, annotation);
+      AnnotationMultiSelect.setRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -198,7 +198,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      annotationFrameRange.setSingle(viewport, annotation);
+      AnnotationMultiSelect.setSingle(viewport, annotation);
       viewport.render();
     }
   },
@@ -228,7 +228,7 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
-  const range = annotationFrameRange.getFrameRange(annotation);
+  const range = AnnotationMultiSelect.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
   console.log('rangeArr=', range, rangeArr);
   const { fps } = viewport;
@@ -280,7 +280,7 @@ function selectNextAnnotation(direction) {
   if (!annotation) {
     return;
   }
-  const range = annotationFrameRange.getFrameRange(annotation);
+  const range = AnnotationMultiSelect.getFrameRange(annotation);
   if (Array.isArray(range)) {
     viewport.setFrameRange(range);
     togglePlay(true);

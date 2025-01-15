@@ -154,7 +154,7 @@ with associated metadata, then it is possible to use annotations with the video 
 These annotations will be shown on either a range of frames or a single frame,
 with some amount of time range allowed so that the annotation will actually be seen.
 
-The `annotationFrameRange` class supports setting and retrieving time ranges on
+The `AnnotationMultiSelect` class supports setting and retrieving time ranges on
 annotations. This is done by modifying the imageID in the `/frames/<number>`
 section or the `frameNumber=<number>` attribute. These become a range when the
 annotation applies to a range of values.

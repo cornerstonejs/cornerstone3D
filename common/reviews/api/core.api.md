@@ -1188,7 +1188,7 @@ interface FlipDirection {
 }
 
 // @public (undocumented)
-class FrameRangeUtils {
+class FrameRange {
     // (undocumented)
     protected static frameRangeExtractor: RegExp;
     // (undocumented)
@@ -1197,8 +1197,6 @@ class FrameRangeUtils {
     static framesToString(range: any): string;
     // (undocumented)
     protected static imageIdToFrames(imageId: string): FramesRange;
-    // (undocumented)
-    static multiframeImageId(imageId: string, frameNumber?: number): string;
 }
 
 // @public (undocumented)
@@ -3928,7 +3926,7 @@ function updateVTKImageDataWithCornerstoneImage(sourceImageData: vtkImageData, i
 
 declare namespace utilities {
     export {
-        FrameRangeUtils as frameRangeUtils,
+        FrameRange,
         eventListener,
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
@@ -4595,20 +4593,14 @@ type ViewReference = {
 };
 
 // @public (undocumented)
-interface ViewReferenceSpecifier {
-    // (undocumented)
-    forFrameOfReference?: boolean;
-    // (undocumented)
-    frameNumber?: number;
-    // (undocumented)
-    points?: Point3[];
-    // (undocumented)
+type ViewReferenceSpecifier = {
     sliceIndex?: number;
-    // (undocumented)
     sliceRangeEnd?: number;
-    // (undocumented)
+    frameNumber?: number;
+    forFrameOfReference?: boolean;
+    points?: Point3[];
     volumeId?: string;
-}
+};
 
 // @public (undocumented)
 interface VOI {

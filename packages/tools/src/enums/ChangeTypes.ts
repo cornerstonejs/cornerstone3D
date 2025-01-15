@@ -36,7 +36,10 @@ enum ChangeTypes {
    */
   History = 'History',
   /**
-   * Send when the metadata selector changes
+   * This change type is used to identify changes where the referenced image
+   * gets modified.  That may also involve changing statistics, but having
+   * this as a separate type allows for updating the applicability of an annotation
+   * so as to cause it to be drawn on the change, or removed if it is no longer visible.
    */
   MetadataReferenceModified = 'MetadataReferenceModified',
 }

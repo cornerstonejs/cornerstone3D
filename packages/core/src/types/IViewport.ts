@@ -11,7 +11,7 @@ import type Viewport from '../RenderingEngine/Viewport';
  * not currently in view, such as for a different slice, or containing a given
  * set of points.
  */
-export interface ViewReferenceSpecifier {
+export type ViewReferenceSpecifier = {
   /**
    * The slice index within the current viewport camera to get a reference for.
    * Note that slice indexes are dependent on the particular view being shown
@@ -21,6 +21,9 @@ export interface ViewReferenceSpecifier {
   sliceIndex?: number;
   /**
    * The end index - this requires sliceIndex to be specified.
+   * The use of this as a single number here rather than having a range array
+   * makes the use of sliceIndex consistent between single item and range items,
+   * so this item is used as an adjunct to sliceIndex in order to specify a range.
    */
   sliceRangeEnd?: number;
 
@@ -38,7 +41,7 @@ export interface ViewReferenceSpecifier {
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
-}
+};
 
 /**
  * It is often important to decide if a given view can display a specific
@@ -53,20 +56,24 @@ export interface ReferenceCompatibleOptions {
    * Test whether the view could be shown if the viewport were navigated.
    * That is, test is just changing the slice position and zoom/pan would
    * allow showing the view.
+   * This will not return a match if the normal of the measurement and the viewport
+   * aren't the same (or opposite), but only if the slice index/focal point were changed.
    */
   withNavigation?: boolean;
+
   /**
    * For a stack viewport, return true if this viewport could show the given
    * view if it were converted into a volume viewport.  Has no affect on volume
    * viewports.
    */
   asVolume?: boolean;
+
   /**
    * For volume viewports, return true if this viewport could show the given view
-   * if the orientation was changed.
+   * if the camera was changed to a different viewNormal orientation.
    */
   withOrientation?: boolean;
-  // Todo: im not sure what is this
+
   /**
    * Use this imageURI for testing - may or may not be the current one.
    * Should be a straight contains URI for the set of imageIds in any of
@@ -81,7 +88,7 @@ export interface ReferenceCompatibleOptions {
   asNearbyProjection?: boolean;
 
   /**
-   * To see if the reference could be overlayed (labelmap, fusion) on the viewport, set this to true.
+   * To see if the reference could be overlaid (labelmap, fusion) on the viewport, set this to true.
    */
   asOverlay?: boolean;
 }
@@ -111,8 +118,9 @@ export type ViewReference = {
   referencedImageId?: string;
 
   /**
-   * An internal URI version of hte referencedImageId, used for performance
-   * while checking the referenced image id.
+   * This is an internal copy of referencedImageId without the volume loader
+   * specification included.  It is used for equality and fast lookup checks
+   * to find whether and how this view reference can be displayed on a viewport.
    */
   referencedImageUri?: string;
 
@@ -127,16 +135,19 @@ export type ViewReference = {
    * in any orientation.
    */
   cameraFocalPoint?: Point3;
+
   /**
    * The normal for the current view.  This defines the plane used to show the
    * 2d annotation.  This should be omitted if the annotation is a point to
    * allows for single-point annotations.
    */
   viewPlaneNormal?: Point3;
+
   /**
    * The view up - this is only used for resetting orientation
    */
   viewUp?: Point3;
+
   /**
    * The slice index for the image of interest
    * <b>NOTE</b> The slice index is relative to the volume or video image.
@@ -147,15 +158,25 @@ export type ViewReference = {
    *
    * For stack viewports, the referencedImageId should be preferred
    *
-   * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
-   * within the stack of images - subsequent slice indexes can be at opposite
-   * ends or can be co-incident but separate types of images.
+   * <b>Warning</b>The slice index is not deterministic between different sets
+   * of images containing the same image id.  It is intended more as information
+   * useful for display about a given view reference with a given context.
+   * The intent is to move this to the statistics data to specify the stats for
+   * a given slice object.
    */
   sliceIndex?: number;
+
   /**
    * An end of a slice range.  This is used to indicate the end of the slices
-   * where the sliceIndex is the first point.  This is a positive value if defined,
-   * so can be tested for `sliceRangeEnd`.
+   * where the referencedImageId or camera focal point is the first point.
+   * This is a positive value if defined so can be tested for `sliceRangeEnd`.
+   * It is only valid if sliceIndex is defined and matches the slice index
+   * specified by the rest of the reference.
+   *
+   * @deprecated This is an improvement over sliceIndex ranges, but is still
+   * not fully consistently defined, so it is intended to be
+   * replaced with a second referencedImageId during a larger
+   * version update.
    */
   sliceRangeEnd?: number;
 

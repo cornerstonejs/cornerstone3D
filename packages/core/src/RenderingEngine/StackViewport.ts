@@ -93,7 +93,6 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
-import frameRangeUtils from '../utilities/frameRangeUtils';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -132,7 +131,13 @@ interface SetVOIOptions {
  */
 class StackViewport extends Viewport {
   private imageIds: string[] = [];
-  private imageIdsMap = new Map<string, number>();
+  /**
+   * The imageKeyToIndexMap maps the imageId values to the position in the imageIds
+   * array.  It also contains the imageURI equivalent of each imageId to map
+   * to the position in the imageIds array.  This allows checking for whether
+   * the imageId or URI is present without having to scan the imageIds array.
+   */
+  private imageKeyToIndexMap = new Map<string, number>();
 
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex = 0;
@@ -1828,10 +1833,10 @@ class StackViewport extends Viewport {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
-    this.imageIdsMap.clear();
+    this.imageKeyToIndexMap.clear();
     imageIds.forEach((imageId, index) => {
-      this.imageIdsMap.set(imageId, index);
-      this.imageIdsMap.set(imageIdToURI(imageId), index);
+      this.imageKeyToIndexMap.set(imageId, index);
+      this.imageKeyToIndexMap.set(imageIdToURI(imageId), index);
     });
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
@@ -3060,7 +3065,7 @@ class StackViewport extends Viewport {
       }
       viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
       const { referencedImageUri } = viewRef;
-      const foundSliceIndex = this.imageIdsMap.get(referencedImageUri);
+      const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageUri);
       if (options.asOverlay) {
         const matchedImageId = this.matchImagesForOverlay(
           currentImageId,
@@ -3154,12 +3159,15 @@ class StackViewport extends Viewport {
    */
   public setViewReference(viewRef: ViewReference): void {
     if (!viewRef?.referencedImageId) {
+      if (viewRef?.sliceIndex !== undefined) {
+        this.scroll(viewRef.sliceIndex - this.targetImageIdIndex);
+      }
       return;
     }
     const { referencedImageId } = viewRef;
     viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
     const { referencedImageUri } = viewRef;
-    const sliceIndex = this.imageIdsMap.get(referencedImageUri);
+    const sliceIndex = this.imageKeyToIndexMap.get(referencedImageUri);
     if (sliceIndex === undefined) {
       console.error(`No image URI found for ${referencedImageUri}`);
       return;
@@ -3211,7 +3219,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageId is in viewport
    */
   public hasImageId = (imageId: string): boolean => {
-    return this.imageIdsMap.has(imageId);
+    return this.imageKeyToIndexMap.has(imageId);
   };
 
   /**
@@ -3220,7 +3228,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    return this.imageIdsMap.has(imageURI);
+    return this.imageKeyToIndexMap.has(imageURI);
   };
 
   private getCPUFallbackError(method: string): Error {

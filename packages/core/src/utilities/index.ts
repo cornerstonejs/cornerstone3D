@@ -79,7 +79,7 @@ import * as transferFunctionUtils from './transferFunctionUtils';
 import * as color from './color';
 import { deepEqual } from './deepEqual';
 import type { IViewport } from '../types/IViewport';
-import frameRangeUtils from './frameRangeUtils';
+import FrameRange from './FrameRange';
 
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
@@ -99,7 +99,7 @@ const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 
 export {
-  frameRangeUtils,
+  FrameRange,
   eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
