@@ -4590,7 +4590,6 @@ type ViewReference = {
     viewUp?: Point3;
     sliceIndex?: number;
     sliceRangeEnd?: number;
-    sliceSet?: Set<number>;
     volumeId?: string;
     bounds?: BoundsLPS;
 };

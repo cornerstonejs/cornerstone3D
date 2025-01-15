@@ -139,13 +139,13 @@ export type ViewReference = {
   viewUp?: Point3;
   /**
    * The slice index for the image of interest
-   * <b>NOTE</b> The slice index is relative to the volume or stack of images.
-   * You cannot apply a slice index from one volume to another as they do NOT
+   * <b>NOTE</b> The slice index is relative to the volume or video image.
+   * You cannot apply a slice index from one volume or stack to another as they do NOT
    * apply.   The referencedImageId should belong to the volume you are trying
    * to apply to, the viewPlane normal should be identical, and then you can
    * apply the sliceIndex.
    *
-   * For stack viewports, the referencedImageId should occur at the given slice index.
+   * For stack viewports, the referencedImageId should be preferred
    *
    * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
    * within the stack of images - subsequent slice indexes can be at opposite
@@ -158,12 +158,6 @@ export type ViewReference = {
    * so can be tested for `sliceRangeEnd`.
    */
   sliceRangeEnd?: number;
-  /**
-   * A set of slice indexes actually in this object.  The values in this set
-   * must be in [sliceIndex, sliceRangeEnd], and if this is not set, then
-   * the entire range is considered in the set.
-   */
-  sliceSet?: Set<number>;
 
   /**
    * VolumeId that the referencedImageId was chosen from
