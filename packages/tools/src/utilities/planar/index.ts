@@ -1,6 +1,7 @@
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
 import getWorldWidthAndHeightFromCorners from './getWorldWidthAndHeightFromCorners';
 import filterAnnotationsForDisplay from './filterAnnotationsForDisplay';
+import getWorldWidthAndHeightFromTwoPoints from './getWorldWidthAndHeightFromTwoPoints';
 import {
   getPointInLineOfSightWithCriteria,
   getPointsInLineOfSight,
@@ -11,6 +12,7 @@ import { filterAnnotationsWithinSamePlane } from './filterAnnotationsWithinPlane
 export default {
   filterAnnotationsWithinSlice,
   getWorldWidthAndHeightFromCorners,
+  getWorldWidthAndHeightFromTwoPoints,
   filterAnnotationsForDisplay,
   getPointInLineOfSightWithCriteria,
   isPlaneIntersectingAABB,
@@ -21,6 +23,7 @@ export default {
 export {
   filterAnnotationsWithinSlice,
   getWorldWidthAndHeightFromCorners,
+  getWorldWidthAndHeightFromTwoPoints,
   filterAnnotationsForDisplay,
   getPointInLineOfSightWithCriteria,
   isPlaneIntersectingAABB,
