@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.15.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.2...v2.15.3) (2025-01-15)
+
+### Bug Fixes
+
+- **sortImageIdsAndGetSpacing:** sliceThickness and spacingBetweenSlices in case of nonstrict spacing ([#1752](https://github.com/cornerstonejs/cornerstone3D/issues/1752)) ([aede384](https://github.com/cornerstonejs/cornerstone3D/commit/aede384bd4d8433a50a66160d0fc3cbe6e241976))
+
 ## [2.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.1...v2.15.2) (2025-01-14)
 
 **Note:** Version bump only for package @cornerstonejs/core
