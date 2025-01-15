@@ -5,13 +5,22 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { Events } from '../../enums';
-import { AnnotationTool } from '../../tools/base';
-import * as annotation from '../../stateManagement/annotation';
-import * as utilities from '../../utilities';
-import * as drawing from '../../drawingSvg';
-import * as cursors from '../../cursors';
-import { state } from '../../store/state';
+import {
+  Enums,
+  AnnotationTool,
+  annotation,
+  utilities,
+  drawing,
+  cursors,
+  store
+} from '../../src/index';
+const { Events } = Enums;
+// import { AnnotationTool } from '../../tools/base';
+// import * as annotation from '../../stateManagement/annotation';
+// import * as utilities from '../../utilities';
+// import * as drawing from '../../drawingSvg';
+// import * as cursors from '../../cursors';
+// import { state } from '../../store/state';
 
 import type {
   EventTypes,
@@ -21,30 +30,31 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
-} from '../../types';
-import type { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import type { StyleSpecifier } from '../../types/AnnotationStyle';
+  ToolSpecificAnnotationTypes,
+  AnnotationStyle,
+} from '../../dist/esm/types';
+type ArrowAnnotation = ToolSpecificAnnotationTypes.ArrowAnnotation;
+type StyleSpecifier = AnnotationStyle.StyleSpecifier;
 
 const { addAnnotation, getAnnotations, removeAnnotation } = annotation.state;
 const { isAnnotationLocked } = annotation.locking;
 const { lineSegment } = utilities.math;
-const { angleBetweenLines } = utilities.math.angle;
 const {
   drawHandles: drawHandlesSvg,
-  drawLine: drawLineSvg,
+  drawArrow: drawArrowSvg,
   drawLinkedTextBox: drawLinkedTextBoxSvg,
 } = drawing;
 const { getViewportIdsWithToolToRender } = utilities.viewportFilters;
-const { triggerAnnotationRenderForViewportIds, throttle } = utilities;
+const { triggerAnnotationRenderForViewportIds } = utilities;
 const { triggerAnnotationCompleted, triggerAnnotationModified } =
   annotation.state;
 const { resetElementCursor, hideElementCursor } = cursors.elementCursor;
 const { isAnnotationVisible } = annotation.visibility;
+const state = store.state;
 
-class AngleTool extends AnnotationTool {
+class SimpleArrowAnnotateTool extends AnnotationTool {
   static toolName;
 
-  angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: Function;
   editData: {
     annotation: Annotation;
@@ -63,27 +73,24 @@ class AngleTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
+        getTextCallback,
+        changeTextCallback,
         preventHandleOutsideImage: false,
-        getTextLines: defaultGetTextLines,
+        arrowFirst: true,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
-
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStats,
-      100,
-      { trailing: true }
-    );
   }
 
   static hydrate = (
     viewportId: string,
     points: Types.Point3[],
+    text?: string,
     options?: {
       annotationUID?: string;
     }
-  ): AngleAnnotation => {
+  ): ArrowAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
@@ -107,6 +114,7 @@ class AngleTool extends AnnotationTool {
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
+        text: text || '',
         handles: {
           points,
         },
@@ -133,21 +141,15 @@ class AngleTool extends AnnotationTool {
    * Based on the current position of the mouse and the current imageId to create
    * a Length Annotation and stores it in the annotationManager
    *
-   * @param evt -  EventTypes.InteractionEventType
+   * @param evt -  EventTypes.NormalizedMouseEventType
    * @returns The annotation object.
    *
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
-  ): AngleAnnotation => {
-    if (this.angleStartedNotYetCompleted) {
-      return;
-    }
-
-    this.angleStartedNotYetCompleted = true;
+  ): ArrowAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
@@ -165,6 +167,7 @@ class AngleTool extends AnnotationTool {
       viewUp
     );
 
+    const { arrowFirst } = this.configuration;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     const annotation = {
@@ -179,9 +182,11 @@ class AngleTool extends AnnotationTool {
         ...viewport.getViewReference({ points: [worldPos] }),
       },
       data: {
+        text: '',
         handles: {
           points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
           activeHandleIndex: null,
+          arrowFirst,
           textBox: {
             hasMoved: false,
             worldPosition: <Types.Point3>[0, 0, 0],
@@ -194,7 +199,6 @@ class AngleTool extends AnnotationTool {
           },
         },
         label: '',
-        cachedStats: {},
       },
     };
 
@@ -235,18 +239,18 @@ class AngleTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: AngleAnnotation,
+    annotation: ArrowAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { data } = annotation;
-    const [point1, point2, point3] = data.handles.points;
+    const [point1, point2] = data.handles.points;
     const canvasPoint1 = viewport.worldToCanvas(point1);
     const canvasPoint2 = viewport.worldToCanvas(point2);
 
-    const line1 = {
+    const line = {
       start: {
         x: canvasPoint1[0],
         y: canvasPoint1[1],
@@ -258,38 +262,12 @@ class AngleTool extends AnnotationTool {
     };
 
     const distanceToPoint = lineSegment.distanceToPoint(
-      [line1.start.x, line1.start.y],
-      [line1.end.x, line1.end.y],
+      [line.start.x, line.start.y],
+      [line.end.x, line.end.y],
       [canvasCoords[0], canvasCoords[1]]
     );
 
     if (distanceToPoint <= proximity) {
-      return true;
-    }
-    if (!point3) {
-      return false;
-    }
-
-    const canvasPoint3 = viewport.worldToCanvas(point3);
-
-    const line2 = {
-      start: {
-        x: canvasPoint2[0],
-        y: canvasPoint2[1],
-      },
-      end: {
-        x: canvasPoint3[0],
-        y: canvasPoint3[1],
-      },
-    };
-
-    const distanceToPoint2 = lineSegment.distanceToPoint(
-      [line2.start.x, line2.start.y],
-      [line2.end.x, line2.end.y],
-      [canvasCoords[0], canvasCoords[1]]
-    );
-
-    if (distanceToPoint2 <= proximity) {
       return true;
     }
 
@@ -298,7 +276,7 @@ class AngleTool extends AnnotationTool {
 
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: AngleAnnotation
+    annotation: ArrowAnnotation
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -330,7 +308,7 @@ class AngleTool extends AnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
-    annotation: AngleAnnotation,
+    annotation: ArrowAnnotation,
     handle: ToolHandle
   ): void {
     const eventDetail = evt.detail;
@@ -378,31 +356,19 @@ class AngleTool extends AnnotationTool {
 
     const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
       this.editData;
-
     const { data } = annotation;
+
     if (newAnnotation && !hasMoved) {
       // when user starts the drawing by click, and moving the mouse, instead
       // of click and drag
       return;
     }
 
-    // If preventing new measurement means we are in the middle of an existing measurement
-    // we shouldn't deactivate modify or draw
-    if (this.angleStartedNotYetCompleted && data.handles.points.length === 2) {
-      // adds the last point to the measurement
-      this.editData.handleIndex = 2;
-      return;
-    }
-
-    this.angleStartedNotYetCompleted = false;
     data.handles.activeHandleIndex = null;
 
     this._deactivateModify(element);
     this._deactivateDraw(element);
     resetElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     if (
       this.isHandleOutsideImage &&
@@ -411,12 +377,28 @@ class AngleTool extends AnnotationTool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-
     if (newAnnotation) {
-      triggerAnnotationCompleted(annotation);
+      this.configuration.getTextCallback((text) => {
+        if (!text) {
+          removeAnnotation(annotation.annotationUID);
+          triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+          this.editData = null;
+          this.isDrawing = false;
+          return;
+        }
+        annotation.data.text = text;
+
+        triggerAnnotationCompleted(annotation);
+        // This is only new if it wasn't already memoed
+        this.createMemo(element, annotation, { newAnnotation: !!this.memo });
+
+        triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+      });
+    } else {
+      triggerAnnotationModified(annotation, element);
     }
 
+    this.doneEditMemo();
     this.editData = null;
     this.isDrawing = false;
   };
@@ -426,8 +408,15 @@ class AngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
+    this.createMemo(element, annotation, { newAnnotation });
+
     const { data } = annotation;
 
     if (movingTextBox) {
@@ -473,6 +462,73 @@ class AngleTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
+  touchTapCallback = (evt: EventTypes.TouchTapEventType) => {
+    if (evt.detail.taps == 2) {
+      this.doubleClickCallback(evt);
+    }
+  };
+
+  doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    let annotations = getAnnotations(this.getToolName(), element);
+
+    annotations = this.filterInteractableAnnotationsForElement(
+      element,
+      annotations
+    );
+
+    if (!annotations?.length) {
+      return;
+    }
+
+    const clickedAnnotation = annotations.find((annotation) =>
+      this.isPointNearTool(
+        element,
+        annotation as ArrowAnnotation,
+        eventDetail.currentPoints.canvas,
+        6 // Todo: get from configuration
+      )
+    );
+
+    if (!clickedAnnotation) {
+      return;
+    }
+
+    const annotation = clickedAnnotation as ArrowAnnotation;
+
+    this.configuration.changeTextCallback(
+      clickedAnnotation,
+      evt.detail,
+      this._doneChangingTextCallback.bind(this, element, annotation)
+    );
+
+    this.editData = null;
+    this.isDrawing = false;
+
+    // This double click was handled and the dialogue was displayed.
+    // No need for any other listener to handle it too - stopImmediatePropagation
+    // helps ensure this primarily so that no other listeners on the target element
+    // get called.
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
+  };
+
+  _doneChangingTextCallback(element, annotation, updatedText): void {
+    annotation.data.text = updatedText;
+
+    const enabledElement = getEnabledElement(element);
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    // Dispatching annotation modified
+    triggerAnnotationModified(annotation, element);
+  }
+
   cancel = (element: HTMLDivElement) => {
     // If it is mid-draw or mid-modify
     if (this.isDrawing) {
@@ -494,7 +550,6 @@ class AngleTool extends AnnotationTool {
       }
 
       this.editData = null;
-      this.angleStartedNotYetCompleted = false;
       return annotation.annotationUID;
     }
   };
@@ -544,17 +599,18 @@ class AngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
+
     element.removeEventListener(
       Events.TOUCH_TAP,
       this._endCallback as EventListener
     );
     element.removeEventListener(
-      Events.TOUCH_END,
-      this._endCallback as EventListener
-    );
-    element.removeEventListener(
       Events.TOUCH_DRAG,
       this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
     );
   };
 
@@ -639,7 +695,6 @@ class AngleTool extends AnnotationTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-
     const { viewport } = enabledElement;
     const { element } = viewport;
 
@@ -659,9 +714,6 @@ class AngleTool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
-    const renderingEngine = viewport.getRenderingEngine();
-
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
@@ -670,9 +722,10 @@ class AngleTool extends AnnotationTool {
 
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as AngleAnnotation;
+      const annotation = annotations[i] as ArrowAnnotation;
       const { annotationUID, data } = annotation;
-      const { points, activeHandleIndex } = data.handles;
+      const { handles, text } = data;
+      const { points, activeHandleIndex } = handles;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -683,28 +736,10 @@ class AngleTool extends AnnotationTool {
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].angle == null
-      ) {
-        data.cachedStats[targetId] = {
-          angle: null,
-        };
-
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
-      } else if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement
-        );
-      }
-
       let activeHandleCanvasCoords;
 
       if (
-        !isAnnotationLocked(annotation.annotationUID) &&
+        !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null
       ) {
@@ -732,49 +767,43 @@ class AngleTool extends AnnotationTool {
           canvasCoordinates,
           {
             color,
-            lineDash,
             lineWidth,
           }
         );
       }
 
-      let lineUID = '1';
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        canvasCoordinates[0],
-        canvasCoordinates[1],
-        {
-          color,
-          width: lineWidth,
-          lineDash,
-        }
-      );
+      const arrowUID = '1';
+      if (this.configuration.arrowFirst) {
+        drawArrowSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arrowUID,
+          canvasCoordinates[1],
+          canvasCoordinates[0],
+          {
+            color,
+            width: lineWidth,
+            lineDash: lineDash,
+          }
+        );
+      } else {
+        drawArrowSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arrowUID,
+          canvasCoordinates[0],
+          canvasCoordinates[1],
+          {
+            color,
+            width: lineWidth,
+            lineDash: lineDash,
+          }
+        );
+      }
 
       renderStatus = true;
 
-      // Don't add textBox until annotation has 3 anchor points (actually 4 because of the center point)
-      if (canvasCoordinates.length !== 3) {
-        return renderStatus;
-      }
-
-      lineUID = '2';
-
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        canvasCoordinates[1],
-        canvasCoordinates[2],
-        {
-          color,
-          width: lineWidth,
-          lineDash,
-        }
-      );
-
-      if (!data.cachedStats[targetId]?.angle) {
+      if (!text) {
         continue;
       }
 
@@ -793,10 +822,9 @@ class AngleTool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
-
+      // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
-        // linked to the vertex by default
+        // linked to the point that doesn't have the arrowhead by default
         const canvasTextBoxCoords = canvasCoordinates[1];
 
         data.handles.textBox.worldPosition =
@@ -812,7 +840,7 @@ class AngleTool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         textBoxUID,
-        textLines,
+        [text + 'hello!'],
         textBoxPosition,
         canvasCoordinates,
         {},
@@ -832,67 +860,21 @@ class AngleTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
-    const data = annotation.data;
-    const { element } = enabledElement.viewport;
-
-    // Until we have all three anchors bail out
-    if (data.handles.points.length !== 3) {
-      return;
-    }
-
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
-    const worldPos3 = data.handles.points[2];
-
-    const { cachedStats } = data;
-    const targetIds = Object.keys(cachedStats);
-
-    for (let i = 0; i < targetIds.length; i++) {
-      const targetId = targetIds[i];
-      const angle = angleBetweenLines(
-        [worldPos1, worldPos2],
-        [worldPos2, worldPos3]
-      );
-      const { dimensions, imageData } = this.getTargetImageData(targetId);
-
-      // Decide if there's at least one handle is outside of image
-      this.isHandleOutsideImage = [worldPos1, worldPos2, worldPos3]
-        .map((worldPos) => csUtils.transformWorldToIndex(imageData, worldPos))
-        .some((index) => !csUtils.indexWithinDimensions(index, dimensions));
-      cachedStats[targetId] = {
-        angle: isNaN(angle) ? 'Incomplete Angle' : angle,
-      };
-    }
-
-    annotation.invalidated = false;
-
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
-
-    return cachedStats;
+  _isInsideVolume(index1, index2, dimensions) {
+    return (
+      csUtils.indexWithinDimensions(index1, dimensions) &&
+      csUtils.indexWithinDimensions(index2, dimensions)
+    );
   }
 }
 
-function defaultGetTextLines(data, targetId): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { angle } = cachedVolumeStats;
-
-  if (angle === undefined) {
-    return;
-  }
-
-  if (isNaN(angle)) {
-    // The verbiage for incomplete angle is set in cachedStats
-    return [`${angle}`];
-  }
-
-  const textLines = [
-    `${csUtils.roundNumber(angle)} ${String.fromCharCode(176)}`,
-  ];
-
-  return textLines;
+function getTextCallback(doneChangingTextCallback) {
+  return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
 
-AngleTool.toolName = 'Angle';
-export default AngleTool;
+function changeTextCallback(data, eventData, doneChangingTextCallback) {
+  return doneChangingTextCallback(prompt('Enter your annotation:'));
+}
+
+SimpleArrowAnnotateTool.toolName = 'SimpleArrowAnnotate';
+export default SimpleArrowAnnotateTool;

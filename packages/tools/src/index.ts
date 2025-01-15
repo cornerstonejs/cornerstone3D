@@ -7,7 +7,8 @@ import {
   Synchronizer,
   cancelActiveManipulations,
 } from './store';
-import { state } from './store/state';
+import * as store from './store';
+// import { state } from './store/state';
 import * as CONSTANTS from './constants';
 
 // Name spaces
@@ -19,6 +20,12 @@ import * as Types from './types';
 import * as annotation from './stateManagement/annotation';
 import * as segmentation from './stateManagement/segmentation';
 import * as splines from './tools/annotation/splines';
+// import * as tools from './tools';
+
+const stateManagement = {
+  annotation,
+  segmentation,
+};
 
 import {
   BaseTool,
@@ -152,9 +159,10 @@ export {
   SynchronizerManager,
   PaintFillTool,
   Types,
-  state,
   // ToolGroups
   ToolGroupManager,
+  // tools,
+  store,
   // Enums
   Enums,
   // Constants
@@ -165,6 +173,7 @@ export {
   annotation,
   // Segmentations
   segmentation,
+  stateManagement,
   // Utilities
   utilities,
   cursors,

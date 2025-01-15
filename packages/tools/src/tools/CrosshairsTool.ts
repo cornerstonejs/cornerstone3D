@@ -1,9 +1,3 @@
-import { vec2, vec3 } from 'gl-matrix';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
-
-import { AnnotationTool } from './base';
-
 import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
@@ -13,32 +7,37 @@ import {
   CONSTANTS,
 } from '@cornerstonejs/core';
 
-import {
-  getToolGroup,
-  getToolGroupForViewport,
-} from '../store/ToolGroupManager';
+import { vec2, vec3 } from 'gl-matrix';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 
-import {
-  addAnnotation,
-  getAnnotations,
-  removeAnnotation,
-} from '../stateManagement/annotation/annotationState';
-
-import {
-  drawCircle as drawCircleSvg,
-  drawHandles as drawHandlesSvg,
-  drawLine as drawLineSvg,
-} from '../drawingSvg';
-import { state } from '../store/state';
+import { AnnotationTool } from '../tools/base';
 import { Events } from '../enums';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
-import {
-  resetElementCursor,
-  hideElementCursor,
-} from '../cursors/elementCursor';
-import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
+import * as annotation from '../stateManagement/annotation';
+import * as utilities from '../utilities';
+import * as drawing from '../drawingSvg';
+import * as cursors from '../cursors';
+import * as store from '../store';
 
-import * as lineSegment from '../utilities/math/line';
+const { state } = store;
+const { getToolGroup, getToolGroupForViewport } = store.ToolGroupManager;
+const { addAnnotation, getAnnotations, removeAnnotation } = annotation.state;
+
+const {
+  drawCircle: drawCircleSvg,
+  drawHandles: drawHandlesSvg,
+  drawLine: drawLineSvg,
+} = drawing;
+
+const { getViewportIdsWithToolToRender } = utilities.viewportFilters;
+const { resetElementCursor, hideElementCursor } = cursors.elementCursor;
+
+const { liangBarksyClip } = utilities.math.vec2;
+const { lineSegment } = utilities.math;
+const { triggerAnnotationRenderForViewportIds } = utilities;
+
+const { isAnnotationLocked } = annotation.locking;
+
 import type {
   Annotation,
   Annotations,
@@ -49,8 +48,6 @@ import type {
   InteractionTypes,
   SVGDrawingHelper,
 } from '../types';
-import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 

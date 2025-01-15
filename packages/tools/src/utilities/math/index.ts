@@ -1,5 +1,5 @@
 import * as aabb from './aabb';
-import * as BasicStatsCalculator from './basic';
+import { BasicStatsCalculator } from './basic';
 import * as circle from './circle';
 import * as ellipse from './ellipse';
 import * as lineSegment from './line';

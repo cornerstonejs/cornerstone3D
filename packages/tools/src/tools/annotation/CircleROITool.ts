@@ -6,15 +6,13 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  Enums,
-  AnnotationTool,
-  annotation,
-  utilities,
-  drawing,
-  state,
-  cursors,
-} from '../../index';
+import { Events } from '../../enums';
+import { AnnotationTool } from '../../tools/base';
+import * as annotation from '../../stateManagement/annotation';
+import * as utilities from '../../utilities';
+import * as drawing from '../../drawingSvg';
+import * as cursors from '../../cursors';
+import { state } from '../../store/state';
 
 import type {
   EventTypes,
@@ -28,7 +26,6 @@ import type {
 import type { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
-const { Events } = Enums;
 const { addAnnotation, getAnnotations, removeAnnotation } = annotation.state;
 const { isAnnotationLocked } = annotation.locking;
 const { getCanvasCircleCorners, getCanvasCircleRadius } = utilities.math.circle;

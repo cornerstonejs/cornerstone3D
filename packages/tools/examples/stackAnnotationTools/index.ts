@@ -11,7 +11,7 @@ import {
   addDropdownToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
-import * as cornerstoneTools from '@cornerstonejs/tools';
+import * as cornerstoneTools from '../../src/index';
 
 // This is for debugging purposes
 console.warn(
@@ -35,6 +35,7 @@ const {
   KeyImageTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
+import SimpleArrowTool from './SimpleArrowTool';
 
 const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
@@ -124,6 +125,7 @@ const toolsNames = [
   PlanarFreehandROITool.toolName,
   EraserTool.toolName,
   KeyImageTool.toolName,
+  SimpleArrowTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -225,6 +227,7 @@ async function run() {
   cornerstoneTools.addTool(PlanarFreehandROITool);
   cornerstoneTools.addTool(EraserTool);
   cornerstoneTools.addTool(KeyImageTool);
+  cornerstoneTools.addTool(SimpleArrowTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -244,6 +247,7 @@ async function run() {
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(EraserTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
+  toolGroup.addTool(SimpleArrowTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -265,6 +269,7 @@ async function run() {
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
   toolGroup.setToolPassive(PlanarFreehandROITool.toolName);
   toolGroup.setToolPassive(EraserTool.toolName);
+  toolGroup.setToolPassive(SimpleArrowTool.toolName);
 
   toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
     calculateStats: true,
