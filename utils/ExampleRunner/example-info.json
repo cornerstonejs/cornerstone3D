@@ -239,10 +239,6 @@
         "name": "Double Click With Stack Annotation Tools",
         "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
       },
-      "dynamicPetCt": {
-        "name": "Load a petCT data where PT series is 4D",
-        "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
-      },
       "colorBar": {
         "name": "ColorBar",
         "description": "Demonstrates how to add an interactive color bar to stack viewport"

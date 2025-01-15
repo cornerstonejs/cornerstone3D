@@ -78,8 +78,10 @@ addButtonToToolbar({
   onClick: () => {
     const dataInTime = csToolsUtilities.dynamicVolume.generateImageFromTimeData(
       volumeForButton,
-      <Enums.DynamicOperatorType>dataOperation,
-      timeFrames
+      <Enums.GenerateImageType>dataOperation,
+      {
+        frameNumbers: timeFrames,
+      }
     );
     createVolumeFromTimeData(dataInTime);
   },
@@ -180,7 +182,6 @@ async function createVolumeFromTimeData(dataInTime) {
   viewport2.setVolumes([
     {
       volumeId: computedVolumeId,
-      callback: setPetTransferFunctionForVolumeActor,
     },
   ]);
 
@@ -225,10 +226,8 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   let imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.12842.1.1.14.3.20220915.105557.468.2963630849',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.12842.1.1.22.4.20220915.124758.560.4125514885',
+    StudyInstanceUID: '2.25.79767489559005369769092179787138169587',
+    SeriesInstanceUID: '2.25.87977716979310885152986847054790859463',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
@@ -301,9 +300,7 @@ async function run() {
   addTimePointSlider(volume);
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId, callback: setPetTransferFunctionForVolumeActor },
-  ]);
+  viewport.setVolumes([{ volumeId }]);
 
   // Render the image
   viewport.render();

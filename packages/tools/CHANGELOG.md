@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.1...v2.15.2) (2025-01-14)
+
+### Bug Fixes
+
+- **probe:** Allow for the handle size for the probe tool to be specified in the configuration ([#1750](https://github.com/cornerstonejs/cornerstone3D/issues/1750)) ([3483d1c](https://github.com/cornerstonejs/cornerstone3D/commit/3483d1caf7207abe49842e3489a72e3b4d97b28b))
+
+## [2.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.0...v2.15.1) (2025-01-14)
+
+### Bug Fixes
+
+- **examples:** and freehand perimiter unit ([#1751](https://github.com/cornerstonejs/cornerstone3D/issues/1751)) ([b4f29ba](https://github.com/cornerstonejs/cornerstone3D/commit/b4f29ba8fd54b27f775a69324522c65acf0d3e69))
+
+# [2.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.12...v2.15.0) (2025-01-14)
+
+### Features
+
+- **vtk:** upgrade version ([#1749](https://github.com/cornerstonejs/cornerstone3D/issues/1749)) ([6853e59](https://github.com/cornerstonejs/cornerstone3D/commit/6853e59a8279ddab95763e5b8ee1f870871a6646))
+
+## [2.14.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.11...v2.14.12) (2025-01-14)
+
+### Bug Fixes
+
+- **ColorbarCanvas:** Fix colorbar rendering issue on small window widths ([#1649](https://github.com/cornerstonejs/cornerstone3D/issues/1649)) ([a2d6518](https://github.com/cornerstonejs/cornerstone3D/commit/a2d651869fd34dac589e2c20f287011203cd22cb))
+
 ## [2.14.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.10...v2.14.11) (2025-01-10)
 
 ### Bug Fixes

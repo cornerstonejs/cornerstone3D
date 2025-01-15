@@ -4479,6 +4479,7 @@ export class ProbeTool extends AnnotationTool {
             shadow: boolean;
             preventHandleOutsideImage: boolean;
             getTextLines: typeof defaultGetTextLines;
+            handleRadius: string;
         };
     };
     // (undocumented)
