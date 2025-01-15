@@ -69,44 +69,25 @@ class VideoRedactionTool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const annotation = {
-      metadata: {
-        // We probably just want a different type of data here, hacking this
-        // together for now.
-        viewPlaneNormal: <Types.Point3>[0, 0, 1],
-        viewUp: <Types.Point3>[0, 1, 0],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId,
-        toolName: this.getToolName(),
-      },
-      data: {
-        invalidated: true,
-        handles: {
-          points: [
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-          ],
-          activeHandleIndex: null,
-        },
-        cachedStats: {},
-        active: true,
-      },
-    };
+    const annotation =
+      VideoRedactionTool.createAnnotationForViewport<VideoRedactionAnnotation>(
+        viewport,
+        {
+          data: {
+            handles: {
+              points: [
+                <Types.Point3>[...worldPos],
+                <Types.Point3>[...worldPos],
+                <Types.Point3>[...worldPos],
+                <Types.Point3>[...worldPos],
+              ],
+            },
+          },
+        }
+      );
 
     addAnnotation(annotation, element);
 

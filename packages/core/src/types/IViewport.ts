@@ -21,7 +21,15 @@ export type ViewReferenceSpecifier = {
    * and cannot be shared across different view types such as stacks and
    * volumes, or two viewports showing different orientations or slab thicknesses.
    */
-  sliceIndex?: number | [number, number];
+  sliceIndex?: number;
+  /**
+   * The end index - this requires sliceIndex to be specified.
+   */
+  sliceRangeEnd?: number;
+
+  /** The frame number for a multiframe */
+  frameNumber?: number;
+
   /**
    * Specifies to get a view reference that refers to the generic frame of
    * reference rather than to a specific volume or stack.  Thus, the view
@@ -94,8 +102,16 @@ export type ViewReference = {
    *
    * The naming of this particular attribute matches the DICOM SR naming for the
    * referenced image, as well as historical naming in CS3D.
+   *
+   * For range/selection, this must be the starting range referenced image id
    */
   referencedImageId?: string;
+
+  /**
+   * An internal URI version of hte referencedImageId, used for performance
+   * while checking the referenced image id.
+   */
+  referencedImageUri?: string;
 
   /**
    * The focal point of the camera in world space.
@@ -119,20 +135,26 @@ export type ViewReference = {
    */
   viewUp?: Point3;
   /**
-   * The slice index or range for this view.
-   * <b>NOTE</b> The slice index is relative to the volume or stack of images.
-   * You cannot apply a slice index from one volume to another as they do NOT
+   * The slice index for the image of interest
+   * <b>NOTE</b> The slice index is relative to the volume or video image.
+   * You cannot apply a slice index from one volume or stack to another as they do NOT
    * apply.   The referencedImageId should belong to the volume you are trying
    * to apply to, the viewPlane normal should be identical, and then you can
    * apply the sliceIndex.
    *
-   * For stack viewports, the referencedImageId should occur at the given slice index.
+   * For stack viewports, the referencedImageId should be preferred
    *
    * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
    * within the stack of images - subsequent slice indexes can be at opposite
    * ends or can be co-incident but separate types of images.
    */
-  sliceIndex?: number | [number, number];
+  sliceIndex?: number;
+  /**
+   * An end of a slice range.  This is used to indicate the end of the slices
+   * where the sliceIndex is the first point.  This is a positive value if defined,
+   * so can be tested for `sliceRangeEnd`.
+   */
+  sliceRangeEnd?: number;
 
   /**
    * VolumeId that the referencedImageId was chosen from

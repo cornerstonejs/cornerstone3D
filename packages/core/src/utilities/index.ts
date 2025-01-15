@@ -81,8 +81,10 @@ import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as cacheUtils from './cacheUtils';
 import * as color from './color';
+import frameRangeUtils from './frameRangeUtils';
 
 export {
+  frameRangeUtils,
   eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,

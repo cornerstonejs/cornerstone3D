@@ -98,6 +98,7 @@ import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { findMatchingColormap } from '../utilities/colormap';
+import frameRangeUtils from '../utilities/frameRangeUtils';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -134,12 +135,14 @@ type SetVOIOptions = {
  * is not available (or low performance). Read more about StackViewports in
  * the documentation section of this website.
  */
-class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
-  private imageIds: Array<string>;
+class StackViewport extends Viewport {
+  private imageIds: string[] = [];
+  private imageIdsMap = new Map<string, number>();
+
   // current imageIdIndex that is rendered in the viewport
-  private currentImageIdIndex: number;
+  private currentImageIdIndex = 0;
   // the imageIdIndex that is targeted to be loaded with scrolling but has not initiated loading yet
-  private targetImageIdIndex: number;
+  private targetImageIdIndex = 0;
   // setTimeout if the image is debounced to be loaded
   private debouncedTimeout: number;
   /**
@@ -212,7 +215,6 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
-    this.imageIds = [];
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
     this.cameraFocalPointOnRender = [0, 0, 0];
@@ -1714,6 +1716,11 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
+    this.imageIdsMap.clear();
+    imageIds.forEach((imageId, index) => {
+      this.imageIdsMap.set(imageId, index);
+      this.imageIdsMap.set(imageIdToURI(imageId), index);
+    });
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
     const imageRetrieveConfiguration = metaData.get(
@@ -2902,34 +2909,45 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
+    const testIndex = this.getCurrentImageIdIndex();
+    const currentImageId = this.imageIds[testIndex];
+    if (!currentImageId || !viewRef) {
+      return false;
+    }
+    const {
+      referencedImageId,
+      sliceIndex,
+      sliceRangeEnd = sliceIndex,
+    } = viewRef;
+
+    // Optimize the return for the exact match cases
+    if (referencedImageId) {
+      if (referencedImageId === currentImageId) {
+        console.log(
+          'Current image id matches requested image id',
+          referencedImageId,
+          currentImageId
+        );
+        return true;
+      }
+      viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
+      const { referencedImageUri } = viewRef;
+      const foundSliceIndex = this.imageIdsMap.get(referencedImageUri);
+      if (foundSliceIndex === undefined) {
+        return false;
+      }
+      if (options.withNavigation) {
+        return true;
+      }
+      return testIndex >= foundSliceIndex && testIndex <= sliceRangeEnd;
+    }
+
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
 
-    let { imageURI } = options;
-    const { referencedImageId, sliceIndex } = viewRef;
-
-    if (viewRef.volumeId && !referencedImageId) {
-      return options.asVolume === true;
-    }
-
-    let testIndex = this.getCurrentImageIdIndex();
-    if (options.withNavigation && typeof sliceIndex === 'number') {
-      testIndex = sliceIndex;
-    }
-    const imageId = this.imageIds[testIndex];
-    if (!imageId) {
-      return false;
-    }
-    if (!imageURI) {
-      // Remove the dataLoader scheme since that can change
-      const colonIndex = imageId.indexOf(':');
-      imageURI = imageId.substring(colonIndex + 1);
-    }
-
-    const endsWith = referencedImageId?.endsWith(imageURI);
-    if (endsWith) {
-      return endsWith;
+    if (viewRef.volumeId) {
+      return options.asVolume;
     }
 
     // if camera focal point is provided, we can use that as a point
@@ -2975,7 +2993,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
   ): ViewReference {
     const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
     const reference = super.getViewReference(viewRefSpecifier);
-    const referencedImageId = this.imageIds[sliceIndex as number];
+    const referencedImageId = this.getCurrentImageId(sliceIndex);
     if (!referencedImageId) {
       return;
     }
@@ -2998,24 +3016,19 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Assumes that the slice index is correct for this viewport
    */
   public setViewReference(viewRef: ViewReference): void {
-    if (!viewRef) {
+    if (!viewRef?.referencedImageId) {
       return;
     }
-    const { referencedImageId, sliceIndex } = viewRef;
-    if (
-      typeof sliceIndex === 'number' &&
-      referencedImageId &&
-      referencedImageId === this.imageIds[sliceIndex]
-    ) {
-      this.scroll(sliceIndex - this.targetImageIdIndex);
-    } else {
-      const foundIndex = this.imageIds.indexOf(referencedImageId);
-      if (foundIndex !== -1) {
-        this.scroll(foundIndex - this.targetImageIdIndex);
-      } else {
-        throw new Error('Unsupported - referenced image id not found');
-      }
+    const { referencedImageId } = viewRef;
+    viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
+    const { referencedImageUri } = viewRef;
+    const sliceIndex = this.imageIdsMap.get(referencedImageUri);
+    if (sliceIndex === undefined) {
+      console.error(`No image URI found for ${referencedImageUri}`);
+      return;
     }
+
+    this.scroll(sliceIndex - this.targetImageIdIndex);
   }
 
   /**
@@ -3023,10 +3036,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * `imageId:<imageId>` URN format.
    */
   public getReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
-    if (Array.isArray(sliceIndex)) {
-      throw new Error('Use of slice ranges for stacks not supported');
-    }
+    const { sliceIndex = this.currentImageIdIndex } = specifier;
     return `imageId:${this.imageIds[sliceIndex]}`;
   }
 
@@ -3052,8 +3062,10 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * Returns the currently rendered imageId
    * @returns string for imageId
    */
-  public getCurrentImageId = (): string => {
-    return this.imageIds[this.currentImageIdIndex];
+  public getCurrentImageId = (
+    index = this.getCurrentImageIdIndex()
+  ): string => {
+    return this.imageIds[index];
   };
 
   /**
@@ -3062,7 +3074,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns boolean if imageId is in viewport
    */
   public hasImageId = (imageId: string): boolean => {
-    return this.imageIds.includes(imageId);
+    return this.imageIdsMap.has(imageId);
   };
 
   /**
@@ -3071,14 +3083,7 @@ class StackViewport extends Viewport implements IStackViewport, IImagesLoader {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    const imageIds = this.imageIds;
-    for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) {
-        return true;
-      }
-    }
-
-    return false;
+    return this.imageIdsMap.has(imageURI);
   };
 
   private getCPUFallbackError(method: string): Error {

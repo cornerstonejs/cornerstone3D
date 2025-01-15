@@ -975,6 +975,20 @@ type FlipDirection = {
 };
 
 // @public (undocumented)
+class FrameRangeUtils {
+    // (undocumented)
+    protected static frameRangeExtractor: RegExp;
+    // (undocumented)
+    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
+    // (undocumented)
+    static framesToString(range: any): string;
+    // (undocumented)
+    protected static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static multiframeImageId(imageId: string, frameNumber?: number): string;
+}
+
+// @public (undocumented)
 function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): ImageVolumeProps;
 
 declare namespace geometryLoader {
@@ -3106,7 +3120,7 @@ type StackScrollOutOfBoundsEventDetail = {
 };
 
 // @public (undocumented)
-export class StackViewport extends Viewport implements StackViewport, IImagesLoader {
+export class StackViewport extends Viewport {
     constructor(props: ViewportInput);
     // (undocumented)
     addActor: (actorEntry: ActorEntry) => void;
@@ -3148,7 +3162,7 @@ export class StackViewport extends Viewport implements StackViewport, IImagesLoa
     // (undocumented)
     getCornerstoneImage: () => IImage;
     // (undocumented)
-    getCurrentImageId: () => string;
+    getCurrentImageId: (index?: number) => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
@@ -3509,6 +3523,7 @@ function updateVTKImageDataWithCornerstoneImage(sourceImageData: vtkImageData, i
 
 declare namespace utilities {
     export {
+        FrameRangeUtils as frameRangeUtils,
         eventListener,
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
@@ -3629,7 +3644,7 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
-    getCurrentImageId(): string;
+    getCurrentImageId(index?: number): string;
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
@@ -4091,17 +4106,21 @@ type ViewPresentationSelector = {
 type ViewReference = {
     FrameOfReferenceUID: string;
     referencedImageId?: string;
+    referencedImageUri?: string;
     cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;
-    sliceIndex?: number | [number, number];
+    sliceIndex?: number;
+    sliceRangeEnd?: number;
     volumeId?: string;
     bounds?: BoundsLPS;
 };
 
 // @public (undocumented)
 type ViewReferenceSpecifier = {
-    sliceIndex?: number | [number, number];
+    sliceIndex?: number;
+    sliceRangeEnd?: number;
+    frameNumber?: number;
     forFrameOfReference?: boolean;
     points?: Point3[];
     volumeId?: string;

@@ -31,6 +31,14 @@ enum ChangeTypes {
    * Occurs when an interpolation result is updated with more tool specific data.
    */
   InterpolationUpdated = 'InterpolationUpdated',
+  /**
+   * Occurs when an annotation is changed do to an undo or redo.
+   */
+  History = 'History',
+  /**
+   * Send when the metadata selector changes
+   */
+  MetadataReferenceModified = 'MetadataReferenceModified',
 }
 
 export default ChangeTypes;

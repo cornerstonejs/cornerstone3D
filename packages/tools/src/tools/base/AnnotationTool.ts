@@ -76,11 +76,14 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * viewport reference data to the metadata, and otherwise returns the
    * static class createAnnotation data.
    */
-  public static createAnnotationForViewport(viewport, ...annotationBaseData) {
+  public static createAnnotationForViewport<T extends Annotation>(
+    viewport,
+    ...annotationBaseData
+  ): T {
     return this.createAnnotation(
       { metadata: viewport.getViewReference() },
       ...annotationBaseData
-    );
+    ) as T;
   }
 
   /**

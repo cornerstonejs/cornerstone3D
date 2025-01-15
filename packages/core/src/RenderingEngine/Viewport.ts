@@ -1604,7 +1604,7 @@ class Viewport implements IViewport {
    *      a different slice index in the same set of images.
    */
   public getViewReference(
-    viewRefSpecifier: ViewReferenceSpecifier = {}
+    viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
     const {
       focalPoint: cameraFocalPoint,
@@ -1616,7 +1616,7 @@ class Viewport implements IViewport {
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
-      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getSliceIndex(),
+      sliceIndex: viewRefSpecifier?.sliceIndex ?? this.getSliceIndex(),
     };
     return target;
   }

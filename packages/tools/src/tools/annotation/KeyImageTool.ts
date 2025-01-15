@@ -74,24 +74,11 @@ class KeyImageTool extends AnnotationTool {
    */
   addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+    const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const annotation = KeyImageTool.createAnnotation({
-      metadata: { ...viewport.getViewReference(), referencedImageId },
-    });
+    const annotation = KeyImageTool.createAnnotationForViewport(viewport);
 
     addAnnotation(annotation, element);
 
