@@ -1,17 +1,38 @@
+import { Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { AnnotationTool } from '../base';
+import throttle from '../../utilities/throttle';
+import {
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import * as lineSegment from '../../utilities/math/line';
+import angleBetweenLines from '../../utilities/math/angle/angleBetweenLines';
 
-import { Events } from '../../enums';
-import { AnnotationTool } from '../../tools/base';
-import * as annotation from '../../stateManagement/annotation';
-import * as utilities from '../../utilities';
-import * as drawing from '../../drawingSvg';
-import * as cursors from '../../cursors';
+import {
+  drawHandles as drawHandlesSvg,
+  drawLine as drawLineSvg,
+  drawLinkedTextBox as drawLinkedTextBoxSvg,
+} from '../../drawingSvg';
 import { state } from '../../store/state';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
+
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor';
 
 import type {
   EventTypes,
@@ -24,22 +45,7 @@ import type {
 } from '../../types';
 import type { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-
-const { addAnnotation, getAnnotations, removeAnnotation } = annotation.state;
-const { isAnnotationLocked } = annotation.locking;
-const { lineSegment } = utilities.math;
-const { angleBetweenLines } = utilities.math.angle;
-const {
-  drawHandles: drawHandlesSvg,
-  drawLine: drawLineSvg,
-  drawLinkedTextBox: drawLinkedTextBoxSvg,
-} = drawing;
-const { getViewportIdsWithToolToRender } = utilities.viewportFilters;
-const { triggerAnnotationRenderForViewportIds, throttle } = utilities;
-const { triggerAnnotationCompleted, triggerAnnotationModified } =
-  annotation.state;
-const { resetElementCursor, hideElementCursor } = cursors.elementCursor;
-const { isAnnotationVisible } = annotation.visibility;
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class AngleTool extends AnnotationTool {
   static toolName;

@@ -1,3 +1,5 @@
+import { AnnotationTool } from '../base';
+
 import {
   getEnabledElement,
   VolumeViewport,
@@ -6,14 +8,38 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { Events } from '../../enums';
-import { AnnotationTool } from '../../tools/base';
-import * as annotation from '../../stateManagement/annotation';
-import * as utilities from '../../utilities';
-import * as drawing from '../../drawingSvg';
-import * as cursors from '../../cursors';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import throttle from '../../utilities/throttle';
+import {
+  addAnnotation,
+  getAnnotations,
+  removeAnnotation,
+} from '../../stateManagement/annotation/annotationState';
+import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import {
+  triggerAnnotationCompleted,
+  triggerAnnotationModified,
+} from '../../stateManagement/annotation/helpers/state';
+import {
+  drawCircle as drawCircleSvg,
+  drawEllipseByCoordinates as drawEllipseSvg,
+  drawHandles as drawHandlesSvg,
+  drawLinkedTextBox as drawLinkedTextBoxSvg,
+} from '../../drawingSvg';
 import { state } from '../../store/state';
-
+import { Events } from '../../enums';
+import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
+import {
+  pointInEllipse,
+  getCanvasEllipseCorners,
+} from '../../utilities/math/ellipse';
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor';
 import type {
   EventTypes,
   ToolHandle,
@@ -24,32 +50,12 @@ import type {
   Annotation,
 } from '../../types';
 import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
-const { addAnnotation, getAnnotations, removeAnnotation } = annotation.state;
-const { isAnnotationLocked } = annotation.locking;
-const { pointInEllipse, getCanvasEllipseCorners } = utilities.math.ellipse;
-const {
-  drawHandles: drawHandlesSvg,
-  drawCircle: drawCircleSvg,
-  drawLinkedTextBox: drawLinkedTextBoxSvg,
-  drawEllipseByCoordinates: drawEllipseSvg,
-} = drawing;
-const { getViewportIdsWithToolToRender } = utilities.viewportFilters;
-const {
-  triggerAnnotationRenderForViewportIds,
-  throttle,
-  getCalibratedLengthUnitsAndScale,
-  getPixelValueUnits,
-} = utilities;
-const { triggerAnnotationCompleted, triggerAnnotationModified } =
-  annotation.state;
-const { resetElementCursor, hideElementCursor } = cursors.elementCursor;
-const { isAnnotationVisible } = annotation.visibility;
-const { getTextBoxCoordsCanvas } = utilities.drawing;
-const { getWorldWidthAndHeightFromTwoPoints } = utilities.planar;
-const { isViewportPreScaled } = utilities.viewport;
-const { BasicStatsCalculator } = utilities.math;
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
+import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 const { transformWorldToIndex } = csUtils;
 
