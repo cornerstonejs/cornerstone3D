@@ -2923,11 +2923,6 @@ class StackViewport extends Viewport {
     // Optimize the return for the exact match cases
     if (referencedImageId) {
       if (referencedImageId === currentImageId) {
-        console.log(
-          'Current image id matches requested image id',
-          referencedImageId,
-          currentImageId
-        );
         return true;
       }
       viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);

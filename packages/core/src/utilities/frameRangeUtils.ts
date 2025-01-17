@@ -1,5 +1,3 @@
-import { triggerEvent, eventTarget } from '@cornerstonejs/core';
-
 export type FramesRange = [number, number] | number;
 
 /**

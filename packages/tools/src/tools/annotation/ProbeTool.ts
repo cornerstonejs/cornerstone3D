@@ -38,6 +38,7 @@ import {
   EventTypes,
   ToolHandle,
   PublicToolProps,
+  ToolProps,
   SVGDrawingHelper,
 } from '../../types';
 import { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
@@ -151,15 +152,34 @@ class ProbeTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
+    const camera = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = camera;
 
-    const annotation = ProbeTool.createAnnotationForViewport<ProbeAnnotation>(
+    const referencedImageId = this.getReferencedImageId(
       viewport,
-      {
-        data: {
-          handles: { points: [<Types.Point3>[...worldPos]] },
-        },
-      }
+      worldPos,
+      viewPlaneNormal,
+      viewUp
     );
+
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
+    const annotation = {
+      invalidated: true,
+      highlighted: true,
+      metadata: {
+        toolName: this.getToolName(),
+        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
+        viewUp: <Types.Point3>[...viewUp],
+        FrameOfReferenceUID,
+        referencedImageId,
+      },
+      data: {
+        label: '',
+        handles: { points: [<Types.Point3>[...worldPos]] },
+        cachedStats: {},
+      },
+    };
 
     addAnnotation(annotation, element);
 

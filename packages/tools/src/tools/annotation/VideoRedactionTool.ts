@@ -69,7 +69,7 @@ class VideoRedactionTool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
     const annotation =
