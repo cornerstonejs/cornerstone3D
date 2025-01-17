@@ -1196,7 +1196,11 @@ class FrameRange {
     // (undocumented)
     static framesToString(range: any): string;
     // (undocumented)
+    static imageIdToFrameEnd(imageId: string): number;
+    // (undocumented)
     protected static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static imageIdToFrameStart(imageId: string): number;
 }
 
 // @public (undocumented)
@@ -3466,6 +3470,8 @@ export class StackViewport extends Viewport {
     // (undocumented)
     getSliceIndex: () => number;
     // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
+    // (undocumented)
     getSliceInfo(): {
         sliceIndex: number;
         slicePlane: number;
@@ -4099,6 +4105,8 @@ export class VideoViewport extends Viewport {
     // (undocumented)
     getSliceIndex(): number;
     // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
+    // (undocumented)
     getSliceViewInfo(): {
         width: number;
         height: number;
@@ -4582,12 +4590,13 @@ interface ViewPresentationSelector {
 type ViewReference = {
     FrameOfReferenceUID?: string;
     referencedImageId?: string;
-    referencedImageUri?: string;
+    referencedImageURI?: string;
+    multiSliceReference?: ReferencedImageRange;
     cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;
     sliceIndex?: number;
-    sliceRangeEnd?: number;
+    endRangeImageURI?: string;
     volumeId?: string;
     bounds?: BoundsLPS;
 };

@@ -27,7 +27,7 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { AnnotationMultiSelect } = cornerstoneTools.utilities;
+const { AnnotationMultiSlice } = cornerstoneTools.utilities;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -138,7 +138,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      AnnotationMultiSelect.setStartRange(viewport, annotation);
+      AnnotationMultiSlice.setStartRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -150,7 +150,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      AnnotationMultiSelect.setEndRange(viewport, annotation);
+      AnnotationMultiSlice.setEndRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -162,7 +162,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      AnnotationMultiSelect.setRange(viewport, annotation);
+      AnnotationMultiSlice.setRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -174,7 +174,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      AnnotationMultiSelect.setSingle(viewport, annotation);
+      AnnotationMultiSlice.setSingle(viewport, annotation);
       viewport.render();
     }
   },
@@ -204,13 +204,12 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
-  const range = AnnotationMultiSelect.getFrameRange(annotation);
-  const rangeArr = Array.isArray(range) ? range : [range];
+  const range = AnnotationMultiSlice.getFrameRangeStr(annotation);
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
     data.label || data.text
   } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
-    <b>Range:</b> Frames: ${rangeArr.join('-')}<br />
+    <b>Range:</b> Frames: ${range}<br />
   `;
 }
 

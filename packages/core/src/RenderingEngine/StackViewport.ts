@@ -3052,20 +3052,16 @@ class StackViewport extends Viewport {
     if (!currentImageId || !viewRef) {
       return false;
     }
-    const {
-      referencedImageId,
-      sliceIndex,
-      sliceRangeEnd = sliceIndex,
-    } = viewRef;
+    const { referencedImageId, multiSliceReference } = viewRef;
 
     // Optimize the return for the exact match cases
     if (referencedImageId) {
       if (referencedImageId === currentImageId) {
         return true;
       }
-      viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
-      const { referencedImageUri } = viewRef;
-      const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageUri);
+      viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
+      const { referencedImageURI: referencedImageURI } = viewRef;
+      const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
       if (options.asOverlay) {
         const matchedImageId = this.matchImagesForOverlay(
           currentImageId,
@@ -3081,7 +3077,10 @@ class StackViewport extends Viewport {
       if (options.withNavigation) {
         return true;
       }
-      return testIndex >= foundSliceIndex && testIndex <= sliceRangeEnd;
+      const sliceRangeEnd =
+        multiSliceReference &&
+        this.imageKeyToIndexMap.get(multiSliceReference.referencedImageId);
+      return testIndex <= sliceRangeEnd && testIndex >= foundSliceIndex;
     }
 
     if (!super.isReferenceViewable(viewRef, options)) {
@@ -3165,11 +3164,11 @@ class StackViewport extends Viewport {
       return;
     }
     const { referencedImageId } = viewRef;
-    viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
-    const { referencedImageUri } = viewRef;
-    const sliceIndex = this.imageKeyToIndexMap.get(referencedImageUri);
+    viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
+    const { referencedImageURI: referencedImageURI } = viewRef;
+    const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
     if (sliceIndex === undefined) {
-      console.error(`No image URI found for ${referencedImageUri}`);
+      console.error(`No image URI found for ${referencedImageURI}`);
       return;
     }
 
@@ -3194,6 +3193,19 @@ class StackViewport extends Viewport {
   public getTargetImageIdIndex = (): number => {
     return this.targetImageIdIndex;
   };
+
+  public getSliceIndexForImage(reference: string | ViewReference) {
+    if (!reference) {
+      return;
+    }
+    if (typeof reference === 'string') {
+      return this.imageKeyToIndexMap.get(reference);
+    }
+    if (reference.referencedImageId) {
+      return this.imageKeyToIndexMap.get(reference.referencedImageId);
+    }
+    return;
+  }
 
   /**
    * Returns the list of image Ids for the current viewport

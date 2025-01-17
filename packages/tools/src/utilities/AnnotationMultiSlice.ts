@@ -6,11 +6,11 @@ import { ChangeTypes } from '../enums';
 export type FramesRange = [number, number] | number;
 
 /**
- * This class handles the annotation multiple selections.  There are a number of
- * methods to deal with different types of range values currently, with the idea
- * that this class can handle other types of multi select in the future.
+ * This class handles the annotation multiple slice view references.
+ * Currently this only manages range values within a single stack, however,
+ * the intent is to support both range and multiple stack/multi slice indices.
  */
-export default class AnnotationMultiSelect {
+export default class AnnotationMultiSlice {
   /**
    * Sets the given annotation start slice index to the provided value (or
    * the current image index).
@@ -53,20 +53,29 @@ export default class AnnotationMultiSelect {
         endRange = viewport.getNumberOfSlices() - 1;
       }
     }
+    const sliceRangeEnd = viewport.getSliceIndexForImage(
+      metadata.multiSliceReference
+    );
+
     if (endRange === undefined) {
       endRange =
-        metadata.sliceRangeEnd >= startRange
-          ? metadata.sliceRangeEnd
+        sliceRangeEnd >= startRange
+          ? sliceRangeEnd
           : viewport.getNumberOfSlices() - 1;
     }
-    metadata.sliceRangeEnd = Math.max(startRange, endRange);
+    endRange = Math.max(startRange, endRange);
     metadata.sliceIndex = Math.min(startRange, endRange);
     metadata.referencedImageId = viewport.getCurrentImageId(
       metadata.sliceIndex
     );
-    metadata.referencedImageUri = undefined;
-    if (metadata.sliceRangeEnd === metadata.sliceIndex) {
-      metadata.sliceRangeEnd = undefined;
+    metadata.referencedImageURI = undefined;
+    if (endRange === metadata.sliceIndex) {
+      metadata.multiSliceReference = undefined;
+    } else if (endRange !== metadata.multiSliceReference?.sliceIndex) {
+      metadata.multiSliceReference = {
+        referencedImageId: viewport.getCurrentImageId(endRange),
+        sliceIndex: endRange,
+      };
     }
 
     // Send an event with metadata reference modified set to true so that
@@ -101,8 +110,14 @@ export default class AnnotationMultiSelect {
     annotation: Annotation
   ): number | [number, number] {
     const { metadata } = annotation;
-    const { sliceIndex, sliceRangeEnd } = metadata;
+    const { sliceIndex, multiSliceReference } = metadata;
+    const sliceRangeEnd = multiSliceReference?.sliceIndex;
     return sliceRangeEnd ? [sliceIndex + 1, sliceRangeEnd + 1] : sliceIndex + 1;
+  }
+
+  public static getFrameRangeStr(annotation: Annotation) {
+    const range = this.getFrameRange(annotation);
+    return Array.isArray(range) ? `${range[0]}-${range[1]}` : String(range);
   }
 
   /**
@@ -110,8 +125,11 @@ export default class AnnotationMultiSelect {
    * playback range for display.
    */
   public static setViewportFrameRange(viewport, specifier) {
-    if (viewport.setFrameRange && specifier.sliceRangeEnd) {
-      viewport.setFrameRange(specifier.sliceIndex, specifier.sliceRangeEnd);
+    if (viewport.setFrameRange && specifier.multiSliceReference?.sliceIndex) {
+      viewport.setFrameRange(
+        specifier.sliceIndex + 1,
+        specifier.multiSliceReference.sliceIndex + 1
+      );
     }
   }
 }

@@ -415,9 +415,11 @@ type AnnotationModifiedEventDetail = {
 type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEventDetail>;
 
 // @public (undocumented)
-class AnnotationMultiSelect {
+class AnnotationMultiSlice {
     // (undocumented)
     static getFrameRange(annotation: Annotation): number | [number, number];
+    // (undocumented)
+    static getFrameRangeStr(annotation: Annotation): string;
     // (undocumented)
     static setEndRange(viewport: any, annotation: any, endRange?: any): void;
     // (undocumented)
@@ -6737,7 +6739,7 @@ declare namespace utilities {
         pointToString,
         polyDataUtils,
         voi,
-        AnnotationMultiSelect,
+        AnnotationMultiSlice,
         contourSegmentation,
         annotationHydration,
         getClosestImageIdForStackViewport,

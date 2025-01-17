@@ -25,6 +25,16 @@ export default class FrameRange {
     return range as FramesRange;
   }
 
+  public static imageIdToFrameEnd(imageId: string): number {
+    const range = this.imageIdToFrames(imageId);
+    return Array.isArray(range) ? range[1] : range;
+  }
+
+  public static imageIdToFrameStart(imageId: string): number {
+    const range = this.imageIdToFrames(imageId);
+    return Array.isArray(range) ? range[0] : range;
+  }
+
   /**
    * @returns A string range or single value representation of a range array
    *    or single instance image.
