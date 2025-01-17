@@ -983,13 +983,27 @@ export default class VoxelManager<T> {
     imageIdGroups,
     dimensions,
     timePoint = 0,
+    frameNumber,
     numberOfComponents = 1,
   }: {
     imageIdGroups: string[][];
     dimensions: Point3;
-    timePoint: number;
+    timePoint?: number;
+    frameNumber?: number;
     numberOfComponents?: number;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
+    // Convert frameNumber to zero-based index for internal use
+    let activeFrame = 0;
+
+    if (frameNumber !== undefined) {
+      activeFrame = frameNumber - 1;
+    } else if (timePoint !== undefined) {
+      console.warn(
+        'Warning: timePoint parameter is deprecated. Please use frameNumber instead. timePoint is zero-based while frameNumber starts at 1.'
+      );
+      activeFrame = timePoint;
+    }
+
     if (!numberOfComponents) {
       const firstImage = cache.getImage(imageIdGroups[0][0]);
       if (!firstImage) {
@@ -1020,57 +1034,100 @@ export default class VoxelManager<T> {
 
     // Create a VoxelManager that will manage the active voxel group
     const voxelManager = new VoxelManager<number | RGB>(dimensions, {
-      _get: (index) => voxelGroups[timePoint]._get(index),
+      _get: (index) => voxelGroups[activeFrame]._get(index),
       // @ts-ignore
-      _set: (index, v) => voxelGroups[timePoint]._set(index, v),
+      _set: (index, v) => voxelGroups[activeFrame]._set(index, v),
       numberOfComponents,
       _id: 'createScalarDynamicVolumeVoxelManager',
     }) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.getScalarDataLength = () => {
-      return voxelGroups[timePoint].getScalarDataLength();
+      return voxelGroups[activeFrame].getScalarDataLength();
     };
 
     voxelManager.getConstructor = () => {
-      return voxelGroups[timePoint].getConstructor();
+      return voxelGroups[activeFrame].getConstructor();
     };
 
     voxelManager.getRange = () => {
-      return voxelGroups[timePoint].getRange();
+      return voxelGroups[activeFrame].getRange();
     };
 
     voxelManager.getMiddleSliceData = () => {
-      return voxelGroups[timePoint].getMiddleSliceData();
+      return voxelGroups[activeFrame].getMiddleSliceData();
     };
 
     // @ts-ignore
     voxelManager.setTimePoint = (newTimePoint: number) => {
-      timePoint = newTimePoint;
+      console.warn(
+        'Warning: setTimePoint is deprecated. Please use setFrameNumber instead. Note that timePoint is zero-based while frameNumber starts at 1.'
+      );
+      activeFrame = newTimePoint;
       // @ts-ignore
-      voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
+      voxelManager._get = (index) => voxelGroups[activeFrame]._get(index);
       // @ts-ignore
-      voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
+      voxelManager._set = (index, v) => voxelGroups[activeFrame]._set(index, v);
+    };
+
+    // @ts-ignore
+    voxelManager.setFrameNumber = (newFrameNumber: number) => {
+      activeFrame = newFrameNumber - 1;
+      // @ts-ignore
+      voxelManager._get = (index) => voxelGroups[activeFrame]._get(index);
+      // @ts-ignore
+      voxelManager._set = (index, v) => voxelGroups[activeFrame]._set(index, v);
     };
 
     // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
+      console.warn(
+        'Warning: getAtIndexAndTimePoint is deprecated. Please use getAtIndexAndFrame instead. Note that timePoint is zero-based while frameNumber starts at 1.'
+      );
       return voxelGroups[tp]._get(index);
     };
 
     // @ts-ignore
+    voxelManager.getAtIndexAndFrame = (index: number, frameNumber: number) => {
+      return voxelGroups[frameNumber - 1]._get(index);
+    };
+
+    // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
+      console.warn(
+        'Warning: getTimePointScalarData is deprecated. Please use getFrameScalarData instead. Note that timePoint is zero-based while frameNumber starts at 1.'
+      );
       return voxelGroups[tp].getCompleteScalarDataArray();
     };
 
     // @ts-ignore
-    // get the given time point complete scalar data array
-    voxelManager.getTimePointScalarData = (tp: number) => {
-      return voxelGroups[tp].getCompleteScalarDataArray();
+    voxelManager.getFrameScalarData = (frameNumber: number) => {
+      return voxelGroups[frameNumber - 1].getCompleteScalarDataArray();
     };
 
     // @ts-ignore
     voxelManager.getCurrentTimePointScalarData = () => {
-      return voxelGroups[timePoint].getCompleteScalarDataArray();
+      console.warn(
+        'Warning: getCurrentTimePointScalarData is deprecated. Please use getCurrentFrameScalarData instead.'
+      );
+      return voxelGroups[activeFrame].getCompleteScalarDataArray();
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentFrameScalarData = () => {
+      return voxelGroups[activeFrame].getCompleteScalarDataArray();
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentFrameNumber = () => {
+      return activeFrame + 1;
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentTimePoint = () => {
+      console.warn(
+        'Warning: getCurrentTimePoint is deprecated. Please use getCurrentFrameNumber instead. Note that timePoint is zero-based while frameNumber starts at 1.'
+      );
+      return activeFrame;
     };
 
     return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;

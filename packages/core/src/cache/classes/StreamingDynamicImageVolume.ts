@@ -16,12 +16,14 @@ export default class StreamingDynamicImageVolume
   extends BaseStreamingImageVolume
   implements IDynamicImageVolume
 {
-  private _timePointIndex = 0;
+  private _frameNumber = 1;
   private _splittingTag: string;
   private _imageIdGroups: string[][];
-  private _loadedTimePoints: Set<number> = new Set();
+  private _loadedFrames: Set<number> = new Set();
 
-  public numTimePoints: number;
+  public numFrames: number;
+  /** @deprecated Use numFrames instead */
+  public override numTimePoints: number;
 
   constructor(
     imageVolumeProperties: ImageVolumeProps & {
@@ -34,12 +36,13 @@ export default class StreamingDynamicImageVolume
     const { imageIdGroups, splittingTag } = imageVolumeProperties;
     this._splittingTag = splittingTag;
     this._imageIdGroups = imageIdGroups;
-    this.numTimePoints = this._imageIdGroups.length;
+    this.numFrames = this._imageIdGroups.length;
+    this.numTimePoints = this.numFrames; // Keep in sync for backward compatibility
   }
 
   private _getImageIdsToLoad(): string[] {
     const imageIdGroups = this._imageIdGroups;
-    const initialImageIdGroupIndex = this._timePointIndex;
+    const initialImageIdGroupIndex = this._frameNumber - 1;
     const imageIds = [...imageIdGroups[initialImageIdGroupIndex]];
 
     let leftIndex = initialImageIdGroupIndex - 1;
@@ -67,39 +70,56 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * Returns the active imageIdGroup index
-   * @returns active imageIdGroup index
+   * Returns the active frame number (1-based)
+   * @returns active frame number
    */
-  public get timePointIndex(): number {
-    return this._timePointIndex;
+  public get frameNumber(): number {
+    return this._frameNumber;
   }
 
   /**
-   * Set the active imageIdGroup index which also updates the active scalar data
+   * Set the active frame number which also updates the active scalar data
+   * Frame numbers are 1-based.
    *
-   * @param index - The index of the imageIdGroup to set as active
-   * @returns current imageIdGroup index
+   * @param frameNumber - The frame number to set as active (1-based)
    */
-  public set timePointIndex(index: number) {
-    // Nothing to do when imageIdGroup index does not change
-    if (this._timePointIndex === index) {
+  public set frameNumber(frameNumber: number) {
+    if (this._frameNumber === frameNumber) {
       return;
     }
 
-    this._timePointIndex = index;
+    this._frameNumber = frameNumber;
     // @ts-expect-error since we need to override the type for now
-    this.voxelManager.setTimePoint(index);
+    this.voxelManager.setFrameNumber(frameNumber);
 
     this.invalidateVolume(true);
 
-    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED, {
       volumeId: this.volumeId,
-      timePointIndex: index,
-      numTimePoints: this.numTimePoints,
-      imageIdGroupIndex: index,
-      numImageIdGroups: this.numTimePoints,
+      frameNumber: frameNumber,
+      numFrames: this.numFrames,
       splittingTag: this.splittingTag,
     });
+  }
+
+  /**
+   * @deprecated Use frameNumber instead. timePointIndex is zero-based while frameNumber starts at 1.
+   */
+  public get timePointIndex(): number {
+    console.warn(
+      'Warning: timePointIndex is deprecated. Please use frameNumber instead. Note that timePointIndex is zero-based while frameNumber starts at 1.'
+    );
+    return this._frameNumber - 1;
+  }
+
+  /**
+   * @deprecated Use frameNumber instead. timePointIndex is zero-based while frameNumber starts at 1.
+   */
+  public set timePointIndex(index: number) {
+    console.warn(
+      'Warning: timePointIndex is deprecated. Please use frameNumber instead. Note that timePointIndex is zero-based while frameNumber starts at 1.'
+    );
+    this.frameNumber = index + 1;
   }
 
   /**
@@ -107,23 +127,43 @@ export default class StreamingDynamicImageVolume
    * @param delta - The amount to scroll
    */
   public scroll(delta: number): void {
-    const newIndex = this._timePointIndex + delta;
+    const newFrameNumber = this._frameNumber + delta;
 
-    if (newIndex < 0) {
-      this.timePointIndex = this.numTimePoints - 1;
-    } else if (newIndex >= this.numTimePoints) {
-      this.timePointIndex = 0;
+    if (newFrameNumber < 1) {
+      this.frameNumber = this.numFrames;
+    } else if (newFrameNumber > this.numFrames) {
+      this.frameNumber = 1;
     } else {
-      this.timePointIndex = newIndex;
+      this.frameNumber = newFrameNumber;
     }
   }
 
-  public getCurrentTimePointImageIds(): string[] {
-    return this._imageIdGroups[this._timePointIndex];
+  public getCurrentFrameImageIds(): string[] {
+    return this._imageIdGroups[this._frameNumber - 1];
   }
 
+  /**
+   * @deprecated Use getCurrentFrameImageIds instead
+   */
+  public getCurrentTimePointImageIds(): string[] {
+    console.warn(
+      'Warning: getCurrentTimePointImageIds is deprecated. Please use getCurrentFrameImageIds instead.'
+    );
+    return this.getCurrentFrameImageIds();
+  }
+
+  public flatImageIdIndexToFrameNumber(flatImageIdIndex: number): number {
+    return Math.floor(flatImageIdIndex / this._imageIdGroups[0].length) + 1;
+  }
+
+  /**
+   * @deprecated Use flatImageIdIndexToFrameNumber instead
+   */
   public flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number {
-    return Math.floor(flatImageIdIndex / this._imageIdGroups[0].length);
+    console.warn(
+      'Warning: flatImageIdIndexToTimePointIndex is deprecated. Please use flatImageIdIndexToFrameNumber instead.'
+    );
+    return this.flatImageIdIndexToFrameNumber(flatImageIdIndex) - 1;
   }
 
   public flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number {
@@ -155,39 +195,65 @@ export default class StreamingDynamicImageVolume
   };
 
   /**
-   * Checks if a specific timepoint is fully loaded
-   * @param timePointIndex - The index of the timepoint to check
-   * @returns boolean indicating if the timepoint is fully loaded
+   * Checks if a specific frame is fully loaded
+   * @param frameNumber - The frame number to check (1-based)
+   * @returns boolean indicating if the frame is fully loaded
    */
-  public isTimePointLoaded(timePointIndex: number): boolean {
-    return this._loadedTimePoints.has(timePointIndex);
+  public isFrameLoaded(frameNumber: number): boolean {
+    return this._loadedFrames.has(frameNumber);
   }
 
   /**
-   * Marks a timepoint as fully loaded
-   * @param timePointIndex - The index of the timepoint to mark as loaded
+   * @deprecated Use isFrameLoaded instead
    */
-  private markTimePointAsLoaded(timePointIndex: number): void {
-    this._loadedTimePoints.add(timePointIndex);
+  public isTimePointLoaded(timePointIndex: number): boolean {
+    console.warn(
+      'Warning: isTimePointLoaded is deprecated. Please use isFrameLoaded instead. Note that timePointIndex is zero-based while frameNumber starts at 1.'
+    );
+    return this.isFrameLoaded(timePointIndex + 1);
+  }
 
-    // Trigger an event to notify that a timepoint has been fully loaded
+  /**
+   * Marks a frame as fully loaded
+   * @param frameNumber - The frame number to mark as loaded (1-based)
+   */
+  private markFrameAsLoaded(frameNumber: number): void {
+    this._loadedFrames.add(frameNumber);
+
+    // Trigger new frame-based event
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_FRAME_NUMBER_LOADED, {
+      volumeId: this.volumeId,
+      frameNumber,
+    });
+
+    // Trigger deprecated time point event for backward compatibility
     triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_LOADED, {
       volumeId: this.volumeId,
-      timePointIndex,
+      timePointIndex: frameNumber - 1,
     });
   }
 
-  protected checkTimePointCompletion(imageIdIndex: number): void {
-    const timePointIndex = this.flatImageIdIndexToTimePointIndex(imageIdIndex);
-    const imageIdsInTimePoint = this._imageIdGroups[timePointIndex];
+  protected checkFrameCompletion(imageIdIndex: number): void {
+    const frameNumber = this.flatImageIdIndexToFrameNumber(imageIdIndex);
+    const imageIdsInFrame = this._imageIdGroups[frameNumber - 1];
 
-    const allLoaded = imageIdsInTimePoint.every((imageId) => {
+    const allLoaded = imageIdsInFrame.every((imageId) => {
       const index = this.getImageIdIndex(imageId);
       return this.cachedFrames[index] === ImageQualityStatus.FULL_RESOLUTION;
     });
 
-    if (allLoaded && !this.isTimePointLoaded(timePointIndex)) {
-      this.markTimePointAsLoaded(timePointIndex);
+    if (allLoaded && !this.isFrameLoaded(frameNumber)) {
+      this.markFrameAsLoaded(frameNumber);
     }
+  }
+
+  /**
+   * @deprecated Use checkFrameCompletion instead
+   */
+  protected checkTimePointCompletion(imageIdIndex: number): void {
+    console.warn(
+      'Warning: checkTimePointCompletion is deprecated. Please use checkFrameCompletion instead.'
+    );
+    this.checkFrameCompletion(imageIdIndex);
   }
 }

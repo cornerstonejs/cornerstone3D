@@ -255,14 +255,30 @@ enum Events {
   COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
 
   /**
+   * Dynamic image volume frame number changed
+   * The first frame number is 1
+   */
+  DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED = 'DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED',
+
+  /**
    * Dynamic image volume time point index changed
+   * The first timepoint index is 0
+   * @deprecated use DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED instead
    */
   DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
 
   /**
    * Dynamic image volume time point loaded
+   * The first timepoint starts at 0
+   * @deprecated use DYNAMIC_VOLUME_FRAME_NUMBER_LOADED instead
    */
   DYNAMIC_VOLUME_TIME_POINT_LOADED = 'DYNAMIC_VOLUME_TIME_POINT_LOADED',
+
+  /**
+   * Dynamic image volume frame loaded
+   * The first frame number is 1
+   */
+  DYNAMIC_VOLUME_FRAME_NUMBER_LOADED = 'DYNAMIC_VOLUME_FRAME_NUMBER_LOADED',
 
   /**
    * Triggers on the eventTarget when a geometry has successfully loaded by geometryLoaders

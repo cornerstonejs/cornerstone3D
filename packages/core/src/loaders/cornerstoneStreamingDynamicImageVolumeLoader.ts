@@ -71,7 +71,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
   const voxelManager = VoxelManager.createScalarDynamicVolumeVoxelManager({
     dimensions,
     imageIdGroups: sortedImageIdGroups,
-    timePoint: 0,
+    frameNumber: 1,
     numberOfComponents,
   });
 
