@@ -2011,7 +2011,7 @@ class Viewport {
   getScale() {
     const imageData = this.getDefaultImageData();
     if (!imageData) {
-        return;
+      return;
     }
 
     const dimensions = imageData.getDimensions();
@@ -2020,21 +2020,21 @@ class Viewport {
 
     const worldZero = imageData.indexToWorld([0, 0, 0]);
     const worldEdge = imageData.indexToWorld([
-        dimensions[0] - 1,
-        dimensions[1] - 1,
-        dimensions[2],
+      dimensions[0] - 1,
+      dimensions[1] - 1,
+      dimensions[2],
     ]);
 
     const canvasZero = this.worldToCanvas([
-        worldZero[0],
-        worldZero[1],
-        worldZero[2]
+      worldZero[0],
+      worldZero[1],
+      worldZero[2],
     ] as [number, number, number]);
 
     const canvasEdge = this.worldToCanvas([
-        worldEdge[0],
-        worldEdge[1],
-        worldEdge[2]
+      worldEdge[0],
+      worldEdge[1],
+      worldEdge[2],
     ] as [number, number, number]);
 
     const renderedWidth = Math.abs(canvasEdge[0] - canvasZero[0]);
@@ -2044,7 +2044,12 @@ class Viewport {
     const scaleY = renderedHeight / originalHeight;
 
     if (Math.abs(scaleX - scaleY) > 0.01) {
-        console.warn('Non-uniform scaling detected in viewport. X scale:', scaleX, 'Y scale:', scaleY);
+      console.warn(
+        'Non-uniform scaling detected in viewport. X scale:',
+        scaleX,
+        'Y scale:',
+        scaleY
+      );
     }
 
     return scaleX;
