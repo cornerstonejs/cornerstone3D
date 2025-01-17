@@ -1996,6 +1996,47 @@ class Viewport {
   public setDataIds(_imageIds: string[], _options?: DataSetOptions) {
     throw new Error('Unsupported operatoin setDataIds');
   }
+
+  /**
+   * Returns the scaling factor of the rendered image compared to its original dimensions.
+   * Scale of 1 means the image is rendered at its original size.
+   *
+   * @returns {number|undefined} The scale factor of the rendered image, or undefined if no image data is available.
+   * Assumes uniform scaling - will log a warning if x and y scales differ by more than 0.01.
+   *
+   * @example
+   * const scale = viewport.getScale();
+   * // scale = 0.5 means a 1000x1000 image is rendered as 500x500
+   */
+  getScale() {
+    const imageData = this.getDefaultImageData();
+    if (!imageData) {
+        return;
+    }
+
+    const dimensions = imageData.getDimensions();
+    const originalWidth = dimensions[0];
+    const originalHeight = dimensions[1];
+
+    const canvasZero = this.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+    const canvasEdge = this.worldToCanvas(imageData.indexToWorld([
+        dimensions[0] - 1,
+        dimensions[1] - 1,
+        dimensions[2],
+    ]));
+
+    const renderedWidth = Math.abs(canvasEdge[0] - canvasZero[0]);
+    const renderedHeight = Math.abs(canvasEdge[1] - canvasZero[1]);
+
+    const scaleX = renderedWidth / originalWidth;
+    const scaleY = renderedHeight / originalHeight;
+
+    if (Math.abs(scaleX - scaleY) > 0.01) {
+        console.warn('Non-uniform scaling detected in viewport. X scale:', scaleX, 'Y scale:', scaleY);
+    }
+
+    return scaleX; // Or scaleY - they should be the same
+  }
 }
 
 export default Viewport;
