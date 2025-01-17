@@ -109,7 +109,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
           continue;
         }
 
-        const data = image.voxelManager.getScalarData();
+        const data = image.getPixelData();
         const gl = model.context;
 
         const dataType = data.constructor.name;

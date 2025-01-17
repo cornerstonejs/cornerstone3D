@@ -276,12 +276,7 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
-        const voxelManager = utilities.VoxelManager.createImageVoxelManager({
-          scalarData: imageFrame.pixelData,
-          width: imageFrame.columns,
-          height: imageFrame.rows,
-          numberOfComponents: imageFrame.samplesPerPixel,
-        });
+        const voxelManager = null;
 
         const image: DICOMLoaderIImage = {
           imageId,
