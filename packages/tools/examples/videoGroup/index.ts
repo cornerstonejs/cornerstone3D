@@ -41,7 +41,7 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { annotationFrameRange } = cornerstoneTools.utilities;
+const { AnnotationMultiSlice } = cornerstoneTools.utilities;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -175,14 +175,14 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
+      const rangeSelection = AnnotationMultiSlice.getFrameRange(annotation);
       const frame = viewport.getFrameNumber();
       const range = Array.isArray(rangeSelection)
         ? rangeSelection
         : [rangeSelection, viewport.numberOfFrames];
       range[0] = frame;
       range[1] = Math.max(frame, range[1]);
-      annotationFrameRange.setFrameRange(
+      AnnotationMultiSlice.setFrameRange(
         annotation,
         range as [number, number],
         baseEventDetail
@@ -200,7 +200,7 @@ addButtonToToolbar({
     const annotation = getActiveAnnotation();
     if (annotation) {
       togglePlay(false);
-      annotationFrameRange.setFrameRange(
+      AnnotationMultiSlice.setFrameRange(
         annotation,
         viewport.getFrameNumber(),
         baseEventDetail
@@ -216,14 +216,14 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
+      const rangeSelection = AnnotationMultiSlice.getFrameRange(annotation);
       const frame = viewport.getFrameNumber();
       const range = Array.isArray(rangeSelection)
         ? rangeSelection
         : [rangeSelection, viewport.getNumberOfSlices()];
       range[1] = frame;
       range[0] = Math.min(frame, range[0]);
-      annotationFrameRange.setFrameRange(
+      AnnotationMultiSlice.setFrameRange(
         annotation,
         range as [number, number],
         baseEventDetail
@@ -256,7 +256,7 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
-  const range = annotationFrameRange.getFrameRange(annotation);
+  const range = AnnotationMultiSlice.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
   const { fps } = viewport;
   selectionDiv.innerHTML = `
@@ -309,7 +309,7 @@ function selectNextAnnotation(direction) {
   if (!annotation) {
     return;
   }
-  const range = annotationFrameRange.getFrameRange(annotation);
+  const range = AnnotationMultiSlice.getFrameRange(annotation);
   if (Array.isArray(range)) {
     viewport.setFrameRange(range);
     togglePlay(true);

@@ -1,53 +1,20 @@
 import { triggerEvent, eventTarget } from '@cornerstonejs/core';
 import Events from '../enums/Events';
-import { Annotation } from '../types';
+import type { Annotation } from '../types';
 import { ChangeTypes } from '../enums';
 
 export type FramesRange = [number, number] | number;
 
 /**
- * This class handles the annotation frame range values for multiframes.
- * Mostly used for the Video viewport, it allows references to
- * a range of frame values.
+ * This class handles the annotation multiple slice view references.
+ * Currently this only manages range values within a single stack, however,
+ * the intent is to support both range and multiple stack/multi slice indices.
  */
-export default class AnnotationFrameRange {
-  protected static frameRangeExtractor =
-    /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
-
-  protected static imageIdToFrames(imageId: string): FramesRange {
-    const match = imageId.match(this.frameRangeExtractor);
-    if (!match || !match[2]) {
-      return null;
-    }
-    const range = match[2].split('-').map((it) => Number(it));
-    if (range.length === 1) {
-      return range[0];
-    }
-    return range as FramesRange;
-  }
-
-  public static framesToString(range) {
-    if (Array.isArray(range)) {
-      return `${range[0]}-${range[1]}`;
-    }
-    return String(range);
-  }
-
-  protected static framesToImageId(
-    imageId: string,
-    range: FramesRange | string
-  ): string {
-    const match = imageId.match(this.frameRangeExtractor);
-    if (!match || !match[2]) {
-      return null;
-    }
-    const newRangeString = this.framesToString(range);
-    return imageId.replace(
-      this.frameRangeExtractor,
-      `${match[1]}${newRangeString}`
-    );
-  }
-
+export default class AnnotationMultiSlice {
+  /**
+   * Sets the given annotation start slice index to the provided value (or
+   * the current image index).
+   */
   public static setStartRange(
     viewport,
     annotation,
@@ -56,6 +23,10 @@ export default class AnnotationFrameRange {
     this.setRange(viewport, annotation, startRange);
   }
 
+  /**
+   * Sets the end of the range to the specified value.
+   * If that is a single image, will be set as a non-range value.
+   */
   public static setEndRange(
     viewport,
     annotation,
@@ -82,20 +53,29 @@ export default class AnnotationFrameRange {
         endRange = viewport.getNumberOfSlices() - 1;
       }
     }
+    const sliceRangeEnd = viewport.getSliceIndexForImage(
+      metadata.multiSliceReference
+    );
+
     if (endRange === undefined) {
       endRange =
-        metadata.sliceRangeEnd >= startRange
-          ? metadata.sliceRangeEnd
+        sliceRangeEnd >= startRange
+          ? sliceRangeEnd
           : viewport.getNumberOfSlices() - 1;
     }
-    metadata.sliceRangeEnd = Math.max(startRange, endRange);
+    endRange = Math.max(startRange, endRange);
     metadata.sliceIndex = Math.min(startRange, endRange);
     metadata.referencedImageId = viewport.getCurrentImageId(
       metadata.sliceIndex
     );
-    metadata.referencedImageUri = undefined;
-    if (metadata.sliceRangeEnd === metadata.sliceIndex) {
-      metadata.sliceRangeEnd = undefined;
+    metadata.referencedImageURI = undefined;
+    if (endRange === metadata.sliceIndex) {
+      metadata.multiSliceReference = undefined;
+    } else if (endRange !== metadata.multiSliceReference?.sliceIndex) {
+      metadata.multiSliceReference = {
+        referencedImageId: viewport.getCurrentImageId(endRange),
+        sliceIndex: endRange,
+      };
     }
 
     // Send an event with metadata reference modified set to true so that
@@ -111,6 +91,10 @@ export default class AnnotationFrameRange {
     this.setViewportFrameRange(viewport, metadata);
   }
 
+  /**
+   * Sets the annotation to display a single image rather than a range of
+   * images.
+   */
   public static setSingle(
     viewport,
     annotation,
@@ -119,17 +103,33 @@ export default class AnnotationFrameRange {
     this.setRange(viewport, annotation, current, current);
   }
 
+  /**
+   * Gets the frame range or single frame item from an annotation.
+   */
   public static getFrameRange(
     annotation: Annotation
   ): number | [number, number] {
     const { metadata } = annotation;
-    const { sliceIndex, sliceRangeEnd } = metadata;
+    const { sliceIndex, multiSliceReference } = metadata;
+    const sliceRangeEnd = multiSliceReference?.sliceIndex;
     return sliceRangeEnd ? [sliceIndex + 1, sliceRangeEnd + 1] : sliceIndex + 1;
   }
 
+  public static getFrameRangeStr(annotation: Annotation) {
+    const range = this.getFrameRange(annotation);
+    return Array.isArray(range) ? `${range[0]}-${range[1]}` : String(range);
+  }
+
+  /**
+   * This sets the viewport frame range if it has a frame range.  This is the
+   * playback range for display.
+   */
   public static setViewportFrameRange(viewport, specifier) {
-    if (viewport.setFrameRange && specifier.sliceRangeEnd) {
-      viewport.setFrameRange(specifier.sliceIndex, specifier.sliceRangeEnd);
+    if (viewport.setFrameRange && specifier.multiSliceReference?.sliceIndex) {
+      viewport.setFrameRange(
+        specifier.sliceIndex + 1,
+        specifier.multiSliceReference.sliceIndex + 1
+      );
     }
   }
 }

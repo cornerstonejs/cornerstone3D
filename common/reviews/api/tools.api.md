@@ -323,30 +323,6 @@ export abstract class AnnotationDisplayTool extends BaseTool {
 }
 
 // @public (undocumented)
-class AnnotationFrameRange {
-    // (undocumented)
-    protected static frameRangeExtractor: RegExp;
-    // (undocumented)
-    protected static framesToImageId(imageId: string, range: FramesRange_2 | string): string;
-    // (undocumented)
-    static framesToString(range: any): string;
-    // (undocumented)
-    static getFrameRange(annotation: Annotation): number | [number, number];
-    // (undocumented)
-    protected static imageIdToFrames(imageId: string): FramesRange_2;
-    // (undocumented)
-    static setEndRange(viewport: any, annotation: any, endRange?: any): void;
-    // (undocumented)
-    static setRange(viewport: any, annotation: any, startRange?: number, endRange?: number): void;
-    // (undocumented)
-    static setSingle(viewport: any, annotation: any, current?: any): void;
-    // (undocumented)
-    static setStartRange(viewport: any, annotation: any, startRange?: any): void;
-    // (undocumented)
-    static setViewportFrameRange(viewport: any, specifier: any): void;
-}
-
-// @public (undocumented)
 class AnnotationGroup {
     constructor();
     // (undocumented)
@@ -423,6 +399,24 @@ type AnnotationModifiedEventDetail = {
 
 // @public (undocumented)
 type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEventDetail>;
+
+// @public (undocumented)
+class AnnotationMultiSlice {
+    // (undocumented)
+    static getFrameRange(annotation: Annotation): number | [number, number];
+    // (undocumented)
+    static getFrameRangeStr(annotation: Annotation): string;
+    // (undocumented)
+    static setEndRange(viewport: any, annotation: any, endRange?: any): void;
+    // (undocumented)
+    static setRange(viewport: any, annotation: any, startRange?: number, endRange?: number): void;
+    // (undocumented)
+    static setSingle(viewport: any, annotation: any, current?: any): void;
+    // (undocumented)
+    static setStartRange(viewport: any, annotation: any, startRange?: any): void;
+    // (undocumented)
+    static setViewportFrameRange(viewport: any, specifier: any): void;
+}
 
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
@@ -956,6 +950,8 @@ enum ChangeTypes {
     Completed = "Completed",
     // (undocumented)
     HandlesUpdated = "HandlesUpdated",
+    // (undocumented)
+    History = "History",
     // (undocumented)
     InitialSetup = "InitialSetup",
     // (undocumented)
@@ -6365,7 +6361,7 @@ declare namespace utilities {
         pointToString,
         polyDataUtils,
         voi,
-        AnnotationFrameRange as annotationFrameRange,
+        AnnotationMultiSlice,
         contourSegmentation,
         annotationHydration,
         getClosestImageIdForStackViewport

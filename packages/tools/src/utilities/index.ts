@@ -25,7 +25,7 @@ import pointInShapeCallback from './pointInShapeCallback';
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import scroll from './scroll';
 import { pointToString } from './pointToString';
-import annotationFrameRange from './annotationFrameRange';
+import AnnotationMultiSlice from './AnnotationMultiSlice';
 import pointInSurroundingSphereCallback from './pointInSurroundingSphereCallback';
 import getViewportForAnnotation from './getViewportForAnnotation';
 import {
@@ -98,7 +98,7 @@ export {
   pointToString,
   polyDataUtils,
   voi,
-  annotationFrameRange,
+  AnnotationMultiSlice,
   contourSegmentation,
   annotationHydration,
   getClosestImageIdForStackViewport,

@@ -98,7 +98,6 @@ import correctShift from './helpers/cpuFallback/rendering/correctShift';
 import resetCamera from './helpers/cpuFallback/rendering/resetCamera';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import { findMatchingColormap } from '../utilities/colormap';
-import frameRangeUtils from '../utilities/frameRangeUtils';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -137,7 +136,13 @@ type SetVOIOptions = {
  */
 class StackViewport extends Viewport {
   private imageIds: string[] = [];
-  private imageIdsMap = new Map<string, number>();
+  /**
+   * The imageKeyToIndexMap maps the imageId values to the position in the imageIds
+   * array.  It also contains the imageURI equivalent of each imageId to map
+   * to the position in the imageIds array.  This allows checking for whether
+   * the imageId or URI is present without having to scan the imageIds array.
+   */
+  private imageKeyToIndexMap = new Map<string, number>();
 
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex = 0;
@@ -1716,10 +1721,10 @@ class StackViewport extends Viewport {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
-    this.imageIdsMap.clear();
+    this.imageKeyToIndexMap.clear();
     imageIds.forEach((imageId, index) => {
-      this.imageIdsMap.set(imageId, index);
-      this.imageIdsMap.set(imageIdToURI(imageId), index);
+      this.imageKeyToIndexMap.set(imageId, index);
+      this.imageKeyToIndexMap.set(imageIdToURI(imageId), index);
     });
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
@@ -2914,27 +2919,26 @@ class StackViewport extends Viewport {
     if (!currentImageId || !viewRef) {
       return false;
     }
-    const {
-      referencedImageId,
-      sliceIndex,
-      sliceRangeEnd = sliceIndex,
-    } = viewRef;
+    const { referencedImageId, multiSliceReference } = viewRef;
 
     // Optimize the return for the exact match cases
     if (referencedImageId) {
       if (referencedImageId === currentImageId) {
         return true;
       }
-      viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
-      const { referencedImageUri } = viewRef;
-      const foundSliceIndex = this.imageIdsMap.get(referencedImageUri);
+      viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
+      const { referencedImageURI: referencedImageURI } = viewRef;
+      const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
       if (foundSliceIndex === undefined) {
         return false;
       }
       if (options.withNavigation) {
         return true;
       }
-      return testIndex >= foundSliceIndex && testIndex <= sliceRangeEnd;
+      const sliceRangeEnd =
+        multiSliceReference &&
+        this.imageKeyToIndexMap.get(multiSliceReference.referencedImageId);
+      return testIndex <= sliceRangeEnd && testIndex >= foundSliceIndex;
     }
 
     if (!super.isReferenceViewable(viewRef, options)) {
@@ -3015,11 +3019,11 @@ class StackViewport extends Viewport {
       return;
     }
     const { referencedImageId } = viewRef;
-    viewRef.referencedImageUri ||= imageIdToURI(referencedImageId);
-    const { referencedImageUri } = viewRef;
-    const sliceIndex = this.imageIdsMap.get(referencedImageUri);
+    viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
+    const { referencedImageURI: referencedImageURI } = viewRef;
+    const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
     if (sliceIndex === undefined) {
-      console.error(`No image URI found for ${referencedImageUri}`);
+      console.error(`No image URI found for ${referencedImageURI}`);
       return;
     }
 
@@ -3045,6 +3049,19 @@ class StackViewport extends Viewport {
     return this.targetImageIdIndex;
   };
 
+  public getSliceIndexForImage(reference: string | ViewReference) {
+    if (!reference) {
+      return;
+    }
+    if (typeof reference === 'string') {
+      return this.imageKeyToIndexMap.get(reference);
+    }
+    if (reference.referencedImageId) {
+      return this.imageKeyToIndexMap.get(reference.referencedImageId);
+    }
+    return;
+  }
+
   /**
    * Returns the list of image Ids for the current viewport
    * @returns list of strings for image Ids
@@ -3069,7 +3086,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageId is in viewport
    */
   public hasImageId = (imageId: string): boolean => {
-    return this.imageIdsMap.has(imageId);
+    return this.imageKeyToIndexMap.has(imageId);
   };
 
   /**
@@ -3078,7 +3095,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    return this.imageIdsMap.has(imageURI);
+    return this.imageKeyToIndexMap.has(imageURI);
   };
 
   private getCPUFallbackError(method: string): Error {

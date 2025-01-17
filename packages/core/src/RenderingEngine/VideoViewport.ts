@@ -26,7 +26,8 @@ import { triggerEvent } from '../utilities';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
-import cache from '../cache';
+import cache from '../cache/cache';
+import FrameRange from '../utilities/FrameRange';
 
 /**
  * A data type for the scalar data for video data.
@@ -453,6 +454,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
     this.frameRange = [frameRange[0], frameRange[1]];
   }
 
+  public getSliceIndexForImage(reference: string | ViewReference) {
+    if (!reference) {
+      return;
+    }
+    if (typeof reference === 'string') {
+      return FrameRange.imageIdToFrameStart(reference);
+    }
+    if (reference.referencedImageId) {
+      return FrameRange.imageIdToFrameStart(reference.referencedImageId);
+    }
+    return;
+  }
+
   public getFrameRange(): [number, number] {
     return this.frameRange;
   }
@@ -736,7 +750,7 @@ class VideoViewport extends Viewport implements IVideoViewport {
     options: ReferenceCompatibleOptions = {}
   ): boolean {
     let { imageURI } = options;
-    const { referencedImageId, sliceIndex, sliceRangeEnd } = viewRef;
+    const { referencedImageId, sliceIndex, multiSliceReference } = viewRef;
     if (!super.isReferenceViewable(viewRef)) {
       return false;
     }
@@ -753,7 +767,10 @@ class VideoViewport extends Viewport implements IVideoViewport {
       return true;
     }
     const currentIndex = this.getSliceIndex();
-    if (sliceRangeEnd) {
+    if (multiSliceReference) {
+      const sliceRangeEnd = FrameRange.imageIdToFrameEnd(
+        multiSliceReference.referencedImageId
+      );
       return currentIndex >= sliceIndex && currentIndex <= sliceRangeEnd;
     }
     if (sliceIndex !== undefined) {
@@ -795,11 +812,19 @@ class VideoViewport extends Viewport implements IVideoViewport {
     const sliceRangeEnd =
       viewRefSpecifier?.sliceRangeEnd ??
       (this.isPlaying ? this.frameRange[1] - 1 : undefined);
+    const multiSliceReference =
+      sliceRangeEnd > sliceIndex
+        ? {
+            sliceIndex: sliceRangeEnd,
+            referencedImageId: this.getCurrentImageId(sliceRangeEnd),
+          }
+        : undefined;
+
     return {
       ...super.getViewReference(viewRefSpecifier),
       referencedImageId: this.getReferenceId(viewRefSpecifier),
       sliceIndex,
-      sliceRangeEnd,
+      multiSliceReference,
     };
   }
 

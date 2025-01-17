@@ -983,9 +983,11 @@ class FrameRangeUtils {
     // (undocumented)
     static framesToString(range: any): string;
     // (undocumented)
+    static imageIdToFrameEnd(imageId: string): number;
+    // (undocumented)
     protected static imageIdToFrames(imageId: string): FramesRange;
     // (undocumented)
-    static multiframeImageId(imageId: string, frameNumber?: number): string;
+    static imageIdToFrameStart(imageId: string): number;
 }
 
 // @public (undocumented)
@@ -3210,6 +3212,8 @@ export class StackViewport extends Viewport {
     // (undocumented)
     getSliceIndex: () => number;
     // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
+    // (undocumented)
     getTargetImageIdIndex: () => number;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -3711,6 +3715,8 @@ export class VideoViewport extends Viewport implements IVideoViewport {
     // (undocumented)
     getSliceIndex(): number;
     // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
+    // (undocumented)
     protected getTransform(): Transform;
     // (undocumented)
     getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
@@ -4104,14 +4110,15 @@ type ViewPresentationSelector = {
 
 // @public (undocumented)
 type ViewReference = {
-    FrameOfReferenceUID: string;
+    FrameOfReferenceUID?: string;
     referencedImageId?: string;
-    referencedImageUri?: string;
+    referencedImageURI?: string;
+    multiSliceReference?: ReferencedImageRange;
     cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
     viewUp?: Point3;
     sliceIndex?: number;
-    sliceRangeEnd?: number;
+    endRangeImageURI?: string;
     volumeId?: string;
     bounds?: BoundsLPS;
 };

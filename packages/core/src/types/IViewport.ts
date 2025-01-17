@@ -17,13 +17,15 @@ import BoundsLPS from './BoundsLPS';
 export type ViewReferenceSpecifier = {
   /**
    * The slice index within the current viewport camera to get a reference for.
-   * Note that slice indexes are dependent on the particular view being shown
-   * and cannot be shared across different view types such as stacks and
-   * volumes, or two viewports showing different orientations or slab thicknesses.
+   * Note that slice indexes are dependent on the data in a viewport, and will
+   * be used to generate a view reference or referenced image, but are not the
+   * reference itself.
    */
   sliceIndex?: number;
   /**
    * The end index - this requires sliceIndex to be specified.
+   * This will result in a view reference containing a range, specified
+   * by the starting and ending images or by a thickness for a volume.
    */
   sliceRangeEnd?: number;
 
@@ -75,12 +77,24 @@ export type ReferenceCompatibleOptions = {
    * the volumes or set of image ids.
    * This is an optimization setting only that makes the test faster, and does
    * not need to be provided.
+   *
+   * @deprecated Going away in the next release as this is no longer required
    */
   imageURI?: string;
   /**
    * As nearby projection
    */
   asNearbyProjection?: boolean;
+};
+
+/**
+ * A referenced image range is used for specifying that an annotation applies
+ * to a range of images.  The content value references the last image included,
+ * while the top level view reference specifies the first image included.
+ * It is itself a view reference, allowing it to be used for setViewReference.
+ */
+export type ReferencedImageRange = ViewReference & {
+  referencedImageId: string;
 };
 
 /**
@@ -93,7 +107,7 @@ export type ViewReference = {
   /**
    * The FrameOfReferenceUID
    */
-  FrameOfReferenceUID: string;
+  FrameOfReferenceUID?: string;
   /**
    * An optional property used to specify the particular image that this view includes.
    * For volumes, that will specify which image is closest to the requested
@@ -111,7 +125,16 @@ export type ViewReference = {
    * An internal URI version of hte referencedImageId, used for performance
    * while checking the referenced image id.
    */
-  referencedImageUri?: string;
+  referencedImageURI?: string;
+
+  /**
+   * The multi-slice selection is some sort of specifier for additional
+   * view references which extend this selection to additional slices.
+   * The only allowed current value is the referenced image range, to select
+   * a range of slices, but the intent is to allow other types of references
+   * to be included in the future.
+   */
+  multiSliceReference?: ReferencedImageRange;
 
   /**
    * The focal point of the camera in world space.
@@ -135,6 +158,11 @@ export type ViewReference = {
    */
   viewUp?: Point3;
   /**
+   * This value is primarily an informational slice index as it isn't a reliable
+   * way to navigate to a specified slice.  HOwever, if it is the only value
+   * provided, then it can be used to navigate to a specific slice index.  As
+   * well, it can be used as informational display information.
+   *
    * The slice index for the image of interest
    * <b>NOTE</b> The slice index is relative to the volume or video image.
    * You cannot apply a slice index from one volume or stack to another as they do NOT
@@ -142,19 +170,19 @@ export type ViewReference = {
    * to apply to, the viewPlane normal should be identical, and then you can
    * apply the sliceIndex.
    *
-   * For stack viewports, the referencedImageId should be preferred
    *
    * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
    * within the stack of images - subsequent slice indexes can be at opposite
    * ends or can be co-incident but separate types of images.
+   *
    */
   sliceIndex?: number;
+
   /**
-   * An end of a slice range.  This is used to indicate the end of the slices
-   * where the sliceIndex is the first point.  This is a positive value if defined,
-   * so can be tested for `sliceRangeEnd`.
+   * The end range image URI is the URI of the final included image in this
+   * measurement.  This allows specifying a range of values of interest.
    */
-  sliceRangeEnd?: number;
+  endRangeImageURI?: string;
 
   /**
    * VolumeId that the referencedImageId was chosen from

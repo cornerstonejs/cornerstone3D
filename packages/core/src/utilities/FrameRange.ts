@@ -5,10 +5,14 @@ export type FramesRange = [number, number] | number;
  * Mostly used for the Video viewport, it allows references to
  * a range of frame values.
  */
-export default class FrameRangeUtils {
+export default class FrameRange {
   protected static frameRangeExtractor =
     /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
+  /**
+   * This method will extract a single frame number or range of frame numbers
+   * from a multiframe image id containing a frame range.
+   */
   protected static imageIdToFrames(imageId: string): FramesRange {
     const match = imageId.match(this.frameRangeExtractor);
     if (!match || !match[2]) {
@@ -42,6 +46,7 @@ export default class FrameRangeUtils {
     return String(range);
   }
 
+  /** Applies the range string to the given image id as a frame range. */
   protected static framesToImageId(
     imageId: string,
     range: FramesRange | string
