@@ -8,8 +8,8 @@ function sumOverFrames(voxelManager, frames) {
   const arrayLength = voxelManager.getScalarDataLength();
   const resultArray = new Float32Array(arrayLength);
 
-  for (const timepoint of frames) {
-    const scalarData = voxelManager.getTimePointScalarData(timepoint);
+  for (const frameNumber of frames) {
+    const scalarData = voxelManager.getFrameScalarData(frameNumber);
     for (let i = 0; i < arrayLength; i++) {
       resultArray[i] += scalarData[i];
     }
@@ -49,12 +49,12 @@ const operationFunctions = {
 
   [Enums.GenerateImageType.SUBTRACT]: (voxelManager, frames, callback) => {
     if (frames.length !== 2) {
-      throw new Error('Please provide only 2 time points for subtraction.');
+      throw new Error('Please provide only 2 frames for subtraction.');
     }
 
     const arrayLength = voxelManager.getScalarDataLength();
-    const scalarData1 = voxelManager.getTimePointScalarData(frames[0]);
-    const scalarData2 = voxelManager.getTimePointScalarData(frames[1]);
+    const scalarData1 = voxelManager.getFrameScalarData(frames[0]);
+    const scalarData2 = voxelManager.getFrameScalarData(frames[1]);
 
     for (let i = 0; i < arrayLength; i++) {
       const difference = scalarData1[i] - scalarData2[i];
@@ -64,15 +64,15 @@ const operationFunctions = {
 };
 
 /**
- * Generates an array of scalar data for a series of time frames from a 4D volume,
+ * Generates an array of scalar data for a series of frames from a 4D volume,
  * performing AVERAGE, SUM or SUBTRACT operations.
  *
- * @param dynamicVolume - volume to compute time frame data from
- * @param operation - operation to perform on time frame data, operations include
- * SUM, AVERAGE, and SUBTRACT (can only be used with 2 time frames provided)
+ * @param dynamicVolume - volume to compute frame data from
+ * @param operation - operation to perform on frame data, operations include
+ * SUM, AVERAGE, and SUBTRACT (can only be used with 2 frames provided)
  * @param options - additional options for the operation
- * @param options.frameNumbers - an array of frame indices to perform the operation on, if
- * left empty, all frames will be used
+ * @param options.frameNumbers - an array of frame numbers to perform the operation on (1-based),
+ * if left empty, all frames will be used
  * @returns {Float32Array} The resulting array after performing the operation
  * @throws {Error} If the operation is not supported or if invalid frame numbers are provided
  */
@@ -85,10 +85,13 @@ function generateImageFromTimeData(
 ): Float32Array {
   const { frameNumbers } = options;
 
-  const frames = frameNumbers || [...Array(dynamicVolume.numTimePoints).keys()];
+  // Create array of frame numbers (1-based) if not provided
+  const frames =
+    frameNumbers ||
+    Array.from({ length: dynamicVolume.numFrames }, (_, i) => i + 1);
 
   if (frames.length <= 1) {
-    throw new Error('Please provide two or more time points');
+    throw new Error('Please provide two or more frames');
   }
 
   const voxelManager = dynamicVolume.voxelManager;
@@ -109,15 +112,15 @@ function generateImageFromTimeData(
 }
 
 /**
- * Updates the scalar data for a target volume based on a series of time frames
+ * Updates the scalar data for a target volume based on a series of frames
  * from a 4D volume, performing AVERAGE, SUM or SUBTRACT operations.
  *
- * @param dynamicVolume - volume to compute time frame data from
- * @param operation - operation to perform on time frame data, operations include
- * SUM, AVERAGE, and SUBTRACT (can only be used with 2 time frames provided)
+ * @param dynamicVolume - volume to compute frame data from
+ * @param operation - operation to perform on frame data, operations include
+ * SUM, AVERAGE, and SUBTRACT (can only be used with 2 frames provided)
  * @param options - additional options for the operation
- * @param options.frameNumbers - an array of frame indices to perform the operation on, if
- * left empty, all frames will be used
+ * @param options.frameNumbers - an array of frame numbers to perform the operation on (1-based),
+ * if left empty, all frames will be used
  * @param options.targetVolume - the volume to update with the result of the operation
  * @throws {Error} If no target volume is provided or if the operation is not supported
  */
@@ -135,10 +138,13 @@ function updateVolumeFromTimeData(
     throw new Error('A target volume must be provided');
   }
 
-  const frames = frameNumbers || [...Array(dynamicVolume.numTimePoints).keys()];
+  // Create array of frame numbers (1-based) if not provided
+  const frames =
+    frameNumbers ||
+    Array.from({ length: dynamicVolume.numFrames }, (_, i) => i + 1);
 
   if (frames.length <= 1) {
-    throw new Error('Please provide two or more time points');
+    throw new Error('Please provide two or more frames');
   }
 
   const voxelManager = dynamicVolume.voxelManager;

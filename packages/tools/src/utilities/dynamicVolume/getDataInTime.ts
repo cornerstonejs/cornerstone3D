@@ -3,15 +3,16 @@ import { utilities, cache } from '@cornerstonejs/core';
 import { getVoxelOverlap } from '../segmentation/utilities';
 
 /**
- * Gets the scalar data for a series of time points for either a single
+ * Gets the scalar data for a series of frames for either a single
  * coordinate or a segmentation mask, it will return the an array of scalar
  * data for a single coordinate or an array of arrays for a segmentation.
  *
- * @param dynamicVolume - 4D volume to compute time point data from
- * @param options - frameNumbers: which frames to use as timepoints, if left
- * blank, gets data timepoints over all frames
- * maskVolumeId: segmentationId to get timepoint data of
- * worldCoordinate: world coordinate to get timepoint data of
+ * @param dynamicVolume - 4D volume to compute frame data from
+ * @param options - frameNumbers: which frames to use (1-based), if left
+ * blank, gets data over all frames
+ *        Note: frameNumber starts at 1 in 4D DICOM specification
+ * maskVolumeId: segmentationId to get frame data of
+ * worldCoordinate: world coordinate to get frame data of
  * @returns
  */
 function getDataInTime(
@@ -24,10 +25,10 @@ function getDataInTime(
 ): number[] | number[][] {
   let dataInTime;
 
-  // if frameNumbers is not provided, all frames are selected
-  const frames = options.frameNumbers || [
-    ...Array(dynamicVolume.numTimePoints).keys(),
-  ];
+  // if frameNumbers is not provided, all frames are selected (1-based)
+  const frames =
+    options.frameNumbers ||
+    Array.from({ length: dynamicVolume.numFrames }, (_, i) => i + 1);
 
   // You only need to provide either maskVolumeId OR worldCoordinate.
   // Throws error if neither maskVolumeId or worldCoordinate is given,
@@ -49,7 +50,7 @@ function getDataInTime(
       throw new Error('Segmentation volume not found');
     }
 
-    const [dataInTime, ijkCoords] = _getTimePointDataMask(
+    const [dataInTime, ijkCoords] = _getFrameDataMask(
       frames,
       dynamicVolume,
       segmentationVolume
@@ -59,7 +60,7 @@ function getDataInTime(
   }
 
   if (options.worldCoordinate) {
-    const dataInTime = _getTimePointDataCoordinate(
+    const dataInTime = _getFrameDataCoordinate(
       frames,
       options.worldCoordinate,
       dynamicVolume
@@ -71,7 +72,7 @@ function getDataInTime(
   return dataInTime;
 }
 
-function _getTimePointDataCoordinate(frames, coordinate, volume) {
+function _getFrameDataCoordinate(frames, coordinate, volume) {
   const { dimensions, imageData } = volume;
   const index = imageData.worldToIndex(coordinate);
 
@@ -88,15 +89,17 @@ function _getTimePointDataCoordinate(frames, coordinate, volume) {
   const zMultiple = dimensions[0] * dimensions[1];
   const value = [];
 
-  frames.forEach((frame) => {
+  frames.forEach((frameNumber) => {
     const scalarIndex = index[2] * zMultiple + index[1] * yMultiple + index[0];
-    value.push(volume.voxelManager.getAtIndexAndTimePoint(scalarIndex, frame));
+    value.push(
+      volume.voxelManager.getAtIndexAndFrame(scalarIndex, frameNumber)
+    );
   });
 
   return value;
 }
 
-function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
+function _getFrameDataMask(frames, dynamicVolume, segmentationVolume) {
   const { imageData: maskImageData } = segmentationVolume;
   const segVoxelManager = segmentationVolume.voxelManager;
 
@@ -133,7 +136,7 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
       const index = nonZeroVoxelIndices[i];
       for (let j = 0; j < frames.length; j++) {
         valuesInTime.push(
-          dynamicVolume.voxelManager.getAtIndexAndTimePoint(index, frames[j])
+          dynamicVolume.voxelManager.getAtIndexAndFrame(index, frames[j])
         );
       }
       nonZeroVoxelValuesInTime.push(valuesInTime);
@@ -173,16 +176,16 @@ function _getTimePointDataMask(frames, dynamicVolume, segmentationVolume) {
     const perFrameSum = new Map();
 
     // Pre-initialize the Map
-    frames.forEach((frame) => perFrameSum.set(frame, 0));
+    frames.forEach((frameNumber) => perFrameSum.set(frameNumber, 0));
 
     const averageCallback = ({ index }) => {
       for (let i = 0; i < frames.length; i++) {
-        const value = dynamicVolume.voxelManager.getAtIndexAndTimePoint(
+        const value = dynamicVolume.voxelManager.getAtIndexAndFrame(
           index,
           frames[i]
         );
-        const frame = frames[i];
-        perFrameSum.set(frame, perFrameSum.get(frame) + value);
+        const frameNumber = frames[i];
+        perFrameSum.set(frameNumber, perFrameSum.get(frameNumber) + value);
       }
       count++;
     };

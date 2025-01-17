@@ -115,19 +115,17 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Set Time Frames',
+  title: 'Set Frame Numbers',
   onClick: () => {
-    const x = document.getElementById('myText').value.split(',');
-    for (let i = 0; i < x.length; i++) {
-      x[i] = ~~x[i];
-    }
-    timeFrames = x;
+    const x = document.getElementById('myText')?.value.split(',') || [];
+    const frameNumbers = x.map((val) => Number(val));
+    timeFrames = frameNumbers;
   },
 });
 
 function addTextInputBox() {
   const id = 'myText';
-  const title = 'Enter time frames';
+  const title = 'Enter frame numbers';
   const textbox = document.createElement('input');
   const value = '';
   textbox.id = id;
@@ -138,14 +136,14 @@ function addTextInputBox() {
   container.append(textbox);
 }
 
-function addTimePointSlider(volume) {
+function addFrameSlider(volume) {
   addSliderToToolbar({
-    title: 'Time Point',
-    range: [0, volume.numTimePoints - 1],
-    defaultValue: 0,
+    title: 'Frame Number',
+    range: [1, volume.numFrames],
+    defaultValue: 1,
     onSelectedValueChange: (value) => {
-      const timePointIndex = Number(value);
-      volume.timePointIndex = timePointIndex;
+      const frameNumber = Number(value);
+      volume.frameNumber = frameNumber;
     },
   });
 }
@@ -231,14 +229,12 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const MAX_NUM_TIMEPOINTS = 40;
-  const firstTimePoint = 10;
-  const lastTimePoint = 14;
-  const NUM_IMAGES_PER_TIME_POINT = 235;
-  const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
-  const firstInstanceNumber =
-    (firstTimePoint - 1) * NUM_IMAGES_PER_TIME_POINT + 1;
-  const lastInstanceNumber = lastTimePoint * NUM_IMAGES_PER_TIME_POINT;
+  const MAX_NUM_FRAMES = 40;
+  const firstFrame = 10;
+  const lastFrame = 14;
+  const NUM_IMAGES_PER_FRAME = 235;
+  const firstInstanceNumber = (firstFrame - 1) * NUM_IMAGES_PER_FRAME + 1;
+  const lastInstanceNumber = lastFrame * NUM_IMAGES_PER_FRAME;
 
   imageIds = imageIds.filter((imageId) => {
     const instanceMetaData = metaDataManager.get(imageId);
@@ -297,7 +293,7 @@ async function run() {
 
   volumeForButton = volume;
   addTextInputBox();
-  addTimePointSlider(volume);
+  addFrameSlider(volume);
 
   // Set the volume on the viewport
   viewport.setVolumes([{ volumeId }]);

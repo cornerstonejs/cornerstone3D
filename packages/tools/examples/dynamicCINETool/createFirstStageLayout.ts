@@ -4,19 +4,19 @@ import {
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 
-const MAX_NUM_TIMEPOINTS = 40;
+const MAX_NUM_FRAMES = 40;
 
 function createFirstStageLayout({
   onLoadTimePoints,
 }: {
-  onLoadTimePoints(numTimePoints): void;
+  onLoadTimePoints(numFrames: number): void;
 }) {
   const container = document.createElement('div');
   const titleEl = createChildEl(container, 'div');
   const toolBarEl = createChildEl(container, 'div');
   const dropdownLabel = createChildEl(toolBarEl, 'span');
-  const dropDownOptions = [];
-  let numTimePoints = 5;
+  const dropDownOptions: number[] = [];
+  let numFrames = 5;
 
   container.id = 'firstStageContainer';
   container.style.transition = 'opacity 0.3s';
@@ -24,9 +24,9 @@ function createFirstStageLayout({
   titleEl.innerHTML = 'Stage 1: Load';
   titleEl.style.fontWeight = 'bold';
 
-  dropdownLabel.innerHTML = 'Time points to load: ';
+  dropdownLabel.innerHTML = 'Frames to load: ';
 
-  for (let i = 1; i <= MAX_NUM_TIMEPOINTS; i++) {
+  for (let i = 1; i <= MAX_NUM_FRAMES; i++) {
     dropDownOptions.push(i);
   }
 
@@ -34,11 +34,11 @@ function createFirstStageLayout({
     id: 'numTimePointsDropdown',
     options: {
       values: dropDownOptions,
-      defaultValue: numTimePoints,
+      defaultValue: numFrames,
     },
     container: toolBarEl,
     onSelectedValueChange: (value) => {
-      numTimePoints = <number>value;
+      numFrames = value as number;
     },
   });
 
@@ -47,15 +47,15 @@ function createFirstStageLayout({
     title: 'Load',
     container: toolBarEl,
     onClick: () => {
-      const dropdown = <HTMLSelectElement>(
-        document.getElementById('numTimePointsDropdown')
-      );
-      const btnLoadTimePoints = <HTMLButtonElement>(
-        document.getElementById('btnLoadTimePoints')
-      );
-      const secondStageContainer = <HTMLDivElement>(
-        document.getElementById('secondStageContainer')
-      );
+      const dropdown = document.getElementById(
+        'numTimePointsDropdown'
+      ) as HTMLSelectElement;
+      const btnLoadTimePoints = document.getElementById(
+        'btnLoadTimePoints'
+      ) as HTMLButtonElement;
+      const secondStageContainer = document.getElementById(
+        'secondStageContainer'
+      ) as HTMLDivElement;
 
       container.style.opacity = '0.4';
       dropdown.disabled = true;
@@ -64,7 +64,7 @@ function createFirstStageLayout({
 
       secondStageContainer.addEventListener(
         'transitionend',
-        () => onLoadTimePoints(numTimePoints),
+        () => onLoadTimePoints(numFrames),
         { once: true }
       );
     },

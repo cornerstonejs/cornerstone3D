@@ -32,7 +32,7 @@ const {
   utilities: csToolsUtilities,
 } = cornerstoneTools;
 
-const MAX_NUM_TIMEPOINTS = 40;
+const MAX_NUM_FRAMES = 40;
 
 // If needed a checkbox may be added to the UI instead
 const dynamicCineEnabled = true;
@@ -77,7 +77,7 @@ function initLayout() {
   const content = document.getElementById('content');
   const stagesContainer = document.createElement('div');
   const firstStageContainer = createFirstStageLayout({
-    onLoadTimePoints: loadTimePoints,
+    onLoadTimePoints: loadFrames,
   });
 
   const secondStageContainer = createSecondStageLayout({
@@ -228,11 +228,11 @@ function initViewports(volume, elements) {
   return viewportIds;
 }
 
-async function createVolume(numTimePoints: number): any {
+async function createVolume(numFrames: number): Promise<any> {
   const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
 
-  if (numTimePoints < 1 || numTimePoints > MAX_NUM_TIMEPOINTS) {
-    throw new Error('numTimePoints is out of range');
+  if (numFrames < 1 || numFrames > MAX_NUM_FRAMES) {
+    throw new Error('Number of frames is out of range');
   }
 
   let imageIds = await createImageIdsAndCacheMetaData({
@@ -243,9 +243,9 @@ async function createVolume(numTimePoints: number): any {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const NUM_IMAGES_PER_TIME_POINT = 235;
-  const TOTAL_NUM_IMAGES = MAX_NUM_TIMEPOINTS * NUM_IMAGES_PER_TIME_POINT;
-  const numImagesToLoad = numTimePoints * NUM_IMAGES_PER_TIME_POINT;
+  const NUM_IMAGES_PER_FRAME = 235;
+  const TOTAL_NUM_IMAGES = MAX_NUM_FRAMES * NUM_IMAGES_PER_FRAME;
+  const numImagesToLoad = numFrames * NUM_IMAGES_PER_FRAME;
 
   // Load the last N time points because they have a better image quality
   // and first ones are white or contains only a few black pixels
@@ -358,7 +358,7 @@ function createToolGroups() {
 /**
  * Runs the demo
  */
-async function loadTimePoints(numTimePoints) {
+async function loadFrames(numFrames) {
   // Init Cornerstone and related libraries
   await initDemo();
 
@@ -369,7 +369,7 @@ async function loadTimePoints(numTimePoints) {
   const elements = initViewportLayout();
 
   // Create and load PT volume
-  const volume = await createVolume(numTimePoints);
+  const volume = await createVolume(numFrames);
 
   // Initialize cornerstone viewports
   initViewports(volume, elements);
@@ -423,7 +423,7 @@ function setActiveElement(element) {
   // Update all FPS related inputs/vars
   framesPerSecond = fps;
   fpsSliderElem.value = fps.toString();
-  fpsSliderLabelElem.innerText = ` Time points per second: ${fps}`;
+  fpsSliderLabelElem.innerText = ` Frames per second: ${fps}`;
 }
 
 initLayout();

@@ -63,14 +63,14 @@ addDropdownToToolbar({
   },
 });
 
-function addTimePointSlider(volume) {
+function addFrameSlider(volume) {
   addSliderToToolbar({
-    title: 'Time Point',
-    range: [0, volume.numTimePoints - 1],
-    defaultValue: 0,
+    title: 'Frame Number',
+    range: [1, volume.numFrames],
+    defaultValue: 1,
     onSelectedValueChange: (value) => {
-      const timePointIndex = Number(value);
-      volume.timePointIndex = timePointIndex;
+      const frameNumber = Number(value);
+      volume.frameNumber = frameNumber;
     },
   });
 }
@@ -122,7 +122,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  addTimePointSlider(volume);
+  addFrameSlider(volume);
 
   // Set the volume on the viewport
   viewport.setVolumes([{ volumeId }]);
