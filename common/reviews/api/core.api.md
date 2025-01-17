@@ -1044,6 +1044,10 @@ export enum EVENTS {
     // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
+    DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED = "DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED",
+    // (undocumented)
+    DYNAMIC_VOLUME_FRAME_NUMBER_LOADED = "DYNAMIC_VOLUME_FRAME_NUMBER_LOADED",
+    // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED",
     // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_LOADED = "DYNAMIC_VOLUME_TIME_POINT_LOADED",
@@ -1567,12 +1571,15 @@ type IContourSet = ContourSet;
 // @public (undocumented)
 interface IDynamicImageVolume extends IImageVolume {
     // (undocumented)
+    get frameNumber(): number;
+    set frameNumber(frameNumber: number);
+    // (undocumented)
     get numTimePoints(): number;
     // (undocumented)
     scroll(delta: number): void;
     // (undocumented)
     get timePointIndex(): number;
-    set timePointIndex(newTimePointIndex: number);
+    set timePointIndex(timePointIndex: number);
 }
 
 // @public (undocumented)
@@ -2272,7 +2279,7 @@ export class ImageVolume {
     // (undocumented)
     modified(): void;
     // (undocumented)
-    protected numFrames: number;
+    numFrames?: number;
     // (undocumented)
     numTimePoints?: number;
     // (undocumented)
@@ -3588,11 +3595,20 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         imageIdGroups: string[][];
     }, streamingProperties: IStreamingVolumeProperties);
     // (undocumented)
+    protected checkFrameCompletion(imageIdIndex: number): void;
+    // (undocumented)
     protected checkTimePointCompletion(imageIdIndex: number): void;
+    // (undocumented)
+    flatImageIdIndexToFrameNumber(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
+    // (undocumented)
+    get frameNumber(): number;
+    set frameNumber(frameNumber: number);
+    // (undocumented)
+    getCurrentFrameImageIds(): string[];
     // (undocumented)
     getCurrentTimePointImageIds(): string[];
     // (undocumented)
@@ -3629,7 +3645,11 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         };
     }[];
     // (undocumented)
+    isFrameLoaded(frameNumber: number): boolean;
+    // (undocumented)
     isTimePointLoaded(timePointIndex: number): boolean;
+    // (undocumented)
+    numFrames: number;
     // (undocumented)
     numTimePoints: number;
     // (undocumented)
@@ -4951,10 +4971,11 @@ class VoxelManager<T> {
         dimensions: Point3;
     }): VoxelManager<T>;
     // (undocumented)
-    static createScalarDynamicVolumeVoxelManager({ imageIdGroups, dimensions, timePoint, numberOfComponents, }: {
+    static createScalarDynamicVolumeVoxelManager({ imageIdGroups, dimensions, timePoint, frameNumber, numberOfComponents, }: {
         imageIdGroups: string[][];
         dimensions: Point3;
-        timePoint: number;
+        timePoint?: number;
+        frameNumber?: number;
         numberOfComponents?: number;
     }): IVoxelManager<number> | IVoxelManager<RGB>;
     // (undocumented)
