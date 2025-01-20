@@ -4604,7 +4604,7 @@ type ViewReference = {
 // @public (undocumented)
 type ViewReferenceSpecifier = {
     sliceIndex?: number;
-    sliceRangeEnd?: number;
+    rangeEndSliceIndex?: number;
     frameNumber?: number;
     forFrameOfReference?: boolean;
     points?: Point3[];

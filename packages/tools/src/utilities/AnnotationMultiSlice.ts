@@ -53,14 +53,14 @@ export default class AnnotationMultiSlice {
         endRange = viewport.getNumberOfSlices() - 1;
       }
     }
-    const sliceRangeEnd = viewport.getSliceIndexForImage(
+    const rangeEndSliceIndex = viewport.getSliceIndexForImage(
       metadata.multiSliceReference
     );
 
     if (endRange === undefined) {
       endRange =
-        sliceRangeEnd >= startRange
-          ? sliceRangeEnd
+        rangeEndSliceIndex >= startRange
+          ? rangeEndSliceIndex
           : viewport.getNumberOfSlices() - 1;
     }
     endRange = Math.max(startRange, endRange);
@@ -111,8 +111,10 @@ export default class AnnotationMultiSlice {
   ): number | [number, number] {
     const { metadata } = annotation;
     const { sliceIndex, multiSliceReference } = metadata;
-    const sliceRangeEnd = multiSliceReference?.sliceIndex;
-    return sliceRangeEnd ? [sliceIndex + 1, sliceRangeEnd + 1] : sliceIndex + 1;
+    const rangeEndSliceIndex = multiSliceReference?.sliceIndex;
+    return rangeEndSliceIndex
+      ? [sliceIndex + 1, rangeEndSliceIndex + 1]
+      : sliceIndex + 1;
   }
 
   public static getFrameRangeStr(annotation: Annotation) {

@@ -23,8 +23,14 @@ export type ViewReferenceSpecifier = {
    * The end index - this requires sliceIndex to be specified.
    * This will result in a view reference containing a range, specified
    * by the starting and ending images or by a thickness for a volume.
+   *
+   * Note that in the view reference, this gets created as a multiSliceReference
+   * containing a ReferencedImageRange object referencing the final image in the range.
+   * The specifier is done this way because it is a logical way for users of the specifier
+   * to choose an end range, while the use of the range internally is handled as a multi slice
+   * specifier.
    */
-  sliceRangeEnd?: number;
+  rangeEndSliceIndex?: number;
 
   /** The frame number for a multiframe */
   frameNumber?: number;

@@ -3077,10 +3077,10 @@ class StackViewport extends Viewport {
       if (options.withNavigation) {
         return true;
       }
-      const sliceRangeEnd =
+      const rangeEndSliceIndex =
         multiSliceReference &&
         this.imageKeyToIndexMap.get(multiSliceReference.referencedImageId);
-      return testIndex <= sliceRangeEnd && testIndex >= foundSliceIndex;
+      return testIndex <= rangeEndSliceIndex && testIndex >= foundSliceIndex;
     }
 
     if (!super.isReferenceViewable(viewRef, options)) {

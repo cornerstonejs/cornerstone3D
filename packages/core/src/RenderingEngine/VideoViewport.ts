@@ -837,10 +837,10 @@ class VideoViewport extends Viewport {
     }
     const currentIndex = this.getSliceIndex();
     if (multiSliceReference) {
-      const sliceRangeEnd = FrameRange.imageIdToFrameEnd(
+      const rangeEndSliceIndex = FrameRange.imageIdToFrameEnd(
         multiSliceReference.referencedImageId
       );
-      return currentIndex >= sliceIndex && currentIndex <= sliceRangeEnd;
+      return currentIndex >= sliceIndex && currentIndex <= rangeEndSliceIndex;
     }
     if (sliceIndex !== undefined) {
       return currentIndex === sliceIndex;
@@ -881,14 +881,14 @@ class VideoViewport extends Viewport {
     const sliceIndex =
       viewRefSpecifier?.sliceIndex ??
       (this.isPlaying ? this.frameRange[0] : this.getCurrentImageIdIndex());
-    const sliceRangeEnd =
-      viewRefSpecifier?.sliceRangeEnd ??
+    const rangeEndSliceIndex =
+      viewRefSpecifier?.rangeEndSliceIndex ??
       (this.isPlaying ? this.frameRange[1] - 1 : undefined);
     const multiSliceReference =
-      sliceRangeEnd > sliceIndex
+      rangeEndSliceIndex > sliceIndex
         ? {
-            sliceIndex: sliceRangeEnd,
-            referencedImageId: this.getCurrentImageId(sliceRangeEnd),
+            sliceIndex: rangeEndSliceIndex,
+            referencedImageId: this.getCurrentImageId(rangeEndSliceIndex),
           }
         : undefined;
 
