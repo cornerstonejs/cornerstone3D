@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.4...v2.15.5) (2025-01-20)
+
+### Bug Fixes
+
+- **wadouri:** Check cache when prefetching wadouri images for volume ([#1765](https://github.com/cornerstonejs/cornerstone3D/issues/1765)) ([4f05843](https://github.com/cornerstonejs/cornerstone3D/commit/4f058434a97b2b66a205571b1edf30c68344b8f2))
+
 ## [2.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.3...v2.15.4) (2025-01-15)
 
 **Note:** Version bump only for package root
